@@ -1,0 +1,41 @@
+@page "/book/add"
+@using MediaSet.Client.ViewModels
+@inject HttpClient Http
+
+<h3>Add Book</h3>
+
+<EditForm Model="@bookViewModel" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <p>
+        <label for="title">Title:</label>
+        <InputText id="title" @bind-Value="@bookViewModel.Title" />
+    </p>
+
+    <p>
+        <label for="isb">ISBN:</label>
+        <InputText id="isbn" @bind-Value="@bookViewModel.ISBN" />
+    </p>
+
+    <p>
+        <label for="subTitle">Sub Title:</label>
+        <InputText id="subTitle" @bind-Value="@bookViewModel.SubTitle" />
+    </p>
+
+    <p>
+        <label for="numberOfPages">Number of Pages:</label>
+        <InputNumber id="numberOfPages" @bind-Value="@bookViewModel.NumberOfPages" />
+    </p>
+
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private AddBookViewModel bookViewModel = new AddBookViewModel();
+
+    private void HandleValidSubmit()
+    {
+        Console.WriteLine("OnValidSubmit");
+    }
+}

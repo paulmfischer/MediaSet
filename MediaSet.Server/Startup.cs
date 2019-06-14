@@ -25,8 +25,7 @@ namespace MediaSet.Server
 
             services.AddScoped<IBookService, BookService>();
 
-            //var connection = @"Server=localhost\\SQLEXPRESS;Database=MediaSet;Trusted_Connection=True;";
-            services.AddDbContext<MediaSetDbContext>(); // options => options.UseSqlServer(connection));
+            services.AddDbContext<MediaSetDbContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

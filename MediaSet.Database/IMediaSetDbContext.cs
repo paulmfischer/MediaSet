@@ -13,5 +13,7 @@ namespace MediaSet.Data
         DbSet<Format> Formats { get; set; }
         DbSet<Genre> Genres { get; set; }
         DbSet<Publisher> Publishers { get; set; }
+
+
     }
 }

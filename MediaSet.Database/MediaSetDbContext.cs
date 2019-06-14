@@ -6,7 +6,7 @@ using System.Text;
 
 namespace MediaSet.Data
 {
-    public class MediaSetDbContext : DbContext, IMediaSetDbContext
+    public class MediaSetDbContext : DbContext //, IMediaSetDbContext
     {
         public DbSet<Book> Books { get; set; }
         public DbSet<Author> Authors { get; set; }

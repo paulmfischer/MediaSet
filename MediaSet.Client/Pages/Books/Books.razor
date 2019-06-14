@@ -1,12 +1,14 @@
 @page "/books"
-@using MediaSet.Shared
+@using MediaSet.Client.ViewModels
 @inject HttpClient Http
 
 <h3>Books</h3>
 
 @if (AllBooks.Count() == 0)
 {
-    <p>There are no books! Add one to get started!</p>
+    <p>
+        There are no books! <NavLink class="nav-link" href="book/add"><span class="oi oi-plus" aria-hidden="true"></span> Add Book</NavLink>Add one to get started!
+    </p>
 }
 else
 {
@@ -24,5 +26,5 @@ else
     protected override async Task OnInitAsync()
     {
         AllBooks = await Http.GetJsonAsync<IList<BookViewModel>>("api/SampleData/GetBooks");
-    }
+    }   
 }
