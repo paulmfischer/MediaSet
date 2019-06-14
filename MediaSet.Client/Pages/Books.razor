@@ -4,11 +4,25 @@
 
 <h3>Books</h3>
 
+@if (AllBooks.Count() == 0)
+{
+    <p>There are no books! Add one to get started!</p>
+}
+else
+{
+    foreach (var book in AllBooks)
+    {
+        <div>
+            @book.Title
+        </div>
+    }
+}
+
 @code {
-//IList<BookViewModel> Books;
+    private IList<BookViewModel> AllBooks = new List<BookViewModel>();
 
     protected override async Task OnInitAsync()
     {
-        var Books = await Http.GetJsonAsync<IList<BookViewModel>>("api/SampleData/GetBooks");
+        AllBooks = await Http.GetJsonAsync<IList<BookViewModel>>("api/SampleData/GetBooks");
     }
 }
