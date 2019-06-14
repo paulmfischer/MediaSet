@@ -1,14 +1,14 @@
 @page "/books"
-@using MediaSet.Data.Models
+@using MediaSet.Database.Models
 @inject HttpClient Http
 
 <h3>Books</h3>
 
 @code {
-    Book[] Books;
+    IList<Book> ListBooks;
     
     protected override async Task OnInitAsync()
     {
-        Books = await Http.GetJsonAsync<Book[]>("api/SampleData/GetBooks");
+        ListBooks = await Http.GetJsonAsync<IList<Book>>("api/SampleData/GetBooks");
     }
 }

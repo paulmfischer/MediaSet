@@ -1,5 +1,5 @@
-﻿using MediaSet.Data;
-using MediaSet.Data.Models;
+﻿using MediaSet.Database;
+using MediaSet.Database.Models;
 using MediaSet.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System;

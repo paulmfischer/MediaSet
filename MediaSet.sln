@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaSet.Shared", "MediaSet
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaSet.Data", "MediaSet.Data\MediaSet.Data.csproj", "{573924A2-87B3-4D56-9757-183E95774882}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaSet.Database", "MediaSet.Database\MediaSet.Database.csproj", "{F94EE43C-FFD7-4ADC-9E17-7871DB5DA6EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{573924A2-87B3-4D56-9757-183E95774882}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{573924A2-87B3-4D56-9757-183E95774882}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{573924A2-87B3-4D56-9757-183E95774882}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F94EE43C-FFD7-4ADC-9E17-7871DB5DA6EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F94EE43C-FFD7-4ADC-9E17-7871DB5DA6EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F94EE43C-FFD7-4ADC-9E17-7871DB5DA6EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F94EE43C-FFD7-4ADC-9E17-7871DB5DA6EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
