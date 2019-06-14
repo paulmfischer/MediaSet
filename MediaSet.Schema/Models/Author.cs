@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MediaSet.Data.Models
+namespace MediaSet.Schema.Models
 {
     public class Author
     {

@@ -1,10 +1,10 @@
-﻿using MediaSet.Data.Models;
+﻿using MediaSet.Schema.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MediaSet.Data
+namespace MediaSet.Schema
 {
     public interface IMediaSetDbContext
     {

@@ -1,4 +1,4 @@
-using MediaSet.Data;
+using MediaSet.Schema;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
