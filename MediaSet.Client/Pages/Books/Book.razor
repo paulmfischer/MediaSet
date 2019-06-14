@@ -1,0 +1,42 @@
+@page "/book/{BookId:int}"
+@using MediaSet.Shared.ViewModels
+@inject HttpClient Http
+
+<h3>Book</h3>
+
+@if (BookDetail == null)
+{
+    <p>Loading book....</p>
+}
+else
+{
+    <NavLink class="nav-link" href="books">
+        <span class="oi oi-book" aria-hidden="true"></span> Books
+    </NavLink>
+    <dl>
+        <dt>Title:</dt>
+        <dd>@BookDetail.Title</dd>
+
+        <dt>ISBN:</dt>
+        <dd>@BookDetail.ISBN</dd>
+
+        <dt>Sub title:</dt>
+        <dd>@BookDetail.SubTitle</dd>
+
+        <dt>Number of Pages:</dt>
+        <dd>@BookDetail.NumberOfPages</dd>
+    </dl>
+}
+
+
+@code {
+    [Parameter]
+    private int BookId { get; set; }
+
+    private EditBookViewModel BookDetail;
+
+    protected override async Task OnInitAsync()
+    {
+        BookDetail = await Http.GetJsonAsync<EditBookViewModel>("api/SampleData/GetBook/" + BookId);
+    }
+}

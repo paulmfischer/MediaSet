@@ -10,13 +10,9 @@ namespace MediaSet.Schema
     public interface IBookService
     {
         IEnumerable<Book> GetBooks();
-
         Book Get(int bookId);
-
         Book Add(Book book);
-
         Book Update(Book book);
-
         void Delete(int bookId);
     }
 

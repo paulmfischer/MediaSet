@@ -1,9 +1,9 @@
-@page "/book/add"
+@page "/book/edit/{BookId:int}"
 @using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 @inject IUriHelper UriHelper
 
-<h3>Add Book</h3>
+<h3>Edit Book</h3>
 <NavLink class="nav-link" href="books">
     <span class="oi oi-book" aria-hidden="true"></span> Books
 </NavLink>
@@ -11,6 +11,7 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
+    <input @bind="@bookViewModel.Id" type="hidden" />
     <p>
         <label for="title">Title:</label>
         <InputText id="title" @bind-Value="@bookViewModel.Title" />
@@ -35,12 +36,19 @@
 </EditForm>
 
 @code {
-    private AddBookViewModel bookViewModel = new AddBookViewModel();
+    [Parameter]
+    private int BookId { get; set; }
+    
+    private EditBookViewModel bookViewModel = new EditBookViewModel();
 
     protected async void HandleValidSubmit()
     {
-        Console.WriteLine("OnValidSubmit");
-        await Http.SendJsonAsync(HttpMethod.Post, "api/SampleData/Add", bookViewModel);
+        await Http.SendJsonAsync(HttpMethod.Post, "api/SampleData/Update", bookViewModel);
         UriHelper.NavigateTo("/books");
+    }
+
+    protected override async Task OnInitAsync()
+    {
+        bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/SampleData/GetBook/" + BookId);
     }
 }

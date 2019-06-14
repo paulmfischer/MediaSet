@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MediaSet.Client.ViewModels
+namespace MediaSet.Shared.ViewModels
 {
     public class AddBookViewModel
     {
@@ -14,10 +14,10 @@ namespace MediaSet.Client.ViewModels
         public string ISBN { get; set; }
         public string SortTitle { get; set; }
         public string SubTitle { get; set; }
-        public int FormatId { get; set; }
-        public int GenreId { get; set; }
-        public int NumberOfPages { get; set; }
-        public int PublisherId { get; set; }
-        public DateTime PublicationDate { get; set; }
+        public int? FormatId { get; set; }
+        public int? GenreId { get; set; }
+        public int? NumberOfPages { get; set; }
+        public int? PublisherId { get; set; }
+        public DateTime? PublicationDate { get; set; }
     }
 }

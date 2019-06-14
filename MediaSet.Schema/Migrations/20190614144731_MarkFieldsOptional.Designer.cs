@@ -4,14 +4,16 @@ using MediaSet.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MediaSet.Schema.Migrations
 {
     [DbContext(typeof(MediaSetDbContext))]
-    partial class MediaSetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190614144731_MarkFieldsOptional")]
+    partial class MarkFieldsOptional
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,9 +48,9 @@ namespace MediaSet.Schema.Migrations
 
                     b.Property<string>("ISBN");
 
-                    b.Property<int?>("NumberOfPages");
+                    b.Property<int>("NumberOfPages");
 
-                    b.Property<DateTime?>("PublicationDate");
+                    b.Property<DateTime>("PublicationDate");
 
                     b.Property<int?>("PublisherId");
 

@@ -1,23 +1,46 @@
 @page "/books"
-@using MediaSet.Client.ViewModels
+@using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 
 <h3>Books</h3>
+<NavLink class="nav-link" href="book/add"><span class="oi oi-plus" aria-hidden="true"></span> Add Book</NavLink>
 
 @if (AllBooks.Count() == 0)
 {
     <p>
-        There are no books! <NavLink class="nav-link" href="book/add"><span class="oi oi-plus" aria-hidden="true"></span> Add Book</NavLink>Add one to get started!
+        There are no books!
+        <NavLink class="nav-link" href="book/add">Add a Book to get started!</NavLink>
     </p>
 }
 else
 {
-    foreach (var book in AllBooks)
-    {
-        <div>
-            @book.Title
-        </div>
-    }
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>ISBN</th>
+                <th>Sub Title</th>
+                <th>Number of Pages</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in AllBooks)
+            {
+                <tr>
+                    <td>@book.Title</td>
+                    <td>@book.ISBN</td>
+                    <td>@book.SubTitle</td>
+                    <td>@book.NumberOfPages</td>
+                    <td>
+                        <a href="book/@book.Id">Detail</a>
+                        <a href="book/edit/@book.Id">Edit</a>
+                        Delete
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -26,5 +49,5 @@ else
     protected override async Task OnInitAsync()
     {
         AllBooks = await Http.GetJsonAsync<IList<BookViewModel>>("api/SampleData/GetBooks");
-    }   
+    }
 }

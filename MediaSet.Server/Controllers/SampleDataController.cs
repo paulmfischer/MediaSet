@@ -1,6 +1,7 @@
 ﻿using MediaSet.Schema;
 using MediaSet.Schema.Models;
 using MediaSet.Shared;
+using MediaSet.Shared.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -36,9 +37,9 @@ namespace MediaSet.Server.Controllers
         }
 
         [HttpGet("[action]")]
-        public IEnumerable<BookViewModel> GetBooks()
+        public IList<BookViewModel> GetBooks()
         {
-            var books = this.BookService.GetBooks();
+            var books = BookService.GetBooks();
             var viewBooks = new List<BookViewModel>();
 
             foreach (var book in books)
@@ -53,6 +54,52 @@ namespace MediaSet.Server.Controllers
             }
 
             return viewBooks;
+        }
+
+        [HttpGet("[action]/{Id}")]
+        public EditBookViewModel GetBook(int Id)
+        {
+            var book = BookService.Get(Id);
+            var viewBook = new EditBookViewModel()
+            {
+                Id = book.Id,
+                ISBN = book.ISBN,
+                NumberOfPages = book.NumberOfPages,
+                Title = book.Title
+            };
+
+            return viewBook;
+        }
+
+        [HttpPost("[action]")]
+        public Book Add([FromBody] AddBookViewModel newBook)
+        {
+            var book = new Book
+            {
+                Title = newBook.Title,
+                ISBN = newBook.ISBN,
+                NumberOfPages = newBook.NumberOfPages,
+                SubTitle = newBook.SubTitle
+            };
+            book = BookService.Add(book);
+
+            return book;
+        }
+
+        [HttpPost("[action]")]
+        public Book Update([FromBody] EditBookViewModel editBook)
+        {
+            var book = new Book
+            {
+                Id = editBook.Id,
+                Title = editBook.Title,
+                ISBN = editBook.ISBN,
+                NumberOfPages = editBook.NumberOfPages,
+                SubTitle = editBook.SubTitle
+            };
+            book = BookService.Update(book);
+
+            return book;
         }
     }
 }
