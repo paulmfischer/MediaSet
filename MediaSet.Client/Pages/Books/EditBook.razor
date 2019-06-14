@@ -1,5 +1,4 @@
 @page "/book/edit/{BookId:int}"
-@using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 @inject IUriHelper UriHelper
 
@@ -43,12 +42,12 @@
 
     protected async void HandleValidSubmit()
     {
-        await Http.SendJsonAsync(HttpMethod.Post, "api/SampleData/Update", bookViewModel);
+        await Http.SendJsonAsync(HttpMethod.Post, "api/sampledata/update", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
 
     protected override async Task OnInitAsync()
     {
-        bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/SampleData/GetBook/" + BookId);
+        bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/sampledata/book/" + BookId);
     }
 }

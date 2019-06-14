@@ -1,0 +1,43 @@
+@if (Display)
+{
+    <div class="modal2" tabindex="1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    @Title
+                </div>
+                <div class="modal-body">
+                    @Message
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="@(async (e) => await OnConfirm.InvokeAsync(false))">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="@(async (e) => await OnConfirm.InvokeAsync(true))">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    private string Title { get; set; }
+
+    [Parameter]
+    private string Message { get; set; }
+
+    [Parameter]
+    private EventCallback<bool> OnConfirm { get; set; }
+
+    [Parameter]
+    private bool Display { get; set; } = false;
+
+    public void Show()
+    {
+        Display = true;
+    }
+
+    public void Hide()
+    {
+        Display = false;
+    }
+}

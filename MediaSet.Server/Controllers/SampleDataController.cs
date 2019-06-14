@@ -37,7 +37,7 @@ namespace MediaSet.Server.Controllers
         }
 
         [HttpGet("[action]")]
-        public IList<BookViewModel> GetBooks()
+        public IList<BookViewModel> Books()
         {
             var books = BookService.GetBooks();
             var viewBooks = new List<BookViewModel>();
@@ -57,7 +57,7 @@ namespace MediaSet.Server.Controllers
         }
 
         [HttpGet("[action]/{Id}")]
-        public EditBookViewModel GetBook(int Id)
+        public EditBookViewModel Book(int Id)
         {
             var book = BookService.Get(Id);
             var viewBook = new EditBookViewModel()
@@ -100,6 +100,12 @@ namespace MediaSet.Server.Controllers
             book = BookService.Update(book);
 
             return book;
+        }
+
+        [HttpDelete("[action]/{Id}")]
+        public void Delete(int Id)
+        {
+            BookService.Delete(Id);
         }
     }
 }

@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaSet.Client", "MediaSet
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaSet.Shared", "MediaSet.Shared\MediaSet.Shared.csproj", "{9FBD85B2-5525-4D0E-946A-97A51A13F4F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaSet.Schema", "MediaSet.Schema\MediaSet.Schema.csproj", "{3B837BAB-DA9E-47DF-AB00-4B9CBDC1D785}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediaSet.Schema", "MediaSet.Schema\MediaSet.Schema.csproj", "{3B837BAB-DA9E-47DF-AB00-4B9CBDC1D785}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

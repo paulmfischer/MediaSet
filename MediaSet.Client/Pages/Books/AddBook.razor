@@ -1,5 +1,4 @@
 @page "/book/add"
-@using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 @inject IUriHelper UriHelper
 
@@ -40,7 +39,7 @@
     protected async void HandleValidSubmit()
     {
         Console.WriteLine("OnValidSubmit");
-        await Http.SendJsonAsync(HttpMethod.Post, "api/SampleData/Add", bookViewModel);
+        await Http.SendJsonAsync(HttpMethod.Post, "api/sampledata/add", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
 }

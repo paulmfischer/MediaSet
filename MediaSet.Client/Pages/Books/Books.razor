@@ -1,5 +1,4 @@
 @page "/books"
-@using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 
 <h3>Books</h3>
@@ -35,19 +34,49 @@ else
                     <td>
                         <a href="book/@book.Id">Detail</a>
                         <a href="book/edit/@book.Id">Edit</a>
-                        Delete
+                        <button class="btn btn-link" @onclick="@(e => DisplayConfirmDialog(book.Id))">Delete</button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+    <Confirm @ref="confirmDialog" Title="Delete book?" Message="Are you sure you want to delete this book?" OnConfirm="@HandleConfirm" />
 }
 
 @code {
     private IList<BookViewModel> AllBooks = new List<BookViewModel>();
-
+    private int BookIdToDelete;
+    private Confirm confirmDialog;
+    
     protected override async Task OnInitAsync()
     {
-        AllBooks = await Http.GetJsonAsync<IList<BookViewModel>>("api/SampleData/GetBooks");
+        AllBooks = await LoadBooks();
+    }
+
+    protected Task<IList<BookViewModel>> LoadBooks()
+    {
+        return Http.GetJsonAsync<IList<BookViewModel>>("api/sampledata/books");
+    }
+
+    protected async Task HandleConfirm(bool performOperation)
+    {
+        Console.WriteLine(string.Format("Delete? {0}", performOperation));
+        if (performOperation)
+        {
+            Console.WriteLine(string.Format("deleting book {0}", BookIdToDelete));
+            await Http.DeleteAsync("api/sampledata/delete/" + BookIdToDelete);
+            Console.WriteLine(string.Format("deleted book {0}", BookIdToDelete));
+            AllBooks = await LoadBooks();
+        }
+
+        Console.WriteLine("Hiding dialog");
+        confirmDialog.Hide();
+        Console.WriteLine("Dialog hidden");
+    }
+
+    protected void DisplayConfirmDialog(int bookId)
+    {
+        BookIdToDelete = bookId;
+        confirmDialog.Show();
     }
 }

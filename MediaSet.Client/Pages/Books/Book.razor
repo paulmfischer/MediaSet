@@ -1,5 +1,4 @@
 @page "/book/{BookId:int}"
-@using MediaSet.Shared.ViewModels
 @inject HttpClient Http
 
 <h3>Book</h3>
@@ -37,6 +36,6 @@ else
 
     protected override async Task OnInitAsync()
     {
-        BookDetail = await Http.GetJsonAsync<EditBookViewModel>("api/SampleData/GetBook/" + BookId);
+        BookDetail = await Http.GetJsonAsync<EditBookViewModel>("api/sampledata/book/" + BookId);
     }
 }
