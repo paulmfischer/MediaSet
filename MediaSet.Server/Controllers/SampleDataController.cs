@@ -1,5 +1,5 @@
-﻿using MediaSet.Database;
-using MediaSet.Database.Models;
+﻿//using MediaSet.Data;
+//using MediaSet.Data.Models;
 using MediaSet.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -16,12 +16,12 @@ namespace MediaSet.Server.Controllers
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
-        private IBookService BookService { get; set; }
+        //private IBookService BookService { get; set; }
 
-        public SampleDataController(IBookService _bookService)
-        {
-            this.BookService = _bookService;
-        }
+        //public SampleDataController(IBookService _bookService)
+        //{
+        //    this.BookService = _bookService;
+        //}
 
         [HttpGet("[action]")]
         public IEnumerable<WeatherForecast> WeatherForecasts()
@@ -35,10 +35,10 @@ namespace MediaSet.Server.Controllers
             });
         }
 
-        [HttpGet("[action]")]
-        public IEnumerable<Book> GetBooks()
-        {
-            return this.BookService.GetBooks();
-        }
+        //[HttpGet("[action]")]
+        //public IEnumerable<Book> GetBooks()
+        //{
+        //    return this.BookService.GetBooks();
+        //}
     }
 }

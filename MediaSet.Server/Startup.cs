@@ -1,4 +1,4 @@
-using MediaSet.Database;
+//using MediaSet.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -23,10 +23,10 @@ namespace MediaSet.Server
                     new[] { "application/octet-stream" });
             });
 
-            services.AddScoped<IBookService, BookService>();
+            //services.AddScoped<IBookService, BookService>();
 
             //var connection = @"Server=localhost\\SQLEXPRESS;Database=MediaSet;Trusted_Connection=True;";
-            services.AddDbContext<MediaSetDbContext>(); // options => options.UseSqlServer(connection));
+            //services.AddDbContext<MediaSetDbContext>(); // options => options.UseSqlServer(connection));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

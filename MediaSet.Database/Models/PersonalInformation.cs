@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MediaSet.Database.Models
+namespace MediaSet.Data.Models
 {
     public class PersonalInformation
     {

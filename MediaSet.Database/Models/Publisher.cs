@@ -1,4 +1,4 @@
-﻿namespace MediaSet.Database.Models
+﻿namespace MediaSet.Data.Models
 {
     public class Publisher
     {
