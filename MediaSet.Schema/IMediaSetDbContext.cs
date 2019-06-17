@@ -12,6 +12,7 @@ namespace MediaSet.Data
         DbSet<Format> Formats { get; set; }
         DbSet<Genre> Genres { get; set; }
         DbSet<Publisher> Publishers { get; set; }
+        //DbSet<PersonalInformation> PersonalInformation { get; set; }
 
         int SaveChanges();
         EntityEntry<TEntity> Entry<TEntity>([NotNull] TEntity entity) where TEntity : class;

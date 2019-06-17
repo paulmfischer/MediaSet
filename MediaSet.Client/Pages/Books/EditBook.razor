@@ -11,6 +11,7 @@
     <ValidationSummary />
 
     <input @bind="@bookViewModel.Id" type="hidden" />
+    <input @bing="@bookViewModel.MediaId" type="hidden" />
     <p>
         <label for="title">Title:</label>
         <InputText id="title" @bind-Value="@bookViewModel.Title" />

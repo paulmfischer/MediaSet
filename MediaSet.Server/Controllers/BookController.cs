@@ -1,5 +1,6 @@
 ﻿using MediaSet.Data.Models;
 using MediaSet.Data.Services;
+using MediaSet.Server.MappingService;
 using MediaSet.Shared.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -10,10 +11,12 @@ namespace MediaSet.Server.Controllers
     public class BookController : Controller
     {
         private IBookService BookService { get; set; }
+        private BookMappingService BookMappingService { get; set; }
 
-        public BookController(IBookService _bookService)
+        public BookController(IBookService bookService, BookMappingService bookMappingService)
         {
-            BookService = _bookService;
+            BookService = bookService;
+            BookMappingService = bookMappingService;
         }
 
         [HttpGet("[action]")]
@@ -24,13 +27,15 @@ namespace MediaSet.Server.Controllers
 
             foreach (var book in books)
             {
-                viewBooks.Add(new BookViewModel
-                {
-                    Id = book.Id,
-                    ISBN = book.ISBN,
-                    NumberOfPages = book.NumberOfPages,
-                    Title = book.Title
-                });
+                viewBooks.Add(BookMappingService.MapToViewBook(book));
+                //    new BookViewModel
+                //{
+                //    Id = book.Id,
+                //    MediaId = book.Media.Id,
+                //    ISBN = book.Media.ISBN,
+                //    NumberOfPages = book.NumberOfPages,
+                //    Title = book.Media.Title
+                //});
             }
 
             return viewBooks;
@@ -40,13 +45,15 @@ namespace MediaSet.Server.Controllers
         public EditBookViewModel Detail(int Id)
         {
             var book = BookService.Get(Id);
-            var viewBook = new EditBookViewModel()
-            {
-                Id = book.Id,
-                ISBN = book.ISBN,
-                NumberOfPages = book.NumberOfPages,
-                Title = book.Title
-            };
+            var viewBook = BookMappingService.MapToEditBook(book);
+            //var viewBook = new EditBookViewModel()
+            //{
+            //    Id = book.Id,
+            //    MediaId = book.Media.Id,
+            //    ISBN = book.Media.ISBN,
+            //    NumberOfPages = book.NumberOfPages,
+            //    Title = book.Media.Title
+            //};
 
             return viewBook;
         }
@@ -54,13 +61,18 @@ namespace MediaSet.Server.Controllers
         [HttpPost("[action]")]
         public Book Add([FromBody] AddBookViewModel newBook)
         {
-            var book = new Book
-            {
-                Title = newBook.Title,
-                ISBN = newBook.ISBN,
-                NumberOfPages = newBook.NumberOfPages,
-                SubTitle = newBook.SubTitle
-            };
+            //var book = new Book
+            //{
+            //    Media = new Media
+            //    {
+            //        Title = newBook.Title,
+            //        ISBN = newBook.ISBN,
+            //        MediaType = MediaType.Book
+            //    },
+            //    NumberOfPages = newBook.NumberOfPages,
+            //    SubTitle = newBook.SubTitle
+            //};
+            var book = BookMappingService.MapToNewBook(newBook);
             book = BookService.Add(book);
 
             return book;
@@ -69,14 +81,19 @@ namespace MediaSet.Server.Controllers
         [HttpPost("[action]")]
         public Book Update([FromBody] EditBookViewModel editBook)
         {
-            var book = new Book
-            {
-                Id = editBook.Id,
-                Title = editBook.Title,
-                ISBN = editBook.ISBN,
-                NumberOfPages = editBook.NumberOfPages,
-                SubTitle = editBook.SubTitle
-            };
+            //var book = new Book
+            //{
+            //    Id = editBook.Id,
+            //    Media = new Media
+            //    {
+            //        Id = editBook.MediaId,
+            //        Title = editBook.Title,
+            //        ISBN = editBook.ISBN
+            //    },
+            //    NumberOfPages = editBook.NumberOfPages,
+            //    SubTitle = editBook.SubTitle
+            //};
+            var book = BookMappingService.MapEditToSaveBook(editBook);
             book = BookService.Update(book);
 
             return book;

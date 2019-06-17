@@ -4,14 +4,16 @@ using MediaSet.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MediaSet.Data.Migrations
 {
     [DbContext(typeof(MediaSetDbContext))]
-    partial class MediaSetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20190617155716_RedoModelAroundMedia")]
+    partial class RedoModelAroundMedia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

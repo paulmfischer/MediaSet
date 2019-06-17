@@ -21,6 +21,28 @@ namespace MediaSet.Data
                 .HasForeignKey(ba => ba.AuthorId);
         }
 
+        public static void SetupMediaGenreMapping(this ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<MediaGenre>()
+                .HasKey(mg => new { mg.MediaId, mg.GenreId });
+
+            modelBuilder.Entity<MediaGenre>()
+                .HasOne(mg => mg.Media)
+                .WithMany(m => m.MediaGenres)
+                .HasForeignKey(mg => mg.MediaId);
+
+            modelBuilder.Entity<MediaGenre>()
+                .HasOne(mg => mg.Genre)
+                .WithMany(m => m.MediaGenres)
+                .HasForeignKey(mg => mg.GenreId);
+        }
+
+        //public static void SetupPersonalInformation(this ModelBuilder modelBuilder)
+        //{
+        //    modelBuilder.Entity<PersonalInformation>()
+        //        .HasKey(pi => new { pi.EntityId, pi.MediaType });
+        //}
+
         public static void Seed(this ModelBuilder modelBuilder)
         {
             //using (var context = new MediaSetDbContext())

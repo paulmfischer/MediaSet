@@ -16,7 +16,7 @@ namespace MediaSet.Data.Services
 
         public IEnumerable<Book> GetAll()
         {
-            return dbContext.Books.AsNoTracking().AsEnumerable();
+            return dbContext.Books.Include(b => b.Media).AsNoTracking().AsEnumerable();
         }
 
         public Book Add(Book book)

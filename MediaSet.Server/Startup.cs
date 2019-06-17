@@ -1,5 +1,6 @@
 using MediaSet.Data;
 using MediaSet.Data.Services;
+using MediaSet.Server.MappingService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -24,6 +25,7 @@ namespace MediaSet.Server
 
             services.AddScoped<IMediaSetDbContext, MediaSetDbContext>();
             services.AddScoped<IBookService, BookService>();
+            services.AddScoped<BookMappingService>();
 
             services.AddDbContext<MediaSetDbContext>();
         }
