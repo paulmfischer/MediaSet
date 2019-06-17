@@ -1,7 +1,9 @@
 ﻿using MediaSet.Schema.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace MediaSet.Schema
@@ -14,6 +16,8 @@ namespace MediaSet.Schema
         DbSet<Genre> Genres { get; set; }
         DbSet<Publisher> Publishers { get; set; }
 
-
+        int SaveChanges();
+        EntityEntry<TEntity> Entry<TEntity>([NotNull] TEntity entity) where TEntity : class;
+        EntityEntry<TEntity> Remove<TEntity>([NotNull] TEntity entity) where TEntity : class;
     }
 }

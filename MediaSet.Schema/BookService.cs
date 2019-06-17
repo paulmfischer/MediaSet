@@ -1,9 +1,7 @@
 ﻿using MediaSet.Schema.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MediaSet.Schema
 {
@@ -18,9 +16,9 @@ namespace MediaSet.Schema
 
     public class BookService : IBookService
     {
-        private readonly MediaSetDbContext dbContext;
+        private readonly IMediaSetDbContext dbContext;
 
-        public BookService(MediaSetDbContext context)
+        public BookService(IMediaSetDbContext context)
         {
             dbContext = context;
         }

@@ -23,6 +23,7 @@ namespace MediaSet.Server
                     new[] { "application/octet-stream" });
             });
 
+            services.AddScoped<IMediaSetDbContext, MediaSetDbContext>();
             services.AddScoped<IBookService, BookService>();
 
             services.AddDbContext<MediaSetDbContext>();
