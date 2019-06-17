@@ -1,12 +1,11 @@
 using MediaSet.Data;
+using MediaSet.Data.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json.Serialization;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
 namespace MediaSet.Server
 {

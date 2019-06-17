@@ -42,12 +42,12 @@
 
     protected async void HandleValidSubmit()
     {
-        await Http.SendJsonAsync(HttpMethod.Post, "api/sampledata/update", bookViewModel);
+        await Http.SendJsonAsync(HttpMethod.Post, "api/book/update", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
 
     protected override async Task OnInitAsync()
     {
-        bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/sampledata/book/" + BookId);
+        bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/book/detail/" + BookId);
     }
 }

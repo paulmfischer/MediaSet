@@ -3,17 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MediaSet.Data
+namespace MediaSet.Data.Services
 {
-    public interface IBookService
-    {
-        IEnumerable<Book> GetBooks();
-        Book Get(int bookId);
-        Book Add(Book book);
-        Book Update(Book book);
-        void Delete(int bookId);
-    }
-
     public class BookService : IBookService
     {
         private readonly IMediaSetDbContext dbContext;
@@ -23,7 +14,7 @@ namespace MediaSet.Data
             dbContext = context;
         }
 
-        public IEnumerable<Book> GetBooks()
+        public IEnumerable<Book> GetAll()
         {
             return dbContext.Books.AsNoTracking().AsEnumerable();
         }

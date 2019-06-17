@@ -39,7 +39,7 @@
     protected async void HandleValidSubmit()
     {
         Console.WriteLine("OnValidSubmit");
-        await Http.SendJsonAsync(HttpMethod.Post, "api/sampledata/add", bookViewModel);
+        await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
 }

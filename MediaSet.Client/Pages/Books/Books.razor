@@ -55,23 +55,18 @@ else
 
     protected Task<IList<BookViewModel>> LoadBooks()
     {
-        return Http.GetJsonAsync<IList<BookViewModel>>("api/sampledata/books");
+        return Http.GetJsonAsync<IList<BookViewModel>>("api/book/list");
     }
 
     protected async Task HandleConfirm(bool performOperation)
     {
-        Console.WriteLine(string.Format("Delete? {0}", performOperation));
         if (performOperation)
         {
-            Console.WriteLine(string.Format("deleting book {0}", BookIdToDelete));
-            await Http.DeleteAsync("api/sampledata/delete/" + BookIdToDelete);
-            Console.WriteLine(string.Format("deleted book {0}", BookIdToDelete));
+            await Http.DeleteAsync("api/book/delete/" + BookIdToDelete);
             AllBooks = await LoadBooks();
         }
 
-        Console.WriteLine("Hiding dialog");
         confirmDialog.Hide();
-        Console.WriteLine("Dialog hidden");
     }
 
     protected void DisplayConfirmDialog(int bookId)

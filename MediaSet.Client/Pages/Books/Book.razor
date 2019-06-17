@@ -36,6 +36,6 @@ else
 
     protected override async Task OnInitAsync()
     {
-        BookDetail = await Http.GetJsonAsync<EditBookViewModel>("api/sampledata/book/" + BookId);
+        BookDetail = await Http.GetJsonAsync<EditBookViewModel>("api/book/detail/" + BookId);
     }
 }
