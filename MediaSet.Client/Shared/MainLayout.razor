@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject IUriHelper UriHelper
 
-<div class="sidebar">
+<div class="sidebar @CurrentRoute">
     <NavMenu />
 </div>
 
@@ -10,6 +11,27 @@
     </div>
 
     <div class="content px-4">
-        @Body
+        <div class="container-fluid">
+            @Body
+        </div>
     </div>
 </div>
+
+@code {
+    private string CurrentRoute;
+
+    protected override void OnInit()
+    {
+        RefreshCurrentRoute();
+        UriHelper.OnLocationChanged += OnLocationChanges;
+    }
+
+    private void OnLocationChanges(object sender, LocationChangedEventArgs newLocation) => RefreshCurrentRoute();
+
+    private void RefreshCurrentRoute()
+    {
+        var urlSplit = UriHelper.GetAbsoluteUri().Replace(UriHelper.GetBaseUri(), "").Split("/");
+        CurrentRoute = urlSplit.Length > 0 ? urlSplit[0] : CurrentRoute = string.Empty;
+        base.StateHasChanged();
+    }
+}

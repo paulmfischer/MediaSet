@@ -29,7 +29,7 @@ namespace MediaSet.Data.Services
 
         public Book Get(int bookId)
         {
-            return dbContext.Books.Find(bookId);
+            return dbContext.Books.Include(b => b.Media).FirstOrDefault(b => b.Id.Equals(bookId));
         }
 
         public Book Update(Book book)

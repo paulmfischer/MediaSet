@@ -1,5 +1,9 @@
-﻿/*Not used anymore, use styles.scss to make changes*/
-@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+﻿@import url('/css/open-iconic/font/css/open-iconic-bootstrap.min.css');
+
+$primary-color: #052767;
+$book-color: #00aa4a;
+$movie-color: #b61313;
+$game-color: #811f94;
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -19,46 +23,57 @@ app {
 
 .main {
     flex: 1;
-}
-
-    .main .top-row {
+    
+    .top-row {
         background-color: #e6e6e6;
         border-bottom: 1px solid #d6d5d5;
     }
-
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
 }
 
-    .sidebar .top-row {
+.sidebar {
+    background-image: linear-gradient(180deg, $primary-color 0%, #3a0647 70%);
+
+    &.book {
+        background-image: linear-gradient(180deg, $primary-color 0%, $book-color 70%);
+    }
+
+    &.dvd {
+        background-image: linear-gradient(180deg, $primary-color 0%, $movie-color 70%);
+    }
+
+    &.game {
+        background-image: linear-gradient(180deg, $primary-color 0%, $game-color 70%);
+    }
+
+    .top-row {
         background-color: rgba(0,0,0,0.4);
     }
 
-    .sidebar .navbar-brand {
+    .navbar-brand {
         font-size: 1.1rem;
     }
 
-    .sidebar .oi {
+    .oi {
         width: 2rem;
         font-size: 1.1rem;
         vertical-align: text-top;
         top: -2px;
     }
+}
 
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
-}
 
-    .nav-item:first-of-type {
+    &:first-of-type {
         padding-top: 1rem;
     }
 
-    .nav-item:last-of-type {
+    &:last-of-type {
         padding-bottom: 1rem;
     }
 
-    .nav-item a {
+    a {
         color: #d7d7d7;
         border-radius: 4px;
         height: 3rem;
@@ -67,15 +82,16 @@ app {
         line-height: 3rem;
     }
 
-        .nav-item a.active {
-            background-color: rgba(255,255,255,0.25);
-            color: white;
-        }
+    a.active {
+        background-color: rgba(255,255,255,0.25);
+        color: white;
+    }
 
-        .nav-item a:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
+    a:hover {
+        background-color: rgba(255,255,255,0.1);
+        color: white;
+    }
+}
 
 .content {
     padding-top: 1.1rem;
@@ -95,6 +111,17 @@ app {
 
 .validation-message {
     color: red;
+}
+
+.table {
+    .btn {
+        padding: 0.125rem 0.375rem;
+    }
+
+    td.actions{
+        width: 12%;
+        padding-left: .75rem;
+    }
 }
 
 @media (max-width: 767.98px) {

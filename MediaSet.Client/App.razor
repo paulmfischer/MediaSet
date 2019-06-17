@@ -1,5 +1,18 @@
 ﻿<Router AppAssembly="typeof(Program).Assembly">
     <NotFoundContent>
-        <p>Sorry, there's nothing at this address.</p>
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <div class="main">
+            <div class="top-row px-4">
+                <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+            </div>
+            <div class="content px-4">
+                <div class="container-fluid">
+                    <p>Sorry, there's nothing at this address.</p>
+                </div>
+            </div>
+        </div>
     </NotFoundContent>
 </Router>
