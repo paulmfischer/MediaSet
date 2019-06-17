@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MediaSet.Client\MediaSet.Client.csproj" />
-    <ProjectReference Include="..\MediaSet.Schema\MediaSet.Schema.csproj" />
+    <ProjectReference Include="..\MediaSet.Schema\MediaSet.Data.csproj" />
     <ProjectReference Include="..\MediaSet.Shared\MediaSet.Shared.csproj" />
   </ItemGroup>
 

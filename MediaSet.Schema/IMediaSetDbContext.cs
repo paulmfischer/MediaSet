@@ -1,12 +1,9 @@
-﻿using MediaSet.Schema.Models;
+﻿using MediaSet.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
-namespace MediaSet.Schema
+namespace MediaSet.Data
 {
     public interface IMediaSetDbContext
     {

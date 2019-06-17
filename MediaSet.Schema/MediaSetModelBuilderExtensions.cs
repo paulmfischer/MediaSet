@@ -1,7 +1,7 @@
-﻿using MediaSet.Schema.Models;
+﻿using MediaSet.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace MediaSet.Schema
+namespace MediaSet.Data
 {
     public static class MediaSetModelBuilderExtensions
     {

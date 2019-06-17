@@ -1,8 +1,8 @@
-﻿using MediaSet.Schema.Models;
+﻿using MediaSet.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace MediaSet.Schema
+namespace MediaSet.Data
 {
     public partial class MediaSetDbContext : DbContext, IMediaSetDbContext
     {

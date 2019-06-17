@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace MediaSet.Schema.Migrations
+namespace MediaSet.Data.Migrations
 {
     public partial class Initial : Migration
     {

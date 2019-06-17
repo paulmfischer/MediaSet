@@ -1,4 +1,4 @@
-﻿namespace MediaSet.Schema.Models
+﻿namespace MediaSet.Data.Models
 {
     public class Genre
     {

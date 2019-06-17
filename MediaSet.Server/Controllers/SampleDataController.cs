@@ -1,5 +1,5 @@
-﻿using MediaSet.Schema;
-using MediaSet.Schema.Models;
+﻿using MediaSet.Data;
+using MediaSet.Data.Models;
 using MediaSet.Shared;
 using MediaSet.Shared.ViewModels;
 using Microsoft.AspNetCore.Mvc;

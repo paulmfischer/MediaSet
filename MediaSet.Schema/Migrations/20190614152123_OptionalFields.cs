@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace MediaSet.Schema.Migrations
+namespace MediaSet.Data.Migrations
 {
     public partial class OptionalFields : Migration
     {
