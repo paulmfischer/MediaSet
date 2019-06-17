@@ -6,43 +6,64 @@
 <NavLink class="nav-link" href="books">
     <span class="oi oi-book" aria-hidden="true"></span> Books
 </NavLink>
-<EditForm Model="@bookViewModel" OnValidSubmit="@HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
 
-    <input @bind="@bookViewModel.Id" type="hidden" />
-    <input @bing="@bookViewModel.MediaId" type="hidden" />
-    <p>
-        <label for="title">Title:</label>
-        <InputText id="title" @bind-Value="@bookViewModel.Title" />
-    </p>
+@if (Loading)
+{
+    <div class="d-flex justify-content-center">
+        <Loading />
+    </div>
+}
+else
+{
+    <EditForm Model="@bookViewModel" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <p>
-        <label for="isb">ISBN:</label>
-        <InputText id="isbn" @bind-Value="@bookViewModel.ISBN" />
-    </p>
+        <input @bind="@bookViewModel.Id" type="hidden" />
+        <input @bind="@bookViewModel.MediaId" type="hidden" />
+        <input @bind="@bookViewModel.MediaTypeId" type="hidden" />
+        <p>
+            <label for="title">Title:</label>
+            <InputText id="title" @bind-Value="@bookViewModel.Title" />
+        </p>
 
-    <p>
-        <label for="subTitle">Sub Title:</label>
-        <InputText id="subTitle" @bind-Value="@bookViewModel.SubTitle" />
-    </p>
+        <p>
+            <label for="isb">ISBN:</label>
+            <InputText id="isbn" @bind-Value="@bookViewModel.ISBN" />
+        </p>
 
-    <p>
-        <label for="numberOfPages">Number of Pages:</label>
-        <InputNumber id="numberOfPages" @bind-Value="@bookViewModel.NumberOfPages" />
-    </p>
+        <p>
+            <label for="subTitle">Sub Title:</label>
+            <InputText id="subTitle" @bind-Value="@bookViewModel.SubTitle" />
+        </p>
 
-    <button type="submit">Submit</button>
-</EditForm>
+        <p>
+            <label for="numberOfPages">Number of Pages:</label>
+            <InputNumber id="numberOfPages" @bind-Value="@bookViewModel.NumberOfPages" />
+        </p>
+
+        @if (!Saving)
+        {
+            <button class="btn btn-primary" type="submit">Submit</button>
+        }
+        else
+        {
+            <button class="btn btn-primary" type="button" disabled><Loading Message="Saving..." InButton="true" />Saving...</button>
+        }
+    </EditForm>
+}
 
 @code {
     [Parameter]
     private int BookId { get; set; }
-    
+
     private EditBookViewModel bookViewModel = new EditBookViewModel();
+    private bool Saving = false;
+    private bool Loading = true;
 
     protected async void HandleValidSubmit()
     {
+        Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/update", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
@@ -50,5 +71,6 @@
     protected override async Task OnInitAsync()
     {
         bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/book/detail/" + BookId);
+        Loading = false;
     }
 }

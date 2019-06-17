@@ -1,5 +1,6 @@
 ﻿using MediaSet.Data.Models;
 using MediaSet.Shared.ViewModels;
+using System;
 
 namespace MediaSet.Server.MappingService
 {
@@ -42,7 +43,8 @@ namespace MediaSet.Server.MappingService
                 MediaId = book.Media.Id,
                 ISBN = book.Media.ISBN,
                 NumberOfPages = book.NumberOfPages,
-                Title = book.Media.Title
+                Title = book.Media.Title,
+                MediaTypeId = (int)book.Media.MediaType
             };
 
             return viewBook;
@@ -57,7 +59,8 @@ namespace MediaSet.Server.MappingService
                 {
                     Id = editBook.MediaId,
                     Title = editBook.Title,
-                    ISBN = editBook.ISBN
+                    ISBN = editBook.ISBN,
+                    MediaType = (MediaType)editBook.MediaTypeId
                 },
                 NumberOfPages = editBook.NumberOfPages,
                 SubTitle = editBook.SubTitle

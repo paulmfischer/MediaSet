@@ -34,6 +34,7 @@ namespace MediaSet.Data.Services
 
         public Book Update(Book book)
         {
+            dbContext.Entry(book.Media).State = EntityState.Modified;
             dbContext.Entry(book).State = EntityState.Modified;
             dbContext.SaveChanges();
 
@@ -42,8 +43,9 @@ namespace MediaSet.Data.Services
 
         public void Delete(int bookId)
         {
-            var book = new Book { Id = bookId };
+            var book = Get(bookId);
             dbContext.Remove(book);
+            dbContext.Remove(book.Media);
             dbContext.SaveChanges();
         }
     }

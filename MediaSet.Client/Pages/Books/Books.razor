@@ -47,7 +47,9 @@ else if (Loaded)
 }
 else
 {
-    <p>Loading books....</p>
+    <div class="d-flex justify-content-center">
+        <Loading />
+    </div>
 }
 
 @code {
@@ -58,13 +60,16 @@ else
 
     protected override async Task OnInitAsync()
     {
-        AllBooks = await LoadBooks();
-        Loaded = true;
+        await LoadBooks();
     }
 
-    protected Task<IList<BookViewModel>> LoadBooks()
+    protected async Task<IList<BookViewModel>> LoadBooks()
     {
-        return Http.GetJsonAsync<IList<BookViewModel>>("api/book/list");
+        Loaded = false;
+        AllBooks = await Http.GetJsonAsync<IList<BookViewModel>>("api/book/list"); ;
+        Loaded = true;
+
+        return AllBooks;
     }
 
     protected async Task HandleConfirm(bool performOperation)
@@ -72,8 +77,7 @@ else
         if (performOperation)
         {
             await Http.DeleteAsync("api/book/delete/" + BookIdToDelete);
-            AllBooks = await LoadBooks();
-            Loaded = true;
+            await LoadBooks();
         }
 
         confirmDialog.Hide();

@@ -1,9 +1,9 @@
 ﻿@import url('/css/open-iconic/font/css/open-iconic-bootstrap.min.css');
 
 $primary-color: #052767;
-$book-color: #00aa4a;
-$movie-color: #b61313;
-$game-color: #811f94;
+$books-color: #00aa4a;
+$movies-color: #b61313;
+$games-color: #811f94;
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -33,16 +33,16 @@ app {
 .sidebar {
     background-image: linear-gradient(180deg, $primary-color 0%, #3a0647 70%);
 
-    &.book {
-        background-image: linear-gradient(180deg, $primary-color 0%, $book-color 70%);
+    &.books {
+        background-image: linear-gradient(180deg, $primary-color 0%, $books-color 70%);
     }
 
-    &.dvd {
-        background-image: linear-gradient(180deg, $primary-color 0%, $movie-color 70%);
+    &.movies {
+        background-image: linear-gradient(180deg, $primary-color 0%, $movies-color 70%);
     }
 
-    &.game {
-        background-image: linear-gradient(180deg, $primary-color 0%, $game-color 70%);
+    &.games {
+        background-image: linear-gradient(180deg, $primary-color 0%, $games-color 70%);
     }
 
     .top-row {

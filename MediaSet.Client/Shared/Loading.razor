@@ -1,0 +1,21 @@
+@if (InButton)
+{
+    <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+}
+else
+{
+    <div class="spinner-grow @Color" role="status">
+        <span class="sr-only">@Message</span>
+    </div>
+}
+
+@code {
+    [Parameter]
+    private string Message { get; set; } = "Loading...";
+
+    [Parameter]
+    private string Color { get; set; } = "text-primary";
+
+    [Parameter]
+    private bool InButton { get; set; } = false;
+}

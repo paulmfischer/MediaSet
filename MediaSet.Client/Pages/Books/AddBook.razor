@@ -30,15 +30,23 @@
         <InputNumber id="numberOfPages" @bind-Value="@bookViewModel.NumberOfPages" />
     </p>
 
-    <button type="submit">Submit</button>
+    @if (!Saving)
+    {
+        <button class="btn btn-primary" type="submit">Submit</button>
+    }
+    else
+    {
+        <button class="btn btn-primary" type="button" disabled><Loading Message="Saving..." InButton="true" />Saving...</button>
+    }
 </EditForm>
 
 @code {
     private AddBookViewModel bookViewModel = new AddBookViewModel();
+    private bool Saving = false;
 
     protected async void HandleValidSubmit()
     {
-        Console.WriteLine("OnValidSubmit");
+        Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
