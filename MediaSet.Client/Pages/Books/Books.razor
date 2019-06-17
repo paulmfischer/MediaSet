@@ -1,14 +1,14 @@
-@page "/book/list"
+@page "/books"
 @inject HttpClient Http
 
 <h3>Books</h3>
-<NavLink class="nav-link" href="book/add"><span class="oi oi-plus" aria-hidden="true"></span> Add Book</NavLink>
+<NavLink class="nav-link" href="books/add"><span class="oi oi-plus" aria-hidden="true"></span> Add Book</NavLink>
 
 @if (AllBooks.Count() == 0 && Loaded)
 {
     <p>
         There are no books!
-        <NavLink class="nav-link" href="book/add">Add a Book to get started!</NavLink>
+        <NavLink class="nav-link" href="books/add">Add a Book to get started!</NavLink>
     </p>
 }
 else if (Loaded)
@@ -34,8 +34,8 @@ else if (Loaded)
                         <td>@book.SubTitle</td>
                         <td>@book.NumberOfPages</td>
                         <td class="actions">
-                            <a class="btn btn-outline-primary" href="book/@book.Id">Detail</a>
-                            <a class="btn btn-outline-secondary" href="book/edit/@book.Id">Edit</a>
+                            <a class="btn btn-outline-primary" href="books/@book.Id">Detail</a>
+                            <a class="btn btn-outline-secondary" href="books/edit/@book.Id">Edit</a>
                             <button class="btn btn-outline-danger" @onclick="@(e => DisplayConfirmDialog(book.Id))">Delete</button>
                         </td>
                     </tr>

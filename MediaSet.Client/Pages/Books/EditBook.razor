@@ -1,9 +1,9 @@
-@page "/book/edit/{BookId:int}"
+@page "/books/edit/{BookId:int}"
 @inject HttpClient Http
 @inject IUriHelper UriHelper
 
 <h3>Edit Book</h3>
-<NavLink class="nav-link" href="book/list">
+<NavLink class="nav-link" href="books">
     <span class="oi oi-book" aria-hidden="true"></span> Books
 </NavLink>
 <EditForm Model="@bookViewModel" OnValidSubmit="@HandleValidSubmit">

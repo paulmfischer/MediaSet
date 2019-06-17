@@ -1,4 +1,4 @@
-@page "/book/{BookId:int}"
+@page "/books/{BookId:int}"
 @inject HttpClient Http
 
 <h3>Book</h3>
@@ -9,7 +9,7 @@
 }
 else
 {
-    <NavLink class="nav-link" href="book/list">
+    <NavLink class="nav-link" href="books">
         <span class="oi oi-book" aria-hidden="true"></span> Books
     </NavLink>
     <dl>
