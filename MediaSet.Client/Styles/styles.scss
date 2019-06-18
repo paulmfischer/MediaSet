@@ -124,6 +124,13 @@ app {
     }
 }
 
+.spinner-grow {
+    &.size-lg {
+        width: 4rem;
+        height: 4rem;
+    }
+}
+
 @media (max-width: 767.98px) {
     .main .top-row {
         display: none;

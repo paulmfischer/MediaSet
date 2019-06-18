@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace MediaSet.Shared.ViewModels
 {
@@ -18,6 +15,7 @@ namespace MediaSet.Shared.ViewModels
         public int? GenreId { get; set; }
         public int? NumberOfPages { get; set; }
         public int? PublisherId { get; set; }
+        public PublisherViewModel PublisherViewModel { get; set; }
         public DateTime? PublicationDate { get; set; }
     }
 }
