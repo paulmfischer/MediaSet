@@ -14,7 +14,9 @@ namespace MediaSet.Server.MappingService
                 MediaId = book.Media.Id,
                 ISBN = book.Media.ISBN,
                 NumberOfPages = book.NumberOfPages,
-                Title = book.Media.Title
+                Title = book.Media.Title,
+                SortTitle = book.Media.SortTitle,
+                SubTitle = book.SubTitle
             };
         }
 
@@ -26,7 +28,8 @@ namespace MediaSet.Server.MappingService
                 {
                     Title = newBook.Title,
                     ISBN = newBook.ISBN,
-                    MediaType = MediaType.Book
+                    MediaType = MediaType.Book,
+                    SortTitle = newBook.SortTitle
                 },
                 NumberOfPages = newBook.NumberOfPages,
                 SubTitle = newBook.SubTitle
@@ -44,7 +47,9 @@ namespace MediaSet.Server.MappingService
                 ISBN = book.Media.ISBN,
                 NumberOfPages = book.NumberOfPages,
                 Title = book.Media.Title,
-                MediaTypeId = (int)book.Media.MediaType
+                MediaTypeId = (int)book.Media.MediaType,
+                SubTitle = book.SubTitle,
+                SortTitle = book.Media.SortTitle
             };
 
             return viewBook;
@@ -60,7 +65,8 @@ namespace MediaSet.Server.MappingService
                     Id = editBook.MediaId,
                     Title = editBook.Title,
                     ISBN = editBook.ISBN,
-                    MediaType = (MediaType)editBook.MediaTypeId
+                    MediaType = (MediaType)editBook.MediaTypeId,
+                    SortTitle = editBook.SortTitle
                 },
                 NumberOfPages = editBook.NumberOfPages,
                 SubTitle = editBook.SubTitle
