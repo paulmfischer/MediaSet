@@ -10,25 +10,31 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <p>
+    <div class="form-group">
         <label for="title">Title:</label>
-        <InputText id="title" @bind-Value="@bookViewModel.Title" />
-    </p>
+        <InputText id="title" Class="form-control" @bind-Value="@bookViewModel.Title" />
+    </div>
 
-    <p>
+    <div class="form-group">
         <label for="isb">ISBN:</label>
-        <InputText id="isbn" @bind-Value="@bookViewModel.ISBN" />
-    </p>
+        <InputText id="isbn" Class="form-control" @bind-Value="@bookViewModel.ISBN" />
+    </div>
 
-    <p>
+    <div class="form-group">
         <label for="subTitle">Sub Title:</label>
-        <InputText id="subTitle" @bind-Value="@bookViewModel.SubTitle" />
-    </p>
+        <InputText id="subTitle" Class="form-control" @bind-Value="@bookViewModel.SubTitle" />
+    </div>
 
-    <p>
+    <div class="form-group">
         <label for="numberOfPages">Number of Pages:</label>
-        <InputNumber id="numberOfPages" @bind-Value="@bookViewModel.NumberOfPages" />
-    </p>
+        <InputNumber id="numberOfPages" Class="form-control" @bind-Value="@bookViewModel.NumberOfPages" />
+    </div>
+
+    <div class="form-group">
+        <Autocomplete Collection="Data">
+            <ItemTemplate Context="DataItem">@DataItem.Id---@DataItem.Name</ItemTemplate>
+        </Autocomplete>
+     </div>
 
     @if (!Saving)
     {
@@ -41,6 +47,12 @@
 </EditForm>
 
 @code {
+    private IList<TempData> Data = new List<TempData>
+    {
+        new TempData { Id = 1, Name = "hi" },
+        new TempData { Id = 2, Name = "fred" },
+        new TempData { Id = 3, Name = "bye" }
+    };
     private AddBookViewModel bookViewModel = new AddBookViewModel();
     private bool Saving = false;
 
@@ -49,5 +61,11 @@
         Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
+    }
+
+    class TempData
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }
