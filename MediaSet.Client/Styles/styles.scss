@@ -131,6 +131,15 @@ app {
     }
 }
 
+.autocomplete {
+    position: relative;
+
+    .list-group {
+        position: absolute;
+        width: 100%;
+    }
+}
+
 @media (max-width: 767.98px) {
     .main .top-row {
         display: none;

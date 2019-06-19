@@ -2,18 +2,16 @@
 
 <div class="autocomplete">
     <label for="search">@Title</label>
-    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults"/>
-    <ul class="list-group">
-        @foreach (var item in FilteredCollection(SearchValue))
-        {
-            <li class="list-group-item">@ItemTemplate(item.Item)</li>
-        }
-        @*<li class="list-group-item">Cras justo odio</li>
-        <li class="list-group-item">Dapibus ac facilisis in</li>
-        <li class="list-group-item">Morbi leo risus</li>
-        <li class="list-group-item">Porta ac consectetur ac</li>
-        <li class="list-group-item">Vestibulum at eros</li>*@
-    </ul>
+    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults" @onfocus="@Focused" @onblur="@LostFocus" />
+    @if (DisplayResults)
+    {
+        <ul class="list-group">
+            @foreach (var item in FilteredCollection(SearchValue))
+            {
+                <li class="list-group-item">@ItemTemplate(item.Item)</li>
+            }
+        </ul>
+    }
 </div>
 
 @code {
@@ -23,23 +21,29 @@
     [Parameter]
     RenderFragment<TItem> ItemTemplate { get; set; }
 
-    //[Parameter]
-    //private TItem ObjType { get; set; }
-
     [Parameter]
     private IEnumerable<TItem> Collection { get; set; }
 
     private string SearchValue { get; set; }
+    private bool DisplayResults { get; set; } = false;
 
     private void FilterResults(UIChangeEventArgs ev)
     {
-        Console.WriteLine(string.Format("input changed: {0}", ev?.Value));
+        SearchValue = (string)ev.Value;
+    }
 
+    private void Focused()
+    {
+        DisplayResults = true;
+    }
+
+    private void LostFocus()
+    {
+        DisplayResults = false;
     }
 
     protected IEnumerable<SelectItem> FilteredCollection(string searchVal)
     {
-        Console.WriteLine(string.Format("Filtering list: {0}", searchVal));
         return Collection.Select(x => new SelectItem {
             Id = (int)x.GetType().GetProperty("Id")?.GetValue(x, null),
             Name = (string)x.GetType().GetProperty("Name")?.GetValue(x, null),
