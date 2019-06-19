@@ -1,5 +1,5 @@
 ﻿using MediaSet.Data.Models;
-using MediaSet.Data.Services;
+using MediaSet.Data.Repositories;
 using MediaSet.Server.MappingService;
 using MediaSet.Shared.ViewModels;
 using Microsoft.AspNetCore.Mvc;

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MediaSet.Data.Services
+namespace MediaSet.Data.Repositories
 {
     public interface IMediaRepository<TEntity>
     {

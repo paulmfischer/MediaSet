@@ -31,8 +31,8 @@
     </div>
 
     <div class="form-group">
-        <Autocomplete Collection="Data" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((TempData selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
-            <ItemTemplate Context="DataItem">@DataItem.Id---@DataItem.Name</ItemTemplate>
+        <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
+            <ItemTemplate Context="Publisher">@Publisher.Id---@Publisher.Name</ItemTemplate>
         </Autocomplete>
      </div>
 
@@ -56,6 +56,11 @@
     private AddBookViewModel bookViewModel = new AddBookViewModel();
     private bool Saving = false;
 
+    protected override async Task OnInitAsync()
+    {
+        bookViewModel.Publishers = await Http.GetJsonAsync<IEnumerable<PublisherViewModel>>("api/metadata/publishers");
+    }
+
     private async void HandleValidSubmit()
     {
         Saving = true;
@@ -63,7 +68,7 @@
         UriHelper.NavigateTo("/books");
     }
 
-    private void PublisherSelected(TempData item)
+    private void PublisherSelected(PublisherViewModel item)
     {
         bookViewModel.PublisherId = item.Id;
     }

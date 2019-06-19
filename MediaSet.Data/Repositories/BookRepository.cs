@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MediaSet.Data.Services
+namespace MediaSet.Data.Repositories
 {
     public class BookRepository : IBookRepository
     {
