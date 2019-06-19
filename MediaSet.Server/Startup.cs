@@ -37,13 +37,13 @@ namespace MediaSet.Server
 
             if (env.IsDevelopment())
             {
-                System.Console.WriteLine("is development********************************************************---");
+                System.Console.WriteLine("********************************************************DEVELOPMENT");
                 app.UseDeveloperExceptionPage();
                 app.UseBlazorDebugging();
             }
             else
             {
-                System.Console.WriteLine("is NOT development=============================================================");
+                System.Console.WriteLine("=============================================================NOT DEVELOPMENT");
             }
 
             app.UseClientSideBlazorFiles<Client.Startup>();

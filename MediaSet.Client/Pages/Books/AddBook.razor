@@ -31,7 +31,7 @@
     </div>
 
     <div class="form-group">
-        <Autocomplete Collection="Data">
+        <Autocomplete Collection="Data" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((TempData selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
             <ItemTemplate Context="DataItem">@DataItem.Id---@DataItem.Name</ItemTemplate>
         </Autocomplete>
      </div>
@@ -56,14 +56,24 @@
     private AddBookViewModel bookViewModel = new AddBookViewModel();
     private bool Saving = false;
 
-    protected async void HandleValidSubmit()
+    private async void HandleValidSubmit()
     {
         Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
     }
 
-    class TempData
+    private void PublisherSelected(TempData item)
+    {
+        bookViewModel.PublisherViewModel = new PublisherViewModel { Id = item.Id, Name = item.Name };
+    }
+
+    private void AddNewItem(string newValue)
+    {
+        bookViewModel.PublisherViewModel = new PublisherViewModel { Name = newValue };
+    }
+
+    private class TempData
     {
         public int Id { get; set; }
         public string Name { get; set; }

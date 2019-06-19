@@ -1,16 +1,20 @@
 @typeparam TItem
 
-<div class="autocomplete">
+<div class="autocomplete" @onblur="@LostFocus">
     <label for="search">@Title</label>
-    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults" @onfocus="@Focused" @onblur="@LostFocus" />
+    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults" @onfocus="@Focused" />
     @if (DisplayResults)
     {
-        <ul class="list-group">
+        <div class="list-group">
             @foreach (var item in FilteredCollection(SearchValue))
             {
-                <li class="list-group-item">@ItemTemplate(item.Item)</li>
+                <button type="button" class="list-group-item list-group-item-action" @onclick="@(async (e) => await SetSelectedItem(item))">@ItemTemplate(item.Item)</button>
             }
-        </ul>
+            @if (!string.IsNullOrEmpty(SearchValue))
+            {
+                <button type="button" class="list-group-item list-group-item-action" @onclick="@SetNewItem">@AddNewLabel@SearchValue</button>
+            }
+        </div>
     }
 </div>
 
@@ -19,17 +23,34 @@
     private string Title { get; set; } = "Search:";
 
     [Parameter]
+    private string AddNewLabel { get; set; } = "Add: ";
+
+    [Parameter]
+    private TItem Value { get; set; }
+
+    [Parameter]
     RenderFragment<TItem> ItemTemplate { get; set; }
 
     [Parameter]
     private IEnumerable<TItem> Collection { get; set; }
 
+    [Parameter]
+    private EventCallback<TItem> OnItemSelected { get; set; }
+
+    [Parameter]
+    private EventCallback<string> OnAddNewItem { get; set; }
+
     private string SearchValue { get; set; }
     private bool DisplayResults { get; set; } = false;
+    private SelectItem NewItem { get; set; }
 
     private void FilterResults(UIChangeEventArgs ev)
     {
         SearchValue = (string)ev.Value;
+        NewItem = new SelectItem
+        {
+            Name = string.Format("Add: {0}", SearchValue)
+        };
     }
 
     private void Focused()
@@ -42,7 +63,7 @@
         DisplayResults = false;
     }
 
-    protected IEnumerable<SelectItem> FilteredCollection(string searchVal)
+    private IEnumerable<SelectItem> FilteredCollection(string searchVal)
     {
         return Collection.Select(x => new SelectItem {
             Id = (int)x.GetType().GetProperty("Id")?.GetValue(x, null),
@@ -51,7 +72,23 @@
         }).Where(x => string.IsNullOrEmpty(searchVal) || x.Name.Contains(searchVal));
     }
 
-    protected class SelectItem
+    private async Task SetNewItem()
+    {
+        await OnAddNewItem.InvokeAsync(SearchValue);
+        DisplayResults = false;
+        base.StateHasChanged();
+    }
+
+    private async Task SetSelectedItem(SelectItem itemSelected)
+    {
+        SearchValue = itemSelected.Name;
+        Value = itemSelected.Item;
+        DisplayResults = false;
+        await OnItemSelected.InvokeAsync(itemSelected.Item);
+        base.StateHasChanged();
+    }
+
+    private class SelectItem
     {
         public int Id { get; set; }
         public string Name { get; set; }
