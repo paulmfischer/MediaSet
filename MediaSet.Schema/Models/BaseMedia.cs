@@ -1,6 +1,6 @@
 ﻿namespace MediaSet.Data.Models
 {
-    public class BaseMedia
+    public class BaseMedia : IEntity
     {
         public int Id { get; set; }
         public int MediaId { get; set; }

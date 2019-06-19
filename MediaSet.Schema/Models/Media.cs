@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MediaSet.Data.Models
 {
-    public class Media
+    public class Media : IEntity
     {
         public int Id { get; set; }
         public MediaType MediaType { get; set; }
