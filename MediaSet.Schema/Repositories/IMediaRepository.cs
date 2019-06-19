@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace MediaSet.Data.Services
 {
-    public interface IMediaService<TEntity>
+    public interface IMediaRepository<TEntity>
     {
         IEnumerable<TEntity> GetAll();
         TEntity Get(int Id);

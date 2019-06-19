@@ -24,7 +24,7 @@ namespace MediaSet.Server
             });
 
             services.AddScoped<IMediaSetDbContext, MediaSetDbContext>();
-            services.AddScoped<IBookService, BookService>();
+            services.AddScoped<IBookRepository, BookRepository>();
             services.AddScoped<BookMappingService>();
 
             services.AddDbContext<MediaSetDbContext>();

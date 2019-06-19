@@ -10,10 +10,10 @@ namespace MediaSet.Server.Controllers
     [Route("api/[controller]")]
     public class BookController : Controller
     {
-        private IBookService BookService { get; set; }
+        private IBookRepository BookService { get; set; }
         private BookMappingService BookMappingService { get; set; }
 
-        public BookController(IBookService bookService, BookMappingService bookMappingService)
+        public BookController(IBookRepository bookService, BookMappingService bookMappingService)
         {
             BookService = bookService;
             BookMappingService = bookMappingService;

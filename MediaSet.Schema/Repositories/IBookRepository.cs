@@ -1,8 +1,7 @@
 ﻿using MediaSet.Data.Models;
 
-namespace MediaSet.Data.Repositories
+namespace MediaSet.Data.Services
 {
-    public interface IBookRepository : IGenericRepository<Book>
-    {
-    }
+    public interface IBookRepository : IMediaRepository<Book>
+    {}
 }
