@@ -37,12 +37,6 @@ namespace MediaSet.Data
                 .HasForeignKey(mg => mg.GenreId);
         }
 
-        //public static void SetupPersonalInformation(this ModelBuilder modelBuilder)
-        //{
-        //    modelBuilder.Entity<PersonalInformation>()
-        //        .HasKey(pi => new { pi.EntityId, pi.MediaType });
-        //}
-
         public static void Seed(this ModelBuilder modelBuilder)
         {
             //using (var context = new MediaSetDbContext())

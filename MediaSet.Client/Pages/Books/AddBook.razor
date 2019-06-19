@@ -65,7 +65,7 @@
 
     private void PublisherSelected(TempData item)
     {
-        bookViewModel.PublisherViewModel = new PublisherViewModel { Id = item.Id, Name = item.Name };
+        bookViewModel.PublisherId = item.Id;
     }
 
     private void AddNewItem(string newValue)

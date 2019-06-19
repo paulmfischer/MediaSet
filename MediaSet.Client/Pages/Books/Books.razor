@@ -22,6 +22,7 @@ else if (Loaded)
                     <th>ISBN</th>
                     <th>Sub Title</th>
                     <th>Number of Pages</th>
+                    <th>Publisher</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,6 +34,7 @@ else if (Loaded)
                         <td>@book.ISBN</td>
                         <td>@book.SubTitle</td>
                         <td>@book.NumberOfPages</td>
+                        <td>@book.PublisherViewModel?.Name</td>
                         <td class="actions">
                             <a class="btn btn-outline-primary" href="books/@book.Id">Detail</a>
                             <a class="btn btn-outline-secondary" href="books/edit/@book.Id">Edit</a>

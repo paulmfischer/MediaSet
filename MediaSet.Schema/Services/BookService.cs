@@ -13,10 +13,17 @@ namespace MediaSet.Data.Services
         {
             dbContext = context;
         }
+        
+        private IQueryable<Book> Books()
+        {
+            return dbContext.Books
+                .Include(b => b.Media)
+                .Include(b => b.Publisher);
+        }
 
         public IEnumerable<Book> GetAll()
         {
-            return dbContext.Books.Include(b => b.Media).AsNoTracking().AsEnumerable();
+            return Books().AsNoTracking().AsEnumerable();
         }
 
         public Book Add(Book book)
@@ -29,7 +36,7 @@ namespace MediaSet.Data.Services
 
         public Book Get(int bookId)
         {
-            return dbContext.Books.Include(b => b.Media).FirstOrDefault(b => b.Id.Equals(bookId));
+            return Books().FirstOrDefault(b => b.Id.Equals(bookId));
         }
 
         public Book Update(Book book)

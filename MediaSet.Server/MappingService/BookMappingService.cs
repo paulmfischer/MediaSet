@@ -8,6 +8,9 @@ namespace MediaSet.Server.MappingService
     {
         public BookViewModel MapToViewBook(Book book)
         {
+            var publisher = book.Publisher != null ?
+                new PublisherViewModel { Id = book.Publisher.Id, Name = book.Publisher.Name } : null;
+
             return new BookViewModel
             {
                 Id = book.Id,
@@ -16,7 +19,8 @@ namespace MediaSet.Server.MappingService
                 NumberOfPages = book.NumberOfPages,
                 Title = book.Media.Title,
                 SortTitle = book.Media.SortTitle,
-                SubTitle = book.SubTitle
+                SubTitle = book.SubTitle,
+                PublisherViewModel = publisher
             };
         }
 
@@ -34,6 +38,17 @@ namespace MediaSet.Server.MappingService
                 NumberOfPages = newBook.NumberOfPages,
                 SubTitle = newBook.SubTitle
             };
+
+            if (newBook.PublisherId.HasValue)
+            {
+                book.PublisherId = newBook.PublisherId;
+            } else if (newBook.PublisherViewModel != null)
+            {
+                book.Publisher = new Publisher {
+                    Name = newBook.PublisherViewModel.Name,
+                    MediaType = MediaType.Book
+                };
+            }
 
             return book;
         }

@@ -8,8 +8,8 @@ namespace MediaSet.Data.Models
     {
         public string SubTitle { get; set; }
         public int? NumberOfPages { get; set; }
-        public Publisher Publisher { get; set; }
         public int? PublisherId { get; set; }
+        public Publisher Publisher { get; set; }
         [DataType(DataType.Date)]
         public DateTime? PublicationDate { get; set; }
         public virtual ICollection<BookAuthor> BookAuthors { get; set; }
