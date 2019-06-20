@@ -67,6 +67,15 @@ namespace MediaSet.Server.MappingService
                 SortTitle = book.Media.SortTitle
             };
 
+            if (book.Publisher != null)
+            {
+                viewBook.PublisherViewModel = new PublisherViewModel
+                {
+                    Id = book.Publisher.Id,
+                    Name = book.Publisher.Name
+                };
+            }
+
             return viewBook;
         }
 
