@@ -16,5 +16,6 @@ namespace MediaSet.Shared.ViewModels
         public PublisherViewModel Publisher { get; set; }
         public DateTime? PublicationDate { get; set; }
         public IEnumerable<PublisherViewModel> Publishers { get; set; } = new List<PublisherViewModel>();
+        public IEnumerable<FormatViewModel> Formats { get; set; } = new List<FormatViewModel>();
     }
 }

@@ -33,5 +33,23 @@ namespace MediaSet.Server.Controllers
 
             return viewPublishers;
         }
+
+        [HttpGet("[action]")]
+        public IEnumerable<FormatViewModel> Formats()
+        {
+            var formats = MetadataRepository.GetAll<Format>();
+            var viewFormats = new List<FormatViewModel>();
+
+            foreach (var pub in formats)
+            {
+                viewFormats.Add(new FormatViewModel
+                {
+                    Id = pub.Id,
+                    Name = pub.Name
+                });
+            }
+
+            return viewFormats;
+        }
     }
 }
