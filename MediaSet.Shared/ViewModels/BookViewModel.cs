@@ -10,7 +10,7 @@ namespace MediaSet.Shared.ViewModels
         public int? GenreId { get; set; }
         public int? NumberOfPages { get; set; }
         public int? PublisherId { get; set; }
-        public PublisherViewModel PublisherViewModel { get; set; }
+        public PublisherViewModel Publisher { get; set; }
         public DateTime PublicationDate { get; set; }
     }
 }
