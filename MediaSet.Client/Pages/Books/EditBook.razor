@@ -43,7 +43,7 @@ else
         </div>
 
         <div class="form-group">
-            <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " Value="bookViewModel.PublisherViewModel" OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
+            <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " Value="bookViewModel.Publisher" OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
                 <ItemTemplate Context="Publisher">@Publisher.Id---@Publisher.Name</ItemTemplate>
             </Autocomplete>
          </div>
@@ -88,6 +88,6 @@ else
 
     private void AddNewItem(string newValue)
     {
-        bookViewModel.PublisherViewModel = new PublisherViewModel { Name = newValue };
+        bookViewModel.Publisher = new PublisherViewModel { Name = newValue };
     }
 }

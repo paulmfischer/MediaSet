@@ -42,10 +42,10 @@ namespace MediaSet.Server.MappingService
             if (newBook.PublisherId.HasValue)
             {
                 book.PublisherId = newBook.PublisherId;
-            } else if (newBook.PublisherViewModel != null)
+            } else if (newBook.Publisher != null)
             {
                 book.Publisher = new Publisher {
-                    Name = newBook.PublisherViewModel.Name,
+                    Name = newBook.Publisher.Name,
                     MediaType = MediaType.Book
                 };
             }
@@ -69,7 +69,7 @@ namespace MediaSet.Server.MappingService
 
             if (book.Publisher != null)
             {
-                viewBook.PublisherViewModel = new PublisherViewModel
+                viewBook.Publisher = new PublisherViewModel
                 {
                     Id = book.Publisher.Id,
                     Name = book.Publisher.Name
