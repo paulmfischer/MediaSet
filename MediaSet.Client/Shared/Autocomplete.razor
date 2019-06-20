@@ -8,9 +8,9 @@
         <div class="list-group">
             @foreach (var item in FilteredCollection(SearchValue))
             {
-                <button type="button" class="list-group-item list-group-item-action" @onclick="@(async (e) => await SetSelectedItem(item))">@ItemTemplate(item.Item)</button>
+                <button type="button" class="list-group-item list-group-item-action @IsAMatch(item)" @onclick="@(async (e) => await SetSelectedItem(item))">@ItemTemplate(item.Item)</button>
             }
-            @if (!string.IsNullOrEmpty(SearchValue))
+            @if (!string.IsNullOrEmpty(SearchValue) && SearchValueDoesNotMatch())
             {
                 <button type="button" class="list-group-item list-group-item-action" @onclick="@SetNewItem">@AddNewLabel@SearchValue</button>
             }
@@ -44,6 +44,14 @@
     private bool DisplayResults { get; set; } = false;
     private SelectItem NewItem { get; set; }
 
+    protected override void OnInit()
+    {
+        if (Value != null)
+        {
+            SearchValue = (string)Value.GetType().GetProperty("Name")?.GetValue(Value, null);
+        }
+    }
+
     private void FilterResults(UIChangeEventArgs ev)
     {
         SearchValue = (string)ev.Value;
@@ -51,6 +59,21 @@
         {
             Name = string.Format("Add: {0}", SearchValue)
         };
+    }
+
+    private bool SearchValueDoesNotMatch()
+    {
+        return !Collection.Any(x => ((string)x.GetType().GetProperty("Name")?.GetValue(x, null)).Equals(SearchValue));
+    }
+
+    private string IsAMatch(SelectItem item)
+    {
+        if (Value != null)
+        {
+            return item.Name.Equals((string)Value.GetType().GetProperty("Name")?.GetValue(Value, null)) ? "active" : string.Empty;
+        }
+
+        return string.Empty;
     }
 
     private void Focused()
