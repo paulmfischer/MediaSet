@@ -1,6 +1,5 @@
 ﻿using MediaSet.Data.Models;
 using MediaSet.Shared.ViewModels;
-using System;
 
 namespace MediaSet.Server.MappingService
 {
@@ -108,11 +107,31 @@ namespace MediaSet.Server.MappingService
                     Title = editBook.Title,
                     ISBN = editBook.ISBN,
                     MediaType = (MediaType)editBook.MediaTypeId,
-                    SortTitle = editBook.SortTitle
+                    SortTitle = editBook.SortTitle,
+                    FormatId = editBook.FormatId
                 },
+                PublisherId = editBook.PublisherId,
                 NumberOfPages = editBook.NumberOfPages,
                 SubTitle = editBook.SubTitle
             };
+
+            if (editBook.Publisher != null)
+            {
+                book.Publisher = new Publisher
+                {
+                    Name = editBook.Publisher.Name,
+                    MediaType = MediaType.Book
+                };
+            }
+
+            if (editBook.Format != null)
+            {
+                book.Media.Format = new Format
+                {
+                    Name = editBook.Format.Name,
+                    MediaType = MediaType.Book
+                };
+            }
 
             return book;
         }
