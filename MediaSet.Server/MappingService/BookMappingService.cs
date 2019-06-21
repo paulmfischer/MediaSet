@@ -93,6 +93,15 @@ namespace MediaSet.Server.MappingService
                 };
             }
 
+            if (book.Media.Format != null)
+            {
+                viewBook.Format = new FormatViewModel
+                {
+                    Id = book.Media.Format.Id,
+                    Name = book.Media.Format.Name
+                };
+            }
+
             return viewBook;
         }
 
