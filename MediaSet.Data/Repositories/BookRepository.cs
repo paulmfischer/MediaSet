@@ -18,6 +18,9 @@ namespace MediaSet.Data.Repositories
         {
             return dbContext.Books
                 .Include(b => b.Media)
+                    .ThenInclude(m => m.Format)
+                //.Include(b => b.Media)
+                //    .ThenInclude(m => m.MediaGenres)
                 .Include(b => b.Publisher);
         }
 

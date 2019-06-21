@@ -43,10 +43,18 @@ else
         </div>
 
         <div class="form-group">
-            <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " Value="bookViewModel.PublisherViewModel" OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
-                <ItemTemplate Context="Publisher">@Publisher.Id---@Publisher.Name</ItemTemplate>
+            <input @bind="@bookViewModel.PublisherId" type="hidden" />
+            <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " Value="bookViewModel.Publisher" OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
+                <ItemTemplate Context="Publisher">@Publisher.Name</ItemTemplate>
             </Autocomplete>
          </div>
+
+        <div class="form-group">
+            <input @bind="@bookViewModel.FormatId" type="hidden" />
+            <Autocomplete Collection="bookViewModel.Formats" Title="Format:" AddNewLabel="Add new format: " Value="bookViewModel.Format" OnItemSelected="@((FormatViewModel selectedItem) => FormatSelected(selectedItem))" OnAddNewItem="@AddNewFormat">
+                <ItemTemplate Context="Format">@Format.Name</ItemTemplate>
+            </Autocomplete>
+        </div>
 
         @if (!Saving)
         {
@@ -78,16 +86,30 @@ else
     {
         bookViewModel = await Http.GetJsonAsync<EditBookViewModel>("api/book/detail/" + BookId);
         Loading = false;
+
         bookViewModel.Publishers = await Http.GetJsonAsync<IEnumerable<PublisherViewModel>>("api/metadata/publishers");
+        bookViewModel.Formats = await Http.GetJsonAsync<IEnumerable<FormatViewModel>>("api/metadata/formats");
     }
 
     private void PublisherSelected(PublisherViewModel item)
     {
         bookViewModel.PublisherId = item.Id;
+        bookViewModel.Publisher = null;
     }
 
     private void AddNewItem(string newValue)
     {
-        bookViewModel.PublisherViewModel = new PublisherViewModel { Name = newValue };
+        bookViewModel.Publisher = new PublisherViewModel { Name = newValue };
+    }
+
+    private void FormatSelected(FormatViewModel item)
+    {
+        bookViewModel.FormatId = item.Id;
+        bookViewModel.Format = null;
+    }
+
+    private void AddNewFormat(string newValue)
+    {
+        bookViewModel.Format = new FormatViewModel { Name = newValue };
     }
 }

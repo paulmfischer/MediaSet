@@ -2,7 +2,7 @@
 
 <div class="autocomplete" @onblur="@LostFocus">
     <label for="search">@Title</label>
-    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults" @onfocus="@Focused" />
+    <InputText id="Search" Class="form-control" @bind-Value="@SearchValue" @oninput="@FilterResults" @onfocus="@Focused" autocomplete="off" />
     @if (DisplayResults)
     {
         <div class="list-group">

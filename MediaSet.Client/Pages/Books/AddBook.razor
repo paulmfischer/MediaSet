@@ -31,10 +31,16 @@
     </div>
 
     <div class="form-group">
-        <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewItem">
-            <ItemTemplate Context="Publisher">@Publisher.Id---@Publisher.Name</ItemTemplate>
+        <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewPublisher">
+            <ItemTemplate Context="Publisher">@Publisher.Name</ItemTemplate>
         </Autocomplete>
-     </div>
+    </div>
+
+    <div class="form-group">
+        <Autocomplete Collection="bookViewModel.Formats" Title="Format:" AddNewLabel="Add new format: " OnItemSelected="@((FormatViewModel selectedItem) => FormatSelected(selectedItem))" OnAddNewItem="@AddNewFormat">
+            <ItemTemplate Context="Format">@Format.Name</ItemTemplate>
+        </Autocomplete>
+    </div>
 
     @if (!Saving)
     {
@@ -59,6 +65,7 @@
     protected override async Task OnInitAsync()
     {
         bookViewModel.Publishers = await Http.GetJsonAsync<IEnumerable<PublisherViewModel>>("api/metadata/publishers");
+        bookViewModel.Formats = await Http.GetJsonAsync<IEnumerable<FormatViewModel>>("api/metadata/formats");
     }
 
     private async void HandleValidSubmit()
@@ -73,9 +80,19 @@
         bookViewModel.PublisherId = item.Id;
     }
 
-    private void AddNewItem(string newValue)
+    private void AddNewPublisher(string newValue)
     {
-        bookViewModel.PublisherViewModel = new PublisherViewModel { Name = newValue };
+        bookViewModel.Publisher = new PublisherViewModel { Name = newValue };
+    }
+
+    private void FormatSelected(FormatViewModel item)
+    {
+        bookViewModel.FormatId = item.Id;
+    }
+
+    private void AddNewFormat(string newValue)
+    {
+        bookViewModel.Format = new FormatViewModel { Name = newValue };
     }
 
     private class TempData

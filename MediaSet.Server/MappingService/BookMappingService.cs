@@ -1,6 +1,5 @@
 ﻿using MediaSet.Data.Models;
 using MediaSet.Shared.ViewModels;
-using System;
 
 namespace MediaSet.Server.MappingService
 {
@@ -11,6 +10,9 @@ namespace MediaSet.Server.MappingService
             var publisher = book.Publisher != null ?
                 new PublisherViewModel { Id = book.Publisher.Id, Name = book.Publisher.Name } : null;
 
+            var format = book.Media.Format != null ?
+                new FormatViewModel { Id = book.Media.Format.Id, Name = book.Media.Format.Name } : null;
+
             return new BookViewModel
             {
                 Id = book.Id,
@@ -20,7 +22,8 @@ namespace MediaSet.Server.MappingService
                 Title = book.Media.Title,
                 SortTitle = book.Media.SortTitle,
                 SubTitle = book.SubTitle,
-                PublisherViewModel = publisher
+                Publisher = publisher,
+                Format = format
             };
         }
 
@@ -42,10 +45,24 @@ namespace MediaSet.Server.MappingService
             if (newBook.PublisherId.HasValue)
             {
                 book.PublisherId = newBook.PublisherId;
-            } else if (newBook.PublisherViewModel != null)
+            }
+            else if (newBook.Publisher != null)
             {
                 book.Publisher = new Publisher {
-                    Name = newBook.PublisherViewModel.Name,
+                    Name = newBook.Publisher.Name,
+                    MediaType = MediaType.Book
+                };
+            }
+
+            if (newBook.FormatId.HasValue)
+            {
+                book.Media.FormatId = newBook.FormatId;
+            }
+            else if (newBook.Format != null)
+            {
+                book.Media.Format = new Format
+                {
+                    Name = newBook.Format.Name,
                     MediaType = MediaType.Book
                 };
             }
@@ -69,10 +86,19 @@ namespace MediaSet.Server.MappingService
 
             if (book.Publisher != null)
             {
-                viewBook.PublisherViewModel = new PublisherViewModel
+                viewBook.Publisher = new PublisherViewModel
                 {
                     Id = book.Publisher.Id,
                     Name = book.Publisher.Name
+                };
+            }
+
+            if (book.Media.Format != null)
+            {
+                viewBook.Format = new FormatViewModel
+                {
+                    Id = book.Media.Format.Id,
+                    Name = book.Media.Format.Name
                 };
             }
 
@@ -90,11 +116,31 @@ namespace MediaSet.Server.MappingService
                     Title = editBook.Title,
                     ISBN = editBook.ISBN,
                     MediaType = (MediaType)editBook.MediaTypeId,
-                    SortTitle = editBook.SortTitle
+                    SortTitle = editBook.SortTitle,
+                    FormatId = editBook.FormatId
                 },
+                PublisherId = editBook.PublisherId,
                 NumberOfPages = editBook.NumberOfPages,
                 SubTitle = editBook.SubTitle
             };
+
+            if (editBook.Publisher != null)
+            {
+                book.Publisher = new Publisher
+                {
+                    Name = editBook.Publisher.Name,
+                    MediaType = MediaType.Book
+                };
+            }
+
+            if (editBook.Format != null)
+            {
+                book.Media.Format = new Format
+                {
+                    Name = editBook.Format.Name,
+                    MediaType = MediaType.Book
+                };
+            }
 
             return book;
         }
