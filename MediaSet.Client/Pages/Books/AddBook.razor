@@ -31,6 +31,10 @@
     </div>
 
     <div class="form-group">
+        <AuthorMultiSelect />
+    </div>
+
+    <div class="form-group">
         <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewPublisher">
             <ItemTemplate Context="Publisher">@Publisher.Name</ItemTemplate>
         </Autocomplete>
