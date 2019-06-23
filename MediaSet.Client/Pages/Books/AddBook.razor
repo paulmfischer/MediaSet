@@ -31,7 +31,7 @@
     </div>
 
     <div class="form-group">
-        <AuthorMultiSelect />
+        <AuthorMultiSelect OnAuthorAdded="@((AuthorViewModel author) => AuthorAdded(author))"/>
     </div>
 
     <div class="form-group">
@@ -70,6 +70,7 @@
     {
         bookViewModel.Publishers = await Http.GetJsonAsync<IEnumerable<PublisherViewModel>>("api/metadata/publishers");
         bookViewModel.Formats = await Http.GetJsonAsync<IEnumerable<FormatViewModel>>("api/metadata/formats");
+        bookViewModel.Authors = await Http.GetJsonAsync<IEnumerable<AuthorViewModel>>("api/metadata/authors");
     }
 
     private async void HandleValidSubmit()
@@ -77,6 +78,11 @@
         Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
+    }
+
+    private void AuthorAdded(AuthorViewModel author)
+    {
+        bookViewModel.BookAuthors.Add(author);
     }
 
     private void PublisherSelected(PublisherViewModel item)

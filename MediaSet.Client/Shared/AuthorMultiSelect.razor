@@ -18,7 +18,10 @@
 @code {
     [Parameter]
     private IList<AuthorViewModel> SelectedAuthors { get; set; } = new List<AuthorViewModel>();
-    
+
+    [Parameter]
+    private EventCallback<AuthorViewModel> OnAuthorAdded { get; set; }
+
     private IEnumerable<AuthorViewModel> Authors { get; set; }
     private Autocomplete<AuthorViewModel> autocomplete { get; set; }
 
@@ -27,10 +30,11 @@
         Authors = await Http.GetJsonAsync<IEnumerable<AuthorViewModel>>("api/metadata/authors");
     }
 
-    protected void AuthorSelected(AuthorViewModel author)
+    protected async void AuthorSelected(AuthorViewModel author)
     {
         SelectedAuthors.Add(author);
         autocomplete.SearchValue = string.Empty;
+        await OnAuthorAdded.InvokeAsync(author);
         Console.WriteLine("author added {0} - {1}", author.Name, SelectedAuthors.Count());
         base.StateHasChanged();
     }

@@ -1,5 +1,6 @@
 ﻿using MediaSet.Data.Models;
 using MediaSet.Shared.ViewModels;
+using System.Collections.Generic;
 
 namespace MediaSet.Server.MappingService
 {
@@ -65,6 +66,24 @@ namespace MediaSet.Server.MappingService
                     Name = newBook.Format.Name,
                     MediaType = MediaType.Book
                 };
+            }
+
+            if (newBook.BookAuthors.Count > 0)
+            {
+                book.BookAuthors = new List<BookAuthor>();
+                foreach (var auth in newBook.BookAuthors)
+                {
+                    var bookAuth = new BookAuthor { Book = book };
+                    if (auth.Id.HasValue)
+                    {
+                        bookAuth.AuthorId = auth.Id.Value;
+                    }
+                    else
+                    {
+                        bookAuth.Author = new Author { Name = auth.Name, SortName = auth.SortName };
+                    }
+                    book.BookAuthors.Add(bookAuth);
+                }
             }
 
             return book;

@@ -15,6 +15,8 @@ namespace MediaSet.Shared.ViewModels
         public int? PublisherId { get; set; }
         public PublisherViewModel Publisher { get; set; }
         public DateTime? PublicationDate { get; set; }
+        public IList<AuthorViewModel> BookAuthors { get; set; } = new List<AuthorViewModel>();
+        public IEnumerable<AuthorViewModel> Authors { get; set; } = new List<AuthorViewModel>();
         public IEnumerable<PublisherViewModel> Publishers { get; set; } = new List<PublisherViewModel>();
         public IEnumerable<FormatViewModel> Formats { get; set; } = new List<FormatViewModel>();
     }
