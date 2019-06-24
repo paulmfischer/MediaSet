@@ -14,6 +14,22 @@ namespace MediaSet.Server.MappingService
             var format = book.Media.Format != null ?
                 new FormatViewModel { Id = book.Media.Format.Id, Name = book.Media.Format.Name } : null;
 
+            IList<AuthorViewModel> authors = null;
+
+            if (book?.BookAuthors?.Count > 0)
+            {
+                authors = new List<AuthorViewModel>();
+                foreach (var author in book.BookAuthors)
+                {
+                    authors.Add(new AuthorViewModel
+                    {
+                        Id = author.AuthorId,
+                        Name = author.Author.Name,
+                        SortName = author.Author.SortName
+                    });
+                }
+            }
+
             return new BookViewModel
             {
                 Id = book.Id,
@@ -24,7 +40,8 @@ namespace MediaSet.Server.MappingService
                 SortTitle = book.Media.SortTitle,
                 SubTitle = book.SubTitle,
                 Publisher = publisher,
-                Format = format
+                Format = format,
+                Authors = authors
             };
         }
 

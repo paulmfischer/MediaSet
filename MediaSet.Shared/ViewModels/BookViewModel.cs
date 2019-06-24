@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace MediaSet.Shared.ViewModels
 {
@@ -12,5 +13,6 @@ namespace MediaSet.Shared.ViewModels
         public int? PublisherId { get; set; }
         public PublisherViewModel Publisher { get; set; }
         public DateTime PublicationDate { get; set; }
+        public IEnumerable<AuthorViewModel> Authors { get; set; } = new List<AuthorViewModel>();
     }
 }

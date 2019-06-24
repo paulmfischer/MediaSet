@@ -21,6 +21,7 @@ else if (Loaded)
                     <th>Title</th>
                     <th>ISBN</th>
                     <th>Sub Title</th>
+                    <th>Authors</th>
                     <th>Number of Pages</th>
                     <th>Publisher</th>
                     <th>Format</th>
@@ -34,6 +35,17 @@ else if (Loaded)
                         <td>@book.Title</td>
                         <td>@book.ISBN</td>
                         <td>@book.SubTitle</td>
+                        <td>
+                            @if (book?.Authors?.Count() > 0)
+                            {
+                                <ul class="list-group">
+                                    @foreach (var author in book.Authors)
+                                    {
+                                        <li class="list-group-item">@author.Name</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
                         <td>@book.NumberOfPages</td>
                         <td>@book.Publisher?.Name</td>
                         <td>@book.Format?.Name</td>

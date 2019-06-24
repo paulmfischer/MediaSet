@@ -14,6 +14,8 @@ namespace MediaSet.Data
         DbSet<Format> Formats { get; set; }
         DbSet<Genre> Genres { get; set; }
         DbSet<Publisher> Publishers { get; set; }
+        DbSet<BookAuthor> BookAuthor { get; set; }
+        DbSet<Media> Media { get; set; }
         //DbSet<PersonalInformation> PersonalInformation { get; set; }
 
         int SaveChanges();

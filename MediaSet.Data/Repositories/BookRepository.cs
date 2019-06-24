@@ -16,17 +16,21 @@ namespace MediaSet.Data.Repositories
         
         private IQueryable<Book> Books()
         {
+            // authors are not being loaded properly with .Include so preload them.
+            dbContext.BookAuthor
+                .Include(ba => ba.Author)
+                .Load();
+
             return dbContext.Books
+                .Include(b => b.BookAuthors)
                 .Include(b => b.Media)
                     .ThenInclude(m => m.Format)
-                //.Include(b => b.Media)
-                //    .ThenInclude(m => m.MediaGenres)
                 .Include(b => b.Publisher);
         }
 
         public IEnumerable<Book> GetAll()
         {
-            return Books().AsNoTracking().AsEnumerable();
+            return Books(); // .AsNoTracking().AsEnumerable();
         }
 
         public Book Add(Book book)
@@ -34,7 +38,7 @@ namespace MediaSet.Data.Repositories
             dbContext.Books.Add(book);
             dbContext.SaveChanges();
 
-            return book;
+            return Get(book.Id);
         }
 
         public Book Get(int bookId)
