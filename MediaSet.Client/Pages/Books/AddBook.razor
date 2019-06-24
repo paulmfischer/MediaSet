@@ -70,7 +70,6 @@
     {
         bookViewModel.Publishers = await Http.GetJsonAsync<IEnumerable<PublisherViewModel>>("api/metadata/publishers");
         bookViewModel.Formats = await Http.GetJsonAsync<IEnumerable<FormatViewModel>>("api/metadata/formats");
-        bookViewModel.Authors = await Http.GetJsonAsync<IEnumerable<AuthorViewModel>>("api/metadata/authors");
     }
 
     private async void HandleValidSubmit()
@@ -82,7 +81,7 @@
 
     private void AuthorAdded(AuthorViewModel author)
     {
-        bookViewModel.BookAuthors.Add(author);
+        bookViewModel.Authors.Add(author);
     }
 
     private void PublisherSelected(PublisherViewModel item)

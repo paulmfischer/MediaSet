@@ -85,10 +85,10 @@ namespace MediaSet.Server.MappingService
                 };
             }
 
-            if (newBook.BookAuthors.Count > 0)
+            if (newBook.Authors.Count > 0)
             {
                 book.BookAuthors = new List<BookAuthor>();
-                foreach (var auth in newBook.BookAuthors)
+                foreach (var auth in newBook.Authors)
                 {
                     var bookAuth = new BookAuthor { Book = book };
                     if (auth.Id.HasValue)
@@ -136,6 +136,22 @@ namespace MediaSet.Server.MappingService
                     Id = book.Media.Format.Id,
                     Name = book.Media.Format.Name
                 };
+            }
+
+            if (book?.BookAuthors?.Count > 0)
+            {
+                IList<AuthorViewModel> authors = new List<AuthorViewModel>();
+                foreach (var author in book.BookAuthors)
+                {
+                    authors.Add(new AuthorViewModel
+                    {
+                        Id = author.AuthorId,
+                        Name = author.Author.Name,
+                        SortName = author.Author.SortName
+                    });
+                }
+
+                viewBook.Authors = authors;
             }
 
             return viewBook;
