@@ -24,6 +24,16 @@ else
         <dt>Sub title:</dt>
         <dd>@BookDetail.SubTitle</dd>
 
+        <dt>Authors:</dt>
+        <dd>
+            <ul class="list-group">
+                @foreach (var auth in BookDetail?.Authors)
+                {
+                    <li class="list-group-item">@auth.Name</li>
+                }
+            </ul>
+        </dd>
+
         <dt>Number of Pages:</dt>
         <dd>@BookDetail.NumberOfPages</dd>
 

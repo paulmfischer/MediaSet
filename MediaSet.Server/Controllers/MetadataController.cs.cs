@@ -51,5 +51,23 @@ namespace MediaSet.Server.Controllers
 
             return viewFormats;
         }
+
+        [HttpGet("[action]")]
+        public IEnumerable<AuthorViewModel> Authors()
+        {
+            var authors = MetadataRepository.GetAll<Author>();
+            var viewAuthors  = new List<AuthorViewModel>();
+
+            foreach (var pub in authors)
+            {
+                viewAuthors.Add(new AuthorViewModel
+                {
+                    Id = pub.Id,
+                    Name = pub.Name
+                });
+            }
+
+            return viewAuthors;
+        }
     }
 }

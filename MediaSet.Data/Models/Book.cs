@@ -12,7 +12,7 @@ namespace MediaSet.Data.Models
         public Publisher Publisher { get; set; }
         [DataType(DataType.Date)]
         public DateTime? PublicationDate { get; set; }
-        public virtual ICollection<BookAuthor> BookAuthors { get; set; }
+        public ICollection<BookAuthor> BookAuthors { get; set; }
         //public virtual PersonalInformation PersonalInformation { get; set; }
     }
 }

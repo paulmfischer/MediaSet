@@ -43,12 +43,13 @@ namespace MediaSet.Server.Controllers
         }
 
         [HttpPost("[action]")]
-        public Book Add([FromBody] AddBookViewModel newBook)
+        public BookViewModel Add([FromBody] AddBookViewModel newBook)
         {
             var book = BookMappingService.MapToNewBook(newBook);
             book = BookService.Add(book);
+            var viewbook = BookMappingService.MapToViewBook(book);
 
-            return book;
+            return viewbook;
         }
 
         [HttpPost("[action]")]

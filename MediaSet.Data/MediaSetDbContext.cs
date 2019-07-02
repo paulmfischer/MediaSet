@@ -17,6 +17,8 @@ namespace MediaSet.Data
         public DbSet<Format> Formats { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Publisher> Publishers { get; set; }
+        public DbSet<BookAuthor> BookAuthor { get; set; }
+        public DbSet<Media> Media { get; set; }
         //public DbSet<PersonalInformation> PersonalInformation { get; set; }
 
         public MediaSetDbContext(IConfiguration config) : base()

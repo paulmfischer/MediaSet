@@ -31,6 +31,10 @@
     </div>
 
     <div class="form-group">
+        <AuthorMultiSelect OnAuthorAdded="@((AuthorViewModel author) => AuthorAdded(author))"/>
+    </div>
+
+    <div class="form-group">
         <Autocomplete Collection="bookViewModel.Publishers" Title="Publisher:" AddNewLabel="Add new publisher: " OnItemSelected="@((PublisherViewModel selectedItem) => PublisherSelected(selectedItem))" OnAddNewItem="@AddNewPublisher">
             <ItemTemplate Context="Publisher">@Publisher.Name</ItemTemplate>
         </Autocomplete>
@@ -73,6 +77,11 @@
         Saving = true;
         await Http.SendJsonAsync(HttpMethod.Post, "api/book/add", bookViewModel);
         UriHelper.NavigateTo("/books");
+    }
+
+    private void AuthorAdded(AuthorViewModel author)
+    {
+        bookViewModel.Authors.Add(author);
     }
 
     private void PublisherSelected(PublisherViewModel item)
