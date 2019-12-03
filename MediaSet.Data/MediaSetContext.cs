@@ -18,6 +18,8 @@ namespace MediaSet.Data
         {
             modelBuilder.SetupMediaGenreMapping();
             modelBuilder.SetupMovieStudioMapping();
+
+            modelBuilder.Seed();
         }
     }
 }
