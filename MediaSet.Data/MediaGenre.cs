@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace MediaSet.Data
 {
-    //[HasNoKey()]
     public class MediaGenre
     {
         public int MediaId { get; set; }

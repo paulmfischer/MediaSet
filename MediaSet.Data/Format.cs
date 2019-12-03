@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MediaSet.Data
+﻿namespace MediaSet.Data
 {
-    public class Format
+    public class Format : EntityAbstract
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        //public int Id { get; set; }
+        //public string Name { get; set; }
         public int MediaTypeId { get; set; }
+        public Media Media { get; set; }
     }
 }

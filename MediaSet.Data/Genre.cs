@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace MediaSet.Data
 {
-    public class Genre
+    public class Genre : EntityAbstract
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public ICollection<MediaType> MediaTypes { get; set; }
+        public int MediaTypeId { get; set; }
         public ICollection<MediaGenre> MediaGenres { get; set; }
     }
 }
