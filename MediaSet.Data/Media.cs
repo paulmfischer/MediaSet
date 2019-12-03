@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace MediaSet.Data
@@ -12,5 +13,6 @@ namespace MediaSet.Data
         public string ISBN { get; set; }
         public int FormatId { get; set; }
         public int MediaTypeId { get; set; }
+        public ICollection<MediaGenre> MediaGenres { get; set; }
     }
 }
