@@ -16,6 +16,77 @@ namespace MediaSet.Data.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "3.0.1");
 
+            modelBuilder.Entity("MediaSet.Data.BookData.Author", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Authors");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.BookData.Book", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<float>("Dewey")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("MediaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MediaTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("NumberOfPages")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Plot")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PublicationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PublisherId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SortTitle")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubTitle")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MediaId");
+
+                    b.HasIndex("PublisherId");
+
+                    b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.BookData.BookAuthor", b =>
+                {
+                    b.Property<int>("BookId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BookId", "AuthorId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.ToTable("BookAuthor");
+                });
+
             modelBuilder.Entity("MediaSet.Data.Format", b =>
                 {
                     b.Property<int>("Id")
@@ -108,6 +179,23 @@ namespace MediaSet.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MediaTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Books"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Movies"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Games"
+                        });
                 });
 
             modelBuilder.Entity("MediaSet.Data.MovieData.Movie", b =>
@@ -171,6 +259,51 @@ namespace MediaSet.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Studios");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.Publisher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MediaTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Publishers");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.BookData.Book", b =>
+                {
+                    b.HasOne("MediaSet.Data.Media", "Media")
+                        .WithMany()
+                        .HasForeignKey("MediaId");
+
+                    b.HasOne("MediaSet.Data.Publisher", "Publisher")
+                        .WithMany()
+                        .HasForeignKey("PublisherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaSet.Data.BookData.BookAuthor", b =>
+                {
+                    b.HasOne("MediaSet.Data.BookData.Author", "Author")
+                        .WithMany("BookAuthors")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.BookData.Book", "Book")
+                        .WithMany("BookAuthors")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MediaSet.Data.Genre", b =>

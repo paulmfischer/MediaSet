@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MediaSet.Data.MovieData;
+using MediaSet.Data.BookData;
 
 namespace MediaSet.Data
 {
@@ -11,6 +12,9 @@ namespace MediaSet.Data
         public DbSet<Format> Formats { get; set; }
         public DbSet<Studio> Studios { get; set; }
         public DbSet<Movie> Movies { get; set; }
+        public DbSet<Book> Books { get; set; }
+        public DbSet<Author> Authors { get; set; }
+        public DbSet<Publisher> Publishers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite("Data Source=MediaSet.db");
 
@@ -18,6 +22,7 @@ namespace MediaSet.Data
         {
             modelBuilder.SetupMediaGenreMapping();
             modelBuilder.SetupMovieStudioMapping();
+            modelBuilder.SetupBookAuthorMapping();
 
             modelBuilder.Seed();
         }

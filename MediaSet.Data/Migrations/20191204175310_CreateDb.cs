@@ -8,6 +8,19 @@ namespace MediaSet.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Authors",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Authors", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Formats",
                 columns: table => new
                 {
@@ -32,6 +45,20 @@ namespace MediaSet.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MediaTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Publishers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(nullable: true),
+                    MediaTypeId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Publishers", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -91,6 +118,39 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Books",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    MediaTypeId = table.Column<int>(nullable: false),
+                    MediaId = table.Column<int>(nullable: true),
+                    SubTitle = table.Column<string>(nullable: true),
+                    SortTitle = table.Column<string>(nullable: true),
+                    NumberOfPages = table.Column<int>(nullable: false),
+                    PublicationDate = table.Column<DateTime>(nullable: false),
+                    PublisherId = table.Column<int>(nullable: false),
+                    Plot = table.Column<string>(nullable: true),
+                    Dewey = table.Column<float>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Books", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Books_Media_MediaId",
+                        column: x => x.MediaId,
+                        principalTable: "Media",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Books_Publishers_PublisherId",
+                        column: x => x.PublisherId,
+                        principalTable: "Publishers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Movies",
                 columns: table => new
                 {
@@ -140,6 +200,30 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BookAuthor",
+                columns: table => new
+                {
+                    BookId = table.Column<int>(nullable: false),
+                    AuthorId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BookAuthor", x => new { x.BookId, x.AuthorId });
+                    table.ForeignKey(
+                        name: "FK_BookAuthor_Authors_AuthorId",
+                        column: x => x.AuthorId,
+                        principalTable: "Authors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BookAuthor_Books_BookId",
+                        column: x => x.BookId,
+                        principalTable: "Books",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MovieStudio",
                 columns: table => new
                 {
@@ -162,6 +246,36 @@ namespace MediaSet.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "MediaTypes",
+                columns: new[] { "Id", "Name" },
+                values: new object[] { 1, "Books" });
+
+            migrationBuilder.InsertData(
+                table: "MediaTypes",
+                columns: new[] { "Id", "Name" },
+                values: new object[] { 2, "Movies" });
+
+            migrationBuilder.InsertData(
+                table: "MediaTypes",
+                columns: new[] { "Id", "Name" },
+                values: new object[] { 3, "Games" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookAuthor_AuthorId",
+                table: "BookAuthor",
+                column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Books_MediaId",
+                table: "Books",
+                column: "MediaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Books_PublisherId",
+                table: "Books",
+                column: "PublisherId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Genres_MediaTypeId",
@@ -193,10 +307,19 @@ namespace MediaSet.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BookAuthor");
+
+            migrationBuilder.DropTable(
                 name: "MediaGenre");
 
             migrationBuilder.DropTable(
                 name: "MovieStudio");
+
+            migrationBuilder.DropTable(
+                name: "Authors");
+
+            migrationBuilder.DropTable(
+                name: "Books");
 
             migrationBuilder.DropTable(
                 name: "Genres");
@@ -206,6 +329,9 @@ namespace MediaSet.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Studios");
+
+            migrationBuilder.DropTable(
+                name: "Publishers");
 
             migrationBuilder.DropTable(
                 name: "MediaTypes");

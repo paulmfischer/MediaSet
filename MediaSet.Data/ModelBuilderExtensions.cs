@@ -1,4 +1,5 @@
-﻿using MediaSet.Data.MovieData;
+﻿using MediaSet.Data.BookData;
+using MediaSet.Data.MovieData;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaSet.Data
@@ -31,6 +32,20 @@ namespace MediaSet.Data
                 .HasOne(mg => mg.Studio)
                 .WithMany(m => m.MovieStudios)
                 .HasForeignKey(mg => mg.StudioId);
+        }
+
+        public static void SetupBookAuthorMapping(this ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BookAuthor>()
+                .HasKey(ba => new { ba.BookId, ba.AuthorId });
+            modelBuilder.Entity<BookAuthor>()
+                .HasOne(ba => ba.Book)
+                .WithMany(b => b.BookAuthors)
+                .HasForeignKey(ba => ba.BookId);
+            modelBuilder.Entity<BookAuthor>()
+                .HasOne(ba => ba.Author)
+                .WithMany(b => b.BookAuthors)
+                .HasForeignKey(ba => ba.AuthorId);
         }
 
         public static void Seed(this ModelBuilder modelBuilder)
