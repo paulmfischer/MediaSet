@@ -12,7 +12,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -25,7 +25,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true),
                     MediaTypeId = table.Column<int>(nullable: false)
                 },
@@ -39,7 +39,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -52,7 +52,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true),
                     MediaTypeId = table.Column<int>(nullable: false)
                 },
@@ -66,7 +66,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
@@ -79,7 +79,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(nullable: true),
                     Barcode = table.Column<string>(nullable: true),
                     ISBN = table.Column<string>(nullable: true),
@@ -102,7 +102,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(nullable: true),
                     MediaTypeId = table.Column<int>(nullable: false)
                 },
@@ -122,7 +122,7 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     MediaTypeId = table.Column<int>(nullable: false),
                     MediaId = table.Column<int>(nullable: true),
                     SubTitle = table.Column<string>(nullable: true),
@@ -155,12 +155,10 @@ namespace MediaSet.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     MediaId = table.Column<int>(nullable: false),
-                    ReleaseDate = table.Column<DateTime>(nullable: false),
-                    SortTitle = table.Column<string>(nullable: true),
-                    SubTitle = table.Column<string>(nullable: true),
-                    Runtime = table.Column<int>(nullable: false),
+                    ReleaseDate = table.Column<string>(nullable: true),
+                    Runtime = table.Column<string>(nullable: true),
                     Plot = table.Column<string>(nullable: true),
                     IMDBLink = table.Column<string>(nullable: true)
                 },

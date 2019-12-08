@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MediaSet.Data.MovieData;
 using MediaSet.Data.BookData;
+using Microsoft.Extensions.Logging;
 
 namespace MediaSet.Data
 {
@@ -16,7 +17,14 @@ namespace MediaSet.Data
         public DbSet<Author> Authors { get; set; }
         public DbSet<Publisher> Publishers { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite("Data Source=MediaSet.db");
+        public static readonly ILoggerFactory MyLoggerFactory
+            = LoggerFactory.Create(builder => { builder.AddConsole(); });
+        //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite("Data Source=MediaSet.db");
+        //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
+        protected override void OnConfiguring(DbContextOptionsBuilder options) => 
+            options
+                .UseLoggerFactory(MyLoggerFactory)
+                .UseSqlServer(@"Data Source=.\SQLEXPRESS;Initial Catalog=MediaSet;Integrated Security=SSPI");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

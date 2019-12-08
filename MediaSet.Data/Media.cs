@@ -9,6 +9,7 @@ namespace MediaSet.Data
         public string Barcode { get; set; }
         public string ISBN { get; set; }
         public int FormatId { get; set; }
+        public Format Format { get; set; }
         public int MediaTypeId { get; set; }
         public ICollection<MediaGenre> MediaGenres { get; set; }
     }
