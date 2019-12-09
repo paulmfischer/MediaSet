@@ -243,7 +243,7 @@ namespace MediaSet.Data.Migrations
                     b.Property<string>("Runtime")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("StudioId")
+                    b.Property<int?>("StudioId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -435,9 +435,7 @@ namespace MediaSet.Data.Migrations
 
                     b.HasOne("MediaSet.Data.MovieData.Studio", "Studio")
                         .WithMany()
-                        .HasForeignKey("StudioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StudioId");
                 });
 
             modelBuilder.Entity("MediaSet.Data.MovieData.MovieDirector", b =>

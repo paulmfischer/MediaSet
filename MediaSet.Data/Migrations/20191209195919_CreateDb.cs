@@ -200,7 +200,7 @@ namespace MediaSet.Data.Migrations
                     Runtime = table.Column<string>(nullable: true),
                     Plot = table.Column<string>(nullable: true),
                     IMDBLink = table.Column<string>(nullable: true),
-                    StudioId = table.Column<int>(nullable: false)
+                    StudioId = table.Column<int>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -216,7 +216,7 @@ namespace MediaSet.Data.Migrations
                         column: x => x.StudioId,
                         principalTable: "Studios",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

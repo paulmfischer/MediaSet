@@ -7,6 +7,14 @@ namespace MediaSet.Data
 {
     public class MediaSetContext : DbContext, IMediaSetContext
     {
+        private bool attachLogging { get; set; }
+        public MediaSetContext(bool attachLogging = false)
+        {
+            this.attachLogging = attachLogging;
+        }
+
+        public MediaSetContext() { }
+
         public DbSet<Media> Media { get; set; }
         public DbSet<MediaType> MediaTypes { get; set; }
         public DbSet<Genre> Genres { get; set; }
@@ -24,10 +32,16 @@ namespace MediaSet.Data
             = LoggerFactory.Create(builder => { builder.AddConsole(); });
 
         //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
-        protected override void OnConfiguring(DbContextOptionsBuilder options) => 
+        protected override void OnConfiguring(DbContextOptionsBuilder options)
+        {
             options
-                .UseLoggerFactory(MyLoggerFactory)
                 .UseSqlServer(@"Data Source=.\SQLEXPRESS;Initial Catalog=MediaSet;Integrated Security=SSPI");
+
+            if (attachLogging)
+            {
+                options.UseLoggerFactory(MyLoggerFactory);
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
