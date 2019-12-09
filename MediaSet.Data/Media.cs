@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MediaSet.Data.MovieData;
+using System.Collections.Generic;
 
 namespace MediaSet.Data
 {
@@ -12,5 +13,6 @@ namespace MediaSet.Data
         public Format Format { get; set; }
         public int MediaTypeId { get; set; }
         public ICollection<MediaGenre> MediaGenres { get; set; }
+        public Movie Movie { get; set; }
     }
 }

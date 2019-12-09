@@ -3,6 +3,5 @@
     public class Format : EntityAbstract
     {
         public int MediaTypeId { get; set; }
-        public Media Media { get; set; }
     }
 }

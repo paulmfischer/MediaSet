@@ -16,10 +16,13 @@ namespace MediaSet.Data
         public DbSet<Book> Books { get; set; }
         public DbSet<Author> Authors { get; set; }
         public DbSet<Publisher> Publishers { get; set; }
+        public DbSet<Director> Directors { get; set; }
+        public DbSet<Producer> Producers { get; set; }
+        public DbSet<Writer> Writers { get; set; }
 
         public static readonly ILoggerFactory MyLoggerFactory
             = LoggerFactory.Create(builder => { builder.AddConsole(); });
-        //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite("Data Source=MediaSet.db");
+
         //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
         protected override void OnConfiguring(DbContextOptionsBuilder options) => 
             options
@@ -29,7 +32,7 @@ namespace MediaSet.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.SetupMediaGenreMapping();
-            modelBuilder.SetupMovieStudioMapping();
+            modelBuilder.SetupMovieMappings();
             modelBuilder.SetupBookAuthorMapping();
 
             modelBuilder.Seed();

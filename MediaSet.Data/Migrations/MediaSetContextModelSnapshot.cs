@@ -154,8 +154,7 @@ namespace MediaSet.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FormatId")
-                        .IsUnique();
+                    b.HasIndex("FormatId");
 
                     b.ToTable("Media");
                 });
@@ -207,6 +206,21 @@ namespace MediaSet.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MediaSet.Data.MovieData.Director", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Directors");
+                });
+
             modelBuilder.Entity("MediaSet.Data.MovieData.Movie", b =>
                 {
                     b.Property<int>("Id")
@@ -229,26 +243,77 @@ namespace MediaSet.Data.Migrations
                     b.Property<string>("Runtime")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("StudioId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("MediaId");
+                    b.HasIndex("MediaId")
+                        .IsUnique();
+
+                    b.HasIndex("StudioId");
 
                     b.ToTable("Movies");
                 });
 
-            modelBuilder.Entity("MediaSet.Data.MovieData.MovieStudio", b =>
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieDirector", b =>
                 {
                     b.Property<int>("MovieId")
                         .HasColumnType("int");
 
-                    b.Property<int>("StudioId")
+                    b.Property<int>("DirectorId")
                         .HasColumnType("int");
 
-                    b.HasKey("MovieId", "StudioId");
+                    b.HasKey("MovieId", "DirectorId");
 
-                    b.HasIndex("StudioId");
+                    b.HasIndex("DirectorId");
 
-                    b.ToTable("MovieStudio");
+                    b.ToTable("MovieDirector");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieProducer", b =>
+                {
+                    b.Property<int>("MovieId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProducerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MovieId", "ProducerId");
+
+                    b.HasIndex("ProducerId");
+
+                    b.ToTable("MovieProducer");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieWriter", b =>
+                {
+                    b.Property<int>("MovieId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WriterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MovieId", "WriterId");
+
+                    b.HasIndex("WriterId");
+
+                    b.ToTable("MovieWriter");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.Producer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Producers");
                 });
 
             modelBuilder.Entity("MediaSet.Data.MovieData.Studio", b =>
@@ -264,6 +329,21 @@ namespace MediaSet.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Studios");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.Writer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Writers");
                 });
 
             modelBuilder.Entity("MediaSet.Data.Publisher", b =>
@@ -324,8 +404,8 @@ namespace MediaSet.Data.Migrations
             modelBuilder.Entity("MediaSet.Data.Media", b =>
                 {
                     b.HasOne("MediaSet.Data.Format", "Format")
-                        .WithOne("Media")
-                        .HasForeignKey("MediaSet.Data.Media", "FormatId")
+                        .WithMany()
+                        .HasForeignKey("FormatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -348,23 +428,59 @@ namespace MediaSet.Data.Migrations
             modelBuilder.Entity("MediaSet.Data.MovieData.Movie", b =>
                 {
                     b.HasOne("MediaSet.Data.Media", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MediaSet.Data.MovieData.MovieStudio", b =>
-                {
-                    b.HasOne("MediaSet.Data.MovieData.Movie", "Movie")
-                        .WithMany("MovieStudios")
-                        .HasForeignKey("MovieId")
+                        .WithOne("Movie")
+                        .HasForeignKey("MediaSet.Data.MovieData.Movie", "MediaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MediaSet.Data.MovieData.Studio", "Studio")
-                        .WithMany("MovieStudios")
+                        .WithMany()
                         .HasForeignKey("StudioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieDirector", b =>
+                {
+                    b.HasOne("MediaSet.Data.MovieData.Director", "Director")
+                        .WithMany("MovieDirectors")
+                        .HasForeignKey("DirectorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.MovieData.Movie", "Movie")
+                        .WithMany("MovieDirectors")
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieProducer", b =>
+                {
+                    b.HasOne("MediaSet.Data.MovieData.Movie", "Movie")
+                        .WithMany("MovieProducers")
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.MovieData.Producer", "Producer")
+                        .WithMany("MovieProducers")
+                        .HasForeignKey("ProducerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaSet.Data.MovieData.MovieWriter", b =>
+                {
+                    b.HasOne("MediaSet.Data.MovieData.Movie", "Movie")
+                        .WithMany("MovieWriters")
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.MovieData.Writer", "Writer")
+                        .WithMany("MovieWriters")
+                        .HasForeignKey("WriterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

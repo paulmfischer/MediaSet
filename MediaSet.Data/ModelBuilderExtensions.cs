@@ -20,18 +20,40 @@ namespace MediaSet.Data
                 .HasForeignKey(mg => mg.GenreId);
         }
 
-        public static void SetupMovieStudioMapping(this ModelBuilder modelBuilder)
+        public static void SetupMovieMappings(this ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<MovieStudio>()
-                .HasKey(mg => new { mg.MovieId, mg.StudioId });
-            modelBuilder.Entity<MovieStudio>()
+            modelBuilder.Entity<MovieDirector>()
+                .HasKey(mg => new { mg.MovieId, mg.DirectorId });
+            modelBuilder.Entity<MovieDirector>()
                 .HasOne(mg => mg.Movie)
-                .WithMany(m => m.MovieStudios)
+                .WithMany(m => m.MovieDirectors)
                 .HasForeignKey(mg => mg.MovieId);
-            modelBuilder.Entity<MovieStudio>()
-                .HasOne(mg => mg.Studio)
-                .WithMany(m => m.MovieStudios)
-                .HasForeignKey(mg => mg.StudioId);
+            modelBuilder.Entity<MovieDirector>()
+                .HasOne(mg => mg.Director)
+                .WithMany(m => m.MovieDirectors)
+                .HasForeignKey(mg => mg.DirectorId);
+
+            modelBuilder.Entity<MovieProducer>()
+                .HasKey(mg => new { mg.MovieId, mg.ProducerId });
+            modelBuilder.Entity<MovieProducer>()
+                .HasOne(mg => mg.Movie)
+                .WithMany(m => m.MovieProducers)
+                .HasForeignKey(mg => mg.MovieId);
+            modelBuilder.Entity<MovieProducer>()
+                .HasOne(mg => mg.Producer)
+                .WithMany(m => m.MovieProducers)
+                .HasForeignKey(mg => mg.ProducerId);
+
+            modelBuilder.Entity<MovieWriter>()
+                .HasKey(mg => new { mg.MovieId, mg.WriterId });
+            modelBuilder.Entity<MovieWriter>()
+                .HasOne(mg => mg.Movie)
+                .WithMany(m => m.MovieWriters)
+                .HasForeignKey(mg => mg.MovieId);
+            modelBuilder.Entity<MovieWriter>()
+                .HasOne(mg => mg.Writer)
+                .WithMany(m => m.MovieWriters)
+                .HasForeignKey(mg => mg.WriterId);
         }
 
         public static void SetupBookAuthorMapping(this ModelBuilder modelBuilder)

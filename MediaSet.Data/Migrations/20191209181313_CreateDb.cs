@@ -21,6 +21,19 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Directors",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Directors", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Formats",
                 columns: table => new
                 {
@@ -48,6 +61,19 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Producers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Producers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Publishers",
                 columns: table => new
                 {
@@ -72,6 +98,19 @@ namespace MediaSet.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Studios", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Writers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Writers", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -160,7 +199,8 @@ namespace MediaSet.Data.Migrations
                     ReleaseDate = table.Column<string>(nullable: true),
                     Runtime = table.Column<string>(nullable: true),
                     Plot = table.Column<string>(nullable: true),
-                    IMDBLink = table.Column<string>(nullable: true)
+                    IMDBLink = table.Column<string>(nullable: true),
+                    StudioId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -169,6 +209,12 @@ namespace MediaSet.Data.Migrations
                         name: "FK_Movies_Media_MediaId",
                         column: x => x.MediaId,
                         principalTable: "Media",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Movies_Studios_StudioId",
+                        column: x => x.StudioId,
+                        principalTable: "Studios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -222,25 +268,73 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MovieStudio",
+                name: "MovieDirector",
                 columns: table => new
                 {
                     MovieId = table.Column<int>(nullable: false),
-                    StudioId = table.Column<int>(nullable: false)
+                    DirectorId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MovieStudio", x => new { x.MovieId, x.StudioId });
+                    table.PrimaryKey("PK_MovieDirector", x => new { x.MovieId, x.DirectorId });
                     table.ForeignKey(
-                        name: "FK_MovieStudio_Movies_MovieId",
+                        name: "FK_MovieDirector_Directors_DirectorId",
+                        column: x => x.DirectorId,
+                        principalTable: "Directors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MovieDirector_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MovieProducer",
+                columns: table => new
+                {
+                    MovieId = table.Column<int>(nullable: false),
+                    ProducerId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovieProducer", x => new { x.MovieId, x.ProducerId });
+                    table.ForeignKey(
+                        name: "FK_MovieProducer_Movies_MovieId",
                         column: x => x.MovieId,
                         principalTable: "Movies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MovieStudio_Studios_StudioId",
-                        column: x => x.StudioId,
-                        principalTable: "Studios",
+                        name: "FK_MovieProducer_Producers_ProducerId",
+                        column: x => x.ProducerId,
+                        principalTable: "Producers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MovieWriter",
+                columns: table => new
+                {
+                    MovieId = table.Column<int>(nullable: false),
+                    WriterId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovieWriter", x => new { x.MovieId, x.WriterId });
+                    table.ForeignKey(
+                        name: "FK_MovieWriter_Movies_MovieId",
+                        column: x => x.MovieId,
+                        principalTable: "Movies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MovieWriter_Writers_WriterId",
+                        column: x => x.WriterId,
+                        principalTable: "Writers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -283,8 +377,7 @@ namespace MediaSet.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Media_FormatId",
                 table: "Media",
-                column: "FormatId",
-                unique: true);
+                column: "FormatId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MediaGenre_MediaId",
@@ -292,14 +385,30 @@ namespace MediaSet.Data.Migrations
                 column: "MediaId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Movies_MediaId",
-                table: "Movies",
-                column: "MediaId");
+                name: "IX_MovieDirector_DirectorId",
+                table: "MovieDirector",
+                column: "DirectorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MovieStudio_StudioId",
-                table: "MovieStudio",
+                name: "IX_MovieProducer_ProducerId",
+                table: "MovieProducer",
+                column: "ProducerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_MediaId",
+                table: "Movies",
+                column: "MediaId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_StudioId",
+                table: "Movies",
                 column: "StudioId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MovieWriter_WriterId",
+                table: "MovieWriter",
+                column: "WriterId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -311,7 +420,13 @@ namespace MediaSet.Data.Migrations
                 name: "MediaGenre");
 
             migrationBuilder.DropTable(
-                name: "MovieStudio");
+                name: "MovieDirector");
+
+            migrationBuilder.DropTable(
+                name: "MovieProducer");
+
+            migrationBuilder.DropTable(
+                name: "MovieWriter");
 
             migrationBuilder.DropTable(
                 name: "Authors");
@@ -323,10 +438,16 @@ namespace MediaSet.Data.Migrations
                 name: "Genres");
 
             migrationBuilder.DropTable(
+                name: "Directors");
+
+            migrationBuilder.DropTable(
+                name: "Producers");
+
+            migrationBuilder.DropTable(
                 name: "Movies");
 
             migrationBuilder.DropTable(
-                name: "Studios");
+                name: "Writers");
 
             migrationBuilder.DropTable(
                 name: "Publishers");
@@ -336,6 +457,9 @@ namespace MediaSet.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Media");
+
+            migrationBuilder.DropTable(
+                name: "Studios");
 
             migrationBuilder.DropTable(
                 name: "Formats");

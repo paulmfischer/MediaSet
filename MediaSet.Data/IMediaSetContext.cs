@@ -15,5 +15,8 @@ namespace MediaSet.Data
         DbSet<Book> Books { get; set; }
         DbSet<Author> Authors { get; set; }
         DbSet<Publisher> Publishers { get; set; }
+        DbSet<Director> Directors { get; set; }
+        DbSet<Producer> Producers { get; set; }
+        DbSet<Writer> Writers { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MediaSet.Data.MovieData
 {
@@ -12,6 +11,10 @@ namespace MediaSet.Data.MovieData
         public string Runtime { get; set; }
         public string Plot { get; set; }
         public string IMDBLink { get; set; }
-        public ICollection<MovieStudio> MovieStudios { get; set; }
+        public int StudioId { get; set; }
+        public Studio Studio { get; set; }
+        public ICollection<MovieDirector> MovieDirectors { get; set; }
+        public ICollection<MovieProducer> MovieProducers { get; set; }
+        public ICollection<MovieWriter> MovieWriters { get; set; }
     }
 }
