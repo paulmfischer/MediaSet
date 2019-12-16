@@ -41,13 +41,10 @@ namespace MediaSet.Data.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<float>("Dewey")
-                        .HasColumnType("real");
+                    b.Property<string>("Dewey")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("MediaId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MediaTypeId")
+                    b.Property<int>("MediaId")
                         .HasColumnType("int");
 
                     b.Property<int>("NumberOfPages")
@@ -56,13 +53,7 @@ namespace MediaSet.Data.Migrations
                     b.Property<string>("Plot")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("PublicationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PublisherId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SortTitle")
+                    b.Property<string>("PublicationDate")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SubTitle")
@@ -70,9 +61,8 @@ namespace MediaSet.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MediaId");
-
-                    b.HasIndex("PublisherId");
+                    b.HasIndex("MediaId")
+                        .IsUnique();
 
                     b.ToTable("Books");
                 });
@@ -90,6 +80,21 @@ namespace MediaSet.Data.Migrations
                     b.HasIndex("AuthorId");
 
                     b.ToTable("BookAuthor");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.BookData.BookPublisher", b =>
+                {
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PublisherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BookId", "PublisherId");
+
+                    b.HasIndex("PublisherId");
+
+                    b.ToTable("BookPublisher");
                 });
 
             modelBuilder.Entity("MediaSet.Data.Format", b =>
@@ -140,7 +145,7 @@ namespace MediaSet.Data.Migrations
                     b.Property<string>("Barcode")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FormatId")
+                    b.Property<int?>("FormatId")
                         .HasColumnType("int");
 
                     b.Property<string>("ISBN")
@@ -367,12 +372,8 @@ namespace MediaSet.Data.Migrations
             modelBuilder.Entity("MediaSet.Data.BookData.Book", b =>
                 {
                     b.HasOne("MediaSet.Data.Media", "Media")
-                        .WithMany()
-                        .HasForeignKey("MediaId");
-
-                    b.HasOne("MediaSet.Data.Publisher", "Publisher")
-                        .WithMany()
-                        .HasForeignKey("PublisherId")
+                        .WithOne("Book")
+                        .HasForeignKey("MediaSet.Data.BookData.Book", "MediaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -392,6 +393,21 @@ namespace MediaSet.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MediaSet.Data.BookData.BookPublisher", b =>
+                {
+                    b.HasOne("MediaSet.Data.BookData.Book", "Book")
+                        .WithMany("BookPublishers")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.Publisher", "Publisher")
+                        .WithMany("BookPublishers")
+                        .HasForeignKey("PublisherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MediaSet.Data.Genre", b =>
                 {
                     b.HasOne("MediaSet.Data.MediaType", null)
@@ -405,9 +421,7 @@ namespace MediaSet.Data.Migrations
                 {
                     b.HasOne("MediaSet.Data.Format", "Format")
                         .WithMany()
-                        .HasForeignKey("FormatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FormatId");
                 });
 
             modelBuilder.Entity("MediaSet.Data.MediaGenre", b =>

@@ -8,7 +8,7 @@ namespace MediaSet.Import
     {
         public static void AddIfDoesNotExist<T>(this IDictionary<string, T> lookup, string name) where T : EntityAbstract, new()
         {
-            if (!lookup.ContainsKey(name))
+            if (!string.IsNullOrWhiteSpace(name) && !lookup.ContainsKey(name))
             {
                 lookup.Add(name, new T { Name = name });
             }
@@ -16,7 +16,7 @@ namespace MediaSet.Import
 
         public static void AddIfDoesNotExist<T>(this IDictionary<string, T> lookup, string name, Func<T> objectCreationFunction) where T : EntityAbstract, new()
         {
-            if (!lookup.ContainsKey(name))
+            if (!string.IsNullOrWhiteSpace(name) && !lookup.ContainsKey(name))
             {
                 lookup.Add(name, objectCreationFunction());
             }

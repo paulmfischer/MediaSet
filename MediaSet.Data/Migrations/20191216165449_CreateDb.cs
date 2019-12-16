@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace MediaSet.Data.Migrations
 {
@@ -122,7 +121,7 @@ namespace MediaSet.Data.Migrations
                     Title = table.Column<string>(nullable: true),
                     Barcode = table.Column<string>(nullable: true),
                     ISBN = table.Column<string>(nullable: true),
-                    FormatId = table.Column<int>(nullable: false),
+                    FormatId = table.Column<int>(nullable: true),
                     MediaTypeId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -133,7 +132,7 @@ namespace MediaSet.Data.Migrations
                         column: x => x.FormatId,
                         principalTable: "Formats",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -162,15 +161,12 @@ namespace MediaSet.Data.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MediaTypeId = table.Column<int>(nullable: false),
-                    MediaId = table.Column<int>(nullable: true),
+                    MediaId = table.Column<int>(nullable: false),
                     SubTitle = table.Column<string>(nullable: true),
-                    SortTitle = table.Column<string>(nullable: true),
                     NumberOfPages = table.Column<int>(nullable: false),
-                    PublicationDate = table.Column<DateTime>(nullable: false),
-                    PublisherId = table.Column<int>(nullable: false),
+                    PublicationDate = table.Column<string>(nullable: true),
                     Plot = table.Column<string>(nullable: true),
-                    Dewey = table.Column<float>(nullable: false)
+                    Dewey = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -179,12 +175,6 @@ namespace MediaSet.Data.Migrations
                         name: "FK_Books_Media_MediaId",
                         column: x => x.MediaId,
                         principalTable: "Media",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Books_Publishers_PublisherId",
-                        column: x => x.PublisherId,
-                        principalTable: "Publishers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -263,6 +253,30 @@ namespace MediaSet.Data.Migrations
                         name: "FK_BookAuthor_Books_BookId",
                         column: x => x.BookId,
                         principalTable: "Books",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BookPublisher",
+                columns: table => new
+                {
+                    BookId = table.Column<int>(nullable: false),
+                    PublisherId = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BookPublisher", x => new { x.BookId, x.PublisherId });
+                    table.ForeignKey(
+                        name: "FK_BookPublisher_Books_BookId",
+                        column: x => x.BookId,
+                        principalTable: "Books",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BookPublisher_Publishers_PublisherId",
+                        column: x => x.PublisherId,
+                        principalTable: "Publishers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -360,14 +374,15 @@ namespace MediaSet.Data.Migrations
                 column: "AuthorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Books_MediaId",
-                table: "Books",
-                column: "MediaId");
+                name: "IX_BookPublisher_PublisherId",
+                table: "BookPublisher",
+                column: "PublisherId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Books_PublisherId",
+                name: "IX_Books_MediaId",
                 table: "Books",
-                column: "PublisherId");
+                column: "MediaId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Genres_MediaTypeId",
@@ -417,6 +432,9 @@ namespace MediaSet.Data.Migrations
                 name: "BookAuthor");
 
             migrationBuilder.DropTable(
+                name: "BookPublisher");
+
+            migrationBuilder.DropTable(
                 name: "MediaGenre");
 
             migrationBuilder.DropTable(
@@ -435,6 +453,9 @@ namespace MediaSet.Data.Migrations
                 name: "Books");
 
             migrationBuilder.DropTable(
+                name: "Publishers");
+
+            migrationBuilder.DropTable(
                 name: "Genres");
 
             migrationBuilder.DropTable(
@@ -448,9 +469,6 @@ namespace MediaSet.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Writers");
-
-            migrationBuilder.DropTable(
-                name: "Publishers");
 
             migrationBuilder.DropTable(
                 name: "MediaTypes");

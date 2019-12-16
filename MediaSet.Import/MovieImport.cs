@@ -135,27 +135,36 @@ namespace MediaSet.Import
                     }
 
                     var movieDirectors = movieProperties[fields[directorTitle]].Trim();
-                    movie.MovieDirectors = new List<MovieDirector>();
-                    foreach (var dir in movieDirectors.Split(";"))
+                    if (!string.IsNullOrWhiteSpace(movieDirectors))
                     {
-                        var dbDirector = context.Directors.FirstOrDefault(x => x.Name == dir.Trim());
-                        movie.MovieDirectors.Add(new MovieDirector { Director = dbDirector, DirectorId = dbDirector.Id, Movie = movie, MovieId = movie.Id });
+                        movie.MovieDirectors = new List<MovieDirector>();
+                        foreach (var dir in movieDirectors.Split(";"))
+                        {
+                            var dbDirector = context.Directors.FirstOrDefault(x => x.Name == dir.Trim());
+                            movie.MovieDirectors.Add(new MovieDirector { Director = dbDirector, DirectorId = dbDirector.Id, Movie = movie, MovieId = movie.Id });
+                        }
                     }
 
                     var movieProducers = movieProperties[fields[producerTitle]].Trim();
-                    movie.MovieProducers = new List<MovieProducer>();
-                    foreach (var dir in movieProducers.Split(";"))
+                    if (!string.IsNullOrWhiteSpace(movieProducers))
                     {
-                        var dbProducer = context.Producers.FirstOrDefault(x => x.Name == dir.Trim());
-                        movie.MovieProducers.Add(new MovieProducer { Producer = dbProducer, ProducerId = dbProducer.Id, Movie = movie, MovieId = movie.Id });
+                        movie.MovieProducers = new List<MovieProducer>();
+                        foreach (var dir in movieProducers.Split(";"))
+                        {
+                            var dbProducer = context.Producers.FirstOrDefault(x => x.Name == dir.Trim());
+                            movie.MovieProducers.Add(new MovieProducer { Producer = dbProducer, ProducerId = dbProducer.Id, Movie = movie, MovieId = movie.Id });
+                        }
                     }
 
                     var movieWriters = movieProperties[fields[writerTitle]].Trim();
-                    movie.MovieWriters = new List<MovieWriter>();
-                    foreach (var dir in movieWriters.Split(";"))
+                    if (!string.IsNullOrWhiteSpace(movieWriters))
                     {
-                        var dbWriter = context.Writers.FirstOrDefault(x => x.Name == dir.Trim());
-                        movie.MovieWriters.Add(new MovieWriter { Writer = dbWriter, WriterId = dbWriter.Id, Movie = movie, MovieId = movie.Id });
+                        movie.MovieWriters = new List<MovieWriter>();
+                        foreach (var dir in movieWriters.Split(";"))
+                        {
+                            var dbWriter = context.Writers.FirstOrDefault(x => x.Name == dir.Trim());
+                            movie.MovieWriters.Add(new MovieWriter { Writer = dbWriter, WriterId = dbWriter.Id, Movie = movie, MovieId = movie.Id });
+                        }
                     }
 
                     context.Movies.Add(movie);

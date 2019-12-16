@@ -25,6 +25,10 @@ namespace MediaSet.Import
                     MovieImport.Import(dataRows);
                     break;
 
+                case "books":
+                    BookImport.Import(dataRows);
+                    break;
+
             }
 
             Console.WriteLine("Done Importing {0} from {1}", mediaType, fileLocation);

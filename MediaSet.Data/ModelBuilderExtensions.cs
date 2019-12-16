@@ -56,7 +56,7 @@ namespace MediaSet.Data
                 .HasForeignKey(mg => mg.WriterId);
         }
 
-        public static void SetupBookAuthorMapping(this ModelBuilder modelBuilder)
+        public static void SetupBookMappings(this ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<BookAuthor>()
                 .HasKey(ba => new { ba.BookId, ba.AuthorId });
@@ -68,6 +68,17 @@ namespace MediaSet.Data
                 .HasOne(ba => ba.Author)
                 .WithMany(b => b.BookAuthors)
                 .HasForeignKey(ba => ba.AuthorId);
+
+            modelBuilder.Entity<BookPublisher>()
+                .HasKey(ba => new { ba.BookId, ba.PublisherId });
+            modelBuilder.Entity<BookPublisher>()
+                .HasOne(ba => ba.Book)
+                .WithMany(b => b.BookPublishers)
+                .HasForeignKey(ba => ba.BookId);
+            modelBuilder.Entity<BookPublisher>()
+                .HasOne(ba => ba.Publisher)
+                .WithMany(b => b.BookPublishers)
+                .HasForeignKey(ba => ba.PublisherId);
         }
 
         public static void Seed(this ModelBuilder modelBuilder)

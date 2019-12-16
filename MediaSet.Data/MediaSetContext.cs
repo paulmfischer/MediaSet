@@ -47,7 +47,7 @@ namespace MediaSet.Data
         {
             modelBuilder.SetupMediaGenreMapping();
             modelBuilder.SetupMovieMappings();
-            modelBuilder.SetupBookAuthorMapping();
+            modelBuilder.SetupBookMappings();
 
             modelBuilder.Seed();
         }
