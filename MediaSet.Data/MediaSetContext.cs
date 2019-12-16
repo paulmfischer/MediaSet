@@ -2,6 +2,7 @@
 using MediaSet.Data.MovieData;
 using MediaSet.Data.BookData;
 using Microsoft.Extensions.Logging;
+using MediaSet.Data.GameData;
 
 namespace MediaSet.Data
 {
@@ -27,6 +28,9 @@ namespace MediaSet.Data
         public DbSet<Director> Directors { get; set; }
         public DbSet<Producer> Producers { get; set; }
         public DbSet<Writer> Writers { get; set; }
+        public DbSet<Platform> Platforms { get; set; }
+        public DbSet<Developer> Developers { get; set; }
+        public DbSet<Game> Games { get; set; }
 
         public static readonly ILoggerFactory MyLoggerFactory
             = LoggerFactory.Create(builder => { builder.AddConsole(); });

@@ -20,6 +20,19 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Developers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Developers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Directors",
                 columns: table => new
                 {
@@ -57,6 +70,19 @@ namespace MediaSet.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MediaTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Platforms",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Platforms", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -119,8 +145,6 @@ namespace MediaSet.Data.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(nullable: true),
-                    Barcode = table.Column<string>(nullable: true),
-                    ISBN = table.Column<string>(nullable: true),
                     FormatId = table.Column<int>(nullable: true),
                     MediaTypeId = table.Column<int>(nullable: false)
                 },
@@ -162,6 +186,7 @@ namespace MediaSet.Data.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     MediaId = table.Column<int>(nullable: false),
+                    ISBN = table.Column<string>(nullable: true),
                     SubTitle = table.Column<string>(nullable: true),
                     NumberOfPages = table.Column<int>(nullable: false),
                     PublicationDate = table.Column<string>(nullable: true),
@@ -180,12 +205,56 @@ namespace MediaSet.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Games",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MediaId = table.Column<int>(nullable: false),
+                    Barcode = table.Column<string>(nullable: true),
+                    PlatformId = table.Column<int>(nullable: false),
+                    SubTitle = table.Column<string>(nullable: true),
+                    ReleaseDate = table.Column<string>(nullable: true),
+                    PublisherId = table.Column<int>(nullable: true),
+                    DeveloperId = table.Column<int>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Games", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Games_Developers_DeveloperId",
+                        column: x => x.DeveloperId,
+                        principalTable: "Developers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Games_Media_MediaId",
+                        column: x => x.MediaId,
+                        principalTable: "Media",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Games_Platforms_PlatformId",
+                        column: x => x.PlatformId,
+                        principalTable: "Platforms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Games_Publishers_PublisherId",
+                        column: x => x.PublisherId,
+                        principalTable: "Publishers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Movies",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     MediaId = table.Column<int>(nullable: false),
+                    Barcode = table.Column<string>(nullable: true),
                     ReleaseDate = table.Column<string>(nullable: true),
                     Runtime = table.Column<string>(nullable: true),
                     Plot = table.Column<string>(nullable: true),
@@ -385,6 +454,27 @@ namespace MediaSet.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Games_DeveloperId",
+                table: "Games",
+                column: "DeveloperId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Games_MediaId",
+                table: "Games",
+                column: "MediaId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Games_PlatformId",
+                table: "Games",
+                column: "PlatformId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Games_PublisherId",
+                table: "Games",
+                column: "PublisherId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Genres_MediaTypeId",
                 table: "Genres",
                 column: "MediaTypeId");
@@ -435,6 +525,9 @@ namespace MediaSet.Data.Migrations
                 name: "BookPublisher");
 
             migrationBuilder.DropTable(
+                name: "Games");
+
+            migrationBuilder.DropTable(
                 name: "MediaGenre");
 
             migrationBuilder.DropTable(
@@ -451,6 +544,12 @@ namespace MediaSet.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Books");
+
+            migrationBuilder.DropTable(
+                name: "Developers");
+
+            migrationBuilder.DropTable(
+                name: "Platforms");
 
             migrationBuilder.DropTable(
                 name: "Publishers");

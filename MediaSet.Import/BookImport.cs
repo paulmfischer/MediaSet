@@ -70,7 +70,7 @@ namespace MediaSet.Import
                 }
             }
 
-            using (var context = new MediaSetContext(attachLogging: true))
+            using (var context = new MediaSetContext())
             {
                 context.AddRange(formats.Select(x => x.Value));
                 context.AddRange(genres.Select(x => x.Value));
@@ -94,7 +94,6 @@ namespace MediaSet.Import
 
                     var media = new Media
                     {
-                        ISBN = bookProperties[fields[isbn]],
                         Title = bookProperties[fields[title]],
                         MediaTypeId = BookMediaType
                     };
@@ -108,6 +107,7 @@ namespace MediaSet.Import
                     var book = new Book
                     {
                         Media = media,
+                        ISBN = bookProperties[fields[isbn]],
                         Plot = bookProperties[fields[plot]],
                         SubTitle = bookProperties[fields[subTitle]],
                         PublicationDate = bookProperties[fields[publicaitonYear]]

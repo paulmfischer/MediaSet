@@ -7,6 +7,7 @@ namespace MediaSet.Data.MovieData
         public int Id { get; set; }
         public int MediaId { get; set; }
         public Media Media { get; set; }
+        public string Barcode { get; set; }
         public string ReleaseDate { get; set; }
         public string Runtime { get; set; }
         public string Plot { get; set; }

@@ -44,6 +44,9 @@ namespace MediaSet.Data.Migrations
                     b.Property<string>("Dewey")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ISBN")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("MediaId")
                         .HasColumnType("int");
 
@@ -115,6 +118,78 @@ namespace MediaSet.Data.Migrations
                     b.ToTable("Formats");
                 });
 
+            modelBuilder.Entity("MediaSet.Data.GameData.Developer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Developers");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.GameData.Game", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Barcode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DeveloperId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MediaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlatformId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PublisherId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReleaseDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SubTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeveloperId");
+
+                    b.HasIndex("MediaId")
+                        .IsUnique();
+
+                    b.HasIndex("PlatformId");
+
+                    b.HasIndex("PublisherId");
+
+                    b.ToTable("Games");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.GameData.Platform", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Platforms");
+                });
+
             modelBuilder.Entity("MediaSet.Data.Genre", b =>
                 {
                     b.Property<int>("Id")
@@ -142,14 +217,8 @@ namespace MediaSet.Data.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("Barcode")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("FormatId")
                         .HasColumnType("int");
-
-                    b.Property<string>("ISBN")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MediaTypeId")
                         .HasColumnType("int");
@@ -232,6 +301,9 @@ namespace MediaSet.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Barcode")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IMDBLink")
                         .HasColumnType("nvarchar(max)");
@@ -406,6 +478,29 @@ namespace MediaSet.Data.Migrations
                         .HasForeignKey("PublisherId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaSet.Data.GameData.Game", b =>
+                {
+                    b.HasOne("MediaSet.Data.GameData.Developer", "Developer")
+                        .WithMany()
+                        .HasForeignKey("DeveloperId");
+
+                    b.HasOne("MediaSet.Data.Media", "Media")
+                        .WithOne("Game")
+                        .HasForeignKey("MediaSet.Data.GameData.Game", "MediaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.GameData.Platform", "Platform")
+                        .WithMany()
+                        .HasForeignKey("PlatformId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MediaSet.Data.Publisher", "Publisher")
+                        .WithMany()
+                        .HasForeignKey("PublisherId");
                 });
 
             modelBuilder.Entity("MediaSet.Data.Genre", b =>

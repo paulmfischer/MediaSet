@@ -8,6 +8,7 @@ namespace MediaSet.Data.BookData
         public int Id { get; set; }
         public int MediaId { get; set; }
         public Media Media { get; set; }
+        public string ISBN { get; set; }
         public string SubTitle { get; set; }
         public int NumberOfPages { get; set; }
         public string PublicationDate { get; set; }

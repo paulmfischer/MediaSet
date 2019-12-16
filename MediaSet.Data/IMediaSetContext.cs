@@ -1,4 +1,5 @@
 ﻿using MediaSet.Data.BookData;
+using MediaSet.Data.GameData;
 using MediaSet.Data.MovieData;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,5 +19,8 @@ namespace MediaSet.Data
         DbSet<Director> Directors { get; set; }
         DbSet<Producer> Producers { get; set; }
         DbSet<Writer> Writers { get; set; }
+        DbSet<Platform> Platforms { get; set; }
+        DbSet<Developer> Developers { get; set; }
+        DbSet<Game> Games { get; set; }
     }
 }

@@ -100,7 +100,6 @@ namespace MediaSet.Import
 
                     var media = new Media
                     {
-                        Barcode = movieProperties[fields[barcode]],
                         Title = movieProperties[fields[title]],
                         MediaTypeId = MovieMediaType,
                         Format = format,
@@ -109,6 +108,7 @@ namespace MediaSet.Import
 
                     var movie = new Movie
                     {
+                        Barcode = movieProperties[fields[barcode]],
                         IMDBLink = movieProperties[fields[imdb]],
                         Plot = movieProperties[fields[plot]],
                         ReleaseDate = movieProperties[fields[releaseDate]],
