@@ -20,6 +20,7 @@ namespace MediaSet.Import
             var barcode = "Barcode";
             var subTitle = "Sub Title";
             var editionTitle = "Edition";
+            var formatTitle = "Format";
             int GameMediaType = 3;
 
             var fields = dataRows[0].Split(";").Select((v, i) => new { Key = v, Value = i }).ToDictionary(o => o.Key, o => o.Value);
@@ -28,7 +29,7 @@ namespace MediaSet.Import
             IDictionary<string, Platform> platforms = new Dictionary<string, Platform>();
             IDictionary<string, Publisher> publishers = new Dictionary<string, Publisher>();
             IDictionary<string, Developer> developers = new Dictionary<string, Developer>();
-
+            IDictionary<string, Format> formats = new Dictionary<string, Format>();
 
             foreach (var gameData in dataRows.Skip(1))
             {
@@ -52,6 +53,9 @@ namespace MediaSet.Import
 
                 var publisher = gameProperties[fields[publisherTitle]].Trim();
                 publishers.AddIfDoesNotExist(publisher, () => new Publisher { Name = publisher, MediaTypeId = GameMediaType });
+
+                var formatName = gameProperties[fields[formatTitle]].Trim();
+                formats.AddIfDoesNotExist(formatName, () => new Format { Name = formatName, MediaTypeId = GameMediaType });
             }
 
             using (var context = new MediaSetContext(attachLogging: true))
@@ -60,6 +64,7 @@ namespace MediaSet.Import
                 context.AddRange(genres.Select(x => x.Value));
                 context.AddRange(developers.Select(x => x.Value));
                 context.AddRange(publishers.Select(x => x.Value));
+                context.AddRange(formats.Select(x => x.Value));
 
                 context.SaveChanges();
             }
@@ -72,17 +77,25 @@ namespace MediaSet.Import
                 Platform platform;
                 Developer developer;
                 Publisher publisher;
+                Format format;
                 using (var context = new MediaSetContext())
                 {
                     publisher = context.Publishers.FirstOrDefault(x => x.Name == gameProperties[fields[publisherTitle]].Trim());
                     platform = context.Platforms.FirstOrDefault(x => x.Name == gameProperties[fields[platformTitle]].Trim());
                     developer = context.Developers.FirstOrDefault(x => x.Name == gameProperties[fields[developerTitle]].Trim());
+                    format = context.Formats.FirstOrDefault(x => x.Name == gameProperties[fields[formatTitle]].Trim());
 
                     var media = new Media
                     {
                         Title = gameProperties[fields[title]],
                         MediaTypeId = GameMediaType
                     };
+
+                    if (format != null)
+                    {
+                        media.Format = format;
+                        media.FormatId = format.Id;
+                    }
 
                     var game = new Game
                     {
