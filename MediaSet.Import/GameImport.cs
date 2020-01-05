@@ -18,8 +18,8 @@ namespace MediaSet.Import
             var publisherTitle = "Publisher";
             var developerTitle = "Developer";
             var barcode = "Barcode";
-            var subTitle = "Sub Title";
-            var editionTitle = "Edition";
+            // var subTitle = "Sub Title";
+            // var editionTitle = "Edition";
             var formatTitle = "Format";
             int GameMediaType = 3;
 

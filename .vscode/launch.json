@@ -4,6 +4,17 @@
    // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
    "version": "0.2.0",
    "configurations": [
+       {
+           "name": "Launch Import",
+           "type": "coreclr",
+           "request": "launch",
+           "preLaunchTask": "build:import",
+           "program": "${workspaceFolder}/MediaSet.Import/bin/Debug/netcoreapp3.0/MediaSet.Import.dll",
+           "args": [],
+           "cwd": "${workspaceFolder}/MediaSet.Import",
+           "stopAtEntry": false,
+           "console": "internalConsole"
+       },
         {
             "name": ".NET Core Launch (web)",
             "type": "coreclr",

@@ -20,10 +20,10 @@ namespace MediaSet.Import
             var publisherTitle = "Publisher";
             var deweyTitle = "Dewey";
             var isbn = "ISBN";
-            var lengthTitle = "Length";
+            // var lengthTitle = "Length";
             var numPagesTitle = "No. of Pages";
             var plot = "Plot";
-            var pubDate = "Publication Date";
+            // var pubDate = "Publication Date";
             int BookMediaType = 1;
 
             var fields = dataRows[0].Split(";").Select((v, i) => new { Key = v, Value = i }).ToDictionary(o => o.Key, o => o.Value);
