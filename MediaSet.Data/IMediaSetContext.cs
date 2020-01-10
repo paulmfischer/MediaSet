@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaSet.Data
 {
-    public interface IMediaSetContext
+    public interface IMediaSetContext //: IDbContext
     {
         DbSet<Media> Media { get; set; }
         DbSet<MediaType> MediaTypes { get; set; }
