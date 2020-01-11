@@ -1,0 +1,20 @@
+<h1>Books</h1>
+
+<table>
+  <thead>
+    <tr>
+      <td>Id</td>
+      <td>Title</td>
+      <td>Sub Title</td>
+      <td>Plot</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let book of books">
+      <td>{{book.id}}</td>
+      <td>{{book.title}}</td>
+      <td>{{book.subTitle}}</td>
+      <td>{{book.plot}}</td>
+    </tr>
+  </tbody>
+</table>

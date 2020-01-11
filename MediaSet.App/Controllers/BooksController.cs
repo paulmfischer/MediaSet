@@ -1,9 +1,6 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using MediaSet.Data;
-using MediaSet.Data.Repositories;
+﻿using MediaSet.Data.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace MediaSet.App.Controllers
 {
@@ -20,16 +17,10 @@ namespace MediaSet.App.Controllers
 
         [Route("GetAll")]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            return Ok(await this.booksRepository.GetAll());
-        }
+        public async Task<IActionResult> GetAll() =>Ok(await this.booksRepository.GetAll());
 
         [Route("{id}")]
         [HttpGet]
-        public async Task<IActionResult> GetById(int id)
-        {
-            return Ok(await this.booksRepository.GetById(id));
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await this.booksRepository.GetById(id));
     }
 }

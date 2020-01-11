@@ -33,8 +33,9 @@ namespace MediaSet.App
             });
 
             services.AddDbContext<MediaSetContext>();
-            services.AddScoped<IMediaSetContext, MediaSetContext>();
             services.AddScoped<IBooksRepository, BooksRepository>();
+            services.AddScoped<IGamesRepository, GamesRepository>();
+            services.AddScoped<IMoviesRepository, MoviesRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

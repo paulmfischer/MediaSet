@@ -58,7 +58,7 @@ namespace MediaSet.Import
                 formats.AddIfDoesNotExist(formatName, () => new Format { Name = formatName, MediaTypeId = GameMediaType });
             }
 
-            using (var context = new MediaSetContext(attachLogging: true))
+            using (var context = new MediaSetContext())
             {
                 context.AddRange(platforms.Select(x => x.Value));
                 context.AddRange(genres.Select(x => x.Value));

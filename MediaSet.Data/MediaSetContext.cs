@@ -6,7 +6,7 @@ using MediaSet.Data.GameData;
 
 namespace MediaSet.Data
 {
-    public class MediaSetContext : DbContext, IMediaSetContext
+    public class MediaSetContext : DbContext
     {
         private bool attachLogging { get; set; }
         public MediaSetContext(bool attachLogging = false)
