@@ -1,20 +1,20 @@
 <h1>Books</h1>
 
-<table>
+<table class="table">
   <thead>
     <tr>
-      <td>Id</td>
-      <td>Title</td>
-      <td>Sub Title</td>
-      <td>Plot</td>
+      <td scope="col">Id</td>
+      <td scope="col">Title</td>
+      <td scope="col">No. of Pages</td>
+      <td scope="col">Publication Year</td>
     </tr>
   </thead>
   <tbody>
     <tr *ngFor="let book of books">
-      <td>{{book.id}}</td>
-      <td>{{book.title}}</td>
-      <td>{{book.subTitle}}</td>
-      <td>{{book.plot}}</td>
+      <td scope="row"><a class="nav-link text-dark" [routerLink]="['/books', book.id]">{{book.id}}</a></td>
+      <td>{{book.media.title}}</td>
+      <td>{{book.numberOfPages}}</td>
+      <td>{{book.publicationDate}}</td>
     </tr>
   </tbody>
 </table>
