@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,6 +28,7 @@ namespace MediaSet.Data.Repositories
                     .Include(game => game.Developer)
                     .Include(game => game.Platform)
                     .Include(game => game.Publisher)
+                    .Take(20)
                     .ToListAsync();
         }
 

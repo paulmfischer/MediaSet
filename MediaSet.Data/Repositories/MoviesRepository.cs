@@ -1,6 +1,7 @@
 ﻿using MediaSet.Data.MovieData;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MediaSet.Data.Repositories
@@ -29,6 +30,7 @@ namespace MediaSet.Data.Repositories
                     .ThenInclude(mp => mp.Producer)
                 .Include(movie => movie.MovieWriters)
                     .ThenInclude(mw => mw.Writer)
+                .Take(20)
                 .ToListAsync();
         }
 
