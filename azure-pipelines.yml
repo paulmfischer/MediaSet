@@ -38,5 +38,13 @@ steps:
     command: 'build'
     projects: 'MediaSet.App/MediaSet.App.csproj'
 
-- publish: $(System.DefaultWorkingDirectory)/bin/WebApp
-  artifact: WebApp
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.BinariesDirectory)'
+    includeRootFolder: true
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+#- publish: $(System.DefaultWorkingDirectory)/bin/WebApp
+#  artifact: WebApp
