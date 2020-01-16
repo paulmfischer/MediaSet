@@ -3,6 +3,7 @@ using MediaSet.Data.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,7 +33,8 @@ namespace MediaSet.App
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            services.AddDbContext<MediaSetContext>();
+            services.AddDbContext<MediaSetContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Data")));
+
             services.AddScoped<IBooksRepository, BooksRepository>();
             services.AddScoped<IGamesRepository, GamesRepository>();
             services.AddScoped<IMoviesRepository, MoviesRepository>();

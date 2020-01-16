@@ -8,11 +8,27 @@ import { HttpClient } from '@angular/common/http';
 })
 export class BooksComponent implements OnInit {
   public books: Array<Book> = [];
+  public pageSize = 10;
+  public page = 1;
 
   constructor(private client: HttpClient) { }
 
   ngOnInit(): void {
-    this.client.get<Array<Book>>('api/books/getall')
+    this.loadBooks();
+  }
+
+  loadBooks(): void {
+    this.client.get<Array<Book>>('api/books/paged', { params: { skip: ((this.page - 1) * 10).toString(), take: this.pageSize.toString() } })
       .subscribe(books => this.books = books);
+  }
+
+  loadPrevious(): void {
+    this.page -= 1;
+    this.loadBooks();
+  }
+
+  loadNext(): void {
+    this.page += 1;
+    this.loadBooks();
   }
 }
