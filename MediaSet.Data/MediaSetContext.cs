@@ -10,12 +10,14 @@ namespace MediaSet.Data
     {
         private bool attachLogging { get; set; }
 
-        public MediaSetContext(bool attachLogging = false)
-        {
-            this.attachLogging = attachLogging;
-        }
+        public MediaSetContext(DbContextOptions options) : base(options) { }
 
-        public MediaSetContext() { }
+        //public MediaSetContext(bool attachLogging = false)
+        //{
+        //    this.attachLogging = attachLogging;
+        //}
+
+        //public MediaSetContext() { }
 
         public DbSet<Media> Media { get; set; }
         public DbSet<MediaType> MediaTypes { get; set; }
@@ -38,9 +40,9 @@ namespace MediaSet.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            options
-                .UseSqlServer(@"Data Source=.\SQLEXPRESS;Initial Catalog=MediaSet;Integrated Security=SSPI");
-                //.UseSqlServer(@"Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
+            //options
+            //    .UseSqlServer(@"Data Source=.\SQLEXPRESS;Initial Catalog=MediaSet;Integrated Security=SSPI");
+            //    .UseSqlServer(@"Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
 
             if (attachLogging)
             {
