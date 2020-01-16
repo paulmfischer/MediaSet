@@ -1,9 +1,7 @@
 ﻿using MediaSet.Data.GameData;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MediaSet.Data.Repositories
@@ -19,22 +17,22 @@ namespace MediaSet.Data.Repositories
 
         public async Task<IList<Game>> GetAll()
         {
-            return await this.context.Games
-                    .Include(game => game.Media)
-                        .ThenInclude(media => media.Format)
-                    .Include(game => game.Media)
-                        .ThenInclude(media => media.MediaGenres)
-                            .ThenInclude(mg => mg.Genre)
-                    .Include(game => game.Developer)
-                    .Include(game => game.Platform)
-                    .Include(game => game.Publisher)
-                    .Take(20)
-                    .ToListAsync();
+            return await this.GetBaseQuery().ToListAsync();
         }
 
         public async Task<Game> GetById(int id)
         {
-            return await this.context.Games
+            return await this.GetBaseQuery().FirstOrDefaultAsync(game => game.Id == id);
+        }
+
+        public async Task<IList<Game>> Paged(int skip, int take)
+        {
+            return await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync();
+        }
+
+        private IQueryable<Game> GetBaseQuery()
+        {
+            return this.context.Games
                     .Include(game => game.Media)
                         .ThenInclude(media => media.Format)
                     .Include(game => game.Media)
@@ -42,8 +40,7 @@ namespace MediaSet.Data.Repositories
                             .ThenInclude(mg => mg.Genre)
                     .Include(game => game.Developer)
                     .Include(game => game.Platform)
-                    .Include(game => game.Publisher)
-                    .FirstOrDefaultAsync(game => game.Id == id);
+                    .Include(game => game.Publisher);
         }
     }
 }

@@ -9,6 +9,7 @@ namespace MediaSet.Data
     public class MediaSetContext : DbContext
     {
         private bool attachLogging { get; set; }
+
         public MediaSetContext(bool attachLogging = false)
         {
             this.attachLogging = attachLogging;
@@ -40,7 +41,6 @@ namespace MediaSet.Data
             options
                 .UseSqlServer(@"Data Source=.\SQLEXPRESS;Initial Catalog=MediaSet;Integrated Security=SSPI");
                 //.UseSqlServer(@"Server=(localdb)\\MSSQLLocalDB;Database=MediaSet;Trusted_Connection=True;MultipleActiveResultSets=true");
-                //.UseSqlServer(@"Server=tcp:mediaset.database.windows.net,1433;Initial Catalog=MediaSet;Persist Security Info=False;User ID={replace};Password={replace};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
 
             if (attachLogging)
             {

@@ -18,3 +18,8 @@
     </tr>
   </tbody>
 </table>
+<div class="btn-group" role="group" aria-label="Basic example">
+  <button type="button" class="btn btn-secondary" [disabled]="page < 2" (click)="loadPrevious()">Previous</button>
+  <button type="button" class="btn btn-secondary" disabled="disabled">{{page}}</button>
+  <button type="button" class="btn btn-secondary" (click)="loadNext()">Next</button>
+</div>
