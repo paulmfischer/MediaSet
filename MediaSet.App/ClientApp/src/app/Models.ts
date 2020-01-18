@@ -1,6 +1,11 @@
-export class Book {
-  public Id: number;
-  public Title: string;
-  public SubTitle: string;
-  public Plot: string;
+export interface Book {
+  Id: number;
+  Title: string;
+  SubTitle: string;
+  Plot: string;
+}
+
+export interface PagedResult<T> {
+  items: Array<T>;
+  total: number;
 }
