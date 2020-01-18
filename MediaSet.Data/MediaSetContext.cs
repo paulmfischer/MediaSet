@@ -17,7 +17,7 @@ namespace MediaSet.Data
         //    this.attachLogging = attachLogging;
         //}
 
-        //public MediaSetContext() { }
+        public MediaSetContext() { }
 
         public DbSet<Media> Media { get; set; }
         public DbSet<MediaType> MediaTypes { get; set; }

@@ -25,9 +25,13 @@ namespace MediaSet.Data.Repositories
             return await this.GetBaseQuery().FirstOrDefaultAsync(game => game.Id == id);
         }
 
-        public async Task<IList<Game>> Paged(int skip, int take)
+        public async Task<PagedResult<Game>> Paged(int skip, int take)
         {
-            return await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync();
+            return new PagedResult<Game>
+            {
+                Items = await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync(),
+                Total = await this.context.Books.CountAsync()
+            };
         }
 
         private IQueryable<Game> GetBaseQuery()
