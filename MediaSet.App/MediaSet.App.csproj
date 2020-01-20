@@ -32,7 +32,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ClientApp\src\app\books\" />
+    <Folder Include="ClientApp\src\app\games\" />
+    <Folder Include="ClientApp\src\app\movies\" />
     <Folder Include="NewFolder\" />
   </ItemGroup>
 

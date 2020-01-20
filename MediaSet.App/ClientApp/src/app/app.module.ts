@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app.component';
@@ -12,6 +12,13 @@ import { BookComponent } from './books/book.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatInputModule } from '@angular/material/input'
+import { MatSortModule} from '@angular/material/sort';
+import { MovieComponent } from './movies/movie.component';
+import { MoviesComponent } from './movies/movies.component';
+import { GamesComponent } from './games/games.component';
+import { GameComponent } from './games/game.component';
 
 @NgModule({
   declarations: [
@@ -19,7 +26,11 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     NavMenuComponent,
     HomeComponent,
     BooksComponent,
-    BookComponent
+    BookComponent,
+    MovieComponent,
+    MoviesComponent,
+    GamesComponent,
+    GameComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -28,11 +39,18 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'books', component: BooksComponent },
-      { path: 'books/:id', component: BookComponent }
+      { path: 'books/:id', component: BookComponent },
+      { path: 'movies', component: MoviesComponent },
+      { path: 'movies/:id', component: MovieComponent },
+      { path: 'games', component: GamesComponent },
+      { path: 'games/:id', component: GameComponent }
     ]),
     BrowserAnimationsModule,
     MatTableModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatProgressSpinnerModule,
+    MatInputModule,
+    MatSortModule
   ],
   providers: [],
   bootstrap: [AppComponent]

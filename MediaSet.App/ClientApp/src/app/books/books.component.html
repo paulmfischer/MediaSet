@@ -1,24 +1,37 @@
 <h1>Books</h1>
 
-<table mat-table [dataSource]="books" class="w-100 table-sm table-striped">
-  <ng-container matColumnDef="id">
-    <th mat-header-cell *matHeaderCellDef>Id</th>
-    <td mat-cell *matCellDef="let book"><a class="nav-link text-dark" [routerLink]="['/books', book.id]">{{book.id}}</a></td>
-  </ng-container>
-  <ng-container matColumnDef="title">
-    <th mat-header-cell *matHeaderCellDef>Title</th>
-    <td mat-cell *matCellDef="let book">{{book.media.title}}</td>
-  </ng-container>
-  <ng-container matColumnDef="numberOfPages">
-    <th mat-header-cell *matHeaderCellDef>No. of Pages</th>
-    <td mat-cell *matCellDef="let book">{{book.numberOfPages}}</td>
-  </ng-container>
-  <ng-container matColumnDef="publicationDate">
-    <th mat-header-cell *matHeaderCellDef>Publication Year</th>
-    <td mat-cell *matCellDef="let book">{{book.publicationDate}}</td>
-  </ng-container>
+<div class="d-flex justify-content-center" *ngIf="isLoading">
+  <mat-spinner diameter="40"></mat-spinner>
+</div>
+<div class="w-100" [ngClass]="{ 'hidden': isLoading }">
+  <!--<mat-form-field class="w-100">
+    <input matInput placeholder="Filter">
+    <!--(keyup)="applyFilter($event.target.value)"
+  </mat-form-field>-->
+  <table mat-table [dataSource]="books" class="w-100 table-sm table-striped" matSort>
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>Id</th>
+      <td mat-cell *matCellDef="let book"><a class="nav-link text-dark" [routerLink]="['/books', book.id]">{{book.id}}</a></td>
+    </ng-container>
+    <ng-container matColumnDef="title">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+      <td mat-cell *matCellDef="let book">{{book.media.title}}</td>
+    </ng-container>
+    <ng-container matColumnDef="subTitle">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Sub Title</th>
+      <td mat-cell *matCellDef="let book">{{book.subTitle}}</td>
+    </ng-container>
+    <ng-container matColumnDef="numberOfPages">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>No. of Pages</th>
+      <td mat-cell *matCellDef="let book">{{book.numberOfPages}}</td>
+    </ng-container>
+    <ng-container matColumnDef="publicationDate">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Publication Year</th>
+      <td mat-cell *matCellDef="let book">{{book.publicationDate}}</td>
+    </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-</table>
-<mat-paginator [length]="resultsLength" [pageSize]="20"></mat-paginator>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+  <mat-paginator [length]="resultsLength" [pageSize]="20"></mat-paginator>
+</div>
