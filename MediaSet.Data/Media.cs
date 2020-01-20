@@ -14,6 +14,8 @@ namespace MediaSet.Data
         public Format Format { get; set; }
         public int MediaTypeId { get; set; }
         public ICollection<MediaGenre> MediaGenres { get; set; }
+        //public string CoverImage { get; set; }
+        //public string Thumbnail { get; set; }
 
         [JsonIgnore]
         public Movie Movie { get; set; }

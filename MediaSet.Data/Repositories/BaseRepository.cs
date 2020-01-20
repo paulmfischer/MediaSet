@@ -7,13 +7,6 @@ namespace MediaSet.Data.Repositories
 {
     public abstract class BaseRepository<T> where T : IEntity
     {
-        private readonly MediaSetContext context;
-
-        public BaseRepository(MediaSetContext context)
-        {
-            this.context = context;
-        }
-
         public abstract IQueryable<T> GetBaseQuery();
         public abstract Task<int> GetTotalEntities();
 
