@@ -23,6 +23,12 @@ steps:
 
 - task: DotNetCoreCLI@2
   inputs:
+    command: 'custom'
+    custom: 'tool'
+    arguments: 'restore'
+
+- task: DotNetCoreCLI@2
+  inputs:
     command: 'build'
     projects: 'MediaSet.App/MediaSet.App.csproj'
 
