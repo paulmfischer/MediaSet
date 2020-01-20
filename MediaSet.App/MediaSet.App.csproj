@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ClientApp\src\app\games\" />
     <Folder Include="NewFolder\" />
   </ItemGroup>
 

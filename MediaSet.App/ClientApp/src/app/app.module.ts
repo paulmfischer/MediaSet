@@ -14,6 +14,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatInputModule } from '@angular/material/input'
+import { MatSortModule} from '@angular/material/sort';
 
 @NgModule({
   declarations: [
@@ -21,7 +22,7 @@ import { MatInputModule } from '@angular/material/input'
     NavMenuComponent,
     HomeComponent,
     BooksComponent,
-    BookComponent
+    BookComponent,
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -36,7 +37,8 @@ import { MatInputModule } from '@angular/material/input'
     MatTableModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatInputModule
+    MatInputModule,
+    MatSortModule
   ],
   providers: [],
   bootstrap: [AppComponent]

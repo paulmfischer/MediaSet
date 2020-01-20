@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { MatPaginator } from '@angular/material/paginator';
 import { startWith, switchMap, map, catchError, tap } from 'rxjs/operators';
 import { of, merge } from 'rxjs';
+import { MatSort } from '@angular/material/sort';
 //import { MatInput } from '@angular/material/input';
 //import { MatTableDataSource } from '@angular/material/table';
 
@@ -23,14 +24,17 @@ export class BooksComponent implements AfterViewInit {
   constructor(private client: HttpClient) { }
 
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
   //@ViewChild(MatInput, { static: true }) filter: MatInput;
 
   ngAfterViewInit() {
-    of(this.paginator.page)
+    //of(this.paginator.page)
     //merge(this.paginator.page, this.source.filter) //, this.filter.value)
+    merge(this.paginator.page, this.sort.sortChange)
       .pipe(
         startWith({}),
         switchMap(() => {
+          //console.log('sort', this.sort);
           return this.client.get('api/books/paged', { params: { skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(), take: this.paginator.pageSize.toString() } });
         }),
         map((data: PagedResult<Book>) => {
