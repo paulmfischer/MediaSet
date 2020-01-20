@@ -21,7 +21,7 @@ namespace MediaSet.App.Controllers
 
         [Route("paged")]
         [HttpGet]
-        public async Task<IActionResult> Paged(int skip, int take) => Ok(await this.moviesRepository.Paged(skip, take));
+        public async Task<IActionResult> Paged(int skip, int take, string filterValue) => Ok(await this.moviesRepository.Paged(skip, take, filterValue));
 
         [Route("{id}")]
         [HttpGet]

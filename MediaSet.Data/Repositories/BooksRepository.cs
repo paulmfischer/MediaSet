@@ -32,5 +32,10 @@ namespace MediaSet.Data.Repositories
         {
             return this.context.Books.CountAsync();
         }
+
+        public override IQueryable<Book> SearchEntityQuery(string filterValue)
+        {
+            return string.IsNullOrEmpty(filterValue) ? this.GetBaseQuery() : this.GetBaseQuery().Where(x => x.Media.Title.Contains(filterValue));
+        }
     }
 }

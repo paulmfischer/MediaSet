@@ -4,10 +4,9 @@
   <mat-spinner diameter="40"></mat-spinner>
 </div>
 <div class="w-100" [ngClass]="{ 'hidden': isLoading }">
-  <!--<mat-form-field class="w-100">
-    <input matInput placeholder="Filter">
-    <!--(keyup)="applyFilter($event.target.value)"
-  </mat-form-field>-->
+  <mat-form-field class="w-100">
+    <input matInput placeholder="Filter" #filterInput />
+  </mat-form-field>
   <table mat-table [dataSource]="books" class="w-100 table-sm table-striped" matSort>
     <ng-container matColumnDef="id">
       <th mat-header-cell *matHeaderCellDef>Id</th>
@@ -31,7 +30,7 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowClicked(row)"></tr>
   </table>
   <mat-paginator [length]="resultsLength" [pageSize]="20"></mat-paginator>
 </div>

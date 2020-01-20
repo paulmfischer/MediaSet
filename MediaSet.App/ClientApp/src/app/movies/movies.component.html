@@ -4,6 +4,9 @@
   <mat-spinner diameter="40"></mat-spinner>
 </div>
 <div class="w-100" [ngClass]="{ 'hidden': isLoading }">
+  <mat-form-field class="w-100">
+    <input matInput placeholder="Filter" #filterInput />
+  </mat-form-field>
   <table mat-table [dataSource]="movies" class="w-100 table-sm table-striped" matSort>
     <ng-container matColumnDef="id">
       <th mat-header-cell *matHeaderCellDef>Id</th>

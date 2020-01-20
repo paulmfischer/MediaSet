@@ -35,5 +35,10 @@ namespace MediaSet.Data.Repositories
         {
             return this.context.Movies.CountAsync();
         }
+
+        public override IQueryable<Movie> SearchEntityQuery(string filterValue)
+        {
+            return string.IsNullOrEmpty(filterValue) ? this.GetBaseQuery() : this.GetBaseQuery().Where(x => x.Media.Title.Contains(filterValue));
+        }
     }
 }

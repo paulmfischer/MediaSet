@@ -1,12 +1,10 @@
-import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { Book, PagedResult } from '../Models';
 import { HttpClient } from '@angular/common/http';
 import { MatPaginator } from '@angular/material/paginator';
-import { startWith, switchMap, map, catchError, tap } from 'rxjs/operators';
-import { of, merge } from 'rxjs';
+import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { of, merge, fromEvent } from 'rxjs';
 import { MatSort } from '@angular/material/sort';
-//import { MatInput } from '@angular/material/input';
-//import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'app-books-component',
@@ -16,7 +14,7 @@ import { MatSort } from '@angular/material/sort';
 export class BooksComponent implements AfterViewInit {
   public displayedColumns: string[] = ['id', 'title', 'subTitle', 'numberOfPages', 'publicationDate'];
   public books: Array<Book> = [];
-  //public source: MatTableDataSource<Book> = new MatTableDataSource<book>([]);
+  public filter: string = '';
   
   public resultsLength: number = 0;
   public isLoading: boolean = true;
@@ -25,17 +23,20 @@ export class BooksComponent implements AfterViewInit {
 
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
   @ViewChild(MatSort, { static: true }) sort: MatSort;
-  //@ViewChild(MatInput, { static: true }) filter: MatInput;
+  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
 
   ngAfterViewInit() {
-    //of(this.paginator.page)
-    //merge(this.paginator.page, this.source.filter) //, this.filter.value)
-    merge(this.paginator.page, this.sort.sortChange)
+    merge(this.paginator.page, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
-          //console.log('sort', this.sort);
-          return this.client.get('api/books/paged', { params: { skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(), take: this.paginator.pageSize.toString() } });
+          return this.client.get('api/books/paged', {
+            params: {
+              skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(),
+              take: this.paginator.pageSize.toString(),
+              filterValue: this.filterInput.nativeElement.value
+            }
+          });
         }),
         map((data: PagedResult<Book>) => {
           this.isLoading = false;
@@ -52,8 +53,7 @@ export class BooksComponent implements AfterViewInit {
       .subscribe(data => this.books = data);
   }
 
-  //applyFilter(filterValue) {
-  //  console.log('filterValue', filterValue);
-  //  this.source.filter = filterValue;
-  //}
+  onRowClicked(row) {
+    console.log('Row clicked: ', row);
+  }
 }
