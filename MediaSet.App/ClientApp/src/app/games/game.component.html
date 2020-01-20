@@ -5,31 +5,21 @@
 </div>
 
 <div *ngIf="!isLoading">
-  <h1>{{book.media?.title}}</h1>
-  <h5 *ngIf="book.subTitle">{{book.subTitle}}</h5>
+  <h1>{{game.media?.title}}</h1>
+  <h5 *ngIf="game.subTitle">{{game.subTitle}}</h5>
 
   <div class="container pt-1">
-    <div class="row mb-3">
-      <div class="col">Plot: {{book.plot}}</div>
+    <div class="row">
+      <div class="col">Game Id: {{game.id}}</div>
+      <div class="col">Game Media Id: {{game?.media?.id}}</div>
     </div>
     <div class="row">
-      <div class="col">Book Id: {{book.id}}</div>
-      <div class="col">Book Media Id: {{book?.media?.id}}</div>
+      <div class="col">Platform: {{game.platform?.name}}</div>
+      <div class="col">Release Date: {{game.releaseDate}}</div>
     </div>
     <div class="row">
-      <div class="col">Number of Pages: {{book.numberOfPages}}</div>
-      <div class="col">Publication year: {{book.publicationDate}}</div>
-    </div>
-    <div class="row">
-      <div class="col">Author(s): <ng-container *ngFor="let bookAuthor of book.bookAuthors">{{bookAuthor.author.name}}</ng-container></div>
-      <div class="col">Publishers: <ng-container *ngFor="let bookPublisher of book.bookPublishers">{{bookPublisher.publisher.name}}</ng-container></div>
-    </div>
-    <div class="row">
-      <div class="col">Format: {{book.media?.format?.name}}</div>
-      <div class="col">ISBN: {{book.isbn}}</div>
-    </div>
-    <div class="row">
-      <div class="col">Dewey: {{book.dewey}}</div>
+      <div class="col">Publisher: {{game.publisher?.name}}</div>
+      <div class="col">Developer: {{game.developer?.name}}</div>
     </div>
   </div>
 </div>

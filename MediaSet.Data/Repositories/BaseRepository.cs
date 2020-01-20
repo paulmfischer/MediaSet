@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MediaSet.Data.Repositories
 {
-    public class BaseRepository
+    public abstract class BaseRepository<T> where T : IEntity
     {
         private readonly MediaSetContext context;
 
@@ -14,9 +14,26 @@ namespace MediaSet.Data.Repositories
             this.context = context;
         }
 
-        //public IEnumerable<T> GetAll<T>()
-        //{
-        //    return this.context.
-        //}
+        public abstract IQueryable<T> GetBaseQuery();
+        public abstract Task<int> GetTotalEntities();
+
+        public async Task<IList<T>> GetAll()
+        {
+            return await this.GetBaseQuery().ToListAsync();
+        }
+
+        public async Task<T> GetById(int id)
+        {
+            return await this.GetBaseQuery().FirstOrDefaultAsync(entity => entity.Id == id);
+        }
+
+        public async Task<PagedResult<T>> Paged(int skip, int take)
+        {
+            return new PagedResult<T>
+            {
+                Items = await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync(),
+                Total = await this.GetTotalEntities()
+            };
+        }
     }
 }

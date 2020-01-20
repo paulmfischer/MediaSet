@@ -2,7 +2,7 @@
 
 namespace MediaSet.Data.GameData
 {
-    public class Game
+    public class Game : IEntity
     {
         public int Id { get; set; }
         public int MediaId { get; set; }

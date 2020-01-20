@@ -1,0 +1,31 @@
+<div *ngIf="isLoading" class="d-flex justify-content-center">
+  <div class="spinner-grow" role="status">
+    <span class="sr-only">Loading...</span>
+  </div>
+</div>
+
+<div *ngIf="!isLoading">
+  <h1>{{movie.media?.title}}</h1>
+
+  <div class="container pt-1">
+    <div class="row mb-3">
+      <div class="col">Plot: {{movie.plot}}</div>
+    </div>
+    <div class="row">
+      <div class="col">movie Id: {{movie.id}}</div>
+      <div class="col">movie Media Id: {{movie?.media?.id}}</div>
+    </div>
+    <div class="row">
+      <div class="col">Format: {{movie.media?.format?.name}}</div>
+      <div class="col">Release Date: {{movie.releaseDate}}</div>
+    </div>
+    <div class="row">
+      <div class="col">Director(s): <ng-container *ngFor="let movieDirector of movie.movieDirectors; index as i">{{movieDirector.director.name}}<span *ngIf="i <= (movie.movieDirectors.length - 1)">, </span></ng-container></div>
+      <div class="col">Producer(s): <ng-container *ngFor="let movieProducer of movie.movieProducers; index as i">{{movieProducer.producer.name}}<span *ngIf="i <= (movie.movieProducers.length - 1)">, </span></ng-container></div>
+    </div>
+    <div class="row">
+      <div class="col">Studio: {{movie.studio?.name}}</div>
+      <div class="col">Writer(s): <ng-container *ngFor="let movieWriter of movie.movieWriters; index as i">{{movieWriter.writer.name}}<span *ngIf="i <= (movie.movieWriters.length - 1)">, </span></ng-container></div>
+    </div>
+  </div>
+</div>

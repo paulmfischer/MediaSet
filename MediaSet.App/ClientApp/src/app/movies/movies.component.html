@@ -1,29 +1,29 @@
-<h1>Games</h1>
+<h1>Movies</h1>
 
 <div class="d-flex justify-content-center" *ngIf="isLoading">
   <mat-spinner diameter="40"></mat-spinner>
 </div>
 <div class="w-100" [ngClass]="{ 'hidden': isLoading }">
-  <table mat-table [dataSource]="games" class="w-100 table-sm table-striped" matSort>
+  <table mat-table [dataSource]="movies" class="w-100 table-sm table-striped" matSort>
     <ng-container matColumnDef="id">
       <th mat-header-cell *matHeaderCellDef>Id</th>
-      <td mat-cell *matCellDef="let game"><a class="nav-link text-dark" [routerLink]="['/games', game.id]">{{game.id}}</a></td>
+      <td mat-cell *matCellDef="let movie"><a class="nav-link text-dark" [routerLink]="['/movies', movie.id]">{{movie.id}}</a></td>
     </ng-container>
     <ng-container matColumnDef="title">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
-      <td mat-cell *matCellDef="let game">{{game.media.title}}</td>
+      <td mat-cell *matCellDef="let movie">{{movie.media.title}}</td>
     </ng-container>
-    <ng-container matColumnDef="subTitle">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Sub Title</th>
-      <td mat-cell *matCellDef="let game">{{game.subTitle}}</td>
-    </ng-container>
-    <ng-container matColumnDef="platform">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Platform</th>
-      <td mat-cell *matCellDef="let game">{{game.platform.name}}</td>
+    <ng-container matColumnDef="studio">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Studio</th>
+      <td mat-cell *matCellDef="let movie">{{movie.studio?.name}}</td>
     </ng-container>
     <ng-container matColumnDef="releaseDate">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Release Date</th>
-      <td mat-cell *matCellDef="let game">{{game.releaseDate}}</td>
+      <td mat-cell *matCellDef="let movie">{{movie.releaseDate}}</td>
+    </ng-container>
+    <ng-container matColumnDef="format">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Format</th>
+      <td mat-cell *matCellDef="let movie">{{movie.media.format?.name}}</td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

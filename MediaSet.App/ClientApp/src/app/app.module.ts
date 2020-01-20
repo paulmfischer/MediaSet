@@ -15,6 +15,10 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatInputModule } from '@angular/material/input'
 import { MatSortModule} from '@angular/material/sort';
+import { MovieComponent } from './movies/movie.component';
+import { MoviesComponent } from './movies/movies.component';
+import { GamesComponent } from './games/games.component';
+import { GameComponent } from './games/game.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +27,10 @@ import { MatSortModule} from '@angular/material/sort';
     HomeComponent,
     BooksComponent,
     BookComponent,
+    MovieComponent,
+    MoviesComponent,
+    GamesComponent,
+    GameComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -31,7 +39,11 @@ import { MatSortModule} from '@angular/material/sort';
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'books', component: BooksComponent },
-      { path: 'books/:id', component: BookComponent }
+      { path: 'books/:id', component: BookComponent },
+      { path: 'movies', component: MoviesComponent },
+      { path: 'movies/:id', component: MovieComponent },
+      { path: 'games', component: GamesComponent },
+      { path: 'games/:id', component: GameComponent }
     ]),
     BrowserAnimationsModule,
     MatTableModule,

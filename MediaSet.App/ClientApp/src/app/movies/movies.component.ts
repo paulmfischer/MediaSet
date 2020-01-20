@@ -1,18 +1,18 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
-import { Game, PagedResult } from '../Models';
+import { Movie, PagedResult } from '../Models';
 import { HttpClient } from '@angular/common/http';
 import { MatPaginator } from '@angular/material/paginator';
 import { startWith, switchMap, map, catchError } from 'rxjs/operators';
 import { of, from } from 'rxjs';
 
 @Component({
-  selector: 'app-games-component',
-  templateUrl: './games.component.html',
-  styleUrls: ['./games.component.css']
+  selector: 'app-movies-component',
+  templateUrl: './movies.component.html',
+  styleUrls: ['./movies.component.css']
 })
-export class GamesComponent implements AfterViewInit {
-  public displayedColumns: string[] = ['id', 'title', 'subTitle', 'platform', 'releaseDate'];
-  public games: Array<Game> = [];
+export class MoviesComponent implements AfterViewInit {
+  public displayedColumns: string[] = ['id', 'title', 'studio', 'releaseDate', 'format'];
+  public movies: Array<Movie> = [];
   
   public resultsLength: number = 0;
   public isLoading: boolean = true;
@@ -26,9 +26,9 @@ export class GamesComponent implements AfterViewInit {
       .pipe(
         startWith({}),
         switchMap(() => {
-          return this.client.get('api/games/paged', { params: { skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(), take: this.paginator.pageSize.toString() } });
+          return this.client.get('api/movies/paged', { params: { skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(), take: this.paginator.pageSize.toString() } });
         }),
-        map((data: PagedResult<Game>) => {
+        map((data: PagedResult<Movie>) => {
           this.isLoading = false;
           this.resultsLength = data.total;
 
@@ -40,6 +40,6 @@ export class GamesComponent implements AfterViewInit {
           return of([]);
         })
       )
-      .subscribe(data => this.games = data);
+      .subscribe(data => this.movies = data);
   }
 }
