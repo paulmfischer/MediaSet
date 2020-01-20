@@ -33,6 +33,12 @@ steps:
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: True
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'custom'
+    custom: 'ef'
+    arguments: 'migrations script -i -o $(Build.ArtifactStagingDirectory)/migrate.sql --project MediaSet.Data/MediaSet.Data.csproj --startup-project MediaSet.App/MediaSet.App.csproj'
+
 # this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
 - task: PublishBuildArtifacts@1
   inputs:
