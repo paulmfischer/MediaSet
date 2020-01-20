@@ -5,17 +5,11 @@ using System.Threading.Tasks;
 
 namespace MediaSet.Data.Repositories
 {
-    public abstract class BaseRepository<T> where T : IEntity
+    public abstract class BaseRepository<T> where T : IMedia
     {
-        private readonly MediaSetContext context;
-
-        public BaseRepository(MediaSetContext context)
-        {
-            this.context = context;
-        }
-
         public abstract IQueryable<T> GetBaseQuery();
         public abstract Task<int> GetTotalEntities();
+        public abstract IQueryable<T> SearchEntityQuery(string filterValue);
 
         public async Task<IList<T>> GetAll()
         {
@@ -27,11 +21,11 @@ namespace MediaSet.Data.Repositories
             return await this.GetBaseQuery().FirstOrDefaultAsync(entity => entity.Id == id);
         }
 
-        public async Task<PagedResult<T>> Paged(int skip, int take)
+        public async Task<PagedResult<T>> Paged(int skip, int take, string filterValue)
         {
             return new PagedResult<T>
             {
-                Items = await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync(),
+                Items = await this.SearchEntityQuery(filterValue).Skip(skip).Take(take).ToListAsync(),
                 Total = await this.GetTotalEntities()
             };
         }

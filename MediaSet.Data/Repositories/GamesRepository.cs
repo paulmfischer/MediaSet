@@ -9,7 +9,7 @@ namespace MediaSet.Data.Repositories
     {
         private readonly MediaSetContext context;
 
-        public GamesRepository(MediaSetContext context) : base(context)
+        public GamesRepository(MediaSetContext context)
         {
             this.context = context;
         }
@@ -32,36 +32,9 @@ namespace MediaSet.Data.Repositories
             return this.context.Games.CountAsync();
         }
 
-        //public async Task<IList<Game>> GetAll()
-        //{
-        //    return await this.GetBaseQuery().ToListAsync();
-        //}
-
-        //public async Task<Game> GetById(int id)
-        //{
-        //    return await this.GetBaseQuery().FirstOrDefaultAsync(game => game.Id == id);
-        //}
-
-        //public async Task<PagedResult<Game>> Paged(int skip, int take)
-        //{
-        //    return new PagedResult<Game>
-        //    {
-        //        Items = await this.GetBaseQuery().Skip(skip).Take(take).ToListAsync(),
-        //        Total = await this.context.Books.CountAsync()
-        //    };
-        //}
-
-        //private IQueryable<Game> GetBaseQuery()
-        //{
-        //    return this.context.Games
-        //            .Include(game => game.Media)
-        //                .ThenInclude(media => media.Format)
-        //            .Include(game => game.Media)
-        //                .ThenInclude(media => media.MediaGenres)
-        //                    .ThenInclude(mg => mg.Genre)
-        //            .Include(game => game.Developer)
-        //            .Include(game => game.Platform)
-        //            .Include(game => game.Publisher);
-        //}
+        public override IQueryable<Game> SearchEntityQuery(string filterValue)
+        {
+            return string.IsNullOrEmpty(filterValue) ? this.GetBaseQuery() : this.GetBaseQuery().Where(x => x.Media.Title.Contains(filterValue));
+        }
     }
 }

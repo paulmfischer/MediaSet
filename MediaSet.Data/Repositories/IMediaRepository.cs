@@ -7,7 +7,7 @@ namespace MediaSet.Data.Repositories
     {
         Task<IList<T>> GetAll();
 
-        Task<PagedResult<T>> Paged(int skip, int take);
+        Task<PagedResult<T>> Paged(int skip, int take, string filterValue);
 
         Task<T> GetById(int id);
     }

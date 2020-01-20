@@ -1,9 +1,9 @@
-import { Component, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { Movie, PagedResult } from '../Models';
 import { HttpClient } from '@angular/common/http';
 import { MatPaginator } from '@angular/material/paginator';
-import { startWith, switchMap, map, catchError } from 'rxjs/operators';
-import { of, from } from 'rxjs';
+import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { of, merge, fromEvent } from 'rxjs';
 
 @Component({
   selector: 'app-movies-component',
@@ -20,13 +20,20 @@ export class MoviesComponent implements AfterViewInit {
   constructor(private client: HttpClient) { }
 
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
+  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
 
   ngAfterViewInit() {
-    from(this.paginator.page)
+    merge(this.paginator.page, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
-          return this.client.get('api/movies/paged', { params: { skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(), take: this.paginator.pageSize.toString() } });
+          return this.client.get('api/movies/paged', {
+            params: {
+              skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(),
+              take: this.paginator.pageSize.toString(),
+              filterValue: this.filterInput.nativeElement.value
+            }
+          });
         }),
         map((data: PagedResult<Movie>) => {
           this.isLoading = false;
