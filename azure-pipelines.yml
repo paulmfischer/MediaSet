@@ -6,7 +6,7 @@
 trigger:
 - master
 
-pr: none
+#pr: none
 
 pool:
   vmImage: 'windows-latest'
@@ -52,3 +52,9 @@ steps:
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
     artifactName: 'MyMediaSet'
+
+- task: GitHubComment@0
+  inputs:
+    gitHubConnection: 'github.com_paulmfischer'
+    repositoryName: 'paulmfischer/MediaSet'
+    comment: 'Test PR Status'
