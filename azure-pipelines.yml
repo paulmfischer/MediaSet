@@ -57,4 +57,3 @@ steps:
   inputs:
     gitHubConnection: 'github.com_paulmfischer'
     repositoryName: 'paulmfischer/MediaSet'
-    comment: 'Test PR Status'
