@@ -1,12 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
-/*@import "~bootswatch/dist/darkly/variables";*/
+@import "~bootswatch/dist/darkly/variables";
 @import "~bootstrap/scss/bootstrap";
-@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
-/*@import "~bootswatch/dist/darkly/bootswatch";*/
-
-/*"src/styles/_bootswatch.scss",
-"node_modules/bootstrap/scss/bootstrap.scss",
-"src/styles/_variables.scss",*/
 
 /* Provide sufficient contrast against white background */
 a {
