@@ -5,21 +5,22 @@ import { MatPaginator } from '@angular/material/paginator';
 import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of, merge, fromEvent } from 'rxjs';
 import { MatSort } from '@angular/material/sort';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-books-component',
   templateUrl: './books.component.html',
-  styleUrls: ['./books.component.css']
+  styleUrls: ['./books.component.scss']
 })
 export class BooksComponent implements AfterViewInit {
-  public displayedColumns: string[] = ['id', 'title', 'subTitle', 'numberOfPages', 'publicationDate'];
+  public displayedColumns: string[] = ['title', 'subTitle', 'numberOfPages', 'publicationDate'];
   public books: Array<Book> = [];
   public filter: string = '';
   
   public resultsLength: number = 0;
   public isLoading: boolean = true;
 
-  constructor(private client: HttpClient) { }
+  constructor(private client: HttpClient, private router: Router) { }
 
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
   @ViewChild(MatSort, { static: true }) sort: MatSort;
@@ -53,7 +54,7 @@ export class BooksComponent implements AfterViewInit {
       .subscribe(data => this.books = data);
   }
 
-  onRowClicked(row) {
-    console.log('Row clicked: ', row);
+  onRowClicked(row: Book) {
+    this.router.navigate(['/books', row.id]);
   }
 }

@@ -4,11 +4,12 @@ import { HttpClient } from '@angular/common/http';
 import { MatPaginator } from '@angular/material/paginator';
 import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { of, merge, fromEvent } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-games-component',
   templateUrl: './games.component.html',
-  styleUrls: ['./games.component.css']
+  styleUrls: ['./games.component.scss']
 })
 export class GamesComponent implements AfterViewInit {
   public displayedColumns: string[] = ['id', 'title', 'subTitle', 'platform', 'releaseDate'];
@@ -17,7 +18,7 @@ export class GamesComponent implements AfterViewInit {
   public resultsLength: number = 0;
   public isLoading: boolean = true;
 
-  constructor(private client: HttpClient) { }
+  constructor(private client: HttpClient, private router: Router) { }
 
   @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
   @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
@@ -48,5 +49,9 @@ export class GamesComponent implements AfterViewInit {
         })
       )
       .subscribe(data => this.games = data);
+  }
+
+  onRowClicked(row: Game) {
+    this.router.navigate(['/games', row.id]);
   }
 }
