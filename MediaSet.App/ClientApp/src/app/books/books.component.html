@@ -7,11 +7,7 @@
   <mat-form-field class="w-100">
     <input matInput placeholder="Filter" #filterInput />
   </mat-form-field>
-  <table mat-table [dataSource]="books" class="w-100 table-sm table-striped" matSort>
-    <ng-container matColumnDef="id">
-      <th mat-header-cell *matHeaderCellDef>Id</th>
-      <td mat-cell *matCellDef="let book"><a class="nav-link text-dark" [routerLink]="['/books', book.id]">{{book.id}}</a></td>
-    </ng-container>
+  <table mat-table [dataSource]="books" class="w-100 table-sm" matSort>
     <ng-container matColumnDef="title">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
       <td mat-cell *matCellDef="let book">{{book.media.title}}</td>

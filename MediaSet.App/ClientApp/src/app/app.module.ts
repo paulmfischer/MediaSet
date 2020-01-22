@@ -6,7 +6,6 @@ import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
-import { HomeComponent } from './home/home.component';
 import { BooksComponent } from './books/books.component';
 import { BookComponent } from './books/book.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -24,7 +23,6 @@ import { GameComponent } from './games/game.component';
   declarations: [
     AppComponent,
     NavMenuComponent,
-    HomeComponent,
     BooksComponent,
     BookComponent,
     MovieComponent,
@@ -37,13 +35,13 @@ import { GameComponent } from './games/game.component';
     HttpClientModule,
     FormsModule,
     RouterModule.forRoot([
-      { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'books', component: BooksComponent },
       { path: 'books/:id', component: BookComponent },
       { path: 'movies', component: MoviesComponent },
       { path: 'movies/:id', component: MovieComponent },
       { path: 'games', component: GamesComponent },
-      { path: 'games/:id', component: GameComponent }
+      { path: 'games/:id', component: GameComponent },
+      //{ path: '', redirectTo: '/books', pathMatch: 'full' },
     ]),
     BrowserAnimationsModule,
     MatTableModule,
