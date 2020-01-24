@@ -3,17 +3,13 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
+import { NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { BooksComponent } from './books/books.component';
 import { BookComponent } from './books/book.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatInputModule } from '@angular/material/input'
-import { MatSortModule} from '@angular/material/sort';
 import { MovieComponent } from './movies/movie.component';
 import { MoviesComponent } from './movies/movies.component';
 import { GamesComponent } from './games/games.component';
@@ -41,14 +37,10 @@ import { GameComponent } from './games/game.component';
       { path: 'movies/:id', component: MovieComponent },
       { path: 'games', component: GamesComponent },
       { path: 'games/:id', component: GameComponent },
-      //{ path: '', redirectTo: '/books', pathMatch: 'full' },
+      { path: '', redirectTo: '/books', pathMatch: 'full' }
     ]),
     BrowserAnimationsModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatProgressSpinnerModule,
-    MatInputModule,
-    MatSortModule
+    NgbPaginationModule
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -1,9 +1,8 @@
 import { Component, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { Movie, PagedResult } from '../Models';
 import { HttpClient } from '@angular/common/http';
-import { MatPaginator } from '@angular/material/paginator';
 import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { of, merge, fromEvent } from 'rxjs';
+import { of, merge, fromEvent, Subject } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Component({
@@ -16,22 +15,23 @@ export class MoviesComponent implements AfterViewInit {
   public movies: Array<Movie> = [];
   
   public resultsLength: number = 0;
+  public page: number = 1;
+  public pageSize: number = 15;
   public isLoading: boolean = true;
+  private pageChange: Subject<number> = new Subject<number>();
+  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
 
   constructor(private client: HttpClient, private router: Router) { }
 
-  @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
-  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
-
   ngAfterViewInit() {
-    merge(this.paginator.page, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
+    merge(this.pageChange, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
           return this.client.get('api/movies/paged', {
             params: {
-              skip: (this.paginator.pageIndex * this.paginator.pageSize).toString(),
-              take: this.paginator.pageSize.toString(),
+              skip: (this.page * this.pageSize).toString(),
+              take: this.pageSize.toString(),
               filterValue: this.filterInput.nativeElement.value
             }
           });
@@ -49,6 +49,10 @@ export class MoviesComponent implements AfterViewInit {
         })
       )
       .subscribe(data => this.movies = data);
+  }
+
+  pageChanged(page) {
+    this.pageChange.next(page);
   }
 
   onRowClicked(row: Movie) {
