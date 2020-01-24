@@ -31,7 +31,7 @@ export class GamesComponent implements AfterViewInit {
         switchMap(() => {
           return this.client.get('api/games/paged', {
             params: {
-              skip: (this.page * this.pageSize).toString(),
+              skip: ((this.page - 1) * this.pageSize).toString(),
               take: this.pageSize.toString(),
               filterValue: this.filterInput.nativeElement.value
             }
@@ -50,6 +50,11 @@ export class GamesComponent implements AfterViewInit {
         })
       )
       .subscribe(data => this.games = data);
+  }
+
+  clearSearch() {
+    this.filterInput.nativeElement.value = '';
+    this.pageChange.next(this.page);
   }
 
   pageChanged(page) {

@@ -33,7 +33,7 @@ namespace MediaSet.App
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            services.AddDbContext<MediaSetContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Data")));
+            services.AddDbContext<MediaSetContext>(options => options.UseSqlServer(Configuration.GetConnectionString("LocalData")));
 
             services.AddScoped<IBooksRepository, BooksRepository>();
             services.AddScoped<IGamesRepository, GamesRepository>();

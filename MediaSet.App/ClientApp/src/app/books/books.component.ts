@@ -13,7 +13,6 @@ import { Router } from '@angular/router';
 export class BooksComponent implements AfterViewInit {
   public displayedColumns: string[] = ['title', 'subTitle', 'numberOfPages', 'publicationDate'];
   public books: Array<Book> = [];
-  public filter: string = '';
   
   public resultsLength: number = 0;
   public page: number = 1;
@@ -31,7 +30,7 @@ export class BooksComponent implements AfterViewInit {
         switchMap(() => {
           return this.client.get('api/books/paged', {
             params: {
-              skip: (this.page * this.pageSize).toString(),
+              skip: ((this.page - 1) * this.pageSize).toString(),
               take: this.pageSize.toString(),
               filterValue: this.filterInput.nativeElement.value
             }
@@ -50,6 +49,11 @@ export class BooksComponent implements AfterViewInit {
         })
       )
       .subscribe(data => this.books = data);
+  }
+
+  clearSearch() {
+    this.filterInput.nativeElement.value = '';
+    this.pageChange.next(this.page);
   }
 
   pageChanged(page) {

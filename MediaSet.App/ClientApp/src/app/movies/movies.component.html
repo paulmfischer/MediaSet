@@ -6,29 +6,32 @@
   </div>
 </div>
 <div class="w-100" [ngClass]="{ 'hidden': isLoading }">
-  <div class="form-group">
+  <div class="input-group mb-3">
     <input class="form-control" placeholder="Filter" #filterInput />
+    <div class="input-group-append">
+      <button type="button" class="btn btn-secondary" aria-label="Clear" (click)="clearSearch()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
   </div>
   <table class="table table-striped table-sm w-100">
     <thead>
       <tr class="d-flex">
-        <th class="col-5" scope="col">Title</th>
-        <th class="col-5" scope="col">Studio</th>
-        <th class="col-1" scope="col">Release Date</th>
-        <th class="col-1" scope="col">Format</th>
+        <th class="col-8" scope="col">Title</th>
+        <th class="col-2" scope="col">Release Date</th>
+        <th class="col-2" scope="col">Format</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let movie of movies" (click)="onRowClicked(game)" class="d-flex">
-        <td class="col-5">{{movie.media.title}}</td>
-        <td class="col-5">{{movie.studio?.name}}</td>
-        <td class="col-1">{{movie.releaseDate}}</td>
-        <td class="col-1">{{movie.media.format?.name}}</td>
+        <td class="col-8">{{movie.media.title}}</td>
+        <td class="col-2">{{movie.releaseDate}}</td>
+        <td class="col-2">{{movie.media.format?.name}}</td>
       </tr>
     </tbody>
   </table>
   <div class="d-flex justify-content-end">
-    <span class="mr-2 pt-2">{{pageSize * page}} of {{resultsLength}}</span>
+    <span class="mr-2 pt-2">{{pageSize * page > resultsLength ? resultsLength : pageSize * page}} of {{resultsLength}}</span>
     <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="resultsLength" (pageChange)="pageChanged($event)" [maxSize]="5" [boundaryLinks]="true"></ngb-pagination>
   </div>
 </div>
