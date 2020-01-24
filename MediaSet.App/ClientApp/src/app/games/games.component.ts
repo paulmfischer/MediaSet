@@ -25,7 +25,7 @@ export class GamesComponent implements AfterViewInit {
   constructor(private client: HttpClient, private router: Router) { }
 
   ngAfterViewInit() {
-    this.pageChange
+    merge(this.pageChange, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
@@ -57,7 +57,6 @@ export class GamesComponent implements AfterViewInit {
   }
 
   onRowClicked(row: Game) {
-    console.log('game', row);
-    //this.router.navigate(['/games', row.id]);
+    this.router.navigate(['/games', row.id]);
   }
 }

@@ -2,7 +2,7 @@ import { Component, ViewChild, AfterViewInit, ElementRef } from '@angular/core';
 import { Book, PagedResult } from '../Models';
 import { HttpClient } from '@angular/common/http';
 import { startWith, switchMap, map, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { of, merge, fromEvent, from, Subject } from 'rxjs';
+import { of, merge, fromEvent, Subject } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Component({
@@ -20,13 +20,12 @@ export class BooksComponent implements AfterViewInit {
   public pageSize: number = 15;
   public isLoading: boolean = true;
   private pageChange: Subject<number> = new Subject<number>();
+  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
 
   constructor(private client: HttpClient, private router: Router) { }
 
-  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
-
   ngAfterViewInit() {
-    this.pageChange
+    merge(this.pageChange, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
@@ -58,7 +57,6 @@ export class BooksComponent implements AfterViewInit {
   }
 
   onRowClicked(row: Book) {
-    console.log('book', row);
-    //this.router.navigate(['/books', row.id]);
+    this.router.navigate(['/books', row.id]);
   }
 }

@@ -1,5 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
-@import "~bootswatch/dist/darkly/variables";
+/*@import "~bootswatch/dist/darkly/variables";*/
+@import "~bootswatch/dist/sandstone/variables";
+/*@import "~bootswatch/dist/slate/variables";*/
+/*@import "~bootswatch/dist/superhero/variables";*/
 @import "~bootstrap/scss/bootstrap";
 
 /* Provide sufficient contrast against white background */
@@ -18,7 +21,8 @@ code {
 }
 
 .table td, .table th {
-    padding: 0.25rem;
+  padding: 0.25rem;
+  border-top: none;
 }
 
 html, body { height: 100%; }

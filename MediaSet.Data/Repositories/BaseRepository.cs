@@ -23,10 +23,12 @@ namespace MediaSet.Data.Repositories
 
         public async Task<PagedResult<T>> Paged(int skip, int take, string filterValue)
         {
+            var query = this.SearchEntityQuery(filterValue);
+
             return new PagedResult<T>
             {
-                Items = await this.SearchEntityQuery(filterValue).Skip(skip).Take(take).ToListAsync(),
-                Total = await this.GetTotalEntities()
+                Items = await query.Skip(skip).Take(take).ToListAsync(),
+                Total = await query.CountAsync()
             };
         }
     }

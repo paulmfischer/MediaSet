@@ -37,7 +37,7 @@ import { GameComponent } from './games/game.component';
       { path: 'movies/:id', component: MovieComponent },
       { path: 'games', component: GamesComponent },
       { path: 'games/:id', component: GameComponent },
-      //{ path: '', redirectTo: '/books', pathMatch: 'full' },
+      { path: '', redirectTo: '/books', pathMatch: 'full' }
     ]),
     BrowserAnimationsModule,
     NgbPaginationModule

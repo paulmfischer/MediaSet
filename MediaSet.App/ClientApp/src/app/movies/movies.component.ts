@@ -19,13 +19,12 @@ export class MoviesComponent implements AfterViewInit {
   public pageSize: number = 15;
   public isLoading: boolean = true;
   private pageChange: Subject<number> = new Subject<number>();
+  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
 
   constructor(private client: HttpClient, private router: Router) { }
 
-  @ViewChild('filterInput', { static: true }) filterInput: ElementRef;
-
   ngAfterViewInit() {
-    this.pageChange
+    merge(this.pageChange, fromEvent(this.filterInput.nativeElement, 'keyup').pipe(debounceTime(300), distinctUntilChanged()))
       .pipe(
         startWith({}),
         switchMap(() => {
@@ -57,7 +56,6 @@ export class MoviesComponent implements AfterViewInit {
   }
 
   onRowClicked(row: Movie) {
-    console.log('movie', row);
-    //this.router.navigate(['/movies', row.id]);
+    this.router.navigate(['/movies', row.id]);
   }
 }
