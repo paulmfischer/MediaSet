@@ -1,11 +1,11 @@
+using Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
+
+namespace Repositories;
 
 public class MediaSetContext : DbContext
 {
-    // public DbSet<Blog> Blogs { get; set; }
-    // public DbSet<Post> Posts { get; set; }
+    public DbSet<MovieEntity> Movies { get; set; }
 
     public string DbPath { get; }
 
