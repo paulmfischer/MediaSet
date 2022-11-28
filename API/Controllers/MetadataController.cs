@@ -20,4 +20,16 @@ public class MetadataController : ControllerBase
     {
         return await context.Formats.ToListAsync();
     }
+    
+    [HttpGet("Genres")]
+    public async Task<ActionResult<List<Genre>>> GetGenres()
+    {
+        return await context.Genres.ToListAsync();
+    }
+
+    [HttpGet("Studios")]
+    public async Task<ActionResult<List<Studio>>> GetStudios()
+    {
+        return await context.Studios.ToListAsync();
+    }
 }
