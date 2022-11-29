@@ -13,6 +13,9 @@ builder.Services.AddDbContext<MediaSetContext>(opt => {
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<IEntityService<Movie>, MovieService>();
+builder.Services.AddScoped<MetadataService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,10 +26,12 @@ if (app.Environment.IsDevelopment())
     using (var scope = scopeFactory.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<MediaSetContext>();
-        if (db.Database.EnsureCreated())
+        if (db.Movies.Any())
         {
-            SeedData.Initialize(db);
+            SeedData.Cleanup(db);
         }
+
+        SeedData.Initialize(db);
     }
 
     app.UseSwagger();

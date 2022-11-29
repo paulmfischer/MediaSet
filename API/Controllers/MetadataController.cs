@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using API.Data;
 
 namespace API.Controllers;
@@ -8,16 +7,28 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class MetadataController : ControllerBase
 {
-    private readonly MediaSetContext context;
+    private readonly MetadataService metadataService;
 
-    public MetadataController(MediaSetContext _context)
+    public MetadataController(MetadataService _metadataService)
     {
-        context = _context;
+        metadataService = _metadataService;
     }
 
     [HttpGet("Formats")]
     public async Task<ActionResult<List<Format>>> GetFormats()
     {
-        return await context.Formats.ToListAsync();
+        return await metadataService.GetAll<Format>();
+    }
+    
+    [HttpGet("Genres")]
+    public async Task<ActionResult<List<Genre>>> GetGenres()
+    {
+        return await metadataService.GetAll<Genre>();
+    }
+
+    [HttpGet("Studios")]
+    public async Task<ActionResult<List<Studio>>> GetStudios()
+    {
+        return await metadataService.GetAll<Studio>();
     }
 }
