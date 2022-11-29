@@ -2,6 +2,16 @@ namespace API.Data;
 
 public static class SeedData
 {
+    public static void Cleanup(MediaSetContext db)
+    {
+        db.Movies.RemoveRange(db.Movies.ToArray());
+        db.MediaItems.RemoveRange(db.MediaItems.ToArray());
+        db.Studios.RemoveRange(db.Studios.ToArray());
+        db.Genres.RemoveRange(db.Genres.ToArray());
+        db.Formats.RemoveRange(db.Formats.ToArray());
+        db.SaveChanges();
+    }
+
     public static void Initialize(MediaSetContext db)
     {
         var formats = new Format[]

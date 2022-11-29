@@ -1,7 +1,6 @@
-
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using API.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Controllers;
 
@@ -9,16 +8,29 @@ namespace API.Controllers;
 [Route("[controller]")]
 public class MovieController : ControllerBase
 {
-    private readonly MediaSetContext context;
+    private readonly IEntityService<Movie> movieService;
 
-    public MovieController(MediaSetContext _context)
+    public MovieController(IEntityService<Movie> _movieService)
     {
-        context = _context;
+        movieService = _movieService;
     }
 
     [HttpGet()]
     public async Task<ActionResult<List<Movie>>> GetAllMovies()
     {
-        return await context.Movies.ToListAsync();
+        return await movieService.GetAll();
+    }
+
+    [HttpGet("{Id}")]
+    public async Task<ActionResult<Movie>> GetById([Required] int Id)
+    {
+        var movie = await movieService.GetById(Id);
+
+        if (movie == null)
+        {
+            return NotFound();
+        }
+
+        return movie;
     }
 }
