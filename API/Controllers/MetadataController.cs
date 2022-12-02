@@ -34,22 +34,19 @@ public class MetadataController : ControllerBase
     }
 
     [HttpPut("Format")]
-    public async Task<ActionResult<Format>> UpdateFormat(CreateFormat format)
+    public async Task<ActionResult<Format>> UpdateFormat(UpdateFormat format)
     {
-        var dbFormat = metadataService.GetById<Format>(1);
+        var dbFormat = metadataService.GetById<Format>(format.Id);
 
         if (dbFormat == null)
         {
             return NotFound();
         }
         
-        var newFormat = new Format
-        {
-            MediaType = format.MediaType,
-            Name = format.Name,
-        };
+        dbFormat.MediaType = format.MediaType;
+        dbFormat.Name = format.Name;
 
-        return await metadataService.Create<Format>(newFormat);
+        return await metadataService.Update<Format>(dbFormat);
     }
     
     [HttpGet("Genre")]
@@ -69,6 +66,21 @@ public class MetadataController : ControllerBase
         return await metadataService.Create<Genre>(newGenre);
     }
 
+    [HttpPut("Genre")]
+    public async Task<ActionResult<Genre>> UpdateGenre(UpdateMetadata genre)
+    {
+        var dbGenre = metadataService.GetById<Genre>(genre.Id);
+
+        if (dbGenre == null)
+        {
+            return NotFound();
+        }
+
+        dbGenre.Name = genre.Name;
+
+        return await metadataService.Update<Genre>(dbGenre);
+    }
+
     [HttpGet("Studio")]
     public async Task<ActionResult<List<Studio>>> GetStudios()
     {
@@ -84,5 +96,20 @@ public class MetadataController : ControllerBase
         };
 
         return await metadataService.Create<Studio>(newStudio);
+    }
+
+    [HttpPut("Studio")]
+    public async Task<ActionResult<Studio>> UpdateStudio(UpdateMetadata studio)
+    {
+        var dbStudio = metadataService.GetById<Studio>(studio.Id);
+
+        if (dbStudio == null)
+        {
+            return NotFound();
+        }
+
+        dbStudio.Name = studio.Name;
+
+        return await metadataService.Update<Studio>(dbStudio);
     }
 }
