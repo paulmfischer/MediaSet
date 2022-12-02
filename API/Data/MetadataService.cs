@@ -15,4 +15,25 @@ public class MetadataService
     {
         return context.Set<T>().ToListAsync();
     }
+
+    public T? GetById<T>(int Id) where T : class
+    {
+        return context.Find<T>(Id);
+    }
+
+    public async Task<T> Create<T>(T entity) where T : class
+    {
+        context.Add<T>(entity);
+        await context.SaveChangesAsync();
+
+        return entity;
+    }
+
+    public async Task<T> Update<T>(T entity) where T : class
+    {
+        context.Update<T>(entity);
+        await context.SaveChangesAsync();
+
+        return entity;
+    }
 }
