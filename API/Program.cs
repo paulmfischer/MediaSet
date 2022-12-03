@@ -26,5 +26,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapMetadata();
+app.MapMovie();
 
 app.Run();
