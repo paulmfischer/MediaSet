@@ -1,10 +1,12 @@
-using API.Data;
+using System.ComponentModel.DataAnnotations;
 
-namespace API.DTOs;
+namespace API;
 
-public class UpdateFormat
+public class Format
 {
     public int Id { get; set; }
+    [Required]
     public string Name { get; set; } = default!;
+    [Required]
     public MediaType MediaType { get; set; }
 }
