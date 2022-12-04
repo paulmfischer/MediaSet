@@ -46,7 +46,7 @@ internal static class MovieApi
             return TypedResults.Created($"/{newMovie.Id}", dbMovie);
         });
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (MediaSetContext context, int id, Movie movie) =>
+        group.MapPut("/{id}", async Task<Results<Ok<Movie>, NotFound, BadRequest>> (MediaSetContext context, int id, Movie movie) =>
         {
             if (id != movie.Id)
             {
@@ -77,7 +77,7 @@ internal static class MovieApi
 
             await context.SaveChangesAsync();
 
-            return TypedResults.Ok();
+            return TypedResults.Ok(dbMovie);
         });
 
         return group;
