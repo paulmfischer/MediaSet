@@ -1,4 +1,12 @@
+
+using MediaSet.API;
+using MediaSet.API.Books;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure database
+var connectionString = builder.Configuration.GetConnectionString("MedaiSet") ?? "Data Source=.db/MediaSet.db";
+builder.Services.AddSqlite<MediaSetDbContext>(connectionString);
 
 // Add services to the container.
 
@@ -12,6 +20,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDbSeeding();
+
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -20,6 +30,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapBooks();
 
 app.Run();
