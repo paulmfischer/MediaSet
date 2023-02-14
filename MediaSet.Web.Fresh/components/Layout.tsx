@@ -1,13 +1,13 @@
+import { RenderableProps } from 'preact';
 import { Head } from "$fresh/runtime.ts";
 import { Header } from "../components/Header.tsx";
 
-type Props = {
+interface LayoutProps {
   route: string;
-  title: string;
-  children: any;
-};
+  title?: string;
+}
 
-export default function Layout({ route, title, children }: Props) {
+export default function Layout({ route, title, children }: RenderableProps<LayoutProps>) {
   const siteTitle = `My Media Set${title ? ' - ' + title : ''}`;
   return (
     <>

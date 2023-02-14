@@ -1,10 +1,8 @@
-import { JSX } from 'preact';
-
-type Props = {
+interface HeaderProps {
   active: string;
-};
+}
 
-export function Header({ active }: Props) {
+export function Header({ active }: HeaderProps) {
   const menus = [
     { name: "Home", href: "/" },
     { name: "Books", href: "/books" },
