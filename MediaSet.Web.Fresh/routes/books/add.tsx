@@ -2,7 +2,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Button } from "../../components/Button.tsx";
 import { TextInput } from "../../components/TextInput.tsx";
 import Layout from "../../components/Layout.tsx";
-import { BookItem, NewBookKeys } from "../../models/book.ts";
+import { BookItem } from "../../models/book.ts";
 
 interface AddBookProps {
   newBook: BookItem;
