@@ -1,15 +1,8 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import Layout from "../../components/Layout.tsx";
+import { BookItem } from "../../models/book.ts";
 
-interface Book {
-  id: number;
-  title: string;
-  publishDate: string;
-  numberOfPages: number;
-  isbn: string;
-}
-
-type BookRespone = Book | null;
+type BookRespone = BookItem | null;
 
 export const handler: Handlers<BookRespone> = {
   async GET(_, context) {
@@ -19,7 +12,7 @@ export const handler: Handlers<BookRespone> = {
       return context.render(null);
     }
 
-    const book: Book = await response.json();
+    const book: BookItem = await response.json();
     return context.render(book);
   }
 };

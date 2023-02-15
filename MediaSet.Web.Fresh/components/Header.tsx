@@ -5,13 +5,13 @@ interface HeaderProps {
 export function Header({ active }: HeaderProps) {
   const menus = [
     { name: "Home", href: "/", matchingRoutes: ['/'] },
-    { name: "Books", href: "/books", matchingRoutes: ['/books', '/books/:id'] },
+    { name: "Books", href: "/books", matchingRoutes: ['/books', '/books/:id', '/books/add'] },
   ];
 
   const activeTab = (path: string[]) => path.includes(active);
 
   return (
-    <div class="bg-white w-full py-6 px-8 flex flex-col gap-4">
+    <div class="bg-white w-full pt-6 pb-2 px-8 flex flex-col gap-4">
       <div class="flex items-center flex-1">
         <div class="text-2xl  ml-1 font-bold">
           MediaSet

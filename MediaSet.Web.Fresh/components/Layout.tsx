@@ -16,7 +16,7 @@ export default function Layout({ route, title, children }: RenderableProps<Layou
       </Head>
       <main class="min-h-screen w-full">
         <Header active={route} />
-        <div class="my-6 mx-8">
+        <div class="my-2 mx-8">
           {children}
         </div>
       </main>

@@ -1,7 +1,7 @@
 import { PageProps } from "$fresh/server.ts";
 import Layout from "../components/Layout.tsx";
 import { IconAnchor } from "../components/IconAnchor.tsx";
-import IconBooks from "tabler-icons"
+import IconBooks from "tabler-icons/books.tsx";
 
 export default function Home({ route }: PageProps) {
   return (
