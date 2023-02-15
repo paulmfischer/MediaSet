@@ -14,12 +14,12 @@ export default function Layout({ route, title, children }: RenderableProps<Layou
       <Head>
         <title>{siteTitle}</title>
       </Head>
-      <div class="p-4 mx-auto max-w-screen-md">
+      <main class="min-h-screen w-full">
         <Header active={route} />
         <div class="my-6 mx-8">
           {children}
         </div>
-      </div>
+      </main>
     </>
   );
 }
