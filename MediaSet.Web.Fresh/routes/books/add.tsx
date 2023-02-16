@@ -22,7 +22,7 @@ export const handler: Handlers<AddBookProps> = {
       }
     });
 
-    // console.log('saved new book!', response);
+    console.log('saved new book!', response);
     return context.render();
   },
 };
