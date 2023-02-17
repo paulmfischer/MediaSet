@@ -8,7 +8,7 @@ export default function Home({ route }: PageProps) {
     <Layout route={route}>
       My Media Sets:
       <div class="flex flex-row p-6">
-        <IconAnchor href="/books">
+        <IconAnchor href="/books" class="w-16 h-16 border-2 flex justify-center items-center">
           <IconBooks class="w-11 h-11" />
         </IconAnchor>
       </div>
