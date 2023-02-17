@@ -1,3 +1,5 @@
+import { Anchor } from "./Anchor.tsx";
+
 interface HeaderProps {
   active: string;
 }
@@ -20,13 +22,14 @@ export function Header({ active }: HeaderProps) {
       <ul class="flex border-b">
         {menus.map((menu) => (
           <li class={`${activeTab(menu.matchingRoutes) ? '-mb-px' : ''} mr-1`}>
-            <a
+            <Anchor
               href={menu.href}
-              class={"bg-white inline-block text-gray-500 hover:text-gray-700 py-2 px-4 font-semibold" +
-                (activeTab(menu.matchingRoutes) ? " border-l border-t border-r rounded-t" : "")}
+              className={`
+                no-underline inline-block py-2 px-4 font-semibold rounded-t
+                ${(activeTab(menu.matchingRoutes) ? " border-l border-t border-r" : "")}`}
             >
               {menu.name}
-            </a>
+            </Anchor>
           </li>
         ))}
       </ul>
