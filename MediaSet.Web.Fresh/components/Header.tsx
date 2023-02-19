@@ -9,7 +9,7 @@ export function Header({ active }: HeaderProps) {
     { name: "Home", href: "/", matchingRoutes: ['/'] },
     { name: "Books", href: "/books", matchingRoutes: ['/books', '/books/:id', '/books/add'] },
   ];
-
+  
   const activeTab = (path: string[]) => path.includes(active);
 
   return (
@@ -19,20 +19,22 @@ export function Header({ active }: HeaderProps) {
           MediaSet
         </div>
       </div>
-      <ul class="flex border-b">
-        {menus.map((menu) => (
-          <li class={`${activeTab(menu.matchingRoutes) ? '-mb-px' : ''} mr-1`}>
-            <Anchor
-              href={menu.href}
-              className={`
-                no-underline inline-block py-2 px-4 font-semibold rounded-t
-                ${(activeTab(menu.matchingRoutes) ? " border-l border-t border-r" : "")}`}
-            >
-              {menu.name}
-            </Anchor>
-          </li>
-        ))}
-      </ul>
+      <nav>
+        <ul class="flex border-b">
+          {menus.map((menu) => (
+            <li class={`${activeTab(menu.matchingRoutes) ? '-mb-px' : ''} mr-1`}>
+              <Anchor
+                href={menu.href}
+                className={`
+                  no-underline inline-block py-2 px-4 font-semibold rounded-t
+                  ${(activeTab(menu.matchingRoutes) ? " border-l border-t border-r" : "")}`}
+              >
+                {menu.name}
+              </Anchor>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }
