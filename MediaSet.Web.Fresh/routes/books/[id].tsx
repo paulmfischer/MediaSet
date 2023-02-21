@@ -9,7 +9,7 @@ export const handler: Handlers<BookRespone> = {
     const response = await fetch(`http://localhost:5103/books/${context.params.id}`);
 
     if (response.status === 404) {
-      return context.render(null);
+      return context.renderNotFound();
     }
 
     const book: BookItem = await response.json();
@@ -17,22 +17,12 @@ export const handler: Handlers<BookRespone> = {
   }
 };
 
-export default function Book({ data: book, route, url }: PageProps<BookRespone>) {
-  const title = book ? book.title : 'Not Found';
-
-  const getDisplay = () => {
-    if (book) {
-      return <div>
-        {book.title}
-      </div>;
-    } else {
-      return <div>No book found</div>;
-    }
-  }
-
+export default function Book({ data: book, route }: PageProps<BookItem>) {
   return (
-    <Layout route={route} title={title}>
-      {getDisplay()}
+    <Layout route={route} title={book.title}>
+      <div>
+        {book.title}
+      </div>
     </Layout>
   );
 }

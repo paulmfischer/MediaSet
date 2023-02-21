@@ -4,7 +4,10 @@ export function Input(props: JSX.HTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      class="border-gray-500 border-1"
+      class={`
+        pl-1 rounded border(gray-500 1)
+        ${props.class || ''}
+      `}
     />
   )
 }

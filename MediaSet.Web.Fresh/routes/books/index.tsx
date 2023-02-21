@@ -23,14 +23,14 @@ export default function Books(props: PageProps<Array<BookItem>>) {
     <Layout route={props.route} title="Books">
       <div class="flex flex-col">
         <div class="flex mb-4">
-          <Anchor href="/books/add" className="rounded border-1 border-gray-400">
+          <Anchor href="/books/add" class="rounded">
             <IconPlus  />
           </Anchor>
         </div>
         <table class="table-auto">
           <thead>
             <tr>
-              <th class="bg-gray-200 font-medium text-left p-2 rounded-tl-lg w-2">ID</th>
+              <th class="bg-gray-200 font-medium text-left p-2 rounded-tl-lg w-4">ID</th>
               <th class="bg-gray-200 font-medium text-left p-2">Title</th>
               <th class="bg-gray-200 font-medium text-left p-2">Number of Pages</th>
               <th class="bg-gray-200 font-medium text-left p-2">Publish Date</th>
@@ -42,7 +42,7 @@ export default function Books(props: PageProps<Array<BookItem>>) {
               props.data.map((book, index) => (
                 <tr class={`${index % 2 === 1 ? 'bg-gray-50' : ''}`}>
                   <td class="pl-2 border-b border-l">
-                    <Anchor href={`/books/${book.id}`}>{book.id}</Anchor>
+                    <Anchor href={`/books/${book.id}`} removeColored>{book.id}</Anchor>
                   </td>
                   <td class="pl-2 border-b">{book.title}</td>
                   <td class="pl-2 border-b">{book.numberOfPages}</td>

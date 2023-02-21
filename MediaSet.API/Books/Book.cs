@@ -9,7 +9,7 @@ public class Book
     [Required]
     public string Title { get; set; } = default!;
 
-    public DateTime PublishDate { get; set; }
+    public string PublishDate { get; set; } = default!;
     public int NumberOfPages { get; set; }
     public string ISBN { get; set; } = default!;
 }
@@ -21,7 +21,7 @@ public class BookItem
     [Required]
     public string Title { get; set; } = default!;
 
-    public DateTime PublishDate { get; set; }
+    public string PublishDate { get; set; } = default!;
     public int NumberOfPages { get; set; }
     public string ISBN { get; set; } = default!;
 }
