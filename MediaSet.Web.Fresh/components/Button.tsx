@@ -1,9 +1,9 @@
-import { JSX } from "preact";
+import { JSX } from 'preact';
 
 export function Button(props: JSX.HTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      type="button"
+      type='button'
       {...props}
       class={`
         ${props.class || ''}

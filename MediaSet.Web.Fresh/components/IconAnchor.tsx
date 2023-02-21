@@ -1,4 +1,4 @@
-import { JSX } from "preact";
+import { JSX } from 'preact';
 
 export function IconAnchor(props: JSX.HTMLAttributes<HTMLAnchorElement>) {
   return (

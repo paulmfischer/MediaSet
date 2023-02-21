@@ -1,6 +1,6 @@
-import { JSX } from "preact";
+import { JSX } from 'preact';
 
-const colorTheme = "text-white bg-indigo-600 border(indigo-600 1) hover:bg-indigo-700";
+const colorTheme = 'text-white bg-indigo-600 border(indigo-600 1) hover:bg-indigo-700';
 
 interface AnchorProps {
   removeColored?: boolean;
@@ -13,7 +13,7 @@ export function Anchor(props: JSX.HTMLAttributes<HTMLAnchorElement> & AnchorProp
       class={`
         ${props.class || ''}
         underline
-        ${props.removeColored ?  '' : colorTheme}
+        ${props.removeColored ? '' : colorTheme}
       `}
     >
       {props.children}

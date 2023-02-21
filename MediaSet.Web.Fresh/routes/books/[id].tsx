@@ -1,6 +1,6 @@
-import { Handlers, PageProps } from "$fresh/server.ts";
-import Layout from "../../components/Layout.tsx";
-import { BookItem } from "../../models/book.ts";
+import { Handlers, PageProps } from '$fresh/server.ts';
+import Layout from '../../components/Layout.tsx';
+import { BookItem } from '../../models/book.ts';
 
 type BookRespone = BookItem | null;
 
@@ -14,7 +14,7 @@ export const handler: Handlers<BookRespone> = {
 
     const book: BookItem = await response.json();
     return context.render(book);
-  }
+  },
 };
 
 export default function Book({ data: book, route }: PageProps<BookItem>) {
