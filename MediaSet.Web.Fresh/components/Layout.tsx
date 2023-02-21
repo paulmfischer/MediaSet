@@ -1,6 +1,6 @@
 import { RenderableProps } from 'preact';
-import { Head } from "$fresh/runtime.ts";
-import { Header } from "../components/Header.tsx";
+import { Head } from '$fresh/runtime.ts';
+import { Header } from '../components/Header.tsx';
 
 interface LayoutProps {
   route: string;
@@ -14,9 +14,9 @@ export default function Layout({ route, title, children }: RenderableProps<Layou
       <Head>
         <title>{siteTitle}</title>
       </Head>
-      <main class="min-h-screen w-full">
+      <main class='min-h-screen w-full'>
         <Header active={route} />
-        <div class="my-2 mx-8">
+        <div class='my-2 mx-8'>
           {children}
         </div>
       </main>

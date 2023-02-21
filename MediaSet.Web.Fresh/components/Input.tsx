@@ -1,4 +1,4 @@
-import { JSX } from "preact";
+import { JSX } from 'preact';
 
 export function Input(props: JSX.HTMLAttributes<HTMLInputElement>) {
   return (
@@ -9,5 +9,5 @@ export function Input(props: JSX.HTMLAttributes<HTMLInputElement>) {
         ${props.class || ''}
       `}
     />
-  )
+  );
 }

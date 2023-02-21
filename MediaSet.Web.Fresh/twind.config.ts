@@ -1,4 +1,4 @@
-import { Options } from "$fresh/plugins/twind.ts";
+import { Options } from '$fresh/plugins/twind.ts';
 
 export default {
   selfURL: import.meta.url,
@@ -12,7 +12,7 @@ export default {
   // overriding default theme:
   // theme: {
   //   colors: {
-      
+
   //   }
   // }
 } as Options;
