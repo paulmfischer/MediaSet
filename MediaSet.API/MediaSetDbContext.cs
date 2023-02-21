@@ -28,7 +28,7 @@ public static class SeedDataExtension
                 Id = 1,
                 ISBN = "1234567890",
                 NumberOfPages = 150,
-                PublishDate = new DateTime(),
+                PublishDate = new DateTime().Year.ToString(),
                 Title = "My Title",
             });
 

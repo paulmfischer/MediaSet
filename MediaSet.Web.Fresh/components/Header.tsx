@@ -20,14 +20,16 @@ export function Header({ active }: HeaderProps) {
         </div>
       </div>
       <nav>
-        <ul class="flex border-b">
+        <ul class="flex border(indigo-600 b)">
           {menus.map((menu) => (
             <li class={`${activeTab(menu.matchingRoutes) ? '-mb-px' : ''} mr-1`}>
               <Anchor
                 href={menu.href}
                 className={`
                   no-underline inline-block py-2 px-4 font-semibold rounded-t
-                  ${(activeTab(menu.matchingRoutes) ? " border-l border-t border-r" : "")}`}
+                  ${(activeTab(menu.matchingRoutes) ? " border-l border-t border-r" : "")}
+                `}
+                removeColored={!activeTab(menu.matchingRoutes)}
               >
                 {menu.name}
               </Anchor>
