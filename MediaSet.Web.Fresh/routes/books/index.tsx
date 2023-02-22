@@ -7,6 +7,7 @@ import IconTrash from 'tabler-icons/trash.tsx';
 import IconEdit from 'tabler-icons/edit.tsx';
 import { BookItem } from '../../models/book.ts';
 import { Button } from '../../components/Button.tsx';
+import moment from 'moment';
 
 export const handler: Handlers<Array<BookItem>> = {
   async GET(_, context) {
@@ -44,7 +45,7 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                 </td>
                 <td class='pl-2 border-b'>{book.title}</td>
                 <td class='pl-2 border-b'>{book.numberOfPages}</td>
-                <td class='pl-2 border-b'>{book.publishDate}</td>
+                <td class='pl-2 border-b'>{book.publishDate !== '' ? moment(book.publishDate).format('MMMM yyyy') : ''}</td>
                 <td class='pl-2 border-b border-l border-r w-4'>
                   <div class='flex gap-2'>
                     <Button type='button'>

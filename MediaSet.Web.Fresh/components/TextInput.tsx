@@ -33,12 +33,12 @@ type FormInputProps = {
   required?: boolean;
 };
 
-export function FormInput({ inputLabel, name, type = 'text', required, value, error }: FormInputProps) {
+export function FormInput({ inputLabel, error, type = 'text', required, ...inputProps }: FormInputProps & JSX.HTMLAttributes<HTMLInputElement>) {
   const textLabel = typeof inputLabel === 'string' ? <label>{inputLabel} {required && '*'}</label> : inputLabel;
   return (
     <>
       {textLabel}
-      <Input required={required} type={type} name={name} value={value} class={error ? 'border-red-500' : ''} />
+      <Input {...inputProps} required={required} type={type} class={error ? 'border-red-500' : ''} />
       {error && <div class='mt-1 text-red-600'>{error}</div>}
     </>
   );
