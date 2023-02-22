@@ -2,25 +2,10 @@ import { Handlers, PageProps } from '$fresh/server.ts';
 import { Button } from '../../components/Button.tsx';
 import { FormInput } from '../../components/TextInput.tsx';
 import Layout from '../../components/Layout.tsx';
-import { BookItem } from '../../models/book.ts';
+import { BookItem, BookOperationProps } from '../../models/book.ts';
+import { BadRequest } from "../../models/request.ts";
 
-type BadRequestError = {
-  [key: string]: string[];
-};
-
-type BadRequest = {
-  type: string;
-  title: string;
-  status: number;
-  errors: BadRequestError;
-};
-
-interface AddBookProps {
-  newBook: BookItem;
-  errors?: BadRequestError;
-}
-
-export const handler: Handlers<AddBookProps> = {
+export const handler: Handlers<BookOperationProps> = {
   async POST(req, context) {
     const formData = await req.formData();
     const newBook: { [key: string]: unknown } = {};
@@ -40,22 +25,22 @@ export const handler: Handlers<AddBookProps> = {
 
     const responseBody = await response.json() as BadRequest;
     return context.render({
-      newBook: newBook as unknown as BookItem,
+      book: newBook as unknown as BookItem,
       errors: responseBody.errors,
     });
   },
 };
 
-export default function AddBook(props: PageProps<AddBookProps>) {
-  const book = props.data?.newBook;
+export default function AddBook(props: PageProps<BookOperationProps>) {
+  const book = props.data?.book;
   return (
     <Layout route={props.route} title='Add Book'>
       <div class='min-w-fit'>
         Add Book
         <form class='flex flex-col' method='post'>
-          <FormInput inputLabel='Title' name='title' required value={book?.title} error={props.data?.errors?.Title} />
+          <FormInput inputLabel='Title' name='title' value={book?.title} error={props.data?.errors?.Title} />
           <FormInput inputLabel='Publish Date' name='publishDate' type='month' value={book?.publishDate} />
-          <FormInput inputLabel='Number of Pages' name='numberOfPages' type='number' value={book?.numberOfPages} />
+          <FormInput inputLabel='Number of Pages' name='numberOfPages' type='number' value={book?.numberOfPages || 0} min="0" />
           <FormInput inputLabel='ISBN' name='isbn' value={book?.isbn} />
           <Button type='submit' class='mt-2'>Add</Button>
         </form>
