@@ -4,6 +4,10 @@ import { FormInput } from '../../components/TextInput.tsx';
 import Layout from '../../components/Layout.tsx';
 import { BookItem, BookOperationProps } from '../../models/book.ts';
 import { BadRequest } from "../../models/request.ts";
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+const env = await load();
+const apiUrl = env['API_URL'];
 
 export const handler: Handlers<BookOperationProps> = {
   async POST(req, context) {
@@ -11,7 +15,7 @@ export const handler: Handlers<BookOperationProps> = {
     const newBook: { [key: string]: unknown } = {};
     formData.forEach((value, key) => newBook[key] = value);
 
-    const response = await fetch('http://localhost:5103/books', {
+    const response = await fetch(`${port}/books`, {
       body: JSON.stringify(newBook),
       method: 'POST',
       headers: {

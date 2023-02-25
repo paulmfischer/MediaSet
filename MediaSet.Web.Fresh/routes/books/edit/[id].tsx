@@ -5,10 +5,14 @@ import Layout from '../../../components/Layout.tsx';
 import { BookItem, BookOperationProps } from '../../../models/book.ts';
 import { Input } from '../../../components/Input.tsx';
 import { BadRequest } from "../../../models/request.ts";
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+const env = await load();
+const apiUrl = env['API_URL'];
 
 export const handler: Handlers<BookOperationProps> = {
   async GET(_, context) {
-    const response = await fetch(`http://localhost:5103/books/${context.params.id}`);
+    const response = await fetch(`http://localhost:${port}/books/${context.params.id}`);
 
     if (response.status === 404) {
       return context.renderNotFound();
@@ -24,7 +28,7 @@ export const handler: Handlers<BookOperationProps> = {
     formData.forEach((value, key) => editBook[key] = value);
     const book = editBook as unknown as BookItem;
 
-    const response = await fetch(`http://localhost:5103/books/${book.id}`, {
+    const response = await fetch(`${port}/books/${book.id}`, {
       body: JSON.stringify(book),
       method: 'PUT',
       headers: {
