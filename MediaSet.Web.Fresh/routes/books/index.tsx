@@ -8,10 +8,14 @@ import IconEdit from 'tabler-icons/edit.tsx';
 import { BookItem } from '../../models/book.ts';
 import { Button } from '../../components/Button.tsx';
 import moment from 'moment';
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+const env = await load();
+const apiUrl = env['API_URL'];
 
 export const handler: Handlers<Array<BookItem>> = {
   async GET(_, context) {
-    const response = await fetch('http://localhost:5103/books');
+    const response = await fetch(`${port}/books`);
 
     const books: Array<BookItem> = await response.json();
     return context.render(books);

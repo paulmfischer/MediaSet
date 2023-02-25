@@ -1,12 +1,16 @@
 import { Handlers, PageProps } from '$fresh/server.ts';
 import Layout from '../../components/Layout.tsx';
 import { BookItem } from '../../models/book.ts';
+import { load } from "https://deno.land/std/dotenv/mod.ts";
+
+const env = await load();
+const apiUrl = env['API_URL'];
 
 type BookRespone = BookItem | null;
 
 export const handler: Handlers<BookRespone> = {
   async GET(_, context) {
-    const response = await fetch(`http://localhost:5103/books/${context.params.id}`);
+    const response = await fetch(`${port}/books/${context.params.id}`);
 
     if (response.status === 404) {
       return context.renderNotFound();
