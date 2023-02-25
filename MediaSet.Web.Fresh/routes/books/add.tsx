@@ -4,7 +4,7 @@ import { FormInput } from '../../components/TextInput.tsx';
 import Layout from '../../components/Layout.tsx';
 import { BookItem, BookOperationProps } from '../../models/book.ts';
 import { BadRequest } from "../../models/request.ts";
-import { load } from "https://deno.land/std/dotenv/mod.ts";
+import { load } from "std";
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -15,7 +15,7 @@ export const handler: Handlers<BookOperationProps> = {
     const newBook: { [key: string]: unknown } = {};
     formData.forEach((value, key) => newBook[key] = value);
 
-    const response = await fetch(`${port}/books`, {
+    const response = await fetch(`${apiUrl}/books`, {
       body: JSON.stringify(newBook),
       method: 'POST',
       headers: {
@@ -24,7 +24,7 @@ export const handler: Handlers<BookOperationProps> = {
     });
 
     if (response.status === 201) {
-      return Response.redirect(`${req.headers.get('origin')}/books`);
+      return Response.redirect(`${req.headers.get('origin')}/books`, 303);
     }
 
     const responseBody = await response.json() as BadRequest;
