@@ -1,7 +1,7 @@
 import { Handlers, PageProps } from '$fresh/server.ts';
 import Layout from '../../components/Layout.tsx';
 import { BookItem } from '../../models/book.ts';
-import { load } from "std";
+import { load } from 'std';
 
 const env = await load();
 const apiUrl = env['API_URL'];

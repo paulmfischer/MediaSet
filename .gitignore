@@ -331,4 +331,6 @@ ASALocalRun/
 
 *.db
 *.db-shm
-*.db-wal
+*.db-walo
+
+**/.env

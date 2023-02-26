@@ -4,8 +4,8 @@ import { FormInput } from '../../../components/TextInput.tsx';
 import Layout from '../../../components/Layout.tsx';
 import { BookItem, BookOperationProps } from '../../../models/book.ts';
 import { Input } from '../../../components/Input.tsx';
-import { BadRequest } from "../../../models/request.ts";
-import { load } from "std";
+import { BadRequest } from '../../../models/request.ts';
+import { load } from 'std';
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -57,7 +57,13 @@ export default function AddBook(props: PageProps<BookOperationProps>) {
         <form class='flex flex-col' method='post'>
           <FormInput inputLabel='Title' name='title' value={book.title} error={props.data?.errors?.Title} />
           <FormInput inputLabel='Publish Date' name='publishDate' type='month' value={book.publishDate} />
-          <FormInput inputLabel='Number of Pages' name='numberOfPages' type='number' value={book.numberOfPages} min="0" />
+          <FormInput
+            inputLabel='Number of Pages'
+            name='numberOfPages'
+            type='number'
+            value={book.numberOfPages}
+            min='0'
+          />
           <FormInput inputLabel='ISBN' name='isbn' value={book.isbn} />
           <Input type='hidden' name='id' value={book.id} />
           <Button type='submit' class='mt-2'>Edit</Button>
