@@ -8,7 +8,7 @@ import IconEdit from 'tabler-icons/edit.tsx';
 import { BookItem } from '../../models/book.ts';
 import { Button } from '../../components/Button.tsx';
 import moment from 'moment';
-import { load } from "std";
+import { load } from 'std';
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -49,7 +49,9 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                 </td>
                 <td class='pl-2 border-b'>{book.title}</td>
                 <td class='pl-2 border-b'>{book.numberOfPages}</td>
-                <td class='pl-2 border-b'>{book.publishDate !== '' ? moment(book.publishDate).format('MMMM yyyy') : ''}</td>
+                <td class='pl-2 border-b'>
+                  {book.publishDate !== '' ? moment(book.publishDate).format('MMMM yyyy') : ''}
+                </td>
                 <td class='pl-2 border-b border-l border-r w-4'>
                   <div class='flex gap-2'>
                     <Button type='button'>

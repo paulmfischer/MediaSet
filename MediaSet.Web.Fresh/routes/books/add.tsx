@@ -3,8 +3,8 @@ import { Button } from '../../components/Button.tsx';
 import { FormInput } from '../../components/TextInput.tsx';
 import Layout from '../../components/Layout.tsx';
 import { BookItem, BookOperationProps } from '../../models/book.ts';
-import { BadRequest } from "../../models/request.ts";
-import { load } from "std";
+import { BadRequest } from '../../models/request.ts';
+import { load } from 'std';
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -43,8 +43,14 @@ export default function AddBook(props: PageProps<BookOperationProps>) {
         Add Book
         <form class='flex flex-col' method='post'>
           <FormInput inputLabel='Title' name='title' value={book?.title} error={props.data?.errors?.Title} />
-          <FormInput inputLabel='Publish Date' name='publishDate' type='month' value={book?.publishDate} />
-          <FormInput inputLabel='Number of Pages' name='numberOfPages' type='number' value={book?.numberOfPages || 0} min="0" />
+          <FormInput inputLabel='Publish Date' name='publishDate' type='date' value={book?.publishDate} />
+          <FormInput
+            inputLabel='Number of Pages'
+            name='numberOfPages'
+            type='number'
+            value={book?.numberOfPages || 0}
+            min='0'
+          />
           <FormInput inputLabel='ISBN' name='isbn' value={book?.isbn} />
           <Button type='submit' class='mt-2'>Add</Button>
         </form>
