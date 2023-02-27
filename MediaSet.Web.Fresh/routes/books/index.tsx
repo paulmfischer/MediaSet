@@ -9,6 +9,7 @@ import { BookItem } from '../../models/book.ts';
 import { Button } from '../../components/Button.tsx';
 import moment from 'moment';
 import { load } from 'std';
+import DeleteBook from "../../islands/DeleteBook.tsx";
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -54,9 +55,10 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                 </td>
                 <td class='pl-2 border-b border-l border-r w-4'>
                   <div class='flex gap-2'>
-                    <Button type='button'>
+                    {/* <Button type='button'>
                       <IconTrash class='w-5 h-5' />
-                    </Button>
+                    </Button> */}
+                    <DeleteBook bookId={book.id} />
                     <IconAnchor href={`/books/edit/${book.id}`}>
                       <IconEdit className='w-5 h-5' />
                     </IconAnchor>
