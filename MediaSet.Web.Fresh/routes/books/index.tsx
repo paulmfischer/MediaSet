@@ -58,7 +58,7 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                     {/* <Button type='button'>
                       <IconTrash class='w-5 h-5' />
                     </Button> */}
-                    <DeleteBook bookId={book.id} />
+                    <DeleteBook bookId={book.id} bookTitle={book.title} />
                     <IconAnchor href={`/books/edit/${book.id}`}>
                       <IconEdit className='w-5 h-5' />
                     </IconAnchor>
