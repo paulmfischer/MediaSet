@@ -3,13 +3,11 @@ import { Anchor } from '../../components/Anchor.tsx';
 import { IconAnchor } from '../../components/IconAnchor.tsx';
 import Layout from '../../components/Layout.tsx';
 import IconPlus from 'tabler-icons/plus.tsx';
-import IconTrash from 'tabler-icons/trash.tsx';
 import IconEdit from 'tabler-icons/edit.tsx';
 import { BookItem } from '../../models/book.ts';
-import { Button } from '../../components/Button.tsx';
 import moment from 'moment';
 import { load } from 'std';
-import DeleteBook from "../../islands/DeleteBook.tsx";
+import DeleteBook from '../../islands/DeleteBook.tsx';
 
 const env = await load();
 const apiUrl = env['API_URL'];
@@ -17,8 +15,8 @@ const apiUrl = env['API_URL'];
 export const handler: Handlers<Array<BookItem>> = {
   async GET(_, context) {
     const response = await fetch(`${apiUrl}/books`);
-
     const books: Array<BookItem> = await response.json();
+
     return context.render(books);
   },
 };
@@ -55,10 +53,7 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                 </td>
                 <td class='pl-2 border-b border-l border-r w-4'>
                   <div class='flex gap-2'>
-                    {/* <Button type='button'>
-                      <IconTrash class='w-5 h-5' />
-                    </Button> */}
-                    <DeleteBook bookId={book.id} bookTitle={book.title} />
+                    <DeleteBook apiUrl={apiUrl} bookId={book.id} bookTitle={book.title} />
                     <IconAnchor href={`/books/edit/${book.id}`}>
                       <IconEdit className='w-5 h-5' />
                     </IconAnchor>
