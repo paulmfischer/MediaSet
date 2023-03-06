@@ -39,7 +39,7 @@ export default function AddBook(props: PageProps<BookOperationProps>) {
   const book = props.data?.book;
   return (
     <Layout route={props.route} title='Add Book'>
-      <div class='min-w-fit'>
+      <div class='container mx-auto'>
         Add Book
         <form class='flex flex-col' method='post'>
           <FormInput inputLabel='Title' name='title' value={book?.title} error={props.data?.errors?.Title} />

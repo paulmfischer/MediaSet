@@ -14,15 +14,19 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddCors(options =>
+var originUrls = builder.Configuration.GetValue<string>("OriginUrls");
+if (originUrls != null)
 {
-    options.AddDefaultPolicy(policy =>
+    builder.Services.AddCors(options =>
     {
-        policy.WithOrigins(builder.Configuration.GetValue<string>("OriginUrls")?.Split(","))
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.WithOrigins(originUrls.Split(","))
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
     });
-});
+}
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

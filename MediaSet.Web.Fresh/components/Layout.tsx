@@ -10,16 +10,17 @@ interface LayoutProps {
 export default function Layout({ route, title, children }: RenderableProps<LayoutProps>) {
   const siteTitle = `My Media Set${title ? ' - ' + title : ''}`;
   return (
-    <>
+    <div class='min-h-screen'>
       <Head>
         <title>{siteTitle}</title>
       </Head>
-      <main class='min-h-screen w-full'>
-        <Header active={route} />
-        <div class='my-2 mx-8'>
+      <Header activeRoute={route} />
+      {/* xl:mt-12 */}
+      <main class='flex '>
+        <section class='container px-3 mx-auto mt-4'>
           {children}
-        </div>
+        </section>
       </main>
-    </>
+    </div>
   );
 }
