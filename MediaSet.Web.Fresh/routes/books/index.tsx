@@ -26,17 +26,17 @@ export default function Books(props: PageProps<Array<BookItem>>) {
     <Layout route={props.route} title='Books'>
       <div class='flex flex-col'>
         <div class='flex mb-4'>
-          <Anchor href='/books/add' class='rounded'>
-            <IconPlus />
-          </Anchor>
+          <IconAnchor href='/books/add'>
+            <IconPlus className='w-5 h-6' />
+          </IconAnchor>
         </div>
         <table class='table-auto'>
           <thead>
             <tr>
               <th class='bg-gray-200 font-medium text-left p-2 rounded-tl-lg w-4'>ID</th>
               <th class='bg-gray-200 font-medium text-left p-2'>Title</th>
-              <th class='bg-gray-200 font-medium text-left p-2'>Number of Pages</th>
-              <th class='bg-gray-200 font-medium text-left p-2'>Publish Date</th>
+              <th class='hidden md:table-cell bg-gray-200 font-medium text-left p-2'>Number of Pages</th>
+              <th class='hidden md:table-cell bg-gray-200 font-medium text-left p-2'>Publish Date</th>
               <th class='bg-gray-200 font-medium text-left p-2 rounded-tr-lg'>Actions</th>
             </tr>
           </thead>
@@ -47,8 +47,8 @@ export default function Books(props: PageProps<Array<BookItem>>) {
                   <Anchor href={`/books/${book.id}`} removeColored>{book.id}</Anchor>
                 </td>
                 <td class='pl-2 border-b'>{book.title}</td>
-                <td class='pl-2 border-b'>{book.numberOfPages}</td>
-                <td class='pl-2 border-b'>
+                <td class='hidden md:table-cell pl-2 border-b'>{book.numberOfPages}</td>
+                <td class='hidden md:table-cell pl-2 border-b'>
                   {book.publishDate !== '' ? moment(book.publishDate).format('MMMM yyyy') : ''}
                 </td>
                 <td class='pl-2 border-b border-l border-r w-4'>

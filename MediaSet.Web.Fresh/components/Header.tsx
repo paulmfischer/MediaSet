@@ -1,42 +1,28 @@
 import { Anchor } from './Anchor.tsx';
+import IconMenu2 from 'tabler-icons/menu-2.tsx';
+import { Navigation } from './Navigation.tsx';
+import MobileMenu from '../islands/MobileMenu.tsx';
 
 interface HeaderProps {
-  active: string;
+  activeRoute: string;
 }
 
-export function Header({ active }: HeaderProps) {
-  const menus = [
-    { name: 'Home', href: '/', matchingRoutes: ['/'] },
-    { name: 'Books', href: '/books', matchingRoutes: ['/books', '/books/:id', '/books/add'] },
-  ];
-
-  const activeTab = (path: string[]) => path.includes(active);
-
+export function Header({ activeRoute }: HeaderProps) {
+  // xl:fixed xl:top-0 xl:left-0
   return (
-    <div class='bg-white w-full pt-6 pb-2 px-8 flex flex-col gap-4'>
-      <div class='flex items-center flex-1'>
-        <div class='text-2xl  ml-1 font-bold'>
-          MediaSet
+    <header class='border-b backdrop-blur bg-white/90 dark:bg-gray-900/70 dark:border-gray-700  xl:w-full xl:z-30'>
+      <div class='container px-3 py-3 mx-auto space-y-4 xl:space-y-0 xl:flex xl:items-center xl:justify-between xl:space-x-10'>
+        <div class='flex justify-between'>
+          <a href='#' class='flex'>
+            <span class='self-center text-lg font-semibold whitespace-nowrap'>MediaSite</span>
+          </a>
+          <div class='flex items-center space-x-2 xl:hidden'>
+            <MobileMenu mobileNavId='mobile-nav'/>
+          </div>
         </div>
+        <Navigation id='mobile-nav' activeRoute={activeRoute} class='flex flex-col space-y-4 hidden' />
+        <Navigation activeRoute={activeRoute} class='hidden xl:flex xl:flex-row xl:items-center xl:justify-between xl:flex-1 xl:space-x-2' />
       </div>
-      <nav>
-        <ul class='flex border(indigo-600 b)'>
-          {menus.map((menu) => (
-            <li class={`${activeTab(menu.matchingRoutes) ? '-mb-px' : ''} mr-1`}>
-              <Anchor
-                href={menu.href}
-                className={`
-                  no-underline inline-block py-2 px-4 font-semibold rounded-t
-                  ${(activeTab(menu.matchingRoutes) ? ' border-l border-t border-r' : '')}
-                `}
-                removeColored={!activeTab(menu.matchingRoutes)}
-              >
-                {menu.name}
-              </Anchor>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
+    </header>
   );
 }

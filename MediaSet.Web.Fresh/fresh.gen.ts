@@ -12,6 +12,7 @@ import * as $5 from './routes/books/index.tsx';
 import * as $6 from './routes/index.tsx';
 import * as $$0 from './islands/Counter.tsx';
 import * as $$1 from './islands/DeleteBook.tsx';
+import * as $$2 from './islands/MobileMenu.tsx';
 
 const manifest = {
   routes: {
@@ -26,6 +27,7 @@ const manifest = {
   islands: {
     './islands/Counter.tsx': $$0,
     './islands/DeleteBook.tsx': $$1,
+    './islands/MobileMenu.tsx': $$2,
   },
   baseUrl: import.meta.url,
   config,
