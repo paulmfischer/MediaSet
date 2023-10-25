@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using MediaSet.API;
 
-namespace MediaSet.API.Books;
+namespace MediaSet.BookApi;
 
 internal static class BookApi
 {
@@ -10,62 +9,54 @@ internal static class BookApi
     {
         var group = routes.MapGroup("/books");
 
-        group.WithTags("Books");
+        // rate limit
+        // group.RequirePerUserRateLimit();
 
-        group.WithParameterValidation(typeof(BookItem));
+        // validate parameters
+        // group.WithParameterValidation(typeof(BookItem));
 
-        group.MapGet("/", async (MediaSetDbContext db) => 
+        group.MapGet("/", async (MediaSetDbContext db) =>
         {
-            return await db.Books.Select(book => book.AsBookItem()).AsNoTracking().ToListAsync();
+            return await db.Books.AsNoTracking().ToListAsync();
         });
 
-        group.MapGet("/{id}", async Task<Results<Ok<BookItem>, NotFound>> (MediaSetDbContext db, int id) =>
+        group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (MediaSetDbContext db, int id) =>
         {
-            return await db.Books.FindAsync(id) switch
+            return await db.Books.FindAsync(id) switch 
             {
-                Book book => TypedResults.Ok(book.AsBookItem()),
+                Book book => TypedResults.Ok(book),
                 _ => TypedResults.NotFound()
             };
         });
 
-        group.MapPost("/", async Task<Created<BookItem>> (MediaSetDbContext db, BookItem bookItem) =>
+        group.MapPost("/", async Task<Created<Book>> (MediaSetDbContext db, Book book) =>
         {
-            var book = new Book
-            {
-                ISBN = bookItem.ISBN,
-                NumberOfPages = bookItem.NumberOfPages,
-                PublishDate = bookItem.PublishDate,
-                Title = bookItem.Title
-            };
-
             db.Books.Add(book);
             await db.SaveChangesAsync();
 
-            return TypedResults.Created($"/books/{book.Id}", book.AsBookItem());
+            return TypedResults.Created($"/books/{book.Id}", book);
         });
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (MediaSetDbContext db, int id, BookItem bookItem) =>
+        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (MediaSetDbContext db, int id, Book book) =>
         {
-            if (id != bookItem.Id)
+            if (id != book.Id)
             {
-                return TypedResults.BadRequest();
+                return TypedResults.BadRequest("Book Id and route id do not match");
             }
 
-            var rowsAffected = await db.Books.Where(book => book.Id == id)
-                                        .ExecuteUpdateAsync(updates =>
-                                            updates.SetProperty(book => book.ISBN, bookItem.ISBN)
-                                                    .SetProperty(book => book.NumberOfPages, bookItem.NumberOfPages)
-                                                    .SetProperty(book => book.PublishDate, bookItem.PublishDate)
-                                                    .SetProperty(book => book.Title, bookItem.Title)
-                                        );
+            var rowsAffected = await db.Books.Where(b => b.Id == id)
+                .ExecuteUpdateAsync(updates =>
+                    updates.SetProperty(b => b.Name, book.Name)
+                );
             
             return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
         });
 
-        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (MediaSetDbContext db, int id) => 
+        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (MediaSetDbContext db, int id) =>
         {
-            var rowsAffected = await db.Books.Where(book => book.Id == id).ExecuteDeleteAsync();
-
+            var rowsAffected = await db.Books.Where(b => b.Id == id)
+                                    .ExecuteDeleteAsync();
+            
             return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
         });
 

@@ -1,6 +1,2 @@
 {
-  "deno.enable": false,
-  "deno.enablePaths": [
-    "./MediaSet.Web.Fresh"
-  ]
 }
