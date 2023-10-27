@@ -46,7 +46,7 @@ internal static class BookApi
 
             var rowsAffected = await db.Books.Where(b => b.Id == id)
                 .ExecuteUpdateAsync(updates =>
-                    updates.SetProperty(b => b.Name, book.Name)
+                    updates.SetProperty(b => b.Title, book.Title)
                 );
             
             return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
