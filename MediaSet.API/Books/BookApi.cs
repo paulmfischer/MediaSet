@@ -1,7 +1,8 @@
+using MediaSet.Api.Filters;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-namespace MediaSet.BookApi;
+namespace MediaSet.Api.BookApi;
 
 internal static class BookApi
 {
@@ -9,11 +10,7 @@ internal static class BookApi
     {
         var group = routes.MapGroup("/books");
 
-        // rate limit
-        // group.RequirePerUserRateLimit();
-
-        // validate parameters
-        // group.WithParameterValidation(typeof(BookItem));
+        group.WithPrameterValidation(typeof(Book));
 
         group.MapGet("/", async (MediaSetDbContext db) =>
         {

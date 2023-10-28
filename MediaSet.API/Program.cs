@@ -1,4 +1,4 @@
-using MediaSet.BookApi;
+using MediaSet.Api.BookApi;
 using Microsoft.EntityFrameworkCore;
 
 var folder = Environment.SpecialFolder.LocalApplicationData;

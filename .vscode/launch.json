@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "[https] MediaSet.Api",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\MediaSet.Api\\MediaSet.Api.csproj",
+            "launchConfigurationId": "TargetFramework=;https"
+        }
+    ]
+}
