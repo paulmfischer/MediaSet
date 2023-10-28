@@ -26,8 +26,9 @@ internal static class BookApi
             };
         });
 
-        group.MapPost("/", async Task<Created<Book>> (MediaSetDbContext db, Book book) =>
+        group.MapPost("/", async Task<Created<Book>> (MediaSetDbContext db, CreateBook createBook) =>
         {
+            var book = createBook.AsBook();
             db.Books.Add(book);
             await db.SaveChangesAsync();
 
@@ -44,6 +45,10 @@ internal static class BookApi
             var rowsAffected = await db.Books.Where(b => b.Id == id)
                 .ExecuteUpdateAsync(updates =>
                     updates.SetProperty(b => b.Title, book.Title)
+                        .SetProperty(b => b.ISBN, book.ISBN)
+                        .SetProperty(b => b.NumberOfPages, book.NumberOfPages)
+                        .SetProperty(b => b.PublicationYear, book.PublicationYear)
+                        .SetProperty(b => b.Plot, book.Plot)
                 );
             
             return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
