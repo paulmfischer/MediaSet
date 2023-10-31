@@ -14,12 +14,12 @@ internal static class BookApi
 
         group.MapGet("/", async (MediaSetDbContext db) =>
         {
-            return await db.Books.AsNoTracking().ToListAsync();
+            return await db.Books.Include(book => book.Format).AsNoTracking().ToListAsync();
         });
 
         group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (MediaSetDbContext db, int id) =>
         {
-            return await db.Books.FindAsync(id) switch 
+            return await db.Books.Include(book => book.Format).FirstOrDefaultAsync(book => book.Id == id) switch 
             {
                 Book book => TypedResults.Ok(book),
                 _ => TypedResults.NotFound()

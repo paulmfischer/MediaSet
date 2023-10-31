@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MediaSet.Api.Metadata;
 
 namespace MediaSet.Api.BookApi;
 public class Book
@@ -10,6 +11,9 @@ public class Book
     public string? Plot { get; set; }
     public string? PublicationYear { get; set; }
     public int? NumberOfPages { get; set; }
+
+    public int? FormatId { get; set; }
+    public Format? Format { get; set; }
 }
 
 public class CreateBook
@@ -20,6 +24,8 @@ public class CreateBook
     public string? Plot { get; set; }
     public string? PublicationYear { get; set; }
     public int? NumberOfPages { get; set; }
+
+    public Format? Format { get; set; }
 }
 
 public static class BookMappingExtensions
@@ -33,6 +39,7 @@ public static class BookMappingExtensions
             Plot = book.Plot,
             PublicationYear = book.PublicationYear,
             NumberOfPages = book.NumberOfPages,
+            Format = book.Format,
         };
     }
 }
