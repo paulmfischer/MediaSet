@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MediaSet.Api.Metadata;
+namespace MediaSet.Data.Entities;
 
 public class Format
 {
     public int Id { get; set; }
     [Required]
-    public required string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }

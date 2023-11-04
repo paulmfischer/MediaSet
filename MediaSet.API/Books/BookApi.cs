@@ -1,6 +1,7 @@
 using MediaSet.Api.Filters;
+using MediaSet.Data.Entities;
+using MediaSet.Data.Repositories;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
 
 namespace MediaSet.Api.BookApi;
 
@@ -11,64 +12,43 @@ internal static class BookApi
         var group = routes.MapGroup("/books");
 
         group.WithPrameterValidation(typeof(Book));
+        group.WithPrameterValidation(typeof(CreateBook));
+        group.WithPrameterValidation(typeof(UpdateBook));
 
-        group.MapGet("/", async (MediaSetDbContext db) =>
+        group.MapGet("/", (IBookRepository bookRepository) =>
         {
-            return await db.Books.Include(book => book.Format).AsNoTracking().ToListAsync();
+            return bookRepository.GetAllBooks();
         });
 
-        group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (MediaSetDbContext db, int id) =>
+        group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (IBookRepository bookRepository, int id) =>
         {
-            return await db.Books.Include(book => book.Format).FirstOrDefaultAsync(book => book.Id == id) switch 
+            return await bookRepository.GetBookById(id) switch 
             {
                 Book book => TypedResults.Ok(book),
                 _ => TypedResults.NotFound()
             };
         });
 
-        group.MapPost("/", async Task<Created<Book>> (MediaSetDbContext db, CreateBook createBook) =>
+        group.MapPost("/", async Task<Created<Book>> (IBookRepository bookRepository, CreateBook createBook) =>
         {
-            var book = createBook.AsBook();
-            db.Books.Add(book);
-            await db.SaveChangesAsync();
-            if (book.FormatId != null)
-            {
-                book.Format = await db.Formats.FirstOrDefaultAsync(format => format.Id == book.FormatId);
-            }
-
+            var book = await bookRepository.CreateBook(createBook.AsBook());
             return TypedResults.Created($"/books/{book.Id}", book);
         });
 
-        group.MapPut("/{id}", async Task<Results<Ok<Book>, NotFound, BadRequest<string>>> (MediaSetDbContext db, int id, UpdateBook book) =>
+        group.MapPut("/{id}", async Task<Results<Ok<Book>, NotFound, BadRequest<string>>> (IBookRepository bookRepository, int id, UpdateBook book) =>
         {
             if (id != book.Id)
             {
                 return TypedResults.BadRequest("Book Id and route id do not match");
             }
+            var updatedBook = await bookRepository.UpdateBook(book.AsBook());
 
-            if (book.Format?.Id == 0)
-            {
-                db.Formats.Add(book.Format);
-                await db.SaveChangesAsync();
-            }
-
-            var rowsAffected = await db.Books.Where(b => b.Id == id)
-                .ExecuteUpdateAsync(updates =>
-                    updates.SetProperty(b => b.Title, book.Title)
-                        .SetProperty(b => b.ISBN, book.ISBN)
-                        .SetProperty(b => b.NumberOfPages, book.NumberOfPages)
-                        .SetProperty(b => b.PublicationYear, book.PublicationYear)
-                        .SetProperty(b => b.Plot, book.Plot)
-                        .SetProperty(b => b.FormatId, book.Format == null ? null : book.Format.Id)
-                );
-            
-            return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok(book.AsBook());
+            return updatedBook is null ? TypedResults.NotFound() : TypedResults.Ok(updatedBook);
         });
 
-        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (MediaSetDbContext db, int id) =>
+        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (IBookRepository bookRepository, int id) =>
         {
-            var rowsAffected = await db.Books.Where(b => b.Id == id)
-                                    .ExecuteDeleteAsync();
+            var rowsAffected = await bookRepository.DeleteBookById(id);
             
             return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
         });
