@@ -1,5 +1,4 @@
-using MediaSet.Api.BookApi;
-using MediaSet.Api.Metadata;
+using MediaSet.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 public class MediaSetDbContext : DbContext

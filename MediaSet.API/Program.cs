@@ -1,4 +1,5 @@
 using MediaSet.Api.BookApi;
+using MediaSet.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var folder = Environment.SpecialFolder.LocalApplicationData;
@@ -9,6 +10,8 @@ builder.Services.AddDbContext<MediaSetDbContext>(opt => opt.UseSqlite($"Data Sou
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IBookRepository, BookRepository>();
 
 var app = builder.Build();
 
