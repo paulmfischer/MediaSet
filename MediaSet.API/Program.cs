@@ -1,4 +1,6 @@
 using MediaSet.Api.BookApi;
+using MediaSet.Api.Metadata;
+using MediaSet.Data.Entities;
 using MediaSet.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +14,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IMetadataRepository, MetadataRepository>();
 
 var app = builder.Build();
 
@@ -21,7 +24,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapFormat();
+app.MapEntity<Format>("/formats");
+app.MapEntity<Genre>("/genres");
+app.MapEntity<Publisher>("/publisher");
 app.MapBooks();
 
 app.Run();

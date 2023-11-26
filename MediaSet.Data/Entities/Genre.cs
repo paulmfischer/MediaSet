@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MediaSet.Data.Entities;
 
-public class Format : IMetadata
+public class Genre : IMetadata
 {
     public int Id { get; set; }
     [Required]
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; } = string.Empty;
 }
