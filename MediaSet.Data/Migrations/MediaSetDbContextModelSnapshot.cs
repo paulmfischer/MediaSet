@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace MediaSet.Api.Migrations
+namespace MediaSet.Data.Migrations
 {
     [DbContext(typeof(MediaSetDbContext))]
     partial class MediaSetDbContextModelSnapshot : ModelSnapshot
@@ -16,7 +16,7 @@ namespace MediaSet.Api.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.13");
 
-            modelBuilder.Entity("MediaSet.Api.BookApi.Book", b =>
+            modelBuilder.Entity("MediaSet.Data.Entities.Book", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -48,7 +48,7 @@ namespace MediaSet.Api.Migrations
                     b.ToTable("Books");
                 });
 
-            modelBuilder.Entity("MediaSet.Api.Metadata.Format", b =>
+            modelBuilder.Entity("MediaSet.Data.Entities.Format", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -63,9 +63,39 @@ namespace MediaSet.Api.Migrations
                     b.ToTable("Formats");
                 });
 
-            modelBuilder.Entity("MediaSet.Api.BookApi.Book", b =>
+            modelBuilder.Entity("MediaSet.Data.Entities.Genre", b =>
                 {
-                    b.HasOne("MediaSet.Api.Metadata.Format", "Format")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Genres");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.Entities.Publisher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Publishers");
+                });
+
+            modelBuilder.Entity("MediaSet.Data.Entities.Book", b =>
+                {
+                    b.HasOne("MediaSet.Data.Entities.Format", "Format")
                         .WithMany()
                         .HasForeignKey("FormatId");
 
