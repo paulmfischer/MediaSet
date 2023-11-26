@@ -1,4 +1,5 @@
 using MediaSet.Api.BookApi;
+using MediaSet.Api.Metadata;
 using Microsoft.EntityFrameworkCore;
 
 var folder = Environment.SpecialFolder.LocalApplicationData;
@@ -18,7 +19,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapFormat();
+app.MapEntity<Format>("/formats");
+app.MapEntity<Genre>("/genres");
+app.MapEntity<Publisher>("/publishers");
+
 app.MapBooks();
 
 app.Run();

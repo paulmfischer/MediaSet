@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MediaSet.Api.Metadata;
 
-public class Format : IMetadata
+public class Publisher : IMetadata
 {
     public int Id { get; set; }
     [Required]
