@@ -12,6 +12,7 @@ public class CreateBook
     public string? PublicationYear { get; set; }
     public int? NumberOfPages { get; set; }
     public Format? Format { get; set; }
+    public Genre? Genre { get; set; }
 }
 
 public class UpdateBook
@@ -24,6 +25,7 @@ public class UpdateBook
     public string? PublicationYear { get; set; }
     public int? NumberOfPages { get; set; }
     public Format? Format { get; set; }
+    public Genre? Genre { get; set; }
 }
 
 
@@ -38,8 +40,8 @@ public static class BookMappingExtensions
             Plot = book.Plot,
             PublicationYear = book.PublicationYear,
             NumberOfPages = book.NumberOfPages,
-            // FormatId = book.FormatId,
             Format = book.Format,
+            Genre = book.Genre,
         };
     }
 
@@ -47,13 +49,14 @@ public static class BookMappingExtensions
     { 
         return new()
         {
+            Id = book.Id,
             Title = book.Title,
             ISBN = book.ISBN,
             Plot = book.Plot,
             PublicationYear = book.PublicationYear,
             NumberOfPages = book.NumberOfPages,
-            // FormatId = book.FormatId,
             Format = book.Format,
+            Genre = book.Genre,
         };
     }
 }

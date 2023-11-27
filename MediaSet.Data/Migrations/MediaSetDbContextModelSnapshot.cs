@@ -25,6 +25,9 @@ namespace MediaSet.Data.Migrations
                     b.Property<int?>("FormatId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("GenreId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ISBN")
                         .HasColumnType("TEXT");
 
@@ -44,6 +47,8 @@ namespace MediaSet.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FormatId");
+
+                    b.HasIndex("GenreId");
 
                     b.ToTable("Books");
                 });
@@ -99,7 +104,13 @@ namespace MediaSet.Data.Migrations
                         .WithMany()
                         .HasForeignKey("FormatId");
 
+                    b.HasOne("MediaSet.Data.Entities.Genre", "Genre")
+                        .WithMany()
+                        .HasForeignKey("GenreId");
+
                     b.Navigation("Format");
+
+                    b.Navigation("Genre");
                 });
 #pragma warning restore 612, 618
         }

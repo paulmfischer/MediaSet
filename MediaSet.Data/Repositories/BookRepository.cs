@@ -23,67 +23,46 @@ public class BookRepository : IBookRepository
 
     public Task<List<Book>> GetAllBooks()
     {
-        return db.Books.Include(book => book.Format).AsNoTracking().ToListAsync();
+        return db.Books
+            .Include(book => book.Format)
+            .Include(book => book.Genre)
+            .AsNoTracking().ToListAsync();
 
     }
     public Task<Book?> GetBookById(int id)
     {
-        return db.Books.Include(book => book.Format).FirstOrDefaultAsync(book => book.Id == id);
+        return db.Books
+            .Include(book => book.Format)
+            .Include(book => book.Genre)
+            .FirstOrDefaultAsync(book => book.Id == id);
     }
 
     public async Task<Book> CreateBook(Book book)
     {
-        if (book.Format?.Id == 0)
-        {
-            db.Formats.Add(book.Format);
-            await db.SaveChangesAsync();
-            book.FormatId = book.Format.Id;
-        }
-        else
-        {
-            book.FormatId = book.Format?.Id;
-            book.Format = null;
-        }
-
         db.Books.Add(book);
         await db.SaveChangesAsync();
-        if (book.FormatId != null && book.Format is null)
-        {
-            book.Format = await db.Formats.FirstOrDefaultAsync(format => format.Id == book.FormatId);
-        }
 
         return book;
     }
 
     public async Task<Book?> UpdateBook(Book book)
     {
-        if (book.Format?.Id == 0)
+        Book? dbBook = await GetBookById(book.Id);
+        if (dbBook is null)
         {
-            db.Formats.Add(book.Format);
-            await db.SaveChangesAsync();
-            book.FormatId = book.Format.Id;
-        }
-        else
-        {
-            book.FormatId = book.Format?.Id;
+            return null;
         }
 
-        var rowsAffected = await db.Books.Where(b => b.Id == book.Id)
-            .ExecuteUpdateAsync(updates =>
-                updates.SetProperty(b => b.Title, book.Title)
-                    .SetProperty(b => b.ISBN, book.ISBN)
-                    .SetProperty(b => b.NumberOfPages, book.NumberOfPages)
-                    .SetProperty(b => b.PublicationYear, book.PublicationYear)
-                    .SetProperty(b => b.Plot, book.Plot)
-                    .SetProperty(b => b.FormatId, book.FormatId)
-            );
+        dbBook.Format = book.Format;
+        dbBook.Genre = book.Genre;
+        dbBook.ISBN = book.ISBN;
+        dbBook.NumberOfPages = book.NumberOfPages;
+        dbBook.Plot = book.Plot;
+        dbBook.PublicationYear = book.PublicationYear;
+        dbBook.Title = book.Title;
 
-        if (book.FormatId != null)
-        {
-            book.Format = await db.Formats.FirstOrDefaultAsync(format => format.Id == book.FormatId);
-        }
-        
-        return book;
+        await db.SaveChangesAsync();
+        return dbBook;
     }
 
     public Task<int> DeleteBookById(int id)

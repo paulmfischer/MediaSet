@@ -14,4 +14,6 @@ public class Book
 
     public int? FormatId { get; set; }
     public Format? Format { get; set; }
+    public int? GenreId { get; set; }
+    public Genre? Genre { get; set; }
 }
