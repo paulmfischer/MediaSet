@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Data.Entities;
 
@@ -13,6 +14,7 @@ public class CreateBook
     public int? NumberOfPages { get; set; }
     public Format? Format { get; set; }
     public Genre? Genre { get; set; }
+    public ICollection<Publisher> Publishers { get; set; } = new Collection<Publisher>();
 }
 
 public class UpdateBook
@@ -26,6 +28,7 @@ public class UpdateBook
     public int? NumberOfPages { get; set; }
     public Format? Format { get; set; }
     public Genre? Genre { get; set; }
+    public ICollection<Publisher> Publishers { get; set; } = new Collection<Publisher>();
 }
 
 
@@ -42,6 +45,7 @@ public static class BookMappingExtensions
             NumberOfPages = book.NumberOfPages,
             Format = book.Format,
             Genre = book.Genre,
+            Publishers = book.Publishers,
         };
     }
 
@@ -57,6 +61,7 @@ public static class BookMappingExtensions
             NumberOfPages = book.NumberOfPages,
             Format = book.Format,
             Genre = book.Genre,
+            Publishers = book.Publishers,
         };
     }
 }

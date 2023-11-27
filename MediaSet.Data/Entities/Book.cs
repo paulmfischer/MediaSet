@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace MediaSet.Data.Entities;
@@ -16,4 +17,5 @@ public class Book
     public Format? Format { get; set; }
     public int? GenreId { get; set; }
     public Genre? Genre { get; set; }
+    public ICollection<Publisher> Publishers { get; set; } = new Collection<Publisher>();
 }

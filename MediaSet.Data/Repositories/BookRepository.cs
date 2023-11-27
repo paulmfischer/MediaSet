@@ -26,6 +26,7 @@ public class BookRepository : IBookRepository
         return db.Books
             .Include(book => book.Format)
             .Include(book => book.Genre)
+            .Include(book => book.Publishers)
             .AsNoTracking().ToListAsync();
 
     }
@@ -34,6 +35,7 @@ public class BookRepository : IBookRepository
         return db.Books
             .Include(book => book.Format)
             .Include(book => book.Genre)
+            .Include(book => book.Publishers)
             .FirstOrDefaultAsync(book => book.Id == id);
     }
 
