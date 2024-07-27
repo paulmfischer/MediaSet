@@ -16,10 +16,10 @@ export default function App({ Component }: PageProps) {
             </div>
             <div id="main" className="max-w-full grow flex flex-col lg:pl-56 bg-zinc-100 dark:bg-zinc-900">
               This will be the content!
+              <Component />
             </div>
           </div>
         </div>
-        {/* <Component /> */}
       </body>
     </html>
   );
