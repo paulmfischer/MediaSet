@@ -11,9 +11,21 @@ public class Book
 
   public string Title { get; set; } = null!;
 
-  public string Genre { get; set; } = null!;
-
-  public string Author { get; set; } = null!;
+  public string ISBN { get; set; } = null!;
 
   public string Format { get; set; } = null!;
+
+  public int Pages { get; set; }
+
+  public DateTime? PublicationDate { get; set; }
+
+  public List<string> Author { get; set; } = [];
+
+  public List<string> Publisher { get; set; } = [];
+
+  public List<string> Genre { get; set; } = [];
+
+  public string Plot { get; set; } = null!;
+
+  public string Subtitle { get; set; } = null!;
 }
