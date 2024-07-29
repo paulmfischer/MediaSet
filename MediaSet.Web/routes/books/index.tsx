@@ -11,7 +11,7 @@ interface Book {
 
 export const handler: Handlers<Array<Book>> = {
   async GET(_req, ctx) {
-    const response = await fetch("https://localhost:7130/books", {
+    const response = await fetch("http://localhost:7130/books", {
         headers: {
             accept: "application/json",
         }
@@ -29,7 +29,7 @@ export const handler: Handlers<Array<Book>> = {
 export default function Books(props: PageProps<Array<Book>>) {
   return (
     <div>
-        <MediaHeader title="Books" />
+        <MediaHeader title="Books" /><a href="/books/upload" className="dark:text-slate-400 flex items-center">Upload</a>
         You have {props.data.length} books.
         <div>
             <ul>

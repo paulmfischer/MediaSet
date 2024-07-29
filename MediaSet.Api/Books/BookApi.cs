@@ -43,10 +43,20 @@ internal static class BookApi
 
     group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (BooksService booksService, string id) =>
     {
-
       var result = await booksService.RemoveAsync(id);
       return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
+
+    group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BooksService booksService, IFormFile bookUpload) =>
+    {
+      Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
+      var tempFile = Path.GetTempFileName();
+      using var stream = File.OpenWrite(tempFile);
+      await bookUpload.CopyToAsync(stream);
+
+      return TypedResults.Ok();
+    })
+    .DisableAntiforgery();
 
     return group;
   }
