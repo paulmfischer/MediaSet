@@ -1,4 +1,6 @@
 import { type PageProps } from "$fresh/server.ts";
+import { Navigation } from "../components/Navigation.tsx";
+
 export default function App({ Component }: PageProps) {
   return (
     <html>
@@ -12,11 +14,15 @@ export default function App({ Component }: PageProps) {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8">
           <div className="min-h-screen flex">
             <div id="sidebar" className="max-w-lg hidden lg:flex flex-col fixed inset-0 h-full lg:max-w-64 bg-zinc-200 dark:bg-zinc-800 z-50">
-              This will be my navigation!
+              <div className="mt-8 ml-8 mr-2">
+                <div className="my-2">MediaSet</div>
+                <Navigation />
+              </div>
             </div>
             <div id="main" className="max-w-full grow flex flex-col lg:pl-56 bg-zinc-100 dark:bg-zinc-900">
-              This will be the content!
-              <Component />
+              <div id="content" className="ml-10 m-5 mr-12 text-3xl lg:text-lg" data-pagefind-body>
+                <Component />
+              </div>
             </div>
           </div>
         </div>

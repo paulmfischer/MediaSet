@@ -14,3 +14,7 @@ deno task start
 ```
 
 This will watch the project directory and restart as necessary.
+
+"fontawesome": "npm:@fortawesome/fontawesome-svg-core@6.6.0",
+"react-fontawesome": "npm:@fortawesome/react-fontawesome@latest",
+"fontawesome-solid": "npm:@fortawesome/free-solid-svg-icons@6.6.0",
