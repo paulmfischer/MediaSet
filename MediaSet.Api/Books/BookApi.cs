@@ -1,6 +1,7 @@
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.VisualBasic.FileIO;
 
 namespace MediaSet.Api.Books;
 
@@ -50,9 +51,32 @@ internal static class BookApi
     group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BooksService booksService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
-      var tempFile = Path.GetTempFileName();
-      using var stream = File.OpenWrite(tempFile);
-      await bookUpload.CopyToAsync(stream);
+      using Stream stream = bookUpload.OpenReadStream();
+
+      using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
+      parser.TextFieldType = FieldType.Delimited;
+      parser.SetDelimiters(";");
+      parser.HasFieldsEnclosedInQuotes = true;
+      while (!parser.EndOfData)
+      {
+        if (parser.LineNumber == 1)
+        {
+          Console.WriteLine("What are the headers?");
+          //Process row
+          string[]? fields = parser.ReadFields();
+          if (fields != null)
+          {
+            foreach (string field in fields)
+            {
+              Console.WriteLine("Header fields: {0}", field);
+            }
+          }
+        }
+        else
+        {
+          parser.Close();
+        }
+      }
 
       return TypedResults.Ok();
     })
