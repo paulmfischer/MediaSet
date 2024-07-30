@@ -1,17 +1,11 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { MediaHeader } from "../../components/MediaHeader.tsx";
-
-interface Book {
-    id: string;
-    title: string;
-    genre: string;
-    author: string;
-    format: string;
-}
+import { baseUrl } from "../../constants.ts";
+import { Book } from "../../models.ts";
 
 export const handler: Handlers<Array<Book>> = {
   async GET(_req, ctx) {
-    const response = await fetch("http://localhost:7130/books", {
+    const response = await fetch(`${baseUrl}/books`, {
         headers: {
             accept: "application/json",
         }
@@ -29,22 +23,25 @@ export const handler: Handlers<Array<Book>> = {
 export default function Books(props: PageProps<Array<Book>>) {
   return (
     <div>
-        <MediaHeader title="Books" /><a href="/books/upload" className="dark:text-slate-400 flex items-center">Upload</a>
-        You have {props.data.length} books.
-        <div>
-            <ul>
-                {props.data.map((book: Book) => (
-                    <li key={book.title} className="flex gap-4 text-3xl lg:text-lg">
-                        <div className="text-blue-600 dark:text-blue-400">
-                            {/* <a href={`/books/${book.id}`}> */}
-                            {book.title}
-                            {/* </a> */}
-                        </div>
-                        <div>{book.author}</div>
-                    </li>
-                ))}
-            </ul>
-        </div>
+      <div className="flex items-center justify-between">
+        <MediaHeader title="Books" />
+        <a href="/books/upload" className="dark:text-slate-400">Upload</a>
+      </div>
+      You have {props.data.length} books.
+      <div className="mt-2">
+          <ul>
+              {props.data.map((book: Book) => (
+                  <li key={book.title} className="flex gap-4 text-3xl lg:text-lg">
+                      <div className="text-blue-600 dark:text-blue-400">
+                          {/* <a href={`/books/${book.id}`}> */}
+                          {book.title}
+                          {/* </a> */}
+                      </div>
+                      <div>{book.author}</div>
+                  </li>
+              ))}
+          </ul>
+      </div>
     </div>
   );
 }
