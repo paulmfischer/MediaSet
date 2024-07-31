@@ -1,3 +1,4 @@
+using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -51,31 +52,76 @@ internal static class BookApi
     group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BooksService booksService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
-      using Stream stream = bookUpload.OpenReadStream();
-
-      using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
-      parser.TextFieldType = FieldType.Delimited;
-      parser.SetDelimiters(";");
-      parser.HasFieldsEnclosedInQuotes = true;
-      while (!parser.EndOfData)
+      try
       {
-        if (parser.LineNumber == 1)
+        
+        using Stream stream = bookUpload.OpenReadStream();
+
+        using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
+        parser.TextFieldType = FieldType.Delimited;
+        parser.SetDelimiters(";");
+        parser.HasFieldsEnclosedInQuotes = true;
+        string[]? headerFields = [];
+        IList<Book> newBooks = [];
+        while (!parser.EndOfData)
         {
-          Console.WriteLine("What are the headers?");
-          //Process row
-          string[]? fields = parser.ReadFields();
-          if (fields != null)
+          //Process header row
+          if (parser.LineNumber == 1)
           {
-            foreach (string field in fields)
+            Console.WriteLine("What are the headers?");
+            headerFields = parser.ReadFields();
+            if (headerFields != null)
             {
-              Console.WriteLine("Header fields: {0}", field);
+              foreach (string field in headerFields)
+              {
+                Console.WriteLine("Header fields: {0}", field);
+              }
+            }
+          }
+          else
+          {
+            // process data rows
+            string[]? newBookFields = parser.ReadFields();
+            if (newBookFields != null)
+            {
+              foreach (string field in newBookFields)
+              {
+                Console.WriteLine("book fields: {0}", field);
+              }
+              var authors = newBookFields.GetByHeader(headerFields, nameof(Book.Author));
+              var publishers = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher));
+              var genres = newBookFields.GetByHeader(headerFields, nameof(Book.Genre));
+              var pagesField = newBookFields.GetByHeader(headerFields, nameof(Book.Pages));
+              var publicationDateField = newBookFields.GetByHeader(headerFields, "Publication Date");
+              // int.TryParse(newBookFields.GetByHeader(headerFields, nameof(Book.Pages)), out var pageCount);
+              newBooks.Add(new()
+              {
+                Title = newBookFields.GetByHeader(headerFields, nameof(Book.Title)),
+                ISBN = newBookFields.GetByHeader(headerFields, nameof(Book.ISBN)),
+                Format = newBookFields.GetByHeader(headerFields, nameof(Book.Format)),
+                Pages = string.IsNullOrWhiteSpace(pagesField) ? null : int.Parse(pagesField),
+                PublicationDate = publicationDateField, // string.IsNullOrWhiteSpace(publicationDateField) ? null : DateTime.Parse(newBookFields.GetByHeader(headerFields, "Publication Date")),
+                Author = string.IsNullOrWhiteSpace(authors) ? [] : [.. authors.Split("|")],
+                Publisher = string.IsNullOrWhiteSpace(publishers) ? [] : [.. publishers.Split("|")],
+                Genre = string.IsNullOrWhiteSpace(genres) ? [] : [.. genres.Split("|")],
+                Plot = newBookFields.GetByHeader(headerFields, nameof(Book.Plot)),
+                Subtitle = newBookFields.GetByHeader(headerFields, nameof(Book.Subtitle)),
+              });
+
+              // await booksService.BulkCreate(newBooks);
             }
           }
         }
-        else
+
+        foreach (var book in newBooks)
         {
-          parser.Close();
+          await booksService.CreateAsync(book);
         }
+      }
+      catch (System.Exception er)
+      {
+        Console.WriteLine("Failed to save bulk create: {0}", er);
+        return TypedResults.BadRequest();
       }
 
       return TypedResults.Ok();

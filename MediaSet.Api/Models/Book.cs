@@ -15,9 +15,9 @@ public class Book
 
   public string Format { get; set; } = null!;
 
-  public int Pages { get; set; }
+  public int? Pages { get; set; }
 
-  public DateTime? PublicationDate { get; set; }
+  public string PublicationDate { get; set; } = null!;
 
   public List<string> Author { get; set; } = [];
 
