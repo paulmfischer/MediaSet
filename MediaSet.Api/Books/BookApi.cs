@@ -107,8 +107,6 @@ internal static class BookApi
                 Plot = newBookFields.GetByHeader(headerFields, nameof(Book.Plot)),
                 Subtitle = newBookFields.GetByHeader(headerFields, nameof(Book.Subtitle)),
               });
-
-              // await booksService.BulkCreate(newBooks);
             }
           }
         }
