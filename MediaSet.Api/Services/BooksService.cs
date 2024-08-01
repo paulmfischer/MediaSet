@@ -17,7 +17,8 @@ public class BooksService
     _booksCollection = mongoDatabase.GetCollection<Book>(dbSettings.BooksCollectionName);
   }
 
-  public async Task<List<Book>> GetAsync() => await _booksCollection.Find(_ => true).ToListAsync();
+  public async Task<List<Book>> GetAsync() => await _booksCollection.Find(_ => true).SortBy(book => book.Title).ToListAsync();
+  public List<Book> SearchAsync(string searchText) => _booksCollection.Find(book => book.Title.ToLower().Contains(searchText.ToLower())).SortBy(book => book.Title).ToList();
 
   public async Task<Book?> GetAsync(string id) => await _booksCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 

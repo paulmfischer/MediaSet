@@ -15,6 +15,7 @@ internal static class BookApi
     group.WithTags("Books");
 
     group.MapGet("/", async (BooksService booksService) => await booksService.GetAsync()).WithOpenApi();
+    group.MapGet("/search", (BooksService bookService, string searchText) => bookService.SearchAsync(searchText));
 
     group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (BooksService booksService, string id) =>
     {
