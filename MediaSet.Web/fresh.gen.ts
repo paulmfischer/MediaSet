@@ -6,7 +6,6 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_joke from "./routes/api/joke.ts";
 import * as $books_id_ from "./routes/books/[id].tsx";
-import * as $books_components_BookForm from "./routes/books/_components/BookForm.tsx";
 import * as $books_add from "./routes/books/add.tsx";
 import * as $books_index from "./routes/books/index.tsx";
 import * as $books_upload from "./routes/books/upload.tsx";
@@ -21,7 +20,6 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/joke.ts": $api_joke,
     "./routes/books/[id].tsx": $books_id_,
-    "./routes/books/_components/BookForm.tsx": $books_components_BookForm,
     "./routes/books/add.tsx": $books_add,
     "./routes/books/index.tsx": $books_index,
     "./routes/books/upload.tsx": $books_upload,

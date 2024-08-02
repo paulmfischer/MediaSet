@@ -1,4 +1,5 @@
 import { Handlers, type PageProps } from "$fresh/server.ts";
+import { Button } from "../../components/Button.tsx";
 import { MediaHeader } from "../../components/MediaHeader.tsx";
 import { baseUrl } from "../../constants.ts";
 
@@ -18,29 +19,25 @@ export const handler: Handlers<Props> = {
 
     if (!file) {
       return ctx.render({
-        message: `A file is required, please try again.`,
+        message: 'A file is required, please try again.',
       });
     }
-    console.log("attempting to upload file", file);
 
     const response = await fetch(`${baseUrl}/books/upload`, {
-      method: "POST",
+      method: 'POST',
       body: form,
     });
 
     if (!response.ok) {
         return ctx.render({
-            message: "File upload failed"
+            message: 'File upload failed'
         });
     }
 
-    console.log("received upload response", response);
-    const name = file.name;
-    // const contents = await file.text();
-    // console.log(contents);
-
-    return ctx.render({
-      message: `${name} uploaded!`,
+    // on success of upload, redirect to books list page
+    return new Response('', {
+      status: 303,
+      headers: { Location: '/books' }
     });
   },
 };
@@ -55,7 +52,7 @@ export default function Upload(props: PageProps<Props>) {
       <div className="mt-2">
         <form method="post" encType="multipart/form-data">
           <input type="file" name="bookUpload" />
-          <button type="submit">Upload</button>
+          <Button type="submit">Upload</Button>
         </form>
         {message ? <p>{message}</p> : null}
       </div>
