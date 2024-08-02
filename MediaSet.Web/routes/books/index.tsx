@@ -40,12 +40,14 @@ export default function Books(props: PageProps<BooksProps>) {
     <div>
       <div className="flex items-center justify-between">
         <MediaHeader title="Books" />
-        <Anchor
-          href="/books/upload"
-          className="text-3xl lg:text-lg text-blue-600 dark:text-blue-400"
-        >
-          Upload
-        </Anchor>
+        <div className="flex gap-4">
+          <Anchor href="/books/add">Add</Anchor>
+          <Anchor
+            href="/books/upload"
+          >
+            Upload
+          </Anchor>
+        </div>
       </div>
       <form className="flex gap-4 mt-2">
         <input
@@ -66,14 +68,14 @@ export default function Books(props: PageProps<BooksProps>) {
               <table className="table-auto border-spacing-x-2">
                 <thead>
                   <tr>
-                    <th className="text-left">
+                    <th className="text-left underline">
                       {(orderBy == '' || orderBy.includes('title:asc'))
                       ? <Anchor href={orderByUrl.replace('{0}', 'title:desc')}>Title (asc)</Anchor>
                       : <Anchor href={orderByUrl.replace('{0}', 'title:asc')}>Title (desc)</Anchor>
                       }
                     </th>
-                    <th className="text-left">Author</th>
-                    <th className="text-left">
+                    <th className="text-left underline">Author</th>
+                    <th className="text-left underline">
                       {(orderBy == '' || orderBy.includes('pages:asc'))
                       ? <Anchor href={orderByUrl.replace('{0}', 'pages:desc')}>Pages (asc)</Anchor>
                       : <Anchor href={orderByUrl.replace('{0}', 'pages:asc')}>Pages (desc)</Anchor>
