@@ -1,41 +1,48 @@
+import { JSX } from "preact";
 import InputField from "./InputField.tsx";
 import { propertyOf } from "../helpers.ts";
 import { Book } from "../models.ts";
 import Input from "./Input.tsx";
+import { Button } from "./Button.tsx";
 
-export default function BookForm() {
+interface BookFormProps {
+  submitText: string;
+}
+
+export default function BookForm({ submitText, className, ...props }: JSX.HTMLAttributes<HTMLFormElement> & BookFormProps) {
   return (
-    <form className="grid grid-cols-2 gap-4">
-      <InputField label="Title" name={propertyOf<Book>("title")}>
-        <Input />
+    <form {...props} className={`grid grid-cols-2 gap-4 ${className}`}>
+      <InputField label="Title">
+        <Input name={propertyOf<Book>("title")} />
       </InputField>
-      <InputField label="Subtitle" name={propertyOf<Book>("subTitle")}>
-        <Input />
+      <InputField label="Subtitle">
+        <Input name={propertyOf<Book>("subTitle")} />
       </InputField>
-      <InputField label="ISBN" name={propertyOf<Book>("isbn")}>
-        <Input />
+      <InputField label="ISBN">
+        <Input name={propertyOf<Book>("isbn")} />
       </InputField>
-      <InputField label="Format" name={propertyOf<Book>("format")}>
-        <Input />
+      <InputField label="Format">
+        <Input name={propertyOf<Book>("format")} />
       </InputField>
-      <InputField label="Pages" name={propertyOf<Book>("pages")}>
-        <Input type="number" min="0" />
+      <InputField label="Pages">
+        <Input type="number" min="0" name={propertyOf<Book>("pages")} />
       </InputField>
-      <InputField label="Publication Date" name={propertyOf<Book>("publicationDate")}>
-        <Input type="date" />
+      <InputField label="Publication Date">
+        <Input type="date" name={propertyOf<Book>("publicationDate")} />
       </InputField>
-      <InputField label="Author" name={propertyOf<Book>("author")}>
-        <Input />
+      <InputField label="Author">
+        <Input name={propertyOf<Book>("author")} />
       </InputField>
-      <InputField label="Publisher" name={propertyOf<Book>("publisher")}>
-        <Input />
+      <InputField label="Publisher">
+        <Input name={propertyOf<Book>("publisher")} />
       </InputField>
-      <InputField label="Genre" name={propertyOf<Book>("genre")}>
-        <Input />
+      <InputField label="Genre">
+        <Input name={propertyOf<Book>("genre")} />
       </InputField>
-      <InputField label="Plot" name={propertyOf<Book>("plot")} inputProps={{ type: 'textarea' }}>
-        <Input type="textarea" />
+      <InputField label="Plot">
+        <Input type="textarea" name={propertyOf<Book>("plot")} />
       </InputField>
+      <Button type="submit">{submitText}</Button>
     </form>
   )
 }

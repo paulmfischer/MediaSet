@@ -103,7 +103,7 @@ export default function Books(props: PageProps<BooksProps>) {
                                 {book.title}
                               </Anchor>
                             </td>
-                            <td>{book.author.join(',')}</td>
+                            <td>{book.author?.join(',')}</td>
                             <td>{book.pages}</td>
                           </tr>
                         ))}

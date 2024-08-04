@@ -30,9 +30,9 @@ export default function ProjectPage(props: PageProps<Book>) {
         <MediaField id="format" label="Format" fieldContent={book.format} />
         <MediaField id="pages" label="Pages" fieldContent={book.pages} />
         <MediaField id="publicationDate" label="Publication Date" fieldContent={book.publicationDate} />
-        <MediaField id="author" label="Author" fieldContent={book.author.join(',')} />
-        <MediaField id="publisher" label="Publisher" fieldContent={book.publisher.join(',')} />
-        <MediaField id="genre" label="Genre" fieldContent={book.genre.join(',')} />
+        <MediaField id="author" label="Author" fieldContent={book.author?.join(',')} />
+        <MediaField id="publisher" label="Publisher" fieldContent={book.publisher?.join(',')} />
+        <MediaField id="genre" label="Genre" fieldContent={book.genre?.join(',')} />
         <MediaField id="isbn" label="ISBN" fieldContent={book.isbn} />
         <MediaField id="plot" label="Plot" fieldContent={book.plot} />
       </div>
