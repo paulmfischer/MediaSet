@@ -1,6 +1,18 @@
 import { JSX } from "preact";
 
-export function Button(props: JSX.HTMLAttributes<HTMLButtonElement>) {
+interface ButtonProps {
+  style?: 'link';
+}
+
+export function Button({ style, ...props }: JSX.HTMLAttributes<HTMLButtonElement>) {
+  if (style == 'link') {
+    return (
+      <button {...props}
+        className="text-blue-600 dark:text-blue-400 border-none underline p-0"
+      />
+    );
+  }
+
   return (
     <button
       {...props}

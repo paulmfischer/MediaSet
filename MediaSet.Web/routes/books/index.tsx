@@ -27,6 +27,33 @@ export const handler: Handlers<BooksProps> = {
 
     const books = await response.json();
     return ctx.render({ books, searchText: searchText.toString(), orderBy });
+  },
+  async POST(req, ctx) {
+    const formData = await req.formData();
+    const id = formData.get('id') ?? '';
+    const url = new URL(req.url);
+    const searchText = url.searchParams.get('searchText') || '';
+    const orderBy = url.searchParams.get('orderBy') || '';
+    console.log('book to delete', id);
+
+    const response = await fetch(`${baseUrl}/books/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      return ctx.render({ failed: true, searchText, orderBy });
+    }
+    
+    let location = '/books';
+    if (searchText != '') {
+      location += `?searchText=${searchText}`;
+    }
+    if (orderBy != '') {
+      location += location.includes('?') ? `&orderBy=${orderBy}` : `?orderBy=${orderBy}`;
+    }
+
+    // on success of delete, reload books page to refresh data
+    return new Response('', {
+      status: 303,
+      headers: { Location: location }
+    });
   }
 };
 
@@ -91,6 +118,7 @@ export default function Books(props: PageProps<BooksProps>) {
                               : <Anchor href={orderByUrl.replace('{0}', 'pages:asc')}>Pages (desc)</Anchor>
                             }
                           </th>
+                          <th className="text-left"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -99,12 +127,21 @@ export default function Books(props: PageProps<BooksProps>) {
                             <td>
                               <Anchor
                                 href={`/books/${book.id}`}
+                                className="mr-2"
                               >
                                 {book.title}
                               </Anchor>
                             </td>
                             <td>{book.author?.join(',')}</td>
                             <td>{book.pages}</td>
+                            <td>
+                              <div class="flex gap-2 mr-2 items-center">
+                                <Anchor href={`/books/${book.id}/edit`}>Edit</Anchor>
+                                <form method="POST">
+                                  <input hidden="hidden" value={book.id} name="id" /><Button type="submit" style="link">Delete</Button>
+                                </form>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

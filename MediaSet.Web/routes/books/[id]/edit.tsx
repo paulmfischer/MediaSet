@@ -1,15 +1,25 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
-import BookForm from "../../components/BookForm.tsx";
-import { MediaHeader } from "../../components/MediaHeader.tsx";
-import { baseUrl } from "../../constants.ts";
-import { getFormData } from "../../helpers.ts";
-import { Book } from "../../models.ts";
+import BookForm from "../../../components/BookForm.tsx";
+import { MediaHeader } from "../../../components/MediaHeader.tsx";
+import { baseUrl } from "../../../constants.ts";
+import { getFormData } from "../../../helpers.ts";
+import { Book } from "../../../models.ts";
 
-interface AddBookProps {
-  message: string | null;
+interface EditBookProps {
+  book: Book;
+  message?: string;
 }
 
-export const handler: Handlers<AddBookProps> = {
+export const handler: Handlers<EditBookProps> = {
+  async GET(_req, ctx) {
+    const response = await fetch(`${baseUrl}/books/${ctx.params.id}`);
+    if (!response.ok) {
+      return ctx.renderNotFound();
+    }
+    const book = await response.json();
+    console.log('edit book', book);
+    return ctx.render({ book });
+  },
   async POST(req, ctx) {
     const form = await req.formData();
     const book: Book = {
@@ -20,13 +30,13 @@ export const handler: Handlers<AddBookProps> = {
       isbn: getFormData(form, 'isbn'),
       plot: getFormData(form, 'plot'),
       publicationDate: getFormData(form, 'publicationDate'),
-      publisher:  getFormData(form, 'publisher')?.split(','),
+      publisher: getFormData(form, 'publisher')?.split(','),
       subTitle: getFormData(form, 'subTitle'),
       pages: Number(getFormData(form, 'pages')),
     };
 
     const response = await fetch(`${baseUrl}/books`, {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify(book),
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +45,7 @@ export const handler: Handlers<AddBookProps> = {
 
     if (!response.ok) {
       console.log('failed to create a book', response);
-      return ctx.render({ message: 'Failed to create a new book' });
+      return ctx.render({ message: 'Failed to create a new book', book });
     }
 
     // on success of upload, redirect to books list page
@@ -46,12 +56,13 @@ export const handler: Handlers<AddBookProps> = {
   },
 };
 
-export default function Add(props: PageProps<AddBookProps>) {
+export default function Edit(props: PageProps<EditBookProps>) {
+  console.log('edit book page', props.data.book);
   return (
     <>
-      <MediaHeader title="Add a book" />
+      <MediaHeader title="Edit a book" />
       {props.data?.message != null && <div>{props.data.message}</div>}
-      <BookForm className="mt-2" submitText="Add" method="POST" />
+      <BookForm className="mt-2" submitText="Update" method="POST" book={props.data.book} />
     </>
   );
 }

@@ -9,9 +9,6 @@ export const handler: Handlers<Book> = {
     const response = await fetch(`${baseUrl}/books/${ctx.params.id}`);
     if (!response.ok) {
       return ctx.renderNotFound();
-      // {
-      //   message: "Project does not exist",
-      // });
     }
     const book = await response.json();
     return ctx.render(book);
