@@ -4,6 +4,7 @@ import { Button } from "../../components/Button.tsx";
 import { MediaHeader } from "../../components/MediaHeader.tsx";
 import { baseUrl } from "../../constants.ts";
 import { Book } from "../../models.ts";
+import { TbPlus, TbUpload, TbEdit, TbTrash, TbArrowUp, TbArrowDown } from '@preact-icons/tb';
 
 interface BooksProps {
   searchText: string;
@@ -71,9 +72,9 @@ export default function Books(props: PageProps<BooksProps>) {
     : "/books?orderBy={0}";
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b dark:border-slate-300">
         <MediaHeader title="Books" />
-        <form className="flex gap-4 mt-2">
+        <form className="flex gap-4 leading-4">
           <input
             name="searchText"
             value={searchText}
@@ -82,10 +83,16 @@ export default function Books(props: PageProps<BooksProps>) {
           <input name="orderBy" value={orderBy} hidden="hidden" />
           <Button type="submit">Search</Button>
         </form>
-        <div className="flex gap-4 text-xl">
-          <Anchor href="/books/add">Add</Anchor>
-          <Anchor href="/books/upload">
-            Upload
+        <div className="flex gap-4">
+          <Anchor href="/books/add" className="flex items-center">
+            <TbPlus size={24} />
+            <span className="ml-2">Add</span>
+          </Anchor>
+          <Anchor href="/books/upload" className="flex items-center">
+            <TbUpload size={24} />
+            <span className="ml-2">
+              Upload
+            </span>
           </Anchor>
         </div>
       </div>
@@ -116,15 +123,17 @@ export default function Books(props: PageProps<BooksProps>) {
                               ? (
                                 <Anchor
                                   href={orderByUrl.replace("{0}", "title:desc")}
+                                  className="flex gap-2"
                                 >
-                                  Title (asc)
+                                  Title <TbArrowUp size={24} alt="asc" title="asc" />
                                 </Anchor>
                               )
                               : (
                                 <Anchor
                                   href={orderByUrl.replace("{0}", "title:asc")}
+                                  className="flex gap-2"
                                 >
-                                  Title (desc)
+                                  Title <TbArrowDown size={24} alt="desc" title="desc" />
                                 </Anchor>
                               )}
                           </th>
@@ -136,14 +145,14 @@ export default function Books(props: PageProps<BooksProps>) {
                                 <Anchor
                                   href={orderByUrl.replace("{0}", "pages:desc")}
                                 >
-                                  Pages (asc)
+                              Pages <TbArrowDown size={24} alt="asc" title="asc" />
                                 </Anchor>
                               )
                               : (
                                 <Anchor
                                   href={orderByUrl.replace("{0}", "pages:asc")}
                                 >
-                                  Pages (desc)
+                              Pages <TbArrowUp size={24} alt="desc" title="desc" />
                                 </Anchor>
                               )}
                           </th>
@@ -165,9 +174,9 @@ export default function Books(props: PageProps<BooksProps>) {
                             <td>{book.author?.join(",")}</td>
                             <td>{book.pages}</td>
                             <td>
-                              <div class="flex gap-2 mr-2 items-center">
+                              <div class="flex gap-2 mr-2">
                                 <Anchor href={`/books/${book.id}/edit`}>
-                                  Edit
+                                  <TbEdit size={24} alt="Edit" title="Edit" />
                                 </Anchor>
                                 <form method="POST">
                                   <input
@@ -176,7 +185,7 @@ export default function Books(props: PageProps<BooksProps>) {
                                     name="id"
                                   />
                                   <Button type="submit" displayStyle="link">
-                                    Delete
+                                    <TbTrash alt="Delete" title="Delete" size={24} />
                                   </Button>
                                 </form>
                               </div>

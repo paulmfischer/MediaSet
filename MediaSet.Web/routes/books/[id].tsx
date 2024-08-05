@@ -5,6 +5,7 @@ import { MediaHeader } from "../../components/MediaHeader.tsx";
 import MediaField from "../../components/MediaField.tsx";
 import { Anchor } from "../../components/Anchor.tsx";
 import { Button } from "../../components/Button.tsx";
+import { TbEdit, TbTrash } from '@preact-icons/tb';
 
 export const handler: Handlers<Book> = {
   async GET(_req, ctx) {
@@ -36,13 +37,23 @@ export default function View(props: PageProps<Book>) {
   const book = props.data;
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b dark:border-slate-300">
         <MediaHeader title={book.title} />
-        <div class="flex gap-2 mr-2 items-center">
-          <Anchor href={`/books/${book.id}/edit`}>Edit</Anchor>
-          <form method="POST">
-            <input hidden="hidden" value={book.id} name="id" />
-            <Button type="submit" style="link">Delete</Button>
+        <div class="flex gap-4">
+          <Anchor href={`/books/${book.id}/edit`} className="flex gap-2">
+            <TbEdit size={24} />
+            <span>Edit</span>
+          </Anchor>
+          <form method="POST" className="leading-4">
+            <input
+              hidden="hidden"
+              value={book.id}
+              name="id"
+            />
+            <Button type="submit" displayStyle="link" className="flex gap-2 items-center">
+              <TbTrash size={24} />
+              <span>Delete</span>
+            </Button>
           </form>
         </div>
       </div>
