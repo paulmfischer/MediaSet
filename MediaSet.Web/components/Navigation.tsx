@@ -1,18 +1,15 @@
 import { JSX } from 'preact';
 import { Anchor } from "./Anchor.tsx";
-//import { FontAwesomeIcon } from 'npm:@fortawesome/react-fontawesome@latest';
-//import { faBook } from 'npm:@fortawesome/free-solid-svg-icons@6.6.0';
+// import BookIcon from 'https://icons.church/fa6-solid/book';
 
 export function Navigation(props: JSX.HTMLAttributes<HTMLElement>) {
   return (
     <nav {...props}>
       <ul>
         <li>
-          <Anchor href="/books" className="flex items-center">
-            <div className="w-8 h-8 lg:w-4 lg:h-4 mr-4">
-              {/* <FontAwesomeIcon icon={faBook} /> */}
-            </div>
-            <span className="text-3xl lg:text-lg text-blue-600 dark:text-blue-400">Books</span>
+          <Anchor href="/books" className="flex">
+            {/* <BookIcon  className="w-6 h-6 mr-4" /> */}
+            <span className="text-xl text-blue-600 dark:text-blue-400">Books</span>
           </Anchor>
         </li>
       </ul>
