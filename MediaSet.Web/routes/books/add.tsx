@@ -21,7 +21,7 @@ export const handler: Handlers<AddBookProps> = {
       plot: getFormData(form, 'plot'),
       publicationDate: getFormData(form, 'publicationDate'),
       publisher:  getFormData(form, 'publisher')?.split(','),
-      subTitle: getFormData(form, 'subTitle'),
+      subtitle: getFormData(form, 'subtitle'),
       pages: Number(getFormData(form, 'pages')),
     };
 

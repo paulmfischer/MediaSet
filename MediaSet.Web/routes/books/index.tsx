@@ -123,7 +123,7 @@ export default function Books(props: PageProps<BooksProps>) {
                       </thead>
                       <tbody>
                         {books?.map((book: Book) => (
-                          <tr>
+                          <tr className="dark:hover:bg-slate-800">
                             <td>
                               <Anchor
                                 href={`/books/${book.id}`}

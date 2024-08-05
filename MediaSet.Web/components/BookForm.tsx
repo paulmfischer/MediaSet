@@ -11,14 +11,14 @@ interface BookFormProps {
 }
 
 export default function BookForm({ book, submitText, className, ...props }: JSX.HTMLAttributes<HTMLFormElement> & BookFormProps) {
-  console.log('book form book', book);
   return (
     <form {...props} className={`grid grid-cols-2 gap-4 ${className}`}>
+      {book?.id && <Input name={propertyOf<Book>('id')} value={book.id} hidden="hidden" />}
       <InputField label="Title">
         <Input name={propertyOf<Book>("title")} value={book?.title} />
       </InputField>
       <InputField label="Subtitle">
-        <Input name={propertyOf<Book>("subTitle")} value={book?.subTitle} />
+        <Input name={propertyOf<Book>("subtitle")} value={book?.subtitle} />
       </InputField>
       <InputField label="ISBN">
         <Input name={propertyOf<Book>("isbn")} value={book?.isbn} />

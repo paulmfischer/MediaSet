@@ -9,5 +9,5 @@ export interface Book {
   publisher?: string[];
   genre?: string[];
   plot?: string;
-  subTitle?: string;
+  subtitle?: string;
 }

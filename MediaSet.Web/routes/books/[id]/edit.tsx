@@ -17,12 +17,13 @@ export const handler: Handlers<EditBookProps> = {
       return ctx.renderNotFound();
     }
     const book = await response.json();
-    console.log('edit book', book);
     return ctx.render({ book });
   },
   async POST(req, ctx) {
     const form = await req.formData();
+    const id = getFormData(form, 'id');
     const book: Book = {
+      id,
       title: getFormData(form, 'title'),
       author: getFormData(form, 'author')?.split(','),
       format: getFormData(form, 'format'),
@@ -31,11 +32,11 @@ export const handler: Handlers<EditBookProps> = {
       plot: getFormData(form, 'plot'),
       publicationDate: getFormData(form, 'publicationDate'),
       publisher: getFormData(form, 'publisher')?.split(','),
-      subTitle: getFormData(form, 'subTitle'),
+      subtitle: getFormData(form, 'subtitle'),
       pages: Number(getFormData(form, 'pages')),
     };
 
-    const response = await fetch(`${baseUrl}/books`, {
+    const response = await fetch(`${baseUrl}/books/${id}`, {
       method: 'PUT',
       body: JSON.stringify(book),
       headers: {
@@ -44,20 +45,19 @@ export const handler: Handlers<EditBookProps> = {
     });
 
     if (!response.ok) {
-      console.log('failed to create a book', response);
+      console.log('failed to update a book', response);
       return ctx.render({ message: 'Failed to create a new book', book });
     }
 
     // on success of upload, redirect to books list page
     return new Response('', {
       status: 303,
-      headers: { Location: '/books' }
+      headers: { Location: `/books/${id}` }
     });
   },
 };
 
 export default function Edit(props: PageProps<EditBookProps>) {
-  console.log('edit book page', props.data.book);
   return (
     <>
       <MediaHeader title="Edit a book" />
