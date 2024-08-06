@@ -8,7 +8,7 @@ export function Button({ displayStyle, className, ...props }: JSX.HTMLAttributes
   if (displayStyle == 'link') {
     return (
       <button {...props}
-        className={`text-blue-600 dark:text-blue-400 border-none underline p-0 ${className}`}
+        className={`text-blue-700 border-none underline p-0 ${className}`}
       />
     );
   }
@@ -16,7 +16,7 @@ export function Button({ displayStyle, className, ...props }: JSX.HTMLAttributes
   return (
     <button
       {...props}
-      class={`px-2 py-1 dark:text-slate-400 dark:bg-slate-800 dark:hover:bg-slate-600 dark:border-slate-600 border-gray-500 border-2 rounded bg-white hover:bg-gray-200 transition-colors ${className}`}
+      class={`px-4 py-2 dark:text-slate-400 dark:bg-blue-900 dark:hover:bg-blue-800 rounded bg-white transition-colors ${className}`}
     />
   );
 }

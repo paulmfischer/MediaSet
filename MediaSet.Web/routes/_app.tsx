@@ -10,19 +10,29 @@ export default function App({ Component }: PageProps) {
         <title>MediaSet.Web</title>
         <link rel="stylesheet" href="/styles.css" />
       </head>
-      <body className="text-base text-slate-900 bg-zinc-200 dark:text-slate-300 dark:bg-zinc-800">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8">
-          <div className="min-h-screen flex">
-            <div id="sidebar" className="max-w-lg hidden lg:flex flex-col fixed inset-0 h-full lg:max-w-64 bg-zinc-200 dark:bg-zinc-800 z-50">
-              <div className="mt-8 ml-8 mr-2">
-                <div className="my-2 text-xl">MediaSet</div>
-                <Navigation />
+      <body className="text-base dark:bg-zinc-800 dark:text-slate-300">
+        <div className="flex flex-col min-h-screen 2xl:mx-14">
+          <div>
+            <div class="lg:hidden flex mx-auto max-w-screen-2xl px-4 py-2 justify-start dark:bg-zinc-700">
+              <div class="flex flex-row gap-8">
+                <div className="text-xl">MediaSet</div>
+                <Navigation className="ml-2" />
               </div>
             </div>
-            <div id="main" className="max-w-full grow flex flex-col lg:pl-56 bg-zinc-100 dark:bg-zinc-900">
-              <div id="content" className="ml-10 m-5 mr-12" data-pagefind-body>
-                <Component />
+            <nav className="flex-shrink-0 hidden lg:block lg:px-4">
+              <div className="fixed pt-4 w-[17rem] flex overflow-hidden dark:bg-zinc-700">
+                <div class="flex-1 h-screen overflow-y-auto pb-8 mx-4">
+                  <div className="mb-2 text-xl">MediaSet</div>
+                  <Navigation className="ml-2" />
+                </div>
               </div>
+            </nav>
+            <div class="w-full min-w-0">
+              <main class="lg:ml-[18rem] mt-4 min-w-0 mx-auto">
+                <div class="mx-4">
+                  <Component />
+                </div>
+              </main>
             </div>
           </div>
         </div>

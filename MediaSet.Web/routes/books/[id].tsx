@@ -37,14 +37,14 @@ export default function View(props: PageProps<Book>) {
   const book = props.data;
   return (
     <div>
-      <div className="flex items-center justify-between border-b dark:border-slate-300">
+      <div className="flex items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title={book.title} />
         <div class="flex gap-4">
           <Anchor href={`/books/${book.id}/edit`} className="flex gap-2">
             <TbEdit size={24} />
             <span>Edit</span>
           </Anchor>
-          <form method="POST" className="leading-4">
+          <form method="POST">
             <input
               hidden="hidden"
               value={book.id}
@@ -57,7 +57,7 @@ export default function View(props: PageProps<Book>) {
           </form>
         </div>
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-col gap-2">
         <MediaField id="subtitle" label="Subtitle" fieldContent={book.subtitle} />
         <MediaField id="format" label="Format" fieldContent={book.format} />
         <MediaField id="pages" label="Pages" fieldContent={book.pages} />

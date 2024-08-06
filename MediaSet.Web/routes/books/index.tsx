@@ -72,7 +72,7 @@ export default function Books(props: PageProps<BooksProps>) {
     : "/books?orderBy={0}";
   return (
     <div>
-      <div className="flex items-center justify-between border-b dark:border-slate-300">
+      <div className="flex items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title="Books" />
         <form className="flex gap-4 leading-4">
           <input

@@ -9,7 +9,7 @@ export function Navigation(props: JSX.HTMLAttributes<HTMLElement>) {
         <li>
           <Anchor href="/books" className="flex items-center">
             <TbBook2 size={24} />
-            <span className="ml-2 text-xl text-blue-600 dark:text-blue-400">Books</span>
+            <span className="ml-2 text-xl">Books</span>
           </Anchor>
         </li>
       </ul>
