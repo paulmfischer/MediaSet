@@ -10,9 +10,9 @@
       "request": "launch",
       "preLaunchTask": "build",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/MediaSet.API/bin/Debug/net7.0/MediaSet.API.dll",
+      "program": "${workspaceFolder}/MediaSet.Api/bin/Debug/net8.0/MediaSet.Api.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/MediaSet.API",
+      "cwd": "${workspaceFolder}/MediaSet.Api",
       "stopAtEntry": false,
       // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
       "serverReadyAction": {

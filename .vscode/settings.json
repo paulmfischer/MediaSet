@@ -1,6 +1,7 @@
 {
-  "deno.enable": false,
+  "deno.enable": true,
   "deno.enablePaths": [
-    "./MediaSet.Web.Fresh"
-  ]
+    "./MediaSet.Web"
+  ],
+  "deno.config": "./MediaSet.Web/deno.json"
 }
