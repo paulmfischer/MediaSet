@@ -71,10 +71,10 @@ export default function Books(props: PageProps<BooksProps>) {
     ? `/books?searchText=${searchText}&orderBy={0}`
     : "/books?orderBy={0}";
   return (
-    <div>
+    <div className="mb-2">
       <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row sm:items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title="Books" />
-        <div class="flex gap-4 justify-between sm:justify-normal">
+        <div class="flex flex-col sm:flex-row gap-4 justify-between sm:justify-normal">
           <form className="flex gap-4 leading-4">
             <input
               name="searchText"
@@ -140,7 +140,7 @@ export default function Books(props: PageProps<BooksProps>) {
                               )}
                           </th>
                           <th className="text-left underline">Subtitle</th>
-                          <th className="text-left underline">Author</th>
+                          <th className="hidden sm:block text-left underline">Author</th>
                           <th className="text-left underline">
                             {(orderBy == "" || orderBy.includes("pages:asc"))
                               ? (
@@ -173,7 +173,7 @@ export default function Books(props: PageProps<BooksProps>) {
                               </Anchor>
                             </td>
                             <td>{book.subtitle}</td>
-                            <td>{book.author?.join(",")}</td>
+                            <td className="hidden sm:block">{book.author?.join(",")}</td>
                             <td>{book.pages}</td>
                             <td>
                               <div class="flex gap-2 mr-2">

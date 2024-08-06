@@ -59,7 +59,7 @@ export const handler: Handlers<EditBookProps> = {
 
 export default function Edit(props: PageProps<EditBookProps>) {
   return (
-    <div>
+    <div className="mb-4">
       <div className="border-b dark:border-slate-300 pb-2">
         <MediaHeader title="Edit a book" />
       </div>
