@@ -46,13 +46,13 @@ export default function Upload(props: PageProps<Props>) {
   const { message } = props.data;
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title="Books Upload" />
       </div>
       <div className="mt-2">
-        <form method="post" encType="multipart/form-data">
+        <form method="post" encType="multipart/form-data" className="flex flex-col gap-4 sm:flex-row sm:gap-0 sm:items-center">
           <input type="file" name="bookUpload" />
-          <Button type="submit">Upload</Button>
+          <Button type="submit" className="max-w-24 min-w-24">Upload</Button>
         </form>
         {message ? <p>{message}</p> : null}
       </div>

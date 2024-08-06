@@ -60,9 +60,11 @@ export const handler: Handlers<EditBookProps> = {
 export default function Edit(props: PageProps<EditBookProps>) {
   return (
     <div>
-      <MediaHeader title="Edit a book" />
+      <div className="border-b dark:border-slate-300 pb-2">
+        <MediaHeader title="Edit a book" />
+      </div>
       {props.data?.message != null && <div>{props.data.message}</div>}
-      <BookForm className="mt-2" submitText="Update" method="POST" book={props.data.book} />
+      <BookForm class="mt-2" submitText="Update" method="POST" book={props.data.book} />
     </div>
   );
 }

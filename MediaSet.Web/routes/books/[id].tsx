@@ -37,7 +37,7 @@ export default function View(props: PageProps<Book>) {
   const book = props.data;
   return (
     <div>
-      <div className="flex items-center justify-between border-b dark:border-slate-300 pb-2">
+      <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row items-normal sm:items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title={book.title} />
         <div class="flex gap-4">
           <Anchor href={`/books/${book.id}/edit`} className="flex gap-2">

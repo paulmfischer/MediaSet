@@ -49,9 +49,11 @@ export const handler: Handlers<AddBookProps> = {
 export default function Add(props: PageProps<AddBookProps>) {
   return (
     <>
-      <MediaHeader title="Add a book" />
+      <div className="border-b dark:border-slate-300 pb-2">
+        <MediaHeader title="Add a book" />
+      </div>
       {props.data?.message != null && <div>{props.data.message}</div>}
-      <BookForm className="mt-2" submitText="Add" method="POST" />
+      <BookForm class="mt-2" submitText="Add" method="POST" />
     </>
   );
 }

@@ -17,7 +17,7 @@ export default function BookForm(
 ) {
   return (
     <form {...props}>
-      <div className="grid grid-cols-2 gap-4 mb-2">
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-4 mb-2">
         {book?.id && (
           <Input
             name={propertyOf<Book>("id")}
@@ -78,7 +78,7 @@ export default function BookForm(
           />
         </InputField>
       </div>
-      <Button className="min-w-24" type="submit">{submitText}</Button>
+      <Button className="mt-4 md:mt-0 min-w-24" type="submit">{submitText}</Button>
     </form>
   );
 }

@@ -72,28 +72,30 @@ export default function Books(props: PageProps<BooksProps>) {
     : "/books?orderBy={0}";
   return (
     <div>
-      <div className="flex items-center justify-between border-b dark:border-slate-300 pb-2">
+      <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row sm:items-center justify-between border-b dark:border-slate-300 pb-2">
         <MediaHeader title="Books" />
-        <form className="flex gap-4 leading-4">
-          <input
-            name="searchText"
-            value={searchText}
-            className="dark:text-slate-800"
-          />
-          <input name="orderBy" value={orderBy} hidden="hidden" />
-          <Button type="submit">Search</Button>
-        </form>
-        <div className="flex gap-4">
-          <Anchor href="/books/add" className="flex items-center">
-            <TbPlus size={24} />
-            <span className="ml-2">Add</span>
-          </Anchor>
-          <Anchor href="/books/upload" className="flex items-center">
-            <TbUpload size={24} />
-            <span className="ml-2">
-              Upload
-            </span>
-          </Anchor>
+        <div class="flex gap-4 justify-between sm:justify-normal">
+          <form className="flex gap-4 leading-4">
+            <input
+              name="searchText"
+              value={searchText}
+              className="dark:text-slate-800"
+            />
+            <input name="orderBy" value={orderBy} hidden="hidden" />
+            <Button type="submit">Search</Button>
+          </form>
+          <div className="flex gap-4">
+            <Anchor href="/books/add" className="flex items-center">
+              <TbPlus size={24} />
+              <span className="ml-2">Add</span>
+            </Anchor>
+            <Anchor href="/books/upload" className="flex items-center">
+              <TbUpload size={24} />
+              <span className="ml-2">
+                Upload
+              </span>
+            </Anchor>
+          </div>
         </div>
       </div>
       <div className="mt-2">
