@@ -9,7 +9,6 @@ import * as $books_id_edit from "./routes/books/[id]/edit.tsx";
 import * as $books_add from "./routes/books/add.tsx";
 import * as $books_index from "./routes/books/index.tsx";
 import * as $books_upload from "./routes/books/upload.tsx";
-import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
 
 import { type Manifest } from "$fresh/server.ts";
@@ -23,7 +22,6 @@ const manifest = {
     "./routes/books/add.tsx": $books_add,
     "./routes/books/index.tsx": $books_index,
     "./routes/books/upload.tsx": $books_upload,
-    "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
   },
   islands: {},
