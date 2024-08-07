@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
+@* <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
@@ -14,8 +14,13 @@
             @Body
         </article>
     </main>
+</div> *@
+<div class="flex flex-row min-h-screen 2xl:mx-14">
+    <NavMenu />
+    <main>
+        @Body
+    </main>
 </div>
-
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>

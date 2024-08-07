@@ -1,4 +1,4 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@* <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">MediaSet.Blazor</a>
     </div>
@@ -26,5 +26,29 @@
             </NavLink>
         </div>
     </nav>
-</div>
+</div> *@
 
+<nav class="flex-shrink-0 hidden lg:block lg:px-4">
+    <div class="pt-4 w-48 flex overflow-hidden dark:bg-zinc-800">
+        <div class="flex-1 h-screen overflow-y-auto pb-8 mx-4">
+            <div class="mb-2 text-xl">MediaSet</div>
+            <ul>
+                <li>
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink class="nav-link" href="counter">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink class="nav-link" href="weather">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

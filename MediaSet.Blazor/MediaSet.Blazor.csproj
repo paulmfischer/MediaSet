@@ -6,4 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <Target Name="Tailwind" BeforeTargets="Compile">
+    <Exec Command="npx tailwindcss -i ./tailwind.css -o ./wwwroot/styles.css" />
+  </Target>
 </Project>
