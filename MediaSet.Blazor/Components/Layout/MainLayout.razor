@@ -15,9 +15,22 @@
         </article>
     </main>
 </div> *@
-<div class="flex flex-row min-h-screen 2xl:mx-14">
-    <NavMenu />
-    <main>
+<div class="flex flex-col min-h-screen 2xl:mx-14">
+    <div class="dark:bg-zinc-700 min-h-16 flex flex-row gap-16 items-center px-4">
+        <h1 class="text-3xl">MediaSet</h1>
+        <div>
+            <ul class="flex flex-row gap-8">
+                <li>
+                    <NavLink href="/">Home</NavLink>
+                </li>
+                <li>
+                    <NavLink href="/books">Books</NavLink>
+                </li>
+            </ul>
+        </div>
+    </div>
+    @* <NavMenu /> *@
+    <main class="dark:bg-zinc-900 pt-4 px-8">
         @Body
     </main>
 </div>
