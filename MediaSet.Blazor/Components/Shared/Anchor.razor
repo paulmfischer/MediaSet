@@ -1,0 +1,23 @@
+﻿@using System.Globalization
+@namespace MediaSet.Blazor.Components.Shared
+
+<NavLink class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
+
+@code {
+  private string? elemClass = "text-blue-500 underline";
+
+  [Parameter]
+  public RenderFragment? ChildContent { get; set; }
+
+  [Parameter(CaptureUnmatchedValues = true)]
+  public IDictionary<string, object>? InputAttributes { get; set; }
+
+  protected override void OnInitialized()
+  {
+    if (InputAttributes?.TryGetValue("class", out var cl) == true)
+    {
+      elemClass += string.Format(" {0}", Convert.ToString(cl, CultureInfo.InvariantCulture));
+      InputAttributes.Remove("class");
+    }
+  }
+}
