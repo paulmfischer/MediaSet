@@ -1,16 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace MediaSet.Api.Models;
+namespace MediaSet.Blazor.Models;
 
 public class Book
 {
-  [BsonId]
-  [BsonRepresentation(BsonType.ObjectId)]
   public string? Id { get; set; }
 
-  [Required]
   public string Title { get; set; } = null!;
 
   public string ISBN { get; set; } = null!;

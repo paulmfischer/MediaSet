@@ -26,8 +26,13 @@ internal static class BookApi
       };
     }).WithOpenApi();
 
-    group.MapPost("/", async Task<Created<Book>> (BooksService booksService, Book newBook) =>
+    group.MapPost("/", async Task<Results<Created<Book>, BadRequest>> (BooksService booksService, Book newBook) =>
     {
+      if (newBook is null || newBook.IsEmpty())
+      {
+        return TypedResults.BadRequest();
+      }
+
       await booksService.CreateAsync(newBook);
 
       return TypedResults.Created($"/books/{newBook.Id}", newBook);

@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.4.8 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.9 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -635,6 +635,15 @@ video {
   overflow-y: auto;
 }
 
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-slate-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(148 163 184 / var(--tw-border-opacity));
+}
+
 .px-3 {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
@@ -650,6 +659,10 @@ video {
   padding-right: 2rem;
 }
 
+.pb-4 {
+  padding-bottom: 1rem;
+}
+
 .pb-8 {
   padding-bottom: 2rem;
 }
@@ -660,6 +673,11 @@ video {
 
 .pt-4 {
   padding-top: 1rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 
 .text-3xl {
