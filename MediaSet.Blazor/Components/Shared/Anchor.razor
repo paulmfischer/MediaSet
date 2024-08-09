@@ -1,7 +1,7 @@
 ﻿@using System.Globalization
 @namespace MediaSet.Blazor.Components.Shared
 
-<NavLink class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
+<NavLink ActiveClass="dark:bg-zinc-600" Match="NavLinkMatch.All" class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
 
 @code {
   private string? elemClass = "text-blue-500 underline";

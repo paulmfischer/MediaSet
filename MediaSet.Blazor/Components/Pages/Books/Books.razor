@@ -1,69 +1,129 @@
 ﻿@page "/books"
-@using MediaSet.Blazor.Models;
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
 @inject IConfiguration Config
-@inject HttpClient Http
+@inject HttpClient HttpClient
 @inject NavigationManager Navigation
 
 <PageTitle>Books</PageTitle>
 
 <div class="flex flex-col">
-  <div>
+  <div class="flex flex-row items-center justify-between">
     <h2 class="text-2xl">Books</h2>
+    <div class="flex flex-row gap-2">
+      <input @bind="SearchInput" class="p-1 pl-2 dark:text-slate-800" placeholder="Search for book(s)" aria-placeholder="Search for book(s)" />
+      <Button @onclick="SearchBooks">Search</Button>
+    </div>
   </div>
   <div class="h-full mt-4">
-    <table class="text-left">
-      <thead class="dark:bg-zinc-700 border-y-2 border-slate-500">
-        <th class="pl-2 p-1 border-r border-slate-800 underline"><button @onclick="OrderData">Title</button></th>
-        <th class="pl-2 p-1 border-r border-slate-800 underline">Subtitle</th>
-        <th class="pl-2 p-1 border-r border-slate-800 underline">Authors</th>
-        <th class="pl-2 p-1 border-r border-slate-800 underline">Pages</th>
-        <th></th>
-      </thead>
-      <tbody>
-      @foreach (var book in BooksData)
+    @if (BooksData.Count > 0)
+    {
+      <table class="text-left w-full">
+        <thead class="dark:bg-zinc-700 border-y-2 border-slate-500">
+          <th class="pl-2 p-1 border-r border-slate-800 underline">
+            <Anchor href=@GetTitleSortHref()>
+              Title (@(OrderBy?.Equals("title:asc") == true ? "asc" : "desc"))
+            </Anchor>
+          </th>
+          <th class="pl-2 p-1 border-r border-slate-800 underline">Subtitle</th>
+          <th class="pl-2 p-1 border-r border-slate-800 underline">Authors</th>
+          <th class="pl-2 p-1 border-r border-slate-800 underline">
+            <Anchor href=@GetPagesSortHref()>
+              Pages (@(OrderBy?.Equals("pages:asc") == true ? "asc" : "desc"))
+            </Anchor>
+          </th>
+          <th></th>
+        </thead>
+        <tbody>
+        @foreach (var book in BooksData)
+        {
+          <tr class="border-b border-slate-700 dark:hover:bg-zinc-800">
+            <td class="pl-2 p-1 border-r border-slate-800">@book.Title</td>
+            <td class="pl-2 p-1 border-r border-slate-800">@book.Subtitle</td>
+            <td class="pl-2 p-1 border-r border-slate-800">@string.Join(',', book.Author)</td>
+            <td class="pl-2 p-1 border-r border-slate-800">@book.Pages</td>
+            <td class="flex flex-row gap-2 p-1">
+              <Anchor href="@($"/books/{book.Id}")">Edit</Anchor>
+              <Anchor>Delete</Anchor>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+    }
+    else if (!IsLoading)
+    {
+      if (string.IsNullOrWhiteSpace(SearchText))
       {
-        <tr class="border-b border-slate-700 dark:hover:bg-zinc-800">
-          <td class="pl-2 p-1 border-r border-slate-800">@book.Title</td>
-          <td class="pl-2 p-1 border-r border-slate-800">@book.Subtitle</td>
-          <td class="pl-2 p-1 border-r border-slate-800">@string.Join(',', book.Author)</td>
-          <td class="pl-2 p-1 border-r border-slate-800">@book.Pages</td>
-          <td class="flex flex-row gap-2 p-1">
-            <Anchor href="@($"/books/{book.Id}")">Edit</Anchor>
-            <Anchor>Delete</Anchor>
-          </td>
-        </tr>
+        <div class="text-xl">It appears that you don't have any books.</div>
       }
-      </tbody>
-    </table>
+      else
+      {
+        <div class="text-xl">No books were found for the search term "@SearchText".</div>
+      }
+    }
   </div>
 </div>
 
 @code {
-  [SupplyParameterFromQuery]
+  [SupplyParameterFromQuery(Name = "searchText")]
   public string? SearchText { get; set; }
 
-  [SupplyParameterFromQuery]
+  [SupplyParameterFromQuery(Name = "orderBy")]
   public string? OrderBy { get; set; } = "title:asc";
 
   private IList<Book> BooksData = [];
   private string apiEndpoint = string.Empty;
+  private string? SearchInput;
+  private bool IsLoading = true;
 
   protected override async Task OnInitializedAsync()
   {
     apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+    SearchInput = SearchText;
+    if (string.IsNullOrWhiteSpace(OrderBy))
+    {
+      OrderBy = "title:asc";
+    }
+    await GetBooks();
+  }
+
+  protected override async Task OnParametersSetAsync()
+  {
+    Console.WriteLine("Have my query params changed? Search: {0} -- Order: {1}", SearchText, OrderBy);
     await GetBooks();
   }
 
   private async Task GetBooks()
   {
+    IsLoading = true;
+    Console.WriteLine("{0} Searching books by: '{1}', ordered by {2}", DateTime.Now.ToShortTimeString(), SearchText, OrderBy);
     var requestUri = $"{apiEndpoint}/books/search?searchText={SearchText}&orderBy={OrderBy}";
-    BooksData = await Http.GetFromJsonAsync<Book[]>(requestUri) ?? [];
+    BooksData = await HttpClient.GetFromJsonAsync<Book[]>(requestUri) ?? [];
+    Console.WriteLine("num of books {0}", BooksData.Count);
+    IsLoading = false;
+  }
+  
+  private string GetTitleSortHref() => GetSortHref("title");
+
+  private string GetPagesSortHref() => GetSortHref("pages");
+
+  private string GetSortHref(string property)
+  {
+    string orderByArgs = OrderBy?.Equals($"{property}:asc", StringComparison.OrdinalIgnoreCase) == true ? $"{property}:desc" : $"{property}:asc";
+    return Navigation.GetUriWithQueryParameter("orderBy", orderByArgs);
+  }
+
+  private void SearchBooks()
+  {
+    string newUrl = Navigation.GetUriWithQueryParameter("searchText", SearchInput);
+    Navigation.NavigateTo(newUrl);
   }
 
   private void OrderData()
   {
-    string orderBy = OrderBy?.Contains("asc") == true ? "title:desc" : "title:asc";
-    Console.WriteLine("Ordering data {0}", orderBy);
-    Navigation.GetUriWithQueryParameter(nameof(OrderBy), orderBy);
+    string orderByArgs = OrderBy?.Contains("asc") == true ? "title:desc" : "title:asc";
+    Console.WriteLine("Ordering data {0}", OrderBy);
+    string newUrl = Navigation.GetUriWithQueryParameter(nameof(OrderBy), orderByArgs);
+    Navigation.NavigateTo(newUrl);
   }
 }
