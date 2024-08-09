@@ -1,54 +1,13 @@
-﻿@* <div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">MediaSet.Blazor</a>
+﻿<div class="dark:bg-zinc-700 min-h-16 flex flex-row gap-16 items-center px-4">
+    <h1 class="text-3xl">MediaSet</h1>
+    <div>
+        <ul class="flex flex-row gap-8">
+            <li>
+                <Anchor href="/">Home</Anchor>
+            </li>
+            <li>
+                <Anchor href="/books">Books</Anchor>
+            </li>
+        </ul>
     </div>
 </div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div> *@
-
-<nav class="flex-shrink-0 hidden lg:block lg:px-4">
-    <div class="pt-4 w-48 flex overflow-hidden dark:bg-zinc-800">
-        <div class="flex-1 h-screen overflow-y-auto pb-8 mx-4">
-            <div class="mb-2 text-xl">MediaSet</div>
-            <ul>
-                <li>
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-                    </NavLink>
-                </li>
-                <li>
-                    <NavLink class="nav-link" href="counter">
-                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-                    </NavLink>
-                </li>
-                <li>
-                    <NavLink class="nav-link" href="weather">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-                    </NavLink>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>

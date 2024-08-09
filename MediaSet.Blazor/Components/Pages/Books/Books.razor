@@ -1,0 +1,69 @@
+﻿@page "/books"
+@using MediaSet.Blazor.Models;
+@inject IConfiguration Config
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Books</PageTitle>
+
+<div class="flex flex-col">
+  <div>
+    <h2 class="text-2xl">Books</h2>
+  </div>
+  <div class="h-full mt-4">
+    <table class="text-left">
+      <thead class="dark:bg-zinc-700 border-y-2 border-slate-500">
+        <th class="pl-2 p-1 border-r border-slate-800 underline"><button @onclick="OrderData">Title</button></th>
+        <th class="pl-2 p-1 border-r border-slate-800 underline">Subtitle</th>
+        <th class="pl-2 p-1 border-r border-slate-800 underline">Authors</th>
+        <th class="pl-2 p-1 border-r border-slate-800 underline">Pages</th>
+        <th></th>
+      </thead>
+      <tbody>
+      @foreach (var book in BooksData)
+      {
+        <tr class="border-b border-slate-700 dark:hover:bg-zinc-800">
+          <td class="pl-2 p-1 border-r border-slate-800">@book.Title</td>
+          <td class="pl-2 p-1 border-r border-slate-800">@book.Subtitle</td>
+          <td class="pl-2 p-1 border-r border-slate-800">@string.Join(',', book.Author)</td>
+          <td class="pl-2 p-1 border-r border-slate-800">@book.Pages</td>
+          <td class="flex flex-row gap-2 p-1">
+            <Anchor href="@($"/books/{book.Id}")">Edit</Anchor>
+            <Anchor>Delete</Anchor>
+          </td>
+        </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@code {
+  [SupplyParameterFromQuery]
+  public string? SearchText { get; set; }
+
+  [SupplyParameterFromQuery]
+  public string? OrderBy { get; set; } = "title:asc";
+
+  private IList<Book> BooksData = [];
+  private string apiEndpoint = string.Empty;
+
+  protected override async Task OnInitializedAsync()
+  {
+    apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+    await GetBooks();
+  }
+
+  private async Task GetBooks()
+  {
+    var requestUri = $"{apiEndpoint}/books/search?searchText={SearchText}&orderBy={OrderBy}";
+    BooksData = await Http.GetFromJsonAsync<Book[]>(requestUri) ?? [];
+  }
+
+  private void OrderData()
+  {
+    string orderBy = OrderBy?.Contains("asc") == true ? "title:desc" : "title:asc";
+    Console.WriteLine("Ordering data {0}", orderBy);
+    Navigation.GetUriWithQueryParameter(nameof(OrderBy), orderBy);
+  }
+}

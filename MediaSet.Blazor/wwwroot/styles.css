@@ -558,19 +558,6 @@ video {
   position: static;
 }
 
-.mx-4 {
-  margin-left: 1rem;
-  margin-right: 1rem;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
-}
-
 .mt-4 {
   margin-top: 1rem;
 }
@@ -581,10 +568,6 @@ video {
 
 .table {
   display: table;
-}
-
-.hidden {
-  display: none;
 }
 
 .h-full {
@@ -605,27 +588,6 @@ video {
 
 .min-h-screen {
   min-height: 100vh;
-}
-
-.w-48 {
-  width: 12rem;
-}
-
-.flex-1 {
-  flex: 1 1 0%;
-}
-
-.flex-shrink-0 {
-  flex-shrink: 0;
-}
-
-.table-auto {
-  table-layout: auto;
-}
-
-.border-spacing-x-2 {
-  --tw-border-spacing-x: 0.5rem;
-  border-spacing: var(--tw-border-spacing-x) var(--tw-border-spacing-y);
 }
 
 .flex-row {
@@ -652,26 +614,36 @@ video {
   gap: 2rem;
 }
 
-.overflow-hidden {
-  overflow: hidden;
-}
-
-.overflow-y-auto {
-  overflow-y: auto;
+.border-y-2 {
+  border-top-width: 2px;
+  border-bottom-width: 2px;
 }
 
 .border-b {
   border-bottom-width: 1px;
 }
 
-.border-slate-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(148 163 184 / var(--tw-border-opacity));
+.border-r {
+  border-right-width: 1px;
 }
 
-.px-3 {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
+.border-slate-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(100 116 139 / var(--tw-border-opacity));
+}
+
+.border-slate-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(51 65 85 / var(--tw-border-opacity));
+}
+
+.border-slate-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(30 41 59 / var(--tw-border-opacity));
+}
+
+.p-1 {
+  padding: 0.25rem;
 }
 
 .px-4 {
@@ -689,20 +661,8 @@ video {
   padding-bottom: 1rem;
 }
 
-.pb-4 {
-  padding-bottom: 1rem;
-}
-
-.pb-8 {
-  padding-bottom: 2rem;
-}
-
-.ps-3 {
-  padding-inline-start: 0.75rem;
-}
-
-.pt-4 {
-  padding-top: 1rem;
+.pl-2 {
+  padding-left: 0.5rem;
 }
 
 .text-left {
@@ -738,17 +698,6 @@ video {
   text-decoration-line: underline;
 }
 
-@media (min-width: 1024px) {
-  .lg\:block {
-    display: block;
-  }
-
-  .lg\:px-4 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
 @media (min-width: 1536px) {
   .\32xl\:mx-14 {
     margin-left: 3.5rem;
@@ -775,5 +724,10 @@ video {
   .dark\:text-slate-300 {
     --tw-text-opacity: 1;
     color: rgb(203 213 225 / var(--tw-text-opacity));
+  }
+
+  .dark\:hover\:bg-zinc-800:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(39 39 42 / var(--tw-bg-opacity));
   }
 }
