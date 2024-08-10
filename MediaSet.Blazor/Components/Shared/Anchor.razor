@@ -6,7 +6,7 @@
 @code {
   private string? elemClass = "text-blue-500 underline";
 
-  [Parameter]
+  [Parameter, EditorRequired]
   public RenderFragment ChildContent { get; set; } = null!;
 
   [Parameter(CaptureUnmatchedValues = true)]

@@ -7,13 +7,13 @@
   [Parameter]
   public ButtonStyle ButtonStyle { get; set; }
 
-  [Parameter]
+  [Parameter, EditorRequired]
   public RenderFragment ChildContent { get; set; } = null!;
 
   [Parameter(CaptureUnmatchedValues = true)]
   public IDictionary<string, object>? InputAttributes { get; set; }
 
-  private const string defaultClass = "px-4 py-2 dark:text-slate-400 dark:bg-blue-900 dark:hover:bg-blue-800 rounded bg-white transition-colors";
+  private const string defaultClass = "px-4 py-2 dark:text-slate-300 dark:bg-blue-700 dark:hover:bg-blue-800 rounded bg-white transition-colors";
   private const string linkClass = "text-blue-700 border-none underline p-0";
   private string? elemClass;
 

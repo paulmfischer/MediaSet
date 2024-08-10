@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  input[class~="invalid"] {
+    @apply border border-red-600
+  }
+
+  /* input[class~="modified"][class~="valid"] {
+    @apply border border-green-600
+  } */
+}

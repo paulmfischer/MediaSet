@@ -1,0 +1,53 @@
+﻿@page "/books/{id:nonfile}/edit"
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@inject IConfiguration Config
+@inject HttpClient HttpClient
+
+<div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 items-normal sm:flex-row sm:gap-0 sm:items-center justify-between">
+    <MediaHeader>Edit Book</MediaHeader>
+  </div>
+  @if (Book is null)
+  {
+    <div>No book found for this id, redirecting to Books.</div>
+  }
+  else
+  {
+    <div class="mt-4 flex flex-col gap-2">
+      <EditForm Model="Book" OnValidSubmit="Submit" FormName="Edit-Book">
+        <div class="flex flex-col gap-2">
+          <DataAnnotationsValidator />
+          <InputText @bind-Value="Book!.Id" hidden="hidden" />
+          <MsInputText Label="@nameof(Book.Title)" @bind-Value="Book.Title" ValidationFor="@(() => Book.Title)" />
+          <MsInputText Label="@nameof(Book.Subtitle)" @bind-Value="Book.Subtitle" ValidationFor="@(() => Book.Subtitle)" />
+          <MsInputText Label="@nameof(Book.Format)" @bind-Value="Book.Format" ValidationFor="@(() => Book.Format)" />
+          @* <MsInputText Label="@nameof(Book.Pages)" @bind-Value="Book.Pages" ValidationFor="@(() => Book.Pages)" /> *@
+          <MsInputText Label="@nameof(Book.PublicationDate)" @bind-Value="Book.PublicationDate" ValidationFor="@(() => Book.PublicationDate)" />
+          <MsInputText Label="@nameof(Book.ISBN)" @bind-Value="Book.ISBN" ValidationFor="@(() => Book.ISBN)" />
+          <MsInputText Label="@nameof(Book.Plot)" @bind-Value="Book.Plot" ValidationFor="@(() => Book.Plot)" InputType="InputTextType.Textarea" />
+        </div>
+        <Button class="mt-4">Update</Button>
+      </EditForm>
+    </div>
+  }
+</div>
+
+@code {
+  [Parameter]
+  public string Id { get; set; } = string.Empty;
+
+  [SupplyParameterFromForm]
+  private Book? Book { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    var apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+    var requestUri = $"{apiEndpoint}/books/{Id}";
+    Book = await HttpClient.GetFromJsonAsync<Book>(requestUri);
+  }
+
+  private void Submit()
+  {
+    Console.WriteLine("Updating book! {0}", Book?.ToString());
+  }
+}

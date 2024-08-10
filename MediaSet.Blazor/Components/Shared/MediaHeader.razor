@@ -3,7 +3,7 @@
 <h2 @attributes=InputAttributes class="text-3xl dark:text-slate-400">@ChildContent</h2>
 
 @code {
-  [Parameter]
+  [Parameter, EditorRequired]
   public RenderFragment ChildContent { get; set; } = null!;
 
   [Parameter(CaptureUnmatchedValues = true)]

@@ -1,21 +1,8 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="flex flex-col min-h-screen 2xl:mx-14">
-    @* <div class="dark:bg-zinc-700 min-h-16 flex flex-row gap-16 items-center px-4">
-        <h1 class="text-3xl">MediaSet</h1>
-        <div>
-            <ul class="flex flex-row gap-8">
-                <li>
-                    <Anchor href="/">Home</Anchor>
-                </li>
-                <li>
-                    <Anchor href="/books">Books</Anchor>
-                </li>
-            </ul>
-        </div>
-    </div> *@
+<div class="flex flex-col h-screen 2xl:mx-14">
     <NavMenu />
-    <main class="dark:bg-zinc-900 py-4 px-8">
+    <main class="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
         @Body
     </main>
     <footer class="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
