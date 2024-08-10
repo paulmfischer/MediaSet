@@ -1,13 +1,13 @@
 ﻿@using System.Globalization
 @namespace MediaSet.Blazor.Components.Shared
 
-<NavLink ActiveClass="dark:bg-zinc-600" Match="NavLinkMatch.All" class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
+<NavLink ActiveClass="dark:bg-zinc-600" class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
 
 @code {
   private string? elemClass = "text-blue-500 underline";
 
   [Parameter]
-  public RenderFragment? ChildContent { get; set; }
+  public RenderFragment ChildContent { get; set; } = null!;
 
   [Parameter(CaptureUnmatchedValues = true)]
   public IDictionary<string, object>? InputAttributes { get; set; }

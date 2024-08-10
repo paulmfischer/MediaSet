@@ -1,0 +1,17 @@
+﻿<div class="flex gap-4">
+  <label for="@GetId()" class="dark:text-slate-400">@Label</label>
+  <div id="@GetId()">@ChildContent</div>
+</div>
+
+@code {
+  [Parameter]
+  public string? Id { get; set; }
+  
+  [Parameter]
+  public string Label { get; set; } = null!;
+
+  [Parameter]
+  public RenderFragment ChildContent { get; set; } = null!;
+  
+  private string GetId() => string.IsNullOrWhiteSpace(Id) ? Label : Id;
+}

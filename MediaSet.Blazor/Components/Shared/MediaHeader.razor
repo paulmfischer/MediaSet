@@ -1,0 +1,11 @@
+﻿@namespace MediaSet.Blazor.Components.Shared
+
+<h2 @attributes=InputAttributes class="text-3xl dark:text-slate-400">@ChildContent</h2>
+
+@code {
+  [Parameter]
+  public RenderFragment ChildContent { get; set; } = null!;
+
+  [Parameter(CaptureUnmatchedValues = true)]
+  public IDictionary<string, object>? InputAttributes { get; set; }
+}
