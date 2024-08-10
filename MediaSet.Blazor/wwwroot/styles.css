@@ -594,6 +594,10 @@ video {
   min-height: 100vh;
 }
 
+.w-28 {
+  width: 7rem;
+}
+
 .w-full {
   width: 100%;
 }
