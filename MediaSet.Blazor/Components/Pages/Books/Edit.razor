@@ -17,14 +17,8 @@
       <EditForm Model="Book" OnValidSubmit="Submit" FormName="Edit-Book">
         <div class="flex flex-col gap-2">
           <DataAnnotationsValidator />
-          <InputText @bind-Value="Book!.Id" hidden="hidden" />
-          <MsInputText Label="@nameof(Book.Title)" @bind-Value="Book.Title" ValidationFor="@(() => Book.Title)" />
-          <MsInputText Label="@nameof(Book.Subtitle)" @bind-Value="Book.Subtitle" ValidationFor="@(() => Book.Subtitle)" />
-          <MsInputText Label="@nameof(Book.Format)" @bind-Value="Book.Format" ValidationFor="@(() => Book.Format)" />
-          @* <MsInputText Label="@nameof(Book.Pages)" @bind-Value="Book.Pages" ValidationFor="@(() => Book.Pages)" /> *@
-          <MsInputText Label="@nameof(Book.PublicationDate)" @bind-Value="Book.PublicationDate" ValidationFor="@(() => Book.PublicationDate)" />
-          <MsInputText Label="@nameof(Book.ISBN)" @bind-Value="Book.ISBN" ValidationFor="@(() => Book.ISBN)" />
-          <MsInputText Label="@nameof(Book.Plot)" @bind-Value="Book.Plot" ValidationFor="@(() => Book.Plot)" InputType="InputTextType.Textarea" />
+          <InputText @bind-Value="Book.Id" hidden="hidden" />
+          <BookForm Book="@Book" />
         </div>
         <Button class="mt-4">Update</Button>
       </EditForm>

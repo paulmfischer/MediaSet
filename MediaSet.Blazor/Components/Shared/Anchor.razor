@@ -1,10 +1,10 @@
 ﻿@using System.Globalization
 @namespace MediaSet.Blazor.Components.Shared
 
-<NavLink ActiveClass="dark:bg-zinc-600" class=@elemClass @attributes="InputAttributes">@ChildContent</NavLink>
+<NavLink @attributes="InputAttributes" class="@elemClass">@ChildContent</NavLink>
 
 @code {
-  private string? elemClass = "text-blue-500 underline";
+  private string elemClass = "text-blue-300 underline";
 
   [Parameter, EditorRequired]
   public RenderFragment ChildContent { get; set; } = null!;
@@ -17,6 +17,7 @@
     if (InputAttributes?.TryGetValue("class", out var cl) == true)
     {
       elemClass += string.Format(" {0}", Convert.ToString(cl, CultureInfo.InvariantCulture));
+      InputAttributes["class"] = elemClass;
       InputAttributes.Remove("class");
     }
   }

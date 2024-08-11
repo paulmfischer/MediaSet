@@ -8,9 +8,15 @@
 
 <div class="flex flex-col">
   <div class="flex flex-row items-center justify-between">
-    <h2 class="text-2xl">Books</h2>
-    <MediaHeader>Books</MediaHeader>
+    <div class="flex flex-row gap-4 items-end">
+      <MediaHeader>Books</MediaHeader>
+      @if (BooksData.Count > 0)
+      {
+        <div class="text-lg">Total Books: @BooksData.Count</div>
+      }
+    </div>
     <div class="flex flex-row gap-2">
+      <Anchor class="self-center mr-4" href="/books/add">Add</Anchor>
       <input @bind="SearchInput" class="p-1 pl-2 dark:text-slate-800" placeholder="Search for book(s)" aria-placeholder="Search for book(s)" />
       <Button @onclick="SearchBooks">Search</Button>
     </div>
@@ -26,6 +32,7 @@
             </Anchor>
           </th>
           <th class="pl-2 p-1 border-r border-slate-800 underline">Subtitle</th>
+          <th class="pl-2 p-1 border-r border-slate-800 underline">Format</th>
           <th class="pl-2 p-1 border-r border-slate-800 underline">Authors</th>
           <th class="pl-2 p-1 border-r border-slate-800 underline w-28">
             <Anchor href=@GetPagesSortHref()>
@@ -42,6 +49,7 @@
               <Anchor href="@($"/books/{book.Id}")">@book.Title</Anchor>
             </td>
             <td class="pl-2 p-1 border-r border-slate-800">@book.Subtitle</td>
+            <td class="pl-2 p-1 border-r border-slate-800">@book.Format</td>
             <td class="pl-2 p-1 border-r border-slate-800">@string.Join(',', book.Author)</td>
             <td class="pl-2 p-1 border-r border-slate-800">@book.Pages</td>
             <td class="flex flex-row gap-2 p-1">
@@ -102,7 +110,6 @@
     Console.WriteLine("{0} Searching books by: '{1}', ordered by {2}", DateTime.Now.ToShortTimeString(), SearchText, OrderBy);
     var requestUri = $"{apiEndpoint}/books/search?searchText={SearchText}&orderBy={OrderBy}";
     BooksData = await HttpClient.GetFromJsonAsync<Book[]>(requestUri) ?? [];
-    Console.WriteLine("num of books {0}", BooksData.Count);
     IsLoading = false;
   }
   
@@ -125,7 +132,6 @@
   private void OrderData()
   {
     string orderByArgs = OrderBy?.Contains("asc") == true ? "title:desc" : "title:asc";
-    Console.WriteLine("Ordering data {0}", OrderBy);
     string newUrl = Navigation.GetUriWithQueryParameter(nameof(OrderBy), orderByArgs);
     Navigation.NavigateTo(newUrl);
   }

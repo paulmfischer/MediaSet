@@ -1,7 +1,8 @@
 ﻿@using System.Globalization
 @namespace MediaSet.Blazor.Components.Shared
 
-<button @attributes=InputAttributes class=@elemClass>@ChildContent</button>
+<button @attributes=InputAttributes class="@elemClass">@ChildContent</button>
+
 
 @code {
   [Parameter]
@@ -25,9 +26,11 @@
       ButtonStyle.Default => defaultClass,
       _ => defaultClass
     };
+    
     if (InputAttributes?.TryGetValue("class", out var cl) == true)
     {
       elemClass += string.Format(" {0}", Convert.ToString(cl, CultureInfo.InvariantCulture));
+      InputAttributes["class"] = elemClass;
       InputAttributes.Remove("class");
     }
   }
