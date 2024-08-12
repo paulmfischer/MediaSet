@@ -28,18 +28,22 @@
   protected override void OnInitialized()
   {
     apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
-    Console.WriteLine("api??? {0}", apiEndpoint);
   }
 
   private async Task Submit()
   {
     var requestUri = $"{apiEndpoint}/books";
-    Console.WriteLine("Adding book via {0}! {1}", requestUri, Book);
     var result = await HttpClient.PostAsJsonAsync<Book>(requestUri, Book);
     if (result.IsSuccessStatusCode) {
-      var newBook = result.Content.ReadFromJsonAsync<Book>();
-      Console.WriteLine("New boook created!! {0}", newBook);
-      Navigation.NavigateTo($"/books/{newBook.Id}");
+      var newBook = await result.Content.ReadFromJsonAsync<Book>();
+      if (newBook is not null)
+      {
+        Navigation.NavigateTo($"/books/{newBook.Id}");
+      }
+      else
+      {
+        Console.WriteLine("Failed to get the new book from the response for some reason");
+      }
     }
   }
 }
