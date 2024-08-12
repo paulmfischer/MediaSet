@@ -1,0 +1,66 @@
+﻿@page "/books/{id:nonfile}/edit"
+@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@inject IConfiguration Config
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+
+<div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 items-normal sm:flex-row sm:gap-0 sm:items-center justify-between">
+    <MediaHeader>Edit Book</MediaHeader>
+  </div>
+  @if (Book is null)
+  {
+    <div>No book found for this id, redirecting to Books.</div>
+  }
+  else
+  {
+    <div class="mt-4 flex flex-col gap-2">
+      <EditForm Model="Book" OnValidSubmit="Submit" FormName="Edit-Book">
+        <div class="flex flex-col gap-2">
+          <DataAnnotationsValidator />
+          <BookForm Book="@Book" />
+        </div>
+        <Button class="mt-4" disabled=@isSaving>Update</Button>
+      </EditForm>
+    </div>
+  }
+</div>
+
+@code {
+  [Parameter]
+  public string Id { get; set; } = string.Empty;
+
+  [SupplyParameterFromForm]
+  private Book Book { get; set; } = default!;
+
+  private string apiEndpoint = string.Empty;
+  private bool isSaving = false;
+
+  protected override async Task OnInitializedAsync()
+  {
+    apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+    var requestUri = $"{apiEndpoint}/books/{Id}";
+    var tempBook = await HttpClient.GetFromJsonAsync<Book>(requestUri);
+    if (tempBook is not null)
+    {
+      Book = tempBook;
+    }
+    // else we do what?
+  }
+
+  private async Task Submit()
+  {
+    isSaving = true;
+    var requestUri = $"{apiEndpoint}/books/{Book.Id}";
+    var result = await HttpClient.PutAsJsonAsync<Book>(requestUri, Book);
+    if (result.IsSuccessStatusCode)
+    {
+      Navigation.NavigateTo($"/books/{Book.Id}");
+    }
+    else
+    {
+      Console.WriteLine("Failed to get the new book from the response for some reason");
+    }
+    isSaving = false;
+  }
+}

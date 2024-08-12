@@ -1,0 +1,56 @@
+﻿@page "/books/add"
+@rendermode InteractiveServer
+@inject IConfiguration Config
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+
+<div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 items-normal sm:flex-row sm:gap-0 sm:items-center justify-between">
+    <MediaHeader>Add Book</MediaHeader>
+  </div>
+  <div class="mt-4 flex flex-col gap-2">
+    <EditForm Model="Book" OnValidSubmit="Submit" FormName="Add-Book">
+      <div class="flex flex-col gap-2">
+        <DataAnnotationsValidator />
+        <BookForm Book="@Book" />
+      </div>
+      <Button class="mt-4" disabled=@isSaving>Add</Button>
+    </EditForm>
+  </div>
+</div>
+
+@code {
+  [SupplyParameterFromForm]
+  private Book Book { get; set; } = new();
+
+  private string apiEndpoint = string.Empty;
+  private bool isSaving = false;
+
+  protected override void OnInitialized()
+  {
+    apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+  }
+
+  private async Task Submit()
+  {
+    isSaving = true;
+    var requestUri = $"{apiEndpoint}/books";
+    var result = await HttpClient.PostAsJsonAsync<Book>(requestUri, Book);
+    if (result.IsSuccessStatusCode) {
+      var newBook = await result.Content.ReadFromJsonAsync<Book>();
+      if (newBook is not null)
+      {
+        Navigation.NavigateTo($"/books/{newBook.Id}");
+      }
+      else
+      {
+        Console.WriteLine("Failed to parse book from the response");
+      }
+    }
+    else
+    {
+      Console.WriteLine("Failed to create a new book for some reason");
+    }
+    isSaving = false;
+  }
+}

@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using MediaSet.Api.Models;
-using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 

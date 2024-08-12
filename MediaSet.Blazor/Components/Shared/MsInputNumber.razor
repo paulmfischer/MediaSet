@@ -1,0 +1,43 @@
+﻿@using System.Linq.Expressions
+
+@inherits InputBase<int?>
+
+<div class="flex flex-col gap-2">
+  @if (!string.IsNullOrWhiteSpace(Label))
+  {
+    <label class="dark:text-slate-400" for="@Id">@Label</label>
+  }
+  <input type="number" class="p-1 rounded dark:text-slate-800 @CssClass" id="@Id" @bind="@CurrentValue" />
+  <ValidationMessage For="@ValidationFor" />
+</div>
+
+@code {
+  [Parameter, EditorRequired] public Expression<Func<int?>> ValidationFor { get; set; } = default!;
+
+  [Parameter] public string? Id { get; set; }
+
+  [Parameter] public string? Label { get; set; }
+  [Parameter] public InputTextType InputType { get; set; } = InputTextType.Default;
+
+  protected override void OnInitialized()
+  {
+    if (string.IsNullOrWhiteSpace(Id))
+    {
+      Id = Label;
+    }
+  }
+
+  protected override bool TryParseValueFromString(string? value, out int? result, out string validationErrorMessage)
+  {
+    if (int.TryParse(value, out int tempResult))
+    {
+      result = tempResult;
+    }
+    else
+    {
+      result = null;
+    }
+    validationErrorMessage = null;
+    return true;
+  }
+}

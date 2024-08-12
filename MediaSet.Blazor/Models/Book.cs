@@ -1,13 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+using MediaSet.Blazor.Validators;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Blazor.Models;
 
 public class Book
 {
-  [BsonId]
-  [BsonRepresentation(BsonType.ObjectId)]
   public string? Id { get; set; }
 
   [Required]
@@ -17,8 +14,10 @@ public class Book
 
   public string Format { get; set; } = null!;
 
+  [Range(0, int.MaxValue, ErrorMessage = "Pages must be greater than 0, and less than integer max.")]
   public int? Pages { get; set; }
 
+  [DateValidator]
   public string PublicationDate { get; set; } = null!;
 
   public List<string> Author { get; set; } = [];
@@ -27,7 +26,13 @@ public class Book
 
   public List<string> Genre { get; set; } = [];
 
+  [MaxLength(int.MaxValue, ErrorMessage = "The Plot is too long! Please shorten it.")]
   public string Plot { get; set; } = null!;
 
   public string Subtitle { get; set; } = null!;
+
+  public override string ToString()
+  {
+    return System.Text.Json.JsonSerializer.Serialize(this);
+  }
 }

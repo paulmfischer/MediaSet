@@ -14,7 +14,7 @@ internal static class BookApi
 
     group.WithTags("Books");
 
-    group.MapGet("/", async (BooksService booksService) => await booksService.GetAsync()).WithOpenApi();
+    group.MapGet("/", async (BooksService booksService) => await booksService.GetAsync());
     group.MapGet("/search", async (BooksService bookService, string searchText, string orderBy) => await bookService.SearchAsync(searchText, orderBy));
 
     group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (BooksService booksService, string id) =>
@@ -24,14 +24,19 @@ internal static class BookApi
         Book book => TypedResults.Ok(book),
         _ => TypedResults.NotFound()
       };
-    }).WithOpenApi();
+    });
 
-    group.MapPost("/", async Task<Created<Book>> (BooksService booksService, Book newBook) =>
+    group.MapPost("/", async Task<Results<Created<Book>, BadRequest>> (BooksService booksService, Book newBook) =>
     {
+      if (newBook is null || newBook.IsEmpty())
+      {
+        return TypedResults.BadRequest();
+      }
+
       await booksService.CreateAsync(newBook);
 
       return TypedResults.Created($"/books/{newBook.Id}", newBook);
-    }).WithOpenApi();
+    });
 
     group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (BooksService booksService, string id, Book updatedBook) =>
     {
