@@ -2,6 +2,7 @@
 @rendermode @(new InteractiveServerRenderMode(prerender:false))
 @inject IConfiguration Config
 @inject HttpClient HttpClient
+@inject NavigationManager Navigation
 
 <div class="flex flex-col gap-2">
   <div class="flex flex-col gap-2 items-normal sm:flex-row sm:gap-0 sm:items-center justify-between">
@@ -17,10 +18,9 @@
       <EditForm Model="Book" OnValidSubmit="Submit" FormName="Edit-Book">
         <div class="flex flex-col gap-2">
           <DataAnnotationsValidator />
-          <InputText @bind-Value="Book.Id" hidden="hidden" />
           <BookForm Book="@Book" />
         </div>
-        <Button class="mt-4">Update</Button>
+        <Button class="mt-4" disabled=@isSaving>Update</Button>
       </EditForm>
     </div>
   }
@@ -31,17 +31,36 @@
   public string Id { get; set; } = string.Empty;
 
   [SupplyParameterFromForm]
-  private Book? Book { get; set; }
+  private Book Book { get; set; } = default!;
+
+  private string apiEndpoint = string.Empty;
+  private bool isSaving = false;
 
   protected override async Task OnInitializedAsync()
   {
-    var apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
+    apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
     var requestUri = $"{apiEndpoint}/books/{Id}";
-    Book = await HttpClient.GetFromJsonAsync<Book>(requestUri);
+    var tempBook = await HttpClient.GetFromJsonAsync<Book>(requestUri);
+    if (tempBook is not null)
+    {
+      Book = tempBook;
+    }
+    // else we do what?
   }
 
-  private void Submit()
+  private async Task Submit()
   {
-    Console.WriteLine("Updating book! {0}", Book?.ToString());
+    isSaving = true;
+    var requestUri = $"{apiEndpoint}/books/{Book.Id}";
+    var result = await HttpClient.PutAsJsonAsync<Book>(requestUri, Book);
+    if (result.IsSuccessStatusCode)
+    {
+      Navigation.NavigateTo($"/books/{Book.Id}");
+    }
+    else
+    {
+      Console.WriteLine("Failed to get the new book from the response for some reason");
+    }
+    isSaving = false;
   }
 }

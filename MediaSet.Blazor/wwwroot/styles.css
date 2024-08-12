@@ -856,4 +856,9 @@ input[class~="invalid"] {
     --tw-bg-opacity: 1;
     background-color: rgb(39 39 42 / var(--tw-bg-opacity));
   }
+
+  .dark\:disabled\:bg-blue-950:disabled {
+    --tw-bg-opacity: 1;
+    background-color: rgb(23 37 84 / var(--tw-bg-opacity));
+  }
 }

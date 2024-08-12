@@ -1,5 +1,5 @@
 ﻿@page "/books/add"
-@rendermode @(new InteractiveServerRenderMode(prerender:false))
+@rendermode InteractiveServer
 @inject IConfiguration Config
 @inject HttpClient HttpClient
 @inject NavigationManager Navigation
@@ -14,7 +14,7 @@
         <DataAnnotationsValidator />
         <BookForm Book="@Book" />
       </div>
-      <Button class="mt-4">Add</Button>
+      <Button class="mt-4" disabled=@isSaving>Add</Button>
     </EditForm>
   </div>
 </div>
@@ -24,6 +24,7 @@
   private Book Book { get; set; } = new();
 
   private string apiEndpoint = string.Empty;
+  private bool isSaving = false;
 
   protected override void OnInitialized()
   {
@@ -32,6 +33,7 @@
 
   private async Task Submit()
   {
+    isSaving = true;
     var requestUri = $"{apiEndpoint}/books";
     var result = await HttpClient.PostAsJsonAsync<Book>(requestUri, Book);
     if (result.IsSuccessStatusCode) {
@@ -42,8 +44,13 @@
       }
       else
       {
-        Console.WriteLine("Failed to get the new book from the response for some reason");
+        Console.WriteLine("Failed to parse book from the response");
       }
     }
+    else
+    {
+      Console.WriteLine("Failed to create a new book for some reason");
+    }
+    isSaving = false;
   }
 }
