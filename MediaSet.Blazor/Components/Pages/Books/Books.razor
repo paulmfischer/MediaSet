@@ -61,7 +61,7 @@
               <td class="pl-2 p-1 border-r border-slate-800">@book.Pages</td>
               <td class="flex flex-row gap-2 p-1">
                 <Anchor href="@($"/books/{book.Id}/edit")">Edit</Anchor>
-                <Anchor>Delete</Anchor>
+                <Button ButtonStyle="ButtonStyle.Link" @onclick="(() => ConfirmDelete(book))">Delete</Button>
               </td>
             </tr>
           }
@@ -83,6 +83,16 @@
   </div>
 </div>
 
+<Dialog Opened="displayDeleteDialog" Title="Confirm deletion">
+  <BodyContent>
+    Are you sure you want to delete "@(bookToDelete?.Title)@(string.IsNullOrWhiteSpace(bookToDelete?.Subtitle) == false ? $": {bookToDelete?.Subtitle}" : "")"?
+  </BodyContent>
+  <FooterContent>
+    <Button ButtonStyle="ButtonStyle.Secondary" @onclick="(() => displayDeleteDialog = false)">Cancel</Button>
+    <Button @onclick="DeleteBook">Delete</Button>
+  </FooterContent>
+</Dialog>
+
 @code {
   [SupplyParameterFromQuery(Name = "searchText")]
   public string? SearchText { get; set; }
@@ -94,6 +104,8 @@
   private string apiEndpoint = string.Empty;
   private string? searchInput;
   private bool isLoading = true;
+  private Book? bookToDelete = null;
+  private bool displayDeleteDialog = false;
 
   protected override async Task OnInitializedAsync()
   {
@@ -141,5 +153,31 @@
     string orderByArgs = OrderBy?.Contains("asc") == true ? "title:desc" : "title:asc";
     string newUrl = Navigation.GetUriWithQueryParameter(nameof(OrderBy), orderByArgs);
     Navigation.NavigateTo(newUrl);
+  }
+
+  private void ConfirmDelete(Book book)
+  {
+    displayDeleteDialog = true;
+    bookToDelete = book;
+  }
+
+  private async Task DeleteBook()
+  {
+    if (bookToDelete is not null)
+    {
+      Console.WriteLine("deleting book -- {0}", bookToDelete);
+      var requestUri = $"{apiEndpoint}/books/{bookToDelete.Id}";
+      var response = await HttpClient.DeleteAsync(requestUri);
+      if (response.IsSuccessStatusCode)
+      {
+        displayDeleteDialog = false;
+        bookToDelete = null;
+        await GetBooks();
+      }
+      else
+      {
+        Console.WriteLine("Failed to delete a book for some reason");
+      }
+    }
   }
 }
