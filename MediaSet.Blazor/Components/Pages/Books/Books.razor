@@ -4,6 +4,8 @@
 @inject IConfiguration Config
 @inject HttpClient HttpClient
 @inject NavigationManager Navigation
+@inject PersistentComponentState ApplicationState
+@implements IDisposable
 
 <PageTitle>Books</PageTitle>
 
@@ -20,6 +22,7 @@
       <Anchor class="self-center mr-4" href="/books/add">Add</Anchor>
       <input @bind="searchInput" class="p-1 pl-2 dark:text-slate-800" placeholder="Search for book(s)" aria-placeholder="Search for book(s)" />
       <Button @onclick="SearchBooks">Search</Button>
+      @* <button @onclick="SearchBooks">Search</button> *@
     </div>
   </div>
   <div class="h-full mt-4">
@@ -106,16 +109,20 @@
   private bool isLoading = true;
   private Book? bookToDelete = null;
   private bool displayDeleteDialog = false;
+  private PersistingComponentStateSubscription _subscription;
 
   protected override async Task OnInitializedAsync()
   {
+    _subscription = ApplicationState.RegisterOnPersisting(Persist);
+    Console.WriteLine("Book count start of init? {0}", booksData.Count);
     apiEndpoint = $"{Config.GetValue<string>("MediaSetApi")}";
     searchInput = SearchText;
     if (string.IsNullOrWhiteSpace(OrderBy))
     {
       OrderBy = "title:asc";
     }
-    await GetBooks();
+    await LoadBooks();
+    Console.WriteLine("Book count end of init? {0}", booksData.Count);
   }
 
   protected override async Task OnParametersSetAsync()
@@ -123,13 +130,33 @@
     await GetBooks();
   }
 
-  private async Task GetBooks()
+  private Task Persist()
+  {
+    ApplicationState.PersistAsJson("BooksList", booksData);
+    return Task.CompletedTask;
+  }
+
+  public void Dispose()
+  {
+    _subscription.Dispose();
+  }
+
+  private async Task LoadBooks()
+  {
+    Console.WriteLine("{0} Searching books by: '{1}', ordered by {2}", DateTime.Now.ToShortTimeString(), SearchText, OrderBy);
+    var foundInState = ApplicationState.TryTakeFromJson<Book[]>("BooksList", out var books);
+
+    booksData = foundInState ? books : await GetBooks();
+  }
+
+  private async Task<Book[]> GetBooks()
   {
     isLoading = true;
-    Console.WriteLine("{0} Searching books by: '{1}', ordered by {2}", DateTime.Now.ToShortTimeString(), SearchText, OrderBy);
     var requestUri = $"{apiEndpoint}/books/search?searchText={SearchText}&orderBy={OrderBy}";
-    booksData = await HttpClient.GetFromJsonAsync<Book[]>(requestUri) ?? [];
+    var books = await HttpClient.GetFromJsonAsync<Book[]>(requestUri) ?? [];
     isLoading = false;
+
+    return books;
   }
   
   private string GetTitleSortHref() => GetSortHref("title");
@@ -145,6 +172,7 @@
   private void SearchBooks()
   {
     string newUrl = Navigation.GetUriWithQueryParameter("searchText", searchInput);
+    Console.WriteLine("searching books? {0} url: {1}", searchInput, newUrl);
     Navigation.NavigateTo(newUrl);
   }
 
