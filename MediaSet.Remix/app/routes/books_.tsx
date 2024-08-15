@@ -1,8 +1,7 @@
+import type { MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
 import { Link, useLoaderData } from "@remix-run/react";
-
-import type { MetaFunction } from "@remix-run/node";
 
 export const meta: MetaFunction = () => {
   return [
@@ -25,7 +24,7 @@ export default function Index() {
           Books!
         </div>
         <div className="flex flex-row gap-4">
-          <input placeholder="Search" className="p-1 pl-2 dark:text-slate-800" />
+          <input placeholder="Search" />
         </div>
       </div>
       <div className="h-full mt-4">
@@ -44,13 +43,13 @@ export default function Index() {
             {books.map(book => {
               return (
                 <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={book.id}>
-                  <td className="pl-2 p-1 border-r border-slate-800">{book.title}</td>
+                  <td className="pl-2 p-1 border-r border-slate-800"><Link to={`/books/${book.id}`}>{book.title}</Link></td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.subTitle}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.format}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.author?.join(',')}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.pages}</td>
                   <td className="flex flex-row gap-2 p-1 ">
-                    <Link to="/edit">Edit</Link>
+                    <Link to={`/books/edit/${book.id}`}>Edit</Link>
                     <Link to="/delete">Delete</Link>
                   </td>
                 </tr>

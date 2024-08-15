@@ -10,4 +10,24 @@
   a[class~="active"] {
     @apply dark:bg-zinc-600
   }
+
+  input {
+    @apply p-1 pl-2 dark:text-slate-800
+  }
+  
+  input::placeholder {
+    @apply text-gray-400 opacity-100
+  }
+
+  button {
+    @apply px-3 py-1 dark:text-slate-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:disabled:bg-blue-950 rounded bg-white transition-colors
+  }
+
+  button[class~="secondary"] {
+    @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-500 dark:hover:bg-gray-600 dark:disabled:bg-gray-950 rounded bg-white transition-colors
+  }
+
+  button[class~="link"] {
+    @apply text-blue-300 border-none underline p-0
+  }
 }
