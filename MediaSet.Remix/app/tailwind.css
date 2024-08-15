@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  a {
+    @apply dark:text-blue-300 underline
+  }
+
+  a[class~="active"] {
+    @apply dark:bg-zinc-600
+  }
+}
