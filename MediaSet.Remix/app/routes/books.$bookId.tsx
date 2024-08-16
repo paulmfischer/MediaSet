@@ -26,7 +26,7 @@ export default function Detail() {
         <div className="flex flex-row gap-4">
           <h2 className="text-2xl">{book.title}</h2>
         </div>
-        <Link to={`/books/edit/${book.id}`}>Edit</Link>
+        <Link to={`/books/${book.id}/edit`}>Edit</Link>
       </div>
       <div className="h-full mt-4">
         <div className="flex gap-4">
