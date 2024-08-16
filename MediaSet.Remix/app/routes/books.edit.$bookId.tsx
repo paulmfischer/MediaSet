@@ -57,7 +57,7 @@ export default function Edit() {
             <textarea id="plot" defaultValue={book.plot} name="plot" placeholder="Plot" aria-label="Plot" />
             <div className="flex flex-row gap-2 mt-3">
               <button type="submit">Update</button>
-              <button type="button" onClick={() => navigate(-1)}>Cancel</button>
+              <button type="button" onClick={() => navigate(-1)} className="secondary">Cancel</button>
             </div>
           </Form>
         </div>

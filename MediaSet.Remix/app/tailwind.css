@@ -20,12 +20,12 @@
     @apply text-gray-400 opacity-100
   }
 
-  button {
+  button:not([class~="link"]) {
     @apply px-3 py-1 dark:text-slate-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:disabled:bg-blue-950 rounded bg-white transition-colors
   }
 
   button[class~="secondary"] {
-    @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-500 dark:hover:bg-gray-600 dark:disabled:bg-gray-950 rounded bg-white transition-colors
+    @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:disabled:bg-gray-950 rounded bg-white transition-colors
   }
 
   button[class~="link"] {
