@@ -60,3 +60,11 @@ export async function addBook(book: BookMutation) {
 
   return await response.json() as BookRecord;
 }
+
+export async function deleteBook(id: string) {
+  const response = await fetch(`${baseUrl}/books/${id}`, { method: 'DELETE' });
+
+  if (!response.ok) {
+    throw new Response(`Error deleting a book ${id}`, { status: 500 });
+  }
+}

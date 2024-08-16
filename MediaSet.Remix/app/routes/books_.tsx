@@ -68,7 +68,14 @@ export default function Index() {
                   <td className="pl-2 p-1 border-r border-slate-800">{book.pages}</td>
                   <td className="flex flex-row gap-2 p-1 ">
                     <Link to={`/books/edit/${book.id}`}>Edit</Link>
-                    <Link to="/delete">Delete</Link>
+                    <Form action={`destroy/${book.id}`} method="post" onSubmit={(event) => {
+                      const response = confirm(`Are you sure you want to delete ${book.title}?`);
+                      if (!response) {
+                        event.preventDefault();
+                      }
+                    }}>
+                      <button className="link" type="submit">Delete</button>
+                    </Form>
                   </td>
                 </tr>
               )
