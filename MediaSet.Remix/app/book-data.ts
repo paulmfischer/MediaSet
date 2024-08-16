@@ -12,10 +12,7 @@ type BookMutation = {
   plot?: string;
 }
 
-export type BookRecord = BookMutation & {
-  id: string;
-  createdAt: string;
-}
+export type BookRecord = BookMutation;
 
 const baseUrl = 'http://localhost:7130';
 
@@ -49,4 +46,18 @@ export async function updatebook(id: string, book: BookMutation) {
   if (!response.ok) {
     throw new Response("Error updating a book", { status: 500 });
   }
+}
+
+export async function addBook(book: BookMutation) {
+  const response = await fetch(`${baseUrl}/books`, {
+    method: 'POST',
+    body: JSON.stringify(book),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  if (!response.ok) {
+    throw new Response("Error creating a new book", { status: 500 });
+  }
+
+  return await response.json() as BookRecord;
 }

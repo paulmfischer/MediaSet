@@ -65,6 +65,16 @@
       "name": ".NET Core Attach",
       "type": "coreclr",
       "request": "attach"
+    },
+    {
+      "name": "MediaSet.Remix",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/MediaSet.Remix",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script", "dev"
+      ]
     }
   ],
   "compounds": [
