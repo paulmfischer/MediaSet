@@ -1,7 +1,8 @@
-import type { MetaFunction } from "@remix-run/node";
+import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
+import { useEffect } from "react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -10,12 +11,23 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader() {
-  return json(await searchBooks());
-}
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchText = url.searchParams.get("searchText");
+  const books = await searchBooks(searchText);
+  return json({ books, searchText });
+};
 
 export default function Index() {
-  const books = useLoaderData<typeof loader>();
+  const { books, searchText } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
+
+  useEffect(() => {
+    const searchField = document.getElementById("search");
+    if (searchField instanceof HTMLInputElement) {
+      searchField.value = searchText || '';
+    }
+  }, [searchText]);
 
   return (
     <div className="flex flex-col">
@@ -25,7 +37,12 @@ export default function Index() {
         </div>
         <div className="flex flex-row gap-4 items-center">
           <Link to="/books/add">Add</Link>
-          <input placeholder="Search" />
+          <Form id="search-form" role="search" onChange={(event) => {
+            const isFirstSearch = searchText === null;
+            submit(event.currentTarget, { replace: !isFirstSearch });
+          }}>
+            <input id="search" defaultValue={searchText || ''} placeholder="Search Books" aria-label="Search Books" type="search" name="searchText" />
+          </Form>
         </div>
       </div>
       <div className="h-full mt-4">

@@ -16,8 +16,8 @@ export type BookRecord = BookMutation;
 
 const baseUrl = 'http://localhost:7130';
 
-export async function searchBooks(searchText: string = '', orderBy: string = '') {
-  const response = await fetch(`${baseUrl}/books/search?searchText=${searchText}&orderBy=${orderBy}`);
+export async function searchBooks(searchText: string | null, orderBy: string = '') {
+  const response = await fetch(`${baseUrl}/books/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
   if (!response.ok) {
     throw new Response("Error fetching data", { status: 500 });
   }
@@ -34,7 +34,6 @@ export async function getBook(id: string) {
 }
 
 export async function updatebook(id: string, book: BookMutation) {
-  console.log('updating a book', id, 'book?', book);
   const response = await fetch(`${baseUrl}/books/${id}`, {
     method: 'PUT',
     body: JSON.stringify(book),
