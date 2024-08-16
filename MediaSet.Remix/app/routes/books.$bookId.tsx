@@ -2,7 +2,7 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { getBook } from "~/book-data";
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -23,14 +23,15 @@ export default function Detail() {
   return (
     <div className="flex flex-col">
       <div className="flex flex-row items-center justify-between">
-        <div className="flex flex-row gap-4 items-end">
+        <div className="flex flex-row gap-4">
           <h2 className="text-2xl">{book.title}</h2>
         </div>
+        <Link to={`/books/edit/${book.id}`}>Edit</Link>
       </div>
       <div className="h-full mt-4">
         <div className="flex gap-4">
           <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
-          <div id="subtitle">{book.subTitle}</div>
+          <div id="subtitle">{book.subtitle}</div>
         </div>
         <div className="flex gap-4">
           <label htmlFor="format" className="dark:text-slate-400">Format</label>

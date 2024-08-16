@@ -1,7 +1,7 @@
 type BookMutation = {
   id?: string;
   title?: string;
-  subTitle?: string;
+  subtitle?: string;
   isbn?: string;
   format?: string;
   pages?: number;
