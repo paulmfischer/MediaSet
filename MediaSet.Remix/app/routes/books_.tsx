@@ -23,7 +23,8 @@ export default function Index() {
         <div className="flex flex-row gap-4 items-end">
           Books!
         </div>
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-row gap-4 items-center">
+          <Link to="/books/add">Add</Link>
           <input placeholder="Search" />
         </div>
       </div>

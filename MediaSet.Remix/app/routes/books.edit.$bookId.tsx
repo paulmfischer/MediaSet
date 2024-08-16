@@ -6,7 +6,7 @@ import { getBook, updatebook } from "~/book-data";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Book Edit" },
+    { title: "Edit a Book" },
     { name: "description", content: "Edit a book" },
   ];
 };
@@ -23,7 +23,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const updates = Object.fromEntries(formData);
   updates.id = params.bookId;
   await updatebook(params.bookId, updates);
-  console.log('redirecting....');
 
   return redirect(`/books/${params.bookId}`);
 };

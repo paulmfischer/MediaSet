@@ -22,8 +22,8 @@ export default function App() {
           <div className="dark:bg-zinc-700 min-h-16 flex flex-row gap-16 items-center px-4">
             <h1 className="text-3xl">MediaSet</h1>
             <div className="flex flex-row gap-4 items-center">
-              <NavLink to="/" className="p-4 h-16 flex items-center rounded-lg">Home</NavLink>
-              <NavLink to="/books" className="p-4 h-16 flex items-center rounded-lg">Books</NavLink>
+              <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
+              <NavLink to="/books" className="p-3 flex items-center rounded-lg">Books</NavLink>
             </div>
           </div>
           <main className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">

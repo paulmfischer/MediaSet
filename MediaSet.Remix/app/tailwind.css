@@ -8,7 +8,7 @@
   }
 
   a[class~="active"] {
-    @apply dark:bg-zinc-600
+    @apply dark:bg-zinc-800
   }
 
   textarea,
