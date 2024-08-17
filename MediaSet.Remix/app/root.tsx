@@ -1,3 +1,4 @@
+import "./tailwind.css";
 import {
   Links,
   Meta,
@@ -6,7 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import "./tailwind.css";
+import { IconBooks } from "@tabler/icons-react";
 
 export default function App() {
   return (
@@ -23,7 +24,7 @@ export default function App() {
             <h1 className="text-3xl">MediaSet</h1>
             <div className="flex flex-row gap-4 items-center">
               <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
-              <NavLink to="/books" className="p-3 flex items-center rounded-lg">Books</NavLink>
+              <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><IconBooks /> Books</NavLink>
             </div>
           </div>
           <main className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">

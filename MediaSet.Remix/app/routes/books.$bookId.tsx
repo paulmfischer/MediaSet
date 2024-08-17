@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { getBook } from "~/book-data";
 import { Link, useLoaderData } from "@remix-run/react";
+import { IconEdit } from "@tabler/icons-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -26,7 +27,7 @@ export default function Detail() {
         <div className="flex flex-row gap-4">
           <h2 className="text-2xl">{book.title}</h2>
         </div>
-        <Link to={`/books/${book.id}/edit`}>Edit</Link>
+        <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><IconEdit /></Link>
       </div>
       <div className="h-full mt-4">
         <div className="flex gap-4">

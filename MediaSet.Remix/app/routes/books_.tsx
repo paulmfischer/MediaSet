@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
 import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
+import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -35,8 +36,8 @@ export default function Index() {
         <div className="flex flex-row gap-4 items-end">
           <h2 className="text-2xl">Books</h2>
         </div>
-        <div className="flex flex-row gap-4 items-center">
-          <Link to="/books/add">Add</Link>
+        <div className="flex flex-row gap-6 items-center">
+          <Link to="/books/add" className="flex gap-1 items-center"><IconPlus size={22} />Add</Link>
           <Form id="search-form" role="search" onChange={(event) => {
             const isFirstSearch = searchText === null;
             submit(event.currentTarget, { replace: !isFirstSearch });
@@ -66,15 +67,15 @@ export default function Index() {
                   <td className="pl-2 p-1 border-r border-slate-800">{book.author?.map(auth => auth.trimEnd()).join(',')}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.format}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.pages}</td>
-                  <td className="flex flex-row gap-2 p-1 ">
-                    <Link to={`/books/${book.id}/edit`}>Edit</Link>
+                  <td className="flex flex-row gap-3 p-1">
+                    <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><IconEdit size={22} /></Link>
                     <Form action={`/books/${book.id}/delete`} method="post" onSubmit={(event) => {
                       const response = confirm(`Are you sure you want to delete ${book.title}?`);
                       if (!response) {
                         event.preventDefault();
                       }
                     }}>
-                      <button className="link" type="submit">Delete</button>
+                      <button className="link" type="submit" aria-label="Delete" title="Delete"><IconTrash size={22} /></button>
                     </Form>
                   </td>
                 </tr>
