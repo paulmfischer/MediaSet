@@ -1,8 +1,9 @@
 import type { MetaFunction, LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useLoaderData, useNavigate } from "@remix-run/react";
+import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { json } from "@remix-run/node";
 import { getBook, updatebook } from "~/book-data";
+import Spinner from "~/components/spinner";
 
 export const meta: MetaFunction = () => {
   return [
@@ -30,6 +31,8 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 export default function Edit() {
   const { book } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.location?.pathname === `/books/${book.id}/edit`;
 
   return (
     <div className="flex flex-col">
@@ -40,25 +43,30 @@ export default function Edit() {
       </div>
       <div className="h-full mt-4">
         <div className="mt-4 flex flex-col gap-2">
-          <Form key={book.id} id="edit-book" method="post" className="flex flex-col gap-2">
-            <label htmlFor="title" className="dark:text-slate-400">Title</label>
-            <input id="title" defaultValue={book.title} name="title" type="text" placeholder="Title" aria-label="Title" />
-            <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
-            <input id="subtitle" defaultValue={book.subtitle} name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
-            <label htmlFor="format" className="dark:text-slate-400">Format</label>
-            <input id="format" defaultValue={book.format} name="format" type="text" placeholder="Format" aria-label="Format" />
-            <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
-            <input id="pages" defaultValue={book.pages} name="pages" type="number" placeholder="Pages" aria-label="Pages" />
-            <label htmlFor="publicationDate" className="dark:text-slate-400">Publication Date</label>
-            <input id="publicationDate" defaultValue={book.publicationDate} name="publicationDate" type="text" placeholder="Publication Date" aria-label="Publication Date" />
-            <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
-            <input id="isbn" defaultValue={book.isbn} name="isbn" type="text" placeholder="ISBN" aria-label="ISBN" />
-            <label htmlFor="plot" className="dark:text-slate-400">Plot</label>
-            <textarea id="plot" defaultValue={book.plot} name="plot" placeholder="Plot" aria-label="Plot" />
-            <div className="flex flex-row gap-2 mt-3">
-              <button type="submit">Update</button>
-              <button type="button" onClick={() => navigate(-1)} className="secondary">Cancel</button>
-            </div>
+          <Form key={book.id} id="edit-book" method="post" action={`/books/${book.id}/edit`}>
+            <fieldset disabled={isSubmitting} className="flex flex-col gap-2">
+              <label htmlFor="title" className="dark:text-slate-400">Title</label>
+              <input id="title" defaultValue={book.title} name="title" type="text" placeholder="Title" aria-label="Title" />
+              <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
+              <input id="subtitle" defaultValue={book.subtitle} name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
+              <label htmlFor="format" className="dark:text-slate-400">Format</label>
+              <input id="format" defaultValue={book.format} name="format" type="text" placeholder="Format" aria-label="Format" />
+              <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
+              <input id="pages" defaultValue={book.pages} name="pages" type="number" placeholder="Pages" aria-label="Pages" />
+              <label htmlFor="publicationDate" className="dark:text-slate-400">Publication Date</label>
+              <input id="publicationDate" defaultValue={book.publicationDate} name="publicationDate" type="text" placeholder="Publication Date" aria-label="Publication Date" />
+              <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
+              <input id="isbn" defaultValue={book.isbn} name="isbn" type="text" placeholder="ISBN" aria-label="ISBN" />
+              <label htmlFor="plot" className="dark:text-slate-400">Plot</label>
+              <textarea id="plot" defaultValue={book.plot} name="plot" placeholder="Plot" aria-label="Plot" />
+              <div className="flex flex-row gap-2 mt-3">
+                <button type="submit" className="flex gap-2">
+                  {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
+                  Update
+                </button>
+                <button type="button" onClick={() => navigate(-1)} className="secondary">Cancel</button>
+              </div>
+            </fieldset>
           </Form>
         </div>
       </div>
