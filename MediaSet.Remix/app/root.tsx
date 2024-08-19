@@ -29,7 +29,7 @@ export default function App() {
             </div>
           </div>
           <PendingNavigation />
-          <main className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
+          <main id="main-content" className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
             <Outlet />
           </main>
           <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
