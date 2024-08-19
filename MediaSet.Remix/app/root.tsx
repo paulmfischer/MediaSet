@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import { IconBooks } from "@tabler/icons-react";
+import PendingNavigation from "./components/pending-navigation";
 
 export default function App() {
   return (
@@ -27,7 +28,8 @@ export default function App() {
               <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><IconBooks /> Books</NavLink>
             </div>
           </div>
-          <main className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
+          <PendingNavigation />
+          <main id="main-content" className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
             <Outlet />
           </main>
           <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
