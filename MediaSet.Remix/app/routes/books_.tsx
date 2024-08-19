@@ -38,11 +38,9 @@ export default function Index() {
         </div>
         <div className="flex flex-row gap-6 items-center">
           <Link to="/books/add" className="flex gap-1 items-center"><IconPlus size={22} />Add</Link>
-          <Form id="search-form" role="search" onChange={(event) => {
-            const isFirstSearch = searchText === null;
-            submit(event.currentTarget, { replace: !isFirstSearch });
-          }}>
+          <Form id="search-form" role="search" className="flex gap-2">
             <input id="search" defaultValue={searchText || ''} placeholder="Search Books" aria-label="Search Books" type="search" name="searchText" />
+            <button type="submit" aria-label="Search">Search</button>
           </Form>
         </div>
       </div>
