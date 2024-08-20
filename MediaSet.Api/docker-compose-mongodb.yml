@@ -1,0 +1,20 @@
+# example docker compose used on a nas to run mongodb
+services:
+  mongodb-community-server:
+    image: mongodb/mongodb-community-server:latest
+    container_name: cortext-mongo
+    hostname: cortext-mongo
+    restart: always
+    ports:
+      - 27017:27017
+    networks:
+      - mediaset
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+networks:
+  mediaset:
+    external: true
+    name: mediaset
