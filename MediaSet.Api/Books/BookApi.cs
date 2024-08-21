@@ -14,10 +14,10 @@ internal static class BookApi
 
     group.WithTags("Books");
 
-    group.MapGet("/", async (BooksService booksService) => await booksService.GetAsync());
-    group.MapGet("/search", async (BooksService bookService, string searchText, string orderBy) => await bookService.SearchAsync(searchText, orderBy));
+    group.MapGet("/", async (BookService booksService) => await booksService.GetAsync());
+    group.MapGet("/search", async (BookService bookService, string searchText, string orderBy) => await bookService.SearchAsync(searchText, orderBy));
 
-    group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (BooksService booksService, string id) =>
+    group.MapGet("/{id}", async Task<Results<Ok<Book>, NotFound>> (BookService booksService, string id) =>
     {
       return await booksService.GetAsync(id) switch
       {
@@ -26,7 +26,7 @@ internal static class BookApi
       };
     });
 
-    group.MapPost("/", async Task<Results<Created<Book>, BadRequest>> (BooksService booksService, Book newBook) =>
+    group.MapPost("/", async Task<Results<Created<Book>, BadRequest>> (BookService booksService, Book newBook) =>
     {
       if (newBook is null || newBook.IsEmpty())
       {
@@ -38,7 +38,7 @@ internal static class BookApi
       return TypedResults.Created($"/books/{newBook.Id}", newBook);
     });
 
-    group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (BooksService booksService, string id, Book updatedBook) =>
+    group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (BookService booksService, string id, Book updatedBook) =>
     {
       if (id != updatedBook.Id)
       {
@@ -49,13 +49,13 @@ internal static class BookApi
       return result.ModifiedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
 
-    group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (BooksService booksService, string id) =>
+    group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (BookService booksService, string id) =>
     {
       var result = await booksService.RemoveAsync(id);
       return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
 
-    group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BooksService booksService, IFormFile bookUpload) =>
+    group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BookService booksService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
       try
