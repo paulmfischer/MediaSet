@@ -1,4 +1,6 @@
-type BookMutation = {
+import { baseUrl } from "./constants";
+
+export type BookRecord = {
   id?: string;
   title?: string;
   subtitle?: string;
@@ -12,9 +14,19 @@ type BookMutation = {
   plot?: string;
 }
 
-export type BookRecord = BookMutation;
-
-const baseUrl = 'http://localhost:7130';
+type BookFormData = {
+  id?: string;
+  title?: string;
+  subtitle?: string;
+  isbn?: string;
+  format?: string;
+  pages?: string;
+  publicationDate?: string;
+  author?: string;
+  publisher?: string;
+  genre?: string;
+  plot?: string;
+};
 
 export async function searchBooks(searchText: string | null, orderBy: string = '') {
   const response = await fetch(`${baseUrl}/books/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
@@ -33,13 +45,21 @@ export async function getBook(id: string) {
   return await response.json() as BookRecord;
 }
 
-export async function updatebook(id: string, book: BookMutation) {
+function convertBookFormToRecord(book: BookFormData): BookRecord {
+  const bookRecord = { ...book } as BookRecord;
+  if (book.author) {
+    bookRecord.author = book.author.split(',');
+  }
+  bookRecord.pages = book.pages === '' ? undefined : Number(book.pages);
+
+  return bookRecord;
+}
+
+export async function updatebook(id: string, book: BookFormData) {
   const response = await fetch(`${baseUrl}/books/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(book),
-    headers: {
-      "Content-Type": "application/json",
-    }
+    body: JSON.stringify(convertBookFormToRecord(book)),
+    headers: { "Content-Type": "application/json" }
   });
 
   if (!response.ok) {
@@ -47,10 +67,10 @@ export async function updatebook(id: string, book: BookMutation) {
   }
 }
 
-export async function addBook(book: BookMutation) {
+export async function addBook(book: BookFormData) {
   const response = await fetch(`${baseUrl}/books`, {
     method: 'POST',
-    body: JSON.stringify(book),
+    body: JSON.stringify(convertBookFormToRecord(book)),
     headers: { "Content-Type": "application/json" }
   });
 

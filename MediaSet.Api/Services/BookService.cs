@@ -5,11 +5,11 @@ using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
 
-public class BooksService
+public class BookService
 {
   private readonly IMongoCollection<Book> _booksCollection;
 
-  public BooksService(IOptions<MediaSetDatabaseSettings> mediaSetDatabaseSettings)
+  public BookService(IOptions<MediaSetDatabaseSettings> mediaSetDatabaseSettings)
   {
     var dbSettings = mediaSetDatabaseSettings.Value;
     var mongoClient = new MongoClient(dbSettings.ConnectionString);
