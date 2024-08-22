@@ -1,7 +1,10 @@
 import type { MetaFunction, ActionFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useNavigate, useNavigation } from "@remix-run/react";
+import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
+import { json } from "@remix-run/node";
 import { addBook } from "~/book-data";
+import MultiselectInput from "~/components/multiselect-input";
 import Spinner from "~/components/spinner";
+import { getAuthors } from "~/metadata-data";
 
 export const meta: MetaFunction = () => {
   return [
@@ -9,6 +12,11 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Add a book" },
   ];
 };
+
+export const loader = async () => {
+  const authors = await getAuthors();
+  return json({ authors });
+}
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
@@ -19,6 +27,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Edit() {
+  const { authors } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === '/books/add';
@@ -40,6 +49,8 @@ export default function Edit() {
               <input id="subtitle" name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
               <label htmlFor="format" className="dark:text-slate-400">Format</label>
               <input id="format" name="format" type="text" placeholder="Format" aria-label="Format" />
+              <label htmlFor="author" className="dark:text-slate-400">Authors</label>
+              <MultiselectInput name="author" selectText="Select Authors..." options={authors} />
               <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
               <input id="pages" name="pages" type="number" placeholder="Pages" aria-label="Pages" />
               <label htmlFor="publicationDate" className="dark:text-slate-400">Publication Date</label>

@@ -29,8 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app
-  .MapBooks()
-  .MapMetadata();
+app.MapBooks();
+app.MapMetadata();
 
 app.Run();

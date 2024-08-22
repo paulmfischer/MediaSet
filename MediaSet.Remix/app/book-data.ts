@@ -1,3 +1,5 @@
+import { baseUrl } from "./constants";
+
 type BookMutation = {
   id?: string;
   title?: string;
@@ -13,8 +15,6 @@ type BookMutation = {
 }
 
 export type BookRecord = BookMutation;
-
-const baseUrl = 'http://localhost:7130';
 
 export async function searchBooks(searchText: string | null, orderBy: string = '') {
   const response = await fetch(`${baseUrl}/books/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
