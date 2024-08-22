@@ -16,7 +16,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const book = await getBook(params.bookId);
   return json({ book });
-}
+};
 
 export default function Detail() {
   const { book } = useLoaderData<typeof loader>();
