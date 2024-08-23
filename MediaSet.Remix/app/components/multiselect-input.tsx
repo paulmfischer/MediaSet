@@ -13,10 +13,19 @@ type MultiselectProps = {
   addLabel: string;
   selectText: string;
   options: Option[];
+  selectedValues?: string[];
 };
 
+function initializeSelected(selectedValues?: string[]): Option[] {
+  if (selectedValues?.length) {
+    return selectedValues.map(value => ({ label: value, value}))
+  }
+
+  return [];
+}
+
 export default function MultiselectInput(props: MultiselectProps) {
-  const [selected, setSelected] = useState<Option[]>([]);
+  const [selected, setSelected] = useState<Option[]>(() => initializeSelected(props.selectedValues));
   const [filterText, setFilterText] = useState('');
   const [filtered, setFiltered] = useState<Option[]>(props.options);
   const [displayOptions, setDisplayOptions] = useState(false);

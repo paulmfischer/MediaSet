@@ -59,6 +59,10 @@ export default function Detail() {
           <div id="publisher">{book.publisher?.join(', ')}</div>
         </div>
         <div className="flex gap-4">
+          <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
+          <div id="isbn">{book.isbn}</div>
+        </div>
+        <div className="flex gap-4">
           <label htmlFor="plot" className="dark:text-slate-400">Plot</label>
           <div id="plot">{book.plot}</div>
         </div>
