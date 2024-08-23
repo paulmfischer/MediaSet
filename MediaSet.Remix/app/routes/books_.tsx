@@ -1,7 +1,7 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
-import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
+import { Form, Link, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
 import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
 
@@ -21,7 +21,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const { books, searchText } = useLoaderData<typeof loader>();
-  const submit = useSubmit();
 
   useEffect(() => {
     const searchField = document.getElementById("search");
