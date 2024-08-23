@@ -25,6 +25,10 @@
     @apply px-3 py-1 dark:text-slate-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:disabled:bg-blue-950 rounded bg-white transition-colors
   }
 
+  button[class~="text-icon"] {
+    @apply dark:bg-white dark:hover:bg-gray-300 dark:text-slate-800 rounded-l-none
+  }
+
   button[class~="secondary"] {
     @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:disabled:bg-gray-950 rounded bg-white transition-colors
   }
