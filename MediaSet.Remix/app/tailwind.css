@@ -12,6 +12,7 @@
   }
 
   textarea,
+  select,
   input {
     @apply p-1 pl-2 dark:text-slate-800 rounded-sm
   }

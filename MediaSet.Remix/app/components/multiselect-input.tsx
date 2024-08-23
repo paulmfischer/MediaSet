@@ -10,6 +10,7 @@ type Option = {
 
 type MultiselectProps = {
   name: string;
+  addLabel: string;
   selectText: string;
   options: Option[];
 };
@@ -52,7 +53,7 @@ export default function MultiselectInput(props: MultiselectProps) {
     if (value) {
       const selectOptions = [
         ...props.options.filter(op => op.label.toLowerCase().includes(value.toLowerCase())),
-        { label: `Add new Author: ${value}`, value, isNew: true }
+        { label: `${props.addLabel} ${value}`, value, isNew: true }
       ];
       setFiltered(selectOptions);
     } else {
@@ -62,9 +63,9 @@ export default function MultiselectInput(props: MultiselectProps) {
 
   return (
     <>
-      <div className={`absolute z-40 w-full h-full ${displayOptions ? '' : 'hidden'}`} onClick={() => setDisplayOptions(false)}></div>
-      <div className="flex flex-col gap-2 z-50">
-        <div className="flex gap-2 bg-white p-1 rounded-sm" id={`multi-select-input-${props.name}`}>
+      <div className={`absolute z-10 w-full h-full ${displayOptions ? '' : 'hidden'}`} onClick={() => setDisplayOptions(false)}></div>
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2 z-20 bg-white p-1 rounded-sm" id={`multi-select-input-${props.name}`}>
           {selected.map(selected => (<Badge key={selected.value}><div className="flex gap-2" onClick={() => toggleSelected(selected)}>{selected.label}<IconX size={16} /></div></Badge>))}
           <input
             type="text"
@@ -78,7 +79,7 @@ export default function MultiselectInput(props: MultiselectProps) {
           <input type="hidden" name={props.name} value={selected.map(op => op.value).join(',')} />
         </div>
         <div 
-          className={`fixed py-2 rounded-md max-h-80 min-w-80 overflow-scroll dark:bg-zinc-700 ${displayOptions ? '' : 'hidden'}`}
+          className={`fixed py-2 z-30 rounded-md max-h-80 min-w-80 overflow-scroll dark:bg-zinc-700 ${displayOptions ? '' : 'hidden'}`}
           style={{ top: (inputEl?.offsetTop ?? 0) + (inputEl?.offsetHeight ?? 0) + 5, left: inputEl?.offsetLeft, width: inputEl?.offsetWidth }}
         >
           {filtered.map(option => (

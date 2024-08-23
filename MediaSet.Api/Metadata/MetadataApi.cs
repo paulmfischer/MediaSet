@@ -20,6 +20,8 @@ internal static class MetadatApi
     });
 
     group.MapGet("/authors", async (MetadataService metadataService) => await metadataService.GetBookAuthors());
+    group.MapGet("/publishers", async (MetadataService metadataService) => await metadataService.GetBookPublishers());
+    group.MapGet("/genres", async (MetadataService metadataService) => await metadataService.GetBookGenres());
 
     return group;
   }
