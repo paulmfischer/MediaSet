@@ -4,6 +4,8 @@ import invariant from "tiny-invariant";
 import { json } from "@remix-run/node";
 import { getBook, updatebook } from "~/book-data";
 import Spinner from "~/components/spinner";
+import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
+import MultiselectInput from "~/components/multiselect-input";
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,8 +16,11 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
-  const book = await getBook(params.bookId);
-  return json({ book });
+  const [book, authors, genres, publishers, formats] = await Promise.all(
+    [getBook(params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
+  );
+
+  return json({ book, authors, genres, publishers, formats });
 }
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
@@ -29,7 +34,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 };
 
 export default function Edit() {
-  const { book } = useLoaderData<typeof loader>();
+  const { book, authors, genres, publishers, formats } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/books/${book.id}/edit`;
@@ -50,7 +55,16 @@ export default function Edit() {
               <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
               <input id="subtitle" defaultValue={book.subtitle} name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
               <label htmlFor="format" className="dark:text-slate-400">Format</label>
-              <input id="format" defaultValue={book.format} name="format" type="text" placeholder="Format" aria-label="Format" />
+              <select id="format" name="format">
+                <option value="">Select Format...</option>
+                {formats.map(format => <option value={format.value}>{format.label}</option>)}
+              </select>
+              <label htmlFor="author" className="dark:text-slate-400">Authors</label>
+              <MultiselectInput name="author" selectText="Select Authors..." addLabel="Add new Author:" options={authors} />
+              <label htmlFor="publisher" className="dark:text-slate-400">Publishers</label>
+              <MultiselectInput name="publisher" selectText="Select Publishers..." addLabel="Add new Publisher:" options={publishers} />
+              <label htmlFor="genre" className="dark:text-slate-400">Genres</label>
+              <MultiselectInput name="genre" selectText="Select Genres..." addLabel="Add new Genre" options={genres} />
               <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
               <input id="pages" defaultValue={book.pages} name="pages" type="number" placeholder="Pages" aria-label="Pages" />
               <label htmlFor="publicationDate" className="dark:text-slate-400">Publication Date</label>

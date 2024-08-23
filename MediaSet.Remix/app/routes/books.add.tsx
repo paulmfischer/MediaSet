@@ -14,10 +14,7 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const authors = await getAuthors();
-  const genres = await getGenres();
-  const publishers = await getPublishers();
-  const formats = await getFormats();
+  const [authors, genres, publishers, formats] = await Promise.all([getAuthors(), getGenres(), getPublishers(), getFormats()]);
   return json({ authors, genres, publishers, formats });
 }
 
