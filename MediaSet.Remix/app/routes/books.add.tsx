@@ -4,7 +4,7 @@ import { json } from "@remix-run/node";
 import { addBook } from "~/book-data";
 import MultiselectInput from "~/components/multiselect-input";
 import Spinner from "~/components/spinner";
-import { getAuthors } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,8 +14,8 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const authors = await getAuthors();
-  return json({ authors });
+  const [authors, genres, publishers, formats] = await Promise.all([getAuthors(), getGenres(), getPublishers(), getFormats()]);
+  return json({ authors, genres, publishers, formats });
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -26,8 +26,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return redirect(`/books/${newBook.id}`);
 };
 
-export default function Edit() {
-  const { authors } = useLoaderData<typeof loader>();
+export default function Add() {
+  const { authors, genres, publishers, formats } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === '/books/add';
@@ -48,13 +48,20 @@ export default function Edit() {
               <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
               <input id="subtitle" name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
               <label htmlFor="format" className="dark:text-slate-400">Format</label>
-              <input id="format" name="format" type="text" placeholder="Format" aria-label="Format" />
-              <label htmlFor="author" className="dark:text-slate-400">Authors</label>
-              <MultiselectInput name="author" selectText="Select Authors..." options={authors} />
+              <select id="format" name="format">
+                <option value="">Select Format...</option>
+                {formats.map(format => <option value={format.value}>{format.label}</option>)}
+              </select>
               <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
               <input id="pages" name="pages" type="number" placeholder="Pages" aria-label="Pages" />
               <label htmlFor="publicationDate" className="dark:text-slate-400">Publication Date</label>
               <input id="publicationDate" name="publicationDate" type="text" placeholder="Publication Date" aria-label="Publication Date" />
+              <label htmlFor="author" className="dark:text-slate-400">Authors</label>
+              <MultiselectInput name="author" selectText="Select Authors..." addLabel="Add new Author:" options={authors} />
+              <label htmlFor="genre" className="dark:text-slate-400">Genres</label>
+              <MultiselectInput name="genre" selectText="Select Genres..." addLabel="Add new Genre" options={genres} />
+              <label htmlFor="publisher" className="dark:text-slate-400">Publishers</label>
+              <MultiselectInput name="publisher" selectText="Select Publishers..." addLabel="Add new Publisher:" options={publishers} />
               <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
               <input id="isbn" name="isbn" type="text" placeholder="ISBN" aria-label="ISBN" />
               <label htmlFor="plot" className="dark:text-slate-400">Plot</label>

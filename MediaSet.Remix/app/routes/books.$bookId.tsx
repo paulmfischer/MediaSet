@@ -48,15 +48,19 @@ export default function Detail() {
         </div>
         <div className="flex gap-4">
           <label htmlFor="author" className="dark:text-slate-400">Author</label>
-          <div id="author">{book.author?.join(',')}</div>
+          <div id="author">{book.author?.join(', ')}</div>
         </div>
         <div className="flex gap-4">
           <label htmlFor="genre" className="dark:text-slate-400">Genre</label>
-          <div id="genre">{book.genre?.join(',')}</div>
+          <div id="genre">{book.genre?.join(', ')}</div>
         </div>
         <div className="flex gap-4">
           <label htmlFor="publisher" className="dark:text-slate-400">Publisher</label>
-          <div id="publisher">{book.publisher?.join(',')}</div>
+          <div id="publisher">{book.publisher?.join(', ')}</div>
+        </div>
+        <div className="flex gap-4">
+          <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
+          <div id="isbn">{book.isbn}</div>
         </div>
         <div className="flex gap-4">
           <label htmlFor="plot" className="dark:text-slate-400">Plot</label>

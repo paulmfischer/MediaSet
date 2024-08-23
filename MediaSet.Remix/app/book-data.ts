@@ -50,6 +50,12 @@ function convertBookFormToRecord(book: BookFormData): BookRecord {
   if (book.author) {
     bookRecord.author = book.author.split(',');
   }
+  if (book.genre) {
+    bookRecord.genre = book.genre.split(',');
+  }
+  if (book.publisher) {
+    bookRecord.publisher = book.publisher.split(',');
+  }
   bookRecord.pages = book.pages === '' ? undefined : Number(book.pages);
 
   return bookRecord;
