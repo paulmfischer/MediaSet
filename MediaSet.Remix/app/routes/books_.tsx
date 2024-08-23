@@ -1,9 +1,9 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
-import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconEdit, IconTrash, IconX } from "@tabler/icons-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -21,6 +21,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const { books, searchText } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
 
   useEffect(() => {
     const searchField = document.getElementById("search");
@@ -38,7 +39,29 @@ export default function Index() {
         <div className="flex flex-row gap-6 items-center">
           <Link to="/books/add" className="flex gap-1 items-center"><IconPlus size={22} />Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
-            <input id="search" defaultValue={searchText || ''} placeholder="Search Books" aria-label="Search Books" type="search" name="searchText" />
+            <div className="flex gap-2 z-20 bg-white rounded-sm">
+              <input
+                id="search"
+                type="search"
+                defaultValue={searchText || ''}
+                placeholder="Search Books"
+                aria-label="Search Books"
+                name="searchText"
+              />
+              {searchText && 
+                <button className="text-icon"
+                  onClick={() => {
+                    const searchEl = document.getElementById('search') as HTMLInputElement;
+                    if (searchEl) {
+                      searchEl.value = '';
+                      submit(searchEl);
+                    }
+                  }}
+                >
+                  <IconX />
+                </button>
+              }
+            </div>
             <button type="submit" aria-label="Search">Search</button>
           </Form>
         </div>
