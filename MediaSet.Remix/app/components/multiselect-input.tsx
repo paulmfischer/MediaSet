@@ -80,6 +80,7 @@ export default function MultiselectInput(props: MultiselectProps) {
             type="text"
             className="flex-1 pl-1 p-0 outline-none"
             value={filterText}
+            placeholder={props.selectText}
             onFocus={() => setDisplayOptions(true)}
             onChange={(event) => {
               filterResults(event.target.value);
