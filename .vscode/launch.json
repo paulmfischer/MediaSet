@@ -11,6 +11,11 @@
       "type": "node"
     },
     {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    },
+    {
       // Use IntelliSense to find out which attributes exist for C# debugging
       // Use hover for the description of the existing attributes
       // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
@@ -35,53 +40,6 @@
       "sourceFileMap": {
         "/Views": "${workspaceFolder}/Views"
       }
-    },
-    {
-      // Use IntelliSense to find out which attributes exist for C# debugging
-      // Use hover for the description of the existing attributes
-      // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
-      "name": "MediaSet.Blazor",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build-blazor-app",
-      // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/MediaSet.Blazor/bin/Debug/net8.0/MediaSet.Blazor.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/MediaSet.Blazor",
-      "stopAtEntry": false,
-      // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-      },
-      "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "sourceFileMap": {
-        "/Views": "${workspaceFolder}/Views"
-      }
-    },
-    {
-      "name": ".NET Core Attach",
-      "type": "coreclr",
-      "request": "attach"
-    },
-    {
-      "name": "MediaSet.Remix",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/MediaSet.Remix",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run-script", "dev"
-      ]
-    }
-  ],
-  "compounds": [
-    {
-      "name": "MediaSet Api/Blazor",
-      "stopAll": true,
-      "configurations": ["MediaSet.Api", "MediaSet.Blazor"]
     }
   ]
 }

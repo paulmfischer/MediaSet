@@ -36,42 +36,6 @@
         "${workspaceFolder}/MediaSet.Api/MediaSet.Api.csproj"
       ],
       "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "build-blazor-app",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/MediaSet.Blazor/MediaSet.Blazor.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "publish-blazor-app",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "publish",
-        "${workspaceFolder}/MediaSet.Blazor/MediaSet.Blazor.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "watch-blazor-app",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "watch",
-        "run",
-        "--project",
-        "${workspaceFolder}/MediaSet.Blazor/MediaSet.Blazor.csproj"
-      ],
-      "problemMatcher": "$msCompile"
     }
   ]
 }

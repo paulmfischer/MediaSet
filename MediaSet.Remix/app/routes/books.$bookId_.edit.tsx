@@ -57,7 +57,7 @@ export default function Edit() {
               <label htmlFor="format" className="dark:text-slate-400">Format</label>
               <select id="format" name="format">
                 <option value="">Select Format...</option>
-                {formats.map(format => <option value={format.value}>{format.label}</option>)}
+                {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
               </select>
               <label htmlFor="pages" className="dark:text-slate-400">Pages</label>
               <input id="pages" defaultValue={book.pages} name="pages" type="number" placeholder="Pages" aria-label="Pages" />
@@ -70,7 +70,7 @@ export default function Edit() {
               <label htmlFor="publisher" className="dark:text-slate-400">Publisher</label>
               <select id="publisher" name="publisher" defaultValue={book.publisher}>
                 <option value="">Select Publisher...</option>
-                {publishers.map(publisher => <option value={publisher.value}>{publisher.label}</option>)}
+                {publishers.map(publisher => <option key={publisher.value} value={publisher.value}>{publisher.label}</option>)}
               </select>
               <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
               <input id="isbn" defaultValue={book.isbn} name="isbn" type="text" placeholder="ISBN" aria-label="ISBN" />
