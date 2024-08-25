@@ -84,7 +84,7 @@ export default function Index() {
                   <td className="pl-2 p-1 border-r border-slate-800">
                     <Link to={`/books/${book.id}`}>{book.title}</Link>{book.subtitle && `: ${book.subtitle}`}
                   </td>
-                  <td className="pl-2 p-1 border-r border-slate-800">{book.author?.map(auth => auth.trimEnd()).join(',')}</td>
+                  <td className="pl-2 p-1 border-r border-slate-800">{book.authors?.map(auth => auth.trimEnd()).join(',')}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.format}</td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.pages}</td>
                   <td className="flex flex-row gap-3 p-1">

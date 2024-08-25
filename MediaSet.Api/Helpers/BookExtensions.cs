@@ -10,8 +10,8 @@ internal static class BookExtensions
     string.IsNullOrWhiteSpace(book.ISBN) &&
     string.IsNullOrWhiteSpace(book.Plot) &&
     string.IsNullOrWhiteSpace(book.PublicationDate) &&
+    string.IsNullOrWhiteSpace(book.Publisher) && 
     !book.Pages.HasValue &&
-    book.Author.Count == 0 &&
-    book.Genre.Count == 0 &&
-    book.Publisher.Count == 0;
+    book.Authors.Count == 0 &&
+    book.Genres.Count == 0;
 }

@@ -74,15 +74,14 @@ internal static class BookApi
           //Process header row
           if (parser.LineNumber == 1)
           {
-            Console.WriteLine("What are the headers?");
             headerFields = parser.ReadFields();
-            if (headerFields != null)
-            {
-              foreach (string field in headerFields)
-              {
-                Console.WriteLine("Header fields: {0}", field);
-              }
-            }
+            // if (headerFields != null)
+            // {
+            //   foreach (string field in headerFields)
+            //   {
+            //     Console.WriteLine("Header fields: {0}", field);
+            //   }
+            // }
           }
           else
           {
@@ -90,13 +89,13 @@ internal static class BookApi
             string[]? newBookFields = parser.ReadFields();
             if (newBookFields != null)
             {
-              foreach (string field in newBookFields)
-              {
-                Console.WriteLine("book fields: {0}", field);
-              }
-              var authors = newBookFields.GetByHeader(headerFields, nameof(Book.Author));
-              var publishers = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher));
-              var genres = newBookFields.GetByHeader(headerFields, nameof(Book.Genre));
+              // foreach (string field in newBookFields)
+              // {
+              //   Console.WriteLine("book fields: {0}", field);
+              // }
+              var authors = newBookFields.GetByHeader(headerFields, "Author");
+              var publisher = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher));
+              var genres = newBookFields.GetByHeader(headerFields, "Genre");
               var pagesField = newBookFields.GetByHeader(headerFields, nameof(Book.Pages));
               var publicationDateField = newBookFields.GetByHeader(headerFields, "Publication Date");
               // int.TryParse(newBookFields.GetByHeader(headerFields, nameof(Book.Pages)), out var pageCount);
@@ -107,9 +106,9 @@ internal static class BookApi
                 Format = newBookFields.GetByHeader(headerFields, nameof(Book.Format)),
                 Pages = string.IsNullOrWhiteSpace(pagesField) ? null : int.Parse(pagesField),
                 PublicationDate = publicationDateField, // string.IsNullOrWhiteSpace(publicationDateField) ? null : DateTime.Parse(newBookFields.GetByHeader(headerFields, "Publication Date")),
-                Author = string.IsNullOrWhiteSpace(authors) ? [] : [.. authors.Split("|")],
-                Publisher = string.IsNullOrWhiteSpace(publishers) ? [] : [.. publishers.Split("|")],
-                Genre = string.IsNullOrWhiteSpace(genres) ? [] : [.. genres.Split("|")],
+                Authors = string.IsNullOrWhiteSpace(authors) ? [] : [.. authors.Split("|")],
+                Publisher = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher)),
+                Genres = string.IsNullOrWhiteSpace(genres) ? [] : [.. genres.Split("|")],
                 Plot = newBookFields.GetByHeader(headerFields, nameof(Book.Plot)),
                 Subtitle = newBookFields.GetByHeader(headerFields, nameof(Book.Subtitle)),
               });
@@ -122,7 +121,7 @@ internal static class BookApi
           await booksService.CreateAsync(book);
         }
       }
-      catch (System.Exception er)
+      catch (Exception er)
       {
         Console.WriteLine("Failed to save bulk create: {0}", er);
         return TypedResults.BadRequest();

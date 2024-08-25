@@ -8,9 +8,9 @@ export type BookRecord = {
   format?: string;
   pages?: number;
   publicationDate?: string;
-  author?: string[];
-  publisher?: string[];
-  genre?: string[];
+  authors?: string[];
+  publisher?: string;
+  genres?: string[];
   plot?: string;
 }
 
@@ -22,9 +22,9 @@ type BookFormData = {
   format?: string;
   pages?: string;
   publicationDate?: string;
-  author?: string;
+  authors?: string;
   publisher?: string;
-  genre?: string;
+  genres?: string;
   plot?: string;
 };
 
@@ -47,15 +47,13 @@ export async function getBook(id: string) {
 
 function convertBookFormToRecord(book: BookFormData): BookRecord {
   const bookRecord = { ...book } as BookRecord;
-  if (book.author) {
-    bookRecord.author = book.author.split(',');
+  if (book.authors) {
+    bookRecord.authors = book.authors.split(',');
   }
-  if (book.genre) {
-    bookRecord.genre = book.genre.split(',');
+  if (book.genres) {
+    bookRecord.genres = book.genres.split(',');
   }
-  if (book.publisher) {
-    bookRecord.publisher = book.publisher.split(',');
-  }
+
   bookRecord.pages = book.pages === '' ? undefined : Number(book.pages);
 
   return bookRecord;

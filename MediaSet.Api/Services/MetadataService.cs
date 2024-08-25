@@ -16,7 +16,7 @@ public class MetadataService
 
     return books
       .Where(book => !string.IsNullOrWhiteSpace(book.Format))
-      .Select(book => book.Format)
+      .Select(book => book.Format.Trim())
       .Distinct()
       .Order();
   }
@@ -26,8 +26,8 @@ public class MetadataService
     var books = await _booksService.GetAsync();
 
     return books
-      .Where(book => book.Author?.Count > 0)
-      .SelectMany(book => book.Author)
+      .Where(book => book.Authors?.Count > 0)
+      .SelectMany(book => book.Authors)
       .Select(author => author.Trim())
       .Distinct()
       .Order();
@@ -38,9 +38,8 @@ public class MetadataService
     var books = await _booksService.GetAsync();
 
     return books
-      .Where(book => book.Publisher?.Count > 0)
-      .SelectMany(book => book.Publisher)
-      .Select(publisher => publisher.Trim())
+      .Where(book => !string.IsNullOrWhiteSpace(book.Publisher))
+      .Select(book => book.Publisher.Trim())
       .Distinct()
       .Order();
   }
@@ -50,8 +49,8 @@ public class MetadataService
     var books = await _booksService.GetAsync();
 
     return books
-      .Where(book => book.Genre?.Count > 0)
-      .SelectMany(book => book.Genre)
+      .Where(book => book.Genres?.Count > 0)
+      .SelectMany(book => book.Genres)
       .Select(genre => genre.Trim())
       .Distinct()
       .Order();

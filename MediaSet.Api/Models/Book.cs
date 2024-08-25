@@ -21,11 +21,11 @@ public class Book
 
   public string PublicationDate { get; set; } = null!;
 
-  public List<string> Author { get; set; } = [];
+  public List<string> Authors { get; set; } = [];
 
-  public List<string> Publisher { get; set; } = [];
+  public string Publisher { get; set; } = null!;
 
-  public List<string> Genre { get; set; } = [];
+  public List<string> Genres { get; set; } = [];
 
   public string Plot { get; set; } = null!;
 
