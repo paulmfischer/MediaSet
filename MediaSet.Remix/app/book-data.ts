@@ -29,6 +29,7 @@ type BookFormData = {
 };
 
 export async function searchBooks(searchText: string | null, orderBy: string = '') {
+  console.log('base url?', baseUrl);
   const response = await fetch(`${baseUrl}/books/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
   if (!response.ok) {
     throw new Response("Error fetching data", { status: 500 });

@@ -1,0 +1,12 @@
+# example docker compose file used on a nas to run api.
+services:
+  site:
+    container_name: site
+    restart: always
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/usr/src/app
+    environment:
+      apiUrl: "http://cortext-mediaset:7134"
