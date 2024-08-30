@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /build
 
 # For use when deploying to a location
-RUN git clone dockerize https://github.com/paulmfischer/MediaSet.git
+RUN git clone https://github.com/paulmfischer/MediaSet.git
 WORKDIR /build/MediaSet/MediaSet.Api
 
 # Copy everything
