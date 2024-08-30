@@ -14,6 +14,7 @@ public class BookService
     var dbSettings = mediaSetDatabaseSettings.Value;
     var mongoClient = new MongoClient(dbSettings.ConnectionString);
     var mongoDatabase = mongoClient.GetDatabase(dbSettings.DatabaseName);
+    Console.WriteLine("Initializing db - Url: {0} ; Name: {1} ; Collection: {2}", dbSettings.ConnectionString, dbSettings.DatabaseName, dbSettings.BooksCollectionName);
 
     _booksCollection = mongoDatabase.GetCollection<Book>(dbSettings.BooksCollectionName);
   }

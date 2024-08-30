@@ -1,0 +1,20 @@
+# example docker compose file used on a nas to run api.
+# need to create the network first and this assumes a mongodb container is running called 'cortext-mongo'
+services:
+  mediaset-api:
+    image: mediaset-api:latest
+    container_name: cortext-mediaset
+    restart: always
+    ports:
+      - 7134:8080
+    networks:
+      - mediaset
+    environment:
+      "MediaSetDatabase:ConnectionString": "mongodb://cortext-mongo:27017"
+      "MediaSetDatabase:DatabaseName": "MediaSet"
+      "MediaSetDatabase:BooksCollectionName": "Books"
+
+networks:
+  mediaset:
+    external: true
+    name: mediaset

@@ -5,7 +5,7 @@ using MediaSet.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure database
+// Configure database settings
 builder.Services.Configure<MediaSetDatabaseSettings>(
   builder.Configuration.GetSection("MediaSetDatabase")
 );
@@ -20,12 +20,13 @@ builder.Services.AddSingleton<MetadataService>();
 
 var app = builder.Build();
 
+// turn on swagger for all environments for now
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-  app.UseSwagger();
-  app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+    app.UseSwagger();
+    app.UseSwaggerUI();
+// }
 
 app.UseHttpsRedirection();
 
