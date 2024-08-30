@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /usr/server/app
 
-RUN git clone dockerize https://github.com/paulmfischer/MediaSet.git
+RUN git clone https://github.com/paulmfischer/MediaSet.git
 WORKDIR /usr/server/app/MediaSet/MediaSet.Remix
 
 COPY ./package.json ./
