@@ -17,6 +17,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<BookService>();
 builder.Services.AddSingleton<MetadataService>();
+builder.Services.AddSingleton<StatsService>();
 
 var app = builder.Build();
 
@@ -32,5 +33,6 @@ app.UseHttpsRedirection();
 
 app.MapBooks();
 app.MapMetadata();
+app.MapStats();
 
 app.Run();
