@@ -10,6 +10,11 @@ builder.Services.Configure<MediaSetDatabaseSettings>(
   builder.Configuration.GetSection("MediaSetDatabase")
 );
 
+var mediaSetDbSettings = builder.Configuration.GetSection("MediaSetDatabase").Get<MediaSetDatabaseSettings>() ?? throw new ArgumentNullException("MediaSetDatabase", "Missing database connection information");
+
+builder.Services.AddIdentity<User, Role>()
+  .AddMongoDbStores<User, Role, Guid>(mediaSetDbSettings.ConnectionString, mediaSetDbSettings.DatabaseName);
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
