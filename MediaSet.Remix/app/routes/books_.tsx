@@ -32,11 +32,11 @@ export default function Index() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-row items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
           <h2 className="text-2xl">Books</h2>
         </div>
-        <div className="flex flex-row gap-6 items-center">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
           <Link to="/books/add" className="flex gap-1 items-center"><IconPlus size={22} />Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
             <div className="flex gap-2 z-20 bg-white rounded-sm">
@@ -72,8 +72,8 @@ export default function Index() {
             <tr>
               <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
               <th className="pl-2 p-1 border-r border-slate-800 underline">Authors</th>
-              <th className="pl-2 p-1 border-r border-slate-800 underline">Format</th>
-              <th className="pl-2 p-1 border-r border-slate-800 underline">Pages</th>
+              <th className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
+              <th className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800 underline">Pages</th>
               <th></th>
             </tr>
           </thead>
@@ -85,8 +85,8 @@ export default function Index() {
                     <Link to={`/books/${book.id}`}>{book.title}{book.subtitle && `: ${book.subtitle}`}</Link>
                   </td>
                   <td className="pl-2 p-1 border-r border-slate-800">{book.authors?.map(auth => auth.trimEnd()).join(',')}</td>
-                  <td className="pl-2 p-1 border-r border-slate-800">{book.format}</td>
-                  <td className="pl-2 p-1 border-r border-slate-800">{book.pages}</td>
+                  <td className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800">{book.format}</td>
+                  <td className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800">{book.pages}</td>
                   <td className="flex flex-row gap-3 p-1">
                     <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><IconEdit size={22} /></Link>
                     <Form action={`/books/${book.id}/delete`} method="post" onSubmit={(event) => {
