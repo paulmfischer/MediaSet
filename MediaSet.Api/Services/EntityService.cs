@@ -40,9 +40,11 @@ public class EntityService<TEntity> where TEntity : IEntity
   public Task<List<TEntity>> GetListAsync() => entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync();
   public async Task<TEntity?> GetAsync(string id) => await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-  public async Task CreateAsync(TEntity newEntity) => await entityCollection.InsertOneAsync(newEntity);
+  public Task CreateAsync(TEntity newEntity) => entityCollection.InsertOneAsync(newEntity);
 
-  public async Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity) => await entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity);
+  public Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity) => entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity);
 
-  public async Task<DeleteResult> RemoveAsync(string id) => await entityCollection.DeleteOneAsync(x => x.Id == id);
+  public Task<DeleteResult> RemoveAsync(string id) => entityCollection.DeleteOneAsync(x => x.Id == id);
+  
+  public Task BulkCreateAsync(IEnumerable<TEntity> newEntities) => entityCollection.InsertManyAsync(newEntities);
 }

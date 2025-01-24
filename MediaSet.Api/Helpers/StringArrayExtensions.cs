@@ -1,14 +1,20 @@
+using System.Reflection;
+using MediaSet.Api.Attributes;
+
 namespace MediaSet.Api.Helpers;
 internal static class StringArrayExtensions
 {
-  public static string GetByHeader(this string[]? fields, string[]? headers, string titleField)
+  public static string? GetValueByHeader<TEntity>(this string[] fields, IList<string> headerFields, PropertyInfo propertyInfo)
   {
-    if (fields is null || headers is null)
-    {
-      return string.Empty;
+    UploadAttribute? uploadAttribute = (UploadAttribute?)Attribute.GetCustomAttribute(propertyInfo, typeof(UploadAttribute));
+    string headerName = uploadAttribute == null ? propertyInfo.Name : uploadAttribute.HeaderName!;
+
+    var headerIndex = headerFields.IndexOf(headerName);
+    if (headerIndex < 0) {
+      return null;
     }
-    var headerIndex = Array.FindIndex(headers, hf => hf.Equals(titleField)); // newBookFields[Array.FindIndex(headerFields, hf => hf.Equals(nameof(Book.Title)))]
-    var fieldData = fields[headerIndex];
-    return fieldData; // string.IsNullOrWhiteSpace(fieldData) ? null : fieldData;
+    var fieldData = fields.ElementAt(headerIndex);
+
+    return fieldData;
   }
 }

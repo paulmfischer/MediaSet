@@ -1,13 +1,15 @@
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using MediaSet.Api.Upload;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.VisualBasic.FileIO;
 
 namespace MediaSet.Api.Books;
 
 internal static class EntityApi
 {
-  public static RouteGroupBuilder MapEntity<TEntity>(this IEndpointRouteBuilder routes) where TEntity : IEntity
+  public static RouteGroupBuilder MapEntity<TEntity>(this IEndpointRouteBuilder routes) where TEntity : IEntity, new()
   {
     var entityName = $"{typeof(TEntity).Name}s";
     var group = routes.MapGroup($"/{entityName}");
@@ -55,81 +57,66 @@ internal static class EntityApi
       return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
 
-    /* group.MapPost("/upload", async Task<Results<Ok, BadRequest>> (BookService booksService, IFormFile bookUpload) =>
+     group.MapPost("/upload", async Task<Results<Ok, BadRequest<string>>> (EntityService<TEntity> entityService, UploadService uploadService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
       try
       {
-        
+        var entityType = typeof(TEntity);
         using Stream stream = bookUpload.OpenReadStream();
 
         using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
         parser.TextFieldType = FieldType.Delimited;
         parser.SetDelimiters(";");
         parser.HasFieldsEnclosedInQuotes = true;
-        string[]? headerFields = [];
-        IList<Book> newBooks = [];
+        IList<string>? headerFields = [];
+        IList<string[]> dataFields = [];
         while (!parser.EndOfData)
         {
           //Process header row
           if (parser.LineNumber == 1)
           {
             headerFields = parser.ReadFields();
-            // if (headerFields != null)
-            // {
-            //   foreach (string field in headerFields)
-            //   {
-            //     Console.WriteLine("Header fields: {0}", field);
-            //   }
-            // }
+            if (headerFields != null)
+            {
+              Console.WriteLine("Header Fields: {0}", string.Join(',', headerFields));
+            }
+            else
+            {
+              Console.WriteLine("No header fields in upload document");
+              return TypedResults.BadRequest("No header fields in upload document.");
+            }
           }
           else
           {
             // process data rows
-            string[]? newBookFields = parser.ReadFields();
-            if (newBookFields != null)
+            string[]? dataRow = parser.ReadFields();
+            if (dataRow != null)
             {
-              // foreach (string field in newBookFields)
-              // {
-              //   Console.WriteLine("book fields: {0}", field);
-              // }
-              var authors = newBookFields.GetByHeader(headerFields, "Author");
-              var publisher = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher));
-              var genres = newBookFields.GetByHeader(headerFields, "Genre");
-              var pagesField = newBookFields.GetByHeader(headerFields, nameof(Book.Pages));
-              var publicationDateField = newBookFields.GetByHeader(headerFields, "Publication Date");
-              // int.TryParse(newBookFields.GetByHeader(headerFields, nameof(Book.Pages)), out var pageCount);
-              newBooks.Add(new()
-              {
-                Title = newBookFields.GetByHeader(headerFields, nameof(Book.Title)),
-                ISBN = newBookFields.GetByHeader(headerFields, nameof(Book.ISBN)),
-                Format = newBookFields.GetByHeader(headerFields, nameof(Book.Format)),
-                Pages = string.IsNullOrWhiteSpace(pagesField) ? null : int.Parse(pagesField),
-                PublicationDate = publicationDateField, // string.IsNullOrWhiteSpace(publicationDateField) ? null : DateTime.Parse(newBookFields.GetByHeader(headerFields, "Publication Date")),
-                Authors = string.IsNullOrWhiteSpace(authors) ? [] : [.. authors.Split("|")],
-                Publisher = newBookFields.GetByHeader(headerFields, nameof(Book.Publisher)),
-                Genres = string.IsNullOrWhiteSpace(genres) ? [] : [.. genres.Split("|")],
-                Plot = newBookFields.GetByHeader(headerFields, nameof(Book.Plot)),
-                Subtitle = newBookFields.GetByHeader(headerFields, nameof(Book.Subtitle)),
-              });
+              Console.WriteLine("Entity Data: {0}", string.Join(',', dataRow));
+              dataFields.Add(dataRow);
             }
           }
         }
 
-        foreach (var book in newBooks)
+        if (dataFields.Count == 0)
         {
-          await booksService.CreateAsync(book);
+          Console.WriteLine("No header fields in upload document");
+          return TypedResults.BadRequest("No header fields in upload document.");
         }
+
+        IEnumerable<TEntity> newEntities = uploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
+        await entityService.BulkCreateAsync(newEntities);
       }
       catch (Exception er)
       {
         Console.WriteLine("Failed to save bulk create: {0}", er);
-        return TypedResults.BadRequest();
+        return TypedResults.BadRequest(string.Format("Failed to save bulk create: {0}", er));
       }
 
       return TypedResults.Ok();
     })
-    .DisableAntiforgery(); */
+    .DisableAntiforgery();
 
     return group;
   }
