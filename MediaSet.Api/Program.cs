@@ -16,10 +16,10 @@ builder.Services.AddSingleton<DatabaseService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<EntityService<Book>>();
+builder.Services.AddScoped<EntityService<Movie>>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<StatsService>();
-builder.Services.AddScoped<EntityService<Movie>>();
 
 var app = builder.Build();
 
@@ -33,9 +33,9 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.MapBooks();
+app.MapEntity<Movie>();
+app.MapEntity<Book>();
 app.MapMetadata();
 app.MapStats();
-app.MapEntity<Movie>();
 
 app.Run();

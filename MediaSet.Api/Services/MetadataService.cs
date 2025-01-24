@@ -1,18 +1,19 @@
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
 public class MetadataService
 {
-  private readonly BookService booksService;
+  private readonly EntityService<Book> booksService;
 
-  public MetadataService(BookService _booksService)
+  public MetadataService(EntityService<Book> _booksService)
   {
     booksService = _booksService;
   }
 
   public async Task<IEnumerable<string>> GetBookFormats()
   {
-    var books = await booksService.GetAsync();
+    var books = await booksService.GetListAsync();
 
     return books
       .Where(book => !string.IsNullOrWhiteSpace(book.Format))
@@ -23,7 +24,7 @@ public class MetadataService
 
   public async Task<IEnumerable<string>> GetBookAuthors()
   {
-    var books = await booksService.GetAsync();
+    var books = await booksService.GetListAsync();
 
     return books
       .Where(book => book.Authors?.Count > 0)
@@ -35,7 +36,7 @@ public class MetadataService
 
   public async Task<IEnumerable<string>> GetBookPublishers()
   {
-    var books = await booksService.GetAsync();
+    var books = await booksService.GetListAsync();
 
     return books
       .Where(book => !string.IsNullOrWhiteSpace(book.Publisher))
@@ -46,7 +47,7 @@ public class MetadataService
 
   public async Task<IEnumerable<string>> GetBookGenres()
   {
-    var books = await booksService.GetAsync();
+    var books = await booksService.GetListAsync();
 
     return books
       .Where(book => book.Genres?.Count > 0)
