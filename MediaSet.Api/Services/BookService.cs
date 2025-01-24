@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using MediaSet.Api.Models;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
@@ -9,17 +8,13 @@ public class BookService
 {
   private readonly IMongoCollection<Book> booksCollection;
 
-  public BookService(IOptions<MediaSetDatabaseSettings> mediaSetDatabaseSettings)
+  public BookService(DatabaseService databaseService)
   {
-    var dbSettings = mediaSetDatabaseSettings.Value;
-    var mongoClient = new MongoClient(dbSettings.ConnectionString);
-    var mongoDatabase = mongoClient.GetDatabase(dbSettings.DatabaseName);
-    Console.WriteLine("Initializing db - Url: {0} ; Name: {1} ; Collection: {2}", dbSettings.ConnectionString, dbSettings.DatabaseName, dbSettings.BooksCollectionName);
-
-    booksCollection = mongoDatabase.GetCollection<Book>(dbSettings.BooksCollectionName);
+    booksCollection = databaseService.GetCollection<Book>();
   }
 
   public async Task<List<Book>> GetAsync() => await booksCollection.Find(_ => true).SortBy(book => book.Title).ToListAsync();
+
   public async Task<List<Book>> SearchAsync(string searchText, string orderBy)
   {
     string orderByField = "";

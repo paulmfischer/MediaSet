@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace MediaSet.Api.Models;
 
-public class Book : IEntity
+public class Movie : IEntity
 {
   [BsonId]
   [BsonRepresentation(BsonType.ObjectId)]
@@ -17,17 +17,14 @@ public class Book : IEntity
 
   public string Format { get; set; } = null!;
 
-  public int? Pages { get; set; }
+  public string ReleaseDate { get; set; } = null!;
 
-  public string PublicationDate { get; set; } = null!;
+  public string Rating { get; set; } = null!;
+  public int? Runtime { get; set; } = null!;
 
-  public List<string> Authors { get; set; } = [];
-
-  public string Publisher { get; set; } = null!;
+  public List<string> Studio { get; set; } = [];
 
   public List<string> Genres { get; set; } = [];
 
   public string Plot { get; set; } = null!;
-
-  public string Subtitle { get; set; } = null!;
 }
