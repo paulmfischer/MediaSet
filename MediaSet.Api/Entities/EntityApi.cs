@@ -9,7 +9,7 @@ namespace MediaSet.Api.Books;
 
 internal static class EntityApi
 {
-  public static RouteGroupBuilder MapEntity<TEntity>(this IEndpointRouteBuilder routes) where TEntity : IEntity
+  public static RouteGroupBuilder MapEntity<TEntity>(this IEndpointRouteBuilder routes) where TEntity : IEntity, new()
   {
     var entityName = $"{typeof(TEntity).Name}s";
     var group = routes.MapGroup($"/{entityName}");
@@ -57,7 +57,7 @@ internal static class EntityApi
       return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
 
-     group.MapPost("/upload", async Task<Results<Ok, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
+     group.MapPost("/upload", async Task<Results<Ok, BadRequest<string>>> (EntityService<TEntity> entityService, UploadService uploadService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
       try
@@ -71,7 +71,6 @@ internal static class EntityApi
         parser.HasFieldsEnclosedInQuotes = true;
         IList<string>? headerFields = [];
         IList<string[]> dataFields = [];
-        IEnumerable<TEntity> newEntities = [];
         while (!parser.EndOfData)
         {
           //Process header row
@@ -106,8 +105,7 @@ internal static class EntityApi
           return TypedResults.BadRequest("No header fields in upload document.");
         }
 
-        IUploadService<TEntity> uploadService = UploadFactoryService.GetUploadService<TEntity>();
-        newEntities = uploadService.MapUploadToEntities(headerFields, dataFields);
+        IEnumerable<TEntity> newEntities = uploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
         await entityService.BulkCreateAsync(newEntities);
       }
       catch (Exception er)
