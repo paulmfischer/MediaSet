@@ -4,16 +4,16 @@ namespace MediaSet.Api.Services;
 
 public class StatsService
 {
-  private readonly BookService bookService;
+  private readonly EntityService<Book> bookService;
 
-  public StatsService(BookService _bookService)
+  public StatsService(EntityService<Book> _bookService)
   {
     bookService = _bookService;
   }
 
   public async Task<Stats> GetBookStats()
   {
-    var books = await bookService.GetAsync();
+    var books = await bookService.GetListAsync();
 
     return new Stats
     {
