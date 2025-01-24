@@ -9,15 +9,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MediaSetDatabaseSettings>(
   builder.Configuration.GetSection("MediaSetDatabase")
 );
+builder.Services.AddSingleton<DatabaseService>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<BookService>();
-builder.Services.AddSingleton<MetadataService>();
-builder.Services.AddSingleton<StatsService>();
+builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<MetadataService>();
+builder.Services.AddScoped<StatsService>();
+builder.Services.AddScoped<EntityService<Movie>>();
 
 var app = builder.Build();
 
@@ -34,5 +36,6 @@ app.UseHttpsRedirection();
 app.MapBooks();
 app.MapMetadata();
 app.MapStats();
+app.MapEntity<Movie>();
 
 app.Run();
