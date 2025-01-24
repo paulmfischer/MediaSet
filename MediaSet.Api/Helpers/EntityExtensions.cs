@@ -12,8 +12,9 @@ internal static class EntityExtensions
         string.IsNullOrWhiteSpace(movie.Format) &&
         string.IsNullOrWhiteSpace(movie.ReleaseDate) &&
         string.IsNullOrWhiteSpace(movie.Rating) &&
-        !movie.Runtime.HasValue &&
-        movie.Studio.Count == 0 &&
+        // !movie.Runtime.HasValue &&
+        string.IsNullOrWhiteSpace(movie.Runtime) &&
+        movie.Studios.Count == 0 &&
         movie.Genres.Count == 0 &&
         string.IsNullOrWhiteSpace(movie.Plot);
     }
