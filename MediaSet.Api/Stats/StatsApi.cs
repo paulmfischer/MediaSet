@@ -11,7 +11,6 @@ internal static class StatsApi
     group.WithTags("Stats");
 
     group.MapGet("/", async (StatsService statsService) => await statsService.GetBookStats());
-    // group.MapGet("/", async (BookService booksService) => await booksService.GetAsync());
 
     return group;
   }

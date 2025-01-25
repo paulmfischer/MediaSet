@@ -10,6 +10,8 @@ internal static class EntityApi
 {
   public static RouteGroupBuilder MapEntity<TEntity>(this IEndpointRouteBuilder routes) where TEntity : IEntity, new()
   {
+    // get the app.Logger to be used for logging.
+    var logger = ((WebApplication)routes).Logger;
     var entityName = $"{typeof(TEntity).Name}s";
     var group = routes.MapGroup($"/{entityName}");
 
@@ -31,6 +33,7 @@ internal static class EntityApi
     {
       if (newEntity is null || newEntity.IsEmpty())
       {
+        logger.LogError("A {entity} is required and must have some data on it", typeof(TEntity).Name);
         return TypedResults.BadRequest();
       }
 
@@ -39,11 +42,12 @@ internal static class EntityApi
       return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
     });
 
-    group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (EntityService<TEntity> entityService, string id, TEntity updatedEntity) =>
+    group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (EntityService<TEntity> entityService, string id, TEntity updatedEntity) =>
     {
       if (id != updatedEntity.Id)
       {
-        return TypedResults.BadRequest();
+        logger.LogError("Ids on the entity and the request do not match: {pathId} != {entityId}", id, updatedEntity.Id);
+        return TypedResults.BadRequest("Ids on the entity and the request do not match");
       }
 
       var result = await entityService.UpdateAsync(id, updatedEntity);
@@ -58,7 +62,7 @@ internal static class EntityApi
 
      group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
     {
-      Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
+      logger.LogInformation("Received {fileName} file to upload to {entity}s", bookUpload.FileName, typeof(TEntity).Name);
       IEnumerable<TEntity> newEntities;
       try
       {
@@ -77,15 +81,12 @@ internal static class EntityApi
           if (parser.LineNumber == 1)
           {
             headerFields = parser.ReadFields();
-            if (headerFields != null)
+            if (headerFields == null)
             {
-              // Console.WriteLine("Header Fields: {0}", string.Join(',', headerFields));
-            }
-            else
-            {
-              Console.WriteLine("No header fields in upload document");
+              logger.LogError("No header fields are included in upload document");
               return TypedResults.BadRequest("No header fields in upload document.");
             }
+            logger.LogDebug("Header Fields: {headerFields}", string.Join(',', headerFields));
           }
           else
           {
@@ -93,7 +94,7 @@ internal static class EntityApi
             string[]? dataRow = parser.ReadFields();
             if (dataRow != null)
             {
-              // Console.WriteLine("Entity Data: {0}", string.Join(',', dataRow));
+              logger.LogTrace("Entity Data: {dataRow}", string.Join(',', dataRow));
               dataFields.Add(dataRow);
             }
           }
@@ -101,8 +102,8 @@ internal static class EntityApi
 
         if (dataFields.Count == 0)
         {
-          Console.WriteLine("No header fields in upload document");
-          return TypedResults.BadRequest("No header fields in upload document.");
+          logger.LogError("No data to upload");
+          return TypedResults.BadRequest("No data to upload.");
         }
 
         newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
@@ -110,11 +111,12 @@ internal static class EntityApi
       }
       catch (Exception er)
       {
-        Console.WriteLine("Failed to save bulk create: {0}", er);
+        logger.LogError(er, "Failed to save bulk create for {entity}s", typeof(TEntity).Name);
         return TypedResults.BadRequest(string.Format("Failed to save bulk create: {0}", er));
       }
 
-      return TypedResults.Ok(string.Format("Uploaded {0} new {1}", newEntities.Count(), $"{typeof(TEntity).Name}s"));
+      logger.LogInformation("Uploaded {count} new {entity}s", newEntities.Count(), typeof(TEntity).Name);
+      return TypedResults.Ok(string.Format("Uploaded {0} new {1}s", newEntities.Count(), typeof(TEntity).Name));
     })
     .DisableAntiforgery();
 
