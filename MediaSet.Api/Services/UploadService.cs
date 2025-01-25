@@ -21,7 +21,7 @@ public class UploadService
             var value = dataRow.GetValueByHeader<Movie>(headerFields, property);
             if (value != null)
             {
-              property.SetValue(newEntity, value.CastTo(property.PropertyType));
+              property.SetValue(newEntity, value.CastTo(property));
             }
           }
         }
