@@ -1,7 +1,6 @@
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
-using MediaSet.Api.Upload;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.VisualBasic.FileIO;
 
@@ -57,9 +56,10 @@ internal static class EntityApi
       return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
     });
 
-     group.MapPost("/upload", async Task<Results<Ok, BadRequest<string>>> (EntityService<TEntity> entityService, UploadService uploadService, IFormFile bookUpload) =>
+     group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
     {
       Console.WriteLine("File upload received: {0}!", bookUpload.FileName);
+      IEnumerable<TEntity> newEntities;
       try
       {
         var entityType = typeof(TEntity);
@@ -79,7 +79,7 @@ internal static class EntityApi
             headerFields = parser.ReadFields();
             if (headerFields != null)
             {
-              Console.WriteLine("Header Fields: {0}", string.Join(',', headerFields));
+              // Console.WriteLine("Header Fields: {0}", string.Join(',', headerFields));
             }
             else
             {
@@ -93,7 +93,7 @@ internal static class EntityApi
             string[]? dataRow = parser.ReadFields();
             if (dataRow != null)
             {
-              Console.WriteLine("Entity Data: {0}", string.Join(',', dataRow));
+              // Console.WriteLine("Entity Data: {0}", string.Join(',', dataRow));
               dataFields.Add(dataRow);
             }
           }
@@ -105,7 +105,7 @@ internal static class EntityApi
           return TypedResults.BadRequest("No header fields in upload document.");
         }
 
-        IEnumerable<TEntity> newEntities = uploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
+        newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
         await entityService.BulkCreateAsync(newEntities);
       }
       catch (Exception er)
@@ -114,7 +114,7 @@ internal static class EntityApi
         return TypedResults.BadRequest(string.Format("Failed to save bulk create: {0}", er));
       }
 
-      return TypedResults.Ok();
+      return TypedResults.Ok(string.Format("Uploaded {0} new {1}", newEntities.Count(), $"{typeof(TEntity).Name}s"));
     })
     .DisableAntiforgery();
 
