@@ -5,6 +5,14 @@ using MediaSet.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+var logger = LoggerFactory.Create(config =>
+{
+  config.AddConsole();
+}).CreateLogger("MediaSet.Api");
+
 // Configure database settings
 builder.Services.Configure<MediaSetDatabaseSettings>(
   builder.Configuration.GetSection("MediaSetDatabase")
