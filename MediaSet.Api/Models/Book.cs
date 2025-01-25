@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MediaSet.Api.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -11,23 +12,26 @@ public class Book : IEntity
   public string? Id { get; set; }
 
   [Required]
-  public string Title { get; set; } = null!;
+  public string Title { get; set; } = string.Empty;
 
-  public string ISBN { get; set; } = null!;
+  public string ISBN { get; set; } = string.Empty;
 
-  public string Format { get; set; } = null!;
+  public string Format { get; set; } = string.Empty;
 
   public int? Pages { get; set; }
 
-  public string PublicationDate { get; set; } = null!;
+  [Upload(HeaderName = "Publication Date")]
+  public string PublicationDate { get; set; } = string.Empty;
 
+  [Upload(HeaderName = "Author")]
   public List<string> Authors { get; set; } = [];
 
-  public string Publisher { get; set; } = null!;
+  public string Publisher { get; set; } = string.Empty;
 
+  [Upload(HeaderName = "Genre")]
   public List<string> Genres { get; set; } = [];
 
-  public string Plot { get; set; } = null!;
+  public string Plot { get; set; } = string.Empty;
 
-  public string Subtitle { get; set; } = null!;
+  public string Subtitle { get; set; } = string.Empty;
 }

@@ -2,7 +2,6 @@ using MediaSet.Api.Books;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
-using MediaSet.Api.Upload;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +20,6 @@ builder.Services.AddScoped<EntityService<Book>>();
 builder.Services.AddScoped<EntityService<Movie>>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<StatsService>();
-builder.Services.AddScoped<UploadService>();
 
 var app = builder.Build();
 
