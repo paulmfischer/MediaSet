@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Attributes;
+using MediaSet.Api.Converters;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -25,10 +26,8 @@ public class Movie : IEntity
   [Upload(HeaderName = "Audience Rating")]
   public string Rating { get; set; } = string.Empty;
 
-  // TODO: clz exports as hh:mm so using string for now to allow upload to work
-  // Need to parse hh:mm to minutes instead on upload and can revert back to int?
-  // public int? Runtime { get; set; } = null!;
-  public string Runtime { get; set; } = string.Empty;
+  [Upload(Converter = typeof(RuntimeConverter))]
+  public int? Runtime { get; set; } = null!;
 
   public List<string> Studios { get; set; } = [];
 
