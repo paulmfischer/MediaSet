@@ -1,9 +1,10 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { searchBooks } from "~/book-data";
 import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, Pencil, Trash, X } from "lucide-react";
+import { search } from "~/entity-data";
+import { Book, Entities } from "~/constants";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,7 +16,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
-  const books = await searchBooks(searchText);
+  const books = await search<Book>(Entities.Books, searchText);
   return json({ books, searchText });
 };
 

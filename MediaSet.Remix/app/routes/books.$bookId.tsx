@@ -1,9 +1,10 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
-import { getBook } from "~/book-data";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { Pencil, Trash } from "lucide-react";
+import { get } from "~/entity-data";
+import { Book, Entities } from "~/constants";
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,7 +15,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
-  const book = await getBook(params.bookId);
+  const book = await get<Book>(Entities.Books, params.bookId);
   return json({ book });
 };
 
@@ -67,7 +68,7 @@ export default function Detail() {
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="isbn" className="basis-2/12 dark:text-slate-400">ISBN</label>
-          <div id="isbn" className="grow">{book.isbn}</div>
+          <div id="isbn" className="grow">{book.iSBN}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="plot" className="basis-2/12 dark:text-slate-400">Plot</label>
