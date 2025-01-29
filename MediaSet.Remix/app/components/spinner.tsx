@@ -1,7 +1,7 @@
-import { IconInnerShadowTop } from "@tabler/icons-react";
+import { Shell } from "lucide-react"
 
 export default function Spinner({ size }: { size?: number }) {
   return (
-    <IconInnerShadowTop size={size} className="animate-spin" />
+    <Shell size={size} className="animate-spin" />
   )
 }

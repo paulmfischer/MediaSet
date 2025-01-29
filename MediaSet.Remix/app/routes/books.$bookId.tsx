@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { getBook } from "~/book-data";
 import { Form, Link, useLoaderData } from "@remix-run/react";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+// import { IconEdit, IconTrash } from "@tabler/icons-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -29,14 +29,14 @@ export default function Detail() {
           {book.subtitle && <h4 className="text-sm">{book.subtitle}</h4>}
         </div>
         <div className="flex flex-row gap-2">
-          <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><IconEdit /></Link>
+          <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit">Edit{/* <IconEdit /> */}</Link>
           <Form action={`/books/${book.id}/delete`} method="post" onSubmit={(event) => {
             const response = confirm(`Are you sure you want to delete ${book.title}?`);
             if (!response) {
               event.preventDefault();
             }
           }}>
-            <button className="link" type="submit" aria-label="Delete" title="Delete"><IconTrash size={22} /></button>
+            <button className="link" type="submit" aria-label="Delete" title="Delete">Delete{/* <IconTrash size={22} /> */}</button>
           </Form>
         </div>
       </div>

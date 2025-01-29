@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { searchBooks } from "~/book-data";
 import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
-import { IconPlus, IconEdit, IconTrash, IconX } from "@tabler/icons-react";
+import { Plus, Pencil, Trash, X } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -37,7 +37,7 @@ export default function Index() {
           <h2 className="text-2xl">Books</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
-          <Link to="/books/add" className="flex gap-1 items-center"><IconPlus size={22} />Add</Link>
+          <Link to="/books/add" className="flex gap-1 items-center"><Plus size={14} /> Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
             <div className="flex gap-2 z-20 bg-white rounded-sm">
               <input
@@ -58,7 +58,7 @@ export default function Index() {
                     }
                   }}
                 >
-                  <IconX />
+                  <X />
                 </button>
               }
             </div>
@@ -87,15 +87,15 @@ export default function Index() {
                   <td className="pl-2 p-1 border-r border-slate-800">{book.authors?.map(auth => auth.trimEnd()).join(',')}</td>
                   <td className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800">{book.format}</td>
                   <td className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800">{book.pages}</td>
-                  <td className="flex flex-row gap-3 p-1">
-                    <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><IconEdit size={22} /></Link>
+                  <td className="flex flex-row gap-3 p-1 pt-2">
+                    <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={18} /></Link>
                     <Form action={`/books/${book.id}/delete`} method="post" onSubmit={(event) => {
                       const response = confirm(`Are you sure you want to delete ${book.title}?`);
                       if (!response) {
                         event.preventDefault();
                       }
                     }}>
-                      <button className="link" type="submit" aria-label="Delete" title="Delete"><IconTrash size={22} /></button>
+                      <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash size={18} /></button>
                     </Form>
                   </td>
                 </tr>
