@@ -2,10 +2,13 @@ import type { MetaFunction, LoaderFunctionArgs, ActionFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { json } from "@remix-run/node";
-import { getBook, updatebook } from "~/book-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
 import MultiselectInput from "~/components/multiselect-input";
+import { get, update } from "~/entity-data";
+import { BookEntity } from "~/models";
+import { Entities } from "~/constants";
+import { bookFormToData } from "~/helpers";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,7 +20,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const [book, authors, genres, publishers, formats] = await Promise.all(
-    [getBook(params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
+    [get<BookEntity>(Entities.Books, params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
   );
 
   return json({ book, authors, genres, publishers, formats });
@@ -26,9 +29,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const formData = await request.formData();
-  const updates = Object.fromEntries(formData);
+  const updates = bookFormToData(formData);
   updates.id = params.bookId;
-  await updatebook(params.bookId, updates);
+  await update(params.bookId, updates);
 
   return redirect(`/books/${params.bookId}`);
 };

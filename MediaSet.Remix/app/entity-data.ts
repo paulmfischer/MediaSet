@@ -1,10 +1,11 @@
-import { baseUrl, Book, Entities, Entity, Movie } from "./constants";
+import { baseUrl, Entities } from "./constants";
+import { BookEntity, MovieEntity } from "./models";
 
 namespace Type {
-  export function isBook(entity: any): entity is Book {
+  export function isBook(entity: any): entity is BookEntity {
     return entity && "authors" in entity;
   }
-  export function isMovie(entity: any): entity is Movie {
+  export function isMovie(entity: any): entity is MovieEntity {
     return entity && "releaseDate" in entity;
   }
 }
@@ -41,26 +42,11 @@ export async function get<TEntity>(entityType: Entities, id: string): Promise<TE
   return await response.json() as TEntity;
 }
 
-function convertFormToRecord<TEntity>(entity: TEntity): TEntity {
-  return entity;
-  /* const bookRecord = { ...book } as BookRecord;
-  if (book.authors) {
-    bookRecord.authors = book.authors.split(',');
-  }
-  if (book.genres) {
-    bookRecord.genres = book.genres.split(',');
-  }
-
-  bookRecord.pages = book.pages === '' ? undefined : Number(book.pages);
-
-  return bookRecord; */
-}
-
 export async function update<TEntity>(id: string, entity: TEntity) {
   const entityName = getEntityName(entity);
   const response = await fetch(`${baseUrl}/${entityName}/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(convertFormToRecord(entity)),
+    body: JSON.stringify(entity),
     headers: { 'Content-Type': 'application/json' }
   });
 
@@ -73,7 +59,7 @@ export async function add<TEntity>(entity: TEntity) {
   const entityName = getEntityName(entity);
   const response = await fetch(`${baseUrl}/${entityName}`, {
     method: 'POST',
-    body: JSON.stringify(convertFormToRecord(entity)),
+    body: JSON.stringify(entity),
     headers: { 'Content-Type': 'application/json' }
   });
 

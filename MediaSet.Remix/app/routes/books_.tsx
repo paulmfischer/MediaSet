@@ -2,9 +2,10 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
-import { Plus, Pencil, Trash, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { search } from "~/entity-data";
-import { Book, Entities } from "~/constants";
+import { Entities } from "~/constants";
+import { BookEntity } from "~/models";
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,7 +17,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
-  const books = await search<Book>(Entities.Books, searchText);
+  const books = await search<BookEntity>(Entities.Books, searchText);
   return json({ books, searchText });
 };
 
@@ -96,7 +97,7 @@ export default function Index() {
                         event.preventDefault();
                       }
                     }}>
-                      <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash size={18} /></button>
+                      <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={18} /></button>
                     </Form>
                   </td>
                 </tr>

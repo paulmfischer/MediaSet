@@ -2,9 +2,10 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { Form, Link, useLoaderData } from "@remix-run/react";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { get } from "~/entity-data";
-import { Book, Entities } from "~/constants";
+import { Entities } from "~/constants";
+import { BookEntity } from "~/models";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,7 +16,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
-  const book = await get<Book>(Entities.Books, params.bookId);
+  const book = await get<BookEntity>(Entities.Books, params.bookId);
   return json({ book });
 };
 
@@ -37,7 +38,7 @@ export default function Detail() {
               event.preventDefault();
             }
           }}>
-            <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash size={22} /></button>
+            <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={22} /></button>
           </Form>
         </div>
       </div>
@@ -68,7 +69,7 @@ export default function Detail() {
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="isbn" className="basis-2/12 dark:text-slate-400">ISBN</label>
-          <div id="isbn" className="grow">{book.iSBN}</div>
+          <div id="isbn" className="grow">{book.isbn}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="plot" className="basis-2/12 dark:text-slate-400">Plot</label>
