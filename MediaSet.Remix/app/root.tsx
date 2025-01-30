@@ -7,8 +7,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import { IconBooks } from "@tabler/icons-react";
+import { LibraryBig } from "lucide-react";
 import PendingNavigation from "./components/pending-navigation";
+
+const year = new Date().getUTCFullYear();
 
 export default function App() {
   return (
@@ -25,7 +27,7 @@ export default function App() {
             <h1 className="text-3xl">MediaSet</h1>
             <div className="flex flex-row gap-4 items-center">
               <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
-              <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><IconBooks /> Books</NavLink>
+              <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
             </div>
           </div>
           <PendingNavigation />
@@ -33,7 +35,7 @@ export default function App() {
             <Outlet />
           </main>
           <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
-            Copyright 2024 Paul Fischer
+            Copyright {year} Paul Fischer
           </footer>
         </div>
         <ScrollRestoration />
