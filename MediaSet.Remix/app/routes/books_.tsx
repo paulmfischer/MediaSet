@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { Form, Link, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
-import { search } from "~/entity-data";
+import { searchEntities } from "~/entity-data";
 import { Entities } from "~/constants";
 import { BookEntity } from "~/models";
 
@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
-  const books = await search<BookEntity>(Entities.Books, searchText);
+  const books = await searchEntities<BookEntity>(Entities.Books, searchText);
   return json({ books, searchText });
 };
 

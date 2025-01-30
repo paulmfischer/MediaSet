@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
-import { get } from "~/entity-data";
+import { getEntity } from "~/entity-data";
 import { Entities } from "~/constants";
 import { BookEntity } from "~/models";
 
@@ -16,7 +16,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
-  const book = await get<BookEntity>(Entities.Books, params.bookId);
+  const book = await getEntity<BookEntity>(Entities.Books, params.bookId);
   return json({ book });
 };
 
