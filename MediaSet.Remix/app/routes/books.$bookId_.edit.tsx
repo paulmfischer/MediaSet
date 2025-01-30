@@ -2,10 +2,13 @@ import type { MetaFunction, LoaderFunctionArgs, ActionFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { json } from "@remix-run/node";
-import { getBook, updatebook } from "~/book-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
 import MultiselectInput from "~/components/multiselect-input";
+import { getEntity, updateEntity } from "~/entity-data";
+import { BookEntity } from "~/models";
+import { Entities } from "~/constants";
+import { bookFormToData } from "~/helpers";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,7 +20,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const [book, authors, genres, publishers, formats] = await Promise.all(
-    [getBook(params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
+    [getEntity<BookEntity>(Entities.Books, params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
   );
 
   return json({ book, authors, genres, publishers, formats });
@@ -26,9 +29,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const formData = await request.formData();
-  const updates = Object.fromEntries(formData);
+  const updates = bookFormToData(formData);
   updates.id = params.bookId;
-  await updatebook(params.bookId, updates);
+  await updateEntity(params.bookId, updates);
 
   return redirect(`/books/${params.bookId}`);
 };
@@ -55,7 +58,7 @@ export default function Edit() {
               <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>
               <input id="subtitle" defaultValue={book.subtitle} name="subtitle" type="text" placeholder="Subtitle" aria-label="Subtitle" />
               <label htmlFor="format" className="dark:text-slate-400">Format</label>
-              <select id="format" name="format">
+              <select id="format" name="format" defaultValue={book.format}>
                 <option value="">Select Format...</option>
                 {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
               </select>

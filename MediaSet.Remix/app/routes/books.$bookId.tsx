@@ -1,9 +1,11 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import invariant from "tiny-invariant";
-import { getBook } from "~/book-data";
 import { Form, Link, useLoaderData } from "@remix-run/react";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import { getEntity } from "~/entity-data";
+import { Entities } from "~/constants";
+import { BookEntity } from "~/models";
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,7 +16,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
-  const book = await getBook(params.bookId);
+  const book = await getEntity<BookEntity>(Entities.Books, params.bookId);
   return json({ book });
 };
 
@@ -36,7 +38,7 @@ export default function Detail() {
               event.preventDefault();
             }
           }}>
-            <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash size={22} /></button>
+            <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={22} /></button>
           </Form>
         </div>
       </div>

@@ -1,10 +1,11 @@
 import type { MetaFunction, ActionFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { json } from "@remix-run/node";
-import { addBook } from "~/book-data";
+import { addEntity } from "~/entity-data";
 import MultiselectInput from "~/components/multiselect-input";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
+import { bookFormToData } from "~/helpers";
 
 export const meta: MetaFunction = () => {
   return [
@@ -20,8 +21,8 @@ export const loader = async () => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const formBook = Object.fromEntries(formData);
-  const newBook = await addBook(formBook);
+  const book = bookFormToData(formData);
+  const newBook = await addEntity(book);
 
   return redirect(`/books/${newBook.id}`);
 };
