@@ -41,7 +41,6 @@ export default function Edit() {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/books/${book.id}/edit`;
-  console.log('editting book', book, formats);
 
   return (
     <div className="flex flex-col">
