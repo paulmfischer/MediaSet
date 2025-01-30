@@ -10,6 +10,8 @@ import {
 import { LibraryBig } from "lucide-react";
 import PendingNavigation from "./components/pending-navigation";
 
+const year = new Date().getUTCFullYear();
+
 export default function App() {
   return (
     <html lang="en" className="dark">
@@ -33,7 +35,7 @@ export default function App() {
             <Outlet />
           </main>
           <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
-            Copyright 2024 Paul Fischer
+            Copyright {year} Paul Fischer
           </footer>
         </div>
         <ScrollRestoration />
