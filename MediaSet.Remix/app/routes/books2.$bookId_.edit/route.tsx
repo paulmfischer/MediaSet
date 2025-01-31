@@ -6,8 +6,7 @@ import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
 import MultiselectInput from "~/components/multiselect-input";
 import { getEntity, updateEntity } from "~/entity-data";
-import { BookEntity } from "~/models";
-import { Entity } from "~/constants";
+import { BookEntity, Entity } from "~/models";
 import { bookFormToData } from "~/helpers";
 
 export const meta: MetaFunction = () => {

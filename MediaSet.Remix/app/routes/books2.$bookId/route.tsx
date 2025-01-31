@@ -4,8 +4,7 @@ import invariant from "tiny-invariant";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import { getEntity } from "~/entity-data";
-import { Entity } from "~/constants";
-import { BookEntity } from "~/models";
+import { BookEntity, Entity } from "~/models";
 
 export const meta: MetaFunction = () => {
   return [

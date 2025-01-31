@@ -1,13 +1,23 @@
 type Override<Type, NewType extends { [key in keyof Type]?: NewType[key] }> = Omit<Type, keyof NewType> & NewType;
 
-export interface Entity {
+export const entities = {
+  books: "Books",
+  movies: "Movies",
+};
+
+export enum Entity {
+  Books = "Books",
+  Movies = "Movies",
+};
+
+export interface BaseEntity {
   id?: string;
   title?: string;
   isbn?: string;
   format?: string;
 }
 
-export interface BookEntity extends Entity {
+export interface BookEntity extends BaseEntity {
   pages?: number;
   publicationDate?: string;
   authors?: Array<string>;
@@ -18,7 +28,7 @@ export interface BookEntity extends Entity {
 }
 export type Book = Override<BookEntity, { authors: string; genres: string; }>
 
-export interface MovieEntity extends Entity {
+export interface MovieEntity extends BaseEntity {
   releaseDate?: string;
   rating?: string;
   runtime?: number;

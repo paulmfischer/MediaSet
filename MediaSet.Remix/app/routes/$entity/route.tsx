@@ -3,8 +3,8 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, Outlet, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
-import { Entity } from "~/constants";
 import { toTitleCase } from "~/helpers";
+import { Entity } from "~/models";
 
 export const loader = ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);

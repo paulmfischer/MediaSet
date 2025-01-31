@@ -1,5 +1,5 @@
-import { baseUrl, Entity } from "./constants";
-import { BookEntity, MovieEntity } from "./models";
+import { baseUrl } from "./constants";
+import { BookEntity, Entity, MovieEntity } from "./models";
 
 namespace Type {
   export function isBook(entity: any): entity is BookEntity {
