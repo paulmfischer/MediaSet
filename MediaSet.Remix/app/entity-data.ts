@@ -1,4 +1,4 @@
-import { baseUrl, Entities } from "./constants";
+import { baseUrl, Entity } from "./constants";
 import { BookEntity, MovieEntity } from "./models";
 
 namespace Type {
@@ -14,18 +14,18 @@ function isOfType<T>(guard: (entity: any) => entity is T, data: any): boolean {
   return guard(data);
 }
 
-function getEntityName<T>(entity: T): Entities {
+function getEntityName<T>(entity: T): Entity {
   if (isOfType(Type.isBook, entity)) {
-    return Entities.Books;
+    return Entity.Books;
   }
   if (isOfType(Type.isMovie, entity)) {
-    return Entities.Movies;
+    return Entity.Movies;
   }
 
   throw "No matching entity name";
 }
 
-export async function searchEntities<TEntity>(entityType: Entities, searchText: string | null, orderBy: string = ''): Promise<Array<TEntity>> {
+export async function searchEntities<TEntity>(entityType: Entity, searchText: string | null, orderBy: string = ''): Promise<Array<TEntity>> {
   const response = await fetch(`${baseUrl}/${entityType}/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
   if (!response.ok) {
     throw new Response('Error fetching data', { status: 500 });
@@ -33,7 +33,7 @@ export async function searchEntities<TEntity>(entityType: Entities, searchText: 
   return await response.json() as TEntity[];
 }
 
-export async function getEntity<TEntity>(entityType: Entities, id: string): Promise<TEntity> {
+export async function getEntity<TEntity>(entityType: Entity, id: string): Promise<TEntity> {
   const response = await fetch(`${baseUrl}/${entityType}/${id}`);
   if (response.status == 404) {
     throw new Response("Book not found", { status: 404 });
@@ -70,7 +70,7 @@ export async function addEntity<TEntity>(entity: TEntity) {
   return await response.json() as TEntity;
 }
 
-export async function deleteEntity<TEntity>(entity: Entities, id: string) {
+export async function deleteEntity<TEntity>(entity: Entity, id: string) {
   const response = await fetch(`${baseUrl}/${entity}/${id}`, { method: 'DELETE' });
 
   if (!response.ok) {

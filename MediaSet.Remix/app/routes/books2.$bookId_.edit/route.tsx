@@ -7,7 +7,7 @@ import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-dat
 import MultiselectInput from "~/components/multiselect-input";
 import { getEntity, updateEntity } from "~/entity-data";
 import { BookEntity } from "~/models";
-import { Entities } from "~/constants";
+import { Entity } from "~/constants";
 import { bookFormToData } from "~/helpers";
 
 export const meta: MetaFunction = () => {
@@ -20,7 +20,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.bookId, "Missing bookId param");
   const [book, authors, genres, publishers, formats] = await Promise.all(
-    [getEntity<BookEntity>(Entities.Books, params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
+    [getEntity<BookEntity>(Entity.Books, params.bookId), getAuthors(), getGenres(), getPublishers(), getFormats()]
   );
 
   return json({ book, authors, genres, publishers, formats });

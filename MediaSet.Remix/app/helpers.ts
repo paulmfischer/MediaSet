@@ -1,5 +1,13 @@
 import { Book, BookEntity } from "./models";
 
+export function toTitleCase(str: string | undefined) {
+  if (str == undefined) {
+    return '';
+  }
+
+  return str.replace(/\w\S*/g, (text: string) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
+}
+
 function formDataToObject<T>(formData: FormData): T {
   const data: Record<string, FormDataEntryValue> = {};
   for (let [key, value] of formData.entries()) {

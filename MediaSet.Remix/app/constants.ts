@@ -6,7 +6,7 @@ export const entities = {
   movies: "Movies",
 };
 
-export enum Entities {
+export enum Entity {
   Books = "Books",
   Movies = "Movies",
 };
