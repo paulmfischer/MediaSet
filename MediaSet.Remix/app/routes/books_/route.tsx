@@ -22,7 +22,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Index() {
-  console.log('books2 route');
   const { books, searchText } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
