@@ -1,47 +1,45 @@
-
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { searchEntities } from "~/entity-data";
 import { BookEntity, Entity, MovieEntity } from "~/models";
-import { toTitleCase } from "~/helpers";
+import { getEntityFromParams } from "~/helpers";
 import Books from "./books";
 import Movies from "./movies";
 
-async function search(entity: Entity, searchText: string | null) {
-  if (entity === Entity.Books) {
-    return await searchEntities<BookEntity>(Entity.Books, searchText);
-  } else if (entity === Entity.Movies) {
-    return await searchEntities<MovieEntity>(Entity.Movies, searchText);
-  }
-}
+export const meta: MetaFunction = (loader) => {
+  const entityName = getEntityFromParams(loader.params);
+  return [
+    { title: `${entityName} List` },
+    { name: "description", content: `${entityName} List` },
+  ];
+};
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
-  const entity: Entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];
-  const entityResult = await search(entity, searchText);
-  console.log('entity result', entityResult?.length);
+  const entityType: Entity = getEntityFromParams(params);
+  const entities = await searchEntities(entityType, searchText);
 
-  return { entities: entityResult, entity };
+  return { entities, entityType };
 };
 
 export default function Index() {
-  const { entities, entity } = useLoaderData<typeof loader>();
+  const { entities, entityType } = useLoaderData<typeof loader>();
   
   if (entities == null || entities.length === 0) {
     return (
       <div className="flex justify-center text-center">
-        You don't appear to have any {entity}!<br />
+        You don't appear to have any {entityType}!<br />
         Add to your collection by clicking the 'Add' link up above!
       </div>
     );
   }
 
-  if (entity === Entity.Books) {
+  if (entityType === Entity.Books) {
     return <Books books={entities as BookEntity[]} />;
   }
 
-  if (entity === Entity.Movies) {
+  if (entityType === Entity.Movies) {
     return <Movies movies={entities as MovieEntity[]} />;
   }
 }

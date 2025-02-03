@@ -1,4 +1,4 @@
-import { baseUrl } from "./constants";
+import { baseUrl } from "./constants.server";
 
 export type Stats = {
   totalBooks: number;

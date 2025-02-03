@@ -1,4 +1,4 @@
-import { baseUrl } from "./constants";
+import { baseUrl } from "./constants.server";
 
 export async function getAuthors() {
   const response = await fetch(`${baseUrl}/metadata/authors`);

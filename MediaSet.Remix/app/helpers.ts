@@ -1,4 +1,5 @@
-import { Book, BookEntity } from "./models";
+import { Params } from "@remix-run/react";
+import { Book, BookEntity, Entity } from "./models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -6,6 +7,14 @@ export function toTitleCase(str: string | undefined) {
   }
 
   return str.replace(/\w\S*/g, (text: string) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
+}
+
+export function getEntityFromParams(params: Params<string>) {
+  return Entity[toTitleCase(params.entity) as keyof typeof Entity];
+}
+
+export function singular(entityName: Entity) {
+  return entityName.slice(0, entityName.length - 1);
 }
 
 function formDataToObject<T>(formData: FormData): T {

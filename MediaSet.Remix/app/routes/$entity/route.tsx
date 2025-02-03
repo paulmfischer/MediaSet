@@ -1,10 +1,17 @@
-
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Form, Link, Outlet, useLoaderData, useSubmit } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
-import { toTitleCase } from "~/helpers";
+import { getEntityFromParams, toTitleCase } from "~/helpers";
 import { Entity } from "~/models";
+
+export const meta: MetaFunction = ({ params }) => {
+  const entityName = getEntityFromParams(params);
+  return [
+    { title: entityName },
+    { name: "description", content: `List of ${entityName.toLowerCase()}` },
+  ];
+};
 
 export const loader = ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
