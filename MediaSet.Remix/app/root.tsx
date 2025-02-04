@@ -6,8 +6,9 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteError,
 } from "@remix-run/react";
-import { LibraryBig } from "lucide-react";
+import { Clapperboard, LibraryBig } from "lucide-react";
 import PendingNavigation from "./components/pending-navigation";
 
 const year = new Date().getUTCFullYear();
@@ -28,6 +29,7 @@ export default function App() {
             <div className="flex flex-row gap-4 items-center">
               <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
               <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
+              <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg"><Clapperboard /> Movies</NavLink>
             </div>
           </div>
           <PendingNavigation />
@@ -39,6 +41,24 @@ export default function App() {
           </footer>
         </div>
         <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  console.error('Root Error:', error);
+  return (
+    <html>
+      <head>
+        <title>Oh no!</title>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        Something bad has happened!<br />
         <Scripts />
       </body>
     </html>
