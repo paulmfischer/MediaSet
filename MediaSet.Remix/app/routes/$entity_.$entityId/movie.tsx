@@ -14,8 +14,8 @@ export default function Movie({ movie }: MovieProps) {
           <h2 className="text-2xl">{movie.title}</h2>
         </div>
         <div className="flex flex-row gap-2">
-          <Link to={`/movie/${movie.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={22} /></Link>
-          <Form action={`/movie/${movie.id}/delete`} method="post" onSubmit={(event) => {
+          <Link to={`/movies/${movie.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={22} /></Link>
+          <Form action={`/movies/${movie.id}/delete`} method="post" onSubmit={(event) => {
             const response = confirm(`Are you sure you want to delete ${movie.title}?`);
             if (!response) {
               event.preventDefault();

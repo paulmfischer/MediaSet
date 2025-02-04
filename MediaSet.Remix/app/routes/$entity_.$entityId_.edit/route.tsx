@@ -1,12 +1,13 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import { addEntity } from "~/entity-data";
+import { addEntity, getEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
-import { Entity } from "~/models";
+import { BookEntity, Entity, MovieEntity } from "~/models";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
+import invariant from "tiny-invariant";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityName = getEntityFromParams(params);
@@ -17,13 +18,20 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
+  console.log("edit entity params", params);
+  invariant(params.entity, "Missing entity param");
+  invariant(params.entityId, "Missing entityId param");
   const entityName = getEntityFromParams(params);
-  const [authors, genres, publishers, formats] = await Promise.all([getAuthors(), getGenres(), getPublishers(), getFormats()]);
-  return { authors, genres, publishers, formats, entityName };
+  const [entity, authors, genres, publishers, formats] =
+   await Promise.all([getEntity(entityName, params.entityId), getAuthors(), getGenres(), getPublishers(), getFormats()]);
+  return { entity, authors, genres, publishers, formats, entityName };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
+  invariant(params.entity, "Missing entity param");
+  invariant(params.entityId, "Missing entityId param");
   const entityName = getEntityFromParams(params);
+  console.log("edit entity params", params);
   const formData = await request.formData();
   const entity = formToDto(entityName, formData);
   const newEntity = await addEntity(entity);
@@ -31,26 +39,26 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   return redirect(`/${entityName.toLowerCase()}/${newEntity.id}`);
 };
 
-export default function Add() {
-  const { authors, genres, publishers, formats, entityName } = useLoaderData<typeof loader>();
+export default function Edit() {
+  const { entity, authors, genres, publishers, formats, entityName } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/add`;
-  const formId = `add-${singular(entityName)}`;
-  const actionUrl = `/${entityName.toLowerCase()}/add`;
+  const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/${entity.id}/edit`;
+  const formId = `edit-${singular(entityName)}`;
+  const actionUrl = `/${entityName.toLowerCase()}/${entity.id}/edit`;
   
   let formComponent;
   if (entityName === Entity.Books) {
-    formComponent = <BookForm authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm book={entity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityName === Entity.Movies) {
-    formComponent = <MovieForm genres={genres} studios={[]} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={[]} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (
     <div className="flex flex-col">
       <div className="flex flex-row items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">Add a {singular(entityName)}</h2>
+          <h2 className="text-2xl">Editing {entity.title}</h2>
         </div>
       </div>
       <div className="h-full mt-4">
@@ -60,7 +68,7 @@ export default function Add() {
             <div className="flex flex-row gap-2 mt-3">
               <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
                 {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
-                Add
+                Update
               </button>
               <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>Cancel</button>
             </div>
