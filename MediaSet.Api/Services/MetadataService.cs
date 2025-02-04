@@ -5,10 +5,12 @@ namespace MediaSet.Api.Services;
 public class MetadataService
 {
   private readonly EntityService<Book> booksService;
+  private readonly EntityService<Movie> movieService;
 
-  public MetadataService(EntityService<Book> _booksService)
+  public MetadataService(EntityService<Book> _booksService, EntityService<Movie> _movieService)
   {
     booksService = _booksService;
+    movieService = _movieService;
   }
 
   public async Task<IEnumerable<string>> GetBookFormats()
@@ -52,6 +54,41 @@ public class MetadataService
     return books
       .Where(book => book.Genres?.Count > 0)
       .SelectMany(book => book.Genres)
+      .Select(genre => genre.Trim())
+      .Distinct()
+      .Order();
+  }
+  
+  public async Task<IEnumerable<string>> GetMovieFormats()
+  {
+    var movies = await movieService.GetListAsync();
+
+    return movies
+      .Where(movie => !string.IsNullOrWhiteSpace(movie.Format))
+      .Select(movie => movie.Format.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetMovieStudios()
+  {
+    var movies = await movieService.GetListAsync();
+
+    return movies
+      .Where(movie => movie.Studios?.Count > 0)
+      .SelectMany(movie => movie.Studios)
+      .Select(studio => studio.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetMovieGenres()
+  {
+    var movies = await movieService.GetListAsync();
+
+    return movies
+      .Where(movie => movie.Genres?.Count > 0)
+      .SelectMany(movie => movie.Genres)
       .Select(genre => genre.Trim())
       .Distinct()
       .Order();

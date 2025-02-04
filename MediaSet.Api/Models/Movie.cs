@@ -15,8 +15,7 @@ public class Movie : IEntity
   [Required]
   public string Title { get; set; } = string.Empty;
 
-  [Upload(HeaderName = "Barcode")]
-  public string ISBN { get; set; } = string.Empty;
+  public string Barcode { get; set; } = string.Empty;
 
   public string Format { get; set; } = string.Empty;
 

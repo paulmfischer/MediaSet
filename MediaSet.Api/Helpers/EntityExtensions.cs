@@ -8,7 +8,7 @@ internal static class EntityExtensions
   {
     if (entity is Movie movie) {
       return string.IsNullOrWhiteSpace(movie.Title) &&
-        string.IsNullOrWhiteSpace(movie.ISBN) &&
+        string.IsNullOrWhiteSpace(movie.Barcode) &&
         string.IsNullOrWhiteSpace(movie.Format) &&
         string.IsNullOrWhiteSpace(movie.ReleaseDate) &&
         string.IsNullOrWhiteSpace(movie.Rating) &&

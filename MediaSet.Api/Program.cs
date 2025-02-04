@@ -1,3 +1,4 @@
+using MediaSet.Api.Bindings;
 using MediaSet.Api.Books;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
@@ -22,7 +23,9 @@ builder.Services.AddSingleton<DatabaseService>();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen((setup) => {
+  setup.SchemaFilter<ParameterSchemaFilter>();
+});
 
 builder.Services.AddScoped<EntityService<Book>>();
 builder.Services.AddScoped<EntityService<Movie>>();
