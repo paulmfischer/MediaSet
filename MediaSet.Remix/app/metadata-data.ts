@@ -1,4 +1,5 @@
 import { baseUrl } from "./constants.server";
+import { Entity } from "./models";
 
 export async function getAuthors() {
   const response = await fetch(`${baseUrl}/metadata/authors`);
@@ -12,14 +13,20 @@ export async function getPublishers() {
   return publishers.map(publisher => ({ label: publisher, value: publisher }));
 }
 
-export async function getGenres() {
-  const response = await fetch(`${baseUrl}/metadata/genres`);
+export async function getGenres(entityName: Entity) {
+  const response = await fetch(`${baseUrl}/metadata/genres/${entityName}`);
   const genres = await response.json() as string[];
   return genres.map(genre => ({ label: genre, value: genre }));
 }
 
-export async function getFormats() {
-  const response = await fetch(`${baseUrl}/metadata/formats/Book`);
+export async function getFormats(entityName: Entity) {
+  const response = await fetch(`${baseUrl}/metadata/formats/${entityName}`);
   const formats = await response.json() as string[];
   return formats.map(format => ({ label: format, value: format }));
+}
+
+export async function getStudios() {
+  const response = await fetch(`${baseUrl}/metadata/studios`);
+  const studios = await response.json() as string[];
+  return studios.map(studio => ({ label: studio, value: studio }));
 }

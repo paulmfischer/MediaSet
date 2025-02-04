@@ -47,8 +47,8 @@ export default function Movie({ movie }: MovieProps) {
           <div id="publisher" className="grow">{movie.studios?.join(', ')}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
-          <label htmlFor="isbn" className="basis-2/12 dark:text-slate-400">ISBN</label>
-          <div id="isbn" className="grow">{movie.isbn}</div>
+          <label htmlFor="barcode" className="basis-2/12 dark:text-slate-400">Barcode</label>
+          <div id="barcode" className="grow">{movie.barcode}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="plot" className="basis-2/12 dark:text-slate-400">Plot</label>

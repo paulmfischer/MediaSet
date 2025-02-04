@@ -31,8 +31,8 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
       <MultiselectInput name="studios" selectText="Select Studios..." addLabel="Add new Studio:" options={studios} selectedValues={movie?.studios} />
       <label htmlFor="genres" className="dark:text-slate-400">Genres</label>
       <MultiselectInput name="genres" selectText="Select Genres..." addLabel="Add new Genre" options={genres} selectedValues={movie?.genres} />
-      <label htmlFor="isbn" className="dark:text-slate-400">ISBN</label>
-      <input id="isbn" name="isbn" type="text" placeholder="ISBN" defaultValue={movie?.isbn} aria-label="ISBN" />
+      <label htmlFor="barcode" className="dark:text-slate-400">Barcode</label>
+      <input id="barcode" name="barcode" type="text" placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
       <label htmlFor="plot" className="dark:text-slate-400">Plot</label>
       <textarea id="plot" name="plot" placeholder="Plot" defaultValue={movie?.plot} aria-label="Plot" />
     </fieldset>

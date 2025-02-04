@@ -2,7 +2,7 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity, getEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, MovieEntity } from "~/models";
 import BookForm from "../../components/book-form";
@@ -21,9 +21,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityName = getEntityFromParams(params);
-  const [entity, authors, genres, publishers, formats] =
-   await Promise.all([getEntity(entityName, params.entityId), getAuthors(), getGenres(), getPublishers(), getFormats()]);
-  return { entity, authors, genres, publishers, formats, entityName };
+  const [entity, authors, genres, publishers, formats, studios] =
+   await Promise.all([getEntity(entityName, params.entityId), getAuthors(), getGenres(entityName), getPublishers(), getFormats(entityName), getStudios()]);
+  return { entity, authors, genres, publishers, formats, entityName, studios };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -38,7 +38,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Edit() {
-  const { entity, authors, genres, publishers, formats, entityName } = useLoaderData<typeof loader>();
+  const { entity, authors, genres, publishers, formats, entityName, studios } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/${entity.id}/edit`;
@@ -49,7 +49,7 @@ export default function Edit() {
   if (entityName === Entity.Books) {
     formComponent = <BookForm book={entity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityName === Entity.Movies) {
-    formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={[]} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (

@@ -2,7 +2,7 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { Entity } from "~/models";
 import BookForm from "../../components/book-form";
@@ -19,8 +19,8 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityName = getEntityFromParams(params);
-  const [authors, genres, publishers, formats] = await Promise.all([getAuthors(), getGenres(), getPublishers(), getFormats()]);
-  return { authors, genres, publishers, formats, entityName };
+  const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityName), getPublishers(), getFormats(entityName), getStudios()]);
+  return { authors, genres, publishers, formats, entityName, studios };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -34,7 +34,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityName } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityName, studios } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/add`;
@@ -45,7 +45,7 @@ export default function Add() {
   if (entityName === Entity.Books) {
     formComponent = <BookForm authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityName === Entity.Movies) {
-    formComponent = <MovieForm genres={genres} studios={[]} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (
