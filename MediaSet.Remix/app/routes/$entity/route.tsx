@@ -38,7 +38,7 @@ export default function Index() {
           <h2 className="text-2xl">{entity}</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
-          <Link to="/books/add" className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
+          <Link to={`/${entity.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
             <div className="flex gap-2 z-20 bg-white rounded-sm">
               <input

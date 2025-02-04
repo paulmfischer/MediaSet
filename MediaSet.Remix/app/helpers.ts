@@ -1,5 +1,5 @@
 import { Params } from "@remix-run/react";
-import { Book, BookEntity, Entity } from "./models";
+import { BaseEntity, Book, BookEntity, Entity, Movie } from "./models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -42,4 +42,36 @@ export function bookFormToData(formData: FormData): BookEntity {
   };
   
   return bookEntity;
+}
+
+export function formToDto(entityName: Entity, formData: FormData): BaseEntity {
+  if (entityName === Entity.Books) {
+    const book = formDataToObject<Book>(formData);
+    return {
+      authors: book.authors ? book.authors.split(',') : undefined,
+      format: book.format,
+      genres: book.genres ? book.genres.split(',') : undefined,
+      id: book.id,
+      isbn: book.isbn,
+      pages: book.pages,
+      plot: book.plot,
+      publicationDate: book.publicationDate,
+      publisher: book.publisher,
+      subtitle: book.subtitle,
+      title: book.title,
+    } as BaseEntity;
+  } else { //if (entityName === Entity.Movies) {
+    const movie = formDataToObject<Movie>(formData);
+    return {
+      studios: movie.studios ? movie.studios.split(',') : undefined,
+      format: movie.format,
+      genres: movie.genres ? movie.genres.split(',') : undefined,
+      id: movie.id,
+      isbn: movie.isbn,
+      releaseDate: movie.releaseDate,
+      plot: movie.plot,
+      runtime: movie.runtime,
+      title: movie.title,
+    } as BaseEntity;
+  }
 }

@@ -1,4 +1,5 @@
 import { baseUrl } from "./constants.server";
+import { singular } from "./helpers";
 import { BaseEntity, BookEntity, Entity, MovieEntity } from "./models";
 
 namespace Type {
@@ -36,7 +37,7 @@ export async function searchEntities<TEntity extends BaseEntity>(entityType: Ent
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
   const response = await fetch(`${baseUrl}/${entityType}/${id}`);
   if (response.status == 404) {
-    throw new Response("Book not found", { status: 404 });
+    throw new Response(`${singular(entityType)} not found.`, { status: 404 });
   }
 
   return await response.json() as TEntity;
@@ -51,7 +52,7 @@ export async function updateEntity<TEntity extends BaseEntity>(id: string, entit
   });
 
   if (!response.ok) {
-    throw new Response(`Error updating a ${entityName}`, { status: 500 });
+    throw new Response(`Error updating a ${singular(entityName)}`, { status: 500 });
   }
 }
 
@@ -64,7 +65,7 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity) {
   });
 
   if (!response.ok) {
-    throw new Response(`Error creating a new ${entityName}`, { status: 500 });
+    throw new Response(`Error creating a new ${singular(entityName)}`, { status: 500 });
   }
 
   return await response.json() as TEntity;
@@ -74,6 +75,6 @@ export async function deleteEntity(entity: Entity, id: string) {
   const response = await fetch(`${baseUrl}/${entity}/${id}`, { method: 'DELETE' });
 
   if (!response.ok) {
-    throw new Response(`Error deleting ${entity} with id: ${id}`, { status: 500 });
+    throw new Response(`Error deleting ${singular(entity)} with id: ${id}`, { status: 500 });
   }
 }

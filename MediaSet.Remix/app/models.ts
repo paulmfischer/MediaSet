@@ -1,5 +1,9 @@
 type Override<Type, NewType extends { [key in keyof Type]?: NewType[key] }> = Omit<Type, keyof NewType> & NewType;
 
+export type FormProps = {
+  isSubmitting?: boolean;
+};
+
 export const entities = {
   books: "Books",
   movies: "Movies",
