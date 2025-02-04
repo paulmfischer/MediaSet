@@ -17,11 +17,11 @@ export enum Entity {
 export interface BaseEntity {
   id?: string;
   title?: string;
-  isbn?: string;
   format?: string;
 }
 
 export interface BookEntity extends BaseEntity {
+  isbn?: string;
   pages?: number;
   publicationDate?: string;
   authors?: Array<string>;
@@ -33,6 +33,7 @@ export interface BookEntity extends BaseEntity {
 export type Book = Override<BookEntity, { authors: string; genres: string; }>
 
 export interface MovieEntity extends BaseEntity {
+  barcode?: string;
   releaseDate?: string;
   rating?: string;
   runtime?: number;
