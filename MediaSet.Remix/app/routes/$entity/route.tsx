@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { getEntityFromParams, toTitleCase } from "~/helpers";
 import { Entity } from "~/models";
+import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = ({ params }) => {
   const entityName = getEntityFromParams(params);
@@ -14,6 +15,7 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export const loader = ({ request, params }: LoaderFunctionArgs) => {
+  invariant(params.entity, "Missing entity param");
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
   const entity: Entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];

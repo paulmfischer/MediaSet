@@ -17,6 +17,7 @@ export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
+  invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
   const entity = await getEntity(entityType, params.entityId);

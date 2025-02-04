@@ -18,7 +18,6 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  console.log("edit entity params", params);
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityName = getEntityFromParams(params);
@@ -31,7 +30,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityName = getEntityFromParams(params);
-  console.log("edit entity params", params);
   const formData = await request.formData();
   const entity = formToDto(entityName, formData);
   const newEntity = await addEntity(entity);

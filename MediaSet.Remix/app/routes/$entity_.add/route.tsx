@@ -7,6 +7,7 @@ import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { Entity } from "~/models";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
+import invariant from "tiny-invariant";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityName = getEntityFromParams(params);
@@ -23,6 +24,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
+  invariant(params.entity, "Missing entity param");
   const entityName = getEntityFromParams(params);
   const formData = await request.formData();
   const entity = formToDto(entityName, formData);

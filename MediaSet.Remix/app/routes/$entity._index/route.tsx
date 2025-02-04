@@ -5,6 +5,7 @@ import { BookEntity, Entity, MovieEntity } from "~/models";
 import { getEntityFromParams } from "~/helpers";
 import Books from "./books";
 import Movies from "./movies";
+import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = (loader) => {
   const entityName = getEntityFromParams(loader.params);
@@ -15,6 +16,7 @@ export const meta: MetaFunction = (loader) => {
 };
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  invariant(params.entity, "Missing entity param");
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
   const entityType: Entity = getEntityFromParams(params);
