@@ -45,8 +45,8 @@ export default function Index() {
                 id="search"
                 type="search"
                 defaultValue={searchText || ''}
-                placeholder="Search Books"
-                aria-label="Search Books"
+                placeholder={`Search ${entity}`}
+                aria-label={`Search ${entity}`}
                 name="searchText"
               />
               {searchText && 
