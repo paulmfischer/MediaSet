@@ -7,10 +7,10 @@ import { Entity } from "~/models";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = ({ params }) => {
-  const entityName = getEntityFromParams(params);
+  const entityType = getEntityFromParams(params);
   return [
-    { title: entityName },
-    { name: "description", content: `List of ${entityName.toLowerCase()}` },
+    { title: entityType },
+    { name: "description", content: `List of ${entityType.toLowerCase()}` },
   ];
 };
 

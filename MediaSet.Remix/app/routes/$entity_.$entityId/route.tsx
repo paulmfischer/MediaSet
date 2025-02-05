@@ -8,11 +8,11 @@ import Book from "./book";
 import Movie from "./movie";
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
-  const entityName = getEntityFromParams(params);
-  const entityTitle = (data?.entity as BaseEntity).title ?? entityName;
+  const entityType = getEntityFromParams(params);
+  const entityTitle = (data?.entity as BaseEntity).title ?? entityType;
   return [
     { title: `${entityTitle}` },
-    { name: "description", content: `${singular(entityName)} Detail: ${entityTitle}` },
+    { name: "description", content: `${singular(entityType)} Detail: ${entityTitle}` },
   ];
 };
 

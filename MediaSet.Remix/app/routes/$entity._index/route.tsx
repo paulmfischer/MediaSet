@@ -8,10 +8,10 @@ import Movies from "./movies";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = (loader) => {
-  const entityName = getEntityFromParams(loader.params);
+  const entityType = getEntityFromParams(loader.params);
   return [
-    { title: `${entityName} List` },
-    { name: "description", content: `${entityName} List` },
+    { title: `${entityType} List` },
+    { name: "description", content: `${entityType} List` },
   ];
 };
 

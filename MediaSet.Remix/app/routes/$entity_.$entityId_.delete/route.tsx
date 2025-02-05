@@ -7,7 +7,7 @@ import { getEntityFromParams } from "~/helpers";
 export const action = async ({ params }: ActionFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
-  const entityName = getEntityFromParams(params);
-  await deleteEntity(entityName, params.entityId);
-  return redirect(`/${entityName.toLowerCase()}`);
+  const entityType = getEntityFromParams(params);
+  await deleteEntity(entityType, params.entityId);
+  return redirect(`/${entityType.toLowerCase()}`);
 };

@@ -13,14 +13,14 @@ export async function getPublishers() {
   return publishers.map(publisher => ({ label: publisher, value: publisher }));
 }
 
-export async function getGenres(entityName: Entity) {
-  const response = await fetch(`${baseUrl}/metadata/genres/${entityName}`);
+export async function getGenres(entityType: Entity) {
+  const response = await fetch(`${baseUrl}/metadata/genres/${entityType}`);
   const genres = await response.json() as string[];
   return genres.map(genre => ({ label: genre, value: genre }));
 }
 
-export async function getFormats(entityName: Entity) {
-  const response = await fetch(`${baseUrl}/metadata/formats/${entityName}`);
+export async function getFormats(entityType: Entity) {
+  const response = await fetch(`${baseUrl}/metadata/formats/${entityType}`);
   const formats = await response.json() as string[];
   return formats.map(format => ({ label: format, value: format }));
 }
