@@ -10,41 +10,44 @@ import MovieForm from "~/components/movie-form";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
-  const entityName = getEntityFromParams(params);
+  const entityType = getEntityFromParams(params);
   return [
-    { title: `Add a ${singular(entityName)}` },
-    { name: "description", content: `Add a ${singular(entityName)}` },
+    { title: `Add a ${singular(entityType)}` },
+    { name: "description", content: `Add a ${singular(entityType)}` },
   ];
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const entityName = getEntityFromParams(params);
-  const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityName), getPublishers(), getFormats(entityName), getStudios()]);
-  return { authors, genres, publishers, formats, entityName, studios };
+  const entityType = getEntityFromParams(params);
+  const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityType), getPublishers(), getFormats(entityType), getStudios()]);
+  return { authors, genres, publishers, formats, entityType, studios };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
-  const entityName = getEntityFromParams(params);
+  const entityType = getEntityFromParams(params);
   const formData = await request.formData();
-  const entity = formToDto(entityName, formData);
-  const newEntity = await addEntity(entity);
-
-  return redirect(`/${entityName.toLowerCase()}/${newEntity.id}`);
+  const entity = formToDto(formData);
+  if (entity) {
+    const newEntity = await addEntity(entity);
+    return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
+  } else {
+    return { invalidObject: `Failed to convert form to a ${entityType}` };
+  }
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityName, studios } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityType, studios } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/add`;
-  const formId = `add-${singular(entityName)}`;
-  const actionUrl = `/${entityName.toLowerCase()}/add`;
+  const isSubmitting = navigation.location?.pathname === `/${entityType.toLowerCase()}/add`;
+  const formId = `add-${singular(entityType)}`;
+  const actionUrl = `/${entityType.toLowerCase()}/add`;
   
   let formComponent;
-  if (entityName === Entity.Books) {
+  if (entityType === Entity.Books) {
     formComponent = <BookForm authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
-  } else if (entityName === Entity.Movies) {
+  } else if (entityType === Entity.Movies) {
     formComponent = <MovieForm genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   }
 
@@ -52,12 +55,13 @@ export default function Add() {
     <div className="flex flex-col">
       <div className="flex flex-row items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">Add a {singular(entityName)}</h2>
+          <h2 className="text-2xl">Add a {singular(entityType)}</h2>
         </div>
       </div>
       <div className="h-full mt-4">
         <div className="mt-4 flex flex-col gap-2">
           <Form id={formId} method="post" action={actionUrl}>
+            <input id="type" name="type" type="hidden" value={entityType} />
             {formComponent}
             <div className="flex flex-row gap-2 mt-3">
               <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>

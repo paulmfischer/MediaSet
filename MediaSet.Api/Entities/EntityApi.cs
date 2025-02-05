@@ -12,10 +12,10 @@ internal static class EntityApi
   {
     // get the app.Logger to be used for logging.
     var logger = ((WebApplication)routes).Logger;
-    var entityName = $"{typeof(TEntity).Name}s";
-    var group = routes.MapGroup($"/{entityName}");
+    var entityType = $"{typeof(TEntity).Name}s";
+    var group = routes.MapGroup($"/{entityType}");
 
-    group.WithTags(entityName);
+    group.WithTags(entityType);
 
     group.MapGet("/", async (EntityService<TEntity> entityService) => await entityService.GetListAsync());
     group.MapGet("/search", async (EntityService<TEntity> entityService, string searchText, string orderBy) => await entityService.SearchAsync(searchText, orderBy));

@@ -4,22 +4,19 @@ export type FormProps = {
   isSubmitting?: boolean;
 };
 
-export const entities = {
-  books: "Books",
-  movies: "Movies",
-};
-
 export enum Entity {
   Books = "Books",
   Movies = "Movies",
 };
 
 export interface BaseEntity {
+  type: Entity;
   id?: string;
   title?: string;
   format?: string;
 }
 
+// Backend model
 export interface BookEntity extends BaseEntity {
   isbn?: string;
   pages?: number;
@@ -30,8 +27,10 @@ export interface BookEntity extends BaseEntity {
   plot?: string;
   subtitle?: string;
 }
+// UI model
 export type Book = Override<BookEntity, { authors: string; genres: string; }>
 
+// Backend model
 export interface MovieEntity extends BaseEntity {
   barcode?: string;
   releaseDate?: string;
@@ -41,4 +40,5 @@ export interface MovieEntity extends BaseEntity {
   genres?: Array<string>;
   plot?: string;
 }
+// UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string; }>

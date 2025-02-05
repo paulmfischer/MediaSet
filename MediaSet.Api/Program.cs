@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Books;
 using MediaSet.Api.Metadata;
@@ -13,6 +14,16 @@ var logger = LoggerFactory.Create(config =>
 {
   config.AddConsole();
 }).CreateLogger("MediaSet.Api");
+
+// configure enums as strings
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+  options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+{
+  options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Configure database settings
 builder.Services.Configure<MediaSetDatabaseSettings>(

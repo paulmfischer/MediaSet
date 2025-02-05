@@ -15,7 +15,7 @@ function isOfType<T>(guard: (entity: any) => entity is T, data: any): boolean {
   return guard(data);
 }
 
-function getEntityName<T>(entity: T): Entity {
+function getEntityType<T>(entity: T): Entity {
   if (isOfType(Type.isBook, entity)) {
     return Entity.Books;
   }
@@ -44,28 +44,28 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
 }
 
 export async function updateEntity<TEntity extends BaseEntity>(id: string, entity: TEntity) {
-  const entityName = getEntityName(entity);
-  const response = await fetch(`${baseUrl}/${entityName}/${id}`, {
+  const entityType = getEntityType(entity);
+  const response = await fetch(`${baseUrl}/${entityType}/${id}`, {
     method: 'PUT',
     body: JSON.stringify(entity),
     headers: { 'Content-Type': 'application/json' }
   });
 
   if (!response.ok) {
-    throw new Response(`Error updating a ${singular(entityName)}`, { status: 500 });
+    throw new Response(`Error updating a ${singular(entityType)}`, { status: 500 });
   }
 }
 
 export async function addEntity<TEntity extends BaseEntity>(entity: TEntity) {
-  const entityName = getEntityName(entity);
-  const response = await fetch(`${baseUrl}/${entityName}`, {
+  const entityType = getEntityType(entity);
+  const response = await fetch(`${baseUrl}/${entityType}`, {
     method: 'POST',
     body: JSON.stringify(entity),
     headers: { 'Content-Type': 'application/json' }
   });
 
   if (!response.ok) {
-    throw new Response(`Error creating a new ${singular(entityName)}`, { status: 500 });
+    throw new Response(`Error creating a new ${singular(entityType)}`, { status: 500 });
   }
 
   return await response.json() as TEntity;

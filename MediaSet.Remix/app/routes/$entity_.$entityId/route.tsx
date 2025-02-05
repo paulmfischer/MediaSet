@@ -8,11 +8,11 @@ import Book from "./book";
 import Movie from "./movie";
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
-  const entityName = getEntityFromParams(params);
-  const entityTitle = (data?.entity as BaseEntity).title ?? entityName;
+  const entityType = getEntityFromParams(params);
+  const entityTitle = (data?.entity as BaseEntity).title ?? entityType;
   return [
     { title: `${entityTitle}` },
-    { name: "description", content: `${singular(entityName)} Detail: ${entityTitle}` },
+    { name: "description", content: `${singular(entityType)} Detail: ${entityTitle}` },
   ];
 };
 
@@ -21,17 +21,17 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
   const entity = await getEntity(entityType, params.entityId);
-  return { entity, entityType };
+  return { entity };
 };
 
 export default function Detail() {
-  const { entity, entityType } = useLoaderData<typeof loader>();
+  const { entity } = useLoaderData<typeof loader>();
 
-  if (entityType === Entity.Books) {
+  if (entity.type === Entity.Books) {
     return <Book book={entity as BookEntity} />;
   }
   
-  if (entityType === Entity.Movies) {
+  if (entity.type === Entity.Movies) {
     return <Movie movie={entity as MovieEntity} />;
   }
 }

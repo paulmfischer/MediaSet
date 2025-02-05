@@ -1,6 +1,6 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import { addEntity, getEntity } from "~/entity-data";
+import { addEntity, getEntity, updateEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
@@ -10,45 +10,55 @@ import MovieForm from "~/components/movie-form";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
-  const entityName = getEntityFromParams(params);
+  const entityType = getEntityFromParams(params);
   return [
-    { title: `Add a ${singular(entityName)}` },
-    { name: "description", content: `Add a ${singular(entityName)}` },
+    { title: `Add a ${singular(entityType)}` },
+    { name: "description", content: `Add a ${singular(entityType)}` },
   ];
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
-  const entityName = getEntityFromParams(params);
-  const [entity, authors, genres, publishers, formats, studios] =
-   await Promise.all([getEntity(entityName, params.entityId), getAuthors(), getGenres(entityName), getPublishers(), getFormats(entityName), getStudios()]);
-  return { entity, authors, genres, publishers, formats, entityName, studios };
+  const entityType = getEntityFromParams(params);
+  const entity = await getEntity(entityType, params.entityId);
+  const [genres, formats, authors, publishers, studios] =
+   await Promise.all([
+    getGenres(entityType),
+    getFormats(entityType),
+    entity.type === Entity.Books ? getAuthors() : Promise.resolve([]),
+    entity.type === Entity.Books ? getPublishers() : Promise.resolve([]),
+    entity.type === Entity.Movies ? getStudios() : Promise.resolve([])
+  ]);
+  return { entity, authors, genres, publishers, formats, entityType, studios };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
-  const entityName = getEntityFromParams(params);
+  const entityType = getEntityFromParams(params);
   const formData = await request.formData();
-  const entity = formToDto(entityName, formData);
-  const newEntity = await addEntity(entity);
-
-  return redirect(`/${entityName.toLowerCase()}/${newEntity.id}`);
+  const entity = formToDto(formData);
+  if (entity) {
+    await updateEntity(params.entityId, entity);
+    return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
+  } else {
+    return { invalidObject: `Failed to convert form to a ${entityType}` };
+  }
 };
 
 export default function Edit() {
-  const { entity, authors, genres, publishers, formats, entityName, studios } = useLoaderData<typeof loader>();
+  const { entity, authors, genres, publishers, formats, entityType, studios } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const isSubmitting = navigation.location?.pathname === `/${entityName.toLowerCase()}/${entity.id}/edit`;
-  const formId = `edit-${singular(entityName)}`;
-  const actionUrl = `/${entityName.toLowerCase()}/${entity.id}/edit`;
+  const isSubmitting = navigation.location?.pathname === `/${entity.type.toLowerCase()}/${entity.id}/edit`;
+  const formId = `edit-${singular(entity.type)}`;
+  const actionUrl = `/${entity.type.toLowerCase()}/${entity.id}/edit`;
   
   let formComponent;
-  if (entityName === Entity.Books) {
+  if (entity.type === Entity.Books) {
     formComponent = <BookForm book={entity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
-  } else if (entityName === Entity.Movies) {
+  } else if (entity.type === Entity.Movies) {
     formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   }
 
@@ -62,6 +72,7 @@ export default function Edit() {
       <div className="h-full mt-4">
         <div className="mt-4 flex flex-col gap-2">
           <Form id={formId} method="post" action={actionUrl}>
+            <input id="type" name="type" type="hidden" value={entity.type} />
             {formComponent}
             <div className="flex flex-row gap-2 mt-3">
               <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>

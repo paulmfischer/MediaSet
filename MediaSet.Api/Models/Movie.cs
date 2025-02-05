@@ -12,6 +12,9 @@ public class Movie : IEntity
   [BsonRepresentation(BsonType.ObjectId)]
   public string? Id { get; set; }
 
+  [BsonIgnore]
+  public MediaTypes Type { get; set; }
+
   [Required]
   public string Title { get; set; } = string.Empty;
 
