@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 
@@ -13,7 +14,7 @@ public class EntityService<TEntity> where TEntity : IEntity
     entityCollection = databaseService.GetCollection<TEntity>();
   }
 
-  public async Task<List<TEntity>> SearchAsync(string searchText, string orderBy)
+  public async Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy)
   {
     string orderByField = "";
     bool orderByAscending = true;
@@ -23,22 +24,23 @@ public class EntityService<TEntity> where TEntity : IEntity
       orderByField = orderByArgs[0];
       orderByAscending = string.IsNullOrWhiteSpace(orderByArgs[1]) || orderByArgs[1].ToLower().Equals("asc");
     }
-    var bookSearch = entityCollection.Find(entity => entity.Title.ToLower().Contains(searchText.ToLower()));
-    Expression<Func<TEntity, object>> sortFn = entity => entity.Title; // orderByField.ToLower().Equals("pages") ? entity.Pages : entity.Title;
+    var entitySearch = entityCollection.Find(entity => entity.Title.ToLower().Contains(searchText.ToLower()));
+    Expression<Func<TEntity, object>> sortFn = entity => entity.Title;
 
     if (orderByAscending)
     {
-      bookSearch.SortBy(sortFn);
+      entitySearch.SortBy(sortFn);
     }
     else
     {
-      bookSearch.SortByDescending(sortFn);
+      entitySearch.SortByDescending(sortFn);
     }
-    return await bookSearch.ToListAsync();
+    return (await entitySearch.ToListAsync()).Select(entity => entity.SetType());
   }
   
-  public Task<List<TEntity>> GetListAsync() => entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync();
-  public async Task<TEntity?> GetAsync(string id) => await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+  public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType());
+
+  public async Task<TEntity?> GetAsync(string id) => (await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync()).SetType();
 
   public Task CreateAsync(TEntity newEntity) => entityCollection.InsertOneAsync(newEntity);
 

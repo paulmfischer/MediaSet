@@ -4,11 +4,6 @@ export type FormProps = {
   isSubmitting?: boolean;
 };
 
-export const entities = {
-  books: "Books",
-  movies: "Movies",
-};
-
 export enum Entity {
   Books = "Books",
   Movies = "Movies",

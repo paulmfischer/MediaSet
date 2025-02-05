@@ -18,12 +18,12 @@ export const loader = ({ request, params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
-  const entity: Entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];
-  return { searchText, entity };
+  const entityName: Entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];
+  return { searchText, entityName };
 };
 
 export default function Index() {
-  const { entity, searchText } = useLoaderData<typeof loader>();
+  const { entityName, searchText } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
   useEffect(() => {
@@ -37,18 +37,18 @@ export default function Index() {
     <div className="flex flex-col">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">{entity}</h2>
+          <h2 className="text-2xl">{entityName}</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
-          <Link to={`/${entity.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
+          <Link to={`/${entityName.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
             <div className="flex gap-2 z-20 bg-white rounded-sm">
               <input
                 id="search"
                 type="search"
                 defaultValue={searchText || ''}
-                placeholder={`Search ${entity}`}
-                aria-label={`Search ${entity}`}
+                placeholder={`Search ${entityName}`}
+                aria-label={`Search ${entityName}`}
                 name="searchText"
               />
               {searchText && 

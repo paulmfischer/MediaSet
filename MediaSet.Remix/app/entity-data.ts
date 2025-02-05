@@ -26,19 +26,12 @@ function getEntityType<T>(entity: T): Entity {
   throw "No matching entity name";
 }
 
-function updateType(entity: BaseEntity): BaseEntity {
-  return {
-    ...entity,
-    type: getEntityType(entity)
-  };
-}
-
 export async function searchEntities<TEntity extends BaseEntity>(entityType: Entity, searchText: string | null, orderBy: string = ''): Promise<Array<TEntity>> {
   const response = await fetch(`${baseUrl}/${entityType}/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
   if (!response.ok) {
     throw new Response('Error fetching data', { status: 500 });
   }
-  return (await response.json()).map(updateType) as TEntity[];
+  return await response.json() as TEntity[];
 }
 
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
@@ -47,7 +40,7 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
     throw new Response(`${singular(entityType)} not found.`, { status: 404 });
   }
 
-  return updateType(await response.json()) as TEntity;
+  return await response.json() as TEntity;
 }
 
 export async function updateEntity<TEntity extends BaseEntity>(id: string, entity: TEntity) {
@@ -75,7 +68,7 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity) {
     throw new Response(`Error creating a new ${singular(entityType)}`, { status: 500 });
   }
 
-  return updateType(await response.json()) as TEntity;
+  return await response.json() as TEntity;
 }
 
 export async function deleteEntity(entity: Entity, id: string) {
