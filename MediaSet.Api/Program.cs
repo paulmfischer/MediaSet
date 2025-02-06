@@ -59,6 +59,12 @@ builder.Services.AddScoped<EntityService<Movie>>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<StatsService>();
 
+builder.Services.Configure<ClientApiSettings>(builder.Configuration.GetSection("ClientApi"));
+builder.Services.AddHttpClient("UpcLookup");
+builder.Services.AddScoped<MovieLookupService>();
+builder.Services.AddHttpClient("Tmdb");
+builder.Services.AddScoped<TmdbClient>();
+
 var app = builder.Build();
 
 // turn on swagger for all environments for now
