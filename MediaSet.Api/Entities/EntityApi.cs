@@ -1,10 +1,11 @@
+using MediaSet.Api.Clients;
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.VisualBasic.FileIO;
 
-namespace MediaSet.Api.Books;
+namespace MediaSet.Api.Entities;
 
 internal static class EntityApi
 {
