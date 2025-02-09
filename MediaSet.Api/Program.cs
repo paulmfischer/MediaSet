@@ -1,9 +1,12 @@
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
-using MediaSet.Api.Books;
+using MediaSet.Api.Clients;
+using MediaSet.Api.Entities;
+using MediaSet.Api.Lookup;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,10 +29,22 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 });
 
 // Configure database settings
-builder.Services.Configure<MediaSetDatabaseSettings>(
-  builder.Configuration.GetSection("MediaSetDatabase")
-);
+builder.Services.Configure<MediaSetDatabaseSettings>(builder.Configuration.GetSection(nameof(MediaSetDatabaseSettings)));
 builder.Services.AddSingleton<DatabaseService>();
+
+// conditionally register open library if the configuration exists
+var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
+if (openLibraryConfig.Exists())
+{
+  logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
+  builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
+  builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) => {
+      var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
+      client.BaseAddress = new Uri(options.BaseUrl);
+      client.Timeout = TimeSpan.FromSeconds(options.Timeout);
+      client.DefaultRequestHeaders.Add("Accept", "application/json");
+  });
+}
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -59,5 +74,10 @@ app.MapEntity<Movie>();
 app.MapEntity<Book>();
 app.MapMetadata();
 app.MapStats();
+
+if (openLibraryConfig.Exists())
+{
+  app.MapIsbnLookup();
+}
 
 app.Run();
