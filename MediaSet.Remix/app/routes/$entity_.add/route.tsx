@@ -30,7 +30,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityType), getPublishers(), getFormats(entityType), getStudios()]);
   let intent: 'barcode' | 'manual' = url.searchParams.get('intent') as 'barcode' | 'manual' ?? 'barcode';
   // if we failed to lookup the barcode, stay on the barcode view and display error.
-  if ((lookupEntity as LookupError).error) {
+  if ((lookupEntity as LookupError)?.error) {
     intent = 'barcode';
   }
   return { authors, genres, publishers, formats, entityType, studios, lookupEntity, barcodeLookup, intent };
@@ -56,7 +56,7 @@ export default function Add() {
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/${entityType.toLowerCase()}/add`;
   const canDoBarcodeLookup = entityType === Entity.Books;
-  const lookupError = (lookupEntity as LookupError).error;
+  const lookupError = (lookupEntity as LookupError)?.error;
   
   useEffect(() => {
     const barcodeInput = document.getElementById('barcodeLookup');
