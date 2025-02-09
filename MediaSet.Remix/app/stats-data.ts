@@ -1,10 +1,23 @@
 import { baseUrl } from "./constants.server";
 
-export type Stats = {
-  totalBooks: number;
+type Stats = {
+  bookStats: BookStats;
+  movieStats: MovieStats;
+};
+
+type BookStats = {
+  total: number;
   totalFormats: number;
+  formats: string[];
   uniqueAuthors: number;
   totalPages: number;
+};
+
+type MovieStats = {
+  total: number;
+  totalFormats: number;
+  formats: string[];
+  totalTvSeries: number;
 };
 
 export async function getStats() {
