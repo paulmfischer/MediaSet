@@ -36,4 +36,7 @@ public class Movie : IEntity
   public List<string> Genres { get; set; } = [];
 
   public string Plot { get; set; } = string.Empty;
+  
+  [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
+  public bool IsTvSeries { get; set; }
 }

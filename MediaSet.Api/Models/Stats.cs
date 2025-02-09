@@ -1,9 +1,18 @@
 namespace MediaSet.Api.Models;
 
-public class Stats
-{
-  public int TotalBooks { get; set; }
-  public int TotalFormats { get; set; }
-  public int UniqueAuthors { get; set; }
-  public int TotalPages { get; set; }
-}
+public record Stats(BookStats BookStats, MovieStats MovieStats);
+
+public record BookStats(
+  int Total,
+  int TotalFormats,
+  IEnumerable<string> Formats,
+  int UniqueAuthors,
+  int TotalPages
+);
+
+public record MovieStats(
+  int Total,
+  int TotalFormats,
+  IEnumerable<string> Formats,
+  int TotalTvSeries
+);
