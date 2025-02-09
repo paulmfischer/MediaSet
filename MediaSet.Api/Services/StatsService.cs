@@ -2,25 +2,34 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
-public class StatsService
+public class StatsService(EntityService<Book> bookService, EntityService<Movie> movieService)
 {
-  private readonly EntityService<Book> bookService;
-
-  public StatsService(EntityService<Book> _bookService)
+  public async Task<Stats> GetMediaStatsAsync()
   {
-    bookService = _bookService;
-  }
+    var bookTask = bookService.GetListAsync();
+    var movieTask = movieService.GetListAsync();
+    await Task.WhenAll(bookTask, movieTask);
 
-  public async Task<Stats> GetBookStats()
-  {
-    var books = await bookService.GetListAsync();
+    var books = bookTask.Result;
+    var movies = movieTask.Result;
+    var bookFormats = books.Where(book => !string.IsNullOrWhiteSpace(book.Format)).Select(book => book.Format.Trim()).Distinct();
+    var movieFormats = movies.Where(movie => !string.IsNullOrWhiteSpace(movie.Format)).Select(movie => movie.Format.Trim()).Distinct();
+    var bookStats = new BookStats
+    (
+      books.Count(),
+      bookFormats.Count(),
+      bookFormats,
+      books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum(),
+      books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count()
+    );
+    var movieStats = new MovieStats
+    (
+      movies.Count(),
+      movieFormats.Count(),
+      movieFormats,
+      movies.Where(movie => movie.IsTvSeries).Count()
+    );
 
-    return new Stats
-    {
-      TotalBooks = books.Count(),
-      TotalFormats = books.Where(book => !string.IsNullOrWhiteSpace(book.Format)).Select(book => book.Format.Trim()).Distinct().Count(),
-      TotalPages = books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum(),
-      UniqueAuthors = books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count(),
-    };
+    return new Stats(bookStats, movieStats);
   }
 }
