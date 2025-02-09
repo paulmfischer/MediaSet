@@ -48,7 +48,6 @@ public record Subject(string Name, string Url);
 
 public class OpenLibraryConfiguration
 {
-  // public const string OpenLibrary = "OpenLibrary";
   public string BaseUrl { get; set; } = "https://openlibrary.org/";
   public int Timeout { get; set; } = 30;
 }

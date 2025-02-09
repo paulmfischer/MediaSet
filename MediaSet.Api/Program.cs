@@ -36,6 +36,7 @@ builder.Services.AddSingleton<DatabaseService>();
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
+  logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
   builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
   builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) => {
       var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
