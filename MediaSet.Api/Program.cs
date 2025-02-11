@@ -43,6 +43,7 @@ if (openLibraryConfig.Exists())
       client.BaseAddress = new Uri(options.BaseUrl);
       client.Timeout = TimeSpan.FromSeconds(options.Timeout);
       client.DefaultRequestHeaders.Add("Accept", "application/json");
+      client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
   });
 }
 
