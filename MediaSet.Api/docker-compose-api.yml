@@ -12,7 +12,9 @@ services:
     environment:
       "MediaSetDatabase:ConnectionString": "mongodb://cortext-mongo:27017"
       "MediaSetDatabase:DatabaseName": "MediaSet"
-      "MediaSetDatabase:BooksCollectionName": "Books"
+      "OpenLibraryConfiguration:BaseUrl": "https://openlibrary.org/"
+      # "OpenLibraryConfiguration:Timeout": "30"
+      # "OpenLibraryConfiguration:ContactEmail": "me@paulmfischer.dev"
 
 networks:
   mediaset:
