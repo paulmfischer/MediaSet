@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Clients;
 using MediaSet.Api.Entities;
+using MediaSet.Api.Helpers;
 using MediaSet.Api.Lookup;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
@@ -32,20 +33,11 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 builder.Services.Configure<MediaSetDatabaseSettings>(builder.Configuration.GetSection(nameof(MediaSetDatabaseSettings)));
 builder.Services.AddSingleton<DatabaseService>();
 
-// conditionally register open library if the configuration exists
-var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
-if (openLibraryConfig.Exists())
-{
-  logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
-  builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
-  builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) => {
-      var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
-      client.BaseAddress = new Uri(options.BaseUrl);
-      client.Timeout = TimeSpan.FromSeconds(options.Timeout);
-      client.DefaultRequestHeaders.Add("Accept", "application/json");
-      client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
-  });
-}
+// conditionally register open library lookup if the configuration exists
+var isBookLookupEnabled = builder.AddOpenLibraryLookup(logger);
+
+// conditionally register movie lookup if the configuration exists
+var isMovieLookupEnabled = builder.AddMovieLookup(logger);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -58,12 +50,7 @@ builder.Services.AddScoped<EntityService<Book>>();
 builder.Services.AddScoped<EntityService<Movie>>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<StatsService>();
-
-builder.Services.Configure<ClientApiSettings>(builder.Configuration.GetSection("ClientApi"));
-builder.Services.AddHttpClient("UpcLookup");
-builder.Services.AddScoped<MovieLookupService>();
-builder.Services.AddHttpClient("Tmdb");
-builder.Services.AddScoped<TmdbClient>();
+builder.Services.AddScoped<LookupService>();
 
 var app = builder.Build();
 
@@ -81,10 +68,6 @@ app.MapEntity<Movie>();
 app.MapEntity<Book>();
 app.MapMetadata();
 app.MapStats();
-
-if (openLibraryConfig.Exists())
-{
-  app.MapIsbnLookup();
-}
+app.MapLookupsApi(isBookLookupEnabled, isMovieLookupEnabled);
 
 app.Run();

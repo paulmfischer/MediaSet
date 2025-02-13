@@ -1,4 +1,3 @@
-using MediaSet.Api.Clients;
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
@@ -20,18 +19,6 @@ internal static class EntityApi
 
     group.MapGet("/", async (EntityService<TEntity> entityService) => await entityService.GetListAsync());
     group.MapGet("/search", async (EntityService<TEntity> entityService, string searchText, string orderBy) => await entityService.SearchAsync(searchText, orderBy));
-    group.MapGet("/lookup/{barcode}", async Task<Results<Ok<MovieResult>, NotFound>> (MovieLookupService movieLookupService, string barcode) =>
-    {
-      var results = await movieLookupService.SearchByUpcAsync(barcode);
-      if (results != null)
-      {
-        return TypedResults.Ok(results);
-      }
-      else
-      {
-        return TypedResults.NotFound();
-      }
-    });
 
     group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (EntityService<TEntity> entityService, string id) =>
     {

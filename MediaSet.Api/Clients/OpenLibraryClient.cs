@@ -15,12 +15,12 @@ public class OpenLibraryClient : IDisposable
 
   public void Dispose() => httpClient?.Dispose();
 
-  public async Task<BookResponse?> GetBookByIsbnAsync(string isbn)
+  public async Task<BookResponse?> SearchByIsbnAsync(string isbn)
   {
     var response = await httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions {
       PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     });
-    logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
+    logger.LogInformation("OpenLibrary search results: {response}", JsonSerializer.Serialize(response));
 
     var key = $"ISBN:{isbn}";
     return response?.ContainsKey(key) == true ? response[key] : null;

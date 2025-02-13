@@ -1,40 +1,23 @@
 using System.Text.Json;
-using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Clients;
 
-public class TmdbClient
+public class TmdbClient(ILogger<TmdbClient> logger, HttpClient httpClient, IOptions<TmdbClientConfiguration> tmdbConfig)
 {
-    private readonly IHttpClientFactory httpClientFactory;
-    private readonly string apiKey;
-    private const string BaseUrl = "https://api.themoviedb.org/3";
+  private string ApiKey => string.IsNullOrWhiteSpace(tmdbConfig.Value.ApiKey)
+    ? throw new ArgumentException("ApiKey is required for Tmdb client", nameof(ApiKey))
+    : tmdbConfig.Value.ApiKey;
 
-    public TmdbClient(IHttpClientFactory _httpClientFactory, IOptions<ClientApiSettings> clientApiSettings)
-    {
-      httpClientFactory = _httpClientFactory;
-      apiKey = clientApiSettings.Value.TmdbApiKey;
-    }
+  public async Task<MovieResponse?> SearchMovieAsync(string query)
+  {
+    var response = await httpClient.GetAsync($"search/movie?api_key={ApiKey}&query={Uri.EscapeDataString(query)}");
+    response.EnsureSuccessStatusCode();
+    var responseData = await response.Content.ReadFromJsonAsync<MovieResponse>();
+    logger.LogInformation("Tmdb search results: {response}", JsonSerializer.Serialize(responseData));
 
-    public async Task<MovieResponse?> SearchMovieAsync(string query)
-    {
-      var client = httpClientFactory.CreateClient("Tmdb");
-      var response = await client.GetAsync($"{BaseUrl}/search/movie?api_key={apiKey}&query={Uri.EscapeDataString(query)}");
-        
-      response.EnsureSuccessStatusCode();
-      var content = await response.Content.ReadAsStringAsync();
-      return JsonSerializer.Deserialize<MovieResponse>(content);
-    }
-
-    public async Task<MovieDetails?> GetMovieDetailsAsync(int movieId)
-    {
-      var client = httpClientFactory.CreateClient("Tmdb");
-      var response = await client.GetAsync($"{BaseUrl}/movie/{movieId}?api_key={apiKey}");
-      
-      response.EnsureSuccessStatusCode();
-      var content = await response.Content.ReadAsStringAsync();
-      return JsonSerializer.Deserialize<MovieDetails>(content);
-    }
+    return responseData;
+  }
 }
 
 public class MovieResponse
@@ -43,6 +26,10 @@ public class MovieResponse
   public List<MovieResult> Results { get; set; } = [];
   public int TotalPages { get; set; }
   public int TotalResults { get; set; }
+  public override string ToString()
+  {
+    return JsonSerializer.Serialize(this);
+  }
 }
 
 public class MovieResult
@@ -68,4 +55,10 @@ public class Genre
 {
   public int Id { get; set; }
   public string Name { get; set; } = string.Empty;
+}
+
+public class TmdbClientConfiguration
+{
+  public string BaseUrl { get; set; } = "";
+  public string? ApiKey { get; set; }
 }
