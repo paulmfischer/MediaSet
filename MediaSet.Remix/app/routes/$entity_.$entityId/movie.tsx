@@ -1,5 +1,5 @@
 import { Form, Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Check } from "lucide-react";
 import { MovieEntity } from "~/models"
 
 type MovieProps = {
@@ -31,20 +31,24 @@ export default function Movie({ movie }: MovieProps) {
           <div id="format" className="grow">{movie.format}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
-          <label htmlFor="pages" className="basis-2/12 dark:text-slate-400">Runtime</label>
-          <div id="pages" className="grow">{movie.runtime}</div>
+          <label htmlFor="runtime" className="basis-2/12 dark:text-slate-400">Runtime</label>
+          <div id="runtime" className="grow">{movie.runtime}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
-          <label htmlFor="authors" className="basis-2/12 dark:text-slate-400">Release Date</label>
-          <div id="authors" className="grow">{movie.releaseDate}</div>
+          <label htmlFor="releaseDate" className="basis-2/12 dark:text-slate-400">Release Date</label>
+          <div id="releaseDate" className="grow">{movie.releaseDate}</div>
+        </div>
+        <div className="flex flex-col md:flex-row mb-2 md:mb-0">
+          <label htmlFor="tvShow" className="basis-2/12 dark:text-slate-400">Is TV Show</label>
+          <div id="tvShow" className="grow">{movie.isTvSeries && <Check size={18} />}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="genres" className="basis-2/12 dark:text-slate-400">Genres</label>
           <div id="genres" className="grow">{movie.genres?.join(', ')}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
-          <label htmlFor="publisher" className="basis-2/12 dark:text-slate-400">Studios</label>
-          <div id="publisher" className="grow">{movie.studios?.join(', ')}</div>
+          <label htmlFor="studios" className="basis-2/12 dark:text-slate-400">Studios</label>
+          <div id="studios" className="grow">{movie.studios?.join(', ')}</div>
         </div>
         <div className="flex flex-col md:flex-row mb-2 md:mb-0">
           <label htmlFor="barcode" className="basis-2/12 dark:text-slate-400">Barcode</label>

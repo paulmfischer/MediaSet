@@ -52,13 +52,15 @@ internal static class EntityApi
       }
 
       var result = await entityService.UpdateAsync(id, updatedEntity);
-      return result.ModifiedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
+      logger.LogInformation("Attempted updating of entity {entityId}: {updated}", id, result.ModifiedCount > 0);
+      return TypedResults.Ok();
     });
 
     group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (EntityService<TEntity> entityService, string id) =>
     {
       var result = await entityService.RemoveAsync(id);
-      return result.DeletedCount == 0 ? TypedResults.NotFound() : TypedResults.Ok();
+      logger.LogInformation("Attempted deleting entity {entityId}: {deleted}", id, result.DeletedCount > 0);
+      return TypedResults.Ok();
     });
 
      group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
