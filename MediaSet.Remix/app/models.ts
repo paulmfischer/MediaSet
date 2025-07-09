@@ -39,6 +39,7 @@ export interface MovieEntity extends BaseEntity {
   studios?: Array<string>;
   genres?: Array<string>;
   plot?: string;
+  isTvSeries?: boolean;
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string; }>

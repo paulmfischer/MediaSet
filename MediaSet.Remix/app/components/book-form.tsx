@@ -16,6 +16,7 @@ type BookFormProps = FormProps & {
 export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-2">
+      <input hidden id="id" name="id" type="text" defaultValue={book?.id} />
       <label htmlFor="title" className="dark:text-slate-400">Title</label>
       <input id="title" name="title" type="text" placeholder="Title" aria-label="Title" defaultValue={book?.title} />
       <label htmlFor="subtitle" className="dark:text-slate-400">Subtitle</label>

@@ -49,6 +49,7 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
 
 function baseToMovieEntity(data: BaseEntity): MovieEntity {
   const movie = data as Movie;
+  const isTvSeries = (movie.isTvSeries as unknown) as string;
   return {
     type: movie.type,
     studios: movie.studios ? movie.studios.split(',') : undefined,
@@ -60,6 +61,7 @@ function baseToMovieEntity(data: BaseEntity): MovieEntity {
     plot: getValue(movie.plot),
     runtime: getValue(movie.runtime),
     title: getValue(movie.title),
+    isTvSeries: getValue(isTvSeries) ? true : false,
   };
 }
 
