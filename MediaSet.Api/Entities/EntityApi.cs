@@ -63,7 +63,7 @@ internal static class EntityApi
       return TypedResults.Ok();
     });
 
-     group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
+    group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload, bool update = false) =>
     {
       logger.LogInformation("Received {fileName} file to upload to {entity}s", bookUpload.FileName, typeof(TEntity).Name);
       IEnumerable<TEntity> newEntities;
@@ -110,7 +110,15 @@ internal static class EntityApi
         }
 
         newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
-        await entityService.BulkCreateAsync(newEntities);
+
+        if (update)
+        {
+          await entityService.BulkCreateAsync(newEntities);
+        }
+        else
+        {
+          await entityService.BulkUpsertAsync(newEntities);
+        }
       }
       catch (Exception er)
       {
@@ -121,7 +129,8 @@ internal static class EntityApi
       logger.LogInformation("Uploaded {count} new {entity}s", newEntities.Count(), typeof(TEntity).Name);
       return TypedResults.Ok(string.Format("Uploaded {0} new {1}s", newEntities.Count(), typeof(TEntity).Name));
     })
-    .DisableAntiforgery();
+    .DisableAntiforgery()
+    .WithDescription("Upload a csv file to insert/update records in bulk.  To update, pass true as the 'update' query param");
 
     return group;
   }
