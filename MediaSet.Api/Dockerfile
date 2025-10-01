@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
 WORKDIR /build
 
 # For use when deploying to a location
@@ -13,7 +13,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /mediaset
 # For use when building somewhere else (not testing locally)
 COPY --from=build-env /build/MediaSet/MediaSet.Api/out .
