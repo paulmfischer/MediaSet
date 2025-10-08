@@ -40,6 +40,28 @@
       "sourceFileMap": {
         "/Views": "${workspaceFolder}/Views"
       }
+    },
+    {
+      "name": "MediaSet.Remix",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/MediaSet.Remix",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "MediaSet: Full Stack",
+      "configurations": ["MediaSet.Api", "MediaSet.Remix"],
+      "preLaunchTask": "build-api",
+      "presentation": {
+        "group": "mediaset",
+        "order": 1
+      },
+      "stopAll": true
     }
   ]
 }
