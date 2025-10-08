@@ -36,6 +36,21 @@
         "${workspaceFolder}/MediaSet.Api/MediaSet.Api.csproj"
       ],
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dev-remix",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/MediaSet.Remix"
+      },
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
     }
   ]
 }
