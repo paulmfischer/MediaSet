@@ -24,7 +24,7 @@
       "request": "launch",
       "preLaunchTask": "build-api",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/MediaSet.Api/bin/Debug/net8.0/MediaSet.Api.dll",
+      "program": "${workspaceFolder}/MediaSet.Api/bin/Debug/net9.0/MediaSet.Api.dll",
       "args": [],
       "cwd": "${workspaceFolder}/MediaSet.Api",
       "stopAtEntry": false,
@@ -49,7 +49,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "skipFiles": ["<node_internals>/**"],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Local:.+(https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
     }
   ],
   "compounds": [
