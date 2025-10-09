@@ -2,8 +2,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
 import { Entity } from "~/models";
 import { useEffect, useRef } from "react";
-import { LookupError, lookup } from "~/lookup-data";
-import { singular } from "~/helpers";
+import { lookup } from "~/lookup-data";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.entity?.toLowerCase() !== Entity.Books.toLowerCase()) {
