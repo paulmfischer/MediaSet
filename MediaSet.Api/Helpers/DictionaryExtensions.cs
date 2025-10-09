@@ -47,6 +47,19 @@ public static class DictionaryExtensions
 
   public static int ExtractNumberOfPagesFromData(this Dictionary<string, object> data)
   {
+    // Favor 'number_of_pages' over 'pagination' if both are present
+    if (data.TryGetValue("number_of_pages", out var numPagesObj))
+    {
+      return numPagesObj switch
+      {
+        int pages => pages,
+        JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetInt32(),
+        JsonElement element when element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsedFromElement) => parsedFromElement,
+        string str when int.TryParse(str, out var parsedFromString) => parsedFromString,
+        _ => 0
+      };
+    }
+
     if (data.TryGetValue("pagination", out var pagesObj))
     {
       return pagesObj switch
