@@ -39,13 +39,18 @@ export default function MultiselectInput(props: MultiselectProps) {
     if (filterText == null || filterText == '') {
       setFiltered(props.options);
     }
-  }, [filterText, setFiltered]);
+  }, [filterText, props.options, setFiltered]);
 
   useEffect(() => {
     if (!displayOptions) {
       setFilterText('');
     }
   }, [displayOptions, setFilterText]);
+
+  // Update selected items when props.selectedValues changes (e.g., from ISBN lookup)
+  useEffect(() => {
+    setSelected(initializeSelected(props.selectedValues));
+  }, [props.selectedValues]);
 
   const isSelected = (option: Option) => selected.find(op => op.value.includes(option.value));
   const toggleSelected = (option: Option) => {

@@ -54,12 +54,12 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
         <label htmlFor="authors" className="block text-sm font-medium text-gray-200 mb-1">Authors</label>
         <MultiselectInput name="authors" selectText="Select Authors..." addLabel="Add new Author:" options={authors} selectedValues={book?.authors} />
       </div>
-      
+
       <div>
         <label htmlFor="genres" className="block text-sm font-medium text-gray-200 mb-1">Genres</label>
         <MultiselectInput name="genres" selectText="Select Genres..." addLabel="Add new Genre" options={genres} selectedValues={book?.genres} />
       </div>
-      
+
       <div>
         <label htmlFor="publisher" className="block text-sm font-medium text-gray-200 mb-1">Publisher</label>
         <select id="publisher" name="publisher" className={selectClasses} value={book?.publisher}>

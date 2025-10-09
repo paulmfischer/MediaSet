@@ -44,7 +44,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
     
     const lookupResult = await lookup(entityType, isbn);
-    console.log('result', lookupResult)
     return { lookupResult, isbn };
   }
   
@@ -63,7 +62,6 @@ export default function Add() {
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const submit = useSubmit();
   const lookupFormRef = useRef<HTMLFormElement>(null);
   
   const isSubmitting = navigation.state === "submitting";
@@ -73,16 +71,10 @@ export default function Add() {
   const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
   const lookupError = (lookupResult as LookupError)?.error;
   const lookupBook = !lookupError ? lookupResult as BookEntity : undefined;
-  console.log('lookupBook', lookupBook);
   const submittedISBN = actionData && 'isbn' in actionData ? actionData.isbn : undefined;
   
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
-
-  function handleLookupSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    submit(event.currentTarget);
-  }
 
   let formComponent;
   if (entityType === Entity.Books) {
@@ -99,7 +91,7 @@ export default function Add() {
       {canDoISBNLookup && (
         <div className="mb-8">
           <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
-          <Form ref={lookupFormRef} method="post" onSubmit={handleLookupSubmit} className="max-w-md">
+          <Form ref={lookupFormRef} method="post" className="max-w-md">
             <div className="mb-4">
               <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
                 ISBN
