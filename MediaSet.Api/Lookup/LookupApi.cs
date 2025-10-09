@@ -1,4 +1,5 @@
 using MediaSet.Api.Clients;
+using MediaSet.Api.Helpers;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace MediaSet.Api.Lookup;
@@ -11,12 +12,19 @@ internal static class LookupApi
     
     group.WithTags("Lookup");
     
-    group.MapGet("/isbn/{isbn}", async Task<Results<Ok<BookResponse>, NotFound>> (OpenLibraryClient openLibraryClient, string isbn) =>
+    group.MapGet("/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, NotFound, BadRequest<string>>> (OpenLibraryClient openLibraryClient, string identifierType, string identifierValue) =>
     {
-      return await openLibraryClient.GetBookByIsbnAsync(isbn) switch
+      if (!IdentifierTypeExtensions.TryParseIdentifierType(identifierType, out var parsedIdentifierType))
+      {
+        return TypedResults.BadRequest($"Invalid identifier type: {identifierType}. Valid types are: {IdentifierTypeExtensions.GetValidTypesString()}");
+      }
+
+      var result = await openLibraryClient.GetReadableBookAsync(parsedIdentifierType, identifierValue);
+
+      return result switch
       {
         BookResponse bookResponse => TypedResults.Ok(bookResponse),
-        _ => TypedResults.NotFound(),
+        _ => TypedResults.NotFound()
       };
     });
 

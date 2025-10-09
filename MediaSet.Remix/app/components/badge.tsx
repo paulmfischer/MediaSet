@@ -6,8 +6,7 @@ type BadgeProps = {
 
 export default function Badge({ children }: PropsWithChildren) {
   return (
-    // <span className="inline-flex items-center rounded-md bg-zinc-700 px-2 py-1 text-xs font-medium text-slate-300 ring-1 ring-inset ring-slate-400">
-    <span className="inline-flex items-center rounded-md bg-slate-300 px-2 py-1 text-xs font-medium text-zinc-700 ring-1 ring-inset ring-slate-400">
+    <span className="inline-flex items-center rounded-md bg-blue-800 px-2 py-1 text-xs font-medium text-blue-100 ring-1 ring-inset ring-blue-600">
       {children}
     </span>
   )

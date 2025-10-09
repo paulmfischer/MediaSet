@@ -1,6 +1,6 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import { useEffect } from "react";
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation, useSubmit } from "@remix-run/react";
+import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
@@ -19,27 +19,35 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
   ];
 };
 
-export const loader = async ({ params, request }: LoaderFunctionArgs) => {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  const url = new URL(request.url);
-  const barcodeLookup = url.searchParams.get('barcodeLookup') as string | undefined;
-  let lookupEntity;
-  if (barcodeLookup) {
-    lookupEntity = await lookup(entityType, barcodeLookup);
-  }
   const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityType), getPublishers(), getFormats(entityType), getStudios()]);
-  let intent: 'barcode' | 'manual' = url.searchParams.get('intent') as 'barcode' | 'manual' ?? 'barcode';
-  // if we failed to lookup the barcode, stay on the barcode view and display error.
-  if ((lookupEntity as LookupError)?.error) {
-    intent = 'barcode';
-  }
-  return { authors, genres, publishers, formats, entityType, studios, lookupEntity, barcodeLookup, intent };
+  return { authors, genres, publishers, formats, entityType, studios };
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
+  
+  // Check if this is an ISBN lookup request
+  const isbn = formData.get("isbn") as string;
+  const intent = formData.get("intent") as string;
+  
+  if (intent === "lookup" && isbn) {
+    if (entityType !== Entity.Books) {
+      return { error: { isbn: "ISBN lookup is only available for books" } };
+    }
+    
+    if (!isbn) {
+      return { error: { isbn: "ISBN is required" } };
+    }
+    
+    const lookupResult = await lookup(entityType, isbn);
+    return { lookupResult, isbn };
+  }
+  
+  // Otherwise, this is a book creation request
   const entity = formToDto(formData);
   if (entity) {
     const newEntity = await addEntity(entity);
@@ -50,69 +58,110 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityType, studios, lookupEntity, barcodeLookup, intent } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityType, studios } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const isSubmitting = navigation.location?.pathname === `/${entityType.toLowerCase()}/add`;
-  const canDoBarcodeLookup = entityType === Entity.Books;
-  const lookupError = (lookupEntity as LookupError)?.error;
+  const lookupFormRef = useRef<HTMLFormElement>(null);
   
-  useEffect(() => {
-    const barcodeInput = document.getElementById('barcodeLookup');
-    if (barcodeInput instanceof HTMLInputElement && barcodeLookup) {
-      barcodeInput.value = barcodeLookup;
-    }
-  });
+  const isSubmitting = navigation.state === "submitting";
+  const canDoISBNLookup = entityType === Entity.Books;
   
+  // Extract lookup result and book data from action
+  const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
+  const lookupError = (lookupResult as LookupError)?.error;
+  const lookupBook = !lookupError ? lookupResult as BookEntity : undefined;
+  const submittedISBN = actionData && 'isbn' in actionData ? actionData.isbn : undefined;
+  
+  // Handle form errors
+  const formError = actionData && 'error' in actionData ? actionData.error : undefined;
+
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm book={lookupBook as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
     formComponent = <MovieForm genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-row items-center justify-between">
-        <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">Add a {singular(entityType)}</h2>
-          {canDoBarcodeLookup &&
-            <Form id="entry-type">
-              {intent == 'manual' && <button name="intent" value="barcode" type="submit">ISBN Lookup</button>}
-              {intent == 'barcode' && <button name="intent" value="manual" type="submit">Manual Entry</button>}
-            </Form>
-          }
+    <div className="container mx-auto px-4 py-8 text-white min-h-screen">
+      <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
+      
+      {/* ISBN Lookup Section - Only for Books */}
+      {canDoISBNLookup && (
+        <div className="mb-8">
+          <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
+          <Form ref={lookupFormRef} method="post" className="max-w-md">
+            <div className="mb-4">
+              <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
+                ISBN
+              </label>
+              <input
+                type="text"
+                id="isbn"
+                name="isbn"
+                defaultValue={submittedISBN}
+                className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                placeholder="Enter ISBN"
+                required
+              />
+              <input type="hidden" name="intent" value="lookup" />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+            >
+              {isSubmitting ? "Looking up..." : "Look up"}
+            </button>
+          </Form>
+          
+          {lookupError && (
+            <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-md">
+              <p className="text-red-300">{lookupError.notFound}</p>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="h-full mt-4">
-        <div className="mt-4 flex flex-col gap-2">
-          {intent === 'barcode' && canDoBarcodeLookup &&
-            <Form id="barcode-lookup">
-              <fieldset disabled={isSubmitting} className="flex flex-col gap-2 mb-2">
-                <input id="hidden-intent" name="intent" type="hidden" value="manual" />
-                <label htmlFor="isbn" className="dark:text-slate-400">Lookup Book by ISBN</label>
-                <input id="barcodeLookup" name="barcodeLookup" type="text" placeholder="ISBN" aria-label="ISBN lookup" />
-              </fieldset>
-              {lookupError && <div className="mb-2">{lookupError.notFound}</div>}
-              <button type="submit">Lookup</button>
-            </Form>
-          }
-          {(intent === 'manual' || !canDoBarcodeLookup) &&
-            <Form id={`add-${singular(entityType)}`} method="post" action={`/${entityType.toLowerCase()}/add`}>
-              <input id="type" name="type" type="hidden" value={entityType} />
-              {actionData?.error && <div>{actionData.error.invalidForm}</div>}
-              {formComponent}
-              <div className="flex flex-row gap-2 mt-3">
-                <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
-                  {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
-                  Add
-                </button>
-                <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>Cancel</button>
-              </div>
-            </Form>
-          }
-        </div>
+      )}
+
+      {/* Book Form Section */}
+      <div className="mb-8">
+        <Form method="post" className="max-w-2xl">
+          <input type="hidden" name="type" value={entityType} />
+          
+          {formError && 'invalidForm' in formError && (
+            <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
+              <p className="text-red-300">{formError.invalidForm}</p>
+            </div>
+          )}
+          
+          {formError && 'isbn' in formError && (
+            <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
+              <p className="text-red-300">{formError.isbn}</p>
+            </div>
+          )}
+          
+          {formComponent}
+          
+          <div className="flex flex-row gap-2 mt-6">
+            <button 
+              type="submit" 
+              className="flex flex-row gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <div className="flex items-center"><Spinner /></div>}
+              Add {singular(entityType)}
+            </button>
+            <button 
+              type="button" 
+              onClick={() => navigate(-1)} 
+              className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+          </div>
+        </Form>
       </div>
     </div>
   );

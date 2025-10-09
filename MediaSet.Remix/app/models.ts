@@ -26,6 +26,7 @@ export interface BookEntity extends BaseEntity {
   genres?: Array<string>;
   plot?: string;
   subtitle?: string;
+  format?: string;
 }
 // UI model
 export type Book = Override<BookEntity, { authors: string; genres: string; }>
