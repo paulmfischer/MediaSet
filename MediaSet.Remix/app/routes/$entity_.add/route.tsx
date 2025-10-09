@@ -89,9 +89,9 @@ export default function Add() {
       
       {/* ISBN Lookup Section - Only for Books */}
       {canDoISBNLookup && (
-        <div className="mb-8">
+        <div className="mb-8 max-w-3xl">
           <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
-          <Form ref={lookupFormRef} method="post" className="max-w-md">
+          <Form ref={lookupFormRef} method="post">
             <div className="mb-4">
               <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
                 ISBN
@@ -126,7 +126,7 @@ export default function Add() {
 
       {/* Book Form Section */}
       <div className="mb-8">
-        <Form method="post" className="max-w-2xl">
+        <Form method="post" className="max-w-3xl">
           <input type="hidden" name="type" value={entityType} />
           
           {formError && 'invalidForm' in formError && (

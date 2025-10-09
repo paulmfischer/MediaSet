@@ -18,30 +18,61 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
   const [isTvSeries, setIsTvSeries] = useState(movie?.isTvSeries ?? false);
   const isTvSeriesChanged = () => setIsTvSeries(!isTvSeries);
 
+  const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+  const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+  const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+
   return (
-    <fieldset disabled={isSubmitting} className="flex flex-col gap-2">
+    <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       <input hidden id="id" name="id" type="text" defaultValue={movie?.id} />
-      <label htmlFor="title" className="dark:text-slate-400">Title</label>
-      <input id="title" name="title" type="text" placeholder="Title" defaultValue={movie?.title} aria-label="Title" />
-      <label htmlFor="format" className="dark:text-slate-400">Format</label>
-      <select id="format" name="format"defaultValue={movie?.format} >
-        <option value="">Select Format...</option>
-        {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
-      </select>
-      <label htmlFor="runtime" className="dark:text-slate-400">Runtime</label>
-      <input id="runtime" name="runtime" type="number" placeholder="Runtime" defaultValue={movie?.runtime} aria-label="Runtime" />
-      <label htmlFor="releaseDate" className="dark:text-slate-400">Release Date</label>
-      <input id="releaseDate" name="releaseDate" type="text" placeholder="Release Date" defaultValue={movie?.releaseDate} aria-label="Release Date" />
-      <label htmlFor="isTvSeries" className="dark:text-slate-400">Is TV Series</label>
-      <input id="isTvSeries" name="isTvSeries" type="checkbox" value="true" checked={isTvSeries} onChange={isTvSeriesChanged} aria-label="Is TV Series" />
-      <label htmlFor="studios" className="dark:text-slate-400">Studios</label>
-      <MultiselectInput name="studios" selectText="Select Studios..." addLabel="Add new Studio:" options={studios} selectedValues={movie?.studios} />
-      <label htmlFor="genres" className="dark:text-slate-400">Genres</label>
-      <MultiselectInput name="genres" selectText="Select Genres..." addLabel="Add new Genre" options={genres} selectedValues={movie?.genres} />
-      <label htmlFor="barcode" className="dark:text-slate-400">Barcode</label>
-      <input id="barcode" name="barcode" type="text" placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
-      <label htmlFor="plot" className="dark:text-slate-400">Plot</label>
-      <textarea id="plot" name="plot" placeholder="Plot" defaultValue={movie?.plot} aria-label="Plot" />
+
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>
+        <input id="title" name="title" type="text" className={inputClasses} placeholder="Title" aria-label="Title" defaultValue={movie?.title} />
+      </div>
+
+      <div>
+        <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
+        <select id="format" name="format" className={selectClasses} value={movie?.format}>
+          <option value="">Select Format...</option>
+          {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="runtime" className="block text-sm font-medium text-gray-200 mb-1">Runtime</label>
+        <input id="runtime" name="runtime" type="number" className={inputClasses} placeholder="Runtime" aria-label="Runtime" defaultValue={movie?.runtime} />
+      </div>
+
+      <div>
+        <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-200 mb-1">Release Date</label>
+        <input id="releaseDate" name="releaseDate" type="text" className={inputClasses} placeholder="Release Date" defaultValue={movie?.releaseDate} aria-label="Release Date" />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input id="isTvSeries" name="isTvSeries" type="checkbox" value="true" checked={isTvSeries} onChange={isTvSeriesChanged} aria-label="Is TV Series" className="form-checkbox h-5 w-5 text-blue-400 bg-gray-800 border-gray-600 focus:ring-blue-400" />
+        <label htmlFor="isTvSeries" className="block text-sm font-medium text-gray-200">Is TV Series</label>
+      </div>
+
+      <div>
+        <label htmlFor="studios" className="block text-sm font-medium text-gray-200 mb-1">Studios</label>
+        <MultiselectInput name="studios" selectText="Select Studios..." addLabel="Add new Studio:" options={studios} selectedValues={movie?.studios} />
+      </div>
+
+      <div>
+        <label htmlFor="genres" className="block text-sm font-medium text-gray-200 mb-1">Genres</label>
+        <MultiselectInput name="genres" selectText="Select Genres..." addLabel="Add new Genre" options={genres} selectedValues={movie?.genres} />
+      </div>
+
+      <div>
+        <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
+        <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
+      </div>
+
+      <div>
+        <label htmlFor="plot" className="block text-sm font-medium text-gray-200 mb-1">Plot</label>
+        <textarea id="plot" name="plot" className={textareaClasses} placeholder="Plot" defaultValue={movie?.plot} aria-label="Plot" />
+      </div>
     </fieldset>
   );
 }
