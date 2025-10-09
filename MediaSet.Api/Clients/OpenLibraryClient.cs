@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MediaSet.Api.Helpers;
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Clients;
 
@@ -63,6 +64,18 @@ public class OpenLibraryClient : IDisposable
   public async Task<BookResponse?> GetReadableBookByOlidAsync(string olid)
   {
     return await GetReadableBookAsync("olid", olid);
+  }
+
+  public async Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue)
+  {
+    return identifierType switch
+    {
+      IdentifierType.Isbn => await GetReadableBookByIsbnAsync(identifierValue),
+      IdentifierType.Lccn => await GetReadableBookByLccnAsync(identifierValue),
+      IdentifierType.Oclc => await GetReadableBookByOclcAsync(identifierValue),
+      IdentifierType.Olid => await GetReadableBookByOlidAsync(identifierValue),
+      _ => throw new ArgumentOutOfRangeException(nameof(identifierType), identifierType, null)
+    };
   }
 
   private static BookResponse? MapReadApiResponseToBookResponse(ReadApiResponse? readApiResponse)
