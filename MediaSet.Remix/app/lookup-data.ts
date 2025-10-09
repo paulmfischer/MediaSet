@@ -7,7 +7,7 @@ type Link = {
   url: string;
 };
 
-type IsbnLookup = {
+type BookLookupResponse = {
   title: string;
   subtitle: string;
   authors: Array<Link>;
@@ -29,16 +29,16 @@ export async function lookup(entityType: Entity, barcode: string): Promise<BookE
     return { error: { notFound: `No ${singular(entityType)} found for ISBN ${barcode}` } };
   }
 
-  const bookLookup = await response.json() as IsbnLookup;
+  const bookLookup = await response.json() as BookLookupResponse;
   return {
     type: Entity.Books,
-    authors: bookLookup.authors.map(linkMap),
+    authors: bookLookup.authors?.map(linkMap),
     pages: bookLookup.numberOfPages,
     isbn: barcode,
     publicationDate: bookLookup.publishDate,
     publisher: bookLookup.publishers.map(pub => pub.name)[0],
     title: bookLookup.title,
     subtitle: bookLookup.subtitle,
-    genres: bookLookup.subjects.map(linkMap)
+    genres: bookLookup.subjects?.map(linkMap)
   } as BookEntity
 }
