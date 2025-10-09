@@ -25,6 +25,44 @@ public class OpenLibraryClient : IDisposable
     var key = $"ISBN:{isbn}";
     return response?.ContainsKey(key) == true ? response[key] : null;
   }
+
+  public async Task<ReadApiResponse?> GetReadableBookAsync(string identifierType, string identifierValue)
+  {
+    try
+    {
+      var response = await httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+      });
+      logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
+      
+      return response;
+    }
+    catch (HttpRequestException ex)
+    {
+      logger.LogWarning("Failed to get readable book for {identifierType}:{identifierValue}: {error}", identifierType, identifierValue, ex.Message);
+      return null;
+    }
+  }
+
+  public async Task<ReadApiResponse?> GetReadableBookByIsbnAsync(string isbn)
+  {
+    return await GetReadableBookAsync("isbn", isbn);
+  }
+
+  public async Task<ReadApiResponse?> GetReadableBookByLccnAsync(string lccn)
+  {
+    return await GetReadableBookAsync("lccn", lccn);
+  }
+
+  public async Task<ReadApiResponse?> GetReadableBookByOclcAsync(string oclc)
+  {
+    return await GetReadableBookAsync("oclc", oclc);
+  }
+
+  public async Task<ReadApiResponse?> GetReadableBookByOlidAsync(string olid)
+  {
+    return await GetReadableBookAsync("olid", olid);
+  }
 }
 
 public record BookResponse(
@@ -45,6 +83,38 @@ public record Author(
 public record Publisher(string Name);
 
 public record Subject(string Name, string Url);
+
+public record ReadApiResponse(
+  List<ReadApiItem> Items,
+  Dictionary<string, ReadApiRecord> Records
+);
+
+public record ReadApiItem(
+  string Match,
+  string Status,
+  string ItemUrl,
+  ReadApiCover? Cover,
+  string FromRecord,
+  string PublishDate,
+  string OlEditionId,
+  string OlWorkId
+);
+
+public record ReadApiCover(
+  string Small,
+  string Medium,
+  string Large
+);
+
+public record ReadApiRecord(
+  List<string> Isbns,
+  List<string> Lccns,
+  List<string> Oclcs,
+  List<string> Olids,
+  List<string> PublishDates,
+  string RecordUrl,
+  Dictionary<string, object>? Data
+);
 
 public class OpenLibraryConfiguration
 {
