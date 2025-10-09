@@ -80,7 +80,7 @@ export default function MultiselectInput(props: MultiselectProps) {
       <div className={`absolute z-10 w-full h-full ${displayOptions ? '' : 'hidden'}`} onClick={() => setDisplayOptions(false)}></div>
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-2 z-20 bg-gray-800 border border-gray-600 p-2 rounded-md" id={`multi-select-input-${props.name}`}>
-          {selected.map(selected => (<Badge key={selected.value}><div className="flex gap-2" onClick={() => toggleSelected(selected)}>{selected.label}<X size={16} /></div></Badge>))}
+          {selected.map(selected => (<Badge key={selected.value.replaceAll(' ', '')}><div className="flex gap-2" onClick={() => toggleSelected(selected)}>{selected.label}<X size={16} /></div></Badge>))}
           <input
             type="text"
             className="flex-1 min-w-32 pl-1 p-0 outline-none bg-transparent text-white placeholder-gray-400"

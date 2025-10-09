@@ -108,8 +108,11 @@ public class OpenLibraryClient : IDisposable
     var publishDate = firstRecord.PublishDates?.FirstOrDefault() ?? 
                      data.ExtractStringFromData("publish_date");
 
-    // Extract subjects
-    var subjects = data.ExtractSubjectsFromData();
+  // Extract subjects and remove duplicates (ignore case)
+  var subjects = data.ExtractSubjectsFromData()
+    .GroupBy(s => s.Name.ToLowerInvariant())
+    .Select(g => g.First())
+    .ToList();
 
     // Extract format from details object
     var format = string.Empty;
