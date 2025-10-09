@@ -15,6 +15,7 @@ type BookLookupResponse = {
   publishers: Array<Omit<Link, 'url'>>;
   publishDate: string;
   subjects: Array<Link>;
+  format?: string;
 };
 
 export type LookupError = {
@@ -39,6 +40,7 @@ export async function lookup(entityType: Entity, barcode: string): Promise<BookE
     publisher: bookLookup.publishers.map(pub => pub.name)[0],
     title: bookLookup.title,
     subtitle: bookLookup.subtitle,
-    genres: bookLookup.subjects?.map(linkMap)
+    genres: bookLookup.subjects?.map(linkMap),
+    format: bookLookup.format
   } as BookEntity
 }

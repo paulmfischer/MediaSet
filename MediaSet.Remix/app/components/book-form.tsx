@@ -34,7 +34,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select id="format" name="format" className={selectClasses} defaultValue={book?.format}>
+        <select id="format" name="format" className={selectClasses} value={book?.format}>
           <option value="">Select Format...</option>
           {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
         </select>

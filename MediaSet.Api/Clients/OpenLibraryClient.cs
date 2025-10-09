@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
@@ -110,6 +111,16 @@ public class OpenLibraryClient : IDisposable
     // Extract subjects
     var subjects = data.ExtractSubjectsFromData();
 
+    // Extract format from details object
+    var format = string.Empty;
+    if (firstRecord.Details?.TryGetValue("details", out var detailsObj) == true && 
+        detailsObj is JsonElement detailsElement && 
+        detailsElement.ValueKind == JsonValueKind.Object &&
+        detailsElement.TryGetProperty("physical_format", out var formatElement))
+    {
+      format = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(formatElement.GetString() ?? string.Empty);
+    }
+
     return new BookResponse(
       title,
       subtitle,
@@ -117,7 +128,8 @@ public class OpenLibraryClient : IDisposable
       numberOfPages,
       publishers,
       publishDate,
-      subjects
+      subjects,
+      format
     );
   }
 }
@@ -129,7 +141,8 @@ public record BookResponse(
   int NumberOfPages,
   List<Publisher> Publishers,
   string PublishDate,
-  List<Subject> Subjects
+  List<Subject> Subjects,
+  string? Format = null
 );
 
 public record Author(
@@ -170,7 +183,8 @@ public record ReadApiRecord(
   List<string> Olids,
   List<string> PublishDates,
   string RecordUrl,
-  Dictionary<string, object>? Data
+  Dictionary<string, object>? Data,
+  Dictionary<string, object>? Details
 );
 
 public class OpenLibraryConfiguration
