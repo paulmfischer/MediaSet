@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MediaSet.Api.Helpers;
 
 namespace MediaSet.Api.Clients;
 
@@ -26,7 +27,7 @@ public class OpenLibraryClient : IDisposable
     return response?.ContainsKey(key) == true ? response[key] : null;
   }
 
-  public async Task<ReadApiResponse?> GetReadableBookAsync(string identifierType, string identifierValue)
+  public async Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue)
   {
     try
     {
@@ -35,7 +36,7 @@ public class OpenLibraryClient : IDisposable
       });
       logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
       
-      return response;
+      return MapReadApiResponseToBookResponse(response);
     }
     catch (HttpRequestException ex)
     {
@@ -44,24 +45,67 @@ public class OpenLibraryClient : IDisposable
     }
   }
 
-  public async Task<ReadApiResponse?> GetReadableBookByIsbnAsync(string isbn)
+  public async Task<BookResponse?> GetReadableBookByIsbnAsync(string isbn)
   {
     return await GetReadableBookAsync("isbn", isbn);
   }
 
-  public async Task<ReadApiResponse?> GetReadableBookByLccnAsync(string lccn)
+  public async Task<BookResponse?> GetReadableBookByLccnAsync(string lccn)
   {
     return await GetReadableBookAsync("lccn", lccn);
   }
 
-  public async Task<ReadApiResponse?> GetReadableBookByOclcAsync(string oclc)
+  public async Task<BookResponse?> GetReadableBookByOclcAsync(string oclc)
   {
     return await GetReadableBookAsync("oclc", oclc);
   }
 
-  public async Task<ReadApiResponse?> GetReadableBookByOlidAsync(string olid)
+  public async Task<BookResponse?> GetReadableBookByOlidAsync(string olid)
   {
     return await GetReadableBookAsync("olid", olid);
+  }
+
+  private static BookResponse? MapReadApiResponseToBookResponse(ReadApiResponse? readApiResponse)
+  {
+    if (readApiResponse == null || !readApiResponse.Records.Any())
+      return null;
+
+    // Get the first record (usually there's only one)
+    var firstRecord = readApiResponse.Records.Values.First();
+    var data = firstRecord.Data;
+
+    if (data == null)
+      return null;
+
+    // Extract title and subtitle from data
+    var title = data.ExtractStringFromData("title");
+    var subtitle = data.ExtractStringFromData("subtitle");
+
+    // Extract authors
+    var authors = data.ExtractAuthorsFromData();
+
+    // Extract number of pages
+    var numberOfPages = data.ExtractNumberOfPagesFromData();
+
+    // Extract publishers
+    var publishers = data.ExtractPublishersFromData();
+
+    // Extract publish date
+    var publishDate = firstRecord.PublishDates?.FirstOrDefault() ?? 
+                     data.ExtractStringFromData("publish_date");
+
+    // Extract subjects
+    var subjects = data.ExtractSubjectsFromData();
+
+    return new BookResponse(
+      title,
+      subtitle,
+      authors,
+      numberOfPages,
+      publishers,
+      publishDate,
+      subjects
+    );
   }
 }
 
