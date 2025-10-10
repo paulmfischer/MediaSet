@@ -33,7 +33,7 @@ export default function App() {
             </div>
           </div>
           <PendingNavigation />
-          <main id="main-content" className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll">
+          <main id="main-content" className="h-full dark:bg-zinc-900 p-2 lg:py-4 lg:px-8 overflow-scroll">
             <Outlet />
           </main>
           <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
@@ -76,7 +76,7 @@ export function ErrorBoundary() {
             </div>
           </div>
           <PendingNavigation />
-          <main id="main-content" className="h-full dark:bg-zinc-900 py-4 px-8 overflow-scroll flex justify-center">
+          <main id="main-content" className="h-full dark:bg-zinc-900 py-2 px-4 lg:py-4 lg:px-8 overflow-scroll flex justify-center">
             An Error was experienced! <br />
             {error.data} <br />
             {error.status} <br />

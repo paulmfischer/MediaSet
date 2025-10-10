@@ -84,84 +84,86 @@ export default function Add() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 text-white min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
-      
-      {/* ISBN Lookup Section - Only for Books */}
-      {canDoISBNLookup && (
-        <div className="mb-8 max-w-3xl">
-          <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
-          <Form ref={lookupFormRef} method="post">
-            <div className="mb-4">
-              <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
-                ISBN
-              </label>
-              <input
-                type="text"
-                id="isbn"
-                name="isbn"
-                defaultValue={submittedISBN}
-                className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                placeholder="Enter ISBN"
-                required
-              />
-              <input type="hidden" name="intent" value="lookup" />
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
-            >
-              {isSubmitting ? "Looking up..." : "Look up"}
-            </button>
-          </Form>
-          
-          {lookupError && (
-            <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-md">
-              <p className="text-red-300">{lookupError.notFound}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Book Form Section */}
-      <div className="mb-8">
-        <Form method="post" className="max-w-3xl">
-          <input type="hidden" name="type" value={entityType} />
-          
-          {formError && 'invalidForm' in formError && (
-            <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
-              <p className="text-red-300">{formError.invalidForm}</p>
-            </div>
-          )}
-          
-          {formError && 'isbn' in formError && (
-            <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
-              <p className="text-red-300">{formError.isbn}</p>
-            </div>
-          )}
-          
-          {formComponent}
-          
-          <div className="flex flex-row gap-2 mt-6">
-            <button 
-              type="submit" 
-              className="flex flex-row gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting && <div className="flex items-center"><Spinner /></div>}
-              Add {singular(entityType)}
-            </button>
-            <button 
-              type="button" 
-              onClick={() => navigate(-1)} 
-              className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
+    <div className="min-h-screen flex text-white py-4">
+      <div className="w-full max-w-3xl mx-auto px-4">
+        <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
+        
+        {/* ISBN Lookup Section - Only for Books */}
+        {canDoISBNLookup && (
+          <div className="mb-8">
+            <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
+            <Form ref={lookupFormRef} method="post">
+              <div className="mb-4">
+                <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
+                  ISBN
+                </label>
+                <input
+                  type="text"
+                  id="isbn"
+                  name="isbn"
+                  defaultValue={submittedISBN}
+                  className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  placeholder="Enter ISBN"
+                  required
+                />
+                <input type="hidden" name="intent" value="lookup" />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+              >
+                {isSubmitting ? "Looking up..." : "Look up"}
+              </button>
+            </Form>
+            
+            {lookupError && (
+              <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-md">
+                <p className="text-red-300">{lookupError.notFound}</p>
+              </div>
+            )}
           </div>
-        </Form>
+        )}
+
+        {/* Book Form Section */}
+        <div className="mb-8">
+          <Form method="post">
+            <input type="hidden" name="type" value={entityType} />
+            
+            {formError && 'invalidForm' in formError && (
+              <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
+                <p className="text-red-300">{formError.invalidForm}</p>
+              </div>
+            )}
+            
+            {formError && 'isbn' in formError && (
+              <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
+                <p className="text-red-300">{formError.isbn}</p>
+              </div>
+            )}
+            
+            {formComponent}
+            
+            <div className="flex flex-row gap-2 mt-6">
+              <button 
+                type="submit" 
+                className="flex flex-row gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting && <div className="flex items-center"><Spinner /></div>}
+                Add {singular(entityType)}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => navigate(-1)} 
+                className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+            </div>
+          </Form>
+        </div>
       </div>
     </div>
   );
