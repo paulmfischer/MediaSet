@@ -34,7 +34,7 @@ export default function Index() {
   }, [searchText]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col px-2">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
           <h2 className="text-2xl">{entityName}</h2>

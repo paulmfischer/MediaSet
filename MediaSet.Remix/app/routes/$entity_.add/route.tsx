@@ -85,7 +85,7 @@ export default function Add() {
 
   return (
     <div className="min-h-screen flex text-white py-4">
-      <div className="w-full max-w-3xl mx-auto px-4">
+      <div className="w-full max-w-3xl mx-auto px-2">
         <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
         
         {/* ISBN Lookup Section - Only for Books */}
