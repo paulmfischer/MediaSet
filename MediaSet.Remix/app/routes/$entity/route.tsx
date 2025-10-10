@@ -34,7 +34,7 @@ export default function Index() {
   }, [searchText]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col px-2">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center justify-between">
         <div className="flex flex-row gap-4 items-end">
           <h2 className="text-2xl">{entityName}</h2>
@@ -42,7 +42,7 @@ export default function Index() {
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
           <Link to={`/${entityName.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
-            <div className="flex gap-2 z-20 bg-white rounded-sm">
+            <div className="flex gap-2 z-20 bg-gray-800 rounded-md">
               <input
                 id="search"
                 type="search"
@@ -50,6 +50,7 @@ export default function Index() {
                 placeholder={`Search ${entityName}`}
                 aria-label={`Search ${entityName}`}
                 name="searchText"
+                className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               />
               {searchText && 
                 <button className="text-icon"
