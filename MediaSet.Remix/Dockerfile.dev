@@ -1,0 +1,29 @@
+# Development Dockerfile for Remix with hot reload support
+FROM node:20-alpine AS development
+
+WORKDIR /app
+
+# Install dependencies for native modules if needed
+RUN apk add --no-cache python3 make g++
+
+# Create a non-root user
+RUN addgroup -g 1000 -S app && adduser -u 1000 -S app -G app
+
+# Copy package files first for better caching
+COPY --chown=app:app package*.json ./
+USER app
+RUN npm ci
+
+# Copy source code
+USER root
+COPY --chown=app:app . ./
+USER app
+
+# Set environment for development
+ENV NODE_ENV=development
+ENV REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
+
+EXPOSE 3000
+
+# Default command - can be overridden in docker-compose
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

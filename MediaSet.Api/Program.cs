@@ -38,21 +38,19 @@ if (openLibraryConfig.Exists())
 {
   logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
   builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
-  builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) =>
-  {
-    var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(options.Timeout);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
+  builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) => {
+      var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
+      client.BaseAddress = new Uri(options.BaseUrl);
+      client.Timeout = TimeSpan.FromSeconds(options.Timeout);
+      client.DefaultRequestHeaders.Add("Accept", "application/json");
+      client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
   });
 }
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen((setup) =>
-{
+builder.Services.AddSwaggerGen((setup) => {
   setup.SchemaFilter<ParameterSchemaFilter>();
 });
 
@@ -67,11 +65,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
-app.UseSwagger();
-app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 // }
 
 app.UseHttpsRedirection();
+
+// Add health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.MapEntity<Movie>();
 app.MapEntity<Book>();
