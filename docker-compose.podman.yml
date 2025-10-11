@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # MongoDB for development
+  mongodb:
+    image: docker.io/mongodb/mongodb-community-server:7.0
+    container_name: mediaset-dev-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=MediaSet
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mediaset-dev
+
+  # .NET API with hot reload support
+  api:
+    build:
+      context: ./MediaSet.Api
+      dockerfile: Dockerfile.dev
+    container_name: mediaset-dev-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"   # HTTP
+      - "5001:5001"   # HTTPS
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+      - ASPNETCORE_HTTPS_PORT=5001
+      - MediaSetDatabase__ConnectionString=mongodb://mongodb:27017
+      - MediaSetDatabase__DatabaseName=MediaSet
+      - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
+    volumes:
+      - ./MediaSet.Api:/app:Z
+      - ~/.nuget/packages:/home/app/.nuget/packages:Z
+      - ~/.dotnet/tools:/home/app/.dotnet/tools:Z
+    depends_on:
+      - mongodb
+    networks:
+      - mediaset-dev
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000;https://0.0.0.0:5001"]
+    # Podman-specific security settings
+    security_opt:
+      - label=disable
+    userns_mode: "keep-id"
+
+  # Remix frontend with hot reload
+  frontend:
+    build:
+      context: ./MediaSet.Remix
+      dockerfile: Dockerfile.dev
+    container_name: mediaset-dev-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
+      - apiUrl=http://api:5000
+    volumes:
+      - ./MediaSet.Remix:/app:Z
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - mediaset-dev
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    # Podman-specific security settings
+    security_opt:
+      - label=disable
+    userns_mode: "keep-id"
+
+volumes:
+  mongodb_data:
+
+networks:
+  mediaset-dev:
+    driver: bridge

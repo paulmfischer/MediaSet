@@ -3,22 +3,68 @@
 # MediaSet Development Environment Setup Script
 set -e
 
-echo "🚀 Setting up MediaSet Development Environment"
+# Function to detect and setup container runtime
+setup_container_runtime() {
+    echo "🚀 Setting up MediaSet Development Environment"
 
-# Check if Docker and Docker Compose are installed
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Please install Docker first."
-    exit 1
-fi
+    # Detect container runtime (Docker or Podman)
+    CONTAINER_RUNTIME=""
+    COMPOSE_COMMAND=""
 
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
-fi
+    if command -v podman &> /dev/null; then
+        CONTAINER_RUNTIME="podman"
+        echo "✅ Found Podman"
+        
+        # Check for podman-compose or docker-compose
+        if command -v podman-compose &> /dev/null; then
+            COMPOSE_COMMAND="podman-compose"
+            echo "✅ Using podman-compose"
+        elif command -v docker-compose &> /dev/null; then
+            COMPOSE_COMMAND="docker-compose"
+            echo "✅ Using docker-compose with Podman"
+            # Set Docker socket to use Podman
+            export DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
+        else
+            echo "❌ Neither podman-compose nor docker-compose found. Please install one of them."
+            exit 1
+        fi
+    elif command -v docker &> /dev/null; then
+        CONTAINER_RUNTIME="docker"
+        echo "✅ Found Docker"
+        
+        if command -v docker-compose &> /dev/null; then
+            COMPOSE_COMMAND="docker-compose"
+            echo "✅ Using docker-compose"
+        elif docker compose version &> /dev/null 2>&1; then
+            COMPOSE_COMMAND="docker compose"
+            echo "✅ Using docker compose (plugin)"
+        else
+            echo "❌ Docker Compose is not installed. Please install Docker Compose."
+            exit 1
+        fi
+    else
+        echo "❌ Neither Docker nor Podman is installed."
+        echo "Please install one of the following:"
+        echo "  - Docker: https://docs.docker.com/get-docker/"
+        echo "  - Podman: https://podman.io/getting-started/installation"
+        exit 1
+    fi
 
-# Create necessary directories if they don't exist
-mkdir -p ~/.nuget/packages
-mkdir -p ~/.dotnet/tools
+    echo "🔧 Using: $CONTAINER_RUNTIME with $COMPOSE_COMMAND"
+
+    # Choose the appropriate compose file
+    COMPOSE_FILE="docker-compose.dev.yml"
+    if [ "$CONTAINER_RUNTIME" = "podman" ]; then
+        COMPOSE_FILE="docker-compose.podman.yml"
+        echo "📄 Using Podman-optimized compose file"
+    else
+        echo "📄 Using Docker compose file"
+    fi
+
+    # Create necessary directories if they don't exist
+    mkdir -p ~/.nuget/packages
+    mkdir -p ~/.dotnet/tools
+}
 
 # Function to check if containers are healthy
 check_health() {
@@ -26,7 +72,7 @@ check_health() {
     
     # Wait for MongoDB to be ready
     echo "⏳ Waiting for MongoDB to be ready..."
-    timeout 60 bash -c 'until docker-compose -f docker-compose.dev.yml exec -T mongodb mongosh --eval "db.admin.hello()" > /dev/null 2>&1; do sleep 2; done'
+    timeout 60 bash -c "until $COMPOSE_COMMAND -f $COMPOSE_FILE exec -T mongodb mongosh --eval \"db.admin.hello()\" > /dev/null 2>&1; do sleep 2; done"
     
     # Wait for API to be ready
     echo "⏳ Waiting for API to be ready..."
@@ -42,7 +88,7 @@ check_health() {
 # Function to start development environment
 start_dev() {
     echo "🔧 Building and starting development containers..."
-    docker-compose -f docker-compose.dev.yml up --build -d
+    $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d
     
     check_health
     
@@ -66,51 +112,55 @@ start_dev() {
 # Function to show logs
 show_logs() {
     if [ -n "$2" ]; then
-        docker-compose -f docker-compose.dev.yml logs -f "$2"
+        $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f "$2"
     else
-        docker-compose -f docker-compose.dev.yml logs -f
+        $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f
     fi
 }
 
 # Function to stop services
 stop_dev() {
     echo "🛑 Stopping development environment..."
-    docker-compose -f docker-compose.dev.yml down
+    $COMPOSE_COMMAND -f $COMPOSE_FILE down
     echo "✅ Services stopped"
 }
 
 # Function to restart services
 restart_dev() {
     echo "🔄 Restarting development environment..."
-    docker-compose -f docker-compose.dev.yml restart
+    $COMPOSE_COMMAND -f $COMPOSE_FILE restart
     check_health
 }
 
 # Function to clean everything
 clean_dev() {
     echo "🧹 Cleaning development environment..."
-    docker-compose -f docker-compose.dev.yml down -v --remove-orphans
-    docker system prune -f
+    $COMPOSE_COMMAND -f $COMPOSE_FILE down -v --remove-orphans
+    if [ "$CONTAINER_RUNTIME" = "docker" ]; then
+        docker system prune -f
+    else
+        podman system prune -f
+    fi
     echo "✅ Environment cleaned"
 }
 
 # Function to show status
 status_dev() {
     echo "📊 Development environment status:"
-    docker-compose -f docker-compose.dev.yml ps
+    $COMPOSE_COMMAND -f $COMPOSE_FILE ps
 }
 
 # Function to enter a container shell
 shell_dev() {
     case "$2" in
         api|backend)
-            docker-compose -f docker-compose.dev.yml exec api bash
+            $COMPOSE_COMMAND -f $COMPOSE_FILE exec api bash
             ;;
         frontend|remix)
-            docker-compose -f docker-compose.dev.yml exec frontend sh
+            $COMPOSE_COMMAND -f $COMPOSE_FILE exec frontend sh
             ;;
         mongo|mongodb)
-            docker-compose -f docker-compose.dev.yml exec mongodb mongosh MediaSet
+            $COMPOSE_COMMAND -f $COMPOSE_FILE exec mongodb mongosh MediaSet
             ;;
         *)
             echo "Available shells: api, frontend, mongo"
@@ -121,35 +171,16 @@ shell_dev() {
 
 # Main command handler
 case "$1" in
-    start|up)
-        start_dev
-        ;;
-    stop|down)
-        stop_dev
-        ;;
-    restart)
-        restart_dev
-        ;;
-    logs)
-        show_logs "$@"
-        ;;
-    status|ps)
-        status_dev
-        ;;
-    shell|exec)
-        shell_dev "$@"
-        ;;
-    clean)
-        clean_dev
-        ;;
-    *)
+    help|--help|-h|"")
+        # Show help and exit before container detection
         echo "MediaSet Development Environment Manager"
+        echo "🐳 Supports both Docker and Podman (auto-detected)"
         echo ""
         echo "Usage: $0 {start|stop|restart|logs|status|shell|clean}"
         echo ""
         echo "Commands:"
         echo "  start     - Start the development environment"
-        echo "  stop      - Stop the development environment"
+        echo "  stop      - Stop the development environment" 
         echo "  restart   - Restart all services"
         echo "  logs      - Show logs (add service name for specific service)"
         echo "  status    - Show container status"
@@ -160,6 +191,51 @@ case "$1" in
         echo "  $0 start"
         echo "  $0 logs api"
         echo "  $0 shell frontend"
+        echo ""
+        echo "Container Runtime Support:"
+        echo "  🐳 Docker     - Uses docker-compose.dev.yml"
+        echo "  🦭 Podman     - Uses docker-compose.podman.yml"
+        echo ""
+        echo "Need help installing? See CONTAINER_SETUP.md"
+        exit 0
+        ;;
+    start|up)
+        setup_container_runtime
+        start_dev
+        ;;
+    stop|down)
+        setup_container_runtime
+        stop_dev
+        ;;
+    restart)
+        setup_container_runtime
+        restart_dev
+        ;;
+    logs)
+        setup_container_runtime
+        show_logs "$@"
+        ;;
+    status|ps)
+        setup_container_runtime
+        status_dev
+        ;;
+    shell|exec)
+        setup_container_runtime
+        shell_dev "$@"
+        ;;
+    clean)
+        setup_container_runtime
+        clean_dev
+        ;;
+    *)
+        echo "❌ Unknown command: $1"
+        echo ""
+        echo "MediaSet Development Environment Manager"
+        echo "🐳 Supports both Docker and Podman (auto-detected)"
+        echo ""
+        echo "Usage: $0 {start|stop|restart|logs|status|shell|clean}"
+        echo ""
+        echo "Run '$0 help' for detailed information"
         exit 1
         ;;
 esac

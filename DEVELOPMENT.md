@@ -4,12 +4,30 @@ This guide helps new developers set up a complete development environment withou
 
 ## Prerequisites
 
+Choose **one** of the following container runtimes:
+
+### Option 1: Docker (Recommended for most users)
 - **Docker**: Install from [docker.com](https://docs.docker.com/get-docker/)
 - **Docker Compose**: Usually included with Docker Desktop
+
+### Option 2: Podman (Recommended for Linux users who prefer rootless containers)
+- **Podman**: Install from [podman.io](https://podman.io/getting-started/installation)
+- **Podman Compose**: Install via `pip install podman-compose` or your package manager
+- Alternatively, use `docker-compose` with Podman (the script will configure this automatically)
+
+### Additional Requirements
 - **Git**: For cloning the repository
 - **VS Code** (recommended): For the best development experience
 
 That's it! No need for .NET SDK, MongoDB, or Node.js on your host machine.
+
+**Need help installing?** See **[CONTAINER_SETUP.md](CONTAINER_SETUP.md)** for detailed installation instructions.
+
+### Container Runtime Detection
+
+The development script automatically detects which container runtime you have installed:
+- 🐳 **Docker**: Uses `docker-compose.dev.yml` 
+- 🦭 **Podman**: Uses `docker-compose.podman.yml` (optimized for Podman with rootless containers)
 
 ## Quick Start
 
@@ -107,6 +125,15 @@ Both frontend and backend support hot reloading:
 }
 ```
 
+### Container Runtime Debugging
+
+**Docker Users:**
+- Use the "Debug API in Container (Docker)" configuration in VS Code
+
+**Podman Users:**
+- Use the "Debug API in Container (Podman)" configuration in VS Code
+- Ensure Podman socket is running: `systemctl --user start podman.socket`
+
 ### Browser Debugging
 
 - **Frontend**: Use browser dev tools as normal at http://localhost:3000
@@ -197,6 +224,33 @@ sudo chown -R $USER:$USER .
 
 ./dev.sh logs frontend
 # Look for Vite/Remix reload messages
+```
+
+### Podman-Specific Issues
+
+**Socket Permission Issues:**
+```bash
+# Start Podman socket service
+systemctl --user start podman.socket
+systemctl --user enable podman.socket
+
+# Verify socket is running
+systemctl --user status podman.socket
+```
+
+**SELinux Issues (RHEL/Fedora/CentOS):**
+```bash
+# If you see permission denied errors, try:
+sudo setsebool -P container_manage_cgroup true
+```
+
+**Rootless Container Issues:**
+```bash
+# Check user namespace setup
+podman unshare cat /proc/self/uid_map
+
+# If issues persist, try running with sudo:
+sudo ./dev.sh start
 ```
 
 ## Performance Tips

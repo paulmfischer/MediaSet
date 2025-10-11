@@ -25,7 +25,9 @@ Books detail page:
 
 ### 🐳 Containerized Development (Recommended)
 
-**New developers don't need to install .NET, Node.js, or MongoDB!** Everything runs in Docker containers with full hot-reload support.
+**New developers don't need to install .NET, Node.js, or MongoDB!** Everything runs in containers with full hot-reload support. 
+
+**Supports both Docker and Podman** - the setup script automatically detects your container runtime.
 
 #### Quick Start
 ```bash
