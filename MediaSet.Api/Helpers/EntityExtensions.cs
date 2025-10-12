@@ -25,15 +25,15 @@ internal static class EntityExtensions
         string.IsNullOrWhiteSpace(book.ISBN) &&
         string.IsNullOrWhiteSpace(book.Plot) &&
         string.IsNullOrWhiteSpace(book.PublicationDate) &&
-        string.IsNullOrWhiteSpace(book.Publisher) && 
+        string.IsNullOrWhiteSpace(book.Publisher) &&
         !book.Pages.HasValue &&
         book.Authors.Count == 0 &&
         book.Genres.Count == 0;
     }
-    
+
     return true;
   }
-  
+
   public static TEntity SetType<TEntity>(this TEntity entity) where TEntity : IEntity
   {
     var success = Enum.TryParse(typeof(MediaTypes), $"{entity.GetType().Name}s", true, out var parsedValue);

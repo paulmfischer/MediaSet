@@ -20,7 +20,8 @@ public class OpenLibraryClient : IDisposable
 
   public async Task<BookResponse?> GetBookByIsbnAsync(string isbn)
   {
-    var response = await httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions {
+    var response = await httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
+    {
       PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     });
     logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
@@ -33,11 +34,12 @@ public class OpenLibraryClient : IDisposable
   {
     try
     {
-      var response = await httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions {
+      var response = await httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
+      {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
       });
       logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
-      
+
       return MapReadApiResponseToBookResponse(response);
     }
     catch (HttpRequestException ex)
@@ -105,19 +107,19 @@ public class OpenLibraryClient : IDisposable
     var publishers = data.ExtractPublishersFromData();
 
     // Extract publish date
-    var publishDate = firstRecord.PublishDates?.FirstOrDefault() ?? 
+    var publishDate = firstRecord.PublishDates?.FirstOrDefault() ??
                      data.ExtractStringFromData("publish_date");
 
-  // Extract subjects and remove duplicates (ignore case)
-  var subjects = data.ExtractSubjectsFromData()
-    .GroupBy(s => s.Name.ToLowerInvariant())
-    .Select(g => g.First())
-    .ToList();
+    // Extract subjects and remove duplicates (ignore case)
+    var subjects = data.ExtractSubjectsFromData()
+      .GroupBy(s => s.Name.ToLowerInvariant())
+      .Select(g => g.First())
+      .ToList();
 
     // Extract format from details object
     var format = string.Empty;
-    if (firstRecord.Details?.TryGetValue("details", out var detailsObj) == true && 
-        detailsObj is JsonElement detailsElement && 
+    if (firstRecord.Details?.TryGetValue("details", out var detailsObj) == true &&
+        detailsObj is JsonElement detailsElement &&
         detailsElement.ValueKind == JsonValueKind.Object &&
         detailsElement.TryGetProperty("physical_format", out var formatElement))
     {

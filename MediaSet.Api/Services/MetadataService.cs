@@ -58,7 +58,7 @@ public class MetadataService
       .Distinct()
       .Order();
   }
-  
+
   public async Task<IEnumerable<string>> GetMovieFormats()
   {
     var movies = await movieService.GetListAsync();

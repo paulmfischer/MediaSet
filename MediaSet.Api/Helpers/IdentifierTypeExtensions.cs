@@ -15,7 +15,7 @@ public static class IdentifierTypeExtensions
   public static bool TryParseIdentifierType(string identifierTypeString, out IdentifierType identifierType)
   {
     identifierType = default;
-    
+
     foreach (IdentifierType enumValue in Enum.GetValues<IdentifierType>())
     {
       if (string.Equals(enumValue.ToApiString(), identifierTypeString, StringComparison.OrdinalIgnoreCase))
@@ -24,7 +24,7 @@ public static class IdentifierTypeExtensions
         return true;
       }
     }
-    
+
     return false;
   }
 
