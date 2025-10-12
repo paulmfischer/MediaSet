@@ -29,8 +29,8 @@ services:
       - ASPNETCORE_URLS=http://+:5000
       - ASPNETCORE_HTTP_PORTS=5000
       - ASPNETCORE_HTTPS_PORTS=
-      - MediaSetDatabase__ConnectionString=mongodb://mongodb:27017
-      - MediaSetDatabase__DatabaseName=MediaSet
+      - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
+      - MediaSetDatabaseSettings__DatabaseName=MediaSet
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
     volumes:
       - ./MediaSet.Api:/app:Z
