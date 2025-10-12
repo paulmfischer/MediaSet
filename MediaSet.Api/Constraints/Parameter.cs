@@ -6,7 +6,7 @@ public interface IParameter
 public class Parameter<T> : IParameter
 {
   private string? stringValue;
-  private T value;
+  private T value = default!;
 
   public bool IsValid { get; private set; }
 
@@ -36,7 +36,7 @@ public class Parameter<T> : IParameter
   private static bool TryParseParameter(string value, IFormatProvider provider, out T result)
   {
     var success = false;
-    result = default;
+    result = default!;
 
     if (typeof(T) == typeof(bool))
     {
@@ -49,7 +49,7 @@ public class Parameter<T> : IParameter
     {
       success = Enum.TryParse(typeof(T), value, true, out var parsedValue);
       success = success && Enum.IsDefined(typeof(T), parsedValue!);
-      if (success)
+      if (success && parsedValue != null)
       {
         result = (T)parsedValue;
       }
