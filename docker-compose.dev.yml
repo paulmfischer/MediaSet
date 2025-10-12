@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # MongoDB for development
   mongodb:
-    image: mongodb/mongodb-community-server:7.0
+    image: mongo:7.0
     container_name: mediaset-dev-mongo
     restart: unless-stopped
     ports:
@@ -24,11 +24,11 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"   # HTTP
-      - "5001:5001"   # HTTPS
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000;https://+:5001
-      - ASPNETCORE_HTTPS_PORT=5001
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_HTTP_PORTS=5000
+      - ASPNETCORE_HTTPS_PORTS=
       - MediaSetDatabase__ConnectionString=mongodb://mongodb:27017
       - MediaSetDatabase__DatabaseName=MediaSet
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
@@ -40,7 +40,7 @@ services:
       - mongodb
     networks:
       - mediaset-dev
-    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000;https://0.0.0.0:5001"]
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
 
   # Remix frontend with hot reload
   frontend:
@@ -50,7 +50,7 @@ services:
     container_name: mediaset-dev-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3000:5173"
     environment:
       - NODE_ENV=development
       - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000

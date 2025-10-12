@@ -98,8 +98,7 @@ start_dev() {
     echo "📋 Available services:"
     echo "   🌐 Frontend (Remix):     http://localhost:3000"
     echo "   🚀 API (.NET):           http://localhost:5000"
-    echo "   🔒 API (HTTPS):          https://localhost:5001"
-    echo "   📊 MongoDB:              mongodb://localhost:27017"
+    echo "    MongoDB:              mongodb://localhost:27017"
     echo ""
     echo "📝 Useful commands:"
     echo "   View logs:               ./dev.sh logs"
@@ -112,9 +111,17 @@ start_dev() {
 # Function to show logs
 show_logs() {
     if [ -n "$2" ]; then
-        $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f "$2"
+        if [ "$3" = "-f" ] || [ "$3" = "--follow" ]; then
+            $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f "$2"
+        else
+            $COMPOSE_COMMAND -f $COMPOSE_FILE logs --tail=50 "$2"
+        fi
     else
-        $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f
+        if [ "$2" = "-f" ] || [ "$2" = "--follow" ]; then
+            $COMPOSE_COMMAND -f $COMPOSE_FILE logs -f
+        else
+            $COMPOSE_COMMAND -f $COMPOSE_FILE logs --tail=50
+        fi
     fi
 }
 
@@ -182,14 +189,15 @@ case "$1" in
         echo "  start     - Start the development environment"
         echo "  stop      - Stop the development environment" 
         echo "  restart   - Restart all services"
-        echo "  logs      - Show logs (add service name for specific service)"
+        echo "  logs      - Show recent logs (add service name for specific service)"
         echo "  status    - Show container status"
         echo "  shell     - Enter container shell (api|frontend|mongo)"
         echo "  clean     - Stop and remove all containers, volumes, and images"
         echo ""
         echo "Examples:"
         echo "  $0 start"
-        echo "  $0 logs api"
+        echo "  $0 logs api          # Show recent API logs"
+        echo "  $0 logs api -f       # Follow API logs (Ctrl+C to exit)"
         echo "  $0 shell frontend"
         echo ""
         echo "Container Runtime Support:"
