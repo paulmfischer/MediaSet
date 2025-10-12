@@ -13,7 +13,8 @@ internal static class MetadatApi
 
     group.WithTags("Metadata");
 
-    group.MapGet("/formats/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) => {
+    group.MapGet("/formats/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+    {
       MediaTypes mediaTypes = media;
       return mediaTypes switch
       {
@@ -23,13 +24,14 @@ internal static class MetadatApi
       };
     });
 
-    group.MapGet("/genres/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) => {
+    group.MapGet("/genres/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+    {
       MediaTypes mediaTypes = media;
       return mediaTypes switch
       {
         MediaTypes.Books => await metadataService.GetBookGenres(),
         MediaTypes.Movies => await metadataService.GetMovieGenres(),
-      _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
+        _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
       };
     });
 

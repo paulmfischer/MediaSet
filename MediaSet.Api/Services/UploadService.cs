@@ -6,27 +6,27 @@ namespace MediaSet.Api.Services;
 
 public class UploadService
 {
-    public static IEnumerable<TEntity> MapUploadToEntities<TEntity>(IList<string> headerFields, IList<string[]> dataFields) where TEntity : IEntity, new()
-    {
-      IList<TEntity> entities = new List<TEntity>(dataFields.Count);
+  public static IEnumerable<TEntity> MapUploadToEntities<TEntity>(IList<string> headerFields, IList<string[]> dataFields) where TEntity : IEntity, new()
+  {
+    IList<TEntity> entities = new List<TEntity>(dataFields.Count);
 
-      foreach (string[] dataRow in dataFields)
+    foreach (string[] dataRow in dataFields)
+    {
+      var newEntity = new TEntity();
+      entities.Add(newEntity);
+      foreach (var property in newEntity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
       {
-        var newEntity = new TEntity();
-        entities.Add(newEntity);
-        foreach (var property in newEntity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        if (property != null)
         {
-          if (property != null)
+          var value = dataRow.GetValueByHeader<Movie>(headerFields, property);
+          if (value != null)
           {
-            var value = dataRow.GetValueByHeader<Movie>(headerFields, property);
-            if (value != null)
-            {
-              property.SetValue(newEntity, value.CastTo(property));
-            }
+            property.SetValue(newEntity, value.CastTo(property));
           }
         }
       }
-
-      return entities;
     }
+
+    return entities;
+  }
 }

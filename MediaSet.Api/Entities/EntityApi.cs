@@ -63,65 +63,65 @@ internal static class EntityApi
       return TypedResults.Ok();
     });
 
-     group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
-    {
-      logger.LogInformation("Received {fileName} file to upload to {entity}s", bookUpload.FileName, typeof(TEntity).Name);
-      IEnumerable<TEntity> newEntities;
-      try
-      {
-        var entityType = typeof(TEntity);
-        using Stream stream = bookUpload.OpenReadStream();
+    group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (EntityService<TEntity> entityService, IFormFile bookUpload) =>
+   {
+     logger.LogInformation("Received {fileName} file to upload to {entity}s", bookUpload.FileName, typeof(TEntity).Name);
+     IEnumerable<TEntity> newEntities;
+     try
+     {
+       var entityType = typeof(TEntity);
+       using Stream stream = bookUpload.OpenReadStream();
 
-        using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
-        parser.TextFieldType = FieldType.Delimited;
-        parser.SetDelimiters(";");
-        parser.HasFieldsEnclosedInQuotes = true;
-        IList<string>? headerFields = [];
-        IList<string[]> dataFields = [];
-        while (!parser.EndOfData)
-        {
-          //Process header row
-          if (parser.LineNumber == 1)
-          {
-            headerFields = parser.ReadFields();
-            if (headerFields == null)
-            {
-              logger.LogError("No header fields are included in upload document");
-              return TypedResults.BadRequest("No header fields in upload document.");
-            }
-            logger.LogDebug("Header Fields: {headerFields}", string.Join(',', headerFields));
-          }
-          else
-          {
-            // process data rows
-            string[]? dataRow = parser.ReadFields();
-            if (dataRow != null)
-            {
-              logger.LogTrace("Entity Data: {dataRow}", string.Join(',', dataRow));
-              dataFields.Add(dataRow);
-            }
-          }
-        }
+       using TextFieldParser parser = new(stream, System.Text.Encoding.UTF8);
+       parser.TextFieldType = FieldType.Delimited;
+       parser.SetDelimiters(";");
+       parser.HasFieldsEnclosedInQuotes = true;
+       IList<string>? headerFields = [];
+       IList<string[]> dataFields = [];
+       while (!parser.EndOfData)
+       {
+         //Process header row
+         if (parser.LineNumber == 1)
+         {
+           headerFields = parser.ReadFields();
+           if (headerFields == null)
+           {
+             logger.LogError("No header fields are included in upload document");
+             return TypedResults.BadRequest("No header fields in upload document.");
+           }
+           logger.LogDebug("Header Fields: {headerFields}", string.Join(',', headerFields));
+         }
+         else
+         {
+           // process data rows
+           string[]? dataRow = parser.ReadFields();
+           if (dataRow != null)
+           {
+             logger.LogTrace("Entity Data: {dataRow}", string.Join(',', dataRow));
+             dataFields.Add(dataRow);
+           }
+         }
+       }
 
-        if (dataFields.Count == 0)
-        {
-          logger.LogError("No data to upload");
-          return TypedResults.BadRequest("No data to upload.");
-        }
+       if (dataFields.Count == 0)
+       {
+         logger.LogError("No data to upload");
+         return TypedResults.BadRequest("No data to upload.");
+       }
 
-        newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
-        await entityService.BulkCreateAsync(newEntities);
-      }
-      catch (Exception er)
-      {
-        logger.LogError(er, "Failed to save bulk create for {entity}s", typeof(TEntity).Name);
-        return TypedResults.BadRequest(string.Format("Failed to save bulk create: {0}", er));
-      }
+       newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
+       await entityService.BulkCreateAsync(newEntities);
+     }
+     catch (Exception er)
+     {
+       logger.LogError(er, "Failed to save bulk create for {entity}s", typeof(TEntity).Name);
+       return TypedResults.BadRequest(string.Format("Failed to save bulk create: {0}", er));
+     }
 
-      logger.LogInformation("Uploaded {count} new {entity}s", newEntities.Count(), typeof(TEntity).Name);
-      return TypedResults.Ok(string.Format("Uploaded {0} new {1}s", newEntities.Count(), typeof(TEntity).Name));
-    })
-    .DisableAntiforgery();
+     logger.LogInformation("Uploaded {count} new {entity}s", newEntities.Count(), typeof(TEntity).Name);
+     return TypedResults.Ok(string.Format("Uploaded {0} new {1}s", newEntities.Count(), typeof(TEntity).Name));
+   })
+   .DisableAntiforgery();
 
     return group;
   }

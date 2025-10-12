@@ -14,6 +14,6 @@ public class DatabaseService
     var mongoClient = new MongoClient(dbSettings.ConnectionString);
     mongoDatabase = mongoClient.GetDatabase(dbSettings.DatabaseName);
   }
-  
+
   public IMongoCollection<TEntity> GetCollection<TEntity>() => mongoDatabase.GetCollection<TEntity>($"{typeof(TEntity).Name}s");
 }

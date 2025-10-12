@@ -8,7 +8,7 @@ namespace MediaSet.Api.Services;
 public class EntityService<TEntity> where TEntity : IEntity
 {
   private readonly IMongoCollection<TEntity> entityCollection;
-  
+
   public EntityService(DatabaseService databaseService)
   {
     entityCollection = databaseService.GetCollection<TEntity>();
@@ -37,7 +37,7 @@ public class EntityService<TEntity> where TEntity : IEntity
     }
     return (await entitySearch.ToListAsync()).Select(entity => entity.SetType());
   }
-  
+
   public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType());
 
   public async Task<TEntity?> GetAsync(string id) => (await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync()).SetType();
@@ -47,6 +47,6 @@ public class EntityService<TEntity> where TEntity : IEntity
   public Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity) => entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity);
 
   public Task<DeleteResult> RemoveAsync(string id) => entityCollection.DeleteOneAsync(x => x.Id == id);
-  
+
   public Task BulkCreateAsync(IEnumerable<TEntity> newEntities) => entityCollection.InsertManyAsync(newEntities);
 }

@@ -130,7 +130,7 @@ public static class DictionaryExtensions
           {
             var name = subjectElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
             var url = subjectElement.TryGetProperty("url", out var urlElement) ? urlElement.GetString() : null;
-            
+
             if (!string.IsNullOrEmpty(name))
             {
               subjects.Add(new Subject(name, url ?? ""));

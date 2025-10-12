@@ -21,7 +21,7 @@ public class RuntimeConverter : IConverter
       var minutes = int.Parse(timeSplit[0]);
       return minutes;
     }
-    
+
     return null;
   }
 }

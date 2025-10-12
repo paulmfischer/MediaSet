@@ -10,7 +10,8 @@ internal static class StringArrayExtensions
     string headerName = uploadAttribute != null && !string.IsNullOrWhiteSpace(uploadAttribute.HeaderName) ? uploadAttribute.HeaderName : propertyInfo.Name;
 
     var headerIndex = headerFields.IndexOf(headerName);
-    if (headerIndex < 0) {
+    if (headerIndex < 0)
+    {
       return null;
     }
     var fieldData = fields.ElementAt(headerIndex);

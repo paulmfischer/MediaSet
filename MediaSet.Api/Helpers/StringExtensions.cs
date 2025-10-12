@@ -21,8 +21,8 @@ public static class StringExtensions
       var converterType = uploadAttribute.Converter;
       if (Activator.CreateInstance(converterType) is IConverter converter)
       {
-          var convertedValue = converter.Convert(value);
-          return convertedValue;
+        var convertedValue = converter.Convert(value);
+        return convertedValue;
       }
     }
     else
