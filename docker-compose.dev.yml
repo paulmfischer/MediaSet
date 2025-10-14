@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MongoDB for development
+  mongodb:
+    image: mongo:7.0
+    container_name: mediaset-dev-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=MediaSet
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mediaset-dev
+
+  # .NET API with hot reload support
+  api:
+    build:
+      context: ./MediaSet.Api
+      dockerfile: Dockerfile.dev
+    container_name: mediaset-dev-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"   # HTTP
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_HTTP_PORTS=5000
+      - ASPNETCORE_HTTPS_PORTS=
+      - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
+      - MediaSetDatabaseSettings__DatabaseName=MediaSet
+      - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
+    volumes:
+      - ./MediaSet.Api:/app
+      - ~/.nuget/packages:/home/app/.nuget/packages
+      - ~/.dotnet/tools:/home/app/.dotnet/tools
+    depends_on:
+      - mongodb
+    networks:
+      - mediaset-dev
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
+
+  # Remix frontend with hot reload
+  frontend:
+    build:
+      context: ./MediaSet.Remix
+      dockerfile: Dockerfile.dev
+    container_name: mediaset-dev-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:5173"
+    environment:
+      - NODE_ENV=development
+      - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
+    volumes:
+      - ./MediaSet.Remix:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - mediaset-dev
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+volumes:
+  mongodb_data:
+
+networks:
+  mediaset-dev:
+    driver: bridge

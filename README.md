@@ -21,15 +21,42 @@ Books detail page:
 
 ![Books detail page](assets/screenshots/Books-detail.png)
 
-## Development work
-To do development you need to star the `MediaSet.Api` as well as the `MediaSite.Remix` projects.
+## Development
 
-To start `MediaSet.Api`:
-- VSCode: can be by pressing `F5` or by staring the debugger from the debug menu. Make sure `MediaSet.Api` is select in the debugger dropdown.
+### 🐳 Containerized Development (Recommended)
 
-This will launch a browser window to http://localhost:7130/swagger/index.html to display the swagger API.
+**New developers don't need to install .NET, Node.js, or MongoDB!** Everything runs in containers with full hot-reload support. 
 
-To start `MediaSet.Remix`:
-- CommandLine/Terminal: run `npm run dev` from the `MediaSet.Remix` folder.
+**Supports both Docker and Podman** - the setup script automatically detects your container runtime.
 
-You can now navigate to http://localhost:5173 in a browser and will be brought to the home page of MediaSet.
+#### Quick Start
+```bash
+# Clone the repository
+git clone https://github.com/paulmfischer/MediaSet.git
+cd MediaSet
+
+# Start the development environment
+./dev.sh start
+
+# Access the applications:
+# Frontend: http://localhost:3000
+# API: http://localhost:5000 
+# MongoDB: mongodb://localhost:27017
+```
+
+For complete setup instructions, debugging, and troubleshooting, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
+
+### 📖 Traditional Development
+
+If you prefer to install dependencies locally:
+
+**Prerequisites:**
+- .NET 8.0 SDK
+- Node.js 20+
+- MongoDB
+
+**Setup:**
+1. Start MongoDB locally
+2. Start the API: Press `F5` in VS Code or `dotnet run` in `MediaSet.Api/`
+3. Start the frontend: `npm run dev` in `MediaSet.Remix/`
+4. Access: Frontend at http://localhost:3000, API at http://localhost:5000
