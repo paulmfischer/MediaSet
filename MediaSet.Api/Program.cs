@@ -54,8 +54,8 @@ builder.Services.AddSwaggerGen((setup) => {
   setup.SchemaFilter<ParameterSchemaFilter>();
 });
 
-builder.Services.AddScoped<EntityService<Book>>();
-builder.Services.AddScoped<EntityService<Movie>>();
+builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
+builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
 builder.Services.AddScoped<MetadataService>();
 builder.Services.AddScoped<StatsService>();
 

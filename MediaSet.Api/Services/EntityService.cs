@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
 
-public class EntityService<TEntity> where TEntity : IEntity
+public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IEntity
 {
   private readonly IMongoCollection<TEntity> entityCollection;
 

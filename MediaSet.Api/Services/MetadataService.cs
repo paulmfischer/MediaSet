@@ -4,10 +4,10 @@ namespace MediaSet.Api.Services;
 
 public class MetadataService
 {
-  private readonly EntityService<Book> booksService;
-  private readonly EntityService<Movie> movieService;
+  private readonly IEntityService<Book> booksService;
+  private readonly IEntityService<Movie> movieService;
 
-  public MetadataService(EntityService<Book> _booksService, EntityService<Movie> _movieService)
+  public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService)
   {
     booksService = _booksService;
     movieService = _movieService;

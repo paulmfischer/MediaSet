@@ -2,7 +2,7 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
-public class StatsService(EntityService<Book> bookService, EntityService<Movie> movieService)
+public class StatsService(IEntityService<Book> bookService, IEntityService<Movie> movieService)
 {
   public async Task<Stats> GetMediaStatsAsync()
   {
