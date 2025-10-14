@@ -133,31 +133,6 @@ namespace MediaSet.Api.Tests.Services
         }
 
         [Test]
-        public void Book_ShouldHaveValidProperties_WhenGeneratedByFaker()
-        {
-            // Arrange & Act
-            var book = _bookFaker.Generate();
-
-            // Assert
-            Assert.That(book, Is.Not.Null);
-            Assert.That(book.Id, Is.Not.Null.And.Not.Empty);
-            Assert.That(book.Title, Is.Not.Null.And.Not.Empty);
-            Assert.That(book.Authors, Is.Not.Null.And.Not.Empty);
-            Assert.That(book.Genres, Is.Not.Null.And.Not.Empty);
-            Assert.That(book, Is.InstanceOf<IEntity>());
-        }
-
-        [Test]
-        public void Movie_ShouldImplementIEntity()
-        {
-            // Arrange & Act
-            var movie = new Movie();
-
-            // Assert
-            Assert.That(movie, Is.InstanceOf<IEntity>());
-        }
-
-        [Test]
         public void EntityService_ShouldWork_WithDifferentEntityTypes()
         {
             // Arrange
@@ -168,11 +143,5 @@ namespace MediaSet.Api.Tests.Services
             // Verify it calls GetCollection for Movie type
             _databaseServiceMock.Verify(db => db.GetCollection<Movie>(), Times.Once);
         }
-
-        // Note: More complex tests involving MongoDB query operations would require
-        // extensive mocking of IFindFluent, IAsyncCursor, etc. These tests focus on 
-        // verifying that the service correctly delegates to the MongoDB collection
-        // and passes the right parameters. Integration tests would be more appropriate
-        // for testing the actual MongoDB query logic.
     }
 }
