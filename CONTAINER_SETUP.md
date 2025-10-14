@@ -182,6 +182,34 @@ echo "$USER:100000:65536" | sudo tee -a /etc/subgid
 
 ## Next Steps
 
+### Known issue: docker-credential-desktop on Linux
+
+On some Linux machines the file `~/.docker/config.json` may contain a `credsStore` or `credHelpers` entry pointing to `docker-credential-desktop` (this is common if you previously used Docker Desktop). On systems where `docker-credential-desktop` isn't installed you'll get an error like:
+
+```
+docker-credential-desktop not installed or available in PATH
+```
+
+Workarounds:
+
+- Recommended (handled by `dev.sh`): The project's `./dev.sh` script detects this situation and creates a temporary `DOCKER_CONFIG` without the credential helper for the duration of the script, avoiding the error.
+
+- Manual: Edit or remove the `credsStore` / `credHelpers` entries from `~/.docker/config.json`. For example, back up and then remove the keys:
+
+```bash
+cp ~/.docker/config.json ~/.docker/config.json.bak
+jq 'del(.credsStore, .credHelpers)' ~/.docker/config.json.bak > ~/.docker/config.json
+```
+
+If you don't have `jq`, you can replace the file with a minimal config:
+
+```bash
+mv ~/.docker/config.json ~/.docker/config.json.bak
+echo '{"auths":{}}' > ~/.docker/config.json
+```
+
+Be careful: editing `~/.docker/config.json` affects Docker CLI authentication state. Back up before changing it.
+
 Once your container runtime is set up:
 
 1. Run `./dev.sh start` to start the development environment

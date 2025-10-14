@@ -64,6 +64,43 @@ setup_container_runtime() {
     # Create necessary directories if they don't exist
     mkdir -p ~/.nuget/packages
     mkdir -p ~/.dotnet/tools
+        # Workaround: some Linux systems have a ~/.docker/config.json that references
+        # docker-credential-desktop (installed with Docker Desktop). On systems without
+        # that helper (typical Linux servers/WSL without Desktop) docker/compose can
+        # error with "docker-credential-desktop not installed or available in PATH".
+        # Create a temporary DOCKER_CONFIG that strips `credsStore`/`credHelpers` so
+        # docker/compose won't try to invoke the missing helper. This only affects
+        # commands run by this script and is cleaned up on exit.
+        if [ "$CONTAINER_RUNTIME" = "docker" ]; then
+            if [ -f "$HOME/.docker/config.json" ]; then
+                if (grep -q '"credsStore"' "$HOME/.docker/config.json" 2>/dev/null) || (grep -q '"credHelpers"' "$HOME/.docker/config.json" 2>/dev/null); then
+                    if ! command -v docker-credential-desktop >/dev/null 2>&1; then
+                        echo "⚠️  docker credential helper 'docker-credential-desktop' not found. Creating temporary DOCKER_CONFIG without credsStore to avoid errors."
+                        TMP_DOCKER_CONFIG=$(mktemp -d)
+                        # Try to cleanly remove the keys using python if available
+                        if command -v python3 >/dev/null 2>&1; then
+python3 - <<'PY' > "$TMP_DOCKER_CONFIG/config.json"
+import json,sys,os
+p=os.path.expanduser('~/.docker/config.json')
+try:
+    j=json.load(open(p))
+except Exception:
+    j={}
+j.pop('credsStore',None)
+j.pop('credHelpers',None)
+json.dump(j,sys.stdout)
+PY
+                        else
+                            # Fallback: create a minimal config so docker doesn't attempt helpers
+                            echo '{"auths":{}}' > "$TMP_DOCKER_CONFIG/config.json"
+                        fi
+                        export DOCKER_CONFIG="$TMP_DOCKER_CONFIG"
+                        # Clean up temp dir on script exit
+                        trap 'rm -rf "$TMP_DOCKER_CONFIG"' EXIT
+                    fi
+                fi
+            fi
+        fi
 }
 
 # Function to check if containers are healthy
