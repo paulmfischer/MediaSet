@@ -15,7 +15,7 @@ namespace MediaSet.Api.Tests.Services
     [TestFixture]
     public class EntityServiceTests
     {
-        private Mock<DatabaseService> _databaseServiceMock;
+        private Mock<IDatabaseService> _databaseServiceMock;
         private Mock<IMongoCollection<Book>> _collectionMock;
         private EntityService<Book> _entityService;
         private Faker<Book> _bookFaker;
@@ -23,15 +23,7 @@ namespace MediaSet.Api.Tests.Services
         [SetUp]
         public void Setup()
         {
-            // Create mock database service with proper constructor
-            var dbSettingsMock = new Mock<IOptions<MediaSetDatabaseSettings>>();
-            dbSettingsMock.Setup(x => x.Value).Returns(new MediaSetDatabaseSettings
-            {
-                ConnectionString = "mongodb://localhost:27017",
-                DatabaseName = "TestDatabase"
-            });
-
-            _databaseServiceMock = new Mock<DatabaseService>(dbSettingsMock.Object);
+            _databaseServiceMock = new Mock<IDatabaseService>();
             _collectionMock = new Mock<IMongoCollection<Book>>();
             
             _databaseServiceMock.Setup(db => db.GetCollection<Book>())

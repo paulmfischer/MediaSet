@@ -30,7 +30,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 
 // Configure database settings
 builder.Services.Configure<MediaSetDatabaseSettings>(builder.Configuration.GetSection(nameof(MediaSetDatabaseSettings)));
-builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 
 // conditionally register open library if the configuration exists
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));

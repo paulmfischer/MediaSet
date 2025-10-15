@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
 
-public class DatabaseService
+public class DatabaseService : IDatabaseService
 {
   private readonly IMongoDatabase mongoDatabase;
 

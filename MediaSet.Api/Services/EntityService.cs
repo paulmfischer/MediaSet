@@ -9,7 +9,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 {
   private readonly IMongoCollection<TEntity> entityCollection;
 
-  public EntityService(DatabaseService databaseService)
+  public EntityService(IDatabaseService databaseService)
   {
     entityCollection = databaseService.GetCollection<TEntity>();
   }
