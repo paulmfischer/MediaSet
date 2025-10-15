@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
@@ -206,7 +207,7 @@ public class StringExtensionsTests
     }
 
     [Test]
-    public void CastTo_RuntimePropertyWithMinutesOnly_ReturnsNull()
+    public void CastTo_RuntimePropertyWithMinutesOnly_ReturnsMinutes()
     {
         // Arrange
         var value = "90"; // Single value without colon separator
@@ -216,7 +217,7 @@ public class StringExtensionsTests
         var result = value.CastTo(propertyInfo);
 
         // Assert
-        Assert.That(result, Is.Null); // RuntimeConverter returns null for invalid format
+        Assert.That(result, Is.EqualTo(90)); // RuntimeConverter now correctly handles minutes-only format
     }
 
     [Test]
@@ -248,17 +249,14 @@ public class StringExtensionsTests
     }
 
     [Test]
-    public void CastTo_RuntimePropertyWithInvalidFormat_ReturnsNull()
+    public void CastTo_RuntimePropertyWithInvalidFormat_ThrowsFormatException()
     {
         // Arrange
         var value = "invalid";
         var propertyInfo = typeof(Movie).GetProperty(nameof(Movie.Runtime))!;
 
-        // Act
-        var result = value.CastTo(propertyInfo);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        // Act & Assert
+        Assert.Throws<FormatException>(() => value.CastTo(propertyInfo));
     }
 
     [Test]
