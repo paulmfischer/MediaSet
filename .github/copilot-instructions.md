@@ -133,3 +133,14 @@ Currently, the project does not have automated tests. When suggesting test imple
 - Docker configurations are available for both API and frontend
 - The project uses OpenLibrary API for book metadata
 - Stats are automatically calculated and cached
+
+## Branching and Git Workflow
+
+- Never commit directly to the `main` branch.
+- For any change, create a new branch from `main` and work there. Use a descriptive naming convention, for example:
+   - `feature/<short-description>` for new features
+   - `fix/<short-description>` for bug fixes
+   - `chore/<short-description>` for maintenance and non-functional changes
+- Open a Pull Request (PR) from your branch into `main` when ready. Ensure the PR description summarizes the change and any notable impacts.
+- Keep branches focused and small; prefer incremental PRs over large ones.
+- Update the branch with the latest `main` before merging (rebase or merge as appropriate).

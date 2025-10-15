@@ -8,6 +8,7 @@ internal static class LookupApi
 {
   public static RouteGroupBuilder MapIsbnLookup(this IEndpointRouteBuilder routes)
   {
+    var logger = ((WebApplication)routes).Logger;
     var group = routes.MapGroup("/lookup");
 
     group.WithTags("Lookup");
@@ -16,16 +17,20 @@ internal static class LookupApi
     {
       if (!IdentifierTypeExtensions.TryParseIdentifierType(identifierType, out var parsedIdentifierType))
       {
+        logger.LogWarning("Invalid identifier type {identifierType} for value {identifierValue}", identifierType, identifierValue);
         return TypedResults.BadRequest($"Invalid identifier type: {identifierType}. Valid types are: {IdentifierTypeExtensions.GetValidTypesString()}");
       }
 
+      logger.LogInformation("Lookup request: {identifierType} = {identifierValue}", parsedIdentifierType, identifierValue);
       var result = await openLibraryClient.GetReadableBookAsync(parsedIdentifierType, identifierValue);
 
-      return result switch
+      if (result is BookResponse bookResponse)
       {
-        BookResponse bookResponse => TypedResults.Ok(bookResponse),
-        _ => TypedResults.NotFound()
-      };
+        return TypedResults.Ok(bookResponse);
+      }
+
+      logger.LogInformation("No result for {identifierType} = {identifierValue}", parsedIdentifierType, identifierValue);
+      return TypedResults.NotFound();
     });
 
     return group;
