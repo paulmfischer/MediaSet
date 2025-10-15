@@ -19,8 +19,8 @@ public class StatsService(IEntityService<Book> bookService, IEntityService<Movie
       books.Count(),
       bookFormats.Count(),
       bookFormats,
-      books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum(),
-      books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count()
+      books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count(),
+      books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum()
     );
     var movieStats = new MovieStats
     (
