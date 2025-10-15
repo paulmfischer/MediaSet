@@ -13,7 +13,7 @@ internal static class MetadatApi
 
     group.WithTags("Metadata");
 
-    group.MapGet("/formats/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+    group.MapGet("/formats/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
     {
       MediaTypes mediaTypes = media;
       return mediaTypes switch
@@ -24,7 +24,7 @@ internal static class MetadatApi
       };
     });
 
-    group.MapGet("/genres/{media}", async (MetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+    group.MapGet("/genres/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
     {
       MediaTypes mediaTypes = media;
       return mediaTypes switch
@@ -35,9 +35,9 @@ internal static class MetadatApi
       };
     });
 
-    group.MapGet("/studios", async (MetadataService metadataService) => await metadataService.GetMovieStudios());
-    group.MapGet("/authors", async (MetadataService metadataService) => await metadataService.GetBookAuthors());
-    group.MapGet("/publishers", async (MetadataService metadataService) => await metadataService.GetBookPublishers());
+    group.MapGet("/studios", async (IMetadataService metadataService) => await metadataService.GetMovieStudios());
+    group.MapGet("/authors", async (IMetadataService metadataService) => await metadataService.GetBookAuthors());
+    group.MapGet("/publishers", async (IMetadataService metadataService) => await metadataService.GetBookPublishers());
 
     return group;
   }

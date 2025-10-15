@@ -38,7 +38,7 @@ if (openLibraryConfig.Exists())
 {
   logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
   builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
-  builder.Services.AddHttpClient<OpenLibraryClient>((serviceProvider, client) => {
+  builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) => {
       var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
       client.BaseAddress = new Uri(options.BaseUrl);
       client.Timeout = TimeSpan.FromSeconds(options.Timeout);
@@ -56,8 +56,8 @@ builder.Services.AddSwaggerGen((setup) => {
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
 builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
-builder.Services.AddScoped<MetadataService>();
-builder.Services.AddScoped<StatsService>();
+builder.Services.AddScoped<IMetadataService, MetadataService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
 
 var app = builder.Build();
 
@@ -85,3 +85,6 @@ if (openLibraryConfig.Exists())
 }
 
 app.Run();
+
+// Make the implicit Program class public so test projects can access it
+public partial class Program { }

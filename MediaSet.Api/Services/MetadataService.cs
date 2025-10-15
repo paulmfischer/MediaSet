@@ -2,7 +2,7 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
-public class MetadataService
+public class MetadataService : IMetadataService
 {
   private readonly IEntityService<Book> booksService;
   private readonly IEntityService<Movie> movieService;
