@@ -141,6 +141,7 @@ namespace MediaSet.Api.Tests.Services
         public async Task GetListAsync_ShouldReturnAllEntities_SortedByTitle()
         {
             // Arrange
+            // Create books in unsorted order
             var books = new List<Book>
             {
                 _bookFaker.Clone().RuleFor(b => b.Title, "Zebra Book").Generate(),
@@ -148,8 +149,11 @@ namespace MediaSet.Api.Tests.Services
                 _bookFaker.Clone().RuleFor(b => b.Title, "Middle Book").Generate()
             };
 
+            // MongoDB would return them sorted, so simulate that
+            var sortedBooks = books.OrderBy(b => b.Title).ToList();
+
             var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(books);
+            asyncCursor.Setup(c => c.Current).Returns(sortedBooks);
             asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
                 .Returns(true)
                 .Returns(false);
@@ -169,6 +173,14 @@ namespace MediaSet.Api.Tests.Services
             // Assert
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Count(), Is.EqualTo(3));
+            
+            // Verify the books are sorted by title
+            var resultList = result.ToList();
+            Assert.That(resultList[0].Title, Is.EqualTo("Alpha Book"));
+            Assert.That(resultList[1].Title, Is.EqualTo("Middle Book"));
+            Assert.That(resultList[2].Title, Is.EqualTo("Zebra Book"));
+            
+            // Verify collection was called
             _collectionMock.Verify(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
