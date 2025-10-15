@@ -40,7 +40,11 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
   public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType());
 
-  public async Task<TEntity?> GetAsync(string id) => (await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync()).SetType();
+  public async Task<TEntity?> GetAsync(string id)
+  {
+    var entity = await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+    return entity == null ? default : entity.SetType();
+  }
 
   public Task CreateAsync(TEntity newEntity) => entityCollection.InsertOneAsync(newEntity);
 
