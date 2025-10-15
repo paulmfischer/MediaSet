@@ -2,7 +2,7 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
-public class StatsService(EntityService<Book> bookService, EntityService<Movie> movieService)
+public class StatsService(IEntityService<Book> bookService, IEntityService<Movie> movieService) : IStatsService
 {
   public async Task<Stats> GetMediaStatsAsync()
   {
@@ -19,8 +19,8 @@ public class StatsService(EntityService<Book> bookService, EntityService<Movie> 
       books.Count(),
       bookFormats.Count(),
       bookFormats,
-      books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum(),
-      books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count()
+      books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count(),
+      books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum()
     );
     var movieStats = new MovieStats
     (

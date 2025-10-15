@@ -16,7 +16,7 @@ public class RuntimeConverter : IConverter
       var minutes = int.Parse(timeSplit[1]);
       return hoursByMinutes + minutes;
     }
-    else if (timeSplit.Length == 0)
+    else if (timeSplit.Length == 1)
     {
       var minutes = int.Parse(timeSplit[0]);
       return minutes;

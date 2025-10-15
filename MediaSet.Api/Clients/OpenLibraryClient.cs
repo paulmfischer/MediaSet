@@ -5,7 +5,7 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Clients;
 
-public class OpenLibraryClient : IDisposable
+public class OpenLibraryClient : IOpenLibraryClient, IDisposable
 {
   private readonly HttpClient httpClient;
   private readonly ILogger<OpenLibraryClient> logger;

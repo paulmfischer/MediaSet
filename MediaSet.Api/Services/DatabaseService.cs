@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
 
-public class DatabaseService
+public class DatabaseService : IDatabaseService
 {
   private readonly IMongoDatabase mongoDatabase;
 
@@ -15,5 +15,5 @@ public class DatabaseService
     mongoDatabase = mongoClient.GetDatabase(dbSettings.DatabaseName);
   }
 
-  public IMongoCollection<TEntity> GetCollection<TEntity>() => mongoDatabase.GetCollection<TEntity>($"{typeof(TEntity).Name}s");
+  public virtual IMongoCollection<TEntity> GetCollection<TEntity>() => mongoDatabase.GetCollection<TEntity>($"{typeof(TEntity).Name}s");
 }

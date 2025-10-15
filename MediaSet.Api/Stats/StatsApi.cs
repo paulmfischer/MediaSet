@@ -10,7 +10,7 @@ internal static class StatsApi
 
     group.WithTags("Stats");
 
-    group.MapGet("/", async (StatsService statsService) => await statsService.GetMediaStatsAsync());
+    group.MapGet("/", async (IStatsService statsService) => await statsService.GetMediaStatsAsync());
 
     return group;
   }

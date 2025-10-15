@@ -5,11 +5,11 @@ using MongoDB.Driver;
 
 namespace MediaSet.Api.Services;
 
-public class EntityService<TEntity> where TEntity : IEntity
+public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IEntity
 {
   private readonly IMongoCollection<TEntity> entityCollection;
 
-  public EntityService(DatabaseService databaseService)
+  public EntityService(IDatabaseService databaseService)
   {
     entityCollection = databaseService.GetCollection<TEntity>();
   }
@@ -35,10 +35,10 @@ public class EntityService<TEntity> where TEntity : IEntity
     {
       entitySearch.SortByDescending(sortFn);
     }
-    return (await entitySearch.ToListAsync()).Select(entity => entity.SetType());
+    return (await entitySearch.ToListAsync()).Select(entity => entity.SetType()).OfType<TEntity>();
   }
 
-  public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType());
+  public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType()).OfType<TEntity>();
 
   public async Task<TEntity?> GetAsync(string id) => (await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync()).SetType();
 

@@ -12,7 +12,7 @@ internal static class LookupApi
 
     group.WithTags("Lookup");
 
-    group.MapGet("/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, NotFound, BadRequest<string>>> (OpenLibraryClient openLibraryClient, string identifierType, string identifierValue) =>
+    group.MapGet("/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, NotFound, BadRequest<string>>> (IOpenLibraryClient openLibraryClient, string identifierType, string identifierValue) =>
     {
       if (!IdentifierTypeExtensions.TryParseIdentifierType(identifierType, out var parsedIdentifierType))
       {
