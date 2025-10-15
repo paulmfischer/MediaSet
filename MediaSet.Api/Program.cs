@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Clients;
@@ -7,16 +8,21 @@ using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure console logging with scopes and timestamps
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-
-var logger = LoggerFactory.Create(config =>
+builder.Logging.AddSimpleConsole(options =>
 {
-  config.AddConsole();
-}).CreateLogger("MediaSet.Api");
+  options.IncludeScopes = true;
+  options.SingleLine = true;
+  options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fff zzz ";
+});
+// Remove automatic TraceId/SpanId/ParentId printing from console logs
+builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.None);
 
 // configure enums as strings
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -36,7 +42,10 @@ builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
-  logger.LogInformation("OpenLibrary Configuration is set, setting up OpenLibrary services");
+  // Log using a bootstrap logger since app isn't built yet
+  using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+  var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+  bootstrapLogger.LogInformation("OpenLibrary configuration exists. Setting up OpenLibrary services.");
   builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
   builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) => {
       var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
@@ -52,6 +61,21 @@ if (openLibraryConfig.Exists())
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen((setup) => {
   setup.SchemaFilter<ParameterSchemaFilter>();
+});
+
+// Built-in HTTP request/response logging
+builder.Services.AddHttpLogging(logging =>
+{
+  logging.LoggingFields =
+    HttpLoggingFields.RequestMethod |
+    HttpLoggingFields.RequestPath |
+    HttpLoggingFields.ResponseStatusCode |
+    HttpLoggingFields.Duration;
+  logging.RequestHeaders.Add("User-Agent");
+  logging.RequestHeaders.Add("X-Request-ID");
+  logging.RequestHeaders.Add("X-Correlation-ID");
+  logging.ResponseHeaders.Add("X-Request-ID");
+  logging.ResponseHeaders.Add("X-Correlation-ID");
 });
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
@@ -70,6 +94,48 @@ var app = builder.Build();
 // }
 
 app.UseHttpsRedirection();
+
+// Enable HTTP logging
+app.UseHttpLogging();
+
+// Correlation ID + request timing middleware (no TraceId)
+app.Use(async (context, next) =>
+{
+  var logger = context.RequestServices
+    .GetRequiredService<ILoggerFactory>()
+    .CreateLogger("RequestTiming");
+
+  // Get or generate correlation ID
+  var correlationId = context.Request.Headers["X-Request-ID"].FirstOrDefault()
+    ?? context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
+    ?? Guid.NewGuid().ToString();
+
+  // Add correlation ID to response headers
+  context.Response.Headers["X-Request-ID"] = correlationId;
+  context.Response.Headers["X-Correlation-ID"] = correlationId;
+
+  var sw = Stopwatch.StartNew();
+
+  // Use a formatted string scope containing just the CorrelationId
+  using (logger.BeginScope("CorrelationId:{CorrelationId}", correlationId))
+  {
+    try
+    {
+      await next();
+    }
+    finally
+    {
+      sw.Stop();
+      logger.LogDebug(
+        "HTTP {method} {path} -> {status} in {elapsedMs} ms",
+        context.Request.Method,
+        context.Request.Path.Value,
+        context.Response.StatusCode,
+        sw.Elapsed.TotalMilliseconds
+      );
+    }
+  }
+});
 
 // Add health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
