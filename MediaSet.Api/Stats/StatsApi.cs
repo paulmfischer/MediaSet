@@ -18,13 +18,16 @@ internal static class StatsApi
       if (stats is not null)
       {
         logger.LogInformation(
-          "Stats: books total={bookTotal}, formats={bookFormats}, pages={bookPages}; movies total={movieTotal}, formats={movieFormats}, tvSeries={tvSeries}",
+          "Stats: books total={bookTotal}, formats={bookFormats}, pages={bookPages}; movies total={movieTotal}, formats={movieFormats}, tvSeries={tvSeries}; games total={gameTotal}, formats={gameFormats}, platforms={gamePlatforms}",
           stats.BookStats.Total,
           stats.BookStats.TotalFormats,
           stats.BookStats.TotalPages,
           stats.MovieStats.Total,
           stats.MovieStats.TotalFormats,
-          stats.MovieStats.TotalTvSeries
+          stats.MovieStats.TotalTvSeries,
+          stats.GameStats.Total,
+          stats.GameStats.TotalFormats,
+          stats.GameStats.TotalPlatforms
         );
       }
       return stats;
