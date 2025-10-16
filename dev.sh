@@ -103,44 +103,114 @@ PY
         fi
 }
 
-# Function to check if containers are healthy
+# Quick TCP port wait helper (faster than repeated exec into containers)
+wait_for_port() {
+    local host="$1"      # e.g., 127.0.0.1
+    local port="$2"      # e.g., 27017
+    local timeout_sec="${3:-30}"
+    local interval="${4:-0.5}"
+
+    echo "⏳ Waiting for $host:$port to accept TCP connections..."
+    timeout "$timeout_sec" bash -c "until (echo > /dev/tcp/$host/$port) >/dev/null 2>&1; do sleep $interval; done"
+}
+
+# Function to check if containers are healthy (scoped by target)
 check_health() {
-    echo "🔍 Checking container health..."
-    
-    # Wait for MongoDB to be ready
-    echo "⏳ Waiting for MongoDB to be ready..."
-    timeout 60 bash -c "until $COMPOSE_COMMAND -f $COMPOSE_FILE exec -T mongodb mongosh --eval \"db.admin.hello()\" > /dev/null 2>&1; do sleep 2; done"
-    
-    # Wait for API to be ready
-    echo "⏳ Waiting for API to be ready..."
-    timeout 60 bash -c 'until curl -s http://localhost:5000/health > /dev/null 2>&1; do sleep 2; done'
-    
-    # Wait for frontend to be ready
-    echo "⏳ Waiting for Frontend to be ready..."
-    timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
-    
-    echo "✅ All services are healthy!"
+    local target="${1:-all}"
+    local check_mongo=false
+    local check_api=false
+    local check_frontend=false
+
+    case "$target" in
+        all|ALL|*)
+            # Default to checking everything if target is empty or 'all'
+            check_mongo=true
+            check_api=true
+            check_frontend=true
+            ;;
+    esac
+
+    # Fine-tune based on explicit targets
+    if [[ "$target" == "mongodb" || "$target" == "mongo" ]]; then
+        check_mongo=true
+        check_api=false
+        check_frontend=false
+    fi
+    if [[ "$target" == "api" || "$target" == "backend" ]]; then
+        check_mongo=true   # API depends on Mongo
+        check_api=true
+        check_frontend=false
+    fi
+    if [[ "$target" == "frontend" || "$target" == "remix" ]]; then
+        check_mongo=true   # Frontend -> API -> Mongo
+        check_api=true
+        check_frontend=true
+    fi
+
+    echo "🔍 Checking container health (target: $target)..."
+
+    if $check_mongo; then
+        # Fast readiness: wait for port 27017 on localhost (bound by compose)
+        wait_for_port 127.0.0.1 27017 30 0.5 || { echo "❌ MongoDB port not ready"; return 1; }
+        # Optional: a brief grace period to allow full readiness after bind
+        sleep 0.5
+    fi
+
+    if $check_api; then
+        echo "⏳ Waiting for API to be ready..."
+        timeout 60 bash -c 'until curl -s http://localhost:5000/health > /dev/null 2>&1; do sleep 2; done' || {
+            echo "❌ API health check failed"; return 1;
+        }
+    fi
+
+    if $check_frontend; then
+        echo "⏳ Waiting for Frontend to be ready..."
+        timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null 2>&1; do sleep 2; done' || {
+            echo "❌ Frontend health check failed"; return 1;
+        }
+    fi
+
+    echo "✅ Health checks passed"
 }
 
 # Function to start development environment
 start_dev() {
-    echo "🔧 Building and starting development containers..."
-    $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d
-    
-    check_health
-    
+    local target="${1:-all}"
+    echo "🔧 Building and starting development containers (target: $target)..."
+
+    if [[ -z "$target" || "$target" == "all" ]]; then
+        $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d
+    else
+        # Normalize common aliases
+        case "$target" in
+            backend) target="api" ;;
+            remix) target="frontend" ;;
+            mongo) target="mongodb" ;;
+            api+frontend|frontend+api|app)
+                echo "🚀 Starting API and Frontend..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d api frontend
+                check_health "frontend"  # ensures api+frontend+mongo
+                echo "✅ Started API and Frontend"
+                return
+                ;;
+        esac
+        $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d "$target"
+    fi
+
+    check_health "$target"
+
     echo ""
     echo "🎉 Development environment is ready!"
     echo ""
     echo "📋 Available services:"
     echo "   🌐 Frontend (Remix):     http://localhost:3000"
     echo "   🚀 API (.NET):           http://localhost:5000"
-    echo "    MongoDB:              mongodb://localhost:27017"
+    echo "   🗄️  MongoDB:              mongodb://localhost:27017"
     echo ""
     echo "📝 Useful commands:"
-    echo "   View logs:               ./dev.sh logs"
-    echo "   Stop services:           ./dev.sh stop"
-    echo "   Restart services:        ./dev.sh restart"
+    echo "   View logs:               ./dev.sh logs [service] [-f]"
+    echo "   Stop services:           ./dev.sh stop [api|frontend|mongo]"
+    echo "   Restart services:        ./dev.sh restart [api|frontend|mongo]"
     echo "   Clean everything:        ./dev.sh clean"
     echo ""
 }
@@ -164,16 +234,51 @@ show_logs() {
 
 # Function to stop services
 stop_dev() {
-    echo "🛑 Stopping development environment..."
-    $COMPOSE_COMMAND -f $COMPOSE_FILE down
-    echo "✅ Services stopped"
+    local target="${1:-all}"
+    if [[ -z "$target" || "$target" == "all" ]]; then
+        echo "🛑 Stopping all development containers..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE down
+    else
+        case "$target" in
+            backend) target="api" ;;
+            remix) target="frontend" ;;
+            mongo) target="mongodb" ;;
+            api+frontend|frontend+api|app)
+                echo "🛑 Stopping API and Frontend (leaving MongoDB running)..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE stop api frontend
+                echo "✅ Stopped API and Frontend"
+                return
+                ;;
+        esac
+        echo "🛑 Stopping container: $target (leaving others running) ..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE stop "$target"
+    fi
+    echo "✅ Stop complete"
 }
 
 # Function to restart services
 restart_dev() {
-    echo "🔄 Restarting development environment..."
-    $COMPOSE_COMMAND -f $COMPOSE_FILE restart
-    check_health
+    local target="${1:-all}"
+    if [[ -z "$target" || "$target" == "all" ]]; then
+        echo "🔄 Restarting all services..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE restart
+        check_health "all"
+    else
+        case "$target" in
+            backend) target="api" ;;
+            remix) target="frontend" ;;
+            mongo) target="mongodb" ;;
+            api+frontend|frontend+api|app)
+                echo "🔄 Restarting API and Frontend..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE restart api frontend
+                check_health "frontend"  # ensures api+frontend+mongo
+                return
+                ;;
+        esac
+        echo "🔄 Restarting service: $target ..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE restart "$target"
+        check_health "$target"
+    fi
 }
 
 # Function to clean everything
@@ -220,19 +325,25 @@ case "$1" in
         echo "MediaSet Development Environment Manager"
         echo "🐳 Supports both Docker and Podman (auto-detected)"
         echo ""
-        echo "Usage: $0 {start|stop|restart|logs|status|shell|clean}"
+    echo "Usage: $0 {start|stop|restart|logs|status|shell|clean} [service]"
         echo ""
         echo "Commands:"
-        echo "  start     - Start the development environment"
-        echo "  stop      - Stop the development environment" 
-        echo "  restart   - Restart all services"
-        echo "  logs      - Show recent logs (add service name for specific service)"
+    echo "  start [service]   - Start environment or a single service (use 'api+frontend' or 'app' for both)"
+    echo "  stop [service]    - Stop environment or a single service (use 'api+frontend' or 'app' for both)"
+    echo "  restart [service] - Restart all or a single service (use 'api+frontend' or 'app' to restart both)"
+    echo "  logs [service]    - Show recent logs (add -f to follow)"
         echo "  status    - Show container status"
-        echo "  shell     - Enter container shell (api|frontend|mongo)"
+    echo "  shell     - Enter container shell (api|frontend|mongo)"
         echo "  clean     - Stop and remove all containers, volumes, and images"
         echo ""
         echo "Examples:"
-        echo "  $0 start"
+    echo "  $0 start                # Start everything"
+    echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
+    echo "  $0 start app            # Start API and Frontend (MongoDB if needed)"
+    echo "  $0 stop frontend        # Stop only the frontend (keep API/Mongo running)"
+    echo "  $0 stop app             # Stop API and Frontend (keep MongoDB running)"
+    echo "  $0 restart api          # Restart only the API"
+    echo "  $0 restart api+frontend # Restart API and Frontend (Mongo stays up)"
         echo "  $0 logs api          # Show recent API logs"
         echo "  $0 logs api -f       # Follow API logs (Ctrl+C to exit)"
         echo "  $0 shell frontend"
@@ -246,15 +357,15 @@ case "$1" in
         ;;
     start|up)
         setup_container_runtime
-        start_dev
+        start_dev "$2"
         ;;
     stop|down)
         setup_container_runtime
-        stop_dev
+        stop_dev "$2"
         ;;
     restart)
         setup_container_runtime
-        restart_dev
+        restart_dev "$2"
         ;;
     logs)
         setup_container_runtime
