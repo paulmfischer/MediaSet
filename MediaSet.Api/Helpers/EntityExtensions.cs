@@ -30,6 +30,19 @@ internal static class EntityExtensions
         book.Authors.Count == 0 &&
         book.Genres.Count == 0;
     }
+    else if (entity is Game game)
+    {
+      return string.IsNullOrWhiteSpace(game.Title) &&
+        string.IsNullOrWhiteSpace(game.Format) &&
+        string.IsNullOrWhiteSpace(game.Barcode) &&
+        string.IsNullOrWhiteSpace(game.ReleaseDate) &&
+        string.IsNullOrWhiteSpace(game.Rating) &&
+        string.IsNullOrWhiteSpace(game.Publisher) &&
+        game.Platforms.Count == 0 &&
+        game.Developers.Count == 0 &&
+        game.Genres.Count == 0 &&
+        string.IsNullOrWhiteSpace(game.Description);
+    }
 
     return true;
   }
