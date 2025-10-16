@@ -137,8 +137,8 @@ app.Use(async (context, next) =>
   }
 });
 
-// Add health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+// Health endpoint group
+app.MapHealth();
 
 app.MapEntity<Movie>();
 app.MapEntity<Book>();
