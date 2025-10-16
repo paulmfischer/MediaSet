@@ -1,6 +1,6 @@
 namespace MediaSet.Api.Models;
 
-public record Stats(BookStats BookStats, MovieStats MovieStats);
+public record Stats(BookStats BookStats, MovieStats MovieStats, GameStats GameStats);
 
 public record BookStats(
   int Total,
@@ -15,4 +15,12 @@ public record MovieStats(
   int TotalFormats,
   IEnumerable<string> Formats,
   int TotalTvSeries
+);
+
+public record GameStats(
+  int Total,
+  int TotalFormats,
+  IEnumerable<string> Formats,
+  int TotalPlatforms,
+  IEnumerable<string> Platforms
 );

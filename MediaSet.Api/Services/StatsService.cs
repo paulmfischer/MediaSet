@@ -2,18 +2,22 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
-public class StatsService(IEntityService<Book> bookService, IEntityService<Movie> movieService) : IStatsService
+public class StatsService(IEntityService<Book> bookService, IEntityService<Movie> movieService, IEntityService<Game> gameService) : IStatsService
 {
   public async Task<Stats> GetMediaStatsAsync()
   {
     var bookTask = bookService.GetListAsync();
     var movieTask = movieService.GetListAsync();
-    await Task.WhenAll(bookTask, movieTask);
+    var gameTask = gameService.GetListAsync();
+    await Task.WhenAll(bookTask, movieTask, gameTask);
 
     var books = bookTask.Result;
     var movies = movieTask.Result;
+    var games = gameTask.Result;
     var bookFormats = books.Where(book => !string.IsNullOrWhiteSpace(book.Format)).Select(book => book.Format.Trim()).Distinct();
     var movieFormats = movies.Where(movie => !string.IsNullOrWhiteSpace(movie.Format)).Select(movie => movie.Format.Trim()).Distinct();
+    var gameFormats = games.Where(game => !string.IsNullOrWhiteSpace(game.Format)).Select(game => game.Format.Trim()).Distinct();
+    var gamePlatforms = games.Where(game => game.Platforms?.Count > 0).SelectMany(game => game.Platforms).Select(platform => platform.Trim()).Distinct();
     var bookStats = new BookStats
     (
       books.Count(),
@@ -29,7 +33,15 @@ public class StatsService(IEntityService<Book> bookService, IEntityService<Movie
       movieFormats,
       movies.Where(movie => movie.IsTvSeries).Count()
     );
+    var gameStats = new GameStats
+    (
+      games.Count(),
+      gameFormats.Count(),
+      gameFormats,
+      gamePlatforms.Count(),
+      gamePlatforms
+    );
 
-    return new Stats(bookStats, movieStats);
+    return new Stats(bookStats, movieStats, gameStats);
   }
 }

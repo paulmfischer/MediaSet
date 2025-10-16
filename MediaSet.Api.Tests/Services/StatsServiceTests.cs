@@ -14,16 +14,19 @@ public class StatsServiceTests
 {
   private Mock<IEntityService<Book>> _bookServiceMock;
   private Mock<IEntityService<Movie>> _movieServiceMock;
+  private Mock<IEntityService<Game>> _gameServiceMock;
   private StatsService _statsService;
   private Faker<Book> _bookFaker;
   private Faker<Movie> _movieFaker;
+  private Faker<Game> _gameFaker;
 
   [SetUp]
   public void Setup()
   {
     _bookServiceMock = new Mock<IEntityService<Book>>();
     _movieServiceMock = new Mock<IEntityService<Movie>>();
-    _statsService = new StatsService(_bookServiceMock.Object, _movieServiceMock.Object);
+    _gameServiceMock = new Mock<IEntityService<Game>>();
+    _statsService = new StatsService(_bookServiceMock.Object, _movieServiceMock.Object, _gameServiceMock.Object);
 
     _bookFaker = new Faker<Book>()
       .RuleFor(b => b.Id, f => f.Random.AlphaNumeric(24))
@@ -40,6 +43,14 @@ public class StatsServiceTests
       .RuleFor(m => m.IsTvSeries, f => f.Random.Bool())
       .RuleFor(m => m.Studios, f => new List<string> { f.Company.CompanyName() })
       .RuleFor(m => m.Genres, f => new List<string> { f.PickRandom("Action", "Comedy", "Drama", "Horror") });
+
+    _gameFaker = new Faker<Game>()
+      .RuleFor(g => g.Id, f => f.Random.AlphaNumeric(24))
+      .RuleFor(g => g.Title, f => f.Lorem.Sentence())
+      .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
+      .RuleFor(g => g.Platforms, f => new List<string> { f.PickRandom("PC", "PlayStation", "Xbox", "Switch") })
+      .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
+      .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
   }
 
   #region GetMediaStatsAsync Tests
@@ -55,6 +66,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -73,6 +86,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -103,6 +118,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -128,6 +145,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -154,6 +173,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -180,6 +201,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -205,6 +228,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -231,6 +256,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -256,6 +283,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -279,6 +308,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -302,6 +333,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -323,6 +356,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -346,6 +381,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -371,6 +408,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -394,6 +433,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -413,6 +454,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -434,6 +477,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -487,6 +532,8 @@ public class StatsServiceTests
       .ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(movies);
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     var result = await _statsService.GetMediaStatsAsync();
@@ -514,6 +561,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     await _statsService.GetMediaStatsAsync();
@@ -530,6 +579,8 @@ public class StatsServiceTests
       .ReturnsAsync(new List<Book>());
     _movieServiceMock.Setup(s => s.GetListAsync())
       .ReturnsAsync(new List<Movie>());
+    _gameServiceMock.Setup(s => s.GetListAsync())
+      .ReturnsAsync(new List<Game>());
 
     // Act
     await _statsService.GetMediaStatsAsync();
@@ -542,7 +593,7 @@ public class StatsServiceTests
   public void StatsService_ShouldBeConstructed_WithValidServices()
   {
     // Arrange & Act
-    var service = new StatsService(_bookServiceMock.Object, _movieServiceMock.Object);
+    var service = new StatsService(_bookServiceMock.Object, _movieServiceMock.Object, _gameServiceMock.Object);
 
     // Assert
     Assert.That(service, Is.Not.Null);
