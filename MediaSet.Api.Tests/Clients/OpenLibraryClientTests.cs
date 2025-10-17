@@ -81,9 +81,9 @@ public class OpenLibraryClientTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-    Assert.That(result!.Subjects, Has.Count.EqualTo(1));
-    // Title-cased after normalization and commas replaced with semicolons
-    Assert.That(result.Subjects[0].Name, Is.EqualTo("Prefect; Ford (Fictitious Character); Fiction"));
+        Assert.That(result!.Subjects, Has.Count.EqualTo(1));
+        // Title-cased after normalization and commas replaced with semicolons
+        Assert.That(result.Subjects[0].Name, Is.EqualTo("Prefect; Ford (Fictitious Character); Fiction"));
     }
 
     [TearDown]
