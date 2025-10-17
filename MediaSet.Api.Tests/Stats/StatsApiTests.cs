@@ -24,7 +24,7 @@ public class StatsApiTests
     public void Setup()
     {
         _statsServiceMock = new Mock<IStatsService>();
-        
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -57,7 +57,7 @@ public class StatsApiTests
         // Arrange
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital" };
-        
+
         var expectedStats = new Models.Stats(
             new BookStats(
                 Total: 150,
@@ -90,20 +90,20 @@ public class StatsApiTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        
+
         // Verify book stats
         Assert.That(result!.BookStats.Total, Is.EqualTo(150));
         Assert.That(result.BookStats.TotalFormats, Is.EqualTo(3));
         Assert.That(result.BookStats.Formats.Count(), Is.EqualTo(3));
         Assert.That(result.BookStats.UniqueAuthors, Is.EqualTo(75));
         Assert.That(result.BookStats.TotalPages, Is.EqualTo(45000));
-        
+
         // Verify movie stats
         Assert.That(result.MovieStats.Total, Is.EqualTo(100));
         Assert.That(result.MovieStats.TotalFormats, Is.EqualTo(3));
         Assert.That(result.MovieStats.Formats.Count(), Is.EqualTo(3));
         Assert.That(result.MovieStats.TotalTvSeries, Is.EqualTo(15));
-        
+
         _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
     }
 
@@ -242,7 +242,7 @@ public class StatsApiTests
         // Arrange
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook", "Audiobook" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital", "4K UHD" };
-        
+
         var expectedStats = new Models.Stats(
             new BookStats(
                 Total: 10000,
@@ -289,7 +289,7 @@ public class StatsApiTests
         // Arrange
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook", "Audiobook", "Large Print" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital", "4K UHD", "VHS" };
-        
+
         var expectedStats = new Models.Stats(
             new BookStats(
                 Total: 200,
@@ -339,7 +339,7 @@ public class StatsApiTests
         // Arrange
         var bookFormats = new List<string> { "eBook" };
         var movieFormats = new List<string> { "Digital" };
-        
+
         var expectedStats = new Models.Stats(
             new BookStats(
                 Total: 25,

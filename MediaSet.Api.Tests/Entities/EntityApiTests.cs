@@ -41,7 +41,7 @@ public class EntityApiTests
         _bookServiceMock = new Mock<IEntityService<Book>>();
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
-        
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -71,7 +71,7 @@ public class EntityApiTests
             });
 
         _client = _factory.CreateClient();
-        
+
         _bookFaker = new Faker<Book>()
             .RuleFor(b => b.Id, f => f.Random.AlphaNumeric(24))
             .RuleFor(b => b.Type, _ => MediaTypes.Books)
@@ -188,7 +188,7 @@ public class EntityApiTests
         var gameId = "507f1f77bcf86cd799439011";
         var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-    _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>())).Returns(Task.FromResult(updateResult));
+        _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>())).Returns(Task.FromResult(updateResult));
 
         // Act
         var response = await _client.PutAsJsonAsync($"/Games/{gameId}", updatedGame);
@@ -220,7 +220,7 @@ public class EntityApiTests
         // Arrange
         var gameId = "507f1f77bcf86cd799439011";
         var deleteResult = Mock.Of<DeleteResult>();
-    _gameServiceMock.Setup(s => s.RemoveAsync(gameId)).Returns(Task.FromResult(deleteResult));
+        _gameServiceMock.Setup(s => s.RemoveAsync(gameId)).Returns(Task.FromResult(deleteResult));
 
         // Act
         var response = await _client.DeleteAsync($"/Games/{gameId}");
@@ -444,7 +444,7 @@ public class EntityApiTests
         var bookId = "507f1f77bcf86cd799439011";
         var updatedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-    _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>())).Returns(Task.FromResult(updateResult));
+        _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>())).Returns(Task.FromResult(updateResult));
 
         // Act
         var response = await _client.PutAsJsonAsync($"/Books/{bookId}", updatedBook);
@@ -476,7 +476,7 @@ public class EntityApiTests
         // Arrange
         var bookId = "507f1f77bcf86cd799439011";
         var deleteResult = Mock.Of<DeleteResult>();
-    _bookServiceMock.Setup(s => s.RemoveAsync(bookId)).Returns(Task.FromResult(deleteResult));
+        _bookServiceMock.Setup(s => s.RemoveAsync(bookId)).Returns(Task.FromResult(deleteResult));
 
         // Act
         var response = await _client.DeleteAsync($"/Books/{bookId}");

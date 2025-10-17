@@ -4,59 +4,59 @@ namespace MediaSet.Api.Helpers;
 
 internal static class EntityExtensions
 {
-  public static bool IsEmpty<TEntity>(this TEntity entity) where TEntity : IEntity
-  {
-    if (entity is Movie movie)
+    public static bool IsEmpty<TEntity>(this TEntity entity) where TEntity : IEntity
     {
-      return string.IsNullOrWhiteSpace(movie.Title) &&
-        string.IsNullOrWhiteSpace(movie.Barcode) &&
-        string.IsNullOrWhiteSpace(movie.Format) &&
-        string.IsNullOrWhiteSpace(movie.ReleaseDate) &&
-        string.IsNullOrWhiteSpace(movie.Rating) &&
-        !movie.Runtime.HasValue &&
-        movie.Studios.Count == 0 &&
-        movie.Genres.Count == 0 &&
-        string.IsNullOrWhiteSpace(movie.Plot);
-    }
-    else if (entity is Book book)
-    {
-      return string.IsNullOrWhiteSpace(book.Title) &&
-        string.IsNullOrWhiteSpace(book.Format) &&
-        string.IsNullOrWhiteSpace(book.ISBN) &&
-        string.IsNullOrWhiteSpace(book.Plot) &&
-        string.IsNullOrWhiteSpace(book.PublicationDate) &&
-        string.IsNullOrWhiteSpace(book.Publisher) &&
-        !book.Pages.HasValue &&
-        book.Authors.Count == 0 &&
-        book.Genres.Count == 0;
-    }
-    else if (entity is Game game)
-    {
-      return string.IsNullOrWhiteSpace(game.Title) &&
-        string.IsNullOrWhiteSpace(game.Format) &&
-        string.IsNullOrWhiteSpace(game.Barcode) &&
-        string.IsNullOrWhiteSpace(game.ReleaseDate) &&
-        string.IsNullOrWhiteSpace(game.Rating) &&
-        string.IsNullOrWhiteSpace(game.Publisher) &&
-        game.Platforms.Count == 0 &&
-        game.Developers.Count == 0 &&
-        game.Genres.Count == 0 &&
-        string.IsNullOrWhiteSpace(game.Description);
+        if (entity is Movie movie)
+        {
+            return string.IsNullOrWhiteSpace(movie.Title) &&
+              string.IsNullOrWhiteSpace(movie.Barcode) &&
+              string.IsNullOrWhiteSpace(movie.Format) &&
+              string.IsNullOrWhiteSpace(movie.ReleaseDate) &&
+              string.IsNullOrWhiteSpace(movie.Rating) &&
+              !movie.Runtime.HasValue &&
+              movie.Studios.Count == 0 &&
+              movie.Genres.Count == 0 &&
+              string.IsNullOrWhiteSpace(movie.Plot);
+        }
+        else if (entity is Book book)
+        {
+            return string.IsNullOrWhiteSpace(book.Title) &&
+              string.IsNullOrWhiteSpace(book.Format) &&
+              string.IsNullOrWhiteSpace(book.ISBN) &&
+              string.IsNullOrWhiteSpace(book.Plot) &&
+              string.IsNullOrWhiteSpace(book.PublicationDate) &&
+              string.IsNullOrWhiteSpace(book.Publisher) &&
+              !book.Pages.HasValue &&
+              book.Authors.Count == 0 &&
+              book.Genres.Count == 0;
+        }
+        else if (entity is Game game)
+        {
+            return string.IsNullOrWhiteSpace(game.Title) &&
+              string.IsNullOrWhiteSpace(game.Format) &&
+              string.IsNullOrWhiteSpace(game.Barcode) &&
+              string.IsNullOrWhiteSpace(game.ReleaseDate) &&
+              string.IsNullOrWhiteSpace(game.Rating) &&
+              string.IsNullOrWhiteSpace(game.Publisher) &&
+              game.Platforms.Count == 0 &&
+              game.Developers.Count == 0 &&
+              game.Genres.Count == 0 &&
+              string.IsNullOrWhiteSpace(game.Description);
+        }
+
+        return true;
     }
 
-    return true;
-  }
-
-  public static TEntity? SetType<TEntity>(this TEntity? entity) where TEntity : IEntity
-  {
-    if (entity == null)
-      return default;
-
-    var success = Enum.TryParse(typeof(MediaTypes), $"{entity.GetType().Name}s", true, out var parsedValue);
-    if (success && parsedValue != null)
+    public static TEntity? SetType<TEntity>(this TEntity? entity) where TEntity : IEntity
     {
-      entity.Type = (MediaTypes)parsedValue;
+        if (entity == null)
+            return default;
+
+        var success = Enum.TryParse(typeof(MediaTypes), $"{entity.GetType().Name}s", true, out var parsedValue);
+        if (success && parsedValue != null)
+        {
+            entity.Type = (MediaTypes)parsedValue;
+        }
+        return entity;
     }
-    return entity;
-  }
 }

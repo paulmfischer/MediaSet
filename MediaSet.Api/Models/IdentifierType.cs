@@ -4,15 +4,15 @@ namespace MediaSet.Api.Models;
 
 public enum IdentifierType
 {
-  [Description("isbn")]
-  Isbn,
+    [Description("isbn")]
+    Isbn,
 
-  [Description("lccn")]
-  Lccn,
+    [Description("lccn")]
+    Lccn,
 
-  [Description("oclc")]
-  Oclc,
+    [Description("oclc")]
+    Oclc,
 
-  [Description("olid")]
-  Olid
+    [Description("olid")]
+    Olid
 }

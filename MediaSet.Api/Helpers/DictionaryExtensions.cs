@@ -5,141 +5,141 @@ namespace MediaSet.Api.Helpers;
 
 public static class DictionaryExtensions
 {
-  public static string ExtractStringFromData(this Dictionary<string, object> data, string key)
-  {
-    if (!data.TryGetValue(key, out var value))
-      return string.Empty;
-
-    return value switch
+    public static string ExtractStringFromData(this Dictionary<string, object> data, string key)
     {
-      string str => str ?? string.Empty,
-      JsonElement element when element.ValueKind == JsonValueKind.String => element.GetString() ?? string.Empty,
-      _ => value?.ToString() ?? string.Empty
-    };
-  }
+        if (!data.TryGetValue(key, out var value))
+            return string.Empty;
 
-  public static List<Author> ExtractAuthorsFromData(this Dictionary<string, object> data)
-  {
-    var authors = new List<Author>();
-
-    if (data.TryGetValue("authors", out var authorsObj) && authorsObj is JsonElement authorsElement)
-    {
-      if (authorsElement.ValueKind == JsonValueKind.Array)
-      {
-        foreach (var authorElement in authorsElement.EnumerateArray())
+        return value switch
         {
-          if (authorElement.ValueKind == JsonValueKind.Object)
-          {
-            var name = authorElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
-            var url = authorElement.TryGetProperty("url", out var urlElement) ? urlElement.GetString() : null;
-
-            if (!string.IsNullOrEmpty(name))
-            {
-              authors.Add(new Author(name, url ?? ""));
-            }
-          }
-        }
-      }
+            string str => str ?? string.Empty,
+            JsonElement element when element.ValueKind == JsonValueKind.String => element.GetString() ?? string.Empty,
+            _ => value?.ToString() ?? string.Empty
+        };
     }
 
-    return authors;
-  }
-
-  public static int ExtractNumberOfPagesFromData(this Dictionary<string, object> data)
-  {
-    // Favor 'number_of_pages' over 'pagination' if both are present
-    if (data.TryGetValue("number_of_pages", out var numPagesObj))
+    public static List<Author> ExtractAuthorsFromData(this Dictionary<string, object> data)
     {
-      return numPagesObj switch
-      {
-        int pages => pages,
-        JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetInt32(),
-        JsonElement element when element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsedFromElement) => parsedFromElement,
-        string str when int.TryParse(str, out var parsedFromString) => parsedFromString,
-        _ => 0
-      };
-    }
+        var authors = new List<Author>();
 
-    if (data.TryGetValue("pagination", out var pagesObj))
-    {
-      return pagesObj switch
-      {
-        int pages => pages,
-        JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetInt32(),
-        JsonElement element when element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsedFromElement) => parsedFromElement,
-        string str when int.TryParse(str, out var parsedFromString) => parsedFromString,
-        _ => 0
-      };
-    }
-
-    return 0;
-  }
-
-  public static List<Publisher> ExtractPublishersFromData(this Dictionary<string, object> data)
-  {
-    var publishers = new List<Publisher>();
-
-    if (data.TryGetValue("publishers", out var publishersObj) && publishersObj is JsonElement publishersElement)
-    {
-      if (publishersElement.ValueKind == JsonValueKind.Array)
-      {
-        foreach (var publisherElement in publishersElement.EnumerateArray())
+        if (data.TryGetValue("authors", out var authorsObj) && authorsObj is JsonElement authorsElement)
         {
-          if (publisherElement.ValueKind == JsonValueKind.String)
-          {
-            var name = publisherElement.GetString();
-            if (!string.IsNullOrEmpty(name))
+            if (authorsElement.ValueKind == JsonValueKind.Array)
             {
-              publishers.Add(new Publisher(name));
+                foreach (var authorElement in authorsElement.EnumerateArray())
+                {
+                    if (authorElement.ValueKind == JsonValueKind.Object)
+                    {
+                        var name = authorElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+                        var url = authorElement.TryGetProperty("url", out var urlElement) ? urlElement.GetString() : null;
+
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            authors.Add(new Author(name, url ?? ""));
+                        }
+                    }
+                }
             }
-          }
-          else if (publisherElement.ValueKind == JsonValueKind.Object)
-          {
-            var name = publisherElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
-            if (!string.IsNullOrEmpty(name))
-            {
-              publishers.Add(new Publisher(name));
-            }
-          }
         }
-      }
+
+        return authors;
     }
 
-    return publishers;
-  }
-
-  public static List<Subject> ExtractSubjectsFromData(this Dictionary<string, object> data)
-  {
-    var subjects = new List<Subject>();
-
-    if (data.TryGetValue("subjects", out var subjectsObj) && subjectsObj is JsonElement subjectsElement)
+    public static int ExtractNumberOfPagesFromData(this Dictionary<string, object> data)
     {
-      if (subjectsElement.ValueKind == JsonValueKind.Array)
-      {
-        foreach (var subjectElement in subjectsElement.EnumerateArray())
+        // Favor 'number_of_pages' over 'pagination' if both are present
+        if (data.TryGetValue("number_of_pages", out var numPagesObj))
         {
-          if (subjectElement.ValueKind == JsonValueKind.String)
-          {
-            var name = subjectElement.GetString();
-            if (!string.IsNullOrEmpty(name))
+            return numPagesObj switch
             {
-              subjects.Add(new Subject(name, ""));
-            }
-          }
-          else if (subjectElement.ValueKind == JsonValueKind.Object)
-          {
-            var name = subjectElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
-            var url = subjectElement.TryGetProperty("url", out var urlElement) ? urlElement.GetString() : null;
-
-            if (!string.IsNullOrEmpty(name))
-            {
-              subjects.Add(new Subject(name, url ?? ""));
-            }
-          }
+                int pages => pages,
+                JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetInt32(),
+                JsonElement element when element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsedFromElement) => parsedFromElement,
+                string str when int.TryParse(str, out var parsedFromString) => parsedFromString,
+                _ => 0
+            };
         }
-      }
+
+        if (data.TryGetValue("pagination", out var pagesObj))
+        {
+            return pagesObj switch
+            {
+                int pages => pages,
+                JsonElement element when element.ValueKind == JsonValueKind.Number => element.GetInt32(),
+                JsonElement element when element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsedFromElement) => parsedFromElement,
+                string str when int.TryParse(str, out var parsedFromString) => parsedFromString,
+                _ => 0
+            };
+        }
+
+        return 0;
     }
 
-    return subjects;
-  }
+    public static List<Publisher> ExtractPublishersFromData(this Dictionary<string, object> data)
+    {
+        var publishers = new List<Publisher>();
+
+        if (data.TryGetValue("publishers", out var publishersObj) && publishersObj is JsonElement publishersElement)
+        {
+            if (publishersElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var publisherElement in publishersElement.EnumerateArray())
+                {
+                    if (publisherElement.ValueKind == JsonValueKind.String)
+                    {
+                        var name = publisherElement.GetString();
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            publishers.Add(new Publisher(name));
+                        }
+                    }
+                    else if (publisherElement.ValueKind == JsonValueKind.Object)
+                    {
+                        var name = publisherElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            publishers.Add(new Publisher(name));
+                        }
+                    }
+                }
+            }
+        }
+
+        return publishers;
+    }
+
+    public static List<Subject> ExtractSubjectsFromData(this Dictionary<string, object> data)
+    {
+        var subjects = new List<Subject>();
+
+        if (data.TryGetValue("subjects", out var subjectsObj) && subjectsObj is JsonElement subjectsElement)
+        {
+            if (subjectsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var subjectElement in subjectsElement.EnumerateArray())
+                {
+                    if (subjectElement.ValueKind == JsonValueKind.String)
+                    {
+                        var name = subjectElement.GetString();
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            subjects.Add(new Subject(name, ""));
+                        }
+                    }
+                    else if (subjectElement.ValueKind == JsonValueKind.Object)
+                    {
+                        var name = subjectElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+                        var url = subjectElement.TryGetProperty("url", out var urlElement) ? urlElement.GetString() : null;
+
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            subjects.Add(new Subject(name, url ?? ""));
+                        }
+                    }
+                }
+            }
+        }
+
+        return subjects;
+    }
 }
