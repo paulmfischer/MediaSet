@@ -106,7 +106,7 @@ public class EntityApiTests
             .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
             .RuleFor(g => g.Platform, f => f.PickRandom("PC", "Xbox", "PlayStation", "Switch"))
             .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
-            .RuleFor(g => g.Publisher, f => f.Company.CompanyName())
+            .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
             .RuleFor(g => g.Genres, f => new List<string> { f.Lorem.Word() })
             .RuleFor(g => g.ReleaseDate, f => f.Date.Past().ToString("yyyy-MM-dd"))
             .RuleFor(g => g.Rating, f => f.PickRandom("E", "T", "M"))

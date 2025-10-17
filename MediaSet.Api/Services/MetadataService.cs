@@ -135,8 +135,9 @@ public class MetadataService : IMetadataService
         var games = await gameService.GetListAsync();
 
         return games
-          .Where(game => !string.IsNullOrWhiteSpace(game.Publisher))
-          .Select(game => game.Publisher.Trim())
+          .Where(game => game.Publishers?.Count > 0)
+          .SelectMany(game => game.Publishers)
+          .Select(publisher => publisher.Trim())
           .Distinct()
           .Order();
     }

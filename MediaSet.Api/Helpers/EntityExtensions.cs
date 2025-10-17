@@ -37,7 +37,7 @@ internal static class EntityExtensions
               string.IsNullOrWhiteSpace(game.Barcode) &&
               string.IsNullOrWhiteSpace(game.ReleaseDate) &&
               string.IsNullOrWhiteSpace(game.Rating) &&
-              string.IsNullOrWhiteSpace(game.Publisher) &&
+              game.Publishers.Count == 0 &&
               string.IsNullOrWhiteSpace(game.Platform) &&
               game.Developers.Count == 0 &&
               game.Genres.Count == 0 &&

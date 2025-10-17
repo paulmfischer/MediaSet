@@ -50,6 +50,7 @@ public class StatsServiceTests
           .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
           .RuleFor(g => g.Platform, f => f.PickRandom("PC", "PlayStation", "Xbox", "Switch"))
           .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
+          .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
     }
 

@@ -38,8 +38,9 @@ public class Game : IEntity
     [Upload(HeaderName = "Developer")]
     public List<string> Developers { get; set; } = [];
 
-    // Publisher
-    public string Publisher { get; set; } = string.Empty;
+    // Publishers
+    [Upload(HeaderName = "Publisher")]
+    public List<string> Publishers { get; set; } = [];
 
     // Genres
     [Upload(HeaderName = "Genre")]
