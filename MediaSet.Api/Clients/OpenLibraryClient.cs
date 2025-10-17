@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
@@ -110,11 +111,17 @@ public class OpenLibraryClient : IOpenLibraryClient, IDisposable
         var publishDate = firstRecord.PublishDates?.FirstOrDefault() ??
                          data.ExtractStringFromData("publish_date");
 
-        // Extract subjects and remove duplicates (ignore case)
+        // Extract subjects and remove duplicates using a robust normalization key
+        // that ignores case, whitespace, punctuation, and diacritics so near-identical
+        // variants from OpenLibrary collapse to a single subject.
         var subjects = data.ExtractSubjectsFromData()
-          .GroupBy(s => s.Name.ToLowerInvariant())
-          .Select(g => g.First())
-          .ToList();
+            .GroupBy(NormalizeSubjectKey)
+            .Select(g => g.First())
+            .Select(s => new Subject(
+                NormalizeDisplaySubject(s.Name),
+                s.Url
+            ))
+            .ToList();
 
         // Extract format from details object
         var format = string.Empty;
@@ -136,6 +143,90 @@ public class OpenLibraryClient : IOpenLibraryClient, IDisposable
           subjects,
           format
         );
+    }
+
+    private static string NormalizeSubjectKey(Subject subject)
+    {
+        // Prefer the name; fall back to URL segment if name is empty
+        var source = string.IsNullOrWhiteSpace(subject.Name)
+            ? (subject.Url ?? string.Empty)
+            : subject.Name;
+
+        if (string.IsNullOrEmpty(source))
+        {
+            return string.Empty;
+        }
+
+        // Lowercase and decompose to strip diacritics
+        var normalized = source.Normalize(NormalizationForm.FormD).ToLowerInvariant();
+
+        // Build a key with only letters and digits, skipping punctuation, underscores and whitespace
+        var sb = new StringBuilder(normalized.Length);
+        foreach (var ch in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(ch);
+            if (category == UnicodeCategory.NonSpacingMark)
+            {
+                // skip diacritic marks
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(ch))
+            {
+                sb.Append(ch);
+            }
+            // else skip punctuation/separators entirely
+        }
+
+        return sb.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static string NormalizeDisplaySubject(string? name)
+    {
+        var text = (name ?? string.Empty).Trim();
+        if (text.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        // Title-case
+        text = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(text.ToLowerInvariant());
+
+        // Replace commas with semicolons to avoid UI splitting issues
+        text = text.Replace(',', ';');
+
+        // Normalize spaces around semicolons: "; " (one space after, none before)
+        // 1) Remove spaces around semicolons
+        var sb = new StringBuilder(text.Length);
+        bool lastWasSemicolon = false;
+        foreach (var ch in text)
+        {
+            if (ch == ';')
+            {
+                if (sb.Length > 0 && sb[^1] == ' ')
+                {
+                    sb.Length -= 1; // remove space before semicolon
+                }
+                sb.Append(';');
+                lastWasSemicolon = true;
+            }
+            else
+            {
+                if (lastWasSemicolon && ch == ' ')
+                {
+                    // ensure single space after semicolon
+                    sb.Append(' ');
+                    lastWasSemicolon = false;
+                    continue;
+                }
+                sb.Append(ch);
+                lastWasSemicolon = false;
+            }
+        }
+
+        // Ensure there's exactly one space after each semicolon (if not end of string)
+        // The loop above attempts to normalize; final Trim to clean up.
+        return sb.ToString().Trim();
     }
 }
 

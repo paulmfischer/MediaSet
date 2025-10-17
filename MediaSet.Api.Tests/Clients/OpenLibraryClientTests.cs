@@ -33,6 +33,59 @@ public class OpenLibraryClientTests
         };
     }
 
+    [Test]
+    public async Task GetReadableBookAsync_NormalizesSubjects_IgnoresPunctuationWhitespaceAndCase()
+    {
+        // Arrange
+        var isbn = "9780140328721";
+        var responseJson = """
+        {
+            "items": [],
+            "records": {
+                "/books/OL7353617M": {
+                    "isbns": ["9780140328721"],
+                    "lccns": [],
+                    "oclcs": [],
+                    "olids": ["OL7353617M"],
+                    "publish_dates": ["1988"],
+                    "record_url": "https://openlibrary.org/books/OL7353617M/Book",
+                    "data": {
+                        "title": "Test Book",
+                        "subtitle": "",
+                        "authors": [],
+                        "number_of_pages": 100,
+                        "publishers": ["Test Publisher"],
+                        "publish_date": "1988",
+                        "subjects": [
+                            {
+                                "name": "Prefect, ford (Fictitious character), fiction",
+                                "url": "/subjects/prefect,_ford_(fictitious_character),_fiction"
+                            },
+                            {
+                                "name": "Prefect, Ford (Fictitious character) Fiction",
+                                "url": "/subjects/prefect,_ford_(fictitious_character)_fiction"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+        """;
+
+        SetupHttpResponse(HttpStatusCode.OK, responseJson);
+
+        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetReadableBookByIsbnAsync(isbn);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Subjects, Has.Count.EqualTo(1));
+        // Title-cased after normalization and commas replaced with semicolons
+        Assert.That(result.Subjects[0].Name, Is.EqualTo("Prefect; Ford (Fictitious Character); Fiction"));
+    }
+
     [TearDown]
     public void TearDown()
     {
@@ -66,6 +119,14 @@ public class OpenLibraryClientTests
                     {
                         "name": "Fiction",
                         "url": "/subjects/fiction"
+                    },
+                    {
+                        "name": "FICTION",
+                        "url": "/subjects/fiction"
+                    },
+                    {
+                        "name": "Prefect, Ford (Fictitious character), fiction",
+                        "url": "/subjects/prefect,_ford_(fictitious_character),_fiction"
                     }
                 ]
             }
@@ -88,6 +149,11 @@ public class OpenLibraryClientTests
         Assert.That(result.NumberOfPages, Is.EqualTo(96));
         Assert.That(result.Publishers, Has.Count.EqualTo(1));
         Assert.That(result.Publishers[0].Name, Is.EqualTo("Puffin Books"));
+        // For direct ISBN lookup, subjects are returned as provided by OpenLibrary (no normalization here)
+        Assert.That(result.Subjects, Has.Count.EqualTo(3));
+        Assert.That(result.Subjects[0].Name, Is.EqualTo("Fiction"));
+        Assert.That(result.Subjects[1].Name, Is.EqualTo("FICTION"));
+        Assert.That(result.Subjects[2].Name, Is.EqualTo("Prefect, Ford (Fictitious character), fiction"));
     }
 
     [Test]
