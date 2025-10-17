@@ -26,7 +26,7 @@ namespace MediaSet.Api.Tests.Services
         {
             _databaseServiceMock = new Mock<IDatabaseService>();
             _collectionMock = new Mock<IMongoCollection<Book>>();
-            
+
             _databaseServiceMock.Setup(db => db.GetCollection<Book>())
                 .Returns(_collectionMock.Object);
 
@@ -83,7 +83,7 @@ namespace MediaSet.Api.Tests.Services
             // Arrange
             var book = _bookFaker.Generate();
             var expectedResult = Mock.Of<ReplaceOneResult>();
-            
+
             _collectionMock.Setup(c => c.ReplaceOneAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 book,
@@ -109,7 +109,7 @@ namespace MediaSet.Api.Tests.Services
             // Arrange
             var bookId = "507f1f77bcf86cd799439011";
             var expectedResult = Mock.Of<DeleteResult>();
-            
+
             _collectionMock.Setup(c => c.DeleteOneAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<CancellationToken>()))
@@ -173,13 +173,13 @@ namespace MediaSet.Api.Tests.Services
             // Assert
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Count(), Is.EqualTo(3));
-            
+
             // Verify the books are sorted by title
             var resultList = result.ToList();
             Assert.That(resultList[0].Title, Is.EqualTo("Alpha Book"));
             Assert.That(resultList[1].Title, Is.EqualTo("Middle Book"));
             Assert.That(resultList[2].Title, Is.EqualTo("Zebra Book"));
-            
+
             // Verify collection was called
             _collectionMock.Verify(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),

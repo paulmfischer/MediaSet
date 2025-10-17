@@ -24,7 +24,7 @@ public class MetadataApiTests
     public void Setup()
     {
         _metadataServiceMock = new Mock<IMetadataService>();
-        
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {

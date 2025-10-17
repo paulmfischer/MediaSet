@@ -282,25 +282,25 @@ public class UploadServiceTests
     public void MapUploadToEntities_ShouldHandleAllMovieProperties()
     {
         // Arrange
-        var headerFields = new List<string> 
-        { 
-            "Title", "Barcode", "Format", "Release Date", "Audience Rating", 
-            "Runtime", "Studios", "Genres", "Plot", "Is TV Series" 
+        var headerFields = new List<string>
+        {
+            "Title", "Barcode", "Format", "Release Date", "Audience Rating",
+            "Runtime", "Studios", "Genres", "Plot", "Is TV Series"
         };
         var dataFields = new List<string[]>
         {
-            new[] 
-            { 
-                "The Matrix", 
-                "123456789", 
-                "Blu-ray", 
-                "1999-03-31", 
-                "R", 
-                "02:16", 
-                "Warner Bros. | Village Roadshow", 
-                "Action | Sci-Fi", 
-                "A computer hacker learns about the true nature of reality.", 
-                "false" 
+            new[]
+            {
+                "The Matrix",
+                "123456789",
+                "Blu-ray",
+                "1999-03-31",
+                "R",
+                "02:16",
+                "Warner Bros. | Village Roadshow",
+                "Action | Sci-Fi",
+                "A computer hacker learns about the true nature of reality.",
+                "false"
             }
         };
 
@@ -331,25 +331,25 @@ public class UploadServiceTests
     public void MapUploadToEntities_ShouldHandleAllBookProperties()
     {
         // Arrange
-        var headerFields = new List<string> 
-        { 
-            "Title", "ISBN", "Format", "Pages", "Publication Date", 
-            "Author", "Publisher", "Genre", "Plot", "Subtitle" 
+        var headerFields = new List<string>
+        {
+            "Title", "ISBN", "Format", "Pages", "Publication Date",
+            "Author", "Publisher", "Genre", "Plot", "Subtitle"
         };
         var dataFields = new List<string[]>
         {
-            new[] 
-            { 
-                "The Lord of the Rings", 
-                "978-0544003415", 
-                "Hardcover", 
-                "1178", 
-                "1954-07-29", 
-                "J.R.R. Tolkien", 
-                "Allen & Unwin", 
-                "Fantasy | Adventure | Epic", 
-                "A hobbit's quest to destroy a powerful ring.", 
-                "The Fellowship of the Ring" 
+            new[]
+            {
+                "The Lord of the Rings",
+                "978-0544003415",
+                "Hardcover",
+                "1178",
+                "1954-07-29",
+                "J.R.R. Tolkien",
+                "Allen & Unwin",
+                "Fantasy | Adventure | Epic",
+                "A hobbit's quest to destroy a powerful ring.",
+                "The Fellowship of the Ring"
             }
         };
 

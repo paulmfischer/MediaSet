@@ -6,33 +6,33 @@ namespace MediaSet.Api.Bindings;
 
 public class ParameterSchemaFilter : ISchemaFilter
 {
-  public void Apply(OpenApiSchema schema, SchemaFilterContext context)
-  {
-    var type = context.Type;
-
-    if (type == null)
+    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
-      return;
+        var type = context.Type;
+
+        if (type == null)
+        {
+            return;
+        }
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Parameter<>))
+        {
+            var enumType = type.GetGenericArguments().FirstOrDefault(x => x.IsEnum);
+
+            if (enumType == null)
+            {
+                return;
+            }
+
+            var names = Enum.GetNames(enumType);
+
+            if (names == null)
+            {
+                return;
+            }
+
+            schema.Type = "string";
+            schema.Enum = names.OfType<string>().Select(x => new OpenApiString(x)).ToList<IOpenApiAny>();
+        }
     }
-
-    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Parameter<>))
-    {
-      var enumType = type.GetGenericArguments().FirstOrDefault(x => x.IsEnum);
-
-      if (enumType == null)
-      {
-        return;
-      }
-
-      var names = Enum.GetNames(enumType);
-
-      if (names == null)
-      {
-        return;
-      }
-
-      schema.Type = "string";
-      schema.Enum = names.OfType<string>().Select(x => new OpenApiString(x)).ToList<IOpenApiAny>();
-    }
-  }
 }

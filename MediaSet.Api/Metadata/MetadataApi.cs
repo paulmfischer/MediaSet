@@ -7,72 +7,72 @@ namespace MediaSet.Api.Metadata;
 
 internal static class MetadatApi
 {
-  public static RouteGroupBuilder MapMetadata(this IEndpointRouteBuilder routes)
-  {
-    var logger = ((WebApplication)routes).Logger;
-    var group = routes.MapGroup("/metadata");
-
-    group.WithTags("Metadata");
-
-    group.MapGet("/formats/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+    public static RouteGroupBuilder MapMetadata(this IEndpointRouteBuilder routes)
     {
-      MediaTypes mediaTypes = media;
-      logger.LogInformation("Requesting formats for {media}", mediaTypes);
-      return mediaTypes switch
-      {
-        MediaTypes.Books => await metadataService.GetBookFormats(),
-        MediaTypes.Movies => await metadataService.GetMovieFormats(),
-        MediaTypes.Games => await metadataService.GetGameFormats(),
-        _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
-      };
-    });
+        var logger = ((WebApplication)routes).Logger;
+        var group = routes.MapGroup("/metadata");
 
-    group.MapGet("/genres/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
-    {
-      MediaTypes mediaTypes = media;
-      logger.LogInformation("Requesting genres for {media}", mediaTypes);
-      return mediaTypes switch
-      {
-        MediaTypes.Books => await metadataService.GetBookGenres(),
-        MediaTypes.Movies => await metadataService.GetMovieGenres(),
-        MediaTypes.Games => await metadataService.GetGameGenres(),
-        _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
-      };
-    });
+        group.WithTags("Metadata");
 
-    group.MapGet("/studios", async (IMetadataService metadataService) =>
-    {
-      var studios = await metadataService.GetMovieStudios();
-      logger.LogInformation("Returning {count} studios", studios.Count());
-      return studios;
-    });
-    group.MapGet("/authors", async (IMetadataService metadataService) =>
-    {
-      var authors = await metadataService.GetBookAuthors();
-      logger.LogInformation("Returning {count} authors", authors.Count());
-      return authors;
-    });
-    group.MapGet("/publishers", async (IMetadataService metadataService) =>
-    {
-      var publishers = await metadataService.GetBookPublishers();
-      logger.LogInformation("Returning {count} publishers", publishers.Count());
-      return publishers;
-    });
+        group.MapGet("/formats/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+        {
+            MediaTypes mediaTypes = media;
+            logger.LogInformation("Requesting formats for {media}", mediaTypes);
+            return mediaTypes switch
+            {
+                MediaTypes.Books => await metadataService.GetBookFormats(),
+                MediaTypes.Movies => await metadataService.GetMovieFormats(),
+                MediaTypes.Games => await metadataService.GetGameFormats(),
+                _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
+            };
+        });
 
-    group.MapGet("/platforms", async (IMetadataService metadataService) =>
-    {
-      var platforms = await metadataService.GetGamePlatforms();
-      logger.LogInformation("Returning {count} platforms", platforms.Count());
-      return platforms;
-    });
+        group.MapGet("/genres/{media}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media) =>
+        {
+            MediaTypes mediaTypes = media;
+            logger.LogInformation("Requesting genres for {media}", mediaTypes);
+            return mediaTypes switch
+            {
+                MediaTypes.Books => await metadataService.GetBookGenres(),
+                MediaTypes.Movies => await metadataService.GetMovieGenres(),
+                MediaTypes.Games => await metadataService.GetGameGenres(),
+                _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
+            };
+        });
 
-    group.MapGet("/developers", async (IMetadataService metadataService) =>
-    {
-      var developers = await metadataService.GetGameDevelopers();
-      logger.LogInformation("Returning {count} developers", developers.Count());
-      return developers;
-    });
+        group.MapGet("/studios", async (IMetadataService metadataService) =>
+        {
+            var studios = await metadataService.GetMovieStudios();
+            logger.LogInformation("Returning {count} studios", studios.Count());
+            return studios;
+        });
+        group.MapGet("/authors", async (IMetadataService metadataService) =>
+        {
+            var authors = await metadataService.GetBookAuthors();
+            logger.LogInformation("Returning {count} authors", authors.Count());
+            return authors;
+        });
+        group.MapGet("/publishers", async (IMetadataService metadataService) =>
+        {
+            var publishers = await metadataService.GetBookPublishers();
+            logger.LogInformation("Returning {count} publishers", publishers.Count());
+            return publishers;
+        });
 
-    return group;
-  }
+        group.MapGet("/platforms", async (IMetadataService metadataService) =>
+        {
+            var platforms = await metadataService.GetGamePlatforms();
+            logger.LogInformation("Returning {count} platforms", platforms.Count());
+            return platforms;
+        });
+
+        group.MapGet("/developers", async (IMetadataService metadataService) =>
+        {
+            var developers = await metadataService.GetGameDevelopers();
+            logger.LogInformation("Returning {count} developers", developers.Count());
+            return developers;
+        });
+
+        return group;
+    }
 }

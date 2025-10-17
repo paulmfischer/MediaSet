@@ -5,34 +5,34 @@ namespace MediaSet.Api.Helpers;
 
 public static class IdentifierTypeExtensions
 {
-  public static string ToApiString(this IdentifierType identifierType)
-  {
-    var field = identifierType.GetType().GetField(identifierType.ToString());
-    var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field!, typeof(DescriptionAttribute));
-    return attribute?.Description ?? identifierType.ToString().ToLowerInvariant();
-  }
-
-  public static bool TryParseIdentifierType(string identifierTypeString, out IdentifierType identifierType)
-  {
-    identifierType = default;
-
-    foreach (IdentifierType enumValue in Enum.GetValues<IdentifierType>())
+    public static string ToApiString(this IdentifierType identifierType)
     {
-      if (string.Equals(enumValue.ToApiString(), identifierTypeString, StringComparison.OrdinalIgnoreCase))
-      {
-        identifierType = enumValue;
-        return true;
-      }
+        var field = identifierType.GetType().GetField(identifierType.ToString());
+        var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field!, typeof(DescriptionAttribute));
+        return attribute?.Description ?? identifierType.ToString().ToLowerInvariant();
     }
 
-    return false;
-  }
+    public static bool TryParseIdentifierType(string identifierTypeString, out IdentifierType identifierType)
+    {
+        identifierType = default;
 
-  public static string GetValidTypesString()
-  {
-    var types = Enum.GetValues<IdentifierType>()
-      .Select(x => x.ToApiString())
-      .ToArray();
-    return string.Join(", ", types);
-  }
+        foreach (IdentifierType enumValue in Enum.GetValues<IdentifierType>())
+        {
+            if (string.Equals(enumValue.ToApiString(), identifierTypeString, StringComparison.OrdinalIgnoreCase))
+            {
+                identifierType = enumValue;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static string GetValidTypesString()
+    {
+        var types = Enum.GetValues<IdentifierType>()
+          .Select(x => x.ToApiString())
+          .ToArray();
+        return string.Join(", ", types);
+    }
 }

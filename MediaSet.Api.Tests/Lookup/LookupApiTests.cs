@@ -24,7 +24,7 @@ public class LookupApiTests
     public void Setup()
     {
         _openLibraryClientMock = new Mock<IOpenLibraryClient>();
-        
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
