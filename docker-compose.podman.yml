@@ -11,7 +11,7 @@ services:
     environment:
       - MONGO_INITDB_DATABASE=MediaSet
     volumes:
-      - mongodb_data:/data/db
+      - ./data/mongodb:/data/db:Z
     networks:
       - mediaset-dev
 
@@ -65,7 +65,6 @@ services:
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 volumes:
-  mongodb_data:
   node_modules_cache:
 
 networks:
