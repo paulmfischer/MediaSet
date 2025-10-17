@@ -57,7 +57,7 @@ Both frontend and backend support hot reloading:
 
 - **Frontend (Remix)**: Changes to files in `MediaSet.Remix/app/` will automatically reload the browser
 - **Backend (.NET)**: Changes to `.cs` files in `MediaSet.Api/` will automatically restart the API server
-- **Database**: MongoDB data persists between container restarts
+- **Database**: MongoDB data persists between container restarts and clean operations (data stored under `./data/mongodb`). Use `./dev.sh clean --purge` to remove it.
 
 ### Making Code Changes
 
@@ -205,8 +205,12 @@ If you get port conflicts, you can modify `docker-compose.dev.yml` to use differ
 
 ### Container Build Issues
 ```bash
-# Clean and rebuild everything
+# Clean and rebuild (preserve data)
 ./dev.sh clean
+./dev.sh start
+
+# Purge everything including MongoDB data
+./dev.sh clean --purge
 ./dev.sh start
 ```
 

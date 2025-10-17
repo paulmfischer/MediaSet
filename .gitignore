@@ -337,3 +337,6 @@ ASALocalRun/
 **/.env
 
 *.pem
+
+# Local development data (MongoDB bind mount)
+data/

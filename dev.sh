@@ -64,6 +64,8 @@ setup_container_runtime() {
     # Create necessary directories if they don't exist
     mkdir -p ~/.nuget/packages
     mkdir -p ~/.dotnet/tools
+    # Create persistent data dir for MongoDB
+    mkdir -p ./data/mongodb
         # Workaround: some Linux systems have a ~/.docker/config.json that references
         # docker-credential-desktop (installed with Docker Desktop). On systems without
         # that helper (typical Linux servers/WSL without Desktop) docker/compose can
@@ -211,7 +213,8 @@ start_dev() {
     echo "   View logs:               ./dev.sh logs [service] [-f]"
     echo "   Stop services:           ./dev.sh stop [api|frontend|mongo]"
     echo "   Restart services:        ./dev.sh restart [api|frontend|mongo]"
-    echo "   Clean everything:        ./dev.sh clean"
+    echo "   Clean (keep data):       ./dev.sh clean"
+    echo "   Clean & purge data:      ./dev.sh clean --purge"
     echo ""
 }
 
@@ -283,8 +286,17 @@ restart_dev() {
 
 # Function to clean everything
 clean_dev() {
+    local mode="$1" # empty or --purge
     echo "🧹 Cleaning development environment..."
-    $COMPOSE_COMMAND -f $COMPOSE_FILE down -v --remove-orphans
+    if [ "$mode" = "--purge" ] || [ "$mode" = "purge" ] || [ "$mode" = "all" ]; then
+        echo "⚠️  Purge mode: removing containers, networks, and volumes (this deletes MongoDB data)"
+        $COMPOSE_COMMAND -f $COMPOSE_FILE down -v --remove-orphans
+        # Optionally remove local data directory too, to truly reset
+        rm -rf ./data/mongodb || true
+    else
+        echo "🧼 Default clean: removing containers and networks (keeping volumes and ./data)"
+        $COMPOSE_COMMAND -f $COMPOSE_FILE down --remove-orphans
+    fi
     if [ "$CONTAINER_RUNTIME" = "docker" ]; then
         docker system prune -f
     else
@@ -334,7 +346,8 @@ case "$1" in
     echo "  logs [service]    - Show recent logs (add -f to follow)"
         echo "  status    - Show container status"
     echo "  shell     - Enter container shell (api|frontend|mongo)"
-        echo "  clean     - Stop and remove all containers, volumes, and images"
+    echo "  clean     - Stop and remove containers and networks (keeps data)"
+    echo "  clean --purge - Also remove volumes and local ./data (deletes data)"
         echo ""
         echo "Examples:"
     echo "  $0 start                # Start everything"
@@ -347,6 +360,8 @@ case "$1" in
         echo "  $0 logs api          # Show recent API logs"
         echo "  $0 logs api -f       # Follow API logs (Ctrl+C to exit)"
         echo "  $0 shell frontend"
+        echo "  $0 clean             # Remove containers, keep data"
+        echo "  $0 clean --purge     # Remove everything including data"
         echo ""
         echo "Container Runtime Support:"
         echo "  🐳 Docker     - Uses docker-compose.dev.yml"
@@ -381,7 +396,7 @@ case "$1" in
         ;;
     clean)
         setup_container_runtime
-        clean_dev
+        clean_dev "$2"
         ;;
     *)
         echo "❌ Unknown command: $1"
