@@ -31,16 +31,16 @@ public class Game : IEntity
     [Upload(HeaderName = "Audience Rating")]
     public string Rating { get; set; } = string.Empty;
 
-    // Single or multiple platforms a title may belong to
-    [Upload(HeaderName = "Platform")]
-    public List<string> Platforms { get; set; } = [];
+    // Platform
+    public string Platform { get; set; } = string.Empty;
 
     // Studios/Developers
     [Upload(HeaderName = "Developer")]
     public List<string> Developers { get; set; } = [];
 
-    // Publisher
-    public string Publisher { get; set; } = string.Empty;
+    // Publishers
+    [Upload(HeaderName = "Publisher")]
+    public List<string> Publishers { get; set; } = [];
 
     // Genres
     [Upload(HeaderName = "Genre")]

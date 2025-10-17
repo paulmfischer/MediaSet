@@ -17,7 +17,7 @@ public class StatsService(IEntityService<Book> bookService, IEntityService<Movie
         var bookFormats = books.Where(book => !string.IsNullOrWhiteSpace(book.Format)).Select(book => book.Format.Trim()).Distinct();
         var movieFormats = movies.Where(movie => !string.IsNullOrWhiteSpace(movie.Format)).Select(movie => movie.Format.Trim()).Distinct();
         var gameFormats = games.Where(game => !string.IsNullOrWhiteSpace(game.Format)).Select(game => game.Format.Trim()).Distinct();
-        var gamePlatforms = games.Where(game => game.Platforms?.Count > 0).SelectMany(game => game.Platforms).Select(platform => platform.Trim()).Distinct();
+        var gamePlatforms = games.Where(game => !string.IsNullOrWhiteSpace(game.Platform)).Select(game => game.Platform.Trim()).Distinct();
         var bookStats = new BookStats
         (
           books.Count(),

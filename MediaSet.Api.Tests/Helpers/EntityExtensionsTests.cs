@@ -346,10 +346,10 @@ public class EntityExtensionsTests
     }
 
     [Test]
-    public void IsEmpty_GameWithPublisher_ReturnsFalse()
+    public void IsEmpty_GameWithPublishers_ReturnsFalse()
     {
         // Arrange
-        var game = new Game { Publisher = "Game Publisher" };
+        var game = new Game { Publishers = ["Game Publisher"] };
 
         // Act
         var result = game.IsEmpty();
@@ -359,10 +359,10 @@ public class EntityExtensionsTests
     }
 
     [Test]
-    public void IsEmpty_GameWithPlatforms_ReturnsFalse()
+    public void IsEmpty_GameWithPlatform_ReturnsFalse()
     {
         // Arrange
-        var game = new Game { Platforms = ["PC"] };
+        var game = new Game { Platform = "PC" };
 
         // Act
         var result = game.IsEmpty();
