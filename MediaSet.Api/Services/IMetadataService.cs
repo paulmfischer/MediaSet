@@ -9,4 +9,9 @@ public interface IMetadataService
   Task<IEnumerable<string>> GetMovieFormats();
   Task<IEnumerable<string>> GetMovieStudios();
   Task<IEnumerable<string>> GetMovieGenres();
+  Task<IEnumerable<string>> GetGameFormats();
+  Task<IEnumerable<string>> GetGamePlatforms();
+  Task<IEnumerable<string>> GetGameDevelopers();
+  Task<IEnumerable<string>> GetGamePublishers();
+  Task<IEnumerable<string>> GetGameGenres();
 }

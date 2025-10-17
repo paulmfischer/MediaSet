@@ -22,6 +22,7 @@ internal static class MetadatApi
       {
         MediaTypes.Books => await metadataService.GetBookFormats(),
         MediaTypes.Movies => await metadataService.GetMovieFormats(),
+        MediaTypes.Games => await metadataService.GetGameFormats(),
         _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
       };
     });
@@ -34,6 +35,7 @@ internal static class MetadatApi
       {
         MediaTypes.Books => await metadataService.GetBookGenres(),
         MediaTypes.Movies => await metadataService.GetMovieGenres(),
+        MediaTypes.Games => await metadataService.GetGameGenres(),
         _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
       };
     });
@@ -55,6 +57,20 @@ internal static class MetadatApi
       var publishers = await metadataService.GetBookPublishers();
       logger.LogInformation("Returning {count} publishers", publishers.Count());
       return publishers;
+    });
+
+    group.MapGet("/platforms", async (IMetadataService metadataService) =>
+    {
+      var platforms = await metadataService.GetGamePlatforms();
+      logger.LogInformation("Returning {count} platforms", platforms.Count());
+      return platforms;
+    });
+
+    group.MapGet("/developers", async (IMetadataService metadataService) =>
+    {
+      var developers = await metadataService.GetGameDevelopers();
+      logger.LogInformation("Returning {count} developers", developers.Count());
+      return developers;
     });
 
     return group;

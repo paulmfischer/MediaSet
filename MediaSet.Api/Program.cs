@@ -80,6 +80,7 @@ builder.Services.AddHttpLogging(logging =>
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
 builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
+builder.Services.AddScoped<IEntityService<Game>, EntityService<Game>>();
 builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 
@@ -142,6 +143,7 @@ app.MapHealth();
 
 app.MapEntity<Movie>();
 app.MapEntity<Book>();
+app.MapEntity<Game>();
 app.MapMetadata();
 app.MapStats();
 

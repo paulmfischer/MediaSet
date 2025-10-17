@@ -6,11 +6,13 @@ public class MetadataService : IMetadataService
 {
   private readonly IEntityService<Book> booksService;
   private readonly IEntityService<Movie> movieService;
+  private readonly IEntityService<Game> gameService;
 
-  public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService)
+  public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService, IEntityService<Game> _gameService)
   {
     booksService = _booksService;
     movieService = _movieService;
+    gameService = _gameService;
   }
 
   public async Task<IEnumerable<string>> GetBookFormats()
@@ -89,6 +91,64 @@ public class MetadataService : IMetadataService
     return movies
       .Where(movie => movie.Genres?.Count > 0)
       .SelectMany(movie => movie.Genres)
+      .Select(genre => genre.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetGameFormats()
+  {
+    var games = await gameService.GetListAsync();
+
+    return games
+      .Where(game => !string.IsNullOrWhiteSpace(game.Format))
+      .Select(game => game.Format.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetGamePlatforms()
+  {
+    var games = await gameService.GetListAsync();
+
+    return games
+      .Where(game => game.Platforms?.Count > 0)
+      .SelectMany(game => game.Platforms)
+      .Select(platform => platform.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetGameDevelopers()
+  {
+    var games = await gameService.GetListAsync();
+
+    return games
+      .Where(game => game.Developers?.Count > 0)
+      .SelectMany(game => game.Developers)
+      .Select(developer => developer.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetGamePublishers()
+  {
+    var games = await gameService.GetListAsync();
+
+    return games
+      .Where(game => !string.IsNullOrWhiteSpace(game.Publisher))
+      .Select(game => game.Publisher.Trim())
+      .Distinct()
+      .Order();
+  }
+
+  public async Task<IEnumerable<string>> GetGameGenres()
+  {
+    var games = await gameService.GetListAsync();
+
+    return games
+      .Where(game => game.Genres?.Count > 0)
+      .SelectMany(game => game.Genres)
       .Select(genre => genre.Trim())
       .Distinct()
       .Order();

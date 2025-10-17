@@ -14,16 +14,23 @@ public class MetadataServiceTests
 {
   private Mock<IEntityService<Book>> _bookServiceMock;
   private Mock<IEntityService<Movie>> _movieServiceMock;
+  private Mock<IEntityService<Game>> _gameServiceMock;
   private MetadataService _metadataService;
   private Faker<Book> _bookFaker;
   private Faker<Movie> _movieFaker;
+  private Faker<Game> _gameFaker;
 
   [SetUp]
   public void Setup()
   {
     _bookServiceMock = new Mock<IEntityService<Book>>();
     _movieServiceMock = new Mock<IEntityService<Movie>>();
-    _metadataService = new MetadataService(_bookServiceMock.Object, _movieServiceMock.Object);
+    _gameServiceMock = new Mock<IEntityService<Game>>();
+    _metadataService = new MetadataService(
+      _bookServiceMock.Object,
+      _movieServiceMock.Object,
+      _gameServiceMock.Object
+    );
 
     _bookFaker = new Faker<Book>()
       .RuleFor(b => b.Id, f => f.Random.AlphaNumeric(24))
@@ -39,6 +46,15 @@ public class MetadataServiceTests
       .RuleFor(m => m.Format, f => f.PickRandom("DVD", "Blu-ray", "4K UHD", "Digital"))
       .RuleFor(m => m.Studios, f => new List<string> { f.Company.CompanyName(), f.Company.CompanyName() })
       .RuleFor(m => m.Genres, f => new List<string> { f.PickRandom("Action", "Comedy", "Drama", "Horror") });
+
+    _gameFaker = new Faker<Game>()
+      .RuleFor(g => g.Id, f => f.Random.AlphaNumeric(24))
+      .RuleFor(g => g.Title, f => f.Lorem.Sentence())
+      .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
+      .RuleFor(g => g.Platforms, f => new List<string> { f.PickRandom("PC", "Xbox", "PlayStation", "Switch") })
+      .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
+      .RuleFor(g => g.Publisher, f => f.Company.CompanyName())
+      .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
   }
 
   #region GetBookFormats Tests
@@ -130,6 +146,120 @@ public class MetadataServiceTests
 
     // Assert
     Assert.That(result, Is.Empty);
+  }
+
+  #endregion
+
+  #region Game Metadata Tests
+
+  [Test]
+  public async Task GetGameFormats_ShouldReturnDistinctFormats_WhenGamesHaveFormats()
+  {
+    var games = new List<Game>
+    {
+      _gameFaker.Clone().RuleFor(g => g.Format, "Disc").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Format, "Digital").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Format, "Disc").Generate()
+    };
+
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+    var result = await _metadataService.GetGameFormats();
+
+    Assert.That(result.Count(), Is.EqualTo(2));
+    Assert.That(result, Contains.Item("Digital"));
+    Assert.That(result, Contains.Item("Disc"));
+    Assert.That(result, Is.Ordered);
+  }
+
+  [Test]
+  public async Task GetGamePlatforms_ShouldReturnDistinctPlatforms()
+  {
+    var games = new List<Game>
+    {
+      _gameFaker.Clone().RuleFor(g => g.Platforms, new List<string>{ "PC", "Xbox" }).Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Platforms, new List<string>{ "Xbox", "Switch" }).Generate(),
+    };
+
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+    var result = await _metadataService.GetGamePlatforms();
+
+    Assert.That(result.Count(), Is.EqualTo(3));
+    Assert.That(result, Does.Contain("PC"));
+    Assert.That(result, Does.Contain("Xbox"));
+    Assert.That(result, Does.Contain("Switch"));
+    Assert.That(result, Is.Ordered);
+  }
+
+  [Test]
+  public async Task GetGameDevelopers_ShouldReturnDistinctDevelopers()
+  {
+    var games = new List<Game>
+    {
+      _gameFaker.Clone().RuleFor(g => g.Developers, new List<string>{ "Studio A", "Studio B" }).Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Developers, new List<string>{ "Studio B", "Studio C" }).Generate(),
+    };
+
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+    var result = await _metadataService.GetGameDevelopers();
+
+    Assert.That(result.Count(), Is.EqualTo(3));
+    Assert.That(result, Does.Contain("Studio A"));
+    Assert.That(result, Does.Contain("Studio B"));
+    Assert.That(result, Does.Contain("Studio C"));
+    Assert.That(result, Is.Ordered);
+  }
+
+  [Test]
+  public async Task GetGamePublishers_ShouldReturnDistinctPublishers()
+  {
+    var games = new List<Game>
+    {
+      _gameFaker.Clone().RuleFor(g => g.Publisher, "Nintendo").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Publisher, "Sony").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Publisher, "Nintendo").Generate(),
+    };
+
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+    var result = await _metadataService.GetGamePublishers();
+
+    Assert.That(result.Count(), Is.EqualTo(2));
+    Assert.That(result, Does.Contain("Nintendo"));
+    Assert.That(result, Does.Contain("Sony"));
+    Assert.That(result, Is.Ordered);
+  }
+
+  [Test]
+  public async Task GetGameGenres_ShouldReturnDistinctGenres()
+  {
+    var games = new List<Game>
+    {
+      _gameFaker.Clone().RuleFor(g => g.Genres, new List<string>{ "Action", "RPG" }).Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Genres, new List<string>{ "RPG", "Strategy" }).Generate(),
+    };
+
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+    var result = await _metadataService.GetGameGenres();
+
+    Assert.That(result.Count(), Is.EqualTo(3));
+    Assert.That(result, Does.Contain("Action"));
+    Assert.That(result, Does.Contain("RPG"));
+    Assert.That(result, Does.Contain("Strategy"));
+    Assert.That(result, Is.Ordered);
+  }
+
+  [Test]
+  public async Task GetGameFormats_ShouldCallGameServiceGetListAsync_Once()
+  {
+    _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(new List<Game>());
+
+    await _metadataService.GetGameFormats();
+
+    _gameServiceMock.Verify(s => s.GetListAsync(), Times.Once);
   }
 
   #endregion

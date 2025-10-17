@@ -71,6 +71,13 @@ public class StatsApiTests
                 TotalFormats: 3,
                 Formats: movieFormats,
                 TotalTvSeries: 15
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -118,6 +125,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalTvSeries: 0
             )
+,
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
@@ -153,6 +168,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalTvSeries: 0
             )
+,
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
@@ -187,6 +210,14 @@ public class StatsApiTests
                 TotalFormats: 2,
                 Formats: movieFormats,
                 TotalTvSeries: 10
+            )
+,
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -225,6 +256,13 @@ public class StatsApiTests
                 TotalFormats: 4,
                 Formats: movieFormats,
                 TotalTvSeries: 500
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -265,6 +303,13 @@ public class StatsApiTests
                 TotalFormats: 5,
                 Formats: movieFormats,
                 TotalTvSeries: 20
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -308,6 +353,13 @@ public class StatsApiTests
                 TotalFormats: 1,
                 Formats: movieFormats,
                 TotalTvSeries: 5
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -345,6 +397,13 @@ public class StatsApiTests
                 TotalFormats: 2,
                 Formats: movieFormats,
                 TotalTvSeries: 0
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 
@@ -379,6 +438,13 @@ public class StatsApiTests
                 TotalFormats: 2,
                 Formats: movieFormats,
                 TotalTvSeries: 40
+            ),
+            new GameStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                TotalPlatforms: 0,
+                Platforms: new List<string>()
             )
         );
 

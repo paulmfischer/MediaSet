@@ -24,8 +24,10 @@ public class EntityApiTests
     private HttpClient _client;
     private Mock<IEntityService<Book>> _bookServiceMock;
     private Mock<IEntityService<Movie>> _movieServiceMock;
+    private Mock<IEntityService<Game>> _gameServiceMock;
     private Faker<Book> _bookFaker;
     private Faker<Movie> _movieFaker;
+    private Faker<Game> _gameFaker;
     private JsonSerializerOptions _jsonOptions;
 
     [SetUp]
@@ -38,6 +40,7 @@ public class EntityApiTests
         };
         _bookServiceMock = new Mock<IEntityService<Book>>();
         _movieServiceMock = new Mock<IEntityService<Movie>>();
+        _gameServiceMock = new Mock<IEntityService<Game>>();
         
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -55,9 +58,15 @@ public class EntityApiTests
                     if (movieServiceDescriptor != null)
                         services.Remove(movieServiceDescriptor);
 
+                    var gameServiceDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(IEntityService<Game>));
+                    if (gameServiceDescriptor != null)
+                        services.Remove(gameServiceDescriptor);
+
                     // Add mock services
                     services.AddScoped<IEntityService<Book>>(_ => _bookServiceMock.Object);
                     services.AddScoped<IEntityService<Movie>>(_ => _movieServiceMock.Object);
+                    services.AddScoped<IEntityService<Game>>(_ => _gameServiceMock.Object);
                 });
             });
 
@@ -89,6 +98,215 @@ public class EntityApiTests
             .RuleFor(m => m.Rating, f => f.PickRandom("G", "PG", "PG-13", "R"))
             .RuleFor(m => m.Plot, f => f.Lorem.Paragraph())
             .RuleFor(m => m.IsTvSeries, f => f.Random.Bool());
+
+        _gameFaker = new Faker<Game>()
+            .RuleFor(g => g.Id, f => f.Random.AlphaNumeric(24))
+            .RuleFor(g => g.Type, _ => MediaTypes.Games)
+            .RuleFor(g => g.Title, f => f.Lorem.Sentence())
+            .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
+            .RuleFor(g => g.Platforms, f => new List<string> { f.PickRandom("PC", "Xbox", "PlayStation", "Switch") })
+            .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
+            .RuleFor(g => g.Publisher, f => f.Company.CompanyName())
+            .RuleFor(g => g.Genres, f => new List<string> { f.Lorem.Word() })
+            .RuleFor(g => g.ReleaseDate, f => f.Date.Past().ToString("yyyy-MM-dd"))
+            .RuleFor(g => g.Rating, f => f.PickRandom("E", "T", "M"))
+            .RuleFor(g => g.Description, f => f.Lorem.Paragraph());
+    }
+
+    [Test]
+    public async Task GetGames_ShouldReturnAllGames()
+    {
+        // Arrange
+        var games = _gameFaker.Generate(3);
+        _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+
+        // Act
+        var response = await _client.GetAsync("/Games");
+        var result = await response.Content.ReadFromJsonAsync<List<Game>>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(3));
+        _gameServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+    }
+
+    [Test]
+    public async Task GetGameById_ShouldReturnGame_WhenGameExists()
+    {
+        // Arrange
+        var gameId = "507f1f77bcf86cd799439011";
+        var expectedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
+        _gameServiceMock.Setup(s => s.GetAsync(gameId)).ReturnsAsync(expectedGame);
+
+        // Act
+        var response = await _client.GetAsync($"/Games/{gameId}");
+        var result = await response.Content.ReadFromJsonAsync<Game>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Id, Is.EqualTo(gameId));
+        Assert.That(result.Title, Is.EqualTo(expectedGame.Title));
+        _gameServiceMock.Verify(s => s.GetAsync(gameId), Times.Once);
+    }
+
+    [Test]
+    public async Task CreateGame_ShouldReturnCreated_WhenGameIsValid()
+    {
+        // Arrange
+        var newGame = _gameFaker.Generate();
+        _gameServiceMock.Setup(s => s.CreateAsync(newGame)).Returns(Task.CompletedTask);
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/Games", newGame);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(response.Headers.Location, Is.Not.Null);
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>()), Times.Once);
+    }
+
+    [Test]
+    public async Task CreateGame_ShouldReturnBadRequest_WhenGameIsEmpty()
+    {
+        // Arrange
+        var emptyGame = new Game();
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/Games", emptyGame);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateGame_ShouldReturnOk_WhenIdsMatch()
+    {
+        // Arrange
+        var gameId = "507f1f77bcf86cd799439011";
+        var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
+        var updateResult = Mock.Of<ReplaceOneResult>();
+    _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>())).Returns(Task.FromResult(updateResult));
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/Games/{gameId}", updatedGame);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _gameServiceMock.Verify(s => s.UpdateAsync(gameId, It.IsAny<Game>()), Times.Once);
+    }
+
+    [Test]
+    public async Task UpdateGame_ShouldReturnBadRequest_WhenIdsDontMatch()
+    {
+        // Arrange
+        var pathId = "507f1f77bcf86cd799439011";
+        var entityId = "507f1f77bcf86cd799439012";
+        var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, entityId).Generate();
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/Games/{pathId}", updatedGame);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        _gameServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>()), Times.Never);
+    }
+
+    [Test]
+    public async Task DeleteGame_ShouldReturnOk()
+    {
+        // Arrange
+        var gameId = "507f1f77bcf86cd799439011";
+        var deleteResult = Mock.Of<DeleteResult>();
+    _gameServiceMock.Setup(s => s.RemoveAsync(gameId)).Returns(Task.FromResult(deleteResult));
+
+        // Act
+        var response = await _client.DeleteAsync($"/Games/{gameId}");
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _gameServiceMock.Verify(s => s.RemoveAsync(gameId), Times.Once);
+    }
+
+    [Test]
+    public async Task GetGames_ShouldReturnEmptyList_WhenNoGamesExist()
+    {
+        // Arrange
+        var emptyList = new List<Game>();
+        _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(emptyList);
+
+        // Act
+        var response = await _client.GetAsync("/Games");
+        var result = await response.Content.ReadFromJsonAsync<List<Game>>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task SearchGames_ShouldReturnMatchingGames()
+    {
+        // Arrange
+        var searchText = "adventure";
+        var orderBy = "title:asc";
+        var games = _gameFaker.Generate(2);
+        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(games);
+
+        // Act
+        var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
+        var result = await response.Content.ReadFromJsonAsync<List<Game>>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(2));
+        _gameServiceMock.Verify(s => s.SearchAsync(searchText, orderBy), Times.Once);
+    }
+
+    [Test]
+    public async Task SearchGames_ShouldReturnEmptyList_WhenNoMatchesFound()
+    {
+        // Arrange
+        var searchText = "nonexistent";
+        var orderBy = "title:asc";
+        var emptyList = new List<Game>();
+        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(emptyList);
+
+        // Act
+        var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
+        var result = await response.Content.ReadFromJsonAsync<List<Game>>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task SearchGames_ShouldSupportDifferentOrderByFormats()
+    {
+        // Arrange
+        var searchText = "game";
+        var orderByOptions = new[] { "title:asc", "title:desc" };
+        var games = _gameFaker.Generate(2);
+
+        foreach (var orderBy in orderByOptions)
+        {
+            _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(games);
+
+            // Act
+            var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
+            var result = await response.Content.ReadFromJsonAsync<List<Game>>(_jsonOptions);
+
+            // Assert
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result!.Count, Is.EqualTo(2));
+        }
     }
 
     [TearDown]
@@ -226,7 +444,7 @@ public class EntityApiTests
         var bookId = "507f1f77bcf86cd799439011";
         var updatedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-        _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>())).ReturnsAsync(updateResult);
+    _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>())).Returns(Task.FromResult(updateResult));
 
         // Act
         var response = await _client.PutAsJsonAsync($"/Books/{bookId}", updatedBook);
@@ -258,7 +476,7 @@ public class EntityApiTests
         // Arrange
         var bookId = "507f1f77bcf86cd799439011";
         var deleteResult = Mock.Of<DeleteResult>();
-        _bookServiceMock.Setup(s => s.RemoveAsync(bookId)).ReturnsAsync(deleteResult);
+    _bookServiceMock.Setup(s => s.RemoveAsync(bookId)).Returns(Task.FromResult(deleteResult));
 
         // Act
         var response = await _client.DeleteAsync($"/Books/{bookId}");
