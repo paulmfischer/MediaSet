@@ -112,9 +112,8 @@ public class MetadataService : IMetadataService
         var games = await gameService.GetListAsync();
 
         return games
-          .Where(game => game.Platforms?.Count > 0)
-          .SelectMany(game => game.Platforms)
-          .Select(platform => platform.Trim())
+          .Where(game => !string.IsNullOrWhiteSpace(game.Platform))
+          .Select(game => game.Platform.Trim())
           .Distinct()
           .Order();
     }

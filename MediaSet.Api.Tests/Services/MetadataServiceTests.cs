@@ -51,7 +51,7 @@ public class MetadataServiceTests
           .RuleFor(g => g.Id, f => f.Random.AlphaNumeric(24))
           .RuleFor(g => g.Title, f => f.Lorem.Sentence())
           .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
-          .RuleFor(g => g.Platforms, f => new List<string> { f.PickRandom("PC", "Xbox", "PlayStation", "Switch") })
+          .RuleFor(g => g.Platform, f => f.PickRandom("PC", "Xbox", "PlayStation", "Switch"))
           .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Publisher, f => f.Company.CompanyName())
           .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
@@ -177,8 +177,10 @@ public class MetadataServiceTests
     {
         var games = new List<Game>
     {
-      _gameFaker.Clone().RuleFor(g => g.Platforms, new List<string>{ "PC", "Xbox" }).Generate(),
-      _gameFaker.Clone().RuleFor(g => g.Platforms, new List<string>{ "Xbox", "Switch" }).Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Platform, "PC").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Platform, "Xbox").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Platform, "Xbox").Generate(),
+      _gameFaker.Clone().RuleFor(g => g.Platform, "Switch").Generate(),
     };
 
         _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);

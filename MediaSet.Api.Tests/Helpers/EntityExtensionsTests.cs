@@ -359,10 +359,10 @@ public class EntityExtensionsTests
     }
 
     [Test]
-    public void IsEmpty_GameWithPlatforms_ReturnsFalse()
+    public void IsEmpty_GameWithPlatform_ReturnsFalse()
     {
         // Arrange
-        var game = new Game { Platforms = ["PC"] };
+        var game = new Game { Platform = "PC" };
 
         // Act
         var result = game.IsEmpty();
