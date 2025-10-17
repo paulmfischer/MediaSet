@@ -1,29 +1,9 @@
 import { baseUrl } from "./constants.server";
 import { singular } from "./helpers";
-import { BaseEntity, BookEntity, Entity, MovieEntity } from "./models";
+import { BaseEntity, Entity } from "./models";
 
-namespace Type {
-  export function isBook(entity: any): entity is BookEntity {
-    return entity && "authors" in entity;
-  }
-  export function isMovie(entity: any): entity is MovieEntity {
-    return entity && "releaseDate" in entity;
-  }
-}
-
-function isOfType<T>(guard: (entity: any) => entity is T, data: any): boolean {
-  return guard(data);
-}
-
-function getEntityType<T>(entity: T): Entity {
-  if (isOfType(Type.isBook, entity)) {
-    return Entity.Books;
-  }
-  if (isOfType(Type.isMovie, entity)) {
-    return Entity.Movies;
-  }
-
-  throw "No matching entity name";
+function getEntityType<T extends BaseEntity>(entity: T): Entity {
+  return entity.type;
 }
 
 export async function searchEntities<TEntity extends BaseEntity>(entityType: Entity, searchText: string | null, orderBy: string = ''): Promise<Array<TEntity>> {

@@ -10,7 +10,7 @@ import {
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { useLocation } from "@remix-run/react";
-import { Clapperboard, LibraryBig, Menu, X } from "lucide-react";
+import { Clapperboard, Gamepad2, LibraryBig, Menu, X } from "lucide-react";
 
 function Header() {
   const [open, setOpen] = useState(false);
@@ -30,6 +30,7 @@ function Header() {
           <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
           <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
           <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg"><Clapperboard /> Movies</NavLink>
+          <NavLink to="/games" className="p-3 flex gap-2 items-center rounded-lg"><Gamepad2 /> Games</NavLink>
         </nav>
 
         {/* Mobile toggle */}
@@ -45,6 +46,7 @@ function Header() {
             <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center">Home</NavLink>
             <NavLink to="/books" className="p-3 rounded-lg flex gap-2 items-center"><LibraryBig /> Books</NavLink>
             <NavLink to="/movies" className="p-3 rounded-lg flex gap-2 items-center"><Clapperboard /> Movies</NavLink>
+            <NavLink to="/games" className="p-3 rounded-lg flex gap-2 items-center"><Gamepad2 /> Games</NavLink>
           </div>
         </nav>
       )}
@@ -67,6 +69,7 @@ function ErrorHeader() {
           <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
           <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
           <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg"><Clapperboard /> Movies</NavLink>
+          <NavLink to="/games" className="p-3 flex gap-2 items-center rounded-lg"><Gamepad2 /> Games</NavLink>
         </nav>
         <button className="md:hidden p-2 rounded-md" onClick={() => setOpen(!open)} aria-label="Toggle menu" aria-expanded={open}>
           {open ? <X /> : <Menu />}
@@ -79,6 +82,7 @@ function ErrorHeader() {
             <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center">Home</NavLink>
             <NavLink to="/books" className="p-3 rounded-lg flex gap-2 items-center"><LibraryBig /> Books</NavLink>
             <NavLink to="/movies" className="p-3 rounded-lg flex gap-2 items-center"><Clapperboard /> Movies</NavLink>
+            <NavLink to="/games" className="p-3 rounded-lg flex gap-2 items-center"><Gamepad2 /> Games</NavLink>
           </div>
         </nav>
       )}

@@ -1,10 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { searchEntities } from "~/entity-data";
-import { BookEntity, Entity, MovieEntity } from "~/models";
+import { BookEntity, Entity, GameEntity, MovieEntity } from "~/models";
 import { getEntityFromParams } from "~/helpers";
 import Books from "./books";
 import Movies from "./movies";
+import Games from "./games";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = (loader) => {
@@ -43,5 +44,9 @@ export default function Index() {
 
   if (entityType === Entity.Movies) {
     return <Movies movies={entities as MovieEntity[]} />;
+  }
+
+  if (entityType === Entity.Games) {
+    return <Games games={entities as GameEntity[]} />;
   }
 }

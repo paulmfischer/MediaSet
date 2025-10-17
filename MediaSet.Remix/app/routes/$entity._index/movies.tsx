@@ -8,7 +8,6 @@ type MovieProps = {
 };
 
 export default function Movies({ movies }: MovieProps) {
-  console.log('movies', movies.filter(movie => movie.isTvSeries));
   return (
     <table className="text-left w-full">
       <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">

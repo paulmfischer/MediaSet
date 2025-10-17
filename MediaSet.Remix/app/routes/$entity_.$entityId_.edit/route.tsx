@@ -2,11 +2,12 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity, getEntity, updateEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
-import { BookEntity, Entity, MovieEntity } from "~/models";
+import { BookEntity, Entity, GameEntity, MovieEntity } from "~/models";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
+import GameForm from "~/components/game-form";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
@@ -22,15 +23,16 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entityId, "Missing entityId param");
   const entityType = getEntityFromParams(params);
   const entity = await getEntity(entityType, params.entityId);
-  const [genres, formats, authors, publishers, studios] =
+  const [genres, formats, authors, publishers, studios, developers] =
    await Promise.all([
     getGenres(entityType),
     getFormats(entityType),
     entity.type === Entity.Books ? getAuthors() : Promise.resolve([]),
-    entity.type === Entity.Books ? getPublishers() : Promise.resolve([]),
-    entity.type === Entity.Movies ? getStudios() : Promise.resolve([])
+    entity.type === Entity.Books || entity.type === Entity.Games ? getPublishers() : Promise.resolve([]),
+    entity.type === Entity.Movies ? getStudios() : Promise.resolve([]),
+    entity.type === Entity.Games ? getDevelopers() : Promise.resolve([])
   ]);
-  return { entity, authors, genres, publishers, formats, entityType, studios };
+  return { entity, authors, genres, publishers, formats, entityType, studios, developers };
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -48,7 +50,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Edit() {
-  const { entity, authors, genres, publishers, formats, entityType, studios } = useLoaderData<typeof loader>();
+  const { entity, authors, genres, publishers, formats, entityType, studios, developers } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/${entity.type.toLowerCase()}/${entity.id}/edit`;
@@ -60,6 +62,8 @@ export default function Edit() {
     formComponent = <BookForm book={entity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entity.type === Entity.Movies) {
     formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+  } else if (entity.type === Entity.Games) {
+    formComponent = <GameForm game={entity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (

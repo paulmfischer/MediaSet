@@ -7,6 +7,7 @@ export type FormProps = {
 export enum Entity {
   Books = "Books",
   Movies = "Movies",
+  Games = "Games",
 };
 
 export interface BaseEntity {
@@ -44,3 +45,17 @@ export interface MovieEntity extends BaseEntity {
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string; }>
+
+// Backend model
+export interface GameEntity extends BaseEntity {
+  barcode?: string;
+  releaseDate?: string;
+  rating?: string;
+  platform?: string;
+  developers?: Array<string>;
+  publishers?: Array<string>;
+  genres?: Array<string>;
+  description?: string;
+}
+// UI model
+export type Game = Override<GameEntity, { developers: string; publishers: string; genres: string; }>
