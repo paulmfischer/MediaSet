@@ -4,11 +4,12 @@ import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
-import { BookEntity, Entity } from "~/models";
+import { BookEntity, Entity, GameEntity } from "~/models";
 import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
+import GameForm from "~/components/game-form";
 import { lookup, LookupError } from "~/lookup-data";
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
@@ -21,8 +22,15 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  const [authors, genres, publishers, formats, studios] = await Promise.all([getAuthors(), getGenres(entityType), getPublishers(), getFormats(entityType), getStudios()]);
-  return { authors, genres, publishers, formats, entityType, studios };
+  const [authors, genres, publishers, formats, studios, developers] = await Promise.all([
+    getAuthors(), 
+    getGenres(entityType), 
+    getPublishers(), 
+    getFormats(entityType), 
+    getStudios(),
+    getDevelopers()
+  ]);
+  return { authors, genres, publishers, formats, entityType, studios, developers };
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -58,7 +66,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityType, studios } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityType, studios, developers } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
@@ -81,6 +89,8 @@ export default function Add() {
     formComponent = <BookForm book={lookupBook as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
     formComponent = <MovieForm genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+  } else if (entityType === Entity.Games) {
+    formComponent = <GameForm developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
   }
 
   return (

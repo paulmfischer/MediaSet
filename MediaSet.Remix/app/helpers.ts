@@ -1,5 +1,5 @@
 import { Params } from "@remix-run/react";
-import { BaseEntity, Book, BookEntity, Entity, Movie, MovieEntity } from "./models";
+import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity } from "./models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -65,12 +65,32 @@ function baseToMovieEntity(data: BaseEntity): MovieEntity {
   };
 }
 
+function baseToGameEntity(data: BaseEntity): GameEntity {
+  const game = data as Game;
+  return {
+    type: game.type,
+    developers: game.developers ? game.developers.split(',') : undefined,
+    publishers: game.publishers ? game.publishers.split(',') : undefined,
+    format: getValue(game.format),
+    genres: game.genres ? game.genres.split(',') : undefined,
+    id: getValue(game.id),
+    barcode: getValue(game.barcode),
+    releaseDate: getValue(game.releaseDate),
+    rating: getValue(game.rating),
+    platform: getValue(game.platform),
+    description: getValue(game.description),
+    title: getValue(game.title),
+  };
+}
+
 export function formToDto(formData: FormData): BaseEntity | null {
   const data = formDataToType<BaseEntity>(formData);
   if (data.type === Entity.Books) {
     return baseToBookEntity(data);
   } else if (data.type === Entity.Movies) {
     return baseToMovieEntity(data);
+  } else if (data.type === Entity.Games) {
+    return baseToGameEntity(data);
   } else {
     return null;
   }
