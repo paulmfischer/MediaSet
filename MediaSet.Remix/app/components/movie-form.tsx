@@ -33,7 +33,7 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
 
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select id="format" name="format" className={selectClasses} value={movie?.format}>
+        <select key={movie?.format ?? 'no-format'} id="format" name="format" className={selectClasses} defaultValue={movie?.format}>
           <option value="">Select Format...</option>
           {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
         </select>

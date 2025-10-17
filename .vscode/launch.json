@@ -2,20 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Node - Attach by Process ID",
-      "processId": "${command:PickProcess}",
-      "request": "attach",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "type": "node"
-    },
-    {
-      "name": ".NET Core Attach",
-      "type": "coreclr",
-      "request": "attach"
-    },
-    {
       // Use IntelliSense to find out which attributes exist for C# debugging
       // Use hover for the description of the existing attributes
       // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
@@ -67,7 +53,12 @@
         "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": false
-      }
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/MediaSet.Api"
+      },
+      "justMyCode": false,
+      "requireExactSource": false
     },
     {
       "name": "Debug API in Container (Podman)",
@@ -80,7 +71,12 @@
         "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": false
-      }
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/MediaSet.Api"
+      },
+      "justMyCode": false,
+      "requireExactSource": false
     }
   ],
   "compounds": [
