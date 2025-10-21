@@ -43,6 +43,20 @@ internal static class EntityExtensions
               game.Genres.Count == 0 &&
               string.IsNullOrWhiteSpace(game.Description);
         }
+        else if (entity is Music music)
+        {
+            return string.IsNullOrWhiteSpace(music.Title) &&
+              string.IsNullOrWhiteSpace(music.Format) &&
+              string.IsNullOrWhiteSpace(music.Artist) &&
+              string.IsNullOrWhiteSpace(music.ReleaseDate) &&
+              music.Genres.Count == 0 &&
+              !music.Duration.HasValue &&
+              string.IsNullOrWhiteSpace(music.Label) &&
+              string.IsNullOrWhiteSpace(music.Barcode) &&
+              !music.Tracks.HasValue &&
+              !music.Discs.HasValue &&
+              music.DiscList.Count == 0;
+        }
 
         return true;
     }
