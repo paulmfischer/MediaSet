@@ -7,6 +7,16 @@ namespace MediaSet.Api.Tests.Models;
 public class MusicTests
 {
     [Test]
+    public void Constructor_SetsTypeToMusics()
+    {
+        // Act
+        var music = new Music();
+
+        // Assert
+        Assert.That(music.Type, Is.EqualTo(MediaTypes.Musics));
+    }
+
+    [Test]
     public void IsEmpty_EmptyMusic_ReturnsTrue()
     {
         // Arrange

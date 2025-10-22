@@ -7,6 +7,16 @@ namespace MediaSet.Api.Tests.Models;
 public class MovieTests
 {
     [Test]
+    public void Constructor_SetsTypeToMovies()
+    {
+        // Act
+        var movie = new Movie();
+
+        // Assert
+        Assert.That(movie.Type, Is.EqualTo(MediaTypes.Movies));
+    }
+
+    [Test]
     public void IsEmpty_EmptyMovie_ReturnsTrue()
     {
         // Arrange

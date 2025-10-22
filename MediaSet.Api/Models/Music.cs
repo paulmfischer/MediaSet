@@ -7,6 +7,11 @@ namespace MediaSet.Api.Models;
 
 public class Music : IEntity
 {
+  public Music()
+  {
+    Type = MediaTypes.Musics;
+  }
+
   [BsonId]
   [BsonRepresentation(BsonType.ObjectId)]
   public string? Id { get; set; }

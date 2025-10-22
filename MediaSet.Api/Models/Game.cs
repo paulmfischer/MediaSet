@@ -7,6 +7,11 @@ namespace MediaSet.Api.Models;
 
 public class Game : IEntity
 {
+    public Game()
+    {
+        Type = MediaTypes.Games;
+    }
+
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }

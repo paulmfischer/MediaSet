@@ -8,6 +8,11 @@ namespace MediaSet.Api.Models;
 
 public class Movie : IEntity
 {
+    public Movie()
+    {
+        Type = MediaTypes.Movies;
+    }
+
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }

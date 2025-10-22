@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 
@@ -35,12 +34,12 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         {
             entitySearch.SortByDescending(sortFn);
         }
-        return (await entitySearch.ToListAsync()).Select(entity => entity.SetType()).OfType<TEntity>();
+        return await entitySearch.ToListAsync();
     }
 
-    public async Task<IEnumerable<TEntity>> GetListAsync() => (await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync()).Select(entity => entity.SetType()).OfType<TEntity>();
+    public async Task<IEnumerable<TEntity>> GetListAsync() => await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync();
 
-    public async Task<TEntity?> GetAsync(string id) => (await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync()).SetType();
+    public async Task<TEntity?> GetAsync(string id) => await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
     public Task CreateAsync(TEntity newEntity) => entityCollection.InsertOneAsync(newEntity);
 

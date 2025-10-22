@@ -7,6 +7,16 @@ namespace MediaSet.Api.Tests.Models;
 public class BookTests
 {
     [Test]
+    public void Constructor_SetsTypeToBooks()
+    {
+        // Act
+        var book = new Book();
+
+        // Assert
+        Assert.That(book.Type, Is.EqualTo(MediaTypes.Books));
+    }
+
+    [Test]
     public void IsEmpty_EmptyBook_ReturnsTrue()
     {
         // Arrange

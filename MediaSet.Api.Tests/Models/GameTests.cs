@@ -7,6 +7,16 @@ namespace MediaSet.Api.Tests.Models;
 public class GameTests
 {
     [Test]
+    public void Constructor_SetsTypeToGames()
+    {
+        // Act
+        var game = new Game();
+
+        // Assert
+        Assert.That(game.Type, Is.EqualTo(MediaTypes.Games));
+    }
+
+    [Test]
     public void IsEmpty_EmptyGame_ReturnsTrue()
     {
         // Arrange
