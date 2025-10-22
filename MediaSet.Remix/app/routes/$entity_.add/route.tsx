@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity } from "~/models";
 import BookForm from "~/components/book-form";
@@ -23,14 +23,14 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  const [authors, genres, publishers, formats, studios, developers, labels] = await Promise.all([
-    getAuthors(), 
-    getGenres(entityType), 
-    getPublishers(), 
-    getFormats(entityType), 
-    getStudios(),
-    getDevelopers(),
-    getLabels()
+  const [genres, formats, authors, publishers, studios, developers, labels] = await Promise.all([
+    getGenres(entityType),
+    getFormats(entityType),
+    entityType === Entity.Books ? getAuthors() : Promise.resolve([]),
+    entityType === Entity.Books ? getPublishers() : entityType === Entity.Games ? getGamePublishers() : Promise.resolve([]),
+    entityType === Entity.Movies ? getStudios() : Promise.resolve([]),
+    entityType === Entity.Games ? getDevelopers() : Promise.resolve([]),
+    entityType === Entity.Musics ? getLabels() : Promise.resolve([])
   ]);
   return { authors, genres, publishers, formats, entityType, studios, developers, labels };
 };

@@ -2,7 +2,7 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity, getEntity, updateEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import BookForm from "../../components/book-form";
@@ -29,7 +29,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     getGenres(entityType),
     getFormats(entityType),
     entity.type === Entity.Books ? getAuthors() : Promise.resolve([]),
-    entity.type === Entity.Books || entity.type === Entity.Games ? getPublishers() : Promise.resolve([]),
+    entity.type === Entity.Books ? getPublishers() : entity.type === Entity.Games ? getGamePublishers() : Promise.resolve([]),
     entity.type === Entity.Movies ? getStudios() : Promise.resolve([]),
     entity.type === Entity.Games ? getDevelopers() : Promise.resolve([]),
     entity.type === Entity.Musics ? getLabels() : Promise.resolve([])
