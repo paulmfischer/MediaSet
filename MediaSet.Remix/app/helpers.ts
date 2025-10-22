@@ -1,5 +1,5 @@
 import { Params } from "@remix-run/react";
-import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity } from "./models";
+import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity, Music, MusicEntity, Disc } from "./models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -83,6 +83,52 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
   };
 }
 
+function baseToMusicEntity(data: BaseEntity): MusicEntity {
+  const music = data as Music;
+  
+  // Parse disc list from form data
+  const discList: Disc[] = [];
+  let i = 0;
+  while (true) {
+    const trackNumberKey = `discList[${i}].trackNumber` as keyof Music;
+    const titleKey = `discList[${i}].title` as keyof Music;
+    const durationKey = `discList[${i}].duration` as keyof Music;
+    
+    const trackNumber = (music as any)[trackNumberKey];
+    const title = (music as any)[titleKey];
+    const duration = (music as any)[durationKey];
+    
+    if (trackNumber === undefined && title === undefined && duration === undefined) {
+      break;
+    }
+    
+    if (title || duration) {
+      discList.push({
+        trackNumber: parseInt(trackNumber) || i + 1,
+        title: title || '',
+        duration: duration || '',
+      });
+    }
+    i++;
+  }
+  
+  return {
+    type: music.type,
+    id: getValue(music.id),
+    title: getValue(music.title),
+    format: getValue(music.format),
+    artist: getValue(music.artist),
+    releaseDate: getValue(music.releaseDate),
+    genres: music.genres ? music.genres.split(',') : undefined,
+    duration: getValue(music.duration),
+    label: getValue(music.label),
+    barcode: getValue(music.barcode),
+    tracks: getValue(music.tracks),
+    discs: getValue(music.discs),
+    discList: discList.length > 0 ? discList : undefined,
+  };
+}
+
 export function formToDto(formData: FormData): BaseEntity | null {
   const data = formDataToType<BaseEntity>(formData);
   if (data.type === Entity.Books) {
@@ -91,6 +137,8 @@ export function formToDto(formData: FormData): BaseEntity | null {
     return baseToMovieEntity(data);
   } else if (data.type === Entity.Games) {
     return baseToGameEntity(data);
+  } else if (data.type === Entity.Musics) {
+    return baseToMusicEntity(data);
   } else {
     return null;
   }

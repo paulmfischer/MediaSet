@@ -36,3 +36,9 @@ export async function getDevelopers() {
   const developers = await response.json() as string[];
   return developers.map(developer => ({ label: developer, value: developer }));
 }
+
+export async function getLabels() {
+  const response = await fetch(`${baseUrl}/metadata/labels`);
+  const labels = await response.json() as string[];
+  return labels.map(label => ({ label: label, value: label }));
+}

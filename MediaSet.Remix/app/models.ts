@@ -8,6 +8,7 @@ export enum Entity {
   Books = "Books",
   Movies = "Movies",
   Games = "Games",
+  Musics = "Musics",
 };
 
 export interface BaseEntity {
@@ -59,3 +60,24 @@ export interface GameEntity extends BaseEntity {
 }
 // UI model
 export type Game = Override<GameEntity, { developers: string; publishers: string; genres: string; }>
+
+export interface Disc {
+  trackNumber: number;
+  title: string;
+  duration: string;
+}
+
+// Backend model
+export interface MusicEntity extends BaseEntity {
+  artist?: string;
+  releaseDate?: string;
+  genres?: Array<string>;
+  duration?: number;
+  label?: string;
+  barcode?: string;
+  tracks?: number;
+  discs?: number;
+  discList?: Array<Disc>;
+}
+// UI model
+export type Music = Override<MusicEntity, { genres: string; }>
