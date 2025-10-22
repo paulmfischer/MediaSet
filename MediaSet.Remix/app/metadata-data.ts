@@ -1,44 +1,48 @@
 import { baseUrl } from "./constants.server";
 import { Entity } from "./models";
 
+/**
+ * Generic function to fetch metadata for a specific property of a media type
+ */
+async function getMetadata(entityType: Entity, property: string) {
+  const response = await fetch(`${baseUrl}/metadata/${entityType}/${property}`);
+  console.log('response', response);
+  const values = await response.json() as string[];
+  return values.map(value => ({ label: value, value: value }));
+}
+
 export async function getAuthors() {
-  const response = await fetch(`${baseUrl}/metadata/authors`);
-  const authors = await response.json() as string[];
-  return authors.map(author => ({ label: author, value: author }));
+  return getMetadata(Entity.Books, "authors");
 }
 
 export async function getPublishers() {
-  const response = await fetch(`${baseUrl}/metadata/publishers`);
-  const publishers = await response.json() as string[];
-  return publishers.map(publisher => ({ label: publisher, value: publisher }));
+  return getMetadata(Entity.Books, "publisher");
 }
 
 export async function getGenres(entityType: Entity) {
-  const response = await fetch(`${baseUrl}/metadata/genres/${entityType}`);
-  const genres = await response.json() as string[];
-  return genres.map(genre => ({ label: genre, value: genre }));
+  return getMetadata(entityType, "genres");
 }
 
 export async function getFormats(entityType: Entity) {
-  const response = await fetch(`${baseUrl}/metadata/formats/${entityType}`);
-  const formats = await response.json() as string[];
-  return formats.map(format => ({ label: format, value: format }));
+  return getMetadata(entityType, "format");
 }
 
 export async function getStudios() {
-  const response = await fetch(`${baseUrl}/metadata/studios`);
-  const studios = await response.json() as string[];
-  return studios.map(studio => ({ label: studio, value: studio }));
+  return getMetadata(Entity.Movies, "studios");
 }
 
 export async function getDevelopers() {
-  const response = await fetch(`${baseUrl}/metadata/developers`);
-  const developers = await response.json() as string[];
-  return developers.map(developer => ({ label: developer, value: developer }));
+  return getMetadata(Entity.Games, "developers");
 }
 
 export async function getLabels() {
-  const response = await fetch(`${baseUrl}/metadata/labels`);
-  const labels = await response.json() as string[];
-  return labels.map(label => ({ label: label, value: label }));
+  return getMetadata(Entity.Musics, "label");
+}
+
+export async function getGamePublishers() {
+  return getMetadata(Entity.Games, "publishers");
+}
+
+export async function getArtist() {
+  return getMetadata(Entity.Musics, "artist");
 }

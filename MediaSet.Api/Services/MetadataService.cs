@@ -1,203 +1,71 @@
+using System.Reflection;
 using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Services;
 
 public class MetadataService : IMetadataService
 {
-    private readonly IEntityService<Book> booksService;
-    private readonly IEntityService<Movie> movieService;
-    private readonly IEntityService<Game> gameService;
-    private readonly IEntityService<Music> musicService;
+    private readonly IServiceProvider serviceProvider;
 
-    public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService, IEntityService<Game> _gameService, IEntityService<Music> _musicService)
+    public MetadataService(IServiceProvider _serviceProvider)
     {
-        booksService = _booksService;
-        movieService = _movieService;
-        gameService = _gameService;
-        musicService = _musicService;
+        serviceProvider = _serviceProvider;
     }
 
-    public async Task<IEnumerable<string>> GetBookFormats()
+    public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName)
     {
-        var books = await booksService.GetListAsync();
+        var entityType = GetEntityType(mediaType);
+        var serviceType = typeof(IEntityService<>).MakeGenericType(entityType);
+        var service = serviceProvider.GetService(serviceType);
 
-        return books
-          .Where(book => !string.IsNullOrWhiteSpace(book.Format))
-          .Select(book => book.Format.Trim())
-          .Distinct()
-          .Order();
+        if (service == null)
+        {
+            throw new InvalidOperationException($"Service not found for {entityType.Name}");
+        }
+
+        var getListMethod = serviceType.GetMethod(nameof(IEntityService<IEntity>.GetListAsync));
+        if (getListMethod == null)
+        {
+            throw new InvalidOperationException($"GetListAsync method not found on {serviceType.Name}");
+        }
+
+        var task = (Task)getListMethod.Invoke(service, null)!;
+        await task.ConfigureAwait(false);
+
+        var resultProperty = task.GetType().GetProperty("Result");
+        var entities = (System.Collections.IEnumerable)resultProperty!.GetValue(task)!;
+
+        var property = entityType.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+        if (property == null)
+        {
+            throw new ArgumentException($"Property {propertyName} not found on {entityType.Name}");
+        }
+
+        var results = new List<string>();
+
+        foreach (var entity in entities)
+        {
+            var value = property.GetValue(entity);
+            
+            if (value is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
+            {
+                results.Add(stringValue.Trim());
+            }
+            else if (value is IEnumerable<string> listValue)
+            {
+                results.AddRange(listValue.Select(v => v.Trim()));
+            }
+        }
+
+        return results.Distinct().Order();
     }
 
-    public async Task<IEnumerable<string>> GetBookAuthors()
+    private static Type GetEntityType(MediaTypes mediaType) => mediaType switch
     {
-        var books = await booksService.GetListAsync();
-
-        return books
-          .Where(book => book.Authors?.Count > 0)
-          .SelectMany(book => book.Authors)
-          .Select(author => author.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetBookPublishers()
-    {
-        var books = await booksService.GetListAsync();
-
-        return books
-          .Where(book => !string.IsNullOrWhiteSpace(book.Publisher))
-          .Select(book => book.Publisher.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetBookGenres()
-    {
-        var books = await booksService.GetListAsync();
-
-        return books
-          .Where(book => book.Genres?.Count > 0)
-          .SelectMany(book => book.Genres)
-          .Select(genre => genre.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMovieFormats()
-    {
-        var movies = await movieService.GetListAsync();
-
-        return movies
-          .Where(movie => !string.IsNullOrWhiteSpace(movie.Format))
-          .Select(movie => movie.Format.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMovieStudios()
-    {
-        var movies = await movieService.GetListAsync();
-
-        return movies
-          .Where(movie => movie.Studios?.Count > 0)
-          .SelectMany(movie => movie.Studios)
-          .Select(studio => studio.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMovieGenres()
-    {
-        var movies = await movieService.GetListAsync();
-
-        return movies
-          .Where(movie => movie.Genres?.Count > 0)
-          .SelectMany(movie => movie.Genres)
-          .Select(genre => genre.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetGameFormats()
-    {
-        var games = await gameService.GetListAsync();
-
-        return games
-          .Where(game => !string.IsNullOrWhiteSpace(game.Format))
-          .Select(game => game.Format.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetGamePlatforms()
-    {
-        var games = await gameService.GetListAsync();
-
-        return games
-          .Where(game => !string.IsNullOrWhiteSpace(game.Platform))
-          .Select(game => game.Platform.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetGameDevelopers()
-    {
-        var games = await gameService.GetListAsync();
-
-        return games
-          .Where(game => game.Developers?.Count > 0)
-          .SelectMany(game => game.Developers)
-          .Select(developer => developer.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetGamePublishers()
-    {
-        var games = await gameService.GetListAsync();
-
-        return games
-          .Where(game => game.Publishers?.Count > 0)
-          .SelectMany(game => game.Publishers)
-          .Select(publisher => publisher.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetGameGenres()
-    {
-        var games = await gameService.GetListAsync();
-
-        return games
-          .Where(game => game.Genres?.Count > 0)
-          .SelectMany(game => game.Genres)
-          .Select(genre => genre.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMusicFormats()
-    {
-        var musics = await musicService.GetListAsync();
-
-        return musics
-          .Where(music => !string.IsNullOrWhiteSpace(music.Format))
-          .Select(music => music.Format.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMusicArtists()
-    {
-        var musics = await musicService.GetListAsync();
-
-        return musics
-          .Where(music => !string.IsNullOrWhiteSpace(music.Artist))
-          .Select(music => music.Artist.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMusicLabels()
-    {
-        var musics = await musicService.GetListAsync();
-
-        return musics
-          .Where(music => !string.IsNullOrWhiteSpace(music.Label))
-          .Select(music => music.Label.Trim())
-          .Distinct()
-          .Order();
-    }
-
-    public async Task<IEnumerable<string>> GetMusicGenres()
-    {
-        var musics = await musicService.GetListAsync();
-
-        return musics
-          .Where(music => music.Genres?.Count > 0)
-          .SelectMany(music => music.Genres)
-          .Select(genre => genre.Trim())
-          .Distinct()
-          .Order();
-    }
+        MediaTypes.Books => typeof(Book),
+        MediaTypes.Movies => typeof(Movie),
+        MediaTypes.Games => typeof(Game),
+        MediaTypes.Musics => typeof(Music),
+        _ => throw new ArgumentException($"Unknown media type: {mediaType}")
+    };
 }
