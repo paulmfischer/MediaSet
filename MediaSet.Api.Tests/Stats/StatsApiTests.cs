@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using ApiModels = MediaSet.Api.Models;
 
 namespace MediaSet.Api.Tests.Stats;
 
@@ -58,7 +59,7 @@ public class StatsApiTests
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital" };
 
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 150,
                 TotalFormats: 3,
@@ -85,7 +86,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -111,7 +112,7 @@ public class StatsApiTests
     public async Task GetStats_ShouldReturnZeroStats_WhenNoMediaExists()
     {
         // Arrange
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 0,
                 TotalFormats: 0,
@@ -139,7 +140,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -154,7 +155,7 @@ public class StatsApiTests
     {
         // Arrange
         var bookFormats = new List<string> { "Hardcover", "Paperback" };
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 50,
                 TotalFormats: 2,
@@ -182,7 +183,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -197,7 +198,7 @@ public class StatsApiTests
     {
         // Arrange
         var movieFormats = new List<string> { "Blu-ray", "Digital" };
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 0,
                 TotalFormats: 0,
@@ -225,7 +226,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -243,7 +244,7 @@ public class StatsApiTests
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook", "Audiobook" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital", "4K UHD" };
 
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 10000,
                 TotalFormats: 4,
@@ -270,7 +271,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -290,7 +291,7 @@ public class StatsApiTests
         var bookFormats = new List<string> { "Hardcover", "Paperback", "eBook", "Audiobook", "Large Print" };
         var movieFormats = new List<string> { "Blu-ray", "DVD", "Digital", "4K UHD", "VHS" };
 
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 200,
                 TotalFormats: 5,
@@ -317,7 +318,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -340,7 +341,7 @@ public class StatsApiTests
         var bookFormats = new List<string> { "eBook" };
         var movieFormats = new List<string> { "Digital" };
 
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 25,
                 TotalFormats: 1,
@@ -367,7 +368,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -384,7 +385,7 @@ public class StatsApiTests
     {
         // Arrange
         var movieFormats = new List<string> { "Blu-ray", "DVD" };
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 100,
                 TotalFormats: 2,
@@ -411,7 +412,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -425,7 +426,7 @@ public class StatsApiTests
     {
         // Arrange
         var movieFormats = new List<string> { "Digital", "Blu-ray" };
-        var expectedStats = new Models.Stats(
+        var expectedStats = new ApiModels.Stats(
             new BookStats(
                 Total: 50,
                 TotalFormats: 1,
@@ -452,7 +453,7 @@ public class StatsApiTests
 
         // Act
         var response = await _client.GetAsync("/stats");
-        var result = await response.Content.ReadFromJsonAsync<Models.Stats>();
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.Stats>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));

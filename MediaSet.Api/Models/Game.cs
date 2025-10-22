@@ -48,4 +48,18 @@ public class Game : IEntity
 
     // Game description/summary
     public string Description { get; set; } = string.Empty;
+
+    public bool IsEmpty()
+    {
+        return string.IsNullOrWhiteSpace(Title) &&
+            string.IsNullOrWhiteSpace(Format) &&
+            string.IsNullOrWhiteSpace(Barcode) &&
+            string.IsNullOrWhiteSpace(ReleaseDate) &&
+            string.IsNullOrWhiteSpace(Rating) &&
+            Publishers.Count == 0 &&
+            string.IsNullOrWhiteSpace(Platform) &&
+            Developers.Count == 0 &&
+            Genres.Count == 0 &&
+            string.IsNullOrWhiteSpace(Description);
+    }
 }

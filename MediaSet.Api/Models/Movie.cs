@@ -39,4 +39,17 @@ public class Movie : IEntity
 
     [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
     public bool IsTvSeries { get; set; }
+
+    public bool IsEmpty()
+    {
+        return string.IsNullOrWhiteSpace(Title) &&
+            string.IsNullOrWhiteSpace(Barcode) &&
+            string.IsNullOrWhiteSpace(Format) &&
+            string.IsNullOrWhiteSpace(ReleaseDate) &&
+            string.IsNullOrWhiteSpace(Rating) &&
+            !Runtime.HasValue &&
+            Studios.Count == 0 &&
+            Genres.Count == 0 &&
+            string.IsNullOrWhiteSpace(Plot);
+    }
 }

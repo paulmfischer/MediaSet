@@ -37,6 +37,21 @@ public class Music : IEntity
   public int? Tracks { get; set; }
   public int? Discs { get; set; }
   public List<Disc> DiscList { get; set; } = [];
+
+  public bool IsEmpty()
+  {
+    return string.IsNullOrWhiteSpace(Title) &&
+      string.IsNullOrWhiteSpace(Format) &&
+      string.IsNullOrWhiteSpace(Artist) &&
+      string.IsNullOrWhiteSpace(ReleaseDate) &&
+      Genres.Count == 0 &&
+      !Duration.HasValue &&
+      string.IsNullOrWhiteSpace(Label) &&
+      string.IsNullOrWhiteSpace(Barcode) &&
+      !Tracks.HasValue &&
+      !Discs.HasValue &&
+      DiscList.Count == 0;
+  }
 }
 
 public class Disc
