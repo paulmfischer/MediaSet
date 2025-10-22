@@ -41,7 +41,7 @@ public class MetadataService : IMetadataService
         var resultProperty = task.GetType().GetProperty("Result");
         var entities = (System.Collections.IEnumerable)resultProperty!.GetValue(task)!;
 
-        var property = entityType.GetProperty(propertyName);
+        var property = entityType.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
         if (property == null)
         {
             throw new ArgumentException($"Property {propertyName} not found on {entityType.Name}");

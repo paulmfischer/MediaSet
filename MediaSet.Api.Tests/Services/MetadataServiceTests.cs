@@ -256,4 +256,153 @@ public class MetadataServiceNewTests
         Assert.ThrowsAsync<ArgumentException>(async () => 
             await _metadataService.GetMetadata(MediaTypes.Books, "NonExistentProperty"));
     }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_WithLowercasePropertyName()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
+            new Book { Authors = ["Stephen King"] }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "authors");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result, Contains.Item("J.K. Rowling"));
+        Assert.That(result, Contains.Item("Stephen King"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_WithUppercasePropertyName()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
+            new Book { Authors = ["Stephen King"] }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "AUTHORS");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result, Contains.Item("J.K. Rowling"));
+        Assert.That(result, Contains.Item("Stephen King"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_WithMixedCasePropertyName()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
+            new Book { Authors = ["Stephen King"] }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "AuThOrS");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result, Contains.Item("J.K. Rowling"));
+        Assert.That(result, Contains.Item("Stephen King"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_ForFormatProperty()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Format = "Hardcover" },
+            new Book { Format = "Paperback" }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "format");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result, Contains.Item("Hardcover"));
+        Assert.That(result, Contains.Item("Paperback"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_ForGenresProperty()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Genres = ["Fiction", "Mystery"] },
+            new Book { Genres = ["Thriller"] }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "genres");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(3));
+        Assert.That(result, Contains.Item("Fiction"));
+        Assert.That(result, Contains.Item("Mystery"));
+        Assert.That(result, Contains.Item("Thriller"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_ForMovieStudios()
+    {
+        // Arrange
+        var movies = new List<Movie>
+        {
+            new Movie { Studios = ["Warner Bros", "Universal"] },
+            new Movie { Studios = ["Disney"] }
+        };
+
+        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Movies, "studios");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(3));
+        Assert.That(result, Contains.Item("Warner Bros"));
+        Assert.That(result, Contains.Item("Universal"));
+        Assert.That(result, Contains.Item("Disney"));
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldBeCaseInsensitive_ForMusicArtist()
+    {
+        // Arrange
+        var musics = new List<Music>
+        {
+            new Music { Artist = "The Beatles" },
+            new Music { Artist = "Queen" }
+        };
+
+        _musicServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(musics);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Musics, "artist");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result, Contains.Item("The Beatles"));
+        Assert.That(result, Contains.Item("Queen"));
+    }
 }
