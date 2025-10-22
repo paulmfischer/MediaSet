@@ -7,12 +7,14 @@ public class MetadataService : IMetadataService
     private readonly IEntityService<Book> booksService;
     private readonly IEntityService<Movie> movieService;
     private readonly IEntityService<Game> gameService;
+    private readonly IEntityService<Music> musicService;
 
-    public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService, IEntityService<Game> _gameService)
+    public MetadataService(IEntityService<Book> _booksService, IEntityService<Movie> _movieService, IEntityService<Game> _gameService, IEntityService<Music> _musicService)
     {
         booksService = _booksService;
         movieService = _movieService;
         gameService = _gameService;
+        musicService = _musicService;
     }
 
     public async Task<IEnumerable<string>> GetBookFormats()
@@ -149,6 +151,51 @@ public class MetadataService : IMetadataService
         return games
           .Where(game => game.Genres?.Count > 0)
           .SelectMany(game => game.Genres)
+          .Select(genre => genre.Trim())
+          .Distinct()
+          .Order();
+    }
+
+    public async Task<IEnumerable<string>> GetMusicFormats()
+    {
+        var musics = await musicService.GetListAsync();
+
+        return musics
+          .Where(music => !string.IsNullOrWhiteSpace(music.Format))
+          .Select(music => music.Format.Trim())
+          .Distinct()
+          .Order();
+    }
+
+    public async Task<IEnumerable<string>> GetMusicArtists()
+    {
+        var musics = await musicService.GetListAsync();
+
+        return musics
+          .Where(music => !string.IsNullOrWhiteSpace(music.Artist))
+          .Select(music => music.Artist.Trim())
+          .Distinct()
+          .Order();
+    }
+
+    public async Task<IEnumerable<string>> GetMusicLabels()
+    {
+        var musics = await musicService.GetListAsync();
+
+        return musics
+          .Where(music => !string.IsNullOrWhiteSpace(music.Label))
+          .Select(music => music.Label.Trim())
+          .Distinct()
+          .Order();
+    }
+
+    public async Task<IEnumerable<string>> GetMusicGenres()
+    {
+        var musics = await musicService.GetListAsync();
+
+        return musics
+          .Where(music => music.Genres?.Count > 0)
+          .SelectMany(music => music.Genres)
           .Select(genre => genre.Trim())
           .Distinct()
           .Order();

@@ -2,11 +2,12 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { useLoaderData } from "@remix-run/react";
 import { getEntity } from "~/entity-data";
-import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity } from "~/models";
+import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams, singular } from "~/helpers";
 import Book from "./book";
 import Movie from "./movie";
 import Game from "./game";
+import Music from "./music";
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   const entityType = getEntityFromParams(params);
@@ -38,5 +39,9 @@ export default function Detail() {
 
   if (entity.type === Entity.Games) {
     return <Game game={entity as GameEntity} />;
+  }
+
+  if (entity.type === Entity.Musics) {
+    return <Music music={entity as MusicEntity} />;
   }
 }

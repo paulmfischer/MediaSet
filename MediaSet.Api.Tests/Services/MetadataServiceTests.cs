@@ -15,10 +15,12 @@ public class MetadataServiceTests
     private Mock<IEntityService<Book>> _bookServiceMock;
     private Mock<IEntityService<Movie>> _movieServiceMock;
     private Mock<IEntityService<Game>> _gameServiceMock;
+    private Mock<IEntityService<Music>> _musicServiceMock;
     private MetadataService _metadataService;
     private Faker<Book> _bookFaker;
     private Faker<Movie> _movieFaker;
     private Faker<Game> _gameFaker;
+    private Faker<Music> _musicFaker;
 
     [SetUp]
     public void Setup()
@@ -26,10 +28,12 @@ public class MetadataServiceTests
         _bookServiceMock = new Mock<IEntityService<Book>>();
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
+        _musicServiceMock = new Mock<IEntityService<Music>>();
         _metadataService = new MetadataService(
           _bookServiceMock.Object,
           _movieServiceMock.Object,
-          _gameServiceMock.Object
+          _gameServiceMock.Object,
+          _musicServiceMock.Object
         );
 
         _bookFaker = new Faker<Book>()
@@ -55,6 +59,14 @@ public class MetadataServiceTests
           .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
+
+        _musicFaker = new Faker<Music>()
+          .RuleFor(m => m.Id, f => f.Random.AlphaNumeric(24))
+          .RuleFor(m => m.Title, f => f.Lorem.Sentence())
+          .RuleFor(m => m.Format, f => f.PickRandom("CD", "Vinyl", "Digital", "Cassette"))
+          .RuleFor(m => m.Artist, f => f.Name.FullName())
+          .RuleFor(m => m.Label, f => f.Company.CompanyName())
+          .RuleFor(m => m.Genres, f => new List<string> { f.PickRandom("Rock", "Pop", "Jazz", "Classical") });
     }
 
     #region GetBookFormats Tests

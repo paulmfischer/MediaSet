@@ -7,6 +7,11 @@ namespace MediaSet.Api.Models;
 
 public class Book : IEntity
 {
+    public Book()
+    {
+        Type = MediaTypes.Books;
+    }
+
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
@@ -37,4 +42,17 @@ public class Book : IEntity
     public string Plot { get; set; } = string.Empty;
 
     public string Subtitle { get; set; } = string.Empty;
+
+    public bool IsEmpty()
+    {
+        return string.IsNullOrWhiteSpace(Title) &&
+            string.IsNullOrWhiteSpace(Format) &&
+            string.IsNullOrWhiteSpace(ISBN) &&
+            string.IsNullOrWhiteSpace(Plot) &&
+            string.IsNullOrWhiteSpace(PublicationDate) &&
+            string.IsNullOrWhiteSpace(Publisher) &&
+            !Pages.HasValue &&
+            Authors.Count == 0 &&
+            Genres.Count == 0;
+    }
 }
