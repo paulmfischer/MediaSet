@@ -46,7 +46,7 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetFormats_WithBooks_ShouldReturnDistinctFormats()
+    public async Task GetMetadata_WithFormats_WithBooks_ShouldReturnDistinctFormats()
     {
         // Arrange
         var books = new List<Book>
@@ -60,7 +60,7 @@ public class MetadataServiceNewTests
         _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
 
         // Act
-        var result = await _metadataService.GetFormats(MediaTypes.Books);
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
 
         // Assert
         Assert.That(result.Count(), Is.EqualTo(3));
@@ -71,7 +71,7 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetFormats_WithMovies_ShouldReturnDistinctFormats()
+    public async Task GetMetadata_WithFormats_WithMovies_ShouldReturnDistinctFormats()
     {
         // Arrange
         var movies = new List<Movie>
@@ -84,7 +84,7 @@ public class MetadataServiceNewTests
         _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
 
         // Act
-        var result = await _metadataService.GetFormats(MediaTypes.Movies);
+        var result = await _metadataService.GetMetadata(MediaTypes.Movies, "Format");
 
         // Assert
         Assert.That(result.Count(), Is.EqualTo(2));
@@ -93,7 +93,7 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetGenres_WithBooks_ShouldReturnDistinctGenres()
+    public async Task GetMetadata_WithGenres_WithBooks_ShouldReturnDistinctGenres()
     {
         // Arrange
         var books = new List<Book>
@@ -106,7 +106,7 @@ public class MetadataServiceNewTests
         _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
 
         // Act
-        var result = await _metadataService.GetGenres(MediaTypes.Books);
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Genres");
 
         // Assert
         Assert.That(result.Count(), Is.EqualTo(4));
@@ -182,7 +182,7 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetFormats_ShouldTrimWhitespace()
+    public async Task GetMetadata_WithFormats_ShouldTrimWhitespace()
     {
         // Arrange
         var books = new List<Book>
@@ -194,7 +194,7 @@ public class MetadataServiceNewTests
         _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
 
         // Act
-        var result = await _metadataService.GetFormats(MediaTypes.Books);
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
 
         // Assert
         Assert.That(result, Contains.Item("Hardcover"));
@@ -203,7 +203,7 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetFormats_ShouldExcludeEmptyValues()
+    public async Task GetMetadata_WithFormats_ShouldExcludeEmptyValues()
     {
         // Arrange
         var books = new List<Book>
@@ -217,7 +217,7 @@ public class MetadataServiceNewTests
         _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
 
         // Act
-        var result = await _metadataService.GetFormats(MediaTypes.Books);
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
 
         // Assert
         Assert.That(result.Count(), Is.EqualTo(2));
@@ -226,13 +226,13 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public async Task GetFormats_ShouldReturnEmpty_WhenNoEntitiesExist()
+    public async Task GetMetadata_WithFormats_ShouldReturnEmpty_WhenNoEntitiesExist()
     {
         // Arrange
         _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(new List<Book>());
 
         // Act
-        var result = await _metadataService.GetFormats(MediaTypes.Books);
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
 
         // Assert
         Assert.That(result, Is.Empty);

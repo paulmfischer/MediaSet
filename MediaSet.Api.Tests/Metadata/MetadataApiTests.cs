@@ -53,41 +53,41 @@ public class MetadataApiNewTests
     }
 
     [Test]
-    public async Task GetFormats_ForBooks_ShouldReturnFormats()
+    public async Task GetMetadata_WithFormats_ForBooks_ShouldReturnFormats()
     {
         // Arrange
         var expectedFormats = new List<string> { "Hardcover", "Paperback", "eBook" };
-        _metadataServiceMock.Setup(s => s.GetFormats(MediaTypes.Books))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Books, "formats"))
             .ReturnsAsync(expectedFormats);
 
         // Act
-        var response = await _client.GetAsync("/metadata/formats/books");
+        var response = await _client.GetAsync("/metadata/books/formats");
         var result = await response.Content.ReadFromJsonAsync<List<string>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(3));
-        _metadataServiceMock.Verify(s => s.GetFormats(MediaTypes.Books), Times.Once);
+        _metadataServiceMock.Verify(s => s.GetMetadata(MediaTypes.Books, "formats"), Times.Once);
     }
 
     [Test]
-    public async Task GetGenres_ForMovies_ShouldReturnGenres()
+    public async Task GetMetadata_WithGenres_ForMovies_ShouldReturnGenres()
     {
         // Arrange
         var expectedGenres = new List<string> { "Action", "Comedy", "Drama" };
-        _metadataServiceMock.Setup(s => s.GetGenres(MediaTypes.Movies))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Movies, "genres"))
             .ReturnsAsync(expectedGenres);
 
         // Act
-        var response = await _client.GetAsync("/metadata/genres/movies");
+        var response = await _client.GetAsync("/metadata/movies/genres");
         var result = await response.Content.ReadFromJsonAsync<List<string>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(3));
-        _metadataServiceMock.Verify(s => s.GetGenres(MediaTypes.Movies), Times.Once);
+        _metadataServiceMock.Verify(s => s.GetMetadata(MediaTypes.Movies, "genres"), Times.Once);
     }
 
     [Test]
@@ -148,11 +148,11 @@ public class MetadataApiNewTests
     }
 
     [Test]
-    public async Task GetFormats_ShouldBeCaseInsensitive()
+    public async Task GetMetadata_WithFormats_ShouldBeCaseInsensitive()
     {
         // Arrange
         var expectedFormats = new List<string> { "CD", "Vinyl" };
-        _metadataServiceMock.Setup(s => s.GetFormats(MediaTypes.Musics))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Musics, "formats"))
             .ReturnsAsync(expectedFormats);
 
         var mediaTypes = new[] { "Musics", "musics", "MUSICS", "mUsIcS" };
@@ -160,7 +160,7 @@ public class MetadataApiNewTests
         foreach (var mediaType in mediaTypes)
         {
             // Act
-            var response = await _client.GetAsync($"/metadata/formats/{mediaType}");
+            var response = await _client.GetAsync($"/metadata/{mediaType}/formats");
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), 
@@ -169,11 +169,11 @@ public class MetadataApiNewTests
     }
 
     [Test]
-    public async Task GetGenres_ShouldBeCaseInsensitive()
+    public async Task GetMetadata_WithGenres_ShouldBeCaseInsensitive()
     {
         // Arrange
         var expectedGenres = new List<string> { "RPG", "Action" };
-        _metadataServiceMock.Setup(s => s.GetGenres(MediaTypes.Games))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Games, "genres"))
             .ReturnsAsync(expectedGenres);
 
         var mediaTypes = new[] { "Games", "games", "GAMES", "gAmEs" };
@@ -181,7 +181,7 @@ public class MetadataApiNewTests
         foreach (var mediaType in mediaTypes)
         {
             // Act
-            var response = await _client.GetAsync($"/metadata/genres/{mediaType}");
+            var response = await _client.GetAsync($"/metadata/{mediaType}/genres");
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), 
@@ -190,14 +190,14 @@ public class MetadataApiNewTests
     }
 
     [Test]
-    public async Task GetFormats_ShouldReturnEmptyList_WhenNoFormatsExist()
+    public async Task GetMetadata_WithFormats_ShouldReturnEmptyList_WhenNoFormatsExist()
     {
         // Arrange
-        _metadataServiceMock.Setup(s => s.GetFormats(MediaTypes.Books))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Books, "formats"))
             .ReturnsAsync(new List<string>());
 
         // Act
-        var response = await _client.GetAsync("/metadata/formats/books");
+        var response = await _client.GetAsync("/metadata/books/formats");
         var result = await response.Content.ReadFromJsonAsync<List<string>>();
 
         // Assert

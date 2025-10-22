@@ -12,12 +12,6 @@ public class MetadataService : IMetadataService
         serviceProvider = _serviceProvider;
     }
 
-    public Task<IEnumerable<string>> GetFormats(MediaTypes mediaType) => 
-        GetMetadata(mediaType, nameof(IEntity.Format));
-
-    public Task<IEnumerable<string>> GetGenres(MediaTypes mediaType) => 
-        GetMetadata(mediaType, "Genres");
-
     public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName)
     {
         var entityType = GetEntityType(mediaType);
