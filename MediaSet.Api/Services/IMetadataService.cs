@@ -14,4 +14,8 @@ public interface IMetadataService
     Task<IEnumerable<string>> GetGameDevelopers();
     Task<IEnumerable<string>> GetGamePublishers();
     Task<IEnumerable<string>> GetGameGenres();
+    Task<IEnumerable<string>> GetMusicFormats();
+    Task<IEnumerable<string>> GetMusicArtists();
+    Task<IEnumerable<string>> GetMusicLabels();
+    Task<IEnumerable<string>> GetMusicGenres();
 }

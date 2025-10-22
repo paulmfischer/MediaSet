@@ -117,6 +117,28 @@ public class MetadataApiTests
     }
 
     [Test]
+    public async Task GetMusicFormats_ShouldReturnFormats()
+    {
+        // Arrange
+        var expectedFormats = new List<string> { "CD", "Vinyl", "Digital", "Cassette" };
+        _metadataServiceMock.Setup(s => s.GetMusicFormats()).ReturnsAsync(expectedFormats);
+
+        // Act
+        var response = await _client.GetAsync("/metadata/formats/musics");
+        var result = await response.Content.ReadFromJsonAsync<List<string>>();
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(4));
+        Assert.That(result, Does.Contain("CD"));
+        Assert.That(result, Does.Contain("Vinyl"));
+        Assert.That(result, Does.Contain("Digital"));
+        Assert.That(result, Does.Contain("Cassette"));
+        _metadataServiceMock.Verify(s => s.GetMusicFormats(), Times.Once);
+    }
+
+    [Test]
     public async Task GetBookGenres_ShouldReturnGenres()
     {
         // Arrange
@@ -175,6 +197,28 @@ public class MetadataApiTests
         Assert.That(result, Does.Contain("RPG"));
         Assert.That(result, Does.Contain("Strategy"));
         _metadataServiceMock.Verify(s => s.GetGameGenres(), Times.Once);
+    }
+
+    [Test]
+    public async Task GetMusicGenres_ShouldReturnGenres()
+    {
+        // Arrange
+        var expectedGenres = new List<string> { "Rock", "Pop", "Jazz", "Classical" };
+        _metadataServiceMock.Setup(s => s.GetMusicGenres()).ReturnsAsync(expectedGenres);
+
+        // Act
+        var response = await _client.GetAsync("/metadata/genres/musics");
+        var result = await response.Content.ReadFromJsonAsync<List<string>>();
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(4));
+        Assert.That(result, Does.Contain("Rock"));
+        Assert.That(result, Does.Contain("Pop"));
+        Assert.That(result, Does.Contain("Jazz"));
+        Assert.That(result, Does.Contain("Classical"));
+        _metadataServiceMock.Verify(s => s.GetMusicGenres(), Times.Once);
     }
 
     [Test]
@@ -276,6 +320,46 @@ public class MetadataApiTests
         Assert.That(result, Does.Contain("Studio A"));
         Assert.That(result, Does.Contain("Studio B"));
         _metadataServiceMock.Verify(s => s.GetGameDevelopers(), Times.Once);
+    }
+
+    [Test]
+    public async Task GetArtists_ShouldReturnArtists()
+    {
+        // Arrange
+        var expectedArtists = new List<string> { "The Beatles", "Queen", "Led Zeppelin", "Pink Floyd" };
+        _metadataServiceMock.Setup(s => s.GetMusicArtists()).ReturnsAsync(expectedArtists);
+
+        // Act
+        var response = await _client.GetAsync("/metadata/artists");
+        var result = await response.Content.ReadFromJsonAsync<List<string>>();
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(4));
+        Assert.That(result, Does.Contain("The Beatles"));
+        Assert.That(result, Does.Contain("Queen"));
+        _metadataServiceMock.Verify(s => s.GetMusicArtists(), Times.Once);
+    }
+
+    [Test]
+    public async Task GetLabels_ShouldReturnLabels()
+    {
+        // Arrange
+        var expectedLabels = new List<string> { "Columbia Records", "Atlantic Records", "Warner Music" };
+        _metadataServiceMock.Setup(s => s.GetMusicLabels()).ReturnsAsync(expectedLabels);
+
+        // Act
+        var response = await _client.GetAsync("/metadata/labels");
+        var result = await response.Content.ReadFromJsonAsync<List<string>>();
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Count, Is.EqualTo(3));
+        Assert.That(result, Does.Contain("Columbia Records"));
+        Assert.That(result, Does.Contain("Atlantic Records"));
+        _metadataServiceMock.Verify(s => s.GetMusicLabels(), Times.Once);
     }
 
     [Test]

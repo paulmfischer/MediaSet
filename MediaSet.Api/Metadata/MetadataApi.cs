@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MediaSet.Api.Metadata;
 
-internal static class MetadatApi
+internal static class MetadataApi
 {
     public static RouteGroupBuilder MapMetadata(this IEndpointRouteBuilder routes)
     {
@@ -23,6 +23,7 @@ internal static class MetadatApi
                 MediaTypes.Books => await metadataService.GetBookFormats(),
                 MediaTypes.Movies => await metadataService.GetMovieFormats(),
                 MediaTypes.Games => await metadataService.GetGameFormats(),
+                MediaTypes.Musics => await metadataService.GetMusicFormats(),
                 _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
             };
         });
@@ -36,6 +37,7 @@ internal static class MetadatApi
                 MediaTypes.Books => await metadataService.GetBookGenres(),
                 MediaTypes.Movies => await metadataService.GetMovieGenres(),
                 MediaTypes.Games => await metadataService.GetGameGenres(),
+                MediaTypes.Musics => await metadataService.GetMusicGenres(),
                 _ => throw new ArgumentException($"Media Type of {mediaTypes} is not supported")
             };
         });
@@ -71,6 +73,20 @@ internal static class MetadatApi
             var developers = await metadataService.GetGameDevelopers();
             logger.LogInformation("Returning {count} developers", developers.Count());
             return developers;
+        });
+
+        group.MapGet("/artists", async (IMetadataService metadataService) =>
+        {
+            var artists = await metadataService.GetMusicArtists();
+            logger.LogInformation("Returning {count} artists", artists.Count());
+            return artists;
+        });
+
+        group.MapGet("/labels", async (IMetadataService metadataService) =>
+        {
+            var labels = await metadataService.GetMusicLabels();
+            logger.LogInformation("Returning {count} labels", labels.Count());
+            return labels;
         });
 
         return group;
