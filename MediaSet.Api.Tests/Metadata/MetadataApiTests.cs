@@ -58,7 +58,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedFormats = new List<string> { "Hardcover", "Paperback", "eBook" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Books, "formats", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Books, "formats", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFormats);
 
         // Act
@@ -77,7 +77,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedGenres = new List<string> { "Action", "Comedy", "Drama" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Movies, "genres", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Movies, "genres", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedGenres);
 
         // Act
@@ -96,7 +96,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedAuthors = new List<string> { "J.K. Rowling", "Stephen King" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Books, "Authors", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Books, "Authors", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedAuthors);
 
         // Act
@@ -115,7 +115,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedStudios = new List<string> { "Warner Bros", "Universal" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Movies, "Studios", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Movies, "Studios", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStudios);
 
         // Act
@@ -134,7 +134,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedArtists = new List<string> { "The Beatles", "Queen" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Musics, "Artist", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Musics, "Artist", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedArtists);
 
         // Act
@@ -153,7 +153,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedFormats = new List<string> { "CD", "Vinyl" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Musics, "formats", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Musics, "formats", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFormats);
 
         var mediaTypes = new[] { "Musics", "musics", "MUSICS", "mUsIcS" };
@@ -174,7 +174,7 @@ public class MetadataApiNewTests
     {
         // Arrange
         var expectedGenres = new List<string> { "RPG", "Action" };
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Games, "genres", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Games, "genres", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedGenres);
 
         var mediaTypes = new[] { "Games", "games", "GAMES", "gAmEs" };
@@ -194,7 +194,7 @@ public class MetadataApiNewTests
     public async Task GetMetadata_WithFormats_ShouldReturnEmptyList_WhenNoFormatsExist()
     {
         // Arrange
-        _metadataServiceMock.Setup(s  => s.GetMetadata(MediaTypes.Books, "formats", It.IsAny<CancellationToken>()))
+        _metadataServiceMock.Setup(s => s.GetMetadata(MediaTypes.Books, "formats", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>());
 
         // Act

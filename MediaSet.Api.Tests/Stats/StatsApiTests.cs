@@ -83,7 +83,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -137,7 +137,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -180,7 +180,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -223,7 +223,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -268,7 +268,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -315,7 +315,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -365,7 +365,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -409,7 +409,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -450,7 +450,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s  => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");

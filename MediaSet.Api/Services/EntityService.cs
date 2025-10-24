@@ -46,8 +46,15 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         return await entitySearch.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default) => 
-        await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync(cancellationToken);
+    public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
+    {
+        var findOptions = new FindOptions<TEntity>
+        {
+            Sort = Builders<TEntity>.Sort.Ascending(entity => entity.Title)
+        };
+        using var cursor = await entityCollection.FindAsync(_ => true, findOptions, cancellationToken);
+        return await cursor.ToListAsync(cancellationToken);
+    }
 
     public async Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default) => 
         await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync(cancellationToken);
