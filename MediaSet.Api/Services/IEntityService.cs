@@ -5,11 +5,11 @@ namespace MediaSet.Api.Services;
 
 public interface IEntityService<TEntity> where TEntity : IEntity
 {
-    Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy);
-    Task<IEnumerable<TEntity>> GetListAsync();
-    Task<TEntity?> GetAsync(string id);
-    Task CreateAsync(TEntity newEntity);
-    Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity);
-    Task<DeleteResult> RemoveAsync(string id);
-    Task BulkCreateAsync(IEnumerable<TEntity> newEntities);
+    Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default);
+    Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default);
+    Task CreateAsync(TEntity newEntity, CancellationToken cancellationToken = default);
+    Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity, CancellationToken cancellationToken = default);
+    Task<DeleteResult> RemoveAsync(string id, CancellationToken cancellationToken = default);
+    Task BulkCreateAsync(IEnumerable<TEntity> newEntities, CancellationToken cancellationToken = default);
 }

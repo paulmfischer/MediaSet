@@ -6,6 +6,7 @@ using MediaSet.Api.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -84,7 +85,7 @@ public class MetadataServiceNewTests
             new Book { Format = "eBook" }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -108,7 +109,7 @@ public class MetadataServiceNewTests
             new Movie { Format = "DVD" }
         };
 
-        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Movies, "Format");
@@ -130,7 +131,7 @@ public class MetadataServiceNewTests
             new Book { Genres = ["Sci-Fi"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Genres");
@@ -153,7 +154,7 @@ public class MetadataServiceNewTests
             new Book { Authors = ["Stephen King"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Authors");
@@ -174,7 +175,7 @@ public class MetadataServiceNewTests
             new Movie { Studios = ["Disney"] }
         };
 
-        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Movies, "Studios");
@@ -197,7 +198,7 @@ public class MetadataServiceNewTests
             new Music { Artist = "The Beatles" }
         };
 
-        _musicServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(musics);
+        _musicServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(musics);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Musics, "Artist");
@@ -218,7 +219,7 @@ public class MetadataServiceNewTests
             new Book { Format = "Paperback  " }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -241,7 +242,7 @@ public class MetadataServiceNewTests
             new Book { Format = "Paperback" }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -256,7 +257,7 @@ public class MetadataServiceNewTests
     public async Task GetMetadata_WithFormats_ShouldReturnEmpty_WhenNoEntitiesExist()
     {
         // Arrange
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(new List<Book>());
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Book>());
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -277,7 +278,7 @@ public class MetadataServiceNewTests
     public void GetMetadata_ShouldThrowException_ForInvalidProperty()
     {
         // Arrange
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(new List<Book>());
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Book>());
 
         // Act & Assert
         Assert.ThrowsAsync<ArgumentException>(async () => 
@@ -294,7 +295,7 @@ public class MetadataServiceNewTests
             new Book { Authors = ["Stephen King"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "authors");
@@ -315,7 +316,7 @@ public class MetadataServiceNewTests
             new Book { Authors = ["Stephen King"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "AUTHORS");
@@ -336,7 +337,7 @@ public class MetadataServiceNewTests
             new Book { Authors = ["Stephen King"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "AuThOrS");
@@ -357,7 +358,7 @@ public class MetadataServiceNewTests
             new Book { Format = "Paperback" }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "format");
@@ -378,7 +379,7 @@ public class MetadataServiceNewTests
             new Book { Genres = ["Thriller"] }
         };
 
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "genres");
@@ -400,7 +401,7 @@ public class MetadataServiceNewTests
             new Movie { Studios = ["Disney"] }
         };
 
-        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Movies, "studios");
@@ -422,7 +423,7 @@ public class MetadataServiceNewTests
             new Music { Artist = "Queen" }
         };
 
-        _musicServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(musics);
+        _musicServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(musics);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Musics, "artist");

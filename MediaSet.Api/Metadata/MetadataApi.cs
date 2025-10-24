@@ -14,11 +14,11 @@ internal static class MetadataApi
 
         group.WithTags("Metadata");
 
-        group.MapGet("/{media}/{property}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media, string property) =>
+        group.MapGet("/{media}/{property}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media, string property, CancellationToken cancellationToken) =>
         {
             MediaTypes mediaTypes = media;
             logger.LogInformation("Requesting {property} for {media}", property, mediaTypes);
-            return await metadataService.GetMetadata(mediaTypes, property);
+            return await metadataService.GetMetadata(mediaTypes, property, cancellationToken);
         });
 
         return group;

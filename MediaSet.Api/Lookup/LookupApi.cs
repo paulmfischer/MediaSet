@@ -13,7 +13,7 @@ internal static class LookupApi
 
         group.WithTags("Lookup");
 
-        group.MapGet("/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, NotFound, BadRequest<string>>> (IOpenLibraryClient openLibraryClient, string identifierType, string identifierValue) =>
+        group.MapGet("/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, NotFound, BadRequest<string>>> (IOpenLibraryClient openLibraryClient, string identifierType, string identifierValue, CancellationToken cancellationToken) =>
         {
             if (!IdentifierTypeExtensions.TryParseIdentifierType(identifierType, out var parsedIdentifierType))
             {
@@ -22,7 +22,7 @@ internal static class LookupApi
             }
 
             logger.LogInformation("Lookup request: {identifierType} = {identifierValue}", parsedIdentifierType, identifierValue);
-            var result = await openLibraryClient.GetReadableBookAsync(parsedIdentifierType, identifierValue);
+            var result = await openLibraryClient.GetReadableBookAsync(parsedIdentifierType, identifierValue, cancellationToken);
 
             if (result is BookResponse bookResponse)
             {

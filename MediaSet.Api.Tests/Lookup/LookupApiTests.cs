@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MediaSet.Api.Tests.Lookup;
@@ -69,7 +70,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -83,7 +84,7 @@ public class LookupApiTests
         Assert.That(result.Authors.Count, Is.EqualTo(1));
         Assert.That(result.Authors[0].Name, Is.EqualTo("Joshua Bloch"));
         Assert.That(result.NumberOfPages, Is.EqualTo(416));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -94,7 +95,7 @@ public class LookupApiTests
         var identifierValue = "0000000000000";
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse)null!);
 
         // Act
@@ -102,7 +103,7 @@ public class LookupApiTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -123,7 +124,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -134,7 +135,7 @@ public class LookupApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("Test Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -155,7 +156,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -166,7 +167,7 @@ public class LookupApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("OCLC Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -187,7 +188,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -198,7 +199,7 @@ public class LookupApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("OpenLibrary Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -215,7 +216,7 @@ public class LookupApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var content = await response.Content.ReadAsStringAsync();
         Assert.That(content, Does.Contain("Invalid identifier type"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(It.IsAny<IdentifierType>(), It.IsAny<string>()), Times.Never);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(It.IsAny<IdentifierType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -238,7 +239,7 @@ public class LookupApiTests
         foreach (var identifierType in identifierTypes)
         {
             _openLibraryClientMock
-                .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+                .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResponse);
 
             // Act
@@ -272,7 +273,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -310,7 +311,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -348,7 +349,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -382,7 +383,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -413,7 +414,7 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue))
+            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act

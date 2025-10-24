@@ -5,6 +5,7 @@ using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Linq;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -93,11 +94,11 @@ public class StatsServiceTests
         var books = _bookFaker.Generate(5);
         var movies = _movieFaker.Generate(3);
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -113,11 +114,11 @@ public class StatsServiceTests
     public async Task GetMediaStatsAsync_ShouldReturnZeroCounts_WhenNoMediaExists()
     {
         // Arrange
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -145,11 +146,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Format, "eBook").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -172,11 +173,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Format, "Paperback  ").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -200,11 +201,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Format, "Paperback").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -228,11 +229,11 @@ public class StatsServiceTests
       _movieFaker.Clone().RuleFor(m => m.Format, "4K UHD").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -255,11 +256,11 @@ public class StatsServiceTests
       _movieFaker.Clone().RuleFor(m => m.Format, "Blu-ray  ").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -283,11 +284,11 @@ public class StatsServiceTests
       _movieFaker.Clone().RuleFor(m => m.Format, "Blu-ray").Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -310,11 +311,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Pages, 150).RuleFor(b => b.Authors, new List<string>()).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -335,11 +336,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Pages, 200).RuleFor(b => b.Authors, new List<string>()).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -360,11 +361,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Brandon Sanderson" }).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -383,11 +384,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "  Stephen King  ", "Stephen King" }).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -408,11 +409,11 @@ public class StatsServiceTests
       _bookFaker.Clone().RuleFor(b => b.Authors, (List<string>)null).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -435,11 +436,11 @@ public class StatsServiceTests
       _movieFaker.Clone().RuleFor(m => m.IsTvSeries, true).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -460,11 +461,11 @@ public class StatsServiceTests
       _movieFaker.Clone().RuleFor(m => m.IsTvSeries, false).Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -481,19 +482,19 @@ public class StatsServiceTests
         var books = _bookFaker.Generate(3);
         var movies = _movieFaker.Generate(3);
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
 
         // Assert - Both services should be called
-        _bookServiceMock.Verify(s => s.GetListAsync(), Times.Once);
-        _movieServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _movieServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
         Assert.That(result, Is.Not.Null);
     }
 
@@ -504,11 +505,11 @@ public class StatsServiceTests
         var books = _bookFaker.Generate(1000);
         var movies = _movieFaker.Generate(1000);
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -559,11 +560,11 @@ public class StatsServiceTests
         .Generate()
     };
 
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(books);
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(movies);
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
@@ -588,36 +589,36 @@ public class StatsServiceTests
     public async Task GetMediaStatsAsync_ShouldCallBookServiceGetListAsync_Once()
     {
         // Arrange
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
 
         // Assert
-        _bookServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetMediaStatsAsync_ShouldCallMovieServiceGetListAsync_Once()
     {
         // Arrange
-        _bookServiceMock.Setup(s => s.GetListAsync())
+        _bookServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Book>());
-        _movieServiceMock.Setup(s => s.GetListAsync())
+        _movieServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Movie>());
-        _gameServiceMock.Setup(s => s.GetListAsync())
+        _gameServiceMock.Setup(s  => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
 
         // Assert
-        _movieServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _movieServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]

@@ -4,11 +4,11 @@ namespace MediaSet.Api.Clients;
 
 public interface IOpenLibraryClient
 {
-    Task<BookResponse?> GetBookByIsbnAsync(string isbn);
-    Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue);
-    Task<BookResponse?> GetReadableBookByIsbnAsync(string isbn);
-    Task<BookResponse?> GetReadableBookByLccnAsync(string lccn);
-    Task<BookResponse?> GetReadableBookByOclcAsync(string oclc);
-    Task<BookResponse?> GetReadableBookByOlidAsync(string olid);
-    Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue);
+    Task<BookResponse?> GetBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookByLccnAsync(string lccn, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookByOclcAsync(string oclc, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookByOlidAsync(string olid, CancellationToken cancellationToken = default);
+    Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue, CancellationToken cancellationToken = default);
 }

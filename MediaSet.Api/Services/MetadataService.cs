@@ -23,7 +23,7 @@ public class MetadataService : IMetadataService
         logger = _logger;
     }
 
-    public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName)
+    public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName, CancellationToken cancellationToken = default)
     {
         var cacheKey = $"metadata:{mediaType}:{propertyName}";
         
@@ -52,7 +52,7 @@ public class MetadataService : IMetadataService
             throw new InvalidOperationException($"GetListAsync method not found on {serviceType.Name}");
         }
 
-        var task = (Task)getListMethod.Invoke(service, null)!;
+        var task = (Task)getListMethod.Invoke(service, new object[] { cancellationToken })!;
         await task.ConfigureAwait(false);
 
         var resultProperty = task.GetType().GetProperty("Result");
