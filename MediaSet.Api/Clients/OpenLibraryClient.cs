@@ -19,26 +19,26 @@ public class OpenLibraryClient : IOpenLibraryClient, IDisposable
 
     public void Dispose() => httpClient?.Dispose();
 
-    public async Task<BookResponse?> GetBookByIsbnAsync(string isbn)
+    public async Task<BookResponse?> GetBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
+        }, cancellationToken);
         logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
 
         var key = $"ISBN:{isbn}";
         return response?.ContainsKey(key) == true ? response[key] : null;
     }
 
-    public async Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue)
+    public async Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue, CancellationToken cancellationToken = default)
     {
         try
         {
             var response = await httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-            });
+            }, cancellationToken);
             logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
 
             return MapReadApiResponseToBookResponse(response);
@@ -50,34 +50,34 @@ public class OpenLibraryClient : IOpenLibraryClient, IDisposable
         }
     }
 
-    public async Task<BookResponse?> GetReadableBookByIsbnAsync(string isbn)
+    public async Task<BookResponse?> GetReadableBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default)
     {
-        return await GetReadableBookAsync("isbn", isbn);
+        return await GetReadableBookAsync("isbn", isbn, cancellationToken);
     }
 
-    public async Task<BookResponse?> GetReadableBookByLccnAsync(string lccn)
+    public async Task<BookResponse?> GetReadableBookByLccnAsync(string lccn, CancellationToken cancellationToken = default)
     {
-        return await GetReadableBookAsync("lccn", lccn);
+        return await GetReadableBookAsync("lccn", lccn, cancellationToken);
     }
 
-    public async Task<BookResponse?> GetReadableBookByOclcAsync(string oclc)
+    public async Task<BookResponse?> GetReadableBookByOclcAsync(string oclc, CancellationToken cancellationToken = default)
     {
-        return await GetReadableBookAsync("oclc", oclc);
+        return await GetReadableBookAsync("oclc", oclc, cancellationToken);
     }
 
-    public async Task<BookResponse?> GetReadableBookByOlidAsync(string olid)
+    public async Task<BookResponse?> GetReadableBookByOlidAsync(string olid, CancellationToken cancellationToken = default)
     {
-        return await GetReadableBookAsync("olid", olid);
+        return await GetReadableBookAsync("olid", olid, cancellationToken);
     }
 
-    public async Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue)
+    public async Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue, CancellationToken cancellationToken = default)
     {
         return identifierType switch
         {
-            IdentifierType.Isbn => await GetReadableBookByIsbnAsync(identifierValue),
-            IdentifierType.Lccn => await GetReadableBookByLccnAsync(identifierValue),
-            IdentifierType.Oclc => await GetReadableBookByOclcAsync(identifierValue),
-            IdentifierType.Olid => await GetReadableBookByOlidAsync(identifierValue),
+            IdentifierType.Isbn => await GetReadableBookByIsbnAsync(identifierValue, cancellationToken),
+            IdentifierType.Lccn => await GetReadableBookByLccnAsync(identifierValue, cancellationToken),
+            IdentifierType.Oclc => await GetReadableBookByOclcAsync(identifierValue, cancellationToken),
+            IdentifierType.Olid => await GetReadableBookByOlidAsync(identifierValue, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(identifierType), identifierType, null)
         };
     }

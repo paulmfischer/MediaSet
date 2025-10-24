@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Threading;
 using ApiModels = MediaSet.Api.Models;
 
 namespace MediaSet.Api.Tests.Stats;
@@ -82,7 +83,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -105,7 +106,7 @@ public class StatsApiTests
         Assert.That(result.MovieStats.Formats.Count(), Is.EqualTo(3));
         Assert.That(result.MovieStats.TotalTvSeries, Is.EqualTo(15));
 
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -136,7 +137,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -147,7 +148,7 @@ public class StatsApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.BookStats.Total, Is.EqualTo(0));
         Assert.That(result.MovieStats.Total, Is.EqualTo(0));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -179,7 +180,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -190,7 +191,7 @@ public class StatsApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.BookStats.Total, Is.EqualTo(50));
         Assert.That(result.MovieStats.Total, Is.EqualTo(0));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -222,7 +223,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -234,7 +235,7 @@ public class StatsApiTests
         Assert.That(result!.BookStats.Total, Is.EqualTo(0));
         Assert.That(result.MovieStats.Total, Is.EqualTo(75));
         Assert.That(result.MovieStats.TotalTvSeries, Is.EqualTo(10));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -267,7 +268,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -281,7 +282,7 @@ public class StatsApiTests
         Assert.That(result!.BookStats.TotalPages, Is.EqualTo(3000000));
         Assert.That(result!.MovieStats.Total, Is.EqualTo(5000));
         Assert.That(result!.MovieStats.TotalTvSeries, Is.EqualTo(500));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -314,7 +315,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -331,7 +332,7 @@ public class StatsApiTests
         Assert.That(result.MovieStats.Formats.Count(), Is.EqualTo(5));
         Assert.That(result.MovieStats.Formats, Does.Contain("Blu-ray"));
         Assert.That(result.MovieStats.Formats, Does.Contain("VHS"));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -364,7 +365,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -377,7 +378,7 @@ public class StatsApiTests
         Assert.That(result.BookStats.Formats.Count(), Is.EqualTo(1));
         Assert.That(result.MovieStats.TotalFormats, Is.EqualTo(1));
         Assert.That(result.MovieStats.Formats.Count(), Is.EqualTo(1));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -408,7 +409,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -418,7 +419,7 @@ public class StatsApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.MovieStats.TotalTvSeries, Is.EqualTo(0));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -449,7 +450,7 @@ public class StatsApiTests
             )
         );
 
-        _statsServiceMock.Setup(s => s.GetMediaStatsAsync()).ReturnsAsync(expectedStats);
+        _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
 
         // Act
         var response = await _client.GetAsync("/stats");
@@ -460,6 +461,6 @@ public class StatsApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.MovieStats.TotalTvSeries, Is.EqualTo(40));
         Assert.That(result.MovieStats.Total, Is.EqualTo(result.MovieStats.TotalTvSeries));
-        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(), Times.Once);
+        _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

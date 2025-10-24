@@ -27,7 +27,8 @@ public class StatsService : IStatsService
         cacheSettings = _cacheSettings.Value;
         logger = _logger;
     }
-    public async Task<Stats> GetMediaStatsAsync()
+
+    public async Task<Stats> GetMediaStatsAsync(CancellationToken cancellationToken = default)
     {
         const string cacheKey = "stats";
         
@@ -41,9 +42,9 @@ public class StatsService : IStatsService
 
         logger.LogDebug("Cache miss for statistics, calculating from database");
 
-        var bookTask = bookService.GetListAsync();
-        var movieTask = movieService.GetListAsync();
-        var gameTask = gameService.GetListAsync();
+        var bookTask = bookService.GetListAsync(cancellationToken);
+        var movieTask = movieService.GetListAsync(cancellationToken);
+        var gameTask = gameService.GetListAsync(cancellationToken);
         await Task.WhenAll(bookTask, movieTask, gameTask);
 
         var books = bookTask.Result;

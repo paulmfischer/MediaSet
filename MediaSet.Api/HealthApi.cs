@@ -15,7 +15,7 @@ internal static class HealthApi
 
         group.WithTags("Health");
 
-        group.MapGet("/", async (IDatabaseService databaseService, IOptions<MediaSetDatabaseSettings> settings) =>
+        group.MapGet("/", async (IDatabaseService databaseService, IOptions<MediaSetDatabaseSettings> settings, CancellationToken cancellationToken) =>
         {
             var dbName = settings.Value.DatabaseName ?? string.Empty;
             var dbStatus = "down";
@@ -26,7 +26,7 @@ internal static class HealthApi
                 var collection = databaseService.GetCollection<BsonDocument>();
                 var database = collection.Database;
                 // Ping command
-                await database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1));
+                await database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1), cancellationToken: cancellationToken);
                 dbStatus = "up";
             }
             catch (Exception ex)

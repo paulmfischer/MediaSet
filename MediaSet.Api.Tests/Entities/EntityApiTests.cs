@@ -13,6 +13,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Threading;
 using MongoDB.Driver;
 
 namespace MediaSet.Api.Tests.Entities;
@@ -118,7 +119,7 @@ public class EntityApiTests
     {
         // Arrange
         var games = _gameFaker.Generate(3);
-        _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(games);
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
 
         // Act
         var response = await _client.GetAsync("/Games");
@@ -128,7 +129,7 @@ public class EntityApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(3));
-        _gameServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _gameServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -137,7 +138,7 @@ public class EntityApiTests
         // Arrange
         var gameId = "507f1f77bcf86cd799439011";
         var expectedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
-        _gameServiceMock.Setup(s => s.GetAsync(gameId)).ReturnsAsync(expectedGame);
+        _gameServiceMock.Setup(s => s.GetAsync(gameId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedGame);
 
         // Act
         var response = await _client.GetAsync($"/Games/{gameId}");
@@ -148,7 +149,7 @@ public class EntityApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Id, Is.EqualTo(gameId));
         Assert.That(result.Title, Is.EqualTo(expectedGame.Title));
-        _gameServiceMock.Verify(s => s.GetAsync(gameId), Times.Once);
+        _gameServiceMock.Verify(s => s.GetAsync(gameId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -156,7 +157,7 @@ public class EntityApiTests
     {
         // Arrange
         var newGame = _gameFaker.Generate();
-        _gameServiceMock.Setup(s => s.CreateAsync(newGame)).Returns(Task.CompletedTask);
+        _gameServiceMock.Setup(s => s.CreateAsync(newGame, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         // Act
         var response = await _client.PostAsJsonAsync("/Games", newGame);
@@ -164,7 +165,7 @@ public class EntityApiTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         Assert.That(response.Headers.Location, Is.Not.Null);
-        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>()), Times.Once);
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -178,7 +179,7 @@ public class EntityApiTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>()), Times.Never);
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -188,14 +189,14 @@ public class EntityApiTests
         var gameId = "507f1f77bcf86cd799439011";
         var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-        _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>())).Returns(Task.FromResult(updateResult));
+        _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));
 
         // Act
         var response = await _client.PutAsJsonAsync($"/Games/{gameId}", updatedGame);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        _gameServiceMock.Verify(s => s.UpdateAsync(gameId, It.IsAny<Game>()), Times.Once);
+        _gameServiceMock.Verify(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -211,7 +212,7 @@ public class EntityApiTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        _gameServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>()), Times.Never);
+        _gameServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -220,14 +221,14 @@ public class EntityApiTests
         // Arrange
         var gameId = "507f1f77bcf86cd799439011";
         var deleteResult = Mock.Of<DeleteResult>();
-        _gameServiceMock.Setup(s => s.RemoveAsync(gameId)).Returns(Task.FromResult(deleteResult));
+        _gameServiceMock.Setup(s => s.RemoveAsync(gameId, It.IsAny<CancellationToken>())).Returns(Task.FromResult(deleteResult));
 
         // Act
         var response = await _client.DeleteAsync($"/Games/{gameId}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        _gameServiceMock.Verify(s => s.RemoveAsync(gameId), Times.Once);
+        _gameServiceMock.Verify(s => s.RemoveAsync(gameId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -235,7 +236,7 @@ public class EntityApiTests
     {
         // Arrange
         var emptyList = new List<Game>();
-        _gameServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(emptyList);
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(emptyList);
 
         // Act
         var response = await _client.GetAsync("/Games");
@@ -254,7 +255,7 @@ public class EntityApiTests
         var searchText = "adventure";
         var orderBy = "title:asc";
         var games = _gameFaker.Generate(2);
-        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(games);
+        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(games);
 
         // Act
         var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
@@ -264,7 +265,7 @@ public class EntityApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(2));
-        _gameServiceMock.Verify(s => s.SearchAsync(searchText, orderBy), Times.Once);
+        _gameServiceMock.Verify(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -274,7 +275,7 @@ public class EntityApiTests
         var searchText = "nonexistent";
         var orderBy = "title:asc";
         var emptyList = new List<Game>();
-        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(emptyList);
+        _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(emptyList);
 
         // Act
         var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
@@ -296,7 +297,7 @@ public class EntityApiTests
 
         foreach (var orderBy in orderByOptions)
         {
-            _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(games);
+            _gameServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(games);
 
             // Act
             var response = await _client.GetAsync($"/Games/search?searchText={searchText}&orderBy={orderBy}");
@@ -321,7 +322,7 @@ public class EntityApiTests
     {
         // Arrange
         var books = _bookFaker.Generate(3);
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var response = await _client.GetAsync("/Books");
@@ -331,7 +332,7 @@ public class EntityApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(3));
-        _bookServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -339,7 +340,7 @@ public class EntityApiTests
     {
         // Arrange
         var movies = _movieFaker.Generate(2);
-        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
 
         // Act
         var response = await _client.GetAsync("/Movies");
@@ -349,7 +350,7 @@ public class EntityApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(2));
-        _movieServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _movieServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -359,7 +360,7 @@ public class EntityApiTests
         var searchText = "fantasy";
         var orderBy = "title:asc";
         var books = _bookFaker.Generate(2);
-        _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(books);
+        _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var response = await _client.GetAsync($"/Books/search?searchText={searchText}&orderBy={orderBy}");
@@ -369,7 +370,7 @@ public class EntityApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Count, Is.EqualTo(2));
-        _bookServiceMock.Verify(s => s.SearchAsync(searchText, orderBy), Times.Once);
+        _bookServiceMock.Verify(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -378,7 +379,7 @@ public class EntityApiTests
         // Arrange
         var bookId = "507f1f77bcf86cd799439011";
         var expectedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
-        _bookServiceMock.Setup(s => s.GetAsync(bookId)).ReturnsAsync(expectedBook);
+        _bookServiceMock.Setup(s => s.GetAsync(bookId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedBook);
 
         // Act
         var response = await _client.GetAsync($"/Books/{bookId}");
@@ -389,7 +390,7 @@ public class EntityApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Id, Is.EqualTo(bookId));
         Assert.That(result.Title, Is.EqualTo(expectedBook.Title));
-        _bookServiceMock.Verify(s => s.GetAsync(bookId), Times.Once);
+        _bookServiceMock.Verify(s => s.GetAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -397,14 +398,14 @@ public class EntityApiTests
     {
         // Arrange
         var bookId = "507f1f77bcf86cd799439011";
-        _bookServiceMock.Setup(s => s.GetAsync(bookId)).ReturnsAsync((Book)null!);
+        _bookServiceMock.Setup(s => s.GetAsync(bookId, It.IsAny<CancellationToken>())).ReturnsAsync((Book)null!);
 
         // Act
         var response = await _client.GetAsync($"/Books/{bookId}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        _bookServiceMock.Verify(s => s.GetAsync(bookId), Times.Once);
+        _bookServiceMock.Verify(s => s.GetAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -412,7 +413,7 @@ public class EntityApiTests
     {
         // Arrange
         var newBook = _bookFaker.Generate();
-        _bookServiceMock.Setup(s => s.CreateAsync(newBook)).Returns(Task.CompletedTask);
+        _bookServiceMock.Setup(s => s.CreateAsync(newBook, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         // Act
         var response = await _client.PostAsJsonAsync("/Books", newBook);
@@ -420,7 +421,7 @@ public class EntityApiTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         Assert.That(response.Headers.Location, Is.Not.Null);
-        _bookServiceMock.Verify(s => s.CreateAsync(It.IsAny<Book>()), Times.Once);
+        _bookServiceMock.Verify(s => s.CreateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -434,7 +435,7 @@ public class EntityApiTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        _bookServiceMock.Verify(s => s.CreateAsync(It.IsAny<Book>()), Times.Never);
+        _bookServiceMock.Verify(s => s.CreateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -444,14 +445,14 @@ public class EntityApiTests
         var bookId = "507f1f77bcf86cd799439011";
         var updatedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-        _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>())).Returns(Task.FromResult(updateResult));
+        _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));
 
         // Act
         var response = await _client.PutAsJsonAsync($"/Books/{bookId}", updatedBook);
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        _bookServiceMock.Verify(s => s.UpdateAsync(bookId, It.IsAny<Book>()), Times.Once);
+        _bookServiceMock.Verify(s => s.UpdateAsync(bookId, It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -467,7 +468,7 @@ public class EntityApiTests
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-        _bookServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Book>()), Times.Never);
+        _bookServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Book>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -476,14 +477,14 @@ public class EntityApiTests
         // Arrange
         var bookId = "507f1f77bcf86cd799439011";
         var deleteResult = Mock.Of<DeleteResult>();
-        _bookServiceMock.Setup(s => s.RemoveAsync(bookId)).Returns(Task.FromResult(deleteResult));
+        _bookServiceMock.Setup(s => s.RemoveAsync(bookId, It.IsAny<CancellationToken>())).Returns(Task.FromResult(deleteResult));
 
         // Act
         var response = await _client.DeleteAsync($"/Books/{bookId}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        _bookServiceMock.Verify(s => s.RemoveAsync(bookId), Times.Once);
+        _bookServiceMock.Verify(s => s.RemoveAsync(bookId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -491,7 +492,7 @@ public class EntityApiTests
     {
         // Arrange
         var emptyList = new List<Book>();
-        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(emptyList);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(emptyList);
 
         // Act
         var response = await _client.GetAsync("/Books");
@@ -510,7 +511,7 @@ public class EntityApiTests
         var searchText = "nonexistent";
         var orderBy = "title:asc";
         var emptyList = new List<Book>();
-        _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(emptyList);
+        _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(emptyList);
 
         // Act
         var response = await _client.GetAsync($"/Books/search?searchText={searchText}&orderBy={orderBy}");
@@ -528,7 +529,7 @@ public class EntityApiTests
         // Arrange
         var movieId = "507f1f77bcf86cd799439011";
         var expectedMovie = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
-        _movieServiceMock.Setup(s => s.GetAsync(movieId)).ReturnsAsync(expectedMovie);
+        _movieServiceMock.Setup(s => s.GetAsync(movieId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedMovie);
 
         // Act
         var response = await _client.GetAsync($"/Movies/{movieId}");
@@ -539,7 +540,7 @@ public class EntityApiTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Id, Is.EqualTo(movieId));
         Assert.That(result.Title, Is.EqualTo(expectedMovie.Title));
-        _movieServiceMock.Verify(s => s.GetAsync(movieId), Times.Once);
+        _movieServiceMock.Verify(s => s.GetAsync(movieId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -547,7 +548,7 @@ public class EntityApiTests
     {
         // Arrange
         var newMovie = _movieFaker.Generate();
-        _movieServiceMock.Setup(s => s.CreateAsync(newMovie)).Returns(Task.CompletedTask);
+        _movieServiceMock.Setup(s => s.CreateAsync(newMovie, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         // Act
         var response = await _client.PostAsJsonAsync("/Movies", newMovie);
@@ -555,7 +556,7 @@ public class EntityApiTests
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         Assert.That(response.Headers.Location, Is.Not.Null);
-        _movieServiceMock.Verify(s => s.CreateAsync(It.IsAny<Movie>()), Times.Once);
+        _movieServiceMock.Verify(s => s.CreateAsync(It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -568,7 +569,7 @@ public class EntityApiTests
 
         foreach (var orderBy in orderByOptions)
         {
-            _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy)).ReturnsAsync(books);
+            _bookServiceMock.Setup(s => s.SearchAsync(searchText, orderBy, It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
             // Act
             var response = await _client.GetAsync($"/Books/search?searchText={searchText}&orderBy={orderBy}");

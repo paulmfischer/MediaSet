@@ -11,10 +11,10 @@ internal static class StatsApi
 
         group.WithTags("Stats");
 
-        group.MapGet("/", async (IStatsService statsService) =>
+        group.MapGet("/", async (IStatsService statsService, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Requesting media stats");
-            var stats = await statsService.GetMediaStatsAsync();
+            var stats = await statsService.GetMediaStatsAsync(cancellationToken);
             if (stats is not null)
             {
                 logger.LogInformation(

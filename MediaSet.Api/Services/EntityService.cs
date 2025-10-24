@@ -22,7 +22,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         entityTypeName = typeof(TEntity).Name;
     }
 
-    public async Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy)
+    public async Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy, CancellationToken cancellationToken = default)
     {
         string orderByField = "";
         bool orderByAscending = true;
@@ -43,36 +43,45 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         {
             entitySearch.SortByDescending(sortFn);
         }
-        return await entitySearch.ToListAsync();
+        return await entitySearch.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<TEntity>> GetListAsync() => await entityCollection.Find(_ => true).SortBy(entity => entity.Title).ToListAsync();
-
-    public async Task<TEntity?> GetAsync(string id) => await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
-    public async Task CreateAsync(TEntity newEntity)
+    public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
-        await entityCollection.InsertOneAsync(newEntity);
+        var findOptions = new FindOptions<TEntity>
+        {
+            Sort = Builders<TEntity>.Sort.Ascending(entity => entity.Title)
+        };
+        using var cursor = await entityCollection.FindAsync(_ => true, findOptions, cancellationToken);
+        return await cursor.ToListAsync(cancellationToken);
+    }
+
+    public async Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default) => 
+        await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync(cancellationToken);
+
+    public async Task CreateAsync(TEntity newEntity, CancellationToken cancellationToken = default)
+    {
+        await entityCollection.InsertOneAsync(newEntity, null, cancellationToken);
         await InvalidateCachesAsync();
     }
 
-    public async Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity)
+    public async Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity, CancellationToken cancellationToken = default)
     {
-        var result = await entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity);
+        var result = await entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity, cancellationToken: cancellationToken);
         await InvalidateCachesAsync();
         return result;
     }
 
-    public async Task<DeleteResult> RemoveAsync(string id)
+    public async Task<DeleteResult> RemoveAsync(string id, CancellationToken cancellationToken = default)
     {
-        var result = await entityCollection.DeleteOneAsync(x => x.Id == id);
+        var result = await entityCollection.DeleteOneAsync(x => x.Id == id, cancellationToken);
         await InvalidateCachesAsync();
         return result;
     }
 
-    public async Task BulkCreateAsync(IEnumerable<TEntity> newEntities)
+    public async Task BulkCreateAsync(IEnumerable<TEntity> newEntities, CancellationToken cancellationToken = default)
     {
-        await entityCollection.InsertManyAsync(newEntities);
+        await entityCollection.InsertManyAsync(newEntities, null, cancellationToken);
         await InvalidateCachesAsync();
     }
 

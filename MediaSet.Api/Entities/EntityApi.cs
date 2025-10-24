@@ -18,26 +18,26 @@ internal static class EntityApi
 
         group.WithTags(entityType);
 
-        group.MapGet("/", async (IEntityService<TEntity> entityService) =>
+        group.MapGet("/", async (IEntityService<TEntity> entityService, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Listing all {entityType}", entityType);
-            var result = await entityService.GetListAsync();
+            var result = await entityService.GetListAsync(cancellationToken);
             logger.LogInformation("Retrieved {count} {entityType}", result.Count(), entityType);
             return result;
         });
 
-        group.MapGet("/search", async (IEntityService<TEntity> entityService, string searchText, string orderBy) =>
+        group.MapGet("/search", async (IEntityService<TEntity> entityService, string searchText, string orderBy, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Searching {entityType} with query '{searchText}', orderBy {orderBy}", entityType, searchText, orderBy);
-            var result = await entityService.SearchAsync(searchText, orderBy);
+            var result = await entityService.SearchAsync(searchText, orderBy, cancellationToken);
             logger.LogInformation("Search returned {count} {entityType}", result.Count(), entityType);
             return result;
         });
 
-        group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (IEntityService<TEntity> entityService, string id) =>
+        group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Fetching {entityType} by id {id}", entityType, id);
-            var entity = await entityService.GetAsync(id);
+            var entity = await entityService.GetAsync(id, cancellationToken);
             if (entity is not null)
             {
                 return TypedResults.Ok(entity);
@@ -47,7 +47,7 @@ internal static class EntityApi
             return TypedResults.NotFound();
         });
 
-        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest>> (IEntityService<TEntity> entityService, TEntity newEntity) =>
+        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest>> (IEntityService<TEntity> entityService, TEntity newEntity, CancellationToken cancellationToken) =>
         {
             if (newEntity is null || newEntity.IsEmpty())
             {
@@ -56,13 +56,13 @@ internal static class EntityApi
             }
 
             logger.LogInformation("Creating new {entityType}", entityType);
-            await entityService.CreateAsync(newEntity);
+            await entityService.CreateAsync(newEntity, cancellationToken);
             logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
 
             return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
         });
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (IEntityService<TEntity> entityService, string id, TEntity updatedEntity) =>
+        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (IEntityService<TEntity> entityService, string id, TEntity updatedEntity, CancellationToken cancellationToken) =>
         {
             if (id != updatedEntity.Id)
             {
@@ -70,19 +70,19 @@ internal static class EntityApi
                 return TypedResults.BadRequest("Ids on the entity and the request do not match");
             }
 
-            var result = await entityService.UpdateAsync(id, updatedEntity);
+            var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
             logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
             return TypedResults.Ok();
         });
 
-        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (IEntityService<TEntity> entityService, string id) =>
+        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>
         {
-            var result = await entityService.RemoveAsync(id);
+            var result = await entityService.RemoveAsync(id, cancellationToken);
             logger.LogInformation("Deleted {entityType} {entityId}: {deleted}", entityType, id, result.DeletedCount > 0);
             return TypedResults.Ok();
         });
 
-        group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (IEntityService<TEntity> entityService, IFormFile bookUpload) =>
+        group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (IEntityService<TEntity> entityService, IFormFile bookUpload, CancellationToken cancellationToken) =>
        {
            logger.LogInformation("Received {fileName} file to upload to {entityType}", bookUpload.FileName, entityType);
            IEnumerable<TEntity> newEntities;
@@ -129,7 +129,7 @@ internal static class EntityApi
 
                newEntities = UploadService.MapUploadToEntities<TEntity>(headerFields, dataFields);
                logger.LogInformation("Parsed {count} {entityType} from upload", newEntities.Count(), entityType);
-               await entityService.BulkCreateAsync(newEntities);
+               await entityService.BulkCreateAsync(newEntities, cancellationToken);
            }
            catch (Exception er)
            {
