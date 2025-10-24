@@ -5,6 +5,7 @@ using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,8 @@ namespace MediaSet.Api.Tests.Services
     {
         private Mock<IDatabaseService> _databaseServiceMock;
         private Mock<IMongoCollection<Book>> _collectionMock;
+        private Mock<ICacheService> _cacheServiceMock;
+        private Mock<ILogger<EntityService<Book>>> _loggerMock;
         private EntityService<Book> _entityService;
         private Faker<Book> _bookFaker;
 
@@ -26,11 +29,16 @@ namespace MediaSet.Api.Tests.Services
         {
             _databaseServiceMock = new Mock<IDatabaseService>();
             _collectionMock = new Mock<IMongoCollection<Book>>();
+            _cacheServiceMock = new Mock<ICacheService>();
+            _loggerMock = new Mock<ILogger<EntityService<Book>>>();
 
             _databaseServiceMock.Setup(db => db.GetCollection<Book>())
                 .Returns(_collectionMock.Object);
 
-            _entityService = new EntityService<Book>(_databaseServiceMock.Object);
+            _entityService = new EntityService<Book>(
+                _databaseServiceMock.Object,
+                _cacheServiceMock.Object,
+                _loggerMock.Object);
 
             _bookFaker = new Faker<Book>()
                 .RuleFor(b => b.Id, f => f.Random.AlphaNumeric(24))
@@ -43,7 +51,10 @@ namespace MediaSet.Api.Tests.Services
         public void EntityService_ShouldBeConstructed_WithValidDatabaseService()
         {
             // Arrange & Act
-            var service = new EntityService<Book>(_databaseServiceMock.Object);
+            var service = new EntityService<Book>(
+                _databaseServiceMock.Object,
+                _cacheServiceMock.Object,
+                _loggerMock.Object);
 
             // Assert
             Assert.That(service, Is.Not.Null);
@@ -129,7 +140,11 @@ namespace MediaSet.Api.Tests.Services
         public void EntityService_ShouldWork_WithDifferentEntityTypes()
         {
             // Arrange
-            var movieService = new EntityService<Movie>(_databaseServiceMock.Object);
+            var loggerMock = new Mock<ILogger<EntityService<Movie>>>();
+            var movieService = new EntityService<Movie>(
+                _databaseServiceMock.Object,
+                _cacheServiceMock.Object,
+                loggerMock.Object);
 
             // Act & Assert
             Assert.That(movieService, Is.Not.Null);
@@ -481,5 +496,97 @@ namespace MediaSet.Api.Tests.Services
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Count(), Is.EqualTo(1));
         }
+
+        #region Cache Invalidation Tests
+
+        [Test]
+        public async Task CreateAsync_ShouldInvalidateCache()
+        {
+            // Arrange
+            var book = _bookFaker.Generate();
+
+            // Act
+            await _entityService.CreateAsync(book);
+
+            // Assert
+            _collectionMock.Verify(c => c.InsertOneAsync(book, null, default), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveAsync("stats"), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateAsync_ShouldInvalidateCache()
+        {
+            // Arrange
+            var book = _bookFaker.Generate();
+            var expectedResult = Mock.Of<ReplaceOneResult>();
+
+            _collectionMock.Setup(c => c.ReplaceOneAsync(
+                It.IsAny<FilterDefinition<Book>>(),
+                book,
+                It.IsAny<ReplaceOptions>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResult);
+
+            // Act
+            await _entityService.UpdateAsync(book.Id, book);
+
+            // Assert
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveAsync("stats"), Times.Once);
+        }
+
+        [Test]
+        public async Task RemoveAsync_ShouldInvalidateCache()
+        {
+            // Arrange
+            var bookId = "507f1f77bcf86cd799439011";
+            var expectedResult = Mock.Of<DeleteResult>();
+
+            _collectionMock.Setup(c => c.DeleteOneAsync(
+                It.IsAny<FilterDefinition<Book>>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResult);
+
+            // Act
+            await _entityService.RemoveAsync(bookId);
+
+            // Assert
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveAsync("stats"), Times.Once);
+        }
+
+        [Test]
+        public async Task BulkCreateAsync_ShouldInvalidateCache()
+        {
+            // Arrange
+            var books = _bookFaker.Generate(3);
+
+            // Act
+            await _entityService.BulkCreateAsync(books);
+
+            // Assert
+            _collectionMock.Verify(c => c.InsertManyAsync(books, null, default), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveAsync("stats"), Times.Once);
+        }
+
+        [Test]
+        public async Task CreateAsync_ShouldInvalidateOnlyRelevantCaches()
+        {
+            // Arrange
+            var book = _bookFaker.Generate();
+
+            // Act
+            await _entityService.CreateAsync(book);
+
+            // Assert - Should only invalidate Books metadata, not Movies or Games
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Movies:*"), Times.Never);
+            _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Games:*"), Times.Never);
+            _cacheServiceMock.Verify(c => c.RemoveAsync("stats"), Times.Once);
+        }
+
+        #endregion
     }
 }

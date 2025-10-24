@@ -38,6 +38,11 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 builder.Services.Configure<MediaSetDatabaseSettings>(builder.Configuration.GetSection(nameof(MediaSetDatabaseSettings)));
 builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 
+// Configure cache settings and services
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection(nameof(CacheSettings)));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+
 // conditionally register open library if the configuration exists
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())

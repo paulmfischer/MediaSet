@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace MediaSet.Api.Tests.Services;
 
@@ -18,8 +20,12 @@ public class MetadataServiceNewTests
     private Mock<IEntityService<Movie>> _movieServiceMock;
     private Mock<IEntityService<Game>> _gameServiceMock;
     private Mock<IEntityService<Music>> _musicServiceMock;
+    private Mock<ICacheService> _cacheServiceMock;
+    private Mock<IOptions<CacheSettings>> _cacheSettingsMock;
+    private Mock<ILogger<MetadataService>> _loggerMock;
     private MetadataService _metadataService;
     private ServiceProvider _serviceProvider;
+    private CacheSettings _cacheSettings;
 
     [SetUp]
     public void Setup()
@@ -28,6 +34,23 @@ public class MetadataServiceNewTests
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
         _musicServiceMock = new Mock<IEntityService<Music>>();
+        _cacheServiceMock = new Mock<ICacheService>();
+        _cacheSettingsMock = new Mock<IOptions<CacheSettings>>();
+        _loggerMock = new Mock<ILogger<MetadataService>>();
+
+        _cacheSettings = new CacheSettings
+        {
+            EnableCaching = true,
+            DefaultCacheDurationMinutes = 10,
+            MetadataCacheDurationMinutes = 10,
+            StatsCacheDurationMinutes = 10
+        };
+
+        _cacheSettingsMock.Setup(x => x.Value).Returns(_cacheSettings);
+
+        // Setup cache to return null (cache miss) by default
+        _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
+            .ReturnsAsync((List<string>)null);
 
         var services = new ServiceCollection();
         services.AddScoped<IEntityService<Book>>(_ => _bookServiceMock.Object);
@@ -36,7 +59,11 @@ public class MetadataServiceNewTests
         services.AddScoped<IEntityService<Music>>(_ => _musicServiceMock.Object);
 
         _serviceProvider = services.BuildServiceProvider();
-        _metadataService = new MetadataService(_serviceProvider);
+        _metadataService = new MetadataService(
+            _serviceProvider,
+            _cacheServiceMock.Object,
+            _cacheSettingsMock.Object,
+            _loggerMock.Object);
     }
 
     [TearDown]
@@ -405,4 +432,115 @@ public class MetadataServiceNewTests
         Assert.That(result, Contains.Item("The Beatles"));
         Assert.That(result, Contains.Item("Queen"));
     }
+
+    #region Caching Tests
+
+    [Test]
+    public async Task GetMetadata_ShouldReturnCachedValue_WhenCacheHit()
+    {
+        // Arrange
+        var cachedFormats = new List<string> { "Cached1", "Cached2" };
+        _cacheServiceMock.Setup(c => c.GetAsync<List<string>>("metadata:Books:Format"))
+            .ReturnsAsync(cachedFormats);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(cachedFormats));
+        _bookServiceMock.Verify(s => s.GetListAsync(), Times.Never);
+        _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Books:Format"), Times.Once);
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldFetchFromDatabase_WhenCacheMiss()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Format = "Hardcover" },
+            new Book { Format = "Paperback" }
+        };
+
+        _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
+            .ReturnsAsync((List<string>)null);
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
+
+        // Assert
+        Assert.That(result.Count(), Is.EqualTo(2));
+        _bookServiceMock.Verify(s => s.GetListAsync(), Times.Once);
+        _cacheServiceMock.Verify(c => c.SetAsync(
+            "metadata:Books:Format",
+            It.IsAny<List<string>>(),
+            null), Times.Once);
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldStoreResultInCache_AfterDatabaseFetch()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Format = "Hardcover" },
+            new Book { Format = "Paperback" },
+            new Book { Format = "Hardcover" }
+        };
+
+        _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
+            .ReturnsAsync((List<string>)null);
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        await _metadataService.GetMetadata(MediaTypes.Books, "Format");
+
+        // Assert
+        _cacheServiceMock.Verify(c => c.SetAsync(
+            "metadata:Books:Format",
+            It.Is<List<string>>(list => list.Count == 2 && list.Contains("Hardcover") && list.Contains("Paperback")),
+            null), Times.Once);
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldUseDifferentCacheKeys_ForDifferentMediaTypes()
+    {
+        // Arrange
+        var books = new List<Book> { new Book { Format = "Hardcover" } };
+        var movies = new List<Movie> { new Movie { Format = "DVD" } };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+        _movieServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(movies);
+
+        // Act
+        await _metadataService.GetMetadata(MediaTypes.Books, "Format");
+        await _metadataService.GetMetadata(MediaTypes.Movies, "Format");
+
+        // Assert
+        _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Books:Format"), Times.Once);
+        _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Movies:Format"), Times.Once);
+    }
+
+    [Test]
+    public async Task GetMetadata_ShouldUseDifferentCacheKeys_ForDifferentProperties()
+    {
+        // Arrange
+        var books = new List<Book>
+        {
+            new Book { Format = "Hardcover", Genres = ["Fiction"] }
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync()).ReturnsAsync(books);
+
+        // Act
+        await _metadataService.GetMetadata(MediaTypes.Books, "Format");
+        await _metadataService.GetMetadata(MediaTypes.Books, "Genres");
+
+        // Assert
+        _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Books:Format"), Times.Once);
+        _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Books:Genres"), Times.Once);
+    }
+
+    #endregion
 }

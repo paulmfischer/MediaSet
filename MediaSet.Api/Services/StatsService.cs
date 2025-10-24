@@ -1,11 +1,46 @@
 using MediaSet.Api.Models;
+using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Services;
 
-public class StatsService(IEntityService<Book> bookService, IEntityService<Movie> movieService, IEntityService<Game> gameService) : IStatsService
+public class StatsService : IStatsService
 {
+    private readonly IEntityService<Book> bookService;
+    private readonly IEntityService<Movie> movieService;
+    private readonly IEntityService<Game> gameService;
+    private readonly ICacheService cacheService;
+    private readonly CacheSettings cacheSettings;
+    private readonly ILogger<StatsService> logger;
+
+    public StatsService(
+        IEntityService<Book> _bookService,
+        IEntityService<Movie> _movieService,
+        IEntityService<Game> _gameService,
+        ICacheService _cacheService,
+        IOptions<CacheSettings> _cacheSettings,
+        ILogger<StatsService> _logger)
+    {
+        bookService = _bookService;
+        movieService = _movieService;
+        gameService = _gameService;
+        cacheService = _cacheService;
+        cacheSettings = _cacheSettings.Value;
+        logger = _logger;
+    }
     public async Task<Stats> GetMediaStatsAsync()
     {
+        const string cacheKey = "stats";
+        
+        // Try to get from cache
+        var cachedStats = await cacheService.GetAsync<Stats>(cacheKey);
+        if (cachedStats != null)
+        {
+            logger.LogDebug("Returning cached statistics");
+            return cachedStats;
+        }
+
+        logger.LogDebug("Cache miss for statistics, calculating from database");
+
         var bookTask = bookService.GetListAsync();
         var movieTask = movieService.GetListAsync();
         var gameTask = gameService.GetListAsync();
@@ -42,6 +77,13 @@ public class StatsService(IEntityService<Book> bookService, IEntityService<Movie
           gamePlatforms
         );
 
-        return new Stats(bookStats, movieStats, gameStats);
+        var stats = new Stats(bookStats, movieStats, gameStats);
+        
+        // Cache the results
+        await cacheService.SetAsync(cacheKey, stats);
+        logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}", 
+            bookStats.Total, movieStats.Total, gameStats.Total);
+
+        return stats;
     }
 }
