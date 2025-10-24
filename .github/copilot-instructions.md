@@ -2,6 +2,28 @@
 
 This file provides context and instructions for GitHub Copilot to better understand and assist with the MediaSet codebase.
 
+## ⚠️ CRITICAL RULES
+
+### 1. Branch Protection
+**NEVER commit directly to the `main` branch.** Before making any changes:
+1. Create a new branch from `main` using a descriptive name:
+   - `feature/<short-description>` for new features
+   - `fix/<short-description>` for bug fixes
+   - `chore/<short-description>` for maintenance tasks
+2. Make all changes on the feature branch
+3. Open a Pull Request (PR) when ready to merge
+
+### 2. Code Style Adherence
+**ALL code changes MUST strictly adhere to the project's code style guidelines:**
+- Backend API: See [code-style-api.md](code-style-api.md)
+- Frontend UI: See [code-style-ui.md](code-style-ui.md)
+
+### 3. Commit Message Attribution
+**ALL commits that involve AI assistance or code generation MUST be attributed:**
+- Include `Co-authored-by: GitHub Copilot <copilot@github.com>` in commit message
+- OR add `[AI-assisted]` tag to commit subject line
+- Example: `feat: add book filtering [AI-assisted]` or include co-author trailer
+
 ## Project Overview
 
 MediaSet is a full-stack application for managing personal media collections (books and movies). The application consists of:
@@ -36,6 +58,86 @@ MediaSet is a full-stack application for managing personal media collections (bo
   - `app/models.ts`: TypeScript interfaces and types
   - `app/*-data.ts`: Data fetching and mutation functions
 
+## Development Commands
+
+### Backend API (MediaSet.Api)
+
+**Build:**
+```bash
+dotnet build MediaSet.Api/MediaSet.Api.csproj
+```
+
+**Run (Development):**
+```bash
+dotnet watch run --project MediaSet.Api/MediaSet.Api.csproj
+```
+Or use VS Code task: `watch-api`
+
+**Run (Production):**
+```bash
+dotnet run --project MediaSet.Api/MediaSet.Api.csproj
+```
+
+**Test:**
+```bash
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
+```
+
+**Publish:**
+```bash
+dotnet publish MediaSet.Api/MediaSet.Api.csproj
+```
+
+**Docker (Development):**
+```bash
+./dev.sh start api
+```
+
+### Frontend UI (MediaSet.Remix)
+
+**Install Dependencies:**
+```bash
+cd MediaSet.Remix && npm install
+```
+
+**Run (Development):**
+```bash
+cd MediaSet.Remix && npm run dev
+```
+Or use VS Code task: `dev-remix`
+
+**Build:**
+```bash
+cd MediaSet.Remix && npm run build
+```
+
+**Test:**
+```bash
+cd MediaSet.Remix && npm test
+```
+
+**Type Check:**
+```bash
+cd MediaSet.Remix && npm run typecheck
+```
+
+**Lint:**
+```bash
+cd MediaSet.Remix && npm run lint
+```
+
+**Docker (Development):**
+```bash
+./dev.sh start frontend
+```
+
+### Full Stack (Both API and UI)
+
+**Run Everything (Development):**
+```bash
+./dev.sh start all
+```
+
 ## Common Tasks
 
 When working with this codebase, you might need to:
@@ -53,94 +155,94 @@ When working with this codebase, you might need to:
    - Create/update components in `MediaSet.Remix/app/components/`
    - Update routes in `MediaSet.Remix/app/routes/`
 
-## Code Conventions
+## Code Style Guidelines
 
-### Backend (.NET 8.0)
+**⚠️ CRITICAL: All code must strictly adhere to the style guidelines below.**
 
-**File Organization:**
-- Use file-scoped namespaces (e.g., `namespace MediaSet.Api.Models;`)
-- Group related functionality into folders (Models, Services, Helpers, etc.)
-- Use descriptive folder names that reflect their purpose
+### Backend API (.NET 8.0)
+See detailed guidelines in [code-style-api.md](code-style-api.md)
 
-**Naming Conventions:**
-- Use PascalCase for public properties, methods, and classes
-- Use camelCase for private fields and parameters
-- Use descriptive names (e.g., `entityCollection`, `searchText`, `orderByField`)
-- Prefix private fields with underscore when injected via constructor (e.g., `_httpClient`, `_logger`)
-- Use plural names for collections (e.g., `Authors`, `Genres`, `Studios`)
+Key points:
+- Use file-scoped namespaces
+- PascalCase for public members, camelCase for private
+- Use `var` and collection initializers (`[]`)
+- Constructor injection with `_fieldName` pattern
+- Minimal APIs with typed results
+- Async/await for all async operations
+- Structured logging with named parameters
 
-**Code Style:**
-- Use `var` for local variables when type is obvious from assignment
-- Initialize collections with `[]` syntax instead of `new List<T>()`
-- Use string interpolation for logging: `logger.LogInformation("Message: {value}", value)`
-- Use `string.Empty` instead of `""` for empty string initialization
-- Place attributes on separate lines above properties/methods
-- Use target-typed `new()` expressions where applicable
+### Frontend UI (Remix.js/TypeScript)
+See detailed guidelines in [code-style-ui.md](code-style-ui.md)
 
-**Dependency Injection:**
-- Use constructor injection for services
-- Store injected dependencies in private readonly fields
-- Follow the pattern: `private readonly ServiceType serviceName;`
-
-**API Design:**
-- Use minimal APIs with route groups for organization
-- Return typed results: `Results<Ok<T>, NotFound>`, `TypedResults.Ok()`, etc.
-- Use descriptive route parameter names that match method parameters
-- Group related endpoints using `MapGroup()`
-- Add appropriate tags for Swagger documentation
-
-**Async/Await:**
-- Use async/await for all asynchronous operations
-- Suffix async methods with `Async`
-- Use `Task<T>` for methods returning values, `Task` for void methods
-- Always await async operations, don't use `.Result` or `.Wait()`
-
-**Entity Design:**
-- Implement `IEntity` interface for new entity types
-- Use `[BsonId]` and `[BsonRepresentation(BsonType.ObjectId)]` for MongoDB IDs
-- Use `[BsonIgnore]` for computed or non-persisted properties
-- Use `[Required]` for mandatory fields
-- Use custom attributes like `[Upload]` for metadata
-
-**Logging:**
-- Use structured logging with named parameters
-- Include relevant context in log messages
-- Use appropriate log levels (Information, Error, Debug, Trace)
-- Pass logger via dependency injection
-
-**Error Handling:**
-- Return appropriate HTTP status codes using TypedResults
-- Log errors with sufficient context for debugging
-- Validate input parameters and return BadRequest for invalid data
-- Use pattern matching for result handling where appropriate
-
-### Frontend
-
-- Use TypeScript for type safety
-- Follow Remix.js conventions for routing and data handling
+Key points:
+- TypeScript for all code
+- Follow Remix.js conventions
+- PascalCase for components, camelCase for functions
 - Use Tailwind CSS for styling
-- Create reusable components when possible
+- Function components with hooks
+- Proper error handling and loading states
 
 ## Testing
 
-Currently, the project does not have automated tests. When suggesting test implementations:
+### Backend (MediaSet.Api.Tests)
+- Uses xUnit test framework
+- Consider in-memory MongoDB for integration tests
+- Run tests with: `dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj`
+- Follow AAA pattern (Arrange, Act, Assert)
+- Name tests: `MethodName_Scenario_ExpectedResult`
 
-- For backend: Consider xUnit with in-memory MongoDB
-- For frontend: Consider Vitest and React Testing Library
+### Frontend (MediaSet.Remix)
+- Uses Vitest for unit tests
+- Uses React Testing Library for component tests
+- Run tests with: `cd MediaSet.Remix && npm test`
+- Name tests: `should [expected behavior] when [condition]`
+
+## Git Workflow
+
+### Creating a Branch
+**⚠️ CRITICAL: NEVER work directly on `main`**
+
+Before starting any work:
+```bash
+# Ensure you're on main and up to date
+git checkout main
+git pull origin main
+
+# Create a new branch with descriptive name
+git checkout -b feature/your-feature-name
+# OR
+git checkout -b fix/your-bug-fix
+# OR
+git checkout -b chore/your-maintenance-task
+```
+
+### Making Commits
+All commits involving AI assistance must be attributed:
+
+**Option 1: Add co-author trailer**
+```bash
+git commit -m "feat: add new feature
+
+Some description of the changes.
+
+Co-authored-by: GitHub Copilot <copilot@github.com>"
+```
+
+**Option 2: Add tag in subject line**
+```bash
+git commit -m "feat: add new feature [AI-assisted]"
+```
+
+### Opening a Pull Request
+1. Push your branch: `git push origin feature/your-feature-name`
+2. Open a PR from your branch to `main`
+3. Ensure the PR description summarizes the change and any notable impacts
+4. Keep branches focused and small; prefer incremental PRs over large ones
+5. Update the branch with the latest `main` before merging (rebase or merge as appropriate)
 
 ## Additional Notes
 
 - Docker configurations are available for both API and frontend
 - The project uses OpenLibrary API for book metadata
 - Stats are automatically calculated and cached
-
-## Branching and Git Workflow
-
-- Never commit directly to the `main` branch.
-- For any change, create a new branch from `main` and work there. Use a descriptive naming convention, for example:
-   - `feature/<short-description>` for new features
-   - `fix/<short-description>` for bug fixes
-   - `chore/<short-description>` for maintenance and non-functional changes
-- Open a Pull Request (PR) from your branch into `main` when ready. Ensure the PR description summarizes the change and any notable impacts.
-- Keep branches focused and small; prefer incremental PRs over large ones.
-- Update the branch with the latest `main` before merging (rebase or merge as appropriate).
+- MongoDB is used for data storage (see `docker-compose.dev.yml` for setup)
