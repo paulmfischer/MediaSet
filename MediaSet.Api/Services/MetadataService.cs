@@ -1,19 +1,42 @@
 using System.Reflection;
 using MediaSet.Api.Models;
+using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Services;
 
 public class MetadataService : IMetadataService
 {
     private readonly IServiceProvider serviceProvider;
+    private readonly ICacheService cacheService;
+    private readonly CacheSettings cacheSettings;
+    private readonly ILogger<MetadataService> logger;
 
-    public MetadataService(IServiceProvider _serviceProvider)
+    public MetadataService(
+        IServiceProvider _serviceProvider,
+        ICacheService _cacheService,
+        IOptions<CacheSettings> _cacheSettings,
+        ILogger<MetadataService> _logger)
     {
         serviceProvider = _serviceProvider;
+        cacheService = _cacheService;
+        cacheSettings = _cacheSettings.Value;
+        logger = _logger;
     }
 
     public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName)
     {
+        var cacheKey = $"metadata:{mediaType}:{propertyName}";
+        
+        // Try to get from cache
+        var cachedResult = await cacheService.GetAsync<List<string>>(cacheKey);
+        if (cachedResult != null)
+        {
+            logger.LogDebug("Returning cached metadata for {mediaType}:{propertyName}", mediaType, propertyName);
+            return cachedResult;
+        }
+
+        logger.LogDebug("Cache miss for metadata {mediaType}:{propertyName}, fetching from database", mediaType, propertyName);
+
         var entityType = GetEntityType(mediaType);
         var serviceType = typeof(IEntityService<>).MakeGenericType(entityType);
         var service = serviceProvider.GetService(serviceType);
@@ -57,7 +80,13 @@ public class MetadataService : IMetadataService
             }
         }
 
-        return results.Distinct().Order();
+        var distinctResults = results.Distinct().Order().ToList();
+        
+        // Cache the results
+        await cacheService.SetAsync(cacheKey, distinctResults);
+        logger.LogInformation("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);
+
+        return distinctResults;
     }
 
     private static Type GetEntityType(MediaTypes mediaType) => mediaType switch

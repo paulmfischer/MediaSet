@@ -46,7 +46,11 @@ cd MediaSet
 
 For complete setup instructions, debugging, and troubleshooting, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
 
-### 📖 Traditional Development
+### � Performance & Caching
+
+MediaSet implements in-memory caching for metadata queries and statistics to significantly improve performance. For details on caching strategy, configuration, and monitoring, see **[CACHING.md](CACHING.md)**.
+
+### �📖 Traditional Development
 
 If you prefer to install dependencies locally:
 
