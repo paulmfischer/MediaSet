@@ -12,15 +12,24 @@ type MovieFormProps = FormProps & {
   studios: Metadata[];
   genres: Metadata[];
   formats: Metadata[];
+  onLookup?: (barcode: string) => void;
+  isLookingUp?: boolean;
 };
 
-export default function MovieForm({ movie, genres, studios, formats, isSubmitting }: MovieFormProps) {
+export default function MovieForm({ movie, genres, studios, formats, isSubmitting, onLookup, isLookingUp }: MovieFormProps) {
   const [isTvSeries, setIsTvSeries] = useState(movie?.isTvSeries ?? false);
   const isTvSeriesChanged = () => setIsTvSeries(!isTvSeries);
 
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+
+  const handleLookupClick = () => {
+    const barcodeInput = document.getElementById("barcode") as HTMLInputElement;
+    if (barcodeInput && barcodeInput.value && onLookup) {
+      onLookup(barcodeInput.value);
+    }
+  };
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
@@ -66,7 +75,19 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
 
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
-        <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
+        <div className="flex gap-2">
+          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
+          {onLookup && (
+            <button
+              type="button"
+              onClick={handleLookupClick}
+              disabled={isSubmitting || isLookingUp}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isLookingUp ? "Looking up..." : "Lookup"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div>

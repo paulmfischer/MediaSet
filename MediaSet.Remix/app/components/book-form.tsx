@@ -11,12 +11,21 @@ type BookFormProps = FormProps & {
   genres: Metadata[];
   publishers: Metadata[];
   formats: Metadata[];
+  onLookup?: (isbn: string) => void;
+  isLookingUp?: boolean;
 };
 
-export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
+export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting, onLookup, isLookingUp }: BookFormProps) {
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+
+  const handleLookupClick = () => {
+    const isbnInput = document.getElementById("isbn") as HTMLInputElement;
+    if (isbnInput && isbnInput.value && onLookup) {
+      onLookup(isbnInput.value);
+    }
+  };
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
@@ -79,7 +88,19 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       
       <div>
         <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">ISBN</label>
-        <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" />
+        <div className="flex gap-2">
+          <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" />
+          {onLookup && (
+            <button
+              type="button"
+              onClick={handleLookupClick}
+              disabled={isSubmitting || isLookingUp}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isLookingUp ? "Looking up..." : "Lookup"}
+            </button>
+          )}
+        </div>
       </div>
       
       <div>
