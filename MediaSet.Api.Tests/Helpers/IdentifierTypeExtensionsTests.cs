@@ -182,6 +182,8 @@ public class IdentifierTypeExtensionsTests
         Assert.That(result, Does.Contain("lccn"));
         Assert.That(result, Does.Contain("oclc"));
         Assert.That(result, Does.Contain("olid"));
+        Assert.That(result, Does.Contain("upc"));
+        Assert.That(result, Does.Contain("ean"));
         Assert.That(result, Does.Contain(", "));
     }
 
@@ -193,6 +195,20 @@ public class IdentifierTypeExtensionsTests
         var parts = result.Split(", ");
 
         // Assert
-        Assert.That(parts.Length, Is.EqualTo(4)); // Should have 4 identifier types
+        Assert.That(parts.Length, Is.EqualTo(6)); // Should have 6 identifier types
+    }
+
+    [Test]
+    public void TryParseIdentifierType_WithUpcAndEan_ReturnsTrue()
+    {
+        // Act
+        var upcParsed = IdentifierTypeExtensions.TryParseIdentifierType("upc", out var upcType);
+        var eanParsed = IdentifierTypeExtensions.TryParseIdentifierType("ean", out var eanType);
+
+        // Assert
+        Assert.That(upcParsed, Is.True);
+        Assert.That(eanParsed, Is.True);
+        Assert.That(upcType, Is.EqualTo(IdentifierType.Upc));
+        Assert.That(eanType, Is.EqualTo(IdentifierType.Ean));
     }
 }
