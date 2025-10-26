@@ -7,6 +7,7 @@ using MediaSet.Api.Lookup;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using MediaSet.Api.Services.Lookup;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Logging;
@@ -45,7 +46,8 @@ builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 // conditionally register open library if the configuration exists
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
-if (openLibraryConfig.Exists())
+var hasOpenLibrary = openLibraryConfig.Exists();
+if (hasOpenLibrary)
 {
     // Log using a bootstrap logger since app isn't built yet
     using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
@@ -60,6 +62,59 @@ if (openLibraryConfig.Exists())
         client.DefaultRequestHeaders.Add("Accept", "application/json");
         client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
     });
+}
+
+// conditionally register barcode lookup if the configuration exists
+var barcodeLookupConfig = builder.Configuration.GetSection(nameof(BarcodeLookupConfiguration));
+var hasBarcodeLookup = barcodeLookupConfig.Exists();
+if (hasBarcodeLookup)
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("BarcodeLookup configuration exists. Setting up BarcodeLookup services.");
+    builder.Services.Configure<BarcodeLookupConfiguration>(barcodeLookupConfig);
+    builder.Services.AddHttpClient<IProductLookupClient, BarcodeLookupClient>((serviceProvider, client) =>
+    {
+        var options = serviceProvider.GetRequiredService<IOptions<BarcodeLookupConfiguration>>().Value;
+        client.BaseAddress = new Uri(options.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(options.Timeout);
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+    });
+}
+
+// conditionally register TMDb if the configuration exists
+var tmdbConfig = builder.Configuration.GetSection(nameof(TmdbConfiguration));
+var hasTmdb = tmdbConfig.Exists();
+if (hasTmdb)
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("TMDb configuration exists. Setting up TMDb services.");
+    builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
+    builder.Services.AddHttpClient<IMovieMetadataClient, TmdbClient>((serviceProvider, client) =>
+    {
+        var options = serviceProvider.GetRequiredService<IOptions<TmdbConfiguration>>().Value;
+        client.BaseAddress = new Uri(options.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(options.Timeout);
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+    });
+}
+
+// Register lookup service and strategies
+var hasAnyLookupProvider = hasOpenLibrary || (hasBarcodeLookup && hasTmdb);
+if (hasAnyLookupProvider)
+{
+    builder.Services.AddScoped<ILookupService, LookupService>();
+
+    if (hasOpenLibrary)
+    {
+        builder.Services.AddScoped<ILookupStrategy, BookLookupStrategy>();
+    }
+
+    if (hasBarcodeLookup && hasTmdb)
+    {
+        builder.Services.AddScoped<ILookupStrategy, MovieLookupStrategy>();
+    }
 }
 
 // Add services to the container.
@@ -156,9 +211,9 @@ app.MapEntity<Music>();
 app.MapMetadata();
 app.MapStats();
 
-if (openLibraryConfig.Exists())
+if (hasAnyLookupProvider)
 {
-    app.MapIsbnLookup();
+    app.MapLookup();
 }
 
 app.Run();
