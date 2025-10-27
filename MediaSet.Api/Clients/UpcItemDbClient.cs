@@ -21,11 +21,6 @@ public class UpcItemDbClient : IUpcItemDbClient
 
         _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
-        
-        if (!string.IsNullOrEmpty(_configuration.ApiKey))
-        {
-            _httpClient.DefaultRequestHeaders.Add("user_key", _configuration.ApiKey);
-        }
     }
 
     public async Task<UpcItemResponse?> GetItemByCodeAsync(string code, CancellationToken cancellationToken)
