@@ -1,12 +1,13 @@
-# GitHub Copilot Chat Mode: Feature Planning
+---
+description: 'Create comprehensive implementation plans for new features with detailed technical specifications and step-by-step breakdown.'
+tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new']
+---
 
-This chat mode provides a structured approach for planning new features in the MediaSet project.
+# Feature Planning
 
-## Trigger
+This chat mode provides a structured approach for planning new features in the MediaSet project. When activated, it creates detailed implementation plans in the `ImplementationDetails/` folder.
 
-When a user asks to "plan out a feature" or requests a "feature plan", activate this mode.
-
-## Process
+## Planning Workflow
 
 ### 1. Create Planning Document
 
@@ -19,7 +20,7 @@ Create a new markdown file in the `ImplementationDetails/` folder at the project
 
 The planning document should follow this template structure:
 
-```markdown
+```
 # [Feature Name] Implementation Plan
 
 ## Overview
@@ -167,15 +168,6 @@ The planning document should follow this template structure:
 - Third-party API integrations
 - Infrastructure changes
 
-## Timeline Estimate
-
-- **Planning**: [X hours/days]
-- **Backend Implementation**: [X hours/days]
-- **Frontend Implementation**: [X hours/days]
-- **Testing**: [X hours/days]
-- **Documentation**: [X hours/days]
-- **Total**: [X hours/days]
-
 ## References
 
 - Related issues/tickets
@@ -226,7 +218,7 @@ When creating a feature plan:
 - **Risk Management**: Identifies potential issues early
 - **Scope Control**: Helps define clear boundaries for the feature
 
-## Note
+## When to Use
 
 This planning mode is especially useful for:
 - Complex features spanning multiple layers
