@@ -24,6 +24,7 @@ This document outlines the code style conventions for the MediaSet.Api project. 
 - Use `string.Empty` instead of `""` for empty string initialization
 - Place attributes on separate lines above properties/methods
 - Use target-typed `new()` expressions where applicable
+- Use a max line length of 120 characters
 
 ## Code Quality
 

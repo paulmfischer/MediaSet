@@ -54,10 +54,11 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             return null;
         }
 
-        _logger.LogInformation("Found title '{Title}' from UPC/EAN {Code}, searching TMDB", 
-            firstItem.Title, identifierValue);
+        var cleanedTitle = CleanMovieTitle(firstItem.Title);
+        _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' for TMDB search", 
+            firstItem.Title, identifierValue, cleanedTitle);
 
-        var searchResult = await _tmdbClient.SearchMovieAsync(firstItem.Title, cancellationToken);
+        var searchResult = await _tmdbClient.SearchMovieAsync(cleanedTitle, cancellationToken);
         
         if (searchResult == null || searchResult.Results.Count == 0)
         {
@@ -95,5 +96,41 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             Runtime: tmdbMovie.Runtime,
             Plot: tmdbMovie.Overview ?? string.Empty
         );
+    }
+
+    /// <summary>
+    /// Cleans movie title from UPCitemdb by removing common format suffixes and edition details.
+    /// Examples:
+    /// - "1408 (Two-Disc Collector's Edition)" -> "1408"
+    /// - "1408 [2 Discs] [Collector's Edition]" -> "1408"
+    /// - "1408 - DVD" -> "1408"
+    /// - "The Matrix (DVD)" -> "The Matrix"
+    /// </summary>
+    private static string CleanMovieTitle(string rawTitle)
+    {
+        if (string.IsNullOrWhiteSpace(rawTitle))
+        {
+            return string.Empty;
+        }
+
+        var title = rawTitle.Trim();
+
+        // Remove content in parentheses at the end (e.g., "(DVD)", "(Two-Disc Edition)")
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\([^)]*\)\s*$", string.Empty);
+
+        // Remove content in square brackets at the end (e.g., "[2 Discs]", "[Collector's Edition]")
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\[[^\]]*\]\s*$", string.Empty);
+
+        // Remove common suffixes like " - DVD", " - Blu-ray", " - 4K", etc.
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Recursively clean in case there are multiple patterns (e.g., "Title [Edition] (DVD)")
+        var cleaned = title.Trim();
+        if (cleaned != rawTitle && (cleaned.EndsWith(')') || cleaned.EndsWith(']') || cleaned.Contains(" - ")))
+        {
+            return CleanMovieTitle(cleaned);
+        }
+
+        return cleaned;
     }
 }

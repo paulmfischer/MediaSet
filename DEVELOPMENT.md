@@ -291,7 +291,7 @@ MediaSet uses external APIs for metadata lookup functionality. Configure these i
 ```json
 "TmdbConfiguration": {
   "BaseUrl": "https://api.themoviedb.org/3/",
-  "BearerToken": "your-tmdb-bearer-token-here",
+  "BearerToken": "",
   "Timeout": 10
 }
 ```
@@ -301,12 +301,34 @@ MediaSet uses external APIs for metadata lookup functionality. Configure these i
 - **Rate limits**: 40 requests per 10 seconds, 1M requests per month
 - Used for comprehensive movie metadata
 
-**To obtain TMDB API credentials:**
+**To configure TMDB API credentials (keep secret!):**
 1. Create a free account at [themoviedb.org](https://www.themoviedb.org/signup)
 2. Navigate to Settings → API
 3. Request an API key (choose "Developer" option)
 4. Copy your **Bearer Token** (not the API Key)
-5. Add it to `appsettings.Development.json`
+5. **Use .NET User Secrets** (recommended) to keep it out of source control:
+   ```bash
+   cd MediaSet.Api
+   dotnet user-secrets set "TmdbConfiguration:BearerToken" "your-tmdb-bearer-token"
+   ```
+6. **Alternative**: Set as environment variable:
+   ```bash
+   export TmdbConfiguration__BearerToken="your-tmdb-bearer-token"
+   ```
+
+> ⚠️ **IMPORTANT**: Never commit your TMDB Bearer Token to git! Use User Secrets for local development.
+
+**Using User Secrets with Docker/Podman:**
+
+User Secrets are automatically mounted into the development containers via the compose files:
+- Docker: `~/.microsoft/usersecrets` → `/root/.microsoft/usersecrets` (read-only)
+- Podman: `~/.microsoft/usersecrets` → `/root/.microsoft/usersecrets` (read-only, SELinux-aware)
+
+This means you set secrets **once** on your host machine using `dotnet user-secrets`, and they work for both:
+- ✅ Running directly with `dotnet run`
+- ✅ Running in containers with `./dev.sh start api`
+
+No need to configure secrets inside the container!
 
 ### Testing Lookup Functionality
 

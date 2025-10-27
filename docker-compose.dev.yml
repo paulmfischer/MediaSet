@@ -36,6 +36,8 @@ services:
       - ./MediaSet.Api:/app
       - ~/.nuget/packages:/home/app/.nuget/packages
       - ~/.dotnet/tools:/home/app/.dotnet/tools
+      # Mount user secrets so they're available in the container
+      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
     depends_on:
       - mongodb
     networks:
