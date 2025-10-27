@@ -83,13 +83,13 @@ export default function Add() {
 
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} lookupError={lookupError} />;
+    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
-    formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} lookupError={lookupError} />
+    formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} lookupError={lookupError} />
+    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Musics) {
-    formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} lookupError={lookupError} />
+    formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (
@@ -110,6 +110,12 @@ export default function Add() {
             {formError && 'lookup' in formError && (
               <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
                 <p className="text-red-300">{formError.lookup}</p>
+              </div>
+            )}
+            
+            {lookupError && (
+              <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+                <p className="text-yellow-300">{lookupError}</p>
               </div>
             )}
             
