@@ -15,6 +15,14 @@ services:
       "OpenLibraryConfiguration:BaseUrl": "https://openlibrary.org/"
       # "OpenLibraryConfiguration:Timeout": "30"
       # "OpenLibraryConfiguration:ContactEmail": "me@paulmfischer.dev"
+      # Barcode Lookup API - Get key from: https://www.barcodelookup.com/api
+      # "BarcodeLookupConfiguration:BaseUrl": "https://api.barcodelookup.com/v3/"
+      # "BarcodeLookupConfiguration:ApiKey": "YOUR_BARCODE_LOOKUP_API_KEY"
+      # "BarcodeLookupConfiguration:Timeout": "30"
+      # TMDb API - Get key from: https://www.themoviedb.org/settings/api
+      # "TmdbConfiguration:BaseUrl": "https://api.themoviedb.org/3/"
+      # "TmdbConfiguration:ApiKey": "YOUR_TMDB_API_KEY"
+      # "TmdbConfiguration:Timeout": "30"
 
 networks:
   mediaset:

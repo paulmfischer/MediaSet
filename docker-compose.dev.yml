@@ -32,6 +32,12 @@ services:
       - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
       - MediaSetDatabaseSettings__DatabaseName=MediaSet
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
+      - BarcodeLookupConfiguration__BaseUrl=https://api.barcodelookup.com/v3/
+      - BarcodeLookupConfiguration__ApiKey=${BARCODE_LOOKUP_API_KEY}
+      - BarcodeLookupConfiguration__Timeout=30
+      - TmdbConfiguration__BaseUrl=https://api.themoviedb.org/3/
+      - TmdbConfiguration__ApiKey=${TMDB_API_KEY}
+      - TmdbConfiguration__Timeout=30
     volumes:
       - ./MediaSet.Api:/app
       - ~/.nuget/packages:/home/app/.nuget/packages
