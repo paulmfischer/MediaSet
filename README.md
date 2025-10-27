@@ -21,6 +21,37 @@ Books detail page:
 
 ![Books detail page](assets/screenshots/Books-detail.png)
 
+## Features
+
+### 📚 Metadata Lookup
+
+MediaSet includes built-in metadata lookup functionality to quickly populate item details:
+
+**Books:**
+- **ISBN Lookup**: Search by ISBN to automatically retrieve book metadata from OpenLibrary
+- Supports multiple identifier types: ISBN, LCCN, OCLC, OLID, UPC, EAN
+- Auto-populates title, authors, publisher, publication date, genres, page count, and more
+- Inline lookup button in add/edit forms - results populate the form for review before saving
+
+**Movies:**
+- **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve movie metadata
+- Two-stage lookup: UPCitemdb for product identification → TMDB for comprehensive movie data
+- Auto-populates title, genres, studios, release date, rating, runtime, and plot
+- Inline lookup button in add/edit forms
+
+**Configuration:**
+- **UPCitemdb**: Free tier (100 requests/day) - no API key required
+- **TMDB**: Free API key required - [sign up here](https://www.themoviedb.org/signup)
+  - Add your TMDB Bearer Token to `appsettings.Development.json`:
+    ```json
+    "TmdbConfiguration": {
+      "BaseUrl": "https://api.themoviedb.org/3/",
+      "BearerToken": "your-tmdb-bearer-token-here",
+      "Timeout": 10
+    }
+    ```
+- **OpenLibrary**: No API key required (existing feature)
+
 ## Development
 
 ### 🐳 Containerized Development (Recommended)

@@ -257,6 +257,73 @@ podman unshare cat /proc/self/uid_map
 sudo ./dev.sh start
 ```
 
+## API Configuration
+
+### External API Integration
+
+MediaSet uses external APIs for metadata lookup functionality. Configure these in `MediaSet.Api/appsettings.Development.json`:
+
+#### OpenLibrary (Books)
+```json
+"OpenLibraryConfiguration": {
+  "BaseUrl": "https://openlibrary.org/",
+  "Timeout": "30",
+  "ContactEmail": "your-email@example.com"
+}
+```
+- **No API key required**
+- Free and unlimited
+- Used for ISBN, LCCN, OCLC, OLID lookups
+
+#### UPCitemdb (Barcode Lookups)
+```json
+"UpcItemDbConfiguration": {
+  "BaseUrl": "https://api.upcitemdb.com/",
+  "Timeout": 10
+}
+```
+- **No API key required** for free tier
+- **100 requests/day limit** on free plan
+- Used to identify products from UPC/EAN barcodes
+- For unlimited requests, [upgrade to paid plan](https://www.upcitemdb.com/api/)
+
+#### TMDB - The Movie Database (Movies)
+```json
+"TmdbConfiguration": {
+  "BaseUrl": "https://api.themoviedb.org/3/",
+  "BearerToken": "your-tmdb-bearer-token-here",
+  "Timeout": 10
+}
+```
+- **API key required** (free)
+- **Sign up**: [https://www.themoviedb.org/signup](https://www.themoviedb.org/signup)
+- **Get API key**: Account → Settings → API → Request API Key → Developer
+- **Rate limits**: 40 requests per 10 seconds, 1M requests per month
+- Used for comprehensive movie metadata
+
+**To obtain TMDB API credentials:**
+1. Create a free account at [themoviedb.org](https://www.themoviedb.org/signup)
+2. Navigate to Settings → API
+3. Request an API key (choose "Developer" option)
+4. Copy your **Bearer Token** (not the API Key)
+5. Add it to `appsettings.Development.json`
+
+### Testing Lookup Functionality
+
+Once configured, test the lookup features:
+
+**Books (ISBN):**
+```bash
+curl http://localhost:5000/lookup/Books/isbn/9780385504201
+```
+
+**Movies (UPC):**
+```bash
+curl http://localhost:5000/lookup/Movies/upc/883929248842
+```
+
+The UI also provides inline lookup buttons in the add/edit forms for books and movies.
+
 ## Performance Tips
 
 1. **Use .dockerignore files** to exclude unnecessary files
