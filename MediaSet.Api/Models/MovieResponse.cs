@@ -7,5 +7,6 @@ public record MovieResponse(
     string ReleaseDate,
     string Rating,
     int? Runtime,
-    string Plot
+    string Plot,
+    string Format
 );
