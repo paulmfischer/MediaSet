@@ -11,7 +11,11 @@ import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
 import GameForm from "~/components/game-form";
 import MusicForm from "~/components/music-form";
-import { lookup, isLookupError, getIdentifierTypeForField } from "~/lookup-data";
+// Server-only lookup utilities are imported dynamically inside the action to avoid client bundling
+
+function isLookupError(result: any): result is { message: string; statusCode: number } {
+  return result && typeof result.message === "string" && typeof result.statusCode === "number";
+}
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityType = getEntityFromParams(params);
@@ -50,6 +54,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { error: { lookup: "Identifier value is required" } };
     }
     
+    const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
     const identifierType = getIdentifierTypeForField(entityType, fieldName);
     const lookupResult = await lookup(entityType, identifierType, identifierValue);
     return { lookupResult, identifierValue, fieldName };
