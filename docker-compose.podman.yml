@@ -32,12 +32,12 @@ services:
       - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
       - MediaSetDatabaseSettings__DatabaseName=MediaSet
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
+      - TmdbConfiguration__BearerToken=${TMDB_BEARER_TOKEN}
+      - UpcItemDbConfiguration__ApiKey=${UPCITEMDB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app:Z
       - ~/.nuget/packages:/root/.nuget/packages:Z
       - ~/.dotnet/tools:/root/.dotnet/tools:Z
-      # Mount user secrets so they're available in the container
-      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:Z,ro
     depends_on:
       - mongodb
     networks:

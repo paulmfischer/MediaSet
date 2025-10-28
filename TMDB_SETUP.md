@@ -1,43 +1,37 @@
-# Setting Up TMDB API Token for Docker
+# Setting Up TMDB API Token
 
-The TMDB (The Movie Database) API bearer token is required for movie barcode lookup functionality.
+The TMDB (The Movie Database) API bearer token is required for movie barcode lookup functionality. This guide covers setup for both containerized (Docker/Podman) and local development environments.
 
-## For Docker Development
+## Setup Instructions
 
-1. **Get your TMDB Bearer Token:**
-   - Go to https://www.themoviedb.org/settings/api
-   - Create an account if you don't have one
-   - Request an API key (choose the API option, not the website option)
-   - Copy your "API Read Access Token" (this is the bearer token)
+### 1. Get Your TMDB Bearer Token
 
-2. **Create a `.env` file in the project root:**
+1. **Create an account** at [themoviedb.org](https://www.themoviedb.org/signup)
+2. **Navigate to Settings → API** (https://www.themoviedb.org/settings/api)
+3. **Request an API key** (choose the "Developer" option, not "Website")
+4. **Copy your "API Read Access Token"** - this is the bearer token you need
+
+### 2. Configure for Development
+
+**For Containerized Development (Docker/Podman):**
+
+1. **Create a `.env` file in the project root:**
    ```bash
-   cd /home/fischerp/projects/MediaSet
    cp .env.example .env
    ```
 
-3. **Edit the `.env` file and set your tokens:**
+2. **Edit the `.env` file and set your tokens:**
    ```bash
    TMDB_BEARER_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...your_actual_token_here
-   UPCITEMDB_API_KEY=your_api_key_here  # Optional
+   UPCITEMDB_API_KEY=your_api_key_here  # Optional - for better rate limits
    ```
 
-4. **Restart the Docker containers:**
+3. **Restart the development environment:**
    ```bash
-   ./dev.sh restart all
-   # or
-   docker-compose -f docker-compose.dev.yml down
-   docker-compose -f docker-compose.dev.yml up -d
+   ./dev.sh restart
    ```
 
-## For Local Development (without Docker)
-
-If you're running the API directly with `dotnet run` (not in Docker), use .NET User Secrets:
-
-```bash
-cd MediaSet.Api
-dotnet user-secrets set "TmdbConfiguration:BearerToken" "your_tmdb_bearer_token_here"
-```
+> ⚠️ **IMPORTANT**: The `.env` file is git-ignored and should never be committed to source control!
 
 ## Verification
 
