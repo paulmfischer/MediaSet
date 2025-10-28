@@ -14,5 +14,11 @@ public enum IdentifierType
     Oclc,
 
     [Description("olid")]
-    Olid
+    Olid,
+
+    [Description("upc")]
+    Upc,
+
+    [Description("ean")]
+    Ean
 }

@@ -81,3 +81,34 @@ export interface MusicEntity extends BaseEntity {
 }
 // UI model
 export type Music = Override<MusicEntity, { genres: string; }>
+
+export type IdentifierType = 'isbn' | 'lccn' | 'oclc' | 'olid' | 'upc' | 'ean';
+
+export interface BookLookupResponse {
+  title: string;
+  subtitle: string;
+  authors: Array<{ name: string; url: string }>;
+  numberOfPages: number;
+  publishers: Array<{ name: string }>;
+  publishDate: string;
+  subjects: Array<{ name: string; url: string }>;
+  format?: string;
+}
+
+export interface MovieLookupResponse {
+  title: string;
+  genres: string[];
+  studios: string[];
+  releaseDate: string;
+  rating: string;
+  runtime: number | null;
+  plot: string;
+  format?: string;
+}
+
+export interface LookupError {
+  message: string;
+  statusCode: number;
+}
+
+export type LookupResult<T> = T | LookupError;

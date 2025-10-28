@@ -6,12 +6,16 @@ import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
-import { BookEntity, Entity, GameEntity, MusicEntity } from "~/models";
+import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
 import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
 import GameForm from "~/components/game-form";
 import MusicForm from "~/components/music-form";
-import { lookup, LookupError } from "~/lookup-data";
+// Server-only lookup utilities are imported dynamically inside the action to avoid client bundling
+
+function isLookupError(result: any): result is { message: string; statusCode: number } {
+  return result && typeof result.message === "string" && typeof result.statusCode === "number";
+}
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityType = getEntityFromParams(params);
@@ -40,24 +44,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
   
-  // Check if this is an ISBN lookup request
-  const isbn = formData.get("isbn") as string;
   const intent = formData.get("intent") as string;
   
-  if (intent === "lookup" && isbn) {
-    if (entityType !== Entity.Books) {
-      return { error: { isbn: "ISBN lookup is only available for books" } };
+  if (intent === "lookup") {
+    const fieldName = formData.get("fieldName") as string;
+    const identifierValue = formData.get("identifierValue") as string;
+    
+    if (!identifierValue) {
+      return { error: { lookup: "Identifier value is required" } };
     }
     
-    if (!isbn) {
-      return { error: { isbn: "ISBN is required" } };
-    }
-    
-    const lookupResult = await lookup(entityType, isbn);
-    return { lookupResult, isbn };
+    const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+    const identifierType = getIdentifierTypeForField(entityType, fieldName);
+    const lookupResult = await lookup(entityType, identifierType, identifierValue);
+    return { lookupResult, identifierValue, fieldName };
   }
   
-  // Otherwise, this is a book creation request
+  // Otherwise, this is an entity creation request
   const entity = formToDto(formData);
   if (entity) {
     const newEntity = await addEntity(entity);
@@ -72,29 +75,26 @@ export default function Add() {
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  const lookupFormRef = useRef<HTMLFormElement>(null);
   
   const isSubmitting = navigation.state === "submitting";
-  const canDoISBNLookup = entityType === Entity.Books;
   
-  // Extract lookup result and book data from action
+  // Extract lookup result from action
   const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
-  const lookupError = (lookupResult as LookupError)?.error;
-  const lookupBook = !lookupError ? lookupResult as BookEntity : undefined;
-  const submittedISBN = actionData && 'isbn' in actionData ? actionData.isbn : undefined;
+  const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
+  const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm book={lookupBook as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
-    formComponent = <MovieForm genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Musics) {
-    formComponent = <MusicForm genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (
@@ -102,44 +102,6 @@ export default function Add() {
       <div className="w-full max-w-3xl mx-auto px-2">
         <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
         
-        {/* ISBN Lookup Section - Only for Books */}
-        {canDoISBNLookup && (
-          <div className="mb-8">
-            <div className="mb-2">Search for a book by ISBN value to prefill the form below and allow editing the book before adding.  You can also manually enter a book by filling in the form below without looking up by ISBN.</div>
-            <Form ref={lookupFormRef} method="post">
-              <div className="mb-4">
-                <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
-                  ISBN
-                </label>
-                <input
-                  type="text"
-                  id="isbn"
-                  name="isbn"
-                  defaultValue={submittedISBN}
-                  className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  placeholder="Enter ISBN"
-                  required
-                />
-                <input type="hidden" name="intent" value="lookup" />
-              </div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
-              >
-                {isSubmitting ? "Looking up..." : "Look up"}
-              </button>
-            </Form>
-            
-            {lookupError && (
-              <div className="mt-4 p-4 bg-red-900 border border-red-700 rounded-md">
-                <p className="text-red-300">{lookupError.notFound}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Book Form Section */}
         <div className="mb-8">
           <Form method="post">
             <input type="hidden" name="type" value={entityType} />
@@ -150,9 +112,15 @@ export default function Add() {
               </div>
             )}
             
-            {formError && 'isbn' in formError && (
+            {formError && 'lookup' in formError && (
               <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
-                <p className="text-red-300">{formError.isbn}</p>
+                <p className="text-red-300">{formError.lookup}</p>
+              </div>
+            )}
+            
+            {lookupError && (
+              <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+                <p className="text-yellow-300">{lookupError}</p>
               </div>
             )}
             

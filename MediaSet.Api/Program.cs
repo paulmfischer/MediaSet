@@ -62,6 +62,42 @@ if (openLibraryConfig.Exists())
     });
 }
 
+// Configure UpcItemDb client
+var upcItemDbConfig = builder.Configuration.GetSection(nameof(UpcItemDbConfiguration));
+if (upcItemDbConfig.Exists())
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("UpcItemDb configuration exists. Setting up UpcItemDb services.");
+    builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
+    builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>();
+}
+
+// Configure TMDB client
+var tmdbConfig = builder.Configuration.GetSection(nameof(TmdbConfiguration));
+if (tmdbConfig.Exists())
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("TMDB configuration exists. Setting up TMDB services.");
+    builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
+    builder.Services.AddHttpClient<ITmdbClient, TmdbClient>();
+}
+
+// Register lookup strategies and factory
+if (openLibraryConfig.Exists() && upcItemDbConfig.Exists())
+{
+    builder.Services.AddScoped<BookLookupStrategy>();
+}
+if (upcItemDbConfig.Exists() && tmdbConfig.Exists())
+{
+    builder.Services.AddScoped<MovieLookupStrategy>();
+}
+if (openLibraryConfig.Exists() || tmdbConfig.Exists())
+{
+    builder.Services.AddScoped<LookupStrategyFactory>();
+}
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -156,9 +192,9 @@ app.MapEntity<Music>();
 app.MapMetadata();
 app.MapStats();
 
-if (openLibraryConfig.Exists())
+if (openLibraryConfig.Exists() || tmdbConfig.Exists())
 {
-    app.MapIsbnLookup();
+    app.MapLookup();
 }
 
 app.Run();

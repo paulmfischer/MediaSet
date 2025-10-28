@@ -1,3 +1,4 @@
+import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import { BookEntity, FormProps } from "~/models";
 
@@ -14,9 +15,26 @@ type BookFormProps = FormProps & {
 };
 
 export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
+  const submit = useSubmit();
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+
+  const handleLookup = () => {
+    const isbnInput = document.getElementById('isbn') as HTMLInputElement;
+    const isbnValue = isbnInput?.value;
+    
+    if (!isbnValue) {
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'isbn');
+    formData.append('identifierValue', isbnValue);
+    
+    submit(formData, { method: 'post' });
+  };
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
@@ -79,7 +97,17 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       
       <div>
         <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">ISBN</label>
-        <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" />
+        <div className="flex gap-2">
+          <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" />
+          <button
+            type="button"
+            onClick={handleLookup}
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 whitespace-nowrap"
+          >
+            Lookup
+          </button>
+        </div>
       </div>
       
       <div>

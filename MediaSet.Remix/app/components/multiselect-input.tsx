@@ -79,7 +79,6 @@ export default function MultiselectInput(props: MultiselectProps) {
   // Compute menu position only when open, and update on resize/scroll
   const [menuPos, setMenuPos] = useState<{ left: number; top: number; width: number } | null>(null);
   useEffect(() => {
-    console.log('displayOptions changed:', displayOptions);
     if (!displayOptions) return;
 
     const update = () => {

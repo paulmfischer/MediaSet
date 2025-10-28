@@ -2,7 +2,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
 import { Entity } from "~/models";
 import { useEffect, useRef } from "react";
-import { lookup } from "~/lookup-data";
+// Import server-only utilities dynamically inside action to keep client bundle clean
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (params.entity?.toLowerCase() !== Entity.Books.toLowerCase()) {
@@ -23,7 +23,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: { isbn: "ISBN is required" } };
   }
 
-  const result = await lookup(Entity.Books, isbn);
+  const { lookup } = await import("~/lookup-data.server");
+  const result = await lookup(Entity.Books, 'isbn', isbn);
   return result;
 }
 
