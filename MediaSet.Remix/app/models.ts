@@ -103,6 +103,7 @@ export interface MovieLookupResponse {
   rating: string;
   runtime: number | null;
   plot: string;
+  format?: string;
 }
 
 export interface LookupError {

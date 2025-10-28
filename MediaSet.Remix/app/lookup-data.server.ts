@@ -78,7 +78,8 @@ export async function lookup(
       rating: movieLookup.rating,
       runtime: movieLookup.runtime ?? undefined,
       plot: movieLookup.plot,
-      barcode: identifierValue
+      barcode: identifierValue,
+      format: movieLookup.format
     } as MovieEntity;
   }
 

@@ -6,7 +6,6 @@ import { Entity } from "./models";
  */
 async function getMetadata(entityType: Entity, property: string) {
   const response = await fetch(`${baseUrl}/metadata/${entityType}/${property}`);
-  console.log('response', response);
   const values = await response.json() as string[];
   return values.map(value => ({ label: value, value: value }));
 }
