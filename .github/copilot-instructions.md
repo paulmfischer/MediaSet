@@ -4,14 +4,30 @@ This file provides context and instructions for GitHub Copilot to better underst
 
 ## ⚠️ CRITICAL RULES
 
-### 1. Branch Protection
-**NEVER commit directly to the `main` branch.** Before making any changes:
-1. Create a new branch from `main` using a descriptive name:
-   - `feature/<short-description>` for new features
-   - `fix/<short-description>` for bug fixes
-   - `chore/<short-description>` for maintenance tasks
-2. Make all changes on the feature branch
-3. Open a Pull Request (PR) when ready to merge
+### 1. Branch Protection - MANDATORY WORKFLOW
+**🚨 ABSOLUTELY NO COMMITS TO THE `main` BRANCH - NO EXCEPTIONS 🚨**
+
+**BEFORE making ANY code changes, file edits, or commits, you MUST:**
+1. **FIRST**: Check current branch with `git branch --show-current`
+2. **IF on `main`**: IMMEDIATELY create and switch to a new branch:
+   ```bash
+   git checkout -b feature/<short-description>
+   # OR
+   git checkout -b fix/<short-description>
+   # OR
+   git checkout -b chore/<short-description>
+   ```
+3. **ONLY THEN**: Proceed with making changes
+4. Commit all changes to the feature branch
+5. Push the feature branch: `git push origin <branch-name>`
+6. Open a Pull Request (PR) to merge into `main`
+
+**Branch naming conventions:**
+- `feature/<short-description>` for new features
+- `fix/<short-description>` for bug fixes  
+- `chore/<short-description>` for maintenance tasks
+
+**⚠️ IF YOU ARE CURRENTLY ON `main`, STOP AND CREATE A BRANCH FIRST!**
 
 ### 2. Code Style Adherence
 **ALL code changes MUST strictly adhere to the project's code style guidelines:**

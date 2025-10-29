@@ -1,0 +1,83 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "feature/*"
+      - "fix/*"
+      - "chore/*"
+
+jobs:
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.305'
+      
+      - name: Restore dependencies
+        run: dotnet restore MediaSet.Api/MediaSet.Api.csproj
+      
+      - name: Build API
+        run: dotnet build MediaSet.Api/MediaSet.Api.csproj --no-restore
+      
+      - name: Build Tests
+        run: dotnet build MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
+      
+      - name: Run Tests
+        run: dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-build --verbosity normal
+
+  ui-build:
+    name: UI Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MediaSet.Remix
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: MediaSet.Remix/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+
+  ui-test:
+    name: UI Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MediaSet.Remix
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: MediaSet.Remix/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Tests (Placeholder)
+        run: |
+          echo "⚠️ UI tests are not yet implemented"
+          echo "This step is a placeholder and will not fail the workflow"
+        continue-on-error: false

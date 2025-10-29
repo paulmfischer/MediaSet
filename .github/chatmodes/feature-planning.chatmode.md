@@ -1,6 +1,6 @@
 ---
 description: 'Create comprehensive implementation plans for new features with detailed technical specifications and step-by-step breakdown.'
-tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new']
+tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new', 'edit']
 ---
 
 # Feature Planning
