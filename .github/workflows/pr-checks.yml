@@ -22,13 +22,10 @@ jobs:
           dotnet-version: '9.0.305'
       
       - name: Restore dependencies
-        run: dotnet restore MediaSet.Api/MediaSet.Api.csproj
+        run: dotnet restore
       
-      - name: Build API
-        run: dotnet build MediaSet.Api/MediaSet.Api.csproj --no-restore
-      
-      - name: Build Tests
-        run: dotnet build MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
+      - name: Build
+        run: dotnet build --no-restore
       
       - name: Run Tests
         run: dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-build --verbosity normal
