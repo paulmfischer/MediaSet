@@ -39,25 +39,23 @@ internal static class LookupApi
 
             try
             {
-                if (parsedEntityType == MediaTypes.Books)
+                object? result = parsedEntityType switch
                 {
-                    var strategy = strategyFactory.GetBookStrategy(parsedIdentifierType);
-                    var result = await strategy.LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
+                    MediaTypes.Books => await strategyFactory.GetStrategy<BookResponse>(parsedEntityType, parsedIdentifierType)
+                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
+                    MediaTypes.Movies => await strategyFactory.GetStrategy<MovieResponse>(parsedEntityType, parsedIdentifierType)
+                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
+                    _ => null
+                };
 
-                    if (result != null)
-                    {
-                        return TypedResults.Ok(result);
-                    }
-                }
-                else if (parsedEntityType == MediaTypes.Movies)
+                if (result != null)
                 {
-                    var strategy = strategyFactory.GetMovieStrategy(parsedIdentifierType);
-                    var result = await strategy.LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
-
-                    if (result != null)
+                    return result switch
                     {
-                        return TypedResults.Ok(result);
-                    }
+                        BookResponse book => TypedResults.Ok(book),
+                        MovieResponse movie => TypedResults.Ok(movie),
+                        _ => TypedResults.NotFound()
+                    };
                 }
 
                 logger.LogInformation("No result for {EntityType} with {IdentifierType} = {IdentifierValue}", 

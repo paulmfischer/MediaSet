@@ -87,11 +87,11 @@ if (tmdbConfig.Exists())
 // Register lookup strategies and factory
 if (openLibraryConfig.Exists() && upcItemDbConfig.Exists())
 {
-    builder.Services.AddScoped<BookLookupStrategy>();
+    builder.Services.AddScoped<ILookupStrategy<BookResponse>, BookLookupStrategy>();
 }
 if (upcItemDbConfig.Exists() && tmdbConfig.Exists())
 {
-    builder.Services.AddScoped<MovieLookupStrategy>();
+    builder.Services.AddScoped<ILookupStrategy<MovieResponse>, MovieLookupStrategy>();
 }
 if (openLibraryConfig.Exists() || tmdbConfig.Exists())
 {

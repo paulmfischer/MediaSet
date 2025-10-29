@@ -193,6 +193,6 @@ public class IdentifierTypeExtensionsTests
         var parts = result.Split(", ");
 
         // Assert
-        Assert.That(parts.Length, Is.EqualTo(4)); // Should have 4 identifier types
+        Assert.That(parts.Length, Is.EqualTo(6)); // Should have 6 identifier types (isbn, lccn, oclc, olid, upc, ean)
     }
 }

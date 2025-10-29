@@ -56,6 +56,7 @@ public class LookupApiTests
     public async Task GetBookByIsbn_ShouldReturnBook_WhenValidIsbn()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780134685991";
         var expectedResponse = new BookResponse(
@@ -70,11 +71,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
@@ -84,32 +85,34 @@ public class LookupApiTests
         Assert.That(result.Authors.Count, Is.EqualTo(1));
         Assert.That(result.Authors[0].Name, Is.EqualTo("Joshua Bloch"));
         Assert.That(result.NumberOfPages, Is.EqualTo(416));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetBookByIdentifier_ShouldReturnNotFound_WhenBookNotFound()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "0000000000000";
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse)null!);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetBookByLccn_ShouldReturnBook_WhenValidLccn()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "lccn";
         var identifierValue = "2017046873";
         var expectedResponse = new BookResponse(
@@ -124,24 +127,25 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByLccnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("Test Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Lccn, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByLccnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetBookByOclc_ShouldReturnBook_WhenValidOclc()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "oclc";
         var identifierValue = "1004392074";
         var expectedResponse = new BookResponse(
@@ -156,24 +160,25 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByOclcAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("OCLC Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Oclc, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByOclcAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetBookByOlid_ShouldReturnBook_WhenValidOlid()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "olid";
         var identifierValue = "OL7353617M";
         var expectedResponse = new BookResponse(
@@ -188,41 +193,46 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByOlidAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Is.EqualTo("OpenLibrary Book"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(IdentifierType.Olid, identifierValue, It.IsAny<CancellationToken>()), Times.Once);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByOlidAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task GetBookByIdentifier_ShouldReturnBadRequest_WhenInvalidIdentifierType()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "invalid";
         var identifierValue = "123456";
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var content = await response.Content.ReadAsStringAsync();
         Assert.That(content, Does.Contain("Invalid identifier type"));
-        _openLibraryClientMock.Verify(c => c.GetReadableBookAsync(It.IsAny<IdentifierType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByLccnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByOclcAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _openLibraryClientMock.Verify(c => c.GetReadableBookByOlidAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
     public async Task GetBookByIdentifier_ShouldBeCaseInsensitive_ForIdentifierType()
     {
         // Arrange
+        var entityType = "books";
         var identifierTypes = new[] { "ISBN", "Isbn", "iSbN", "isbn" };
         var identifierValue = "9780134685991";
         var expectedResponse = new BookResponse(
@@ -239,11 +249,11 @@ public class LookupApiTests
         foreach (var identifierType in identifierTypes)
         {
             _openLibraryClientMock
-                .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+                .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResponse);
 
             // Act
-            var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+            var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
 
             // Assert
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"Failed for identifier type: {identifierType}");
@@ -254,6 +264,7 @@ public class LookupApiTests
     public async Task GetBookByIdentifier_ShouldHandleBookWithMultipleAuthors()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780132350884";
         var expectedResponse = new BookResponse(
@@ -273,11 +284,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
@@ -293,6 +304,7 @@ public class LookupApiTests
     public async Task GetBookByIdentifier_ShouldHandleBookWithMultiplePublishers()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780201616224";
         var expectedResponse = new BookResponse(
@@ -311,11 +323,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
@@ -330,6 +342,7 @@ public class LookupApiTests
     public async Task GetBookByIdentifier_ShouldHandleBookWithMultipleSubjects()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780596007126";
         var expectedResponse = new BookResponse(
@@ -349,11 +362,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
@@ -369,6 +382,7 @@ public class LookupApiTests
     public async Task GetBookByIdentifier_ShouldHandleBookWithNoSubtitle()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780451524935";
         var expectedResponse = new BookResponse(
@@ -383,11 +397,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert
@@ -400,6 +414,7 @@ public class LookupApiTests
     public async Task GetBookByIdentifier_ShouldHandleBookWithNoFormat()
     {
         // Arrange
+        var entityType = "books";
         var identifierType = "isbn";
         var identifierValue = "9780141439518";
         var expectedResponse = new BookResponse(
@@ -414,11 +429,11 @@ public class LookupApiTests
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookAsync(IdentifierType.Isbn, identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
-        var response = await _client.GetAsync($"/lookup/{identifierType}/{identifierValue}");
+        var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
         var result = await response.Content.ReadFromJsonAsync<BookResponse>();
 
         // Assert

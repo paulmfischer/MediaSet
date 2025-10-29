@@ -12,23 +12,19 @@ public class LookupStrategyFactory
         _serviceProvider = serviceProvider;
     }
 
-    public ILookupStrategy<BookResponse> GetBookStrategy(IdentifierType identifierType)
+    public ILookupStrategy<TResponse> GetStrategy<TResponse>(MediaTypes mediaType, IdentifierType identifierType)
+        where TResponse : class
     {
-        var strategy = _serviceProvider.GetService<BookLookupStrategy>();
-        if (strategy == null || !strategy.CanHandle(MediaTypes.Books, identifierType))
-        {
-            throw new NotSupportedException($"No strategy found for Books with identifier type: {identifierType}");
-        }
-        return strategy;
-    }
+        var strategies = _serviceProvider.GetServices<ILookupStrategy<TResponse>>();
 
-    public ILookupStrategy<MovieResponse> GetMovieStrategy(IdentifierType identifierType)
-    {
-        var strategy = _serviceProvider.GetService<MovieLookupStrategy>();
-        if (strategy == null || !strategy.CanHandle(MediaTypes.Movies, identifierType))
+        foreach (var strategy in strategies)
         {
-            throw new NotSupportedException($"No strategy found for Movies with identifier type: {identifierType}");
+            if (strategy.CanHandle(mediaType, identifierType))
+            {
+                return strategy;
+            }
         }
-        return strategy;
+
+        throw new NotSupportedException($"No strategy found for {mediaType} with identifier type: {identifierType}");
     }
 }
