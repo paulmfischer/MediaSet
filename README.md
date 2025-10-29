@@ -95,3 +95,5 @@ If you prefer to install dependencies locally:
 2. Start the API: Press `F5` in VS Code or `dotnet run` in `MediaSet.Api/`
 3. Start the frontend: `npm run dev` in `MediaSet.Remix/`
 4. Access: Frontend at http://localhost:3000, API at http://localhost:5000
+
+
