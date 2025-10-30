@@ -64,7 +64,7 @@ public class GameLookupStrategyTests
     public async Task LookupAsync_WithValidUpc_ReturnsGameResponse()
     {
         var upc = "887256301891"; // example
-        var upcTitle = "Halo Infinite - Xbox Series X (Disc)";
+        var upcTitle = "Halo Infinite - Xbox Series X";
         var upcResponse = CreateUpcItemResponse(upc, upcTitle, category: "Video Games", brand: "Microsoft", model: null);
 
         _upcItemDbClientMock
@@ -106,7 +106,7 @@ public class GameLookupStrategyTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Does.Contain("Halo Infinite"));
         Assert.That(result.Platform, Is.EqualTo("Xbox Series X|S"));
-        Assert.That(result.Format, Is.EqualTo("Disc"));
+        Assert.That(result.Format, Is.EqualTo("Blu-ray Disc"));
         Assert.That(result.ReleaseDate, Is.EqualTo("2021-12-08"));
         Assert.That(result.Rating, Is.EqualTo("ESRB: T"));
         Assert.That(result.Genres, Contains.Item("Shooter"));
@@ -275,7 +275,7 @@ public class GameLookupStrategyTests
     }
 
     [Test]
-    public void DeriveFormatFromPlatforms_WithPlayStationPlatform_ReturnsDisc()
+    public void DeriveFormatFromPlatforms_WithPlayStation5Platform_ReturnsBlurayDisc()
     {
         var platforms = new List<GiantBombPlatformRef>
         {
@@ -284,7 +284,59 @@ public class GameLookupStrategyTests
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation 5");
 
-        Assert.That(format, Is.EqualTo("Disc"));
+        Assert.That(format, Is.EqualTo("Blu-ray Disc"));
+    }
+
+    [Test]
+    public void DeriveFormatFromPlatforms_WithPlayStation3Platform_ReturnsDvd()
+    {
+        var platforms = new List<GiantBombPlatformRef>
+        {
+            new("PlayStation 3", "PS3")
+        };
+
+        var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation 3");
+
+        Assert.That(format, Is.EqualTo("DVD"));
+    }
+
+    [Test]
+    public void DeriveFormatFromPlatforms_WithPlayStation1Platform_ReturnsCdRom()
+    {
+        var platforms = new List<GiantBombPlatformRef>
+        {
+            new("PlayStation", "PS")
+        };
+
+        var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation");
+
+        Assert.That(format, Is.EqualTo("CD-ROM"));
+    }
+
+    [Test]
+    public void DeriveFormatFromPlatforms_WithPcPlatform_ReturnsCdRom()
+    {
+        var platforms = new List<GiantBombPlatformRef>
+        {
+            new("PC", "PC")
+        };
+
+        var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PC");
+
+        Assert.That(format, Is.EqualTo("CD-ROM"));
+    }
+
+    [Test]
+    public void DeriveFormatFromPlatforms_WithDreamcastPlatform_ReturnsGdRom()
+    {
+        var platforms = new List<GiantBombPlatformRef>
+        {
+            new("Dreamcast", "DC")
+        };
+
+        var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "Dreamcast");
+
+        Assert.That(format, Is.EqualTo("GD-ROM"));
     }
 
     [Test]
@@ -301,7 +353,7 @@ public class GameLookupStrategyTests
     }
 
     [Test]
-    public void DeriveFormatFromPlatforms_WithXboxPlatform_ReturnsDisc()
+    public void DeriveFormatFromPlatforms_WithXboxSeriesXPlatform_ReturnsBlurayDisc()
     {
         var platforms = new List<GiantBombPlatformRef>
         {
@@ -310,7 +362,7 @@ public class GameLookupStrategyTests
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "Xbox Series X|S");
 
-        Assert.That(format, Is.EqualTo("Disc"));
+        Assert.That(format, Is.EqualTo("Blu-ray Disc"));
     }
 
     [Test]

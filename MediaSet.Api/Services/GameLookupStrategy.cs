@@ -206,29 +206,66 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         // Map platforms to typical formats
         var platformName = matchingPlatform.Name.ToLowerInvariant();
         
+        // GD-ROM (Dreamcast's proprietary format) - check first before CD-ROM
+        if (platformName.Contains("dreamcast"))
+        {
+            return "GD-ROM";
+        }
+        
         // Cartridge-based platforms
         if (platformName.Contains("nintendo switch") || platformName.Contains("switch") ||
             platformName.Contains("3ds") || platformName.Contains("ds") ||
-            platformName.Contains("game boy") || platformName.Contains("gameboy"))
+            platformName.Contains("game boy") || platformName.Contains("gameboy") ||
+            platformName.Contains("n64") || platformName.Contains("snes") || platformName.Contains("nes") ||
+            platformName.Contains("genesis") || platformName.Contains("game gear"))
         {
             return "Cartridge";
         }
 
-        // Disc-based platforms
-        if (platformName.Contains("playstation") || platformName.Contains("ps5") || platformName.Contains("ps4") || platformName.Contains("ps3") ||
-            platformName.Contains("xbox") || platformName.Contains("wii u") || platformName.Contains("wii"))
+        // Blu-ray Disc platforms (PS3, PS4, PS5, Xbox One, Xbox Series X)
+        if (platformName.Contains("playstation 5") || platformName.Contains("ps5") ||
+            platformName.Contains("playstation 4") || platformName.Contains("ps4") ||
+            platformName.Contains("xbox series") || platformName.Contains("xbox one"))
         {
-            return "Disc";
+            return "Blu-ray Disc";
         }
 
-        // Digital-only or PC (assume disc as default for PC physical releases)
-        if (platformName.Contains("pc") || platformName.Contains("windows"))
+        // DVD platforms (PS2, Xbox, Xbox 360, Wii, Wii U)
+        if (platformName.Contains("playstation 3") || platformName.Contains("ps3") ||
+            platformName.Contains("playstation 2") || platformName.Contains("ps2") ||
+            platformName.Contains("xbox 360") || platformName.Contains("xbox") ||
+            platformName.Contains("wii"))
         {
-            return "Disc"; // Physical PC games are typically disc-based
+            return "DVD";
         }
 
-        // Default to Disc for unknown platforms (most common physical format)
-        return "Disc";
+        // CD-ROM platforms (PS1, Saturn, older PC games)
+        if (platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
+            !platformName.Contains("playstation 3") && !platformName.Contains("playstation 4") && 
+            !platformName.Contains("playstation 5") ||
+            platformName.Contains("saturn") ||
+            platformName.Contains("sega cd"))
+        {
+            return "CD-ROM";
+        }
+
+        // Digital platforms
+        if (platformName.Contains("eshop") || platformName.Contains("digital") ||
+            platformName.Contains("download"))
+        {
+            return "Nintendo eShop";
+        }
+
+        // PC - default to CD-ROM for older games, but could be DVD or digital
+        // This is imperfect without release date, but CD-ROM is most common for physical PC
+        if (platformName.Contains("pc") || platformName.Contains("windows") || 
+            platformName.Contains("mac") || platformName.Contains("linux"))
+        {
+            return "CD-ROM";
+        }
+
+        // Default to DVD for unknown platforms (most common modern physical format before Blu-ray)
+        return "DVD";
     }
 
     internal static GiantBombSearchResult? FindBestMatch(List<GiantBombSearchResult> searchResults, string cleanedTitle)
