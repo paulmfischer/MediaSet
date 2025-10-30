@@ -3,10 +3,12 @@ import { singular } from "./helpers";
 import { 
   BookEntity, 
   MovieEntity, 
+  GameEntity,
   Entity, 
   IdentifierType, 
   BookLookupResponse,
   MovieLookupResponse,
+  GameLookupResponse,
   LookupError
 } from "./models";
 
@@ -35,7 +37,7 @@ export async function lookup(
   entityType: Entity, 
   identifierType: IdentifierType, 
   identifierValue: string
-): Promise<BookEntity | MovieEntity | LookupError> {
+): Promise<BookEntity | MovieEntity | GameEntity | LookupError> {
   const response = await fetch(`${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`);
   
   if (response.status === 404) {
@@ -81,6 +83,21 @@ export async function lookup(
       barcode: identifierValue,
       format: movieLookup.format
     } as MovieEntity;
+  } else if (entityType === Entity.Games) {
+    const gameLookup = await response.json() as GameLookupResponse;
+    return {
+      type: Entity.Games,
+      title: gameLookup.title,
+      platform: gameLookup.platform,
+      genres: gameLookup.genres,
+      developers: gameLookup.developers,
+      publishers: gameLookup.publishers,
+      releaseDate: gameLookup.releaseDate,
+      rating: gameLookup.rating,
+      description: gameLookup.description,
+      barcode: identifierValue,
+      format: gameLookup.format
+    } as GameEntity;
   }
 
   return {

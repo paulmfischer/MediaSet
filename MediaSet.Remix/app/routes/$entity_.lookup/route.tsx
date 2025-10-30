@@ -29,7 +29,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function LookupRoute() {
-  const data = useActionData<typeof action>();
+  // This route is book-only; relax typing to avoid union issues from generic lookup util
+  const data = useActionData<any>();
   const { entity } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -119,7 +120,7 @@ export default function LookupRoute() {
                 <dt className="text-gray-400 font-medium">Genres/Subjects</dt>
                 <dd className="text-gray-200">
                   <div className="flex flex-wrap gap-1">
-                    {data.genres.map((genre, index) => (
+                    {data.genres.map((genre: string, index: number) => (
                       <span
                         key={index}
                         className="inline-block bg-blue-800 text-blue-100 text-sm px-2 py-1 rounded"

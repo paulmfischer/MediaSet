@@ -39,6 +39,12 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
 - Auto-populates title, genres, studios, release date, rating, runtime, and plot
 - Inline lookup button in add/edit forms
 
+**Games:**
+- **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve game metadata
+- Two-stage lookup: UPCitemdb for product identification → GiantBomb for comprehensive game data
+- Auto-populates title, platform, genres, developers, publishers, release date, rating, description, and format
+- Inline lookup button in add/edit forms
+
 **Configuration:**
 - **UPCitemdb**: Free tier (100 requests/day) - no API key required
 - **TMDB**: Free API key required - [sign up here](https://www.themoviedb.org/signup)
@@ -51,6 +57,16 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
     }
     ```
 - **OpenLibrary**: No API key required (existing feature)
+- **GiantBomb**: Free API key required - request one at https://www.giantbomb.com/api/
+  - Add your GiantBomb settings to `appsettings.Development.json`:
+    ```json
+    "GiantBombConfiguration": {
+      "BaseUrl": "https://www.giantbomb.com/api/",
+      "ApiKey": "your-giantbomb-api-key-here",
+      "Timeout": 10
+    }
+    ```
+  - See detailed setup in [GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)
 
 ## Development
 

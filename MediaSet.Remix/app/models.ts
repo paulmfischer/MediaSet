@@ -106,6 +106,18 @@ export interface MovieLookupResponse {
   format?: string;
 }
 
+export interface GameLookupResponse {
+  title: string;
+  platform: string;
+  genres: string[];
+  developers: string[];
+  publishers: string[];
+  releaseDate: string;
+  rating: string;
+  description: string;
+  format?: string;
+}
+
 export interface LookupError {
   message: string;
   statusCode: number;
