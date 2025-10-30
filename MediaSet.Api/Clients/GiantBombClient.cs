@@ -141,17 +141,7 @@ public class GiantBombClient : IGiantBombClient
                 return null;
             }
 
-            // Sanitize HTML from description if present
-            var details = result.Results;
-            if (details != null && !string.IsNullOrWhiteSpace(details.Description))
-            {
-                details = details with
-                {
-                    Description = StripHtmlTags(details.Description)
-                };
-            }
-
-            return details;
+            return result.Results;
         }
         catch (HttpRequestException ex)
         {
@@ -163,24 +153,5 @@ public class GiantBombClient : IGiantBombClient
             _logger.LogError(ex, "Error getting GiantBomb game details from: {Path}", apiDetailUrlOrGuid);
             return null;
         }
-    }
-
-    private static string StripHtmlTags(string html)
-    {
-        if (string.IsNullOrWhiteSpace(html))
-        {
-            return string.Empty;
-        }
-
-        // Remove HTML tags
-        var text = System.Text.RegularExpressions.Regex.Replace(html, @"<[^>]+>", string.Empty);
-        
-        // Decode HTML entities
-        text = System.Web.HttpUtility.HtmlDecode(text);
-        
-        // Normalize whitespace (collapse multiple spaces/newlines)
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
-        
-        return text.Trim();
     }
 }

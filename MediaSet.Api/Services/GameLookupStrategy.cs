@@ -339,7 +339,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         }
 
         var releaseDate = details.OriginalReleaseDate ?? string.Empty;
-        var description = !string.IsNullOrWhiteSpace(details.Description) ? details.Description! : (details.Deck ?? string.Empty);
+        var description = details.Deck ?? string.Empty;
 
         var title = details.Name;
         if (!string.IsNullOrEmpty(edition))

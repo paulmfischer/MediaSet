@@ -238,8 +238,7 @@ public class GiantBombClientTests
         Assert.That(result.Publishers, Has.Count.EqualTo(1));
         Assert.That(result.Platforms, Has.Count.EqualTo(1));
         Assert.That(result.Platforms![0].Name, Is.EqualTo("Xbox Series X|S"));
-        Assert.That(result.Description, Does.Not.Contain("<p>"));
-        Assert.That(result.Description, Does.Contain("Master Chief returns"));
+        Assert.That(result.Deck, Is.EqualTo("Master Chief returns"));
     }
 
     [Test]
@@ -326,49 +325,6 @@ public class GiantBombClientTests
 
         Assert.ThrowsAsync<HttpRequestException>(async () =>
             await _client.GetGameDetailsAsync("3030-12345", CancellationToken.None));
-    }
-
-    [Test]
-    public async Task GetGameDetailsAsync_SanitizesHtmlInDescription()
-    {
-        var responseJson = JsonSerializer.Serialize(new
-        {
-            status_code = 1,
-            error = "OK",
-            results = new
-            {
-                name = "Test Game",
-                genres = new object[] { },
-                developers = new object[] { },
-                publishers = new object[] { },
-                platforms = new object[] { },
-                original_release_date = (string?)null,
-                description = "<p>This is a <strong>test</strong> with &nbsp; <em>HTML</em> tags.</p>",
-                deck = "Test description",
-                original_game_rating = new object[] { }
-            }
-        });
-
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(responseJson)
-            });
-
-        var result = await _client.GetGameDetailsAsync("test-game", CancellationToken.None);
-
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Description, Does.Not.Contain("<p>"));
-        Assert.That(result.Description, Does.Not.Contain("<strong>"));
-        Assert.That(result.Description, Does.Not.Contain("<em>"));
-        Assert.That(result.Description, Does.Not.Contain("&nbsp;"));
-        Assert.That(result.Description, Does.Contain("This is a test with HTML tags."));
     }
 
     #endregion
