@@ -1,31 +1,49 @@
-## MediaSet Library Management
+# MediaSet
 
-### Screenshots of application
-Home screen:
+A modern, full-stack personal media library management system for organizing your books, movies, and games collection. Built with .NET 9.0 and Remix.js, MediaSet provides an intuitive interface for cataloging, searching, and tracking your media items with automatic metadata lookup capabilities.
+
+## ✨ Key Features
+
+- **📚 Multi-Media Support**: Manage books, movies, and games in one unified application
+- **🔍 Smart Metadata Lookup**: Automatic metadata retrieval using ISBN, UPC/EAN barcodes
+- **📱 Responsive Design**: Mobile-friendly interface built with Tailwind CSS
+- **🚀 Modern Stack**: .NET 9.0 backend API with Remix.js frontend
+- **🐳 Containerized Development**: Full Docker/Podman support with hot-reload
+- **⚡ Performance Optimized**: In-memory caching for fast queries
+- **📊 Library Statistics**: Track collection size, authors, genres, and more
+
+## 📸 Screenshots
+
+### Home Dashboard
+View your complete library overview with statistics and recent additions.
 
 ![Home screen with library information](assets/screenshots/Home-page.png)
 
-Books home screen:
+### Entity List
+Browse and manage your media collection.
 
-![Books index list page](assets/screenshots/Books-index.png)
+![Entity list page](assets/screenshots/Entity-list.png)
 
-Books home screen filtered:
+### Filtered View
+Filter your collection to find specific items.
 
-![Books index list page filtered](assets/screenshots/Books-index-filter.png)
+![Entity list page filtered](assets/screenshots/Entity-list-filtered.png)
 
-Books home screen mobile friendly:
+### Detailed Item View
+View complete metadata, add notes, and track status.
 
-![Books index list mobile view](assets/screenshots/Books-index-mobile.png)
+![Entity detail page](assets/screenshots/Entity-detail.png)
 
-Books detail page:
+### Edit Items
+Update and manage item information with inline metadata lookup.
 
-![Books detail page](assets/screenshots/Books-detail.png)
+![Entity edit page](assets/screenshots/Entity-edit.png)
 
-## Features
+## 🔧 Core Features
 
-### 📚 Metadata Lookup
+### Metadata Lookup
 
-MediaSet includes built-in metadata lookup functionality to quickly populate item details:
+MediaSet includes built-in metadata lookup functionality to quickly populate item details using various APIs:
 
 **Books:**
 - **ISBN Lookup**: Search by ISBN to automatically retrieve book metadata from OpenLibrary
@@ -68,15 +86,23 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
     ```
   - See detailed setup in [GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)
 
-## Development
+## 🚀 Getting Started
 
-### 🐳 Containerized Development (Recommended)
+### Prerequisites
 
-**New developers don't need to install .NET, Node.js, or MongoDB!** Everything runs in containers with full hot-reload support. 
+**Option 1: Containerized Development (Recommended)**
+- Docker or Podman installed
+- No other dependencies needed!
 
-**Supports both Docker and Podman** - the setup script automatically detects your container runtime.
+**Option 2: Local Development**
+- .NET 9.0 SDK
+- Node.js 20+
+- MongoDB
 
-#### Quick Start
+### Quick Start with Containers
+
+New developers don't need to install .NET, Node.js, or MongoDB! Everything runs in containers with full hot-reload support. Both Docker and Podman are supported - the setup script automatically detects your container runtime.
+
 ```bash
 # Clone the repository
 git clone https://github.com/paulmfischer/MediaSet.git
@@ -91,25 +117,69 @@ cd MediaSet
 # MongoDB: mongodb://localhost:27017
 ```
 
-For complete setup instructions, debugging, and troubleshooting, see **[DEVELOPMENT.md](DEVELOPMENT.md)**.
+**For complete setup instructions, debugging, and troubleshooting, see [DEVELOPMENT.md](DEVELOPMENT.md).**
 
-### � Performance & Caching
-
-MediaSet implements in-memory caching for metadata queries and statistics to significantly improve performance. For details on caching strategy, configuration, and monitoring, see **[CACHING.md](CACHING.md)**.
-
-### �📖 Traditional Development
+### Traditional Local Development
 
 If you prefer to install dependencies locally:
 
-**Prerequisites:**
-- .NET 8.0 SDK
-- Node.js 20+
-- MongoDB
+1. **Start MongoDB locally**
+   ```bash
+   # Using Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:latest
+   ```
 
-**Setup:**
-1. Start MongoDB locally
-2. Start the API: Press `F5` in VS Code or `dotnet run` in `MediaSet.Api/`
-3. Start the frontend: `npm run dev` in `MediaSet.Remix/`
-4. Access: Frontend at http://localhost:3000, API at http://localhost:5000
+2. **Start the Backend API**
+   ```bash
+   cd MediaSet.Api
+   dotnet run
+   # API available at http://localhost:5000
+   ```
+
+3. **Start the Frontend**
+   ```bash
+   cd MediaSet.Remix
+   npm install
+   npm run dev
+   # Frontend available at http://localhost:3000
+   ```
+
+## 📚 Documentation
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete development environment setup and debugging
+- **[CACHING.md](CACHING.md)** - Performance optimization and caching strategy
+- **[TMDB_SETUP.md](TMDB_SETUP.md)** - The Movie Database API configuration
+- **[GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
+- **[CONTAINER_SETUP.md](CONTAINER_SETUP.md)** - Container orchestration details
+
+## 🛠️ Technology Stack
+
+**Backend:**
+- .NET 9.0 Web API
+- MongoDB database
+- RESTful API design
+
+**Frontend:**
+- Remix.js (React framework)
+- TypeScript
+- Tailwind CSS
+
+**External APIs:**
+- OpenLibrary (books metadata)
+- The Movie Database (TMDB)
+- GiantBomb (games metadata)
+- UPCitemdb (barcode lookup)
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow the project's code style guidelines:
+- Backend: [code-style-api.md](.github/code-style-api.md)
+- Frontend: [code-style-ui.md](.github/code-style-ui.md)
+
+**Important:** Always create a feature branch - never commit directly to `main`. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for complete workflow guidelines.
 
 
