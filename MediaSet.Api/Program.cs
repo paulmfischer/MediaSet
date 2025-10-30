@@ -84,6 +84,17 @@ if (tmdbConfig.Exists())
     builder.Services.AddHttpClient<ITmdbClient, TmdbClient>();
 }
 
+// Configure GiantBomb client
+var giantBombConfig = builder.Configuration.GetSection(nameof(GiantBombConfiguration));
+if (giantBombConfig.Exists())
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("GiantBomb configuration exists. Setting up GiantBomb services.");
+    builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
+    builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>();
+}
+
 // Register lookup strategies and factory
 if (openLibraryConfig.Exists() && upcItemDbConfig.Exists())
 {
@@ -92,6 +103,10 @@ if (openLibraryConfig.Exists() && upcItemDbConfig.Exists())
 if (upcItemDbConfig.Exists() && tmdbConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<MovieResponse>, MovieLookupStrategy>();
+}
+if (upcItemDbConfig.Exists() && giantBombConfig.Exists())
+{
+    builder.Services.AddScoped<ILookupStrategy<GameResponse>, GameLookupStrategy>();
 }
 if (openLibraryConfig.Exists() || tmdbConfig.Exists())
 {
@@ -192,7 +207,7 @@ app.MapEntity<Music>();
 app.MapMetadata();
 app.MapStats();
 
-if (openLibraryConfig.Exists() || tmdbConfig.Exists())
+if (openLibraryConfig.Exists() || tmdbConfig.Exists() || giantBombConfig.Exists())
 {
     app.MapLookup();
 }

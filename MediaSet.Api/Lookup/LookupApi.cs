@@ -15,7 +15,7 @@ internal static class LookupApi
 
         group.WithTags("Lookup");
 
-        group.MapGet("/{entityType}/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, Ok<MovieResponse>, NotFound, BadRequest<string>>> (
+        group.MapGet("/{entityType}/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, Ok<MovieResponse>, Ok<GameResponse>, NotFound, BadRequest<string>>> (
             LookupStrategyFactory strategyFactory,
             string entityType,
             string identifierType,
@@ -31,7 +31,7 @@ internal static class LookupApi
             if (!Enum.TryParse<MediaTypes>(entityType, true, out var parsedEntityType))
             {
                 logger.LogWarning("Invalid entity type {EntityType}", entityType);
-                return TypedResults.BadRequest($"Invalid entity type: {entityType}. Valid types are: Books, Movies");
+                return TypedResults.BadRequest($"Invalid entity type: {entityType}. Valid types are: Books, Movies, Games");
             }
 
             logger.LogInformation("Lookup request: {EntityType} with {IdentifierType} = {IdentifierValue}", 
@@ -45,6 +45,8 @@ internal static class LookupApi
                         .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
                     MediaTypes.Movies => await strategyFactory.GetStrategy<MovieResponse>(parsedEntityType, parsedIdentifierType)
                         .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
+                    MediaTypes.Games => await strategyFactory.GetStrategy<GameResponse>(parsedEntityType, parsedIdentifierType)
+                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
                     _ => null
                 };
 
@@ -54,6 +56,7 @@ internal static class LookupApi
                     {
                         BookResponse book => TypedResults.Ok(book),
                         MovieResponse movie => TypedResults.Ok(movie),
+                        GameResponse game => TypedResults.Ok(game),
                         _ => TypedResults.NotFound()
                     };
                 }

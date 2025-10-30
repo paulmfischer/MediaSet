@@ -34,6 +34,8 @@ services:
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
       - TmdbConfiguration__BearerToken=${TMDB_BEARER_TOKEN}
       - UpcItemDbConfiguration__ApiKey=${UPCITEMDB_API_KEY}
+      - GiantBombConfiguration__BaseUrl=${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}
+      - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app
       - ~/.nuget/packages:/home/app/.nuget/packages

@@ -1,5 +1,5 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity, getEntity, updateEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers } from "~/metadata-data";
@@ -42,6 +42,20 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entityId, "Missing entityId param");
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "lookup") {
+    const fieldName = formData.get("fieldName") as string;
+    const identifierValue = formData.get("identifierValue") as string;
+    if (!identifierValue) {
+      return { error: { lookup: "Identifier value is required" } };
+    }
+    const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+    const identifierType = getIdentifierTypeForField(entityType, fieldName);
+    const lookupResult = await lookup(entityType, identifierType, identifierValue);
+    return { lookupResult, identifierValue, fieldName };
+  }
+
   const entity = formToDto(formData);
   if (entity) {
     await updateEntity(params.entityId, entity);
@@ -53,21 +67,26 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
 export default function Edit() {
   const { entity, authors, genres, publishers, formats, entityType, studios, developers, labels } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.location?.pathname === `/${entity.type.toLowerCase()}/${entity.id}/edit`;
   const formId = `edit-${singular(entity.type)}`;
   const actionUrl = `/${entity.type.toLowerCase()}/${entity.id}/edit`;
+  const isLookupError = (r: any): r is { message: string; statusCode: number } => r && typeof r.message === 'string' && typeof r.statusCode === 'number';
+  const lookupResult = actionData && 'lookupResult' in actionData ? (actionData as any).lookupResult : undefined;
+  const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
+  const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   
   let formComponent;
   if (entity.type === Entity.Books) {
-    formComponent = <BookForm book={entity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm book={(lookupEntity as BookEntity) ?? (entity as BookEntity)} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entity.type === Entity.Movies) {
-    formComponent = <MovieForm movie={entity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm movie={(lookupEntity as MovieEntity) ?? (entity as MovieEntity)} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entity.type === Entity.Games) {
-    formComponent = <GameForm game={entity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <GameForm game={(lookupEntity as GameEntity) ?? (entity as GameEntity)} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
   } else if (entity.type === Entity.Musics) {
-    formComponent = <MusicForm music={entity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm music={(lookupEntity as MusicEntity) ?? (entity as MusicEntity)} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (
@@ -81,6 +100,11 @@ export default function Edit() {
         <div className="mt-4 flex flex-col gap-2">
           <Form id={formId} method="post" action={actionUrl}>
             <input id="type" name="type" type="hidden" value={entity.type} />
+            {lookupError && (
+              <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+                <p className="text-yellow-300">{lookupError}</p>
+              </div>
+            )}
             {formComponent}
             <div className="flex flex-row gap-2 mt-3">
               <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
