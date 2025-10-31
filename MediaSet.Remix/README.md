@@ -1,40 +1,238 @@
-# Welcome to Remix!
+# MediaSet.Remix
 
-- 📖 [Remix docs](https://remix.run/docs)
+Frontend UI for MediaSet, built with Remix.js and TypeScript.
+
+## Overview
+
+This is the frontend application for MediaSet's media library management system. Built with Remix.js, it provides a modern, responsive interface for managing your books, movies, and games collection.
+
+## Technologies
+
+- **Remix.js**: Full-stack React framework with server-side rendering
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first CSS framework
+- **Vite**: Fast build tool and dev server
 
 ## Development
 
-Run the dev server:
+### Prerequisites
 
-```shellscript
+- Node.js 20+
+- npm or yarn
+
+### Running Locally
+
+```bash
+# From the MediaSet.Remix directory
+
+# Install dependencies
+npm install
+
+# Start the dev server (with hot-reload)
 npm run dev
+
+# Frontend will be available at http://localhost:3000
+```
+
+### Using Docker (Recommended)
+
+**From the project root:**
+
+```bash
+# Start frontend only
+./dev.sh start frontend
+
+# Start everything (API + Frontend + MongoDB)
+./dev.sh start all
+```
+
+**Manual Docker commands (from MediaSet.Remix directory):**
+
+```bash
+# Build the Docker image
+docker build -t mediaset-remix .
+
+# Run the container
+docker run -it --rm -p 3000:3000 --name mediaset-remix \
+  -e "API_URL=http://localhost:5000" \
+  mediaset-remix
+```
+
+## Building
+
+### Development Build
+
+```bash
+npm run build
+```
+
+### Production Deployment
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+The build outputs are:
+- `build/server` - Server-side code
+- `build/client` - Client-side assets
+
+## Available Scripts
+
+- `npm run dev` - Start development server with hot-reload
+- `npm run build` - Build for production
+- `npm start` - Run production server
+- `npm run typecheck` - Run TypeScript type checking
+- `npm run lint` - Run ESLint
+- `npm test` - Run tests with Vitest
+
+## Project Structure
+
+```
+MediaSet.Remix/
+├── app/
+│   ├── routes/           # Remix route components
+│   │   ├── _index.tsx    # Home page
+│   │   ├── books.tsx     # Books routes
+│   │   ├── movies.tsx    # Movies routes
+│   │   └── games.tsx     # Games routes
+│   ├── components/       # Reusable UI components
+│   ├── models.ts         # TypeScript interfaces
+│   ├── entity-data.ts    # Data fetching functions
+│   ├── root.tsx          # Root component
+│   └── entry.*.tsx       # Entry points
+├── public/               # Static assets
+└── build/                # Build output (generated)
+```
+
+## Routing
+
+Remix uses file-based routing. Key routes:
+
+- `/` - Home dashboard
+- `/books` - Books collection
+- `/books/$id` - Book detail
+- `/books/$id/edit` - Edit book
+- `/movies` - Movies collection
+- `/games` - Games collection
+
+## Data Loading
+
+Use Remix loaders for server-side data fetching:
+
+```typescript
+export async function loader({ params }: LoaderFunctionArgs) {
+  const books = await getBooks();
+  return json({ books });
+}
+```
+
+## Forms and Mutations
+
+Use Remix actions for form submissions:
+
+```typescript
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const book = await createBook(formData);
+  return redirect(`/books/${book.id}`);
+}
+```
+
+## Styling
+
+This project uses **Tailwind CSS** for styling:
+
+- Utility-first approach
+- Responsive design built-in
+- Custom configuration in `tailwind.config.ts`
+- PostCSS setup in `postcss.config.js`
+
+Example:
+```tsx
+<div className="container mx-auto px-4 py-8">
+  <h1 className="text-3xl font-bold text-gray-900">Books</h1>
+</div>
+```
+
+## API Integration
+
+The frontend communicates with the MediaSet.Api backend:
+
+```typescript
+// In app/entity-data.ts
+const API_BASE_URL = process.env.API_URL || 'http://localhost:5000';
+
+export async function getBooks() {
+  const response = await fetch(`${API_BASE_URL}/books`);
+  return response.json();
+}
+```
+
+## Type Safety
+
+TypeScript interfaces are defined in `app/models.ts`:
+
+```typescript
+export interface Book {
+  id: string;
+  title: string;
+  authors: string[];
+  // ... other properties
+}
+```
+
+## Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+Tests use:
+- **Vitest**: Fast unit test runner
+- **React Testing Library**: Component testing
+
+## Code Style
+
+Follow the frontend code style guidelines in [../.github/code-style-ui.md](../.github/code-style-ui.md).
+
+Key conventions:
+- PascalCase for components
+- camelCase for functions and variables
+- TypeScript for all code
+- Functional components with hooks
+- Tailwind CSS for styling
+
+## Environment Variables
+
+Create a `.env` file in the MediaSet.Remix directory:
+
+```env
+API_URL=http://localhost:5000
 ```
 
 ## Deployment
 
-First, build your app for production:
+For deployment options, see the [Remix deployment documentation](https://remix.run/docs/en/main/guides/deployment).
 
-```sh
-npm run build
-```
+Popular options:
+- Vercel
+- Netlify
+- Fly.io
+- Docker container (production-ready Dockerfile included)
 
-Then run the app in production mode:
+## Resources
 
-```sh
-npm start
-```
-
-Now you'll need to pick a host to deploy it to.
-
-### DIY
-
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-- `build/server`
-- `build/client`
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
+- [Remix Documentation](https://remix.run/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Vite Documentation](https://vitejs.dev/guide/)
