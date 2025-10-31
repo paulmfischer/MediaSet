@@ -8,10 +8,10 @@ This project contains comprehensive tests for the MediaSet API, including unit t
 
 ## Technologies
 
-- **xUnit**: Test framework
+- **NUnit**: Test framework
 - **Moq**: Mocking library for dependencies
 - **Bogus**: Realistic fake data generation
-- **FluentAssertions**: Expressive assertions (if applicable)
+- **Microsoft.AspNetCore.Mvc.Testing**: Integration testing support
 
 ## Running Tests
 
@@ -70,7 +70,7 @@ MediaSet.Api.Tests/
 Follow the **AAA pattern** (Arrange, Act, Assert) and name tests descriptively:
 
 ```csharp
-[Fact]
+[Test]
 public void MethodName_Scenario_ExpectedResult()
 {
     // Arrange
@@ -80,7 +80,7 @@ public void MethodName_Scenario_ExpectedResult()
     var result = sut.Method();
     
     // Assert
-    Assert.Equal(expected, result);
+    Assert.That(result, Is.EqualTo(expected));
 }
 ```
 
@@ -96,18 +96,20 @@ Examples:
 Focus on testing individual components in isolation:
 
 ```csharp
+[TestFixture]
 public class BookServiceTests
 {
-    private readonly Mock<IMongoCollection<Book>> _mockCollection;
-    private readonly BookService _sut;
+    private Mock<IMongoCollection<Book>> _mockCollection;
+    private BookService _sut;
 
-    public BookServiceTests()
+    [SetUp]
+    public void SetUp()
     {
         _mockCollection = new Mock<IMongoCollection<Book>>();
         _sut = new BookService(_mockCollection.Object);
     }
 
-    [Fact]
+    [Test]
     public async Task GetBookById_ExistingId_ReturnsBook()
     {
         // Test implementation
@@ -120,19 +122,34 @@ public class BookServiceTests
 Test API endpoints with realistic scenarios:
 
 ```csharp
-public class BookApiTests : IClassFixture<WebApplicationFactory<Program>>
+[TestFixture]
+public class BookApiTests
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private WebApplicationFactory<Program> _factory;
+    private HttpClient _client;
 
-    public BookApiTests(WebApplicationFactory<Program> factory)
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
-        _factory = factory;
+        _factory = new WebApplicationFactory<Program>();
     }
 
-    [Fact]
+    [SetUp]
+    public void SetUp()
+    {
+        _client = _factory.CreateClient();
+    }
+
+    [Test]
     public async Task GetBooks_ReturnsSuccessStatusCode()
     {
         // Test implementation
+    }
+
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
+    {
+        _factory?.Dispose();
     }
 }
 ```

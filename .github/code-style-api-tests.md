@@ -2,6 +2,13 @@
 
 This document outlines the code style conventions for the MediaSet.Api.Tests project. **All test code changes must strictly adhere to these guidelines.**
 
+## Testing Framework
+
+This project uses **NUnit** as the testing framework along with:
+- **Moq** for mocking dependencies
+- **Bogus** for generating realistic test data
+- **Microsoft.AspNetCore.Mvc.Testing** for integration tests
+
 ## File Organization
 
 - Use file-scoped namespaces (e.g., `namespace MediaSet.Api.Tests.Services;`)
@@ -39,7 +46,7 @@ This document outlines the code style conventions for the MediaSet.Api.Tests pro
 All tests must follow the AAA pattern with clear sections:
 
 ```csharp
-[Fact]
+[Test]
 public async Task GetBookById_ExistingId_ReturnsBook()
 {
     // Arrange
@@ -52,25 +59,34 @@ public async Task GetBookById_ExistingId_ReturnsBook()
     var result = await sut.GetBookByIdAsync("123");
 
     // Assert
-    Assert.NotNull(result);
-    Assert.Equal(expectedBook.Id, result.Id);
-    Assert.Equal(expectedBook.Title, result.Title);
+    Assert.That(result, Is.Not.Null);
+    Assert.That(result.Id, Is.EqualTo(expectedBook.Id));
+    Assert.That(result.Title, Is.EqualTo(expectedBook.Title));
 }
 ```
 
 ### Test Class Structure
 ```csharp
+[TestFixture]
 public class BookServiceTests
 {
     // Private fields for commonly used mocks
-    private readonly Mock<IBookRepository> _mockRepository;
-    private readonly Mock<ILogger<BookService>> _mockLogger;
+    private Mock<IBookRepository> _mockRepository;
+    private Mock<ILogger<BookService>> _mockLogger;
     
-    // Constructor for test setup
-    public BookServiceTests()
+    // Setup method runs before each test
+    [SetUp]
+    public void SetUp()
     {
         _mockRepository = new Mock<IBookRepository>();
         _mockLogger = new Mock<ILogger<BookService>>();
+    }
+    
+    // Teardown method runs after each test (if cleanup needed)
+    [TearDown]
+    public void TearDown()
+    {
+        // Clean up resources if necessary
     }
     
     // Helper methods for creating test data
@@ -82,13 +98,13 @@ public class BookServiceTests
     };
     
     // Test methods grouped by functionality
-    [Fact]
+    [Test]
     public async Task GetBookById_ExistingId_ReturnsBook()
     {
         // Test implementation
     }
     
-    [Fact]
+    [Test]
     public async Task GetBookById_NonExistentId_ReturnsNull()
     {
         // Test implementation
@@ -96,19 +112,20 @@ public class BookServiceTests
 }
 ```
 
-## xUnit Attributes
+## NUnit Attributes
 
 ### Test Attributes
-- Use `[Fact]` for tests without parameters
-- Use `[Theory]` with `[InlineData]` for parameterized tests
-- Use `[Skip("Reason")]` for temporarily disabled tests (with clear reason)
+- Use `[Test]` for individual test methods
+- Use `[TestCase]` for parameterized tests with inline data
+- Use `[TestCaseSource]` for parameterized tests with complex data
+- Use `[Ignore("Reason")]` for temporarily disabled tests (with clear reason)
+- Use `[TestFixture]` to mark a class as containing tests
 
 ```csharp
-[Theory]
-[InlineData("978-0-123456-47-2", true)]
-[InlineData("invalid-isbn", false)]
-[InlineData("", false)]
-[InlineData(null, false)]
+[TestCase("978-0-123456-47-2", true)]
+[TestCase("invalid-isbn", false)]
+[TestCase("", false)]
+[TestCase(null, false)]
 public void IsValidIsbn_VariousInputs_ReturnsExpectedResult(string isbn, bool expected)
 {
     // Arrange
@@ -118,22 +135,39 @@ public void IsValidIsbn_VariousInputs_ReturnsExpectedResult(string isbn, bool ex
     var result = validator.IsValid(isbn);
 
     // Assert
-    Assert.Equal(expected, result);
+    Assert.That(result, Is.EqualTo(expected));
 }
 ```
 
-### Test Fixtures
-- Use `IClassFixture<T>` for shared setup across test classes
-- Use `ICollectionFixture<T>` for shared setup across multiple test classes
+### Test Fixtures and Setup
+- Use `[SetUp]` for code that runs before each test method
+- Use `[TearDown]` for code that runs after each test method
+- Use `[OneTimeSetUp]` for code that runs once before all tests in the fixture
+- Use `[OneTimeTearDown]` for code that runs once after all tests in the fixture
 
 ```csharp
-public class BookApiTests : IClassFixture<WebApplicationFactory<Program>>
+[TestFixture]
+public class BookApiTests
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private WebApplicationFactory<Program> _factory;
+    private HttpClient _client;
 
-    public BookApiTests(WebApplicationFactory<Program> factory)
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
-        _factory = factory;
+        _factory = new WebApplicationFactory<Program>();
+    }
+
+    [SetUp]
+    public void SetUp()
+    {
+        _client = _factory.CreateClient();
+    }
+
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
+    {
+        _factory?.Dispose();
     }
 }
 ```
@@ -206,25 +240,29 @@ var books = CreateBookFaker().Generate(10);
 
 ## Assertions
 
-### xUnit Assertions
+### NUnit Assertions
+- Use the constraint-based assertion model (`Assert.That`)
 - Use descriptive assertion messages when helpful
 - Test one logical concept per test method
-- Use specific assertions over generic ones
+- Use specific constraints over generic ones
 
 ```csharp
-// Good - specific assertions
-Assert.NotNull(result);
-Assert.Equal(expected, actual);
-Assert.True(condition);
-Assert.Contains(item, collection);
-Assert.Empty(collection);
+// Good - specific constraint-based assertions
+Assert.That(result, Is.Not.Null);
+Assert.That(actual, Is.EqualTo(expected));
+Assert.That(condition, Is.True);
+Assert.That(collection, Does.Contain(item));
+Assert.That(collection, Is.Empty);
+Assert.That(value, Is.GreaterThan(0));
+Assert.That(text, Does.StartWith("prefix"));
+Assert.That(exception, Is.InstanceOf<ArgumentException>());
 
 // Good - with message for clarity
-Assert.Equal(expectedCount, actualCount, "Book count should match after deletion");
+Assert.That(actualCount, Is.EqualTo(expectedCount), "Book count should match after deletion");
 
-// Avoid - too generic
-Assert.True(result != null);
-Assert.True(collection.Count == 0);
+// Avoid - too generic or old assertion style
+Assert.IsTrue(result != null); // Use Assert.That(result, Is.Not.Null) instead
+Assert.IsTrue(collection.Count == 0); // Use Assert.That(collection, Is.Empty) instead
 ```
 
 ### Async Assertions
@@ -233,7 +271,7 @@ Assert.True(collection.Count == 0);
 - Don't use `.Result` or `.Wait()`
 
 ```csharp
-[Fact]
+[Test]
 public async Task GetBooksAsync_ReturnsAllBooks()
 {
     // Arrange
@@ -245,7 +283,7 @@ public async Task GetBooksAsync_ReturnsAllBooks()
     var result = await sut.GetBooksAsync();
 
     // Assert
-    Assert.Equal(expectedBooks.Count, result.Count);
+    Assert.That(result.Count, Is.EqualTo(expectedBooks.Count));
 }
 ```
 
@@ -254,7 +292,7 @@ public async Task GetBooksAsync_ReturnsAllBooks()
 ### Happy Path Tests
 Test the expected successful behavior:
 ```csharp
-[Fact]
+[Test]
 public async Task CreateBook_WithValidData_ReturnsCreatedBook()
 {
     // Test successful creation
@@ -264,7 +302,7 @@ public async Task CreateBook_WithValidData_ReturnsCreatedBook()
 ### Error Path Tests
 Test error handling and edge cases:
 ```csharp
-[Fact]
+[Test]
 public async Task CreateBook_WithNullTitle_ThrowsArgumentException()
 {
     // Arrange
@@ -272,10 +310,10 @@ public async Task CreateBook_WithNullTitle_ThrowsArgumentException()
     var sut = new BookService(_mockRepository.Object);
 
     // Act & Assert
-    await Assert.ThrowsAsync<ArgumentException>(() => sut.CreateBookAsync(invalidBook));
+    Assert.ThrowsAsync<ArgumentException>(async () => await sut.CreateBookAsync(invalidBook));
 }
 
-[Fact]
+[Test]
 public async Task GetBookById_NonExistentId_ReturnsNull()
 {
     // Test not found scenario
@@ -285,10 +323,9 @@ public async Task GetBookById_NonExistentId_ReturnsNull()
 ### Boundary Tests
 Test edge cases and limits:
 ```csharp
-[Theory]
-[InlineData("")]
-[InlineData(null)]
-[InlineData("   ")]
+[TestCase("")]
+[TestCase(null)]
+[TestCase("   ")]
 public async Task SearchBooks_EmptyOrWhitespaceQuery_ReturnsAllBooks(string query)
 {
     // Test boundary conditions
@@ -299,16 +336,25 @@ public async Task SearchBooks_EmptyOrWhitespaceQuery_ReturnsAllBooks(string quer
 
 ### WebApplicationFactory Usage
 ```csharp
-public class BooksApiTests : IClassFixture<WebApplicationFactory<Program>>
+[TestFixture]
+public class BooksApiTests
 {
-    private readonly HttpClient _client;
+    private WebApplicationFactory<Program> _factory;
+    private HttpClient _client;
 
-    public BooksApiTests(WebApplicationFactory<Program> factory)
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
-        _client = factory.CreateClient();
+        _factory = new WebApplicationFactory<Program>();
     }
 
-    [Fact]
+    [SetUp]
+    public void SetUp()
+    {
+        _client = _factory.CreateClient();
+    }
+
+    [Test]
     public async Task GetBooks_ReturnsSuccessAndBooks()
     {
         // Arrange & Act
@@ -317,7 +363,13 @@ public class BooksApiTests : IClassFixture<WebApplicationFactory<Program>>
         // Assert
         response.EnsureSuccessStatusCode();
         var books = await response.Content.ReadFromJsonAsync<List<Book>>();
-        Assert.NotNull(books);
+        Assert.That(books, Is.Not.Null);
+    }
+
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
+    {
+        _factory?.Dispose();
     }
 }
 ```
@@ -346,13 +398,15 @@ public class BooksApiTests : IClassFixture<WebApplicationFactory<Program>>
 
 ### Mock HTTP Responses
 ```csharp
+[TestFixture]
 public class OpenLibraryClientTests
 {
-    private readonly Mock<HttpMessageHandler> _mockHandler;
-    private readonly HttpClient _httpClient;
-    private readonly OpenLibraryClient _sut;
+    private Mock<HttpMessageHandler> _mockHandler;
+    private HttpClient _httpClient;
+    private OpenLibraryClient _sut;
 
-    public OpenLibraryClientTests()
+    [SetUp]
+    public void SetUp()
     {
         _mockHandler = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_mockHandler.Object)
@@ -362,7 +416,7 @@ public class OpenLibraryClientTests
         _sut = new OpenLibraryClient(_httpClient);
     }
 
-    [Fact]
+    [Test]
     public async Task SearchByIsbn_ValidIsbn_ReturnsBookMetadata()
     {
         // Arrange
@@ -374,8 +428,8 @@ public class OpenLibraryClientTests
         var result = await _sut.SearchByIsbnAsync("1234567890");
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Test Book", result.Title);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Title, Is.EqualTo("Test Book"));
     }
 }
 ```
@@ -384,7 +438,7 @@ public class OpenLibraryClientTests
 
 ### Measure Execution Time
 ```csharp
-[Fact]
+[Test]
 public async Task GetBooks_WithCache_CompletesQuickly()
 {
     // Arrange
@@ -396,7 +450,7 @@ public async Task GetBooks_WithCache_CompletesQuickly()
     stopwatch.Stop();
 
     // Assert
-    Assert.True(stopwatch.ElapsedMilliseconds < 100, "Cached operation should be fast");
+    Assert.That(stopwatch.ElapsedMilliseconds, Is.LessThan(100), "Cached operation should be fast");
 }
 ```
 
