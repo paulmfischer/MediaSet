@@ -1,0 +1,95 @@
+using System.Text.Json;
+using Microsoft.Extensions.Options;
+using MediaSet.Api.Models;
+
+namespace MediaSet.Api.Clients;
+
+public class MusicBrainzClient : IMusicBrainzClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<MusicBrainzClient> _logger;
+    private readonly MusicBrainzConfiguration _configuration;
+    private static readonly SemaphoreSlim _rateLimiter = new(1, 1);
+    private static DateTime _lastRequestTime = DateTime.MinValue;
+
+    public MusicBrainzClient(
+        HttpClient httpClient,
+        IOptions<MusicBrainzConfiguration> configuration,
+        ILogger<MusicBrainzClient> logger)
+    {
+        _httpClient = httpClient;
+        _logger = logger;
+        _configuration = configuration.Value;
+
+        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
+        _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", _configuration.UserAgent);
+    }
+
+    public async Task<MusicBrainzRelease?> GetReleaseByBarcodeAsync(string barcode, CancellationToken cancellationToken)
+    {
+        await _rateLimiter.WaitAsync(cancellationToken);
+        try
+        {
+            // Ensure at least 1 second between requests
+            var timeSinceLastRequest = DateTime.UtcNow - _lastRequestTime;
+            if (timeSinceLastRequest < TimeSpan.FromSeconds(1))
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1) - timeSinceLastRequest, cancellationToken);
+            }
+
+            _logger.LogInformation("Looking up music release by barcode: {Barcode}", barcode);
+
+            var response = await _httpClient.GetAsync(
+                $"ws/2/release/?query=barcode:{barcode}&inc=artists+labels+recordings+genres&fmt=json",
+                cancellationToken);
+
+            _lastRequestTime = DateTime.UtcNow;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    _logger.LogWarning("MusicBrainz rate limit exceeded for barcode: {Barcode}", barcode);
+                    throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
+                }
+
+                _logger.LogWarning("MusicBrainz returned status code {StatusCode} for barcode: {Barcode}",
+                    response.StatusCode, barcode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            var result = JsonSerializer.Deserialize<MusicBrainzSearchResponse>(content,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (result?.Releases == null || result.Releases.Count == 0)
+            {
+                _logger.LogInformation("No releases found for barcode: {Barcode}", barcode);
+                return null;
+            }
+
+            // Get the first release (best match)
+            var release = result.Releases[0];
+
+            _logger.LogInformation("Successfully retrieved release for barcode: {Barcode}, Title: {Title}",
+                barcode, release.Title);
+
+            return release;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error while looking up release for barcode: {Barcode}", barcode);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error looking up release for barcode: {Barcode}", barcode);
+            return null;
+        }
+        finally
+        {
+            _rateLimiter.Release();
+        }
+    }
+}
