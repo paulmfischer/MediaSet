@@ -62,7 +62,7 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
 
         // Extract label
         var label = release.LabelInfo.Count > 0 && release.LabelInfo[0].Label != null
-            ? release.LabelInfo[0].Label.Name
+            ? release.LabelInfo[0].Label!.Name
             : string.Empty;
 
         // Calculate total duration and track count
