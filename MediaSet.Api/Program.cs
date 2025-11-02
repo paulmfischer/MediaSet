@@ -95,6 +95,17 @@ if (giantBombConfig.Exists())
     builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>();
 }
 
+// Configure MusicBrainz client
+var musicBrainzConfig = builder.Configuration.GetSection(nameof(MusicBrainzConfiguration));
+if (musicBrainzConfig.Exists())
+{
+    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+    bootstrapLogger.LogInformation("MusicBrainz configuration exists. Setting up MusicBrainz services.");
+    builder.Services.Configure<MusicBrainzConfiguration>(musicBrainzConfig);
+    builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>();
+}
+
 // Register lookup strategies and factory
 if (openLibraryConfig.Exists() && upcItemDbConfig.Exists())
 {
@@ -108,7 +119,11 @@ if (upcItemDbConfig.Exists() && giantBombConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<GameResponse>, GameLookupStrategy>();
 }
-if (openLibraryConfig.Exists() || tmdbConfig.Exists())
+if (musicBrainzConfig.Exists())
+{
+    builder.Services.AddScoped<ILookupStrategy<MusicResponse>, MusicLookupStrategy>();
+}
+if (openLibraryConfig.Exists() || tmdbConfig.Exists() || musicBrainzConfig.Exists())
 {
     builder.Services.AddScoped<LookupStrategyFactory>();
 }
