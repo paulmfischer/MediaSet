@@ -118,6 +118,19 @@ export interface GameLookupResponse {
   format?: string;
 }
 
+export interface MusicLookupResponse {
+  title: string;
+  artist: string;
+  releaseDate: string;
+  genres: string[];
+  duration: number | null;
+  label: string;
+  tracks: number | null;
+  discs: number | null;
+  discList: Disc[];
+  format?: string;
+}
+
 export interface LookupError {
   message: string;
   statusCode: number;
