@@ -1,11 +1,25 @@
 ---
-description: 'Create comprehensive implementation plans for new features with detailed technical specifications and step-by-step breakdown.'
+description: 'Create comprehensive implementation plans for new features with detailed technical specifications and step-by-step breakdown. Includes autonomous execution of git commands and implementation steps with minimal user intervention.'
 tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new', 'edit']
 ---
 
 # Feature Planning
 
-This chat mode provides a structured approach for planning new features in the MediaSet project. When activated, it creates detailed implementation plans in the `ImplementationDetails/` folder.
+This chat mode provides a structured approach for planning new features in the MediaSet project. When activated, it creates detailed implementation plans in the `ImplementationDetails/` folder and can autonomously execute the implementation with git operations.
+
+## Autonomous Execution Mode
+
+When using this mode, the assistant will:
+1. **Automatically create feature branches** using git commands
+2. **Execute implementation steps** from the plan autonomously
+3. **Make periodic commits** with appropriate commit messages
+4. **Check progress** and report status at each major step
+5. **Handle errors** and ask for guidance only when needed
+
+The user only needs to:
+- Provide the feature request or point to an implementation plan
+- Review progress updates at key milestones
+- Approve the final pull request
 
 ## Planning Workflow
 
@@ -196,7 +210,85 @@ When creating a feature plan:
 4. Once approved, the plan serves as a roadmap for implementation
 5. Commit the plan to a feature branch (following branch protection rules)
 
+### 5. Implementation and Commits
+
+When implementing the feature plan:
+
+1. **Check Current Branch**: First check which branch you're on
+   ```bash
+   git branch --show-current
+   ```
+
+2. **Create Feature Branch**: If not already on a feature branch, create one
+   ```bash
+   git checkout -b feature/[feature-name]
+   ```
+   - Use descriptive names: `feature/music-barcode-lookup`, `feature/advanced-filters`, etc.
+   - Branch from `main` or the current working branch as appropriate
+
+3. **Commit the Plan First**: Commit the implementation plan document as the first commit
+   ```bash
+   git add ImplementationDetails/FEATURE_NAME_IMPLEMENTATION.md
+   git commit -m "docs: add implementation plan for [feature name] [AI-assisted]"
+   ```
+
+4. **Autonomous Implementation**: Execute implementation steps from the plan
+   - The assistant will work through steps systematically
+   - Create files, modify code, run tests as specified
+   - Report progress at each major milestone
+   - Handle compilation errors and fix issues automatically where possible
+
+5. **Commit Periodically**: Make commits as you complete related changes or implementation steps
+   - Commit after completing each major step in the implementation plan
+   - Group related changes together (e.g., all model changes, all service changes)
+   - Each commit should represent a logical unit of work
+   
+6. **Follow Commit Message Conventions**:
+   - Use conventional commit format: `type(scope): description`
+   - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+   - Always include `[AI-assisted]` tag or co-author trailer
+   - Examples:
+     ```bash
+     git commit -m "feat(api): add barcode lookup models [AI-assisted]"
+     git commit -m "feat(api): implement barcode lookup service [AI-assisted]"
+     git commit -m "feat(api): add barcode lookup endpoints [AI-assisted]"
+     git commit -m "feat(ui): add barcode lookup components [AI-assisted]"
+     git commit -m "test(api): add barcode lookup service tests [AI-assisted]"
+     ```
+
+7. **Commit Frequency Guidelines**:
+   - After completing backend models and database changes
+   - After implementing each service or significant business logic
+   - After adding API endpoints
+   - After implementing frontend types/interfaces
+   - After creating/modifying UI components
+   - After adding tests for a component/service
+   - After updating documentation
+   - When switching between major tasks (backend → frontend)
+
+8. **Keep Commits Focused**: Each commit should be:
+   - Self-contained and buildable (when possible)
+   - Easy to review and understand
+   - Reversible if needed
+   - Descriptive of what changed and why
+
+9. **Progress Checkpoints**: The assistant will pause and report progress:
+   - After completing backend implementation
+   - After completing frontend implementation
+   - After adding tests
+   - Before final commit
+   - User can continue or provide feedback at these checkpoints
+
+10. **Push and PR**: Once implementation is complete
+    ```bash
+    git push origin feature/[feature-name]
+    ```
+    - Assistant will provide summary of changes
+    - User opens PR manually to review and merge
+
 ## Example Usage
+
+### Planning Only
 
 **User**: "Plan out a movie barcode generation feature"
 
@@ -210,6 +302,25 @@ When creating a feature plan:
    - Testing approach for image generation
    - Acceptance criteria and risks
 
+### Planning + Autonomous Execution
+
+**User**: "Implement the feature outlined in #file:MUSIC_BARCODE_LOOKUP_IMPLEMENTATION.md"
+
+**Response**:
+1. Check current branch with `git branch --show-current`
+2. Create feature branch: `git checkout -b feature/music-barcode-lookup`
+3. Begin implementing steps from the plan:
+   - Step 1: Create backend models → commit
+   - Step 2: Implement MusicBrainz client → commit
+   - Step 3: Implement MusicLookupStrategy → commit
+   - *[Progress update: Backend complete, moving to frontend]*
+   - Step 4: Update TypeScript models → commit
+   - Step 5: Update lookup data function → commit
+   - Step 6: Update MusicForm component → commit
+   - *[Progress update: Frontend complete, implementation finished]*
+4. Push branch: `git push origin feature/music-barcode-lookup`
+5. Provide summary and next steps for PR
+
 ## Benefits
 
 - **Structured Thinking**: Forces consideration of all aspects before coding
@@ -217,6 +328,9 @@ When creating a feature plan:
 - **Communication**: Makes it easy to discuss and review plans
 - **Risk Management**: Identifies potential issues early
 - **Scope Control**: Helps define clear boundaries for the feature
+- **Autonomous Execution**: Reduces manual work with automatic git operations and implementation
+- **Consistency**: Follows project conventions for commits, branches, and code style
+- **Progress Tracking**: Regular checkpoints keep user informed without requiring constant input
 
 ## When to Use
 
