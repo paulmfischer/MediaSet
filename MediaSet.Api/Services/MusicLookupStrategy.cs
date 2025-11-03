@@ -97,17 +97,13 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
                     discList.Add(new DiscResponse(
                         TrackNumber: trackNumber,
                         Title: track.Title,
-                        Duration: FormatDuration(trackDuration)
+                        Duration: trackDuration
                     ));
                 }
             }
         }
 
-        // Convert total duration from milliseconds to seconds
-        if (totalDuration.HasValue)
-        {
-            totalDuration = totalDuration.Value / 1000;
-        }
+        // Duration is already in milliseconds, no conversion needed
 
         // Extract format
         var format = release.Media.Count > 0
@@ -129,20 +125,6 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
             DiscList: discList,
             Format: format
         );
-    }
-
-    private static string FormatDuration(int? milliseconds)
-    {
-        if (!milliseconds.HasValue || milliseconds.Value <= 0)
-        {
-            return string.Empty;
-        }
-
-        var totalSeconds = milliseconds.Value / 1000;
-        var minutes = totalSeconds / 60;
-        var seconds = totalSeconds % 60;
-
-        return $"{minutes}:{seconds:D2}";
     }
 
     private static string CapitalizeGenre(string genre)

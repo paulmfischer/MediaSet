@@ -64,7 +64,7 @@ export type Game = Override<GameEntity, { developers: string; publishers: string
 export interface Disc {
   trackNumber: number;
   title: string;
-  duration: string;
+  duration: number | null;
 }
 
 // Backend model

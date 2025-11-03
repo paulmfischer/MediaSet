@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import { FormProps, MusicEntity, Disc } from "~/models";
+import { millisecondsToMinutesSeconds } from "~/helpers";
 
 type Metadata = {
   label: string;
@@ -46,14 +47,14 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
   };
 
   const addDisc = () => {
-    setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: "" }]);
+    setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: null }]);
   };
 
   const removeDisc = (index: number) => {
     setDiscList(discList.filter((_, i) => i !== index));
   };
 
-  const updateDisc = (index: number, field: keyof Disc, value: string | number) => {
+  const updateDisc = (index: number, field: keyof Disc, value: string | number | null) => {
     const newDiscList = [...discList];
     newDiscList[index] = { ...newDiscList[index], [field]: value };
     setDiscList(newDiscList);
@@ -92,8 +93,16 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
       </div>
 
       <div>
-        <label htmlFor="duration" className="block text-sm font-medium text-gray-200 mb-1">Duration (minutes)</label>
-        <input id="duration" name="duration" type="number" className={inputClasses} placeholder="Duration" aria-label="Duration" defaultValue={music?.duration} />
+        <label htmlFor="duration" className="block text-sm font-medium text-gray-200 mb-1">Duration (MM:SS)</label>
+        <input 
+          id="duration" 
+          name="duration" 
+          type="text" 
+          className={inputClasses} 
+          placeholder="MM:SS" 
+          aria-label="Duration" 
+          defaultValue={millisecondsToMinutesSeconds(music?.duration)} 
+        />
       </div>
 
       <div>
@@ -166,7 +175,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
                     type="text"
                     className={inputClasses}
                     placeholder="mm:ss"
-                    value={disc.duration}
+                    value={millisecondsToMinutesSeconds(disc.duration)}
                     onChange={(e) => updateDisc(index, 'duration', e.target.value)}
                   />
                 </div>
