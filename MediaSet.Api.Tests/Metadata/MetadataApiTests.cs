@@ -4,6 +4,8 @@ using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,6 +32,12 @@ public class MetadataApiNewTests
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UseEnvironment("Testing");
+                builder.ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                });
+                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing MetadataService registration
