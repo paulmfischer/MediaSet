@@ -29,7 +29,6 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
   }, [music]);
 
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
-  const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
 
   const handleLookup = () => {
     const barcodeInput = document.getElementById('barcode') as HTMLInputElement;

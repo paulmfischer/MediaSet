@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { X } from "lucide-react";
 import { Option } from "~/models";
 
 type SingleselectProps = {
@@ -134,8 +133,8 @@ export default function SingleselectInput(props: SingleselectProps) {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, displayOptions]);
 
-  // Determine what to display in the input
-  const displayValue = selected ? selected.label : filterText;
+  // Determine what to display in the input; when opening with a value, keep showing it until user types
+  const displayValue = filterText !== "" ? filterText : (selected?.label ?? "");
 
   return (
     <>
@@ -145,16 +144,16 @@ export default function SingleselectInput(props: SingleselectProps) {
         onClick={() => setDisplayOptions(false)}
       ></div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
         <div
           ref={containerRef}
-          className="flex items-center gap-2 z-20 bg-gray-800 border border-gray-600 px-3 py-2 rounded-md"
+          className="w-full flex items-center z-20 bg-gray-800 border border-gray-600 px-3 py-2 rounded-md text-white shadow-sm focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400"
           id={`single-select-input-${props.name}`}
         >
           <input
             type="text"
-            className="flex-1 outline-none bg-transparent text-white placeholder-gray-400"
-            value={displayOptions ? filterText : displayValue}
+            className="flex-1 min-w-0 outline-none bg-transparent text-white placeholder-gray-400 p-0"
+            value={displayValue}
             placeholder={props.placeholder}
             onFocus={() => setDisplayOptions(true)}
             onChange={(event) => setFilterText(event.target.value)}
@@ -170,16 +169,6 @@ export default function SingleselectInput(props: SingleselectProps) {
             }
             onKeyDown={handleKeyDown}
           />
-          {selected && (
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="text-gray-400 hover:text-white focus:outline-none"
-              aria-label="Clear selection"
-            >
-              <X size={16} />
-            </button>
-          )}
           <input type="hidden" name={props.name} value={selected?.value ?? ""} />
         </div>
 
@@ -207,7 +196,6 @@ export default function SingleselectInput(props: SingleselectProps) {
                 onMouseEnter={() => setActiveIndex(idx)}
                 onClick={() => {
                   selectOption(option);
-                  inputRef.current?.focus();
                 }}
                 className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${
                   activeFlag ? "bg-gray-600" : ""
