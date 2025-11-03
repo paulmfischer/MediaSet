@@ -9,6 +9,9 @@ RUN npm install
 
 COPY ./ .
 
+ARG APP_VERSION=0.0.0-local
+ENV VITE_APP_VERSION=${APP_VERSION}
+
 RUN npm run build
 ENV NODE_ENV=production
 
