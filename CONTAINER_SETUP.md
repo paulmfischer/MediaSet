@@ -57,9 +57,13 @@ docker --version && docker-compose --version
 sudo apt update
 sudo apt install podman
 
-# Install podman-compose
-pip3 install podman-compose
-# OR install docker-compose to use with Podman
+# Install podman-compose (using pipx for isolated environment)
+sudo apt install pipx
+pipx install podman-compose
+pipx ensurepath
+# Note: After pipx ensurepath, restart your shell or run: source ~/.bashrc
+
+# OR install docker-compose to use with Podman (alternative)
 sudo apt install docker-compose
 
 # Start Podman socket (for rootless usage)
@@ -75,9 +79,13 @@ podman --version
 # Install Podman (usually pre-installed on newer versions)
 sudo dnf install podman
 
-# Install podman-compose
-pip3 install podman-compose
-# OR install docker-compose to use with Podman
+# Install podman-compose (using pipx for isolated environment)
+sudo dnf install pipx
+pipx install podman-compose
+pipx ensurepath
+# Note: After pipx ensurepath, restart your shell or run: source ~/.bashrc
+
+# OR install docker-compose to use with Podman (alternative)
 sudo dnf install docker-compose
 
 # Start Podman socket (for rootless usage)
