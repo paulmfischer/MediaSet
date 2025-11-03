@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import { FormProps, MusicEntity, Disc } from "~/models";
@@ -18,6 +18,13 @@ type MusicFormProps = FormProps & {
 export default function MusicForm({ music, genres, formats, labels, isSubmitting }: MusicFormProps) {
   const submit = useSubmit();
   const [discList, setDiscList] = useState<Disc[]>(music?.discList ?? []);
+
+  // Update disc list when music data changes (e.g., after lookup)
+  useEffect(() => {
+    if (music?.discList) {
+      setDiscList(music.discList);
+    }
+  }, [music]);
 
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";

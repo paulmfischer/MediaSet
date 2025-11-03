@@ -35,11 +35,21 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         _logger.LogInformation("Looking up music with {IdentifierType}: {IdentifierValue}",
             identifierType, identifierValue);
 
-        var release = await _musicBrainzClient.GetReleaseByBarcodeAsync(identifierValue, cancellationToken);
+        // Step 1: Search by barcode to get the release ID
+        var searchRelease = await _musicBrainzClient.GetReleaseByBarcodeAsync(identifierValue, cancellationToken);
+
+        if (searchRelease == null)
+        {
+            _logger.LogWarning("No MusicBrainz release found for barcode: {Barcode}", identifierValue);
+            return null;
+        }
+
+        // Step 2: Fetch full release details including tracks
+        var release = await _musicBrainzClient.GetReleaseByIdAsync(searchRelease.Id, cancellationToken);
 
         if (release == null)
         {
-            _logger.LogWarning("No MusicBrainz release found for barcode: {Barcode}", identifierValue);
+            _logger.LogWarning("Failed to fetch full release details for ID: {ReleaseId}", searchRelease.Id);
             return null;
         }
 
