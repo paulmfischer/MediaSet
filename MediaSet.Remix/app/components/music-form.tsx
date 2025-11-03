@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
+import SingleselectInput from "~/components/singleselect-input";
 import { FormProps, MusicEntity, Disc } from "~/models";
 import { millisecondsToMinutesSeconds } from "~/helpers";
 
@@ -76,10 +77,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
 
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select key={music?.format ?? 'no-format'} id="format" name="format" className={selectClasses} defaultValue={music?.format}>
-          <option value="">Select Format...</option>
-          {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
-        </select>
+        <SingleselectInput name="format" placeholder="Select Format..." addLabel="Add new Format:" options={formats} selectedValue={music?.format} />
       </div>
 
       <div>
@@ -107,10 +105,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
 
       <div>
         <label htmlFor="label" className="block text-sm font-medium text-gray-200 mb-1">Label</label>
-        <select key={music?.label ?? 'no-label'} id="label" name="label" className={selectClasses} defaultValue={music?.label}>
-          <option value="">Select Label...</option>
-          {labels.map(label => <option key={label.value} value={label.value}>{label.label}</option>)}
-        </select>
+        <SingleselectInput name="label" placeholder="Select Label..." addLabel="Add new Label:" options={labels} selectedValue={music?.label} />
       </div>
 
       <div>

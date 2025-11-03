@@ -1,4 +1,5 @@
 import MultiselectInput from "~/components/multiselect-input";
+import SingleselectInput from "~/components/singleselect-input";
 import { useSubmit } from "@remix-run/react";
 import { FormProps, GameEntity } from "~/models";
 
@@ -47,10 +48,7 @@ export default function GameForm({ game, developers, publishers, genres, formats
       
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select key={game?.format ?? 'no-format'} id="format" name="format" className={selectClasses} defaultValue={game?.format}>
-          <option value="">Select Format...</option>
-          {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
-        </select>
+        <SingleselectInput name="format" placeholder="Select Format..." addLabel="Add new Format:" options={formats} selectedValue={game?.format} />
       </div>
       
       <div>
