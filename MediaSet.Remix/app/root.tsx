@@ -94,8 +94,9 @@ function ErrorHeader() {
   );
 }
 import PendingNavigation from "./components/pending-navigation";
+import Footer from "./components/footer";
 
-const year = new Date().getUTCFullYear();
+const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0-local';
 
 export default function App() {
   return (
@@ -114,9 +115,7 @@ export default function App() {
           <main id="main-content" className="h-full dark:bg-zinc-900 p-2 lg:py-4 lg:px-8 overflow-scroll">
             <Outlet />
           </main>
-          <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
-            Copyright {year} Paul Fischer
-          </footer>
+          <Footer version={appVersion} />
         </div>
         <ScrollRestoration />
         <Scripts />
@@ -153,9 +152,7 @@ export function ErrorBoundary() {
             {error.status} <br />
             {error.statusText} <br />
           </main>
-          <footer className="min-h-12 flex flex-row items-center px-4 dark:bg-zinc-700">
-            Copyright {year} Paul Fischer
-          </footer>
+          <Footer version={appVersion} />
         </div>
         <ScrollRestoration />
         <Scripts />

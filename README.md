@@ -162,6 +162,71 @@ If you prefer to install dependencies locally:
 - **[GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
 - **[CONTAINER_SETUP.md](CONTAINER_SETUP.md)** - Container orchestration details
 
+## 🔖 Versioning
+
+**Current Version:** See the [latest release](https://github.com/paulmfischer/MediaSet/releases/latest)
+
+MediaSet follows [Semantic Versioning](https://semver.org/) (SemVer):
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for new functionality in a backwards compatible manner
+- **PATCH** version for backwards compatible bug fixes
+
+### Pre-1.0 Development
+
+We are currently in pre-1.0 development (v0.x.x), which means:
+- The API may change without notice
+- Features are being actively developed and refined
+- Breaking changes may occur in minor versions
+- Production use is not recommended until v1.0.0
+
+### Version Information
+
+Version information is available in multiple places:
+- **API Health Endpoint**: `GET /health` returns version, commit SHA, and build time
+- **UI Footer**: Version is displayed in the footer of all pages
+- **GitHub Releases**: Full changelog and version history
+
+### Release Process
+
+Releases are automated using [Release Please](https://github.com/google-github-actions/release-please):
+1. Commits to `main` trigger version calculation based on [Conventional Commits](https://www.conventionalcommits.org/)
+2. A release PR is automatically opened/updated with the next version and changelog
+3. Merging the release PR creates a Git tag and GitHub Release
+
+### Conventional Commits
+
+All commits must follow the Conventional Commits specification:
+
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+- `feat`: New feature (triggers MINOR version bump)
+- `fix`: Bug fix (triggers PATCH version bump)
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring without feature changes
+- `chore`: Maintenance tasks, dependency updates
+- `style`: Code style changes (formatting, semicolons, etc.)
+- `perf`: Performance improvements
+- `ci`: CI/CD configuration changes
+- `build`: Build system changes
+
+**Breaking Changes:** Add `!` after type or include `BREAKING CHANGE:` in footer (triggers MAJOR version bump)
+
+**Examples:**
+```bash
+feat(api): add barcode lookup for movies
+fix(ui): correct form validation on book edit page
+docs: update README with versioning policy
+feat(api)!: change health endpoint response format
+```
+
 ## 🛠️ Technology Stack
 
 **Backend:**

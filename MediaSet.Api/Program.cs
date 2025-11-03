@@ -157,6 +157,7 @@ builder.Services.AddScoped<IEntityService<Game>, EntityService<Game>>();
 builder.Services.AddScoped<IEntityService<Music>, EntityService<Music>>();
 builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddSingleton<IVersionService, VersionService>();
 
 var app = builder.Build();
 

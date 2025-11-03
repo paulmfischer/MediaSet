@@ -15,7 +15,7 @@ internal static class HealthApi
 
         group.WithTags("Health");
 
-        group.MapGet("/", async (IDatabaseService databaseService, IOptions<MediaSetDatabaseSettings> settings, CancellationToken cancellationToken) =>
+        group.MapGet("/", async (IDatabaseService databaseService, IVersionService versionService, IOptions<MediaSetDatabaseSettings> settings, CancellationToken cancellationToken) =>
         {
             var dbName = settings.Value.DatabaseName ?? string.Empty;
             var dbStatus = "down";
@@ -40,6 +40,9 @@ internal static class HealthApi
             return Results.Ok(new
             {
                 status = overall,
+                version = versionService.GetVersion(),
+                commit = versionService.GetCommitSha(),
+                buildTime = versionService.GetBuildTime(),
                 timestamp = DateTime.UtcNow,
                 database = new
                 {
