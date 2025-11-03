@@ -26,7 +26,7 @@
   }
 
   button[class~="text-icon"] {
-    @apply dark:bg-white dark:hover:bg-gray-300 dark:text-slate-800 rounded-l-none
+    @apply px-3 py-2 bg-gray-800 hover:bg-gray-700 text-slate-300 border border-gray-600 rounded-l-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
   }
 
   button[class~="secondary"] {

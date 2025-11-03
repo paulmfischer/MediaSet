@@ -42,7 +42,7 @@ export default function Index() {
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
           <Link to={`/${entityName.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
           <Form id="search-form" role="search" className="flex gap-2">
-            <div className="flex gap-2 z-20 bg-gray-800 rounded-md">
+            <div className="flex gap-0 z-20">
               <input
                 id="search"
                 type="search"
@@ -50,10 +50,10 @@ export default function Index() {
                 placeholder={`Search ${entityName}`}
                 aria-label={`Search ${entityName}`}
                 name="searchText"
-                className="w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                className={`w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${searchText ? 'border-r-0 rounded-l-md rounded-r-none' : 'rounded-md'}`}
               />
               {searchText && 
-                <button className="text-icon"
+                <button className="text-icon rounded-r-md" aria-label="Clear search" title="Clear search"
                   onClick={() => {
                     const searchEl = document.getElementById('search') as HTMLInputElement;
                     if (searchEl) {
