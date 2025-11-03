@@ -22,11 +22,13 @@ public class LookupApiTests
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
     private Mock<IOpenLibraryClient> _openLibraryClientMock;
+    private Mock<IUpcItemDbClient> _upcItemDbClientMock;
 
     [SetUp]
     public void Setup()
     {
         _openLibraryClientMock = new Mock<IOpenLibraryClient>();
+        _upcItemDbClientMock = new Mock<IUpcItemDbClient>();
 
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -39,14 +41,30 @@ public class LookupApiTests
                 
                 builder.ConfigureServices(services =>
                 {
-                    // Remove existing OpenLibraryClient registration
-                    var clientDescriptor = services.SingleOrDefault(
+                    // Remove existing client registrations and replace with mocks
+                    var openLibraryDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IOpenLibraryClient));
-                    if (clientDescriptor != null)
-                        services.Remove(clientDescriptor);
+                    if (openLibraryDescriptor != null)
+                        services.Remove(openLibraryDescriptor);
 
-                    // Add mock client
+                    var upcItemDbDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(IUpcItemDbClient));
+                    if (upcItemDbDescriptor != null)
+                        services.Remove(upcItemDbDescriptor);
+
+                    // Add mock clients FIRST
                     services.AddScoped<IOpenLibraryClient>(_ => _openLibraryClientMock.Object);
+                    services.AddScoped<IUpcItemDbClient>(_ => _upcItemDbClientMock.Object);
+                    
+                    // Ensure the BookLookupStrategy is registered with our mocks
+                    // Remove existing strategy if it exists
+                    var strategyDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(MediaSet.Api.Services.ILookupStrategy<BookResponse>));
+                    if (strategyDescriptor != null)
+                        services.Remove(strategyDescriptor);
+                    
+                    // Re-register with our mocked clients
+                    services.AddScoped<MediaSet.Api.Services.ILookupStrategy<BookResponse>, MediaSet.Api.Services.BookLookupStrategy>();
                 });
             });
 
