@@ -64,7 +64,7 @@ export type Game = Override<GameEntity, { developers: string; publishers: string
 export interface Disc {
   trackNumber: number;
   title: string;
-  duration: string;
+  duration: number | null;
 }
 
 // Backend model
@@ -115,6 +115,19 @@ export interface GameLookupResponse {
   releaseDate: string;
   rating: string;
   description: string;
+  format?: string;
+}
+
+export interface MusicLookupResponse {
+  title: string;
+  artist: string;
+  releaseDate: string;
+  genres: string[];
+  duration: number | null;
+  label: string;
+  tracks: number | null;
+  discs: number | null;
+  discList: Disc[];
   format?: string;
 }
 

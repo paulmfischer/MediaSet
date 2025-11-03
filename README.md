@@ -4,7 +4,7 @@ A modern, full-stack personal media library management system for organizing you
 
 ## ✨ Key Features
 
-- **📚 Multi-Media Support**: Manage books, movies, and games in one unified application
+- **📚 Multi-Media Support**: Manage books, movies, games, and music in one unified application
 - **🔍 Smart Metadata Lookup**: Automatic metadata retrieval using ISBN, UPC/EAN barcodes
 - **📱 Responsive Design**: Mobile-friendly interface built with Tailwind CSS
 - **🚀 Modern Stack**: .NET 9.0 backend API with Remix.js frontend
@@ -63,6 +63,12 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
 - Auto-populates title, platform, genres, developers, publishers, release date, rating, description, and format
 - Inline lookup button in add/edit forms
 
+**Music:**
+- **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve music album metadata
+- Direct lookup via MusicBrainz API for comprehensive album information
+- Auto-populates title, artist, release date, genres, label, track count, track list with durations, and format
+- Inline lookup button in add/edit forms
+
 **Configuration:**
 - **UPCitemdb**: Free tier (100 requests/day) - no API key required
 - **TMDB**: Free API key required - [sign up here](https://www.themoviedb.org/signup)
@@ -85,6 +91,10 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
     }
     ```
   - See detailed setup in [GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)
+- **MusicBrainz**: No API key required (free and open)
+  - Requires descriptive User-Agent header (already configured)
+  - Respects 1 request per second rate limit
+  - See detailed setup in [MUSICBRAINZ_SETUP.md](MUSICBRAINZ_SETUP.md)
 
 ## 🚀 Getting Started
 

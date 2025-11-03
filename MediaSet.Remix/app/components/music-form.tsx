@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import { FormProps, MusicEntity, Disc } from "~/models";
+import { millisecondsToMinutesSeconds } from "~/helpers";
 
 type Metadata = {
   label: string;
@@ -15,20 +17,44 @@ type MusicFormProps = FormProps & {
 };
 
 export default function MusicForm({ music, genres, formats, labels, isSubmitting }: MusicFormProps) {
+  const submit = useSubmit();
   const [discList, setDiscList] = useState<Disc[]>(music?.discList ?? []);
+
+  // Update disc list when music data changes (e.g., after lookup)
+  useEffect(() => {
+    if (music?.discList) {
+      setDiscList(music.discList);
+    }
+  }, [music]);
 
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
 
+  const handleLookup = () => {
+    const barcodeInput = document.getElementById('barcode') as HTMLInputElement;
+    const barcodeValue = barcodeInput?.value;
+    
+    if (!barcodeValue) {
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'barcode');
+    formData.append('identifierValue', barcodeValue);
+    
+    submit(formData, { method: 'post' });
+  };
+
   const addDisc = () => {
-    setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: "" }]);
+    setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: null }]);
   };
 
   const removeDisc = (index: number) => {
     setDiscList(discList.filter((_, i) => i !== index));
   };
 
-  const updateDisc = (index: number, field: keyof Disc, value: string | number) => {
+  const updateDisc = (index: number, field: keyof Disc, value: string | number | null) => {
     const newDiscList = [...discList];
     newDiscList[index] = { ...newDiscList[index], [field]: value };
     setDiscList(newDiscList);
@@ -67,8 +93,16 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
       </div>
 
       <div>
-        <label htmlFor="duration" className="block text-sm font-medium text-gray-200 mb-1">Duration (minutes)</label>
-        <input id="duration" name="duration" type="number" className={inputClasses} placeholder="Duration" aria-label="Duration" defaultValue={music?.duration} />
+        <label htmlFor="duration" className="block text-sm font-medium text-gray-200 mb-1">Duration (MM:SS)</label>
+        <input 
+          id="duration" 
+          name="duration" 
+          type="text" 
+          className={inputClasses} 
+          placeholder="MM:SS" 
+          aria-label="Duration" 
+          defaultValue={millisecondsToMinutesSeconds(music?.duration)} 
+        />
       </div>
 
       <div>
@@ -81,7 +115,17 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
 
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
-        <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={music?.barcode} aria-label="Barcode" />
+        <div className="flex gap-2">
+          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={music?.barcode} aria-label="Barcode" />
+          <button
+            type="button"
+            onClick={handleLookup}
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 whitespace-nowrap"
+          >
+            Lookup
+          </button>
+        </div>
       </div>
 
       <div>
@@ -131,7 +175,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
                     type="text"
                     className={inputClasses}
                     placeholder="mm:ss"
-                    value={disc.duration}
+                    value={millisecondsToMinutesSeconds(disc.duration)}
                     onChange={(e) => updateDisc(index, 'duration', e.target.value)}
                   />
                 </div>

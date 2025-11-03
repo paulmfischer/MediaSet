@@ -29,6 +29,40 @@ function getValue(val: any): any | undefined {
   return val == '' ? undefined : val;
 }
 
+// Convert MM:SS format to milliseconds
+function durationToMilliseconds(duration: string): number | null {
+  if (!duration || duration.trim() === '') {
+    return null;
+  }
+  
+  const parts = duration.split(':');
+  if (parts.length !== 2) {
+    return null;
+  }
+  
+  const minutes = parseInt(parts[0], 10);
+  const seconds = parseInt(parts[1], 10);
+  
+  if (isNaN(minutes) || isNaN(seconds)) {
+    return null;
+  }
+  
+  return (minutes * 60 + seconds) * 1000;
+}
+
+// Convert milliseconds to MM:SS format
+export function millisecondsToMinutesSeconds(milliseconds: number | null | undefined): string {
+  if (!milliseconds || milliseconds <= 0) {
+    return '';
+  }
+  
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 function baseToBookEntity(data: BaseEntity): BookEntity {
   const book = data as Book;
   return {
@@ -106,11 +140,14 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
       discList.push({
         trackNumber: parseInt(trackNumber) || i + 1,
         title: title || '',
-        duration: duration || '',
+        duration: durationToMilliseconds(duration),
       });
     }
     i++;
   }
+  
+  // Convert overall duration from MM:SS to milliseconds
+  const durationMs = music.duration ? durationToMilliseconds(music.duration as any) : undefined;
   
   return {
     type: music.type,
@@ -120,7 +157,7 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     artist: getValue(music.artist),
     releaseDate: getValue(music.releaseDate),
     genres: music.genres ? music.genres.split(',') : undefined,
-    duration: getValue(music.duration),
+    duration: durationMs ?? undefined,
     label: getValue(music.label),
     barcode: getValue(music.barcode),
     tracks: getValue(music.tracks),

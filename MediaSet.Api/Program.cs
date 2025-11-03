@@ -13,6 +13,17 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Helper to conditionally log during bootstrap (skip in Testing environment)
+void BootstrapLog(string message)
+{
+    if (builder.Environment.EnvironmentName != "Testing")
+    {
+        using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
+        var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
+        bootstrapLogger.LogInformation(message);
+    }
+}
+
 // Configure console logging with scopes and timestamps
 builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(options =>
@@ -47,10 +58,7 @@ builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
-    // Log using a bootstrap logger since app isn't built yet
-    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
-    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
-    bootstrapLogger.LogInformation("OpenLibrary configuration exists. Setting up OpenLibrary services.");
+    BootstrapLog("OpenLibrary configuration exists. Setting up OpenLibrary services.");
     builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
     builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) =>
     {
@@ -66,9 +74,7 @@ if (openLibraryConfig.Exists())
 var upcItemDbConfig = builder.Configuration.GetSection(nameof(UpcItemDbConfiguration));
 if (upcItemDbConfig.Exists())
 {
-    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
-    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
-    bootstrapLogger.LogInformation("UpcItemDb configuration exists. Setting up UpcItemDb services.");
+    BootstrapLog("UpcItemDb configuration exists. Setting up UpcItemDb services.");
     builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
     builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>();
 }
@@ -77,9 +83,7 @@ if (upcItemDbConfig.Exists())
 var tmdbConfig = builder.Configuration.GetSection(nameof(TmdbConfiguration));
 if (tmdbConfig.Exists())
 {
-    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
-    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
-    bootstrapLogger.LogInformation("TMDB configuration exists. Setting up TMDB services.");
+    BootstrapLog("TMDB configuration exists. Setting up TMDB services.");
     builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
     builder.Services.AddHttpClient<ITmdbClient, TmdbClient>();
 }
@@ -88,11 +92,18 @@ if (tmdbConfig.Exists())
 var giantBombConfig = builder.Configuration.GetSection(nameof(GiantBombConfiguration));
 if (giantBombConfig.Exists())
 {
-    using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
-    var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
-    bootstrapLogger.LogInformation("GiantBomb configuration exists. Setting up GiantBomb services.");
+    BootstrapLog("GiantBomb configuration exists. Setting up GiantBomb services.");
     builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
     builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>();
+}
+
+// Configure MusicBrainz client
+var musicBrainzConfig = builder.Configuration.GetSection(nameof(MusicBrainzConfiguration));
+if (musicBrainzConfig.Exists())
+{
+    BootstrapLog("MusicBrainz configuration exists. Setting up MusicBrainz services.");
+    builder.Services.Configure<MusicBrainzConfiguration>(musicBrainzConfig);
+    builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>();
 }
 
 // Register lookup strategies and factory
@@ -108,7 +119,11 @@ if (upcItemDbConfig.Exists() && giantBombConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<GameResponse>, GameLookupStrategy>();
 }
-if (openLibraryConfig.Exists() || tmdbConfig.Exists())
+if (musicBrainzConfig.Exists())
+{
+    builder.Services.AddScoped<ILookupStrategy<MusicResponse>, MusicLookupStrategy>();
+}
+if (openLibraryConfig.Exists() || tmdbConfig.Exists() || musicBrainzConfig.Exists())
 {
     builder.Services.AddScoped<LookupStrategyFactory>();
 }

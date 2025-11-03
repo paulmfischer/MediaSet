@@ -4,11 +4,13 @@ import {
   BookEntity, 
   MovieEntity, 
   GameEntity,
+  MusicEntity,
   Entity, 
   IdentifierType, 
   BookLookupResponse,
   MovieLookupResponse,
   GameLookupResponse,
+  MusicLookupResponse,
   LookupError
 } from "./models";
 
@@ -37,7 +39,7 @@ export async function lookup(
   entityType: Entity, 
   identifierType: IdentifierType, 
   identifierValue: string
-): Promise<BookEntity | MovieEntity | GameEntity | LookupError> {
+): Promise<BookEntity | MovieEntity | GameEntity | MusicEntity | LookupError> {
   const response = await fetch(`${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`);
   
   if (response.status === 404) {
@@ -98,6 +100,22 @@ export async function lookup(
       barcode: identifierValue,
       format: gameLookup.format
     } as GameEntity;
+  } else if (entityType === Entity.Musics) {
+    const musicLookup = await response.json() as MusicLookupResponse;
+    return {
+      type: Entity.Musics,
+      title: musicLookup.title,
+      artist: musicLookup.artist,
+      releaseDate: musicLookup.releaseDate,
+      genres: musicLookup.genres,
+      duration: musicLookup.duration ?? undefined,
+      label: musicLookup.label,
+      tracks: musicLookup.tracks ?? undefined,
+      discs: musicLookup.discs ?? undefined,
+      discList: musicLookup.discList,
+      barcode: identifierValue,
+      format: musicLookup.format
+    } as MusicEntity;
   }
 
   return {

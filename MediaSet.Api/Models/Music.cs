@@ -63,5 +63,5 @@ public class Disc
 {
   public int TrackNumber { get; set; }
   public string Title { get; set; } = string.Empty;
-  public string Duration { get; set; } = string.Empty;
+  public int? Duration { get; set; }
 }

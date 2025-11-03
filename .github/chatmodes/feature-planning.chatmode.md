@@ -1,6 +1,6 @@
 ---
 description: 'Create comprehensive implementation plans for new features with detailed technical specifications and step-by-step breakdown. Includes autonomous execution of git commands and implementation steps with minimal user intervention.'
-tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new', 'edit']
+tools: ['codebase', 'search', 'searchResults', 'usages', 'fetch', 'githubRepo', 'problems', 'new', 'edit', 'runInTerminal']
 ---
 
 # Feature Planning
