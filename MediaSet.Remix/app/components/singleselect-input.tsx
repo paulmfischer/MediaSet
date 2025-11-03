@@ -1,27 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import Badge from "./badge";
-import { X } from "lucide-react";
 import { Option } from "~/models";
 
-type MultiselectProps = {
+type SingleselectProps = {
   name: string;
   addLabel: string;
-  selectText: string;
+  placeholder: string;
   options: Option[];
-  selectedValues?: string[];
+  selectedValue?: string;
 };
 
-function initializeSelected(selectedValues?: string[]): Option[] {
-  if (selectedValues?.length) {
-    return selectedValues.map(value => ({ label: value, value}))
+function initializeSelected(selectedValue?: string): Option | null {
+  if (selectedValue) {
+    return { label: selectedValue, value: selectedValue };
   }
-
-  return [];
+  return null;
 }
 
-export default function MultiselectInput(props: MultiselectProps) {
-  const [selected, setSelected] = useState<Option[]>(() => initializeSelected(props.selectedValues));
+export default function SingleselectInput(props: SingleselectProps) {
+  const [selected, setSelected] = useState<Option | null>(() => initializeSelected(props.selectedValue));
   const [filterText, setFilterText] = useState('');
   const [displayOptions, setDisplayOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -31,27 +28,24 @@ export default function MultiselectInput(props: MultiselectProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  // Re-sync selected when props.selectedValues changes (e.g., ISBN lookup)
+  // Re-sync selected when props.selectedValue changes (e.g., lookup)
   useEffect(() => {
-    setSelected(initializeSelected(props.selectedValues));
-  }, [props.selectedValues]);
+    setSelected(initializeSelected(props.selectedValue));
+  }, [props.selectedValue]);
 
-  // Fast membership check for selection
-  const selectedSet = useMemo(
-    () => new Set(selected.map((op) => op.value)),
-    [selected]
-  );
-  const isSelected = (option: Option) => selectedSet.has(option.value);
+  const selectOption = (option: Option) => {
+    const next: Option = option.isNew
+      ? { label: option.value, value: option.value }
+      : { label: option.label, value: option.value };
+    setSelected(next);
+    setDisplayOptions(false);
+    setFilterText('');
+  };
 
-  const toggleSelected = (option: Option) => {
-    if (isSelected(option)) {
-      setSelected((prev) => prev.filter((op) => op.value !== option.value));
-    } else {
-      const next: Option = option.isNew
-        ? { label: option.value, value: option.value }
-        : { label: option.label, value: option.value };
-      setSelected((prev) => [...prev, next]);
-    }
+  const clearSelection = () => {
+    setSelected(null);
+    setFilterText('');
+    inputRef.current?.focus();
   };
 
   // Derive filtered options instead of storing in state
@@ -116,15 +110,14 @@ export default function MultiselectInput(props: MultiselectProps) {
       e.preventDefault();
       const option = filteredOptions[activeIndex];
       if (option) {
-        toggleSelected(option);
-        // keep list open; focus stays on input
+        selectOption(option);
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
       setDisplayOptions(false);
-    } else if (e.key === "Backspace" && filterText === "" && selected.length > 0) {
-      // Remove last selected when input empty
-      setSelected((prev) => prev.slice(0, -1));
+    } else if (e.key === "Backspace" && filterText === "" && selected) {
+      // Clear selection when input is empty
+      clearSelection();
     }
   };
 
@@ -140,6 +133,9 @@ export default function MultiselectInput(props: MultiselectProps) {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, displayOptions]);
 
+  // Determine what to display in the input; when opening with a value, keep showing it until user types
+  const displayValue = filterText !== "" ? filterText : (selected?.label ?? "");
+
   return (
     <>
       {/* click-away overlay */}
@@ -148,26 +144,17 @@ export default function MultiselectInput(props: MultiselectProps) {
         onClick={() => setDisplayOptions(false)}
       ></div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
         <div
           ref={containerRef}
-          className="flex flex-wrap gap-2 z-20 bg-gray-800 border border-gray-600 p-2 rounded-md"
-          id={`multi-select-input-${props.name}`}
+          className="w-full flex items-center z-20 bg-gray-800 border border-gray-600 px-3 py-2 rounded-md text-white shadow-sm focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400"
+          id={`single-select-input-${props.name}`}
         >
-          {selected.map((sel) => (
-            <Badge key={sel.value.replaceAll(" ", "")}>
-              <div className="flex gap-2" onClick={() => toggleSelected(sel)}>
-                {sel.label}
-                <X size={16} />
-              </div>
-            </Badge>
-          ))}
-
           <input
             type="text"
-            className="flex-1 min-w-32 pl-1 p-0 outline-none bg-transparent text-white placeholder-gray-400"
-            value={filterText}
-            placeholder={props.selectText}
+            className="flex-1 min-w-0 outline-none bg-transparent text-white placeholder-gray-400 p-0"
+            value={displayValue}
+            placeholder={props.placeholder}
             onFocus={() => setDisplayOptions(true)}
             onChange={(event) => setFilterText(event.target.value)}
             ref={inputRef}
@@ -182,7 +169,7 @@ export default function MultiselectInput(props: MultiselectProps) {
             }
             onKeyDown={handleKeyDown}
           />
-          <input type="hidden" name={props.name} value={selected.map((op) => op.value).join(",")} />
+          <input type="hidden" name={props.name} value={selected?.value ?? ""} />
         </div>
 
         <div
@@ -198,7 +185,6 @@ export default function MultiselectInput(props: MultiselectProps) {
           id={`${props.name}-listbox`}
         >
           {filteredOptions.map((option, idx) => {
-            const selectedFlag = isSelected(option);
             const activeFlag = idx === activeIndex;
             return (
               <div
@@ -206,16 +192,14 @@ export default function MultiselectInput(props: MultiselectProps) {
                 id={`${props.name}-option-${idx}`}
                 ref={(el) => (optionRefs.current[idx] = el)}
                 role="option"
-                aria-selected={selectedFlag}
+                aria-selected={activeFlag}
                 onMouseEnter={() => setActiveIndex(idx)}
                 onClick={() => {
-                  toggleSelected(option);
-                  // Keep menu open for multiple selections; refocus input for continued typing
-                  inputRef.current?.focus();
+                  selectOption(option);
                 }}
                 className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${
-                  selectedFlag ? "bg-gray-600" : ""
-                } ${activeFlag ? "bg-gray-600" : ""}`}
+                  activeFlag ? "bg-gray-600" : ""
+                }`}
               >
                 {option.label}
               </div>

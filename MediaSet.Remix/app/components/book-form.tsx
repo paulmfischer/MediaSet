@@ -1,5 +1,6 @@
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
+import SingleselectInput from "~/components/singleselect-input";
 import { BookEntity, FormProps } from "~/models";
 
 type Metadata = {
@@ -17,7 +18,6 @@ type BookFormProps = FormProps & {
 export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
   const submit = useSubmit();
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
-  const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
 
   const handleLookup = () => {
@@ -52,10 +52,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select key={book?.format ?? 'no-format'} id="format" name="format" className={selectClasses} defaultValue={book?.format}>
-          <option value="">Select Format...</option>
-          {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
-        </select>
+        <SingleselectInput name="format" placeholder="Select Format..." addLabel="Add new Format:" options={formats} selectedValue={book?.format} />
       </div>
       
       <div>
@@ -80,19 +77,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
 
       <div>
         <label htmlFor="publisher" className="block text-sm font-medium text-gray-200 mb-1">Publisher</label>
-        <select key={book?.publisher ?? ''} id="publisher" name="publisher" className={selectClasses} defaultValue={book?.publisher}>
-          <option value="">Select Publisher...</option>
-          {(() => {
-            const allPublishers = [...publishers];
-            // Add the book's publisher if it's not in the existing list
-            if (book?.publisher && !publishers.find(p => p.value === book.publisher)) {
-              allPublishers.push({ value: book.publisher, label: book.publisher });
-            }
-            return allPublishers.map(publisher => (
-              <option key={publisher.value} value={publisher.value}>{publisher.label}</option>
-            ));
-          })()}
-        </select>
+        <SingleselectInput name="publisher" placeholder="Select Publisher..." addLabel="Add new Publisher:" options={publishers} selectedValue={book?.publisher} />
       </div>
       
       <div>

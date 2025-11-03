@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { addEntity } from "~/entity-data";
 import Spinner from "~/components/spinner";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers } from "~/metadata-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
 import BookForm from "~/components/book-form";
@@ -27,16 +27,17 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  const [genres, formats, authors, publishers, studios, developers, labels] = await Promise.all([
+  const [genres, formats, authors, publishers, studios, developers, labels, platforms] = await Promise.all([
     getGenres(entityType),
     getFormats(entityType),
     entityType === Entity.Books ? getAuthors() : Promise.resolve([]),
     entityType === Entity.Books ? getPublishers() : entityType === Entity.Games ? getGamePublishers() : Promise.resolve([]),
     entityType === Entity.Movies ? getStudios() : Promise.resolve([]),
     entityType === Entity.Games ? getDevelopers() : Promise.resolve([]),
-    entityType === Entity.Musics ? getLabels() : Promise.resolve([])
+    entityType === Entity.Musics ? getLabels() : Promise.resolve([]),
+    entityType === Entity.Games ? getPlatforms() : Promise.resolve([])
   ]);
-  return { authors, genres, publishers, formats, entityType, studios, developers, labels };
+  return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -71,7 +72,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityType, studios, developers, labels } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
@@ -92,7 +93,7 @@ export default function Add() {
   } else if (entityType === Entity.Movies) {
     formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Musics) {
     formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }

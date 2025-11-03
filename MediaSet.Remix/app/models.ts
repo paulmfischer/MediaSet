@@ -4,6 +4,12 @@ export type FormProps = {
   isSubmitting?: boolean;
 };
 
+export type Option = {
+  label: string;
+  value: string;
+  isNew?: boolean | undefined;
+};
+
 export enum Entity {
   Books = "Books",
   Movies = "Movies",

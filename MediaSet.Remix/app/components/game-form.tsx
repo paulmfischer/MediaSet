@@ -1,4 +1,5 @@
 import MultiselectInput from "~/components/multiselect-input";
+import SingleselectInput from "~/components/singleselect-input";
 import { useSubmit } from "@remix-run/react";
 import { FormProps, GameEntity } from "~/models";
 
@@ -12,12 +13,12 @@ type GameFormProps = FormProps & {
   publishers: Metadata[];
   genres: Metadata[];
   formats: Metadata[];
+  platforms: Metadata[];
 };
 
-export default function GameForm({ game, developers, publishers, genres, formats, isSubmitting }: GameFormProps) {
+export default function GameForm({ game, developers, publishers, genres, formats, platforms, isSubmitting }: GameFormProps) {
   const submit = useSubmit();
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
-  const selectClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
 
   const handleLookup = () => {
@@ -42,15 +43,12 @@ export default function GameForm({ game, developers, publishers, genres, formats
       
       <div>
         <label htmlFor="platform" className="block text-sm font-medium text-gray-200 mb-1">Platform</label>
-        <input id="platform" name="platform" type="text" className={inputClasses} placeholder="Platform" aria-label="Platform" defaultValue={game?.platform} />
+        <SingleselectInput name="platform" placeholder="Select Platform..." addLabel="Add new Platform:" options={platforms} selectedValue={game?.platform} />
       </div>
       
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
-        <select key={game?.format ?? 'no-format'} id="format" name="format" className={selectClasses} defaultValue={game?.format}>
-          <option value="">Select Format...</option>
-          {formats.map(format => <option key={format.value} value={format.value}>{format.label}</option>)}
-        </select>
+        <SingleselectInput name="format" placeholder="Select Format..." addLabel="Add new Format:" options={formats} selectedValue={game?.format} />
       </div>
       
       <div>
