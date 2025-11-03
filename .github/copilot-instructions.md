@@ -40,6 +40,18 @@ This file provides context and instructions for GitHub Copilot to better underst
 - OR add `[AI-assisted]` tag to commit subject line
 - Example: `feat: add book filtering [AI-assisted]` or include co-author trailer
 
+### 4. Conventional Commits
+**ALL commits MUST follow the Conventional Commits specification:**
+- Use the format: `type(scope): description`
+- Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `style`, `perf`, `ci`, `build`
+- Scope is optional but recommended (e.g., `api`, `ui`, `db`)
+- Examples:
+  - `feat(api): add barcode lookup for movies [AI-assisted]`
+  - `fix(ui): correct form validation on book edit page`
+  - `docs: update README with versioning policy`
+  - `test(api): add tests for health endpoint version field`
+  - `chore: update dependencies`
+
 ## Project Overview
 
 MediaSet is a full-stack application for managing personal media collections (books and movies). The application consists of:
@@ -233,21 +245,37 @@ git checkout -b chore/your-maintenance-task
 ```
 
 ### Making Commits
-All commits involving AI assistance must be attributed:
+All commits involving AI assistance must be attributed and follow Conventional Commits:
 
-**Option 1: Add co-author trailer**
+**Format: `type(scope): description [AI-assisted]`**
+
+**Option 1: Add tag in subject line**
 ```bash
-git commit -m "feat: add new feature
+git commit -m "feat(api): add new feature [AI-assisted]"
+```
+
+**Option 2: Add co-author trailer**
+```bash
+git commit -m "feat(api): add new feature
 
 Some description of the changes.
 
 Co-authored-by: GitHub Copilot <copilot@github.com>"
 ```
 
-**Option 2: Add tag in subject line**
-```bash
-git commit -m "feat: add new feature [AI-assisted]"
-```
+**Conventional Commit Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring without feature changes
+- `chore`: Maintenance tasks, dependency updates
+- `style`: Code style changes (formatting, missing semicolons, etc.)
+- `perf`: Performance improvements
+- `ci`: CI/CD configuration changes
+- `build`: Build system changes
+
+**Scope examples:** `api`, `ui`, `db`, `workflows`, `deps`
 
 ### Opening a Pull Request
 1. Push your branch: `git push origin feature/your-feature-name`
