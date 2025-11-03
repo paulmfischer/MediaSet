@@ -53,12 +53,11 @@ export default function Index() {
                 className={`w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${searchText ? 'border-r-0 rounded-l-md rounded-r-none' : 'rounded-md'}`}
               />
               {searchText && 
-                <button className="text-icon rounded-r-md" aria-label="Clear search" title="Clear search"
+                <button type="submit" className="text-icon rounded-r-md" aria-label="Clear search" title="Clear search"
                   onClick={() => {
                     const searchEl = document.getElementById('search') as HTMLInputElement;
                     if (searchEl) {
                       searchEl.value = '';
-                      submit(searchEl);
                     }
                   }}
                 >
