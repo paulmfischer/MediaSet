@@ -34,6 +34,10 @@ export async function getDevelopers() {
   return getMetadata(Entity.Games, "developers");
 }
 
+export async function getPlatforms() {
+  return getMetadata(Entity.Games, "platform");
+}
+
 export async function getLabels() {
   return getMetadata(Entity.Musics, "label");
 }
