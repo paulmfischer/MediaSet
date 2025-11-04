@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README.md
+LICENSE
+CHANGELOG.md
+
+# CI/CD
+.github
+
+# Development files
+.vscode
+.idea
+*.suo
+*.user
+*.userosstate
+*.sln.docstates
+
+# Build output
+**/bin/
+**/obj/
+**/out/
+**/build/
+**/dist/
+
+# Data and databases
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Test files
+**/test-results/
+**/.coverage/
+coverage/
+
+# Docker files (don't copy other docker files)
+**/Dockerfile
+**/Dockerfile.*
+**/.dockerignore
+**/docker-compose*.yml
+
+# IDE settings
+**/.vscode/
+**/.idea/
+
+# Assets that aren't needed in containers
+assets/
+ImplementationDetails/
