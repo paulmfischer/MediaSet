@@ -1,30 +1,43 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
-WORKDIR /build
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
 
-# Disable .NET diagnostics to prevent socket creation issues in containers
-ENV DOTNET_EnableDiagnostics=0
+# Copy global.json and solution file
+COPY global.json ./
+COPY MediaSet.sln ./
 
-# For use when deploying to a location
-RUN git clone https://github.com/paulmfischer/MediaSet.git
-WORKDIR /build/MediaSet
+# Copy project file and restore dependencies
+COPY MediaSet.Api/MediaSet.Api.csproj ./MediaSet.Api/
+RUN dotnet restore MediaSet.Api/MediaSet.Api.csproj
 
-# Remove the global.json from the cloned repo to avoid version conflicts
-RUN rm -f global.json
+# Copy source code
+COPY MediaSet.Api/ ./MediaSet.Api/
 
-# Copy everything
-COPY . ./MediaSet.Api/
+# Build and publish
+WORKDIR /src/MediaSet.Api
+RUN dotnet publish -c Release -o /app/publish --no-restore
 
-WORKDIR /build/MediaSet/MediaSet.Api
-# Restore as distinct layers
-RUN dotnet restore
-# Build and publish a release
-RUN dotnet publish -c Release -o out
-# Clean up any diagnostic sockets or temp files that might cause issues
-RUN find /tmp -name "dotnet-diagnostic-*" -type s -delete 2>/dev/null || true
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
 
-# Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /mediaset
-# Copy the published output
-COPY --from=build-env /build/MediaSet/MediaSet.Api/out .
+# Create non-root user for security
+RUN groupadd -r mediaset && useradd -r -g mediaset mediaset
+
+# Copy published output
+COPY --from=build /app/publish .
+
+# Set ownership
+RUN chown -R mediaset:mediaset /app
+
+# Switch to non-root user
+USER mediaset
+
+# Expose port
+EXPOSE 8080
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
 ENTRYPOINT ["dotnet", "MediaSet.Api.dll"]

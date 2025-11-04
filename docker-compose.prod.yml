@@ -1,0 +1,31 @@
+services:
+  api:
+    image: ghcr.io/paulmfischer/mediaset-api:latest
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Mongo__ConnectionString=mongodb://mongo:27017
+      - Mongo__Database=mediaset
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  ui:
+    image: ghcr.io/paulmfischer/mediaset-ui:latest
+    environment:
+      - API_BASE_URL=http://api:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mongo:
+    image: docker.io/library/mongo:7
+    volumes:
+      - ./data/mongodb:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
