@@ -12,7 +12,6 @@ This document describes how MediaSet will build, version, and publish production
   - Support SemVer releases (starting at v0.x, aiming for 1.0).
   - Always include a commit SHA tag for traceability.
   - Provide a rolling tag for the default branch (edge/nightly).
-- Support multi-architecture builds (linux/amd64 and linux/arm64).
 - Keep CI fast and reproducible using BuildKit cache.
 
 ## Registries and Repositories
@@ -23,10 +22,6 @@ Primary: GitHub Container Registry (GHCR) — works with Docker and Podman
 - Repositories (auto-created on first push):
   - `ghcr.io/<github_owner>/mediaset-api`
   - `ghcr.io/<github_owner>/mediaset-ui` (or `mediaset-remix`; choose one and keep consistent)
-
-Optional future mirrors:
-- Docker Hub: `docker.io/<org>/mediaset-api` and `mediaset-ui`
-- Quay: `quay.io/<org>/mediaset-api` and `mediaset-ui`
 
 ## Versioning & Tagging Strategy
 
@@ -51,7 +46,7 @@ Notes
 
 ## Build Targets
 
-- Platforms: `linux/amd64`, `linux/arm64` using Buildx/QEMU.
+- Platform: `linux/amd64` only (multi-arch support may be added in the future)
 - OCI labels: Provide provenance metadata (title, description, version, revision, source, authors, url, created) via `docker/metadata-action`.
 - Image names (examples):
   - API: `ghcr.io/<github_owner>/mediaset-api`
@@ -107,9 +102,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -137,7 +129,7 @@ jobs:
         with:
           context: .
           file: MediaSet.Api/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -157,6 +149,7 @@ jobs:
 Notes
 - The `docker/metadata-action` will emit the `vX.Y.Z` tag automatically on tag events, `edge` on `main`, and a `sha-<short>` tag.
 - The imagetools step adds `X.Y`, `X`, and `latest` pointers when a `v*` tag is pushed.
+- Only `linux/amd64` platform is supported initially.
 
 ## GitHub Actions — UI Workflow (example)
 
@@ -187,9 +180,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -217,7 +207,7 @@ jobs:
         with:
           context: MediaSet.Remix
           file: MediaSet.Remix/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -285,20 +275,20 @@ services:
 ## Acceptance Criteria
 
 - CI builds both API and UI Docker images on PR (no push), on merges to main (push `edge` + `sha-*`), and on version tags (push SemVer + `latest` + `sha-*`).
-- Images are multi-arch (amd64 + arm64).
+- Images are built for `linux/amd64` platform.
 - Images carry useful OCI labels (version, source, revision, etc.).
 - Public documentation shows how to pull and run the images.
 
 ## Risks & Mitigations
 
-- Build time for multi-arch: use Buildx cache; consider limiting platforms if needed initially.
 - Registry rate limits or auth issues: use a bot account/token; set retries on push.
 - Tag drift: tags are generated from Git refs to avoid manual inconsistencies.
-- Dockerfile mismatches: if runtime images aren’t minimal/secure, tighten base images and scan (Trivy) in a follow-up.
+- Dockerfile mismatches: if runtime images aren't minimal/secure, tighten base images and scan (Trivy) in a follow-up.
 
 ## Future Enhancements
 
-- Mirror to GHCR or Quay.
+- Multi-architecture support (linux/arm64).
+- Mirror to Docker Hub or Quay.
 - SBOM and image signing (cosign/Provenance/SLSA).
 - Automated versioning with Conventional Commits (release-please/semantic-release).
 - Registry retention policy and cleanup of `edge` history.
