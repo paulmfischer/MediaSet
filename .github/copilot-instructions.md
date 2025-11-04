@@ -34,23 +34,28 @@ This file provides context and instructions for GitHub Copilot to better underst
 - Backend API: See [code-style-api.md](code-style-api.md)
 - Frontend UI: See [code-style-ui.md](code-style-ui.md)
 
-### 3. Commit Message Attribution
+
+### 3. Commit Message Attribution & Issue Reference
 **ALL commits that involve AI assistance or code generation MUST be attributed:**
 - Include `Co-authored-by: GitHub Copilot <copilot@github.com>` in commit message
 - OR add `[AI-assisted]` tag to commit subject line
-- Example: `feat: add book filtering [AI-assisted]` or include co-author trailer
+- **If your commit addresses a GitHub issue or task, you MUST reference the issue number and action in the commit message.**
+   - Use keywords like `closes #228`, `fixes #123`, or `refs #456` as appropriate.
+- Example: `feat: add book filtering [AI-assisted] closes #228` or include co-author trailer and issue reference in the body.
+
 
 ### 4. Conventional Commits
 **ALL commits MUST follow the Conventional Commits specification:**
 - Use the format: `type(scope): description`
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `style`, `perf`, `ci`, `build`
 - Scope is optional but recommended (e.g., `api`, `ui`, `db`)
+- **If your commit is related to a GitHub issue, include the issue number and action (e.g., `closes #228`) in the commit message.**
 - Examples:
-  - `feat(api): add barcode lookup for movies [AI-assisted]`
-  - `fix(ui): correct form validation on book edit page`
-  - `docs: update README with versioning policy`
-  - `test(api): add tests for health endpoint version field`
-  - `chore: update dependencies`
+   - `feat(api): add barcode lookup for movies [AI-assisted] closes #228`
+   - `fix(ui): correct form validation on book edit page fixes #123`
+   - `docs: update README with versioning policy refs #99`
+   - `test(api): add tests for health endpoint version field [AI-assisted] closes #228`
+   - `chore: update dependencies`
 
 ## Project Overview
 
