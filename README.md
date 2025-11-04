@@ -129,6 +129,55 @@ cd MediaSet
 
 **For complete setup instructions, debugging, and troubleshooting, see [DEVELOPMENT.md](DEVELOPMENT.md).**
 
+### Running from Pre-built Docker Images
+
+MediaSet publishes production-ready Docker images to GitHub Container Registry. This is the easiest way to run MediaSet without building from source.
+
+```bash
+# Clone the repository (only needed for docker-compose.prod.yml)
+git clone https://github.com/paulmfischer/MediaSet.git
+cd MediaSet
+
+# Pull and run the latest images
+docker compose -f docker-compose.prod.yml up -d
+
+# Or with Podman
+podman-compose -f docker-compose.prod.yml up -d
+
+# Access the applications:
+# Frontend: http://localhost:3000
+# API: http://localhost:8080
+# MongoDB: mongodb://localhost:27017
+```
+
+**Available Images:**
+- `ghcr.io/paulmfischer/mediaset-api` - Backend API
+- `ghcr.io/paulmfischer/mediaset-ui` - Frontend UI
+
+**Available Tags:**
+- `latest` - Most recent stable release
+- `edge` - Latest build from main branch (bleeding edge)
+- `v0.x.y` - Specific version (e.g., `v0.1.0`)
+- `0.x`, `0` - Major/minor version pins
+- `sha-xxxxxxx` - Specific commit builds
+
+**Example with specific version:**
+```bash
+# Edit docker-compose.prod.yml to specify version:
+# api:
+#   image: ghcr.io/paulmfischer/mediaset-api:v0.1.0
+# ui:
+#   image: ghcr.io/paulmfischer/mediaset-ui:v0.1.0
+
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Configuration:**
+You can customize environment variables in `docker-compose.prod.yml`:
+- API configuration (MongoDB connection, TMDB/GiantBomb API keys, etc.)
+- UI configuration (API base URL)
+- MongoDB settings
+
 ### Traditional Local Development
 
 If you prefer to install dependencies locally:
