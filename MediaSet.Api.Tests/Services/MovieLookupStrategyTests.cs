@@ -413,6 +413,54 @@ public class MovieLookupStrategyTests
         Assert.That(format, Is.EqualTo(string.Empty));
     }
 
+    [Test]
+    public async Task LookupAsync_ExtractsFormat_FromEndOfTitle()
+    {
+        // Format at end: 'DVD'
+        var format = await TestFormatExtraction("30 Days of Night DVD", "DVD");
+        Assert.That(format, Is.EqualTo("DVD"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ExtractsFormat_FromEndOfTitle_Bluray()
+    {
+        // Format at end: 'Blu-ray'
+        var format = await TestFormatExtraction("Some Movie Blu-ray", "Blu-ray");
+        Assert.That(format, Is.EqualTo("Blu-ray"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ExtractsFormat_FromEndOfTitle_4K()
+    {
+        // Format at end: '4K'
+        var format = await TestFormatExtraction("Epic Movie 4K", "4K");
+        Assert.That(format, Is.EqualTo("4K"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ExtractsDvDFormat_FromEndOfTitle()
+    {
+        // Format at end: 'DVD'
+        var format = await TestFormatExtraction("30 Days of Night DVD", "DVD");
+        Assert.That(format, Is.EqualTo("DVD"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ExtractsBluRayFormat_FromEndOfTitle()
+    {
+        // Format at end: 'Blu-ray'
+        var format = await TestFormatExtraction("Some Movie Blu-ray", "Blu-ray");
+        Assert.That(format, Is.EqualTo("Blu-ray"));
+    }
+
+    [Test]
+    public async Task LookupAsync_Extracts4kFormat_FromEndOfTitle()
+    {
+        // Format at end: '4K'
+        var format = await TestFormatExtraction("Epic Movie 4K", "4K");
+        Assert.That(format, Is.EqualTo("4K"));
+    }
+
     private async Task<string> TestFormatExtraction(string title, string expectedFormat)
     {
         var upc = "043396471238";
