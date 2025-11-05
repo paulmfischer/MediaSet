@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.3](https://github.com/paulmfischer/MediaSet/compare/v0.3.2...v0.3.3) (2025-11-05)
+
+
+### Bug Fixes
+
+* **api:** robust movie format extraction and title cleaning [AI-assisted] closes [#229](https://github.com/paulmfischer/MediaSet/issues/229) ([#244](https://github.com/paulmfischer/MediaSet/issues/244)) ([b9b8717](https://github.com/paulmfischer/MediaSet/commit/b9b8717bd77a1a29312e128c3120cb4d4a4cdd49))
+
+
+### Documentation
+
+* improve AI instructions per issue requirements refs [#232](https://github.com/paulmfischer/MediaSet/issues/232) ([#242](https://github.com/paulmfischer/MediaSet/issues/242)) ([941fb30](https://github.com/paulmfischer/MediaSet/commit/941fb30fb748170c57d7d616db2702875e2d57f8))
+
 ## [0.3.2](https://github.com/paulmfischer/MediaSet/compare/v0.3.1...v0.3.2) (2025-11-05)
 
 
