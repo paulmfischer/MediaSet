@@ -17,11 +17,11 @@ namespace MediaSet.Api.Tests.Clients;
 [TestFixture]
 public class GiantBombClientTests
 {
-    private Mock<HttpMessageHandler> _httpMessageHandlerMock;
-    private HttpClient _httpClient;
-    private Mock<ILogger<GiantBombClient>> _loggerMock;
-    private IOptions<GiantBombConfiguration> _configuration;
-    private GiantBombClient _client;
+    private Mock<HttpMessageHandler> _httpMessageHandlerMock = null!;
+    private HttpClient _httpClient = null!;
+    private Mock<ILogger<GiantBombClient>> _loggerMock = null!;
+    private IOptions<GiantBombConfiguration> _configuration = null!;
+    private GiantBombClient _client = null!;
 
     [SetUp]
     public void Setup()
@@ -154,7 +154,7 @@ public class GiantBombClientTests
     }
 
     [Test]
-    public async Task SearchGameAsync_WithRateLimit_ThrowsHttpRequestException()
+    public void SearchGameAsync_WithRateLimit_ThrowsHttpRequestException()
     {
         _httpMessageHandlerMock
             .Protected()
@@ -310,7 +310,7 @@ public class GiantBombClientTests
     }
 
     [Test]
-    public async Task GetGameDetailsAsync_WithRateLimit_ThrowsHttpRequestException()
+    public void GetGameDetailsAsync_WithRateLimit_ThrowsHttpRequestException()
     {
         _httpMessageHandlerMock
             .Protected()
