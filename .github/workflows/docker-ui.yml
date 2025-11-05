@@ -6,9 +6,6 @@ on:
       - main
     tags:
       - 'v*'
-    paths:
-      - 'MediaSet.Remix/**'
-      - '.github/workflows/docker-ui.yml'
 
 permissions:
   contents: read
@@ -17,6 +14,18 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    # Only filter by paths on main branch, always run on tags
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      (
+        github.ref == 'refs/heads/main' &&
+        (
+          contains(github.event.head_commit.modified, 'MediaSet.Remix/') ||
+          contains(github.event.head_commit.added, 'MediaSet.Remix/') ||
+          contains(github.event.head_commit.modified, '.github/workflows/docker-ui.yml') ||
+          contains(github.event.head_commit.added, '.github/workflows/docker-ui.yml')
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4
