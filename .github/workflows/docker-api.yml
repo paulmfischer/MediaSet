@@ -1,5 +1,8 @@
 name: Docker - API
 
+# Note: paths filter only applies to branch pushes, not to tags
+# This ensures that every version tag (v*) builds both API and UI images
+# even if only one component changed, maintaining version consistency
 on:
   push:
     branches:
@@ -9,6 +12,10 @@ on:
     paths:
       - 'MediaSet.Api/**'
       - '.github/workflows/docker-api.yml'
+  # Override for tags: run on all tags regardless of paths
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
