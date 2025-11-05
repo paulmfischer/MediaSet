@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.4](https://github.com/paulmfischer/MediaSet/compare/v0.3.3...v0.3.4) (2025-11-05)
+
+
+### Bug Fixes
+
+* **ui:** match add/edit form widths [AI-assisted] closes [#211](https://github.com/paulmfischer/MediaSet/issues/211) ([#248](https://github.com/paulmfischer/MediaSet/issues/248)) ([9244056](https://github.com/paulmfischer/MediaSet/commit/92440568b99f29f6648f5477928fdc73be4e3a8f))
+
+
+### Tests
+
+* **api:** cleanup test warnings [AI-assisted] closes [#216](https://github.com/paulmfischer/MediaSet/issues/216) ([#246](https://github.com/paulmfischer/MediaSet/issues/246)) ([2f5cc89](https://github.com/paulmfischer/MediaSet/commit/2f5cc893f790d7a3540f7079c81cb4b5ea0b09cb))
+
 ## [0.3.3](https://github.com/paulmfischer/MediaSet/compare/v0.3.2...v0.3.3) (2025-11-05)
 
 
