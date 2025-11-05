@@ -45,38 +45,108 @@ This file provides context and instructions for GitHub Copilot to better underst
 - Place the reference at the end of the subject line or in the body
 - Use `closes` or `fixes` for commits that complete an issue
 - Use `refs` for commits that partially address or relate to an issue
+
+**⚠️ CRITICAL: Multi-commit workflow for a single issue:**
+- When making MULTIPLE commits for ONE issue, use `refs #N` for all intermediate commits
+- ONLY use `closes #N` or `fixes #N` on the FINAL commit that completes the issue
+- This ensures the issue stays open until all related work is done
 - Examples:
-  - `feat: add book filtering [AI-assisted] closes #228`
-  - `fix: correct form validation [AI-assisted] fixes #123`
-  - `refactor: improve service structure [AI-assisted] refs #456`
-  - Or with co-author trailer in body:
-    ```
-    feat: add book filtering closes #228
-    
-    Implements filtering functionality for the book list.
-    
-    Co-authored-by: GitHub Copilot <copilot@github.com>
-    ```
+  - First commit: `feat(api): add entity service [AI-assisted] refs #123`
+  - Second commit: `test(api): add tests for entity service [AI-assisted] refs #123`
+  - Final commit: `docs(api): update README with entity usage [AI-assisted] closes #123`
+
+**Examples:**
+- `feat: add book filtering [AI-assisted] closes #228`
+- `fix: correct form validation [AI-assisted] fixes #123`
+- `refactor: improve service structure [AI-assisted] refs #456`
+- Or with co-author trailer in body:
+  ```
+  feat: add book filtering closes #228
+  
+  Implements filtering functionality for the book list.
+  
+  Co-authored-by: GitHub Copilot <copilot@github.com>
+  ```
 
 
-### 4. Conventional Commits
-**ALL commits MUST follow the Conventional Commits specification:**
+### 4. Conventional Commits & Release-Please Compatibility
+**ALL commits MUST follow the Conventional Commits specification for release-please compatibility:**
 - Use the format: `type(scope): description`
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `style`, `perf`, `ci`, `build`
 - Scope is optional but recommended (e.g., `api`, `ui`, `db`)
 
+**⚠️ CRITICAL: Commit Message Length Limits:**
+- **Subject line MUST be 72 characters or less** (release-please requirement)
+- If description is too long, use a shorter subject and add details in the body
+- Format with body:
+  ```
+  type(scope): short description closes #N
+  
+  Longer explanation of the change, why it was needed,
+  and any important details or context.
+  
+  Co-authored-by: GitHub Copilot <copilot@github.com>
+  ```
+
 **If your commit is related to a GitHub issue or task:**
 - Include the issue reference using keywords: `closes #N`, `fixes #N`, or `refs #N`
-- Place at the end of the subject line or in the commit body
+- Place at the end of the subject line (if space permits) or in the commit body
 - Use `closes`/`fixes` when the commit completes the issue
 - Use `refs` when the commit partially addresses or relates to the issue
 
 **Examples:**
-- `feat(api): add barcode lookup for movies [AI-assisted] closes #228`
-- `fix(ui): correct form validation on book edit page fixes #123`
-- `docs: update README with versioning policy refs #99`
-- `test(api): add tests for health endpoint version field [AI-assisted] closes #228`
+- `feat(api): add barcode lookup [AI-assisted] closes #228`
+- `fix(ui): correct form validation fixes #123`
+- `docs: update README refs #99`
+- `test(api): add health tests [AI-assisted] closes #228`
 - `chore: update dependencies`
+- With body for longer description:
+  ```
+  feat(api): add filtering closes #228
+  
+  Implements comprehensive filtering functionality
+  for the book list with multiple filter criteria.
+  
+  Co-authored-by: GitHub Copilot <copilot@github.com>
+  ```
+
+**Conventional Commit Types:**
+- `feat`: New feature (correlates to SemVer MINOR)
+- `fix`: Bug fix (correlates to SemVer PATCH)
+- `feat!` or `fix!`: Breaking change (correlates to SemVer MAJOR)
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring without feature changes
+- `chore`: Maintenance tasks, dependency updates
+- `style`: Code style changes (formatting, missing semicolons, etc.)
+- `perf`: Performance improvements
+- `ci`: CI/CD configuration changes
+- `build`: Build system changes
+
+**Scope examples:** `api`, `ui`, `db`, `workflows`, `deps`
+
+### 5. Testing Requirements
+**⚠️ CRITICAL: All code changes MUST include appropriate test updates:**
+- When adding new features, add corresponding tests
+- When fixing bugs, add tests that verify the fix
+- When refactoring, ensure existing tests still pass and update as needed
+- Run tests before committing to verify changes work correctly
+
+**Testing commands:**
+- Backend: `dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj`
+- Frontend: `cd MediaSet.Remix && npm test`
+
+**If a commit includes code changes without tests:**
+- Either include tests in the same commit, OR
+- Make a separate commit for tests with `refs #N` (followed by final commit with `closes #N`)
+
+### 6. User Verification Before Commits
+**⚠️ CRITICAL: Always ask user for verification before making commits:**
+- After making code changes, summarize what was changed
+- Show the proposed commit message(s)
+- Ask user: "Are you ready for me to commit these changes?"
+- Wait for explicit user confirmation before running `git commit`
+- This gives the user a chance to review changes and commit messages
 
 ## Project Overview
 
@@ -271,18 +341,23 @@ git checkout -b chore/your-maintenance-task
 ```
 
 ### Making Commits
+**⚠️ CRITICAL: Always ask user for verification before making commits (see section 6 above)**
+
 All commits involving AI assistance must be attributed and follow Conventional Commits:
 
 **Format: `type(scope): description [AI-assisted]`**
+- Subject line MUST be 72 characters or less (see section 4 above)
+- Include issue references: `closes #N` for final commit, `refs #N` for intermediate commits (see section 3 above)
+- Include test updates with code changes (see section 5 above)
 
 **Option 1: Add tag in subject line**
 ```bash
-git commit -m "feat(api): add new feature [AI-assisted]"
+git commit -m "feat(api): add new feature [AI-assisted] refs #123"
 ```
 
-**Option 2: Add co-author trailer**
+**Option 2: Add co-author trailer (useful for longer descriptions)**
 ```bash
-git commit -m "feat(api): add new feature
+git commit -m "feat(api): add new feature refs #123
 
 Some description of the changes.
 
@@ -290,8 +365,9 @@ Co-authored-by: GitHub Copilot <copilot@github.com>"
 ```
 
 **Conventional Commit Types:**
-- `feat`: New feature
-- `fix`: Bug fix
+- `feat`: New feature (correlates to SemVer MINOR)
+- `fix`: Bug fix (correlates to SemVer PATCH)
+- `feat!` or `fix!`: Breaking change (correlates to SemVer MAJOR)
 - `docs`: Documentation changes
 - `test`: Adding or updating tests
 - `refactor`: Code refactoring without feature changes
