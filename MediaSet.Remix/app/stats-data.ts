@@ -3,6 +3,8 @@ import { baseUrl } from "./constants.server";
 type Stats = {
   bookStats: BookStats;
   movieStats: MovieStats;
+  gameStats: GameStats;
+  musicStats: MusicStats;
 };
 
 type BookStats = {
@@ -18,6 +20,22 @@ type MovieStats = {
   totalFormats: number;
   formats: string[];
   totalTvSeries: number;
+};
+
+type GameStats = {
+  total: number;
+  totalFormats: number;
+  formats: string[];
+  totalPlatforms: number;
+  platforms: string[];
+};
+
+type MusicStats = {
+  total: number;
+  totalFormats: number;
+  formats: string[];
+  uniqueArtists: number;
+  totalTracks: number;
 };
 
 export async function getStats() {

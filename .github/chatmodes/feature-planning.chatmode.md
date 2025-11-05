@@ -37,6 +37,12 @@ The planning document should follow this template structure:
 ```
 # [Feature Name] Implementation Plan
 
+## Related Issue/Task
+
+**GitHub Issue**: [#ISSUE_NUMBER](https://github.com/paulmfischer/MediaSet/issues/ISSUE_NUMBER)
+
+*Replace ISSUE_NUMBER with the actual issue number. If no issue exists yet, create one first or note "To be created".*
+
 ## Overview
 
 [2-3 paragraph summary of the feature]
@@ -194,13 +200,14 @@ The planning document should follow this template structure:
 
 When creating a feature plan:
 
-1. **Be Specific**: Include actual file paths, class names, and code references
-2. **Be Thorough**: Consider all layers of the application (API, UI, DB, tests)
-3. **Be Realistic**: Include risks and open questions rather than assuming everything will work perfectly
-4. **Follow Code Style**: Reference the project's code style guidelines when proposing changes
-5. **Consider Testing**: Always include testing strategy for new functionality
-6. **Think About Edge Cases**: Document error handling, validation, and edge cases
-7. **Reference Existing Code**: Look at similar features in the codebase for patterns to follow
+1. **Link to GitHub Issue**: Always include a link to the GitHub issue/task that describes this feature request
+2. **Be Specific**: Include actual file paths, class names, and code references
+3. **Be Thorough**: Consider all layers of the application (API, UI, DB, tests)
+4. **Be Realistic**: Include risks and open questions rather than assuming everything will work perfectly
+5. **Follow Code Style**: Reference the project's code style guidelines when proposing changes
+6. **Consider Testing**: Always include testing strategy for new functionality
+7. **Think About Edge Cases**: Document error handling, validation, and edge cases
+8. **Reference Existing Code**: Look at similar features in the codebase for patterns to follow
 
 ### 4. After Creating the Plan
 
@@ -229,8 +236,10 @@ When implementing the feature plan:
 3. **Commit the Plan First**: Commit the implementation plan document as the first commit
    ```bash
    git add ImplementationDetails/FEATURE_NAME_IMPLEMENTATION.md
-   git commit -m "docs: add implementation plan for [feature name] [AI-assisted]"
+   git commit -m "docs: add implementation plan for [feature name] [AI-assisted] refs #ISSUE_NUMBER"
    ```
+   - Replace `#ISSUE_NUMBER` with the actual GitHub issue number
+   - Use `refs #N` to reference the issue without closing it
 
 4. **Autonomous Implementation**: Execute implementation steps from the plan
    - The assistant will work through steps systematically
@@ -247,13 +256,14 @@ When implementing the feature plan:
    - Use conventional commit format: `type(scope): description`
    - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
    - Always include `[AI-assisted]` tag or co-author trailer
+   - Always reference the GitHub issue with `refs #N` for partial work or `closes #N` for completion
    - Examples:
      ```bash
-     git commit -m "feat(api): add barcode lookup models [AI-assisted]"
-     git commit -m "feat(api): implement barcode lookup service [AI-assisted]"
-     git commit -m "feat(api): add barcode lookup endpoints [AI-assisted]"
-     git commit -m "feat(ui): add barcode lookup components [AI-assisted]"
-     git commit -m "test(api): add barcode lookup service tests [AI-assisted]"
+     git commit -m "feat(api): add barcode lookup models [AI-assisted] refs #228"
+     git commit -m "feat(api): implement barcode lookup service [AI-assisted] refs #228"
+     git commit -m "feat(api): add barcode lookup endpoints [AI-assisted] refs #228"
+     git commit -m "feat(ui): add barcode lookup components [AI-assisted] refs #228"
+     git commit -m "test(api): add barcode lookup service tests [AI-assisted] closes #228"
      ```
 
 7. **Commit Frequency Guidelines**:
@@ -293,8 +303,10 @@ When implementing the feature plan:
 **User**: "Plan out a movie barcode generation feature"
 
 **Response**:
-1. Create `ImplementationDetails/MOVIE_BARCODE_GENERATION_IMPLEMENTATION.md`
-2. Fill in all sections with specific details about:
+1. Ask user for the GitHub issue number
+2. Create `ImplementationDetails/MOVIE_BARCODE_GENERATION_IMPLEMENTATION.md`
+3. Fill in all sections with specific details about:
+   - Link to the related GitHub issue
    - How movie barcodes work
    - Existing image handling in the codebase
    - Required backend endpoints for frame extraction
@@ -309,17 +321,17 @@ When implementing the feature plan:
 **Response**:
 1. Check current branch with `git branch --show-current`
 2. Create feature branch: `git checkout -b feature/music-barcode-lookup`
-3. Begin implementing steps from the plan:
-   - Step 1: Create backend models → commit
-   - Step 2: Implement MusicBrainz client → commit
-   - Step 3: Implement MusicLookupStrategy → commit
+3. Begin implementing steps from the plan (all commits reference the issue):
+   - Step 1: Create backend models → commit with `refs #123`
+   - Step 2: Implement MusicBrainz client → commit with `refs #123`
+   - Step 3: Implement MusicLookupStrategy → commit with `refs #123`
    - *[Progress update: Backend complete, moving to frontend]*
-   - Step 4: Update TypeScript models → commit
-   - Step 5: Update lookup data function → commit
-   - Step 6: Update MusicForm component → commit
+   - Step 4: Update TypeScript models → commit with `refs #123`
+   - Step 5: Update lookup data function → commit with `refs #123`
+   - Step 6: Update MusicForm component → commit with `closes #123`
    - *[Progress update: Frontend complete, implementation finished]*
 4. Push branch: `git push origin feature/music-barcode-lookup`
-5. Provide summary and next steps for PR
+5. Provide summary and next steps for PR (which will close the issue when merged)
 
 ## Benefits
 

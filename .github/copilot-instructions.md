@@ -39,9 +39,24 @@ This file provides context and instructions for GitHub Copilot to better underst
 **ALL commits that involve AI assistance or code generation MUST be attributed:**
 - Include `Co-authored-by: GitHub Copilot <copilot@github.com>` in commit message
 - OR add `[AI-assisted]` tag to commit subject line
-- **If your commit addresses a GitHub issue or task, you MUST reference the issue number and action in the commit message.**
-   - Use keywords like `closes #228`, `fixes #123`, or `refs #456` as appropriate.
-- Example: `feat: add book filtering [AI-assisted] closes #228` or include co-author trailer and issue reference in the body.
+
+**If your commit addresses a GitHub issue or task, you MUST reference the issue number:**
+- Use keywords like `closes #123`, `fixes #456`, or `refs #789` in the commit message
+- Place the reference at the end of the subject line or in the body
+- Use `closes` or `fixes` for commits that complete an issue
+- Use `refs` for commits that partially address or relate to an issue
+- Examples:
+  - `feat: add book filtering [AI-assisted] closes #228`
+  - `fix: correct form validation [AI-assisted] fixes #123`
+  - `refactor: improve service structure [AI-assisted] refs #456`
+  - Or with co-author trailer in body:
+    ```
+    feat: add book filtering closes #228
+    
+    Implements filtering functionality for the book list.
+    
+    Co-authored-by: GitHub Copilot <copilot@github.com>
+    ```
 
 
 ### 4. Conventional Commits
@@ -49,13 +64,19 @@ This file provides context and instructions for GitHub Copilot to better underst
 - Use the format: `type(scope): description`
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `style`, `perf`, `ci`, `build`
 - Scope is optional but recommended (e.g., `api`, `ui`, `db`)
-- **If your commit is related to a GitHub issue, include the issue number and action (e.g., `closes #228`) in the commit message.**
-- Examples:
-   - `feat(api): add barcode lookup for movies [AI-assisted] closes #228`
-   - `fix(ui): correct form validation on book edit page fixes #123`
-   - `docs: update README with versioning policy refs #99`
-   - `test(api): add tests for health endpoint version field [AI-assisted] closes #228`
-   - `chore: update dependencies`
+
+**If your commit is related to a GitHub issue or task:**
+- Include the issue reference using keywords: `closes #N`, `fixes #N`, or `refs #N`
+- Place at the end of the subject line or in the commit body
+- Use `closes`/`fixes` when the commit completes the issue
+- Use `refs` when the commit partially addresses or relates to the issue
+
+**Examples:**
+- `feat(api): add barcode lookup for movies [AI-assisted] closes #228`
+- `fix(ui): correct form validation on book edit page fixes #123`
+- `docs: update README with versioning policy refs #99`
+- `test(api): add tests for health endpoint version field [AI-assisted] closes #228`
+- `chore: update dependencies`
 
 ## Project Overview
 
