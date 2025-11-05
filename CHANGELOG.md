@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/paulmfischer/MediaSet/compare/v0.3.0...v0.3.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* **ci:** ensure version tags build both API and UI images [AI-assisted] refs [#234](https://github.com/paulmfischer/MediaSet/issues/234) ([#237](https://github.com/paulmfischer/MediaSet/issues/237)) ([51a27e7](https://github.com/paulmfischer/MediaSet/commit/51a27e762d3f32928b3ea4e1603ca57470396786))
+* **ci:** use job-level conditional instead of duplicate push triggers [AI-assisted] refs [#234](https://github.com/paulmfischer/MediaSet/issues/234) ([#239](https://github.com/paulmfischer/MediaSet/issues/239)) ([7ea23a5](https://github.com/paulmfischer/MediaSet/commit/7ea23a558c9f5adde404d1e84f3748b8ba159b75))
+
 ## [0.3.0](https://github.com/paulmfischer/MediaSet/compare/v0.2.0...v0.3.0) (2025-11-05)
 
 
