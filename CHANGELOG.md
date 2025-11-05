@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/paulmfischer/MediaSet/compare/v0.3.1...v0.3.2) (2025-11-05)
+
+
+### Miscellaneous
+
+* **ci:** simplify Docker workflows to only build on version tags [AI-assisted] ([#240](https://github.com/paulmfischer/MediaSet/issues/240)) ([8ca6d61](https://github.com/paulmfischer/MediaSet/commit/8ca6d61c50dffaa24b990c3690e32500ab037c47))
+
 ## [0.3.1](https://github.com/paulmfischer/MediaSet/compare/v0.3.0...v0.3.1) (2025-11-05)
 
 
