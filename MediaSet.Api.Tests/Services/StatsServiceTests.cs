@@ -18,6 +18,7 @@ public class StatsServiceTests
     private Mock<IEntityService<Book>> _bookServiceMock;
     private Mock<IEntityService<Movie>> _movieServiceMock;
     private Mock<IEntityService<Game>> _gameServiceMock;
+    private Mock<IEntityService<Music>> _musicServiceMock;
     private Mock<ICacheService> _cacheServiceMock;
     private Mock<IOptions<CacheSettings>> _cacheSettingsMock;
     private Mock<ILogger<StatsService>> _loggerMock;
@@ -25,6 +26,7 @@ public class StatsServiceTests
     private Faker<Book> _bookFaker;
     private Faker<Movie> _movieFaker;
     private Faker<Game> _gameFaker;
+    private Faker<Music> _musicFaker;
     private CacheSettings _cacheSettings;
 
     [SetUp]
@@ -33,6 +35,7 @@ public class StatsServiceTests
         _bookServiceMock = new Mock<IEntityService<Book>>();
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
+        _musicServiceMock = new Mock<IEntityService<Music>>();
         _cacheServiceMock = new Mock<ICacheService>();
         _cacheSettingsMock = new Mock<IOptions<CacheSettings>>();
         _loggerMock = new Mock<ILogger<StatsService>>();
@@ -55,6 +58,7 @@ public class StatsServiceTests
             _bookServiceMock.Object,
             _movieServiceMock.Object,
             _gameServiceMock.Object,
+            _musicServiceMock.Object,
             _cacheServiceMock.Object,
             _cacheSettingsMock.Object,
             _loggerMock.Object);
@@ -83,6 +87,18 @@ public class StatsServiceTests
           .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
           .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
+
+        _musicFaker = new Faker<Music>()
+          .RuleFor(m => m.Id, f => f.Random.AlphaNumeric(24))
+          .RuleFor(m => m.Title, f => f.Lorem.Sentence())
+          .RuleFor(m => m.Format, f => f.PickRandom("CD", "Vinyl", "Digital", "Cassette"))
+          .RuleFor(m => m.Artist, f => f.Name.FullName())
+          .RuleFor(m => m.Tracks, f => f.Random.Int(8, 15))
+          .RuleFor(m => m.DiscList, f => new List<Disc> 
+          { 
+            new() { TrackNumber = 1, Title = f.Lorem.Word() }, 
+            new() { TrackNumber = 2, Title = f.Lorem.Word() } 
+          });
     }
 
     #region GetMediaStatsAsync Tests
@@ -100,6 +116,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -120,6 +138,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -152,6 +172,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -179,6 +201,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -207,6 +231,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -235,6 +261,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -262,6 +290,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -290,6 +320,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -317,6 +349,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -342,6 +376,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -367,6 +403,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -390,6 +428,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -415,6 +455,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -442,6 +484,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -467,6 +511,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -488,6 +534,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -511,6 +559,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -566,6 +616,8 @@ public class StatsServiceTests
           .ReturnsAsync(movies);
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -595,6 +647,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
@@ -613,6 +667,8 @@ public class StatsServiceTests
           .ReturnsAsync(new List<Movie>());
         _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
           .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+          .ReturnsAsync(new List<Music>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
@@ -629,6 +685,7 @@ public class StatsServiceTests
             _bookServiceMock.Object,
             _movieServiceMock.Object,
             _gameServiceMock.Object,
+            _musicServiceMock.Object,
             _cacheServiceMock.Object,
             _cacheSettingsMock.Object,
             _loggerMock.Object);
@@ -648,7 +705,8 @@ public class StatsServiceTests
         var cachedStats = new MediaSet.Api.Models.Stats(
             new BookStats(10, 2, new[] { "Hardcover", "Paperback" }, 5, 2500),
             new MovieStats(5, 2, new[] { "DVD", "Blu-ray" }, 1),
-            new GameStats(3, 1, new[] { "Digital" }, 2, new[] { "PC", "Xbox" }));
+            new GameStats(3, 1, new[] { "Digital" }, 2, new[] { "PC", "Xbox" }),
+            new MusicStats(8, 2, new[] { "CD", "Vinyl" }, 5, 120));
 
         _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>("stats"))
             .ReturnsAsync(cachedStats);
@@ -676,6 +734,7 @@ public class StatsServiceTests
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
+  _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Music>());
 
         // Act
         var result = await _statsService.GetMediaStatsAsync();
@@ -700,6 +759,7 @@ public class StatsServiceTests
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
+  _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Music>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
@@ -722,6 +782,7 @@ public class StatsServiceTests
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
+  _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Music>());
 
         // Act
         await _statsService.GetMediaStatsAsync();
@@ -732,4 +793,209 @@ public class StatsServiceTests
     }
 
     #endregion
+
+    #region Music Stats Tests
+
+    [Test]
+    public async Task GetMediaStatsAsync_WithMusicItems_ReturnsCorrectMusicStats()
+    {
+        // Arrange
+        var music = new List<Music>
+        {
+            _musicFaker.Clone()
+                .RuleFor(m => m.Format, "CD")
+                .RuleFor(m => m.Artist, "Artist A")
+                .RuleFor(m => m.Tracks, 10)
+                .Generate(),
+            _musicFaker.Clone()
+                .RuleFor(m => m.Format, "Vinyl")
+                .RuleFor(m => m.Artist, "Artist B")
+                .RuleFor(m => m.Tracks, 12)
+                .Generate(),
+            _musicFaker.Clone()
+                .RuleFor(m => m.Format, "CD")
+                .RuleFor(m => m.Artist, "Artist A") // Duplicate artist
+                .RuleFor(m => m.Tracks, 8)
+                .Generate()
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(music);
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert
+        Assert.That(result.MusicStats.Total, Is.EqualTo(3));
+        Assert.That(result.MusicStats.TotalFormats, Is.EqualTo(2)); // CD, Vinyl
+        Assert.That(result.MusicStats.Formats, Contains.Item("CD"));
+        Assert.That(result.MusicStats.Formats, Contains.Item("Vinyl"));
+        Assert.That(result.MusicStats.UniqueArtists, Is.EqualTo(2)); // Artist A, Artist B
+        Assert.That(result.MusicStats.TotalTracks, Is.EqualTo(30)); // 10 + 12 + 8
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_WithNoMusic_ReturnsZeroMusicStats()
+    {
+        // Arrange
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Music>());
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert
+        Assert.That(result.MusicStats.Total, Is.EqualTo(0));
+        Assert.That(result.MusicStats.TotalFormats, Is.EqualTo(0));
+        Assert.That(result.MusicStats.UniqueArtists, Is.EqualTo(0));
+        Assert.That(result.MusicStats.TotalTracks, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_ShouldCalculateMusicFormatsCorrectly()
+    {
+        // Arrange
+        var music = new List<Music>
+        {
+            _musicFaker.Clone().RuleFor(m => m.Format, "CD").RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Format, "Vinyl").RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Format, "CD").RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(), // Duplicate
+            _musicFaker.Clone().RuleFor(m => m.Format, "Digital").RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate()
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(music);
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert
+        Assert.That(result.MusicStats.TotalFormats, Is.EqualTo(3));
+        Assert.That(result.MusicStats.Formats, Contains.Item("CD"));
+        Assert.That(result.MusicStats.Formats, Contains.Item("Vinyl"));
+        Assert.That(result.MusicStats.Formats, Contains.Item("Digital"));
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_ShouldCalculateUniqueArtistsCorrectly()
+    {
+        // Arrange
+        var music = new List<Music>
+        {
+            _musicFaker.Clone().RuleFor(m => m.Artist, "The Beatles").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Artist, "Pink Floyd").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Artist, "The Beatles").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(), // Duplicate
+            _musicFaker.Clone().RuleFor(m => m.Artist, "Led Zeppelin").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate()
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(music);
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert
+        Assert.That(result.MusicStats.UniqueArtists, Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_ShouldTrimWhitespace_FromArtists()
+    {
+        // Arrange
+        var music = new List<Music>
+        {
+            _musicFaker.Clone().RuleFor(m => m.Artist, "  The Beatles  ").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Artist, "The Beatles").RuleFor(m => m.Format, string.Empty).RuleFor(m => m.Tracks, (int?)null).Generate()
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(music);
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert - Should count as one unique artist after trimming
+        Assert.That(result.MusicStats.UniqueArtists, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_ShouldCalculateTotalTracksCorrectly()
+    {
+        // Arrange
+        var music = new List<Music>
+        {
+            _musicFaker.Clone().RuleFor(m => m.Tracks, 10).RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Format, string.Empty).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Tracks, 15).RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Format, string.Empty).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Tracks, (int?)null).RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Format, string.Empty).Generate(),
+            _musicFaker.Clone().RuleFor(m => m.Tracks, 8).RuleFor(m => m.Artist, string.Empty).RuleFor(m => m.Format, string.Empty).Generate()
+        };
+
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(music);
+
+        // Act
+        var result = await _statsService.GetMediaStatsAsync();
+
+        // Assert - null value should be excluded
+        Assert.That(result.MusicStats.TotalTracks, Is.EqualTo(33)); // 10 + 15 + 8
+    }
+
+    [Test]
+    public async Task GetMediaStatsAsync_ShouldCallMusicServiceGetListAsync_Once()
+    {
+        // Arrange
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie>());
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game>());
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Music>());
+
+        // Act
+        await _statsService.GetMediaStatsAsync();
+
+        // Assert
+        _musicServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    #endregion
 }
+

@@ -8,6 +8,7 @@ public class StatsService : IStatsService
     private readonly IEntityService<Book> bookService;
     private readonly IEntityService<Movie> movieService;
     private readonly IEntityService<Game> gameService;
+    private readonly IEntityService<Music> musicService;
     private readonly ICacheService cacheService;
     private readonly CacheSettings cacheSettings;
     private readonly ILogger<StatsService> logger;
@@ -16,6 +17,7 @@ public class StatsService : IStatsService
         IEntityService<Book> _bookService,
         IEntityService<Movie> _movieService,
         IEntityService<Game> _gameService,
+        IEntityService<Music> _musicService,
         ICacheService _cacheService,
         IOptions<CacheSettings> _cacheSettings,
         ILogger<StatsService> _logger)
@@ -23,6 +25,7 @@ public class StatsService : IStatsService
         bookService = _bookService;
         movieService = _movieService;
         gameService = _gameService;
+        musicService = _musicService;
         cacheService = _cacheService;
         cacheSettings = _cacheSettings.Value;
         logger = _logger;
@@ -45,15 +48,18 @@ public class StatsService : IStatsService
         var bookTask = bookService.GetListAsync(cancellationToken);
         var movieTask = movieService.GetListAsync(cancellationToken);
         var gameTask = gameService.GetListAsync(cancellationToken);
-        await Task.WhenAll(bookTask, movieTask, gameTask);
+        var musicTask = musicService.GetListAsync(cancellationToken);
+        await Task.WhenAll(bookTask, movieTask, gameTask, musicTask);
 
         var books = bookTask.Result;
         var movies = movieTask.Result;
         var games = gameTask.Result;
+        var musics = musicTask.Result;
         var bookFormats = books.Where(book => !string.IsNullOrWhiteSpace(book.Format)).Select(book => book.Format.Trim()).Distinct();
         var movieFormats = movies.Where(movie => !string.IsNullOrWhiteSpace(movie.Format)).Select(movie => movie.Format.Trim()).Distinct();
         var gameFormats = games.Where(game => !string.IsNullOrWhiteSpace(game.Format)).Select(game => game.Format.Trim()).Distinct();
         var gamePlatforms = games.Where(game => !string.IsNullOrWhiteSpace(game.Platform)).Select(game => game.Platform.Trim()).Distinct();
+        var musicFormats = musics.Where(music => !string.IsNullOrWhiteSpace(music.Format)).Select(music => music.Format.Trim()).Distinct();
         var bookStats = new BookStats
         (
           books.Count(),
@@ -77,13 +83,21 @@ public class StatsService : IStatsService
           gamePlatforms.Count(),
           gamePlatforms
         );
+        var musicStats = new MusicStats
+        (
+          musics.Count(),
+          musicFormats.Count(),
+          musicFormats,
+          musics.Where(music => !string.IsNullOrWhiteSpace(music.Artist)).Select(music => music.Artist.Trim()).Distinct().Count(),
+          musics.Where(music => music.Tracks.HasValue).Select(music => music.Tracks ?? 0).Sum()
+        );
 
-        var stats = new Stats(bookStats, movieStats, gameStats);
+        var stats = new Stats(bookStats, movieStats, gameStats, musicStats);
         
         // Cache the results
         await cacheService.SetAsync(cacheKey, stats);
-        logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}", 
-            bookStats.Total, movieStats.Total, gameStats.Total);
+        logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}, music={musicCount}", 
+            bookStats.Total, movieStats.Total, gameStats.Total, musicStats.Total);
 
         return stats;
     }

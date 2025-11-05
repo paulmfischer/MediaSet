@@ -88,6 +88,13 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
+            ),
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
             )
         );
 
@@ -143,6 +150,14 @@ public class StatsApiTests
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
             )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
@@ -186,6 +201,14 @@ public class StatsApiTests
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
             )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
@@ -228,6 +251,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
+            )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
             )
         );
 
@@ -273,6 +304,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
+            )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
             )
         );
 
@@ -320,6 +359,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
+            )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
             )
         );
 
@@ -371,6 +418,14 @@ public class StatsApiTests
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
             )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
@@ -415,6 +470,14 @@ public class StatsApiTests
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
             )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
+            )
         );
 
         _statsServiceMock.Setup(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expectedStats);
@@ -455,6 +518,14 @@ public class StatsApiTests
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
                 Platforms: new List<string>()
+            )
+            ,
+            new MusicStats(
+                Total: 0,
+                TotalFormats: 0,
+                Formats: new List<string>(),
+                UniqueArtists: 0,
+                TotalTracks: 0
             )
         );
 

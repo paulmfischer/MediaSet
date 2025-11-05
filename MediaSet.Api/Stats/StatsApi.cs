@@ -18,7 +18,7 @@ internal static class StatsApi
             if (stats is not null)
             {
                 logger.LogInformation(
-              "Stats: books total={bookTotal}, formats={bookFormats}, pages={bookPages}; movies total={movieTotal}, formats={movieFormats}, tvSeries={tvSeries}; games total={gameTotal}, formats={gameFormats}, platforms={gamePlatforms}",
+              "Stats: books total={bookTotal}, formats={bookFormats}, pages={bookPages}; movies total={movieTotal}, formats={movieFormats}, tvSeries={tvSeries}; games total={gameTotal}, formats={gameFormats}, platforms={gamePlatforms}; music total={musicTotal}, formats={musicFormats}, tracks={musicTracks}",
               stats.BookStats.Total,
               stats.BookStats.TotalFormats,
               stats.BookStats.TotalPages,
@@ -27,7 +27,10 @@ internal static class StatsApi
               stats.MovieStats.TotalTvSeries,
               stats.GameStats.Total,
               stats.GameStats.TotalFormats,
-              stats.GameStats.TotalPlatforms
+              stats.GameStats.TotalPlatforms,
+              stats.MusicStats.Total,
+              stats.MusicStats.TotalFormats,
+              stats.MusicStats.TotalTracks
             );
             }
             return stats;
