@@ -121,6 +121,10 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         // Remove common trailing words like NEW, USED, SEALED, etc.
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+(NEW|USED|SEALED|MINT|OPENED|UNOPENED|LIKE NEW)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
+        // Remove format keywords in parentheses or brackets (e.g., (DVD), [Blu-ray])
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\(([^)]*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)[^)]*)\)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\[([^\]]*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)[^\]]*)\]", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         // Remove content in parentheses (anywhere, not just at end)
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\([^)]*\)", string.Empty);
 
@@ -130,12 +134,15 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         // Remove common suffixes like " - DVD", " - Blu-ray", " - 4K", etc.
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
+        // Remove format keywords at end (e.g., 'DVD', 'Blu-ray', etc.)
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         // Clean up multiple spaces and trim
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+", " ").Trim();
 
         // Recursively clean in case there are multiple patterns
         var cleaned = title;
-        if (cleaned != rawTitle && (cleaned.Contains('(') || cleaned.Contains('[') || cleaned.Contains(" - ")))
+        if (cleaned != rawTitle && (cleaned.Contains('(') || cleaned.Contains('[') || cleaned.Contains(" - ") || System.Text.RegularExpressions.Regex.IsMatch(cleaned, @"\b(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
         {
             return CleanMovieTitle(cleaned);
         }
@@ -180,6 +187,13 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         if (dashMatch.Success)
         {
             formats.Add(dashMatch.Groups[0].Value.TrimStart('-').Trim());
+        }
+
+        // Check for format at the end of the title (e.g., '30 Days of Night DVD')
+        var endMatch = System.Text.RegularExpressions.Regex.Match(rawTitle, @"\b(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\b\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (endMatch.Success)
+        {
+            formats.Add(endMatch.Groups[1].Value.Trim());
         }
 
         // Return the first found format, normalized
