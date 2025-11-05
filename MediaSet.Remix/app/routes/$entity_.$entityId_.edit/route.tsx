@@ -91,30 +91,32 @@ export default function Edit() {
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-row items-center justify-between">
-        <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">Editing {entity.title}</h2>
+    <div className="min-h-screen flex text-white py-4">
+      <div className="w-full max-w-3xl mx-auto px-2">
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-row gap-4 items-end">
+            <h2 className="text-2xl">Editing {entity.title}</h2>
+          </div>
         </div>
-      </div>
-      <div className="h-full mt-4">
-        <div className="mt-4 flex flex-col gap-2">
-          <Form id={formId} method="post" action={actionUrl}>
-            <input id="type" name="type" type="hidden" value={entity.type} />
-            {lookupError && (
-              <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
-                <p className="text-yellow-300">{lookupError}</p>
+        <div className="h-full mt-4">
+          <div className="mt-4 flex flex-col gap-2">
+            <Form id={formId} method="post" action={actionUrl}>
+              <input id="type" name="type" type="hidden" value={entity.type} />
+              {lookupError && (
+                <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+                  <p className="text-yellow-300">{lookupError}</p>
+                </div>
+              )}
+              {formComponent}
+              <div className="flex flex-row gap-2 mt-3">
+                <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
+                  {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
+                  Update
+                </button>
+                <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>Cancel</button>
               </div>
-            )}
-            {formComponent}
-            <div className="flex flex-row gap-2 mt-3">
-              <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
-                {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
-                Update
-              </button>
-              <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>Cancel</button>
-            </div>
-          </Form>
+            </Form>
+          </div>
         </div>
       </div>
     </div>
