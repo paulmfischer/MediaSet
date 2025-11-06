@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/paulmfischer/MediaSet/compare/v0.4.0...v0.4.1) (2025-11-06)
+
+
+### Bug Fixes
+
+* **ci:** use PAT and semver tags to trigger docker workflows refs [#245](https://github.com/paulmfischer/MediaSet/issues/245) ([#257](https://github.com/paulmfischer/MediaSet/issues/257)) ([19cc7c3](https://github.com/paulmfischer/MediaSet/commit/19cc7c3367412151b82f918d02d50158c13a6ffd))
+
 ## [0.4.0](https://github.com/paulmfischer/MediaSet/compare/v0.3.4...v0.4.0) (2025-11-06)
 
 
