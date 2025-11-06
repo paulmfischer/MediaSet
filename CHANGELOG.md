@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/paulmfischer/MediaSet/compare/v0.4.2...v0.4.3) (2025-11-06)
+
+
+### Bug Fixes
+
+* **ci:** use GitHub App for verified release-please commits refs [#261](https://github.com/paulmfischer/MediaSet/issues/261) ([#262](https://github.com/paulmfischer/MediaSet/issues/262)) ([992af7a](https://github.com/paulmfischer/MediaSet/commit/992af7aa83559e864670c6a4f14bfddbfce01d79))
+
 ## [0.4.2](https://github.com/paulmfischer/MediaSet/compare/v0.4.1...v0.4.2) (2025-11-06)
 
 
