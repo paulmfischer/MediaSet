@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/paulmfischer/MediaSet/compare/v0.3.4...v0.4.0) (2025-11-06)
+
+
+### Features
+
+* **ui:** add Home icon and make header clickable closes [#254](https://github.com/paulmfischer/MediaSet/issues/254) ([#256](https://github.com/paulmfischer/MediaSet/issues/256)) ([218cf47](https://github.com/paulmfischer/MediaSet/commit/218cf4718d5ee6d23909c2d468454ce3ea562dd3))
+
+
+### Bug Fixes
+
+* **ci:** trigger docker workflows on release events closes [#245](https://github.com/paulmfischer/MediaSet/issues/245) ([#250](https://github.com/paulmfischer/MediaSet/issues/250)) ([b4f4c60](https://github.com/paulmfischer/MediaSet/commit/b4f4c601262cf5f14fd20adb0f2bf9cb461dfab1))
+
 ## [0.3.4](https://github.com/paulmfischer/MediaSet/compare/v0.3.3...v0.3.4) (2025-11-05)
 
 
