@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/paulmfischer/MediaSet/compare/v0.4.1...v0.4.2) (2025-11-06)
+
+
+### Bug Fixes
+
+* **ci:** use tags trigger only for docker workflows refs [#245](https://github.com/paulmfischer/MediaSet/issues/245) ([#259](https://github.com/paulmfischer/MediaSet/issues/259)) ([6f8ada6](https://github.com/paulmfischer/MediaSet/commit/6f8ada61d76d2d67c69982fe7df4d9ba26421b6e))
+
 ## [0.4.1](https://github.com/paulmfischer/MediaSet/compare/v0.4.0...v0.4.1) (2025-11-06)
 
 
