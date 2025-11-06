@@ -17,3 +17,6 @@ jobs:
         with:
           # Configuration is now in .release-please-config.json
           config-file: .release-please-config.json
+          # Use PAT to allow release events to trigger other workflows
+          # Without this, GITHUB_TOKEN releases don't trigger workflow runs
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
