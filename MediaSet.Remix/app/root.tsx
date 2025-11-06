@@ -1,5 +1,6 @@
 import "./tailwind.css";
 import {
+  Link,
   Links,
   Meta,
   NavLink,
@@ -10,7 +11,7 @@ import {
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { useLocation } from "@remix-run/react";
-import { Clapperboard, Gamepad2, LibraryBig, Menu, Music, X } from "lucide-react";
+import { Clapperboard, Gamepad2, Home, LibraryBig, Menu, Music, X } from "lucide-react";
 
 function Header() {
   const [open, setOpen] = useState(false);
@@ -23,11 +24,13 @@ function Header() {
   return (
     <header className="dark:bg-zinc-700 p-2 lg:px-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl">MediaSet</h1>
+        <Link to="/">
+          <h1 className="text-3xl">MediaSet</h1>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex flex-row gap-4 items-center">
-          <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
+          <NavLink to="/" className="p-3 flex gap-2 items-center rounded-lg"><Home /> Home</NavLink>
           <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
           <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg"><Clapperboard /> Movies</NavLink>
           <NavLink to="/games" className="p-3 flex gap-2 items-center rounded-lg"><Gamepad2 /> Games</NavLink>
@@ -44,7 +47,7 @@ function Header() {
       {open && (
         <nav className="md:hidden bg-zinc-700 z-50">
           <div className="flex flex-col gap-2">
-            <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center">Home</NavLink>
+            <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center"><Home /> Home</NavLink>
             <NavLink to="/books" className="p-3 rounded-lg flex gap-2 items-center"><LibraryBig /> Books</NavLink>
             <NavLink to="/movies" className="p-3 rounded-lg flex gap-2 items-center"><Clapperboard /> Movies</NavLink>
             <NavLink to="/games" className="p-3 rounded-lg flex gap-2 items-center"><Gamepad2 /> Games</NavLink>
@@ -66,9 +69,11 @@ function ErrorHeader() {
   return (
     <header className="dark:bg-zinc-700 min-h-16 px-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <h1 className="text-3xl">MediaSet</h1>
+        <Link to="/">
+          <h1 className="text-3xl">MediaSet</h1>
+        </Link>
         <nav className="hidden md:flex flex-row gap-4 items-center">
-          <NavLink to="/" className="p-3 flex items-center rounded-lg">Home</NavLink>
+          <NavLink to="/" className="p-3 flex gap-2 items-center rounded-lg"><Home /> Home</NavLink>
           <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg"><LibraryBig /> Books</NavLink>
           <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg"><Clapperboard /> Movies</NavLink>
           <NavLink to="/games" className="p-3 flex gap-2 items-center rounded-lg"><Gamepad2 /> Games</NavLink>
@@ -82,7 +87,7 @@ function ErrorHeader() {
       {open && (
         <nav className="md:hidden px-4 pb-4 bg-zinc-700 z-50">
           <div className="flex flex-col gap-2">
-            <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center">Home</NavLink>
+            <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center"><Home /> Home</NavLink>
             <NavLink to="/books" className="p-3 rounded-lg flex gap-2 items-center"><LibraryBig /> Books</NavLink>
             <NavLink to="/movies" className="p-3 rounded-lg flex gap-2 items-center"><Clapperboard /> Movies</NavLink>
             <NavLink to="/games" className="p-3 rounded-lg flex gap-2 items-center"><Gamepad2 /> Games</NavLink>
