@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, FocusEvent as ReactFocusEvent } from "react";
 import { Option } from "~/models";
 
 type SingleselectProps = {
@@ -115,10 +115,27 @@ export default function SingleselectInput(props: SingleselectProps) {
     } else if (e.key === "Escape") {
       e.preventDefault();
       setDisplayOptions(false);
+    } else if (e.key === "Tab") {
+      // When tabbing away, close the menu so the backdrop/dropdown doesn't linger
+      setDisplayOptions(false);
     } else if (e.key === "Backspace" && filterText === "" && selected) {
       // Clear selection when input is empty
       clearSelection();
     }
+  };
+
+  // Close the menu when focus moves outside of the component/menu (handles tabbing out)
+  const handleBlur = (e: ReactFocusEvent<HTMLInputElement>) => {
+    // Defer check so document.activeElement reflects the newly focused element
+    setTimeout(() => {
+      const active = document.activeElement as HTMLElement | null;
+      const container = containerRef.current;
+      const menuEl = document.getElementById(`${props.name}-listbox`);
+      if (!container) return;
+      // If the newly focused element is inside our container or the menu, keep open
+      if (active && (container.contains(active) || menuEl?.contains(active))) return;
+      setDisplayOptions(false);
+    }, 0);
   };
 
   // Reset active index when opening or when the filtered list changes
@@ -156,6 +173,7 @@ export default function SingleselectInput(props: SingleselectProps) {
             value={displayValue}
             placeholder={props.placeholder}
             onFocus={() => setDisplayOptions(true)}
+            onBlur={handleBlur}
             onChange={(event) => setFilterText(event.target.value)}
             ref={inputRef}
             role="combobox"

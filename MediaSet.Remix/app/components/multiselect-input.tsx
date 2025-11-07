@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, FocusEvent as ReactFocusEvent } from "react";
 import Badge from "./badge";
 import { X } from "lucide-react";
 import { Option } from "~/models";
@@ -122,10 +122,27 @@ export default function MultiselectInput(props: MultiselectProps) {
     } else if (e.key === "Escape") {
       e.preventDefault();
       setDisplayOptions(false);
+    } else if (e.key === "Tab") {
+      // When tabbing away, close the menu so the backdrop/dropdown doesn't linger
+      setDisplayOptions(false);
     } else if (e.key === "Backspace" && filterText === "" && selected.length > 0) {
       // Remove last selected when input empty
       setSelected((prev) => prev.slice(0, -1));
     }
+  };
+
+  // Close the menu when focus moves outside of the component/menu (handles tabbing out)
+  const handleBlur = (e: ReactFocusEvent<HTMLInputElement>) => {
+    // Defer check so document.activeElement reflects the newly focused element
+    setTimeout(() => {
+      const active = document.activeElement as HTMLElement | null;
+      const container = containerRef.current;
+      const menuEl = document.getElementById(`${props.name}-listbox`);
+      if (!container) return;
+      // If the newly focused element is inside our container or the menu, keep open
+      if (active && (container.contains(active) || menuEl?.contains(active))) return;
+      setDisplayOptions(false);
+    }, 0);
   };
 
   // Reset active index when opening or when the filtered list changes
@@ -169,6 +186,7 @@ export default function MultiselectInput(props: MultiselectProps) {
             value={filterText}
             placeholder={props.selectText}
             onFocus={() => setDisplayOptions(true)}
+            onBlur={handleBlur}
             onChange={(event) => setFilterText(event.target.value)}
             ref={inputRef}
             role="combobox"
