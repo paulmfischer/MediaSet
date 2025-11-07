@@ -1,5 +1,7 @@
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import DeleteDialog from "~/components/delete-dialog";
 import { GameEntity } from "~/models";
 
 type GamesProps = {
@@ -7,8 +9,14 @@ type GamesProps = {
 };
 
 export default function Games({ games }: GamesProps) {
+  const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; game: GameEntity | null }>({
+    isOpen: false,
+    game: null
+  });
+
   return (
-    <table className="text-left w-full">
+    <>
+      <table className="text-left w-full">
       <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
         <tr>
           <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
@@ -30,19 +38,27 @@ export default function Games({ games }: GamesProps) {
               <td className="hidden sm:table-cell pl-2 p-1 border-r border-slate-800">{game.developers?.map(dev => dev.trimEnd()).join(', ')}</td>
               <td className="flex flex-row gap-3 p-1 pt-2">
                 <Link to={`/games/${game.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={18} /></Link>
-                <Form action={`/games/${game.id}/delete`} method="post" onSubmit={(event) => {
-                  const response = confirm(`Are you sure you want to delete ${game.title}?`);
-                  if (!response) {
-                    event.preventDefault();
-                  }
-                }}>
-                  <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={18} /></button>
-                </Form>
+                <button
+                  onClick={() => setDeleteDialogState({ isOpen: true, game })}
+                  className="link"
+                  type="button"
+                  aria-label="Delete"
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
               </td>
             </tr>
           )
         })}
       </tbody>
     </table>
+    <DeleteDialog
+      isOpen={deleteDialogState.isOpen}
+      onClose={() => setDeleteDialogState({ isOpen: false, game: null })}
+      entityTitle={deleteDialogState.game?.title}
+      deleteAction={deleteDialogState.game ? `/games/${deleteDialogState.game.id}/delete` : ""}
+    />
+    </>
   )
 }

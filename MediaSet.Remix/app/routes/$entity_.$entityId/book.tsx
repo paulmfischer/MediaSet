@@ -1,5 +1,7 @@
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import DeleteDialog from "~/components/delete-dialog";
 import { BookEntity } from "~/models"
 
 type BookProps = {
@@ -7,6 +9,7 @@ type BookProps = {
 };
 
 export default function Book({ book }: BookProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
  return (
       <div className="flex flex-col">
         <div className="flex flex-row items-center justify-between border-b-2 border-slate-600 pb-2">
@@ -16,14 +19,15 @@ export default function Book({ book }: BookProps) {
           </div>
           <div className="flex flex-row gap-2">
             <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={22} /></Link>
-            <Form action={`/books/${book.id}/delete`} method="post" onSubmit={(event) => {
-              const response = confirm(`Are you sure you want to delete ${book.title}?`);
-              if (!response) {
-                event.preventDefault();
-              }
-            }}>
-              <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={22} /></button>
-            </Form>
+            <button
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="link"
+              type="button"
+              aria-label="Delete"
+              title="Delete"
+            >
+              <Trash2 size={22} />
+            </button>
           </div>
         </div>
         <div className="h-full mt-4">
@@ -60,6 +64,12 @@ export default function Book({ book }: BookProps) {
             <div id="plot" className="basis-3/4">{book.plot}</div>
           </div>
         </div>
+        <DeleteDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          entityTitle={book.title}
+          deleteAction={`/books/${book.id}/delete`}
+        />
       </div>
     );
 }

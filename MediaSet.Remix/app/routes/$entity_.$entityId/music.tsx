@@ -1,5 +1,7 @@
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import DeleteDialog from "~/components/delete-dialog";
 import { MusicEntity } from "~/models"
 
 type MusicProps = {
@@ -7,6 +9,8 @@ type MusicProps = {
 };
 
 export default function Music({ music }: MusicProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   return (
     <div className="flex flex-col">
       <div className="flex flex-row items-center justify-between border-b-2 border-slate-600 pb-2">
@@ -15,14 +19,15 @@ export default function Music({ music }: MusicProps) {
         </div>
         <div className="flex flex-row gap-2">
           <Link to={`/musics/${music.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={22} /></Link>
-          <Form action={`/musics/${music.id}/delete`} method="post" onSubmit={(event) => {
-            const response = confirm(`Are you sure you want to delete ${music.title}?`);
-            if (!response) {
-              event.preventDefault();
-            }
-          }}>
-            <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={22} /></button>
-          </Form>
+          <button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="link"
+            type="button"
+            aria-label="Delete"
+            title="Delete"
+          >
+            <Trash2 size={22} />
+          </button>
         </div>
       </div>
       <div className="h-full mt-4">
@@ -88,6 +93,12 @@ export default function Music({ music }: MusicProps) {
           </div>
         )}
       </div>
+      <DeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        entityTitle={music.title}
+        deleteAction={`/musics/${music.id}/delete`}
+      />
     </div>
   );
 }

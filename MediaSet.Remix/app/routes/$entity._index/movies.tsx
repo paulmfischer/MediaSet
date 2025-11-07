@@ -1,6 +1,8 @@
 
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Pencil, Trash2, Check } from "lucide-react";
+import { useState } from "react";
+import DeleteDialog from "~/components/delete-dialog";
 import { MovieEntity } from "~/models";
 
 type MovieProps = {
@@ -8,8 +10,14 @@ type MovieProps = {
 };
 
 export default function Movies({ movies }: MovieProps) {
+  const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; movie: MovieEntity | null }>({
+    isOpen: false,
+    movie: null
+  });
+
   return (
-    <table className="text-left w-full">
+    <>
+      <table className="text-left w-full">
       <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
         <tr>
           <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
@@ -35,19 +43,27 @@ export default function Movies({ movies }: MovieProps) {
               </td>
               <td className="flex flex-row gap-3 p-1 pt-2">
                 <Link to={`/movies/${movie.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={18} /></Link>
-                <Form action={`/movies/${movie.id}/delete`} method="post" onSubmit={(event) => {
-                  const response = confirm(`Are you sure you want to delete ${movie.title}?`);
-                  if (!response) {
-                    event.preventDefault();
-                  }
-                }}>
-                  <button className="link" type="submit" aria-label="Delete" title="Delete"><Trash2 size={18} /></button>
-                </Form>
+                <button
+                  onClick={() => setDeleteDialogState({ isOpen: true, movie })}
+                  className="link"
+                  type="button"
+                  aria-label="Delete"
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
               </td>
             </tr>
           )
         })}
       </tbody>
     </table>
+    <DeleteDialog
+      isOpen={deleteDialogState.isOpen}
+      onClose={() => setDeleteDialogState({ isOpen: false, movie: null })}
+      entityTitle={deleteDialogState.movie?.title}
+      deleteAction={deleteDialogState.movie ? `/movies/${deleteDialogState.movie.id}/delete` : ""}
+    />
+    </>
   )
 }
