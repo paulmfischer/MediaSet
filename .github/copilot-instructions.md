@@ -9,14 +9,19 @@ This file provides context and instructions for GitHub Copilot to better underst
 
 **BEFORE making ANY code changes, file edits, or commits, you MUST:**
 1. **FIRST**: Check current branch with `git branch --show-current`
-2. **IF on `main`**: IMMEDIATELY create and switch to a new branch:
-   ```bash
-   git checkout -b feature/<short-description>
-   # OR
-   git checkout -b fix/<short-description>
-   # OR
-   git checkout -b chore/<short-description>
-   ```
+2. **ALWAYS**: Switch to the `main` branch and update it before creating a feature branch:
+  ```bash
+  git checkout main
+  git pull origin main
+  ```
+3. **THEN**: Create and switch to a new branch from the updated `main`:
+  ```bash
+  git checkout -b feature/<short-description>
+  # OR
+  git checkout -b fix/<short-description>
+  # OR
+  git checkout -b chore/<short-description>
+  ```
 3. **ONLY THEN**: Proceed with making changes
 4. Commit all changes to the feature branch
 5. Push the feature branch: `git push origin <branch-name>`
