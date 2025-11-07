@@ -130,7 +130,7 @@ export default function Add() {
             <div className="flex flex-row gap-2 mt-6">
               <button 
                 type="submit" 
-                className="flex flex-row gap-2 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+                className="flex flex-row gap-2" 
                 disabled={isSubmitting}
               >
                 {isSubmitting && <div className="flex items-center"><Spinner /></div>}
@@ -139,7 +139,7 @@ export default function Add() {
               <button 
                 type="button" 
                 onClick={() => navigate(-1)} 
-                className="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50" 
+                className="secondary" 
                 disabled={isSubmitting}
               >
                 Cancel
