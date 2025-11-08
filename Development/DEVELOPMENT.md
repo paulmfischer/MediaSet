@@ -21,7 +21,7 @@ Choose **one** of the following container runtimes:
 
 That's it! No need for .NET SDK, MongoDB, or Node.js on your host machine.
 
-**Need help installing?** See **[CONTAINER_SETUP.md](CONTAINER_SETUP.md)** for detailed installation instructions.
+**Need help installing?** See **[CONTAINER_SETUP.md](../Setup/CONTAINER_SETUP.md)** for detailed installation instructions.
 
 ### Container Runtime Detection
 
@@ -323,7 +323,7 @@ MediaSet uses external APIs for metadata lookup functionality. Configure these i
 > ⚠️ **IMPORTANT**: 
 > - Never commit your `.env` file to git! It's already in `.gitignore`.
 > - The `.env` file is automatically loaded by Docker/Podman compose files.
-> - For detailed setup instructions, see **[TMDB_SETUP.md](TMDB_SETUP.md)**
+> - For detailed setup instructions, see **[TMDB_SETUP.md](../Setup/TMDB_SETUP.md)**
 
 ### Testing Lookup Functionality
 
