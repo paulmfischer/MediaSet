@@ -110,15 +110,19 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
             edition = editionMatch.Value;
         }
 
-    // Remove platform indicators commonly found in UPC titles
-    title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PlayStation 5|PlayStation 4|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS)\b", string.Empty);
+        // Remove platform indicators commonly found in UPC titles
+        title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PlayStation 5|PlayStation 4|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS)\b", string.Empty);
 
-    // Remove format markers like (Cartridge), [Disc], - Disc and trailing dashes
+        // Remove format markers like (Cartridge), [Disc], - Disc and trailing dashes
         title = Regex.Replace(title, @"\s*\([^)]*(Disc|Cartridge|Digital)[^)]*\)", string.Empty, RegexOptions.IgnoreCase);
         title = Regex.Replace(title, @"\s*\[[^\]]*(Disc|Cartridge|Digital)[^\]]*\]", string.Empty, RegexOptions.IgnoreCase);
-    title = Regex.Replace(title, @"\s*-\s*(Disc|Cartridge|Digital).*$", string.Empty, RegexOptions.IgnoreCase);
-    // Remove trailing hyphens left by platform removal
-    title = Regex.Replace(title, @"\s*-\s*$", string.Empty);
+        title = Regex.Replace(title, @"\s*-\s*(Disc|Cartridge|Digital).*$", string.Empty, RegexOptions.IgnoreCase);
+    
+        // Remove common condition/release type suffixes
+        title = Regex.Replace(title, @"\s*-\s*(Pre-Played|Pre-Owned|Used|Greatest Hits|Platinum Hits|Player's Choice|Nintendo Selects|Essentials).*$", string.Empty, RegexOptions.IgnoreCase);
+        
+        // Remove trailing hyphens left by platform removal
+        title = Regex.Replace(title, @"\s*-\s*$", string.Empty);
 
         // Remove trailing SKU-like codes
         title = Regex.Replace(title, @"\b[A-Z0-9]{3,}-[A-Z0-9]{2,}\b", string.Empty);
@@ -126,6 +130,8 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         // Remove extra edition words from title for search
         if (!string.IsNullOrEmpty(edition))
         {
+            // Also remove "Edition" word if it appears after the edition type
+            title = Regex.Replace(title, Regex.Escape(edition) + @"\s*Edition", string.Empty, RegexOptions.IgnoreCase);
             title = Regex.Replace(title, Regex.Escape(edition), string.Empty, RegexOptions.IgnoreCase);
         }
 
