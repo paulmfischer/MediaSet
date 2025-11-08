@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.5.0](https://github.com/paulmfischer/MediaSet/compare/v0.4.3...v0.5.0) (2025-11-08)
+
+
+### Features
+
+* **ui:** improve entity list mobile layout [AI-assisted] closes [#253](https://github.com/paulmfischer/MediaSet/issues/253) ([#271](https://github.com/paulmfischer/MediaSet/issues/271)) ([0bf9077](https://github.com/paulmfischer/MediaSet/commit/0bf90775c6d019f4869ce6092c0f6e84644fece8))
+* **ui:** replace browser confirm with HTML dialog [AI-assisted] closes [#267](https://github.com/paulmfischer/MediaSet/issues/267) ([#269](https://github.com/paulmfischer/MediaSet/issues/269)) ([8c6da56](https://github.com/paulmfischer/MediaSet/commit/8c6da566fe5ff32d0f48e97fb054fdca5ff09a08))
+
+
+### Bug Fixes
+
+* **api:** correct HttpClient configuration pattern closes [#204](https://github.com/paulmfischer/MediaSet/issues/204) ([#275](https://github.com/paulmfischer/MediaSet/issues/275)) ([da8f27a](https://github.com/paulmfischer/MediaSet/commit/da8f27adefa0b1d44f3bb846f5605df2d41aa15c))
+* **api:** fix game clean title to remove extra info closes [#272](https://github.com/paulmfischer/MediaSet/issues/272) ([#273](https://github.com/paulmfischer/MediaSet/issues/273)) ([b5fb20c](https://github.com/paulmfischer/MediaSet/commit/b5fb20c5773595467107c72bf36153a77d6c8a23))
+* **ui:** close select dropdown on Tab/blur [AI-assisted] closes [#268](https://github.com/paulmfischer/MediaSet/issues/268) ([#270](https://github.com/paulmfischer/MediaSet/issues/270)) ([7c5d10a](https://github.com/paulmfischer/MediaSet/commit/7c5d10aa567f746cfec035f01433fc2b5055788e))
+
+
+### Miscellaneous
+
+* **chatmodes:** add expert remix chatmode [AI-assisted] closes [#255](https://github.com/paulmfischer/MediaSet/issues/255) ([#264](https://github.com/paulmfischer/MediaSet/issues/264)) ([7faace3](https://github.com/paulmfischer/MediaSet/commit/7faace3722864a7e9d673b9aa617be6ff6a4e6a8))
+
+
+### Code Style
+
+* **ui:** adjust button colors to fit theme [AI-assisted] closes [#252](https://github.com/paulmfischer/MediaSet/issues/252) ([#266](https://github.com/paulmfischer/MediaSet/issues/266)) ([9a9ef91](https://github.com/paulmfischer/MediaSet/commit/9a9ef91e37997576cd186b208becb9ce4beb0a1a))
+
 ## [0.4.3](https://github.com/paulmfischer/MediaSet/compare/v0.4.2...v0.4.3) (2025-11-06)
 
 
