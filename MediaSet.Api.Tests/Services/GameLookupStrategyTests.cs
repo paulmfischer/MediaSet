@@ -385,6 +385,127 @@ public class GameLookupStrategyTests
 
     #endregion
 
+    #region CleanGameTitleAndExtractEdition
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesPrePlayed()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Black - Pre-Played");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Black"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesGreatestHits()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Heavy Rain - Greatest Hits");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Heavy Rain"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesPreOwned()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("God of War - Pre-Owned");
+
+        Assert.That(cleanedTitle, Is.EqualTo("God of War"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesPlatinumHits()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Halo 3 - Platinum Hits");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Halo 3"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesPlayersChoice()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Super Smash Bros - Player's Choice");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Super Smash Bros"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesNintendoSelects()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Mario Kart 7 - Nintendo Selects");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Mario Kart 7"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesUsed()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("The Last of Us - Used");
+
+        Assert.That(cleanedTitle, Is.EqualTo("The Last of Us"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesEssentials()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Uncharted - Essentials");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Uncharted"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_ExtractsDeluxeEdition()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Cyberpunk 2077 Deluxe Edition");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Cyberpunk 2077"));
+        Assert.That(edition, Is.EqualTo("Deluxe"));
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesPlatformIndicators()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Spider-Man - PS5");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Spider-Man"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_HandlesComplexTitle()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Red Dead Redemption 2 - PlayStation 4 - Pre-Played");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Red Dead Redemption 2"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_HandlesEmptyString()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("");
+
+        Assert.That(cleanedTitle, Is.Empty);
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_HandlesWhitespace()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("   ");
+
+        Assert.That(cleanedTitle, Is.Empty);
+        Assert.That(edition, Is.Empty);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static UpcItemResponse CreateUpcItemResponse(string code, string title, string? category, string? brand, string? model)
