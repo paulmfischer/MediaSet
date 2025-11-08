@@ -27,7 +27,10 @@ public class GiantBombClientTests
     public void Setup()
     {
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-        _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://www.giantbomb.com/api/")
+        };
         _loggerMock = new Mock<ILogger<GiantBombClient>>();
         _configuration = Options.Create(new GiantBombConfiguration
         {
