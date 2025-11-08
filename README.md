@@ -127,7 +127,7 @@ cd MediaSet
 # MongoDB: mongodb://localhost:27017
 ```
 
-**For complete setup instructions, debugging, and troubleshooting, see [DEVELOPMENT.md](DEVELOPMENT.md).**
+**For complete setup instructions, debugging, and troubleshooting, see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md).**
 
 ### Running from Pre-built Docker Images
 
@@ -205,11 +205,11 @@ If you prefer to install dependencies locally:
 
 ## 📚 Documentation
 
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete development environment setup and debugging
-- **[CACHING.md](CACHING.md)** - Performance optimization and caching strategy
-- **[TMDB_SETUP.md](TMDB_SETUP.md)** - The Movie Database API configuration
-- **[GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
-- **[CONTAINER_SETUP.md](CONTAINER_SETUP.md)** - Container orchestration details
+- **[Development/DEVELOPMENT.md](Development/DEVELOPMENT.md)** - Complete development environment setup and debugging
+- **[Development/CACHING.md](Development/CACHING.md)** - Performance optimization and caching strategy
+- **[Setup/TMDB_SETUP.md](Setup/TMDB_SETUP.md)** - The Movie Database API configuration
+- **[Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
+- **[Setup/CONTAINER_SETUP.md](Setup/CONTAINER_SETUP.md)** - Container orchestration details
 
 ## 🔖 Versioning
 
