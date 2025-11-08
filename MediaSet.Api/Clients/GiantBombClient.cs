@@ -19,11 +19,6 @@ public class GiantBombClient : IGiantBombClient
         _httpClient = httpClient;
         _logger = logger;
         _configuration = configuration.Value;
-
-        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-        _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
-        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "MediaSet/1.0 (GiantBomb)");
     }
 
     public async Task<List<GiantBombSearchResult>?> SearchGameAsync(string title, CancellationToken cancellationToken)

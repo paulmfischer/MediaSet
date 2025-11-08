@@ -6,26 +6,24 @@ using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Clients;
 
-public class OpenLibraryClient : IOpenLibraryClient, IDisposable
+public class OpenLibraryClient : IOpenLibraryClient
 {
-    private readonly HttpClient httpClient;
-    private readonly ILogger<OpenLibraryClient> logger;
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<OpenLibraryClient> _logger;
 
-    public OpenLibraryClient(HttpClient _httpClient, ILogger<OpenLibraryClient> _logger)
+    public OpenLibraryClient(HttpClient httpClient, ILogger<OpenLibraryClient> logger)
     {
-        httpClient = _httpClient;
-        logger = _logger;
+        _httpClient = httpClient;
+        _logger = logger;
     }
-
-    public void Dispose() => httpClient?.Dispose();
 
     public async Task<BookResponse?> GetBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default)
     {
-        var response = await httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
+        var response = await _httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         }, cancellationToken);
-        logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
+        _logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
 
         var key = $"ISBN:{isbn}";
         return response?.ContainsKey(key) == true ? response[key] : null;
@@ -35,17 +33,17 @@ public class OpenLibraryClient : IOpenLibraryClient, IDisposable
     {
         try
         {
-            var response = await httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
+            var response = await _httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
             }, cancellationToken);
-            logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
+            _logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
 
             return MapReadApiResponseToBookResponse(response);
         }
         catch (HttpRequestException ex)
         {
-            logger.LogWarning("Failed to get readable book for {identifierType}:{identifierValue}: {error}", identifierType, identifierValue, ex.Message);
+            _logger.LogWarning("Failed to get readable book for {identifierType}:{identifierValue}: {error}", identifierType, identifierValue, ex.Message);
             return null;
         }
     }

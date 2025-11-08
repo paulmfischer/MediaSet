@@ -18,9 +18,6 @@ public class UpcItemDbClient : IUpcItemDbClient
         _httpClient = httpClient;
         _logger = logger;
         _configuration = configuration.Value;
-
-        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-        _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
     }
 
     public async Task<UpcItemResponse?> GetItemByCodeAsync(string code, CancellationToken cancellationToken)

@@ -20,10 +20,6 @@ public class MusicBrainzClient : IMusicBrainzClient
         _httpClient = httpClient;
         _logger = logger;
         _configuration = configuration.Value;
-
-        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-        _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", _configuration.UserAgent);
     }
 
     public async Task<MusicBrainzRelease?> GetReleaseByBarcodeAsync(string barcode, CancellationToken cancellationToken)

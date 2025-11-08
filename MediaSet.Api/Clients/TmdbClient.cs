@@ -19,14 +19,6 @@ public class TmdbClient : ITmdbClient
         _httpClient = httpClient;
         _logger = logger;
         _configuration = configuration.Value;
-
-        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-        _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.Timeout);
-        
-        if (!string.IsNullOrEmpty(_configuration.BearerToken))
-        {
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_configuration.BearerToken}");
-        }
     }
 
     public async Task<TmdbSearchResponse?> SearchMovieAsync(string title, CancellationToken cancellationToken)
