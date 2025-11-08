@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/paulmfischer/MediaSet/compare/v0.5.0...v1.0.0) (2025-11-08)
+
+
+### Miscellaneous
+
+* **docs:** move and update markdown references [AI-assisted] closes [#276](https://github.com/paulmfischer/MediaSet/issues/276) ([#278](https://github.com/paulmfischer/MediaSet/issues/278)) ([c7940bf](https://github.com/paulmfischer/MediaSet/commit/c7940bf931e5ce532e0e8fce8cff85e2eee6b2a2))
+
 ## [0.5.0](https://github.com/paulmfischer/MediaSet/compare/v0.4.3...v0.5.0) (2025-11-08)
 
 
