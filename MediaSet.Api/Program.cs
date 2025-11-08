@@ -65,8 +65,8 @@ if (openLibraryConfig.Exists())
         var options = serviceProvider.GetRequiredService<IOptions<OpenLibraryConfiguration>>().Value;
         client.BaseAddress = new Uri(options.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(options.Timeout);
-        client.DefaultRequestHeaders.Add("Accept", "application/json");
-        client.DefaultRequestHeaders.Add("User-Agent", $"MediaSet/1.0 (${options.ContactEmail})");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", $"MediaSet/1.0 ({options.ContactEmail})");
     });
 }
 
@@ -76,7 +76,12 @@ if (upcItemDbConfig.Exists())
 {
     BootstrapLog("UpcItemDb configuration exists. Setting up UpcItemDb services.");
     builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
-    builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>();
+    builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<UpcItemDbConfiguration>>().Value;
+        client.BaseAddress = new Uri(config.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(config.Timeout);
+    });
 }
 
 // Configure TMDB client
@@ -85,7 +90,17 @@ if (tmdbConfig.Exists())
 {
     BootstrapLog("TMDB configuration exists. Setting up TMDB services.");
     builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
-    builder.Services.AddHttpClient<ITmdbClient, TmdbClient>();
+    builder.Services.AddHttpClient<ITmdbClient, TmdbClient>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<TmdbConfiguration>>().Value;
+        client.BaseAddress = new Uri(config.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(config.Timeout);
+        
+        if (!string.IsNullOrEmpty(config.BearerToken))
+        {
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {config.BearerToken}");
+        }
+    });
 }
 
 // Configure GiantBomb client
@@ -94,7 +109,14 @@ if (giantBombConfig.Exists())
 {
     BootstrapLog("GiantBomb configuration exists. Setting up GiantBomb services.");
     builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
-    builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>();
+    builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<GiantBombConfiguration>>().Value;
+        client.BaseAddress = new Uri(config.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(config.Timeout);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "MediaSet/1.0 (GiantBomb)");
+    });
 }
 
 // Configure MusicBrainz client
@@ -103,7 +125,13 @@ if (musicBrainzConfig.Exists())
 {
     BootstrapLog("MusicBrainz configuration exists. Setting up MusicBrainz services.");
     builder.Services.Configure<MusicBrainzConfiguration>(musicBrainzConfig);
-    builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>();
+    builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<MusicBrainzConfiguration>>().Value;
+        client.BaseAddress = new Uri(config.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(config.Timeout);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", config.UserAgent);
+    });
 }
 
 // Register lookup strategies and factory

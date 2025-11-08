@@ -74,7 +74,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -135,7 +135,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetBookByIsbnAsync(isbn);
@@ -165,7 +165,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetBookByIsbnAsync(isbn);
@@ -221,7 +221,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -249,7 +249,7 @@ public class OpenLibraryClientTests
                 ItExpr.IsAny<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("Network error"));
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -295,7 +295,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByLccnAsync(lccn);
@@ -337,7 +337,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByOclcAsync(oclc);
@@ -379,7 +379,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByOlidAsync(olid);
@@ -421,7 +421,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookAsync(IdentifierType.Isbn, isbn);
@@ -463,7 +463,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookAsync(IdentifierType.Lccn, lccn);
@@ -505,7 +505,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookAsync(IdentifierType.Oclc, oclc);
@@ -547,7 +547,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookAsync(IdentifierType.Olid, olid);
@@ -561,7 +561,7 @@ public class OpenLibraryClientTests
     public void GetReadableBookAsync_WithInvalidIdentifierType_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act & Assert
         Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
@@ -582,7 +582,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -615,7 +615,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -669,7 +669,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -712,7 +712,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -754,7 +754,7 @@ public class OpenLibraryClientTests
 
         SetupHttpResponse(HttpStatusCode.OK, responseJson);
 
-        using var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act
         var result = await client.GetReadableBookByIsbnAsync(isbn);
@@ -763,16 +763,6 @@ public class OpenLibraryClientTests
         Assert.That(result, Is.Not.Null);
         // Record publish_dates takes priority over data publish_date
         Assert.That(result!.PublishDate, Is.EqualTo("2015"));
-    }
-
-    [Test]
-    public void Dispose_DisposesHttpClient()
-    {
-        // Arrange
-        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
-
-        // Act & Assert - should not throw
-        Assert.DoesNotThrow(() => client.Dispose());
     }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)
