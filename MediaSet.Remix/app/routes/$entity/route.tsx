@@ -35,14 +35,14 @@ export default function Index() {
 
   return (
     <div className="flex flex-col px-2">
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center justify-between">
-        <div className="flex flex-row gap-4 items-end">
-          <h2 className="text-2xl">{entityName}</h2>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-row items-center gap-2">
+          <h2 className="text-2xl mb-1 sm:mb-0">{entityName}</h2>
           <Link to={`/${entityName.toLowerCase()}/add`} className="flex gap-1 items-center"><Plus size={18} /> Add</Link>
-          <Form id="search-form" role="search" className="flex gap-2">
-            <div className="flex gap-0 z-20">
+        </div>
+        <div className="flex flex-row w-full sm:w-auto gap-2 items-center">
+          <Form id="search-form" role="search" className="flex flex-1 sm:flex-none gap-2">
+            <div className="flex flex-1 gap-0 z-20">
               <input
                 id="search"
                 type="search"
