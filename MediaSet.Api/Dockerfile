@@ -18,11 +18,11 @@ COPY MediaSet.Api/ ./MediaSet.Api/
 
 # Build and publish
 WORKDIR /src/MediaSet.Api
-RUN if [ -n "$MINVER_VERSION" ]; then \
+RUN /bin/sh -c 'if [ -n "$MINVER_VERSION" ]; then \
       dotnet publish -c Release -o /app/publish --no-restore -p:MinVer.Version=$MINVER_VERSION; \
     else \
       dotnet publish -c Release -o /app/publish --no-restore; \
-    fi
+    fi'
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
