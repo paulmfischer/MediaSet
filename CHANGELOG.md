@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/paulmfischer/MediaSet/compare/v1.0.2...v1.0.3) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** pass version via build arg instead of copying .git refs [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#287](https://github.com/paulmfischer/MediaSet/issues/287)) ([83f0ed1](https://github.com/paulmfischer/MediaSet/commit/83f0ed1151970c7ee2c059095397bc6a583bfe05))
+
 ## [1.0.2](https://github.com/paulmfischer/MediaSet/compare/v1.0.1...v1.0.2) (2025-11-09)
 
 
