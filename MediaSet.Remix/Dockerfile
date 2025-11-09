@@ -12,9 +12,9 @@ RUN npm ci && \
 # Copy source code
 COPY . .
 
-# Build argument for versioning
-ARG APP_VERSION=0.0.0-local
-ENV VITE_APP_VERSION=${APP_VERSION}
+# Build argument for versioning - must match what's passed from CI/CD
+ARG VITE_APP_VERSION=0.0.0-local
+ENV VITE_APP_VERSION=${VITE_APP_VERSION}
 
 # Build the application
 RUN npm run build
