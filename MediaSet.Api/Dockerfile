@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
+# Copy git directory for MinVer version detection
+COPY .git ./.git
+
 # Copy global.json and solution file
 COPY global.json ./
 COPY MediaSet.sln ./
