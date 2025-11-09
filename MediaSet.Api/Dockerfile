@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Accept version from build args (passed by CI/CD)
-ARG MINVER_VERSION=""
+ARG MINVER_VERSION=0.0.0
 
 # Copy global.json and solution file
 COPY global.json ./
@@ -18,11 +18,7 @@ COPY MediaSet.Api/ ./MediaSet.Api/
 
 # Build and publish
 WORKDIR /src/MediaSet.Api
-RUN /bin/sh -c 'if [ -n "$MINVER_VERSION" ]; then \
-      dotnet publish -c Release -o /app/publish --no-restore -p:MinVer.Version=$MINVER_VERSION; \
-    else \
-      dotnet publish -c Release -o /app/publish --no-restore; \
-    fi'
+RUN dotnet publish -c Release -o /app/publish --no-restore -p:MinVer.Version=$MINVER_VERSION
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
