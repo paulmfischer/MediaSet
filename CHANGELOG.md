@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.6](https://github.com/paulmfischer/MediaSet/compare/v1.0.5...v1.0.6) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** use environment variable for MinVer version refs [#281](https://github.com/paulmfischer/MediaSet/issues/281)  ([#293](https://github.com/paulmfischer/MediaSet/issues/293)) ([8ef63e5](https://github.com/paulmfischer/MediaSet/commit/8ef63e50dffc3bbc8e86c0f15733a1d1954a9322))
+
 ## [1.0.5](https://github.com/paulmfischer/MediaSet/compare/v1.0.4...v1.0.5) (2025-11-09)
 
 
