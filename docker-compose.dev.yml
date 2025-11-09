@@ -52,6 +52,8 @@ services:
     build:
       context: ./MediaSet.Remix
       dockerfile: Dockerfile.dev
+      args:
+        - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
     container_name: mediaset-dev-frontend
     restart: unless-stopped
     ports:

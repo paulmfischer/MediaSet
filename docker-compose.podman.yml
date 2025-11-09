@@ -52,6 +52,8 @@ services:
     build:
       context: ./MediaSet.Remix
       dockerfile: Dockerfile.dev
+      args:
+        - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
     container_name: mediaset-dev-frontend
     restart: unless-stopped
     ports:
@@ -60,7 +62,6 @@ services:
       - NODE_ENV=development
       - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
       - apiUrl=http://api:5000
-      - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
     volumes:
       - ./MediaSet.Remix:/app:Z
       - node_modules_cache:/app/node_modules
