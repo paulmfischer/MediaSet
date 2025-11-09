@@ -1,7 +1,3 @@
 {
-  "deno.enable": true,
-  "deno.enablePaths": [
-    "./MediaSet.Web"
-  ],
-  "deno.config": "./MediaSet.Web/deno.json"
+  "chat.promptFiles": true
 }
