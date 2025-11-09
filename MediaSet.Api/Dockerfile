@@ -3,11 +3,15 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Accept version from build args (passed by CI/CD)
+# This will be used by MinVer as a fallback when git directory is not available
 ARG MINVER_VERSION=0.0.0
 
 # Copy global.json and solution file
 COPY global.json ./
 COPY MediaSet.sln ./
+
+# Copy .git directory so MinVer can access git metadata for version calculation
+COPY .git/ .git/
 
 # Copy project file and restore dependencies
 COPY MediaSet.Api/MediaSet.Api.csproj ./MediaSet.Api/
@@ -18,8 +22,7 @@ COPY MediaSet.Api/ ./MediaSet.Api/
 
 # Build and publish
 WORKDIR /src/MediaSet.Api
-ENV MINVER_VERSION=$MINVER_VERSION
-RUN dotnet publish -c Release -o /app/publish --no-restore
+RUN dotnet publish -c Release -o /app/publish --no-restore /p:MinVerVersion=${MINVER_VERSION}
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime

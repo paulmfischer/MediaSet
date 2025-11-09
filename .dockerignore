@@ -1,5 +1,6 @@
 # Git
-.git
+# Note: .git is NOT ignored to allow MinVer to access git metadata during Docker builds
+# This is needed for accurate version calculation using git tags
 .gitignore
 .gitattributes
 
