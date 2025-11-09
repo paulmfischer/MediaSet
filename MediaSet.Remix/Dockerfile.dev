@@ -16,7 +16,8 @@ COPY . ./
 # Set environment for development
 ENV NODE_ENV=development
 ENV REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
-ENV VITE_APP_VERSION=0.0.0-dev
+# VITE_APP_VERSION will be set by docker-compose or .env file in development
+ENV VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
 
 EXPOSE 5173
 

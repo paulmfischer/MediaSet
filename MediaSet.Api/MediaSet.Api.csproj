@@ -7,7 +7,8 @@
         <WarningsAsErrors />
         <WarningsNotAsErrors>AD0001</WarningsNotAsErrors>
         <NoWarn>AD0001</NoWarn>
-      <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
+        <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
 
     <ItemGroup>

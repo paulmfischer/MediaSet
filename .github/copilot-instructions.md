@@ -40,17 +40,5 @@ MediaSet is a full-stack application managing personal media collections.
 ## Development Commands
 
 ```bash
-# Backend build
-dotnet build MediaSet.Api/MediaSet.Api.csproj
-
-# Backend tests
-dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
-
-# Frontend build
-cd MediaSet.Remix && npm run build
-# Frontend tests
-cd MediaSet.Remix && npm test
-
-# Full Stack
-./dev.sh start
+./dev.sh start # Start backend API and frontend UI and MongoDB
 ```

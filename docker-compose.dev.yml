@@ -38,6 +38,7 @@ services:
       - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app
+      - ./.git:/app/.git
       - ~/.nuget/packages:/home/app/.nuget/packages
       - ~/.dotnet/tools:/home/app/.dotnet/tools
     depends_on:
@@ -58,6 +59,7 @@ services:
     environment:
       - NODE_ENV=development
       - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
+      - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
     volumes:
       - ./MediaSet.Remix:/app
       - /app/node_modules
