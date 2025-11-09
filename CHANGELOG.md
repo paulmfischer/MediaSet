@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7](https://github.com/paulmfischer/MediaSet/compare/v1.0.6...v1.0.7) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** copy .git directory and pass MinVerVersion to MSBuild closes [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#295](https://github.com/paulmfischer/MediaSet/issues/295)) ([30302df](https://github.com/paulmfischer/MediaSet/commit/30302df38597b91dc70cd1886a742829c506c1ce))
+
 ## [1.0.6](https://github.com/paulmfischer/MediaSet/compare/v1.0.5...v1.0.6) (2025-11-09)
 
 
