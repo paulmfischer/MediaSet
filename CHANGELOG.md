@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/paulmfischer/MediaSet/compare/v1.0.1...v1.0.2) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** include .git directory for MinVer versioning in production builds closes [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#285](https://github.com/paulmfischer/MediaSet/issues/285)) ([fa88290](https://github.com/paulmfischer/MediaSet/commit/fa88290edf91b85af204f568c4e7354e0bd1983d))
+
 ## [1.0.1](https://github.com/paulmfischer/MediaSet/compare/v1.0.0...v1.0.1) (2025-11-09)
 
 
