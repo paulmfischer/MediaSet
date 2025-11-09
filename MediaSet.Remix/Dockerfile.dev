@@ -16,7 +16,10 @@ COPY . ./
 # Set environment for development
 ENV NODE_ENV=development
 ENV REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
-ENV VITE_APP_VERSION=0.0.0-dev
+
+# Accept version as build arg for Vite - evaluated at build time
+ARG VITE_APP_VERSION=0.0.0-dev
+ENV VITE_APP_VERSION=${VITE_APP_VERSION}
 
 EXPOSE 5173
 

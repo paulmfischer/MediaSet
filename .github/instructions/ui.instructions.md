@@ -89,3 +89,13 @@ applyTo: "**/*.ts,**/*.tsx"
 - Mock external dependencies appropriately
 - Name tests: `should [expected behavior] when [condition]`
 - Always include test updates with code changes
+
+## Development Commands
+
+```bash
+cd MediaSet.Remix && npm run build # Frontend build
+
+cd MediaSet.Remix && npm test # Frontend tests
+
+./dev.sh start frontend # Start frontend UI
+```

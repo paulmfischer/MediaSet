@@ -61,6 +61,21 @@ setup_container_runtime() {
         echo "📄 Using Docker compose file"
     fi
 
+    # Calculate and export application version from git tags
+    if [ -d ".git" ]; then
+        VITE_APP_VERSION=$(git describe --tags --abbrev=7 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "0.0.0-dev")
+        # Remove 'v' prefix if present for VITE_APP_VERSION
+        VITE_APP_VERSION="${VITE_APP_VERSION#v}"
+        # Append -local to indicate local development
+        VITE_APP_VERSION="${VITE_APP_VERSION}-local"
+        export VITE_APP_VERSION
+        echo "📦 Version: $VITE_APP_VERSION"
+        
+        # Update .env in MediaSet.Remix for Vite to pick up version in dev server
+        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" .env
+        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_APP_VERSION=$VITE_APP_VERSION" > MediaSet.Remix/.env.local
+    fi
+
     # Create necessary directories if they don't exist
     mkdir -p ~/.nuget/packages
     mkdir -p ~/.dotnet/tools

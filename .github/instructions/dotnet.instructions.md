@@ -77,3 +77,15 @@ applyTo: "**/*.cs"
 - Follow AAA pattern (Arrange, Act, Assert)
 - Name tests: `MethodName_Scenario_ExpectedResult`
 - Always include test updates with code changes
+
+## Development Commands
+
+```bash
+./dev.sh start api # Start backend API
+
+./dev.sh restart api # Restart backend API
+
+./dev.sh stop api # Stop backend API
+
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj # Run backend tests
+```

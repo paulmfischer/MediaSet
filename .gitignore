@@ -335,6 +335,7 @@ ASALocalRun/
 *.db-walo
 
 **/.env
+**/.env.local
 
 *.pem
 

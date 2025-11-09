@@ -19,6 +19,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${{ github.ref_name }}
+          # Remove 'v' prefix if present
+          VERSION=${VERSION#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -44,6 +52,8 @@ jobs:
           context: MediaSet.Remix
           file: MediaSet.Remix/Dockerfile
           platforms: linux/amd64
+          build-args: |
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

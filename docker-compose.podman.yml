@@ -38,6 +38,7 @@ services:
       - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app:Z
+      - ./.git:/app/.git:Z
       - ~/.nuget/packages:/root/.nuget/packages:Z
       - ~/.dotnet/tools:/root/.dotnet/tools:Z
     depends_on:
@@ -51,6 +52,8 @@ services:
     build:
       context: ./MediaSet.Remix
       dockerfile: Dockerfile.dev
+      args:
+        - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
     container_name: mediaset-dev-frontend
     restart: unless-stopped
     ports:
