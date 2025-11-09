@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/paulmfischer/MediaSet/compare/v1.0.4...v1.0.5) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** simplify minver version handling refs [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#291](https://github.com/paulmfischer/MediaSet/issues/291)) ([76bbe31](https://github.com/paulmfischer/MediaSet/commit/76bbe31959cd26d41b743043682dc4b9a62215fe))
+
 ## [1.0.4](https://github.com/paulmfischer/MediaSet/compare/v1.0.3...v1.0.4) (2025-11-09)
 
 
