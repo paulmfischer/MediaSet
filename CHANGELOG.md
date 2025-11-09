@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.1](https://github.com/paulmfischer/MediaSet/compare/v1.0.0...v1.0.1) (2025-11-09)
+
+
+### Bug Fixes
+
+* **versioning:** configure displaying version correctly in api/ui closes [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#284](https://github.com/paulmfischer/MediaSet/issues/284)) ([cede81b](https://github.com/paulmfischer/MediaSet/commit/cede81bd352dee5ebe53e2ed5fc99c49bb0de9e6))
+
+
+### Miscellaneous
+
+* restructure copilot instructions to follow VS Code standards [AI-assisted] ([#282](https://github.com/paulmfischer/MediaSet/issues/282)) ([5322e34](https://github.com/paulmfischer/MediaSet/commit/5322e3488e263eaed9eb58b1195d1074937d8e4f))
+
 ## [1.0.0](https://github.com/paulmfischer/MediaSet/compare/v0.5.0...v1.0.0) (2025-11-08)
 
 
