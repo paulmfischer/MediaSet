@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/paulmfischer/MediaSet/compare/v1.0.3...v1.0.4) (2025-11-09)
+
+
+### Bug Fixes
+
+* **docker:** wrap shell conditional in /bin/sh for compatibility refs [#281](https://github.com/paulmfischer/MediaSet/issues/281) ([#289](https://github.com/paulmfischer/MediaSet/issues/289)) ([0639934](https://github.com/paulmfischer/MediaSet/commit/0639934ff1d83130b21835bb7801298a64341dee))
+
 ## [1.0.3](https://github.com/paulmfischer/MediaSet/compare/v1.0.2...v1.0.3) (2025-11-09)
 
 
