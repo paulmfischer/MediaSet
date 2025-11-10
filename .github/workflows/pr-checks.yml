@@ -105,8 +105,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run Tests (Placeholder)
-        run: |
-          echo "⚠️ UI tests are not yet implemented"
-          echo "This step is a placeholder and will not fail the workflow"
-        continue-on-error: false
+      - name: Run Tests
+        run: npm run test
