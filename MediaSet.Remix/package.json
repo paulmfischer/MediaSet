@@ -8,6 +8,9 @@
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/server/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -22,10 +25,15 @@
   },
   "devDependencies": {
     "@remix-run/dev": "^2.17.0",
+    "@remix-run/testing": "^2.17.0",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.19.0",
     "eslint-import-resolver-typescript": "^3.7.0",
@@ -33,12 +41,14 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "jsdom": "^23.0.1",
     "postcss": "^8.4.38",
     "remix-development-tools": "^4.7.7",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite": "^5.4.19",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^1.0.4"
   },
   "engines": {
     "node": ">=20.0.0"
