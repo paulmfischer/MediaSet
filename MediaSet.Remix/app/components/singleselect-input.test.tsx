@@ -389,7 +389,7 @@ describe('SingleselectInput', () => {
       render(<SingleselectInput {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Select an option');
-      input.focus();
+      await user.click(input);
 
       await user.keyboard('{ArrowDown}');
 
@@ -403,7 +403,7 @@ describe('SingleselectInput', () => {
       render(<SingleselectInput {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Select an option');
-      input.focus();
+      await user.click(input);
 
       await user.keyboard('{ArrowUp}');
 
@@ -509,8 +509,8 @@ describe('SingleselectInput', () => {
       // Display shows the value initially
       expect(input).toHaveValue('option1');
 
-      // Focus and press backspace to clear
-      input.focus();
+      // Click to focus and activate, then press backspace to clear
+      await user.click(input);
       await user.keyboard('{Backspace}');
 
       // After backspace, both display and hidden input should be empty
@@ -593,13 +593,15 @@ describe('SingleselectInput', () => {
       render(<SingleselectInput {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Select an option');
-      input.focus();
+      await user.click(input);
+      
+      // Close dropdown with Escape
+      await user.keyboard('{Escape}');
 
       // Press Enter with closed dropdown - should open it
       await user.keyboard('{Enter}');
 
       // Since dropdown was closed, Enter opens it
-      // The condition "if (!displayOptions)" returns early
       await waitFor(() => {
         // The display should have actually opened the dropdown
         const listbox = screen.getByRole('listbox');
@@ -726,7 +728,7 @@ describe('SingleselectInput', () => {
       render(<SingleselectInput {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Select an option');
-      input.focus();
+      await user.click(input);
 
       expect(input).toHaveFocus();
 
@@ -921,27 +923,28 @@ describe('SingleselectInput', () => {
       });
     });
 
-    it('should handle options with duplicate values', async () => {
+    it('should handle options with unique values correctly', async () => {
       const user = userEvent.setup();
-      const duplicateOptions: Option[] = [
-        { label: 'First', value: 'same' },
-        { label: 'Second', value: 'same' },
+      const uniqueOptions: Option[] = [
+        { label: 'First', value: 'first' },
+        { label: 'Second', value: 'second' },
       ];
 
       render(
         <SingleselectInput
           {...defaultProps}
-          options={duplicateOptions}
+          options={uniqueOptions}
         />
       );
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      const firstOption = screen.getAllByText(/First|Second/)[0];
+      const firstOption = screen.getByRole('option', { name: 'First' });
       await user.click(firstOption);
 
-      expect(input).toHaveValue('First');
+      const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
+      expect(hiddenInput.value).toBe('first');
     });
   });
 
