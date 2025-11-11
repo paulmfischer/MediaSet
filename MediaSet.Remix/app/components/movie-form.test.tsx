@@ -83,7 +83,7 @@ describe('MovieForm', () => {
       render(<MovieForm {...defaultProps} />);
 
       expect(screen.getByLabelText('Title')).toBeInTheDocument();
-      expect(screen.getByLabelText('Format')).toBeInTheDocument();
+      expect(screen.getByText('Format')).toBeInTheDocument();
       expect(screen.getByLabelText('Runtime')).toBeInTheDocument();
       expect(screen.getByLabelText('Release Date')).toBeInTheDocument();
       expect(screen.getByLabelText('Is TV Series')).toBeInTheDocument();
