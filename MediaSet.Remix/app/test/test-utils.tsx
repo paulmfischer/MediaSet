@@ -17,3 +17,6 @@ function customRender(
 // Re-export everything from @testing-library/react
 export * from '@testing-library/react';
 export { customRender as render };
+
+// Explicitly re-export commonly used utilities for convenience
+export { screen, fireEvent } from '@testing-library/react';
