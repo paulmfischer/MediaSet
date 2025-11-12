@@ -57,9 +57,7 @@ describe('SingleselectInput', () => {
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should render all options in dropdown when opened', async () => {
@@ -69,11 +67,9 @@ describe('SingleselectInput', () => {
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      await waitFor(() => {
-        mockOptions.forEach((option) => {
+      mockOptions.forEach((option) => {
           expect(screen.getByText(option.label)).toBeInTheDocument();
         });
-      });
     });
 
     it('should have listbox role on dropdown container', async () => {
@@ -171,9 +167,7 @@ describe('SingleselectInput', () => {
       const option = screen.getByText('Option 1');
       await user.click(option);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should clear filter text after selection', async () => {
@@ -237,9 +231,7 @@ describe('SingleselectInput', () => {
         />
       );
 
-      await waitFor(() => {
-        expect(input).toHaveValue('option3');
-      });
+      expect(input).toHaveValue('option3');
     });
 
     it('should handle option with isNew flag', async () => {
@@ -393,9 +385,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{ArrowDown}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should open dropdown with ArrowUp key', async () => {
@@ -407,9 +397,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{ArrowUp}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should navigate down through options with ArrowDown', async () => {
@@ -470,9 +458,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should close dropdown and move focus out with Tab key', async () => {
@@ -491,9 +477,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{Tab}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should clear selection with Backspace when input is empty', async () => {
@@ -549,12 +533,10 @@ describe('SingleselectInput', () => {
       await user.keyboard('{ArrowDown}');
 
       // After one ArrowDown, activeIndex should be 1
-      await waitFor(() => {
-        expect(input).toHaveAttribute(
+      expect(input).toHaveAttribute(
           'aria-activedescendant',
           `${defaultProps.name}-option-1`
         );
-      });
     });
 
     it('should not go below first option with ArrowUp at start', async () => {
@@ -630,15 +612,11 @@ describe('SingleselectInput', () => {
 
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should have aria-selected on options', async () => {
@@ -686,9 +664,7 @@ describe('SingleselectInput', () => {
       await user.tab();
 
       // Dropdown should close when focus leaves
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should keep dropdown open when focus moves to listbox', async () => {
@@ -892,9 +868,7 @@ describe('SingleselectInput', () => {
       const otherField = screen.getByPlaceholderText('Other field');
       await user.click(otherField);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
 
       await user.click(input);
       expect(input).toHaveAttribute('aria-expanded', 'true');
@@ -918,9 +892,7 @@ describe('SingleselectInput', () => {
         />
       );
 
-      await waitFor(() => {
-        expect(input).toHaveValue('');
-      });
+      expect(input).toHaveValue('');
     });
 
     it('should handle options with unique values correctly', async () => {
