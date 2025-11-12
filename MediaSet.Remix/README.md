@@ -187,20 +187,48 @@ export interface Book {
 
 ## Testing
 
+The MediaSet.Remix frontend includes comprehensive test coverage using Vitest and React Testing Library. For detailed testing guidance, patterns, and best practices, see the [Testing Guide](../Development/TESTING.md).
+
+### Running Tests
+
 ```bash
-# Run tests
+# Run tests once
 npm test
 
-# Run tests in watch mode
+# Run tests in watch mode (recommended for development)
 npm test -- --watch
 
-# Run tests with coverage
+# Run tests with coverage report
 npm test -- --coverage
+
+# Run specific test file
+npm test -- app/helpers.test.ts
+
+# Run tests matching a pattern
+npm test -- --grep "toTitleCase"
 ```
 
-Tests use:
-- **Vitest**: Fast unit test runner
-- **React Testing Library**: Component testing
+### Test Coverage
+
+- Generate coverage reports locally: `npm test -- --coverage`
+- View detailed HTML report: `open coverage/index.html`
+- Target coverage: 80%+ for statements, branches, functions, and lines
+
+### Testing Stack
+
+- **Vitest**: Fast unit test runner with Vite integration
+- **React Testing Library**: Component testing focusing on user interactions
+- **Happy DOM**: Lightweight DOM implementation for testing
+- **@testing-library/user-event**: User-centric testing utilities
+
+### Test Organization
+
+Tests are located alongside source code:
+- `app/helpers.test.ts` - Utility function tests
+- `app/entity-data.test.ts` - Data fetching tests
+- `app/test/` - Shared testing utilities, fixtures, and mocks
+
+For comprehensive testing documentation, see [Development/TESTING.md](../Development/TESTING.md).
 
 ## Code Style
 

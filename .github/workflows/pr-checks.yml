@@ -106,4 +106,4 @@ jobs:
         run: npm ci
       
       - name: Run Tests
-        run: npm run test
+        run: npm test
