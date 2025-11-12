@@ -654,9 +654,11 @@ describe('GameForm', () => {
         'This is a very long description '.repeat(20);
       const descriptionInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
 
-      await user.type(descriptionInput, longDescription);
+      // Use paste() instead of type() for realistic user action with better performance
+      await user.click(descriptionInput);
+      await user.paste(longDescription);
 
-      expect(descriptionInput.value).toContain('This is a very long description');
+      expect(descriptionInput.value).toBe(longDescription);
     });
 
     it('should handle special characters in all text fields', async () => {
