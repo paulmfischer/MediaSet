@@ -26,28 +26,27 @@ describe('SingleselectInput', () => {
   });
 
   describe('Dropdown Rendering', () => {
-    it('should render the input field with placeholder', () => {
+    it('should render initial component state correctly', () => {
       render(<SingleselectInput {...defaultProps} />);
 
+      // Input field with placeholder
       const input = screen.getByPlaceholderText('Select an option');
       expect(input).toBeInTheDocument();
       expect(input).toHaveAttribute('role', 'combobox');
-    });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
+      expect(input).toHaveAttribute('aria-autocomplete', 'list');
 
-    it('should render the hidden input field with correct name', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
+      // Hidden input field
       const hiddenInputs = document.querySelectorAll('input[type="hidden"][name="test-select"]');
       expect(hiddenInputs.length).toBeGreaterThan(0);
       expect(hiddenInputs[0]).toHaveAttribute('type', 'hidden');
       expect(hiddenInputs[0]).toHaveAttribute('name', 'test-select');
-    });
 
-    it('should have aria-expanded set to false initially', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      // Backdrop should be hidden initially
+      const { container } = render(<SingleselectInput {...defaultProps} />);
+      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
+      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should display dropdown when input is focused', async () => {
@@ -94,20 +93,6 @@ describe('SingleselectInput', () => {
       expect(options).toHaveLength(mockOptions.length);
     });
 
-    it('should have aria-controls pointing to listbox', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
-    });
-
-    it('should have aria-autocomplete="list" for combobox', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
-    });
-
     it('should display backdrop when dropdown is open', async () => {
       const user = userEvent.setup();
       const { container } = render(<SingleselectInput {...defaultProps} />);
@@ -119,13 +104,6 @@ describe('SingleselectInput', () => {
         const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
         expect(backdrop).not.toHaveClass('hidden');
       });
-    });
-
-    it('should hide backdrop when dropdown is closed', () => {
-      const { container } = render(<SingleselectInput {...defaultProps} />);
-
-      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-      expect(backdrop).toHaveClass('hidden');
     });
   });
 

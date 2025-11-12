@@ -26,29 +26,28 @@ describe('MultiselectInput', () => {
   });
 
   describe('Dropdown Rendering', () => {
-    it('should render the input field with placeholder', () => {
+    it('should render initial component state correctly', () => {
       render(<MultiselectInput {...defaultProps} />);
 
+      // Input field with placeholder
       const input = screen.getByPlaceholderText('Select options');
       expect(input).toBeInTheDocument();
       expect(input).toHaveAttribute('role', 'combobox');
-    });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
+      expect(input).toHaveAttribute('aria-autocomplete', 'list');
 
-    it('should render the hidden input field with correct name', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
+      // Hidden input field
       const hiddenInput = document.querySelector(
         `input[type="hidden"][name="${defaultProps.name}"]`
       );
       expect(hiddenInput).toBeInTheDocument();
       expect(hiddenInput).toHaveAttribute('type', 'hidden');
-    });
 
-    it('should have aria-expanded set to false initially', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      // Backdrop should be hidden initially
+      const { container } = render(<MultiselectInput {...defaultProps} />);
+      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
+      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should display dropdown when input is focused', async () => {
@@ -95,20 +94,6 @@ describe('MultiselectInput', () => {
       expect(options).toHaveLength(mockOptions.length);
     });
 
-    it('should have aria-controls pointing to listbox', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
-    });
-
-    it('should have aria-autocomplete="list" for combobox', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
-    });
-
     it('should display backdrop when dropdown is open', async () => {
       const user = userEvent.setup();
       const { container } = render(<MultiselectInput {...defaultProps} />);
@@ -120,13 +105,6 @@ describe('MultiselectInput', () => {
         const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
         expect(backdrop).not.toHaveClass('hidden');
       });
-    });
-
-    it('should hide backdrop when dropdown is closed', () => {
-      const { container } = render(<MultiselectInput {...defaultProps} />);
-
-      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should close dropdown when clicking backdrop', async () => {
