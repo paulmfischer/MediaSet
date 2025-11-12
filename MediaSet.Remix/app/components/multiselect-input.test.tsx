@@ -26,29 +26,28 @@ describe('MultiselectInput', () => {
   });
 
   describe('Dropdown Rendering', () => {
-    it('should render the input field with placeholder', () => {
+    it('should render initial component state correctly', () => {
       render(<MultiselectInput {...defaultProps} />);
 
+      // Input field with placeholder
       const input = screen.getByPlaceholderText('Select options');
       expect(input).toBeInTheDocument();
       expect(input).toHaveAttribute('role', 'combobox');
-    });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
+      expect(input).toHaveAttribute('aria-autocomplete', 'list');
 
-    it('should render the hidden input field with correct name', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
+      // Hidden input field
       const hiddenInput = document.querySelector(
         `input[type="hidden"][name="${defaultProps.name}"]`
       );
       expect(hiddenInput).toBeInTheDocument();
       expect(hiddenInput).toHaveAttribute('type', 'hidden');
-    });
 
-    it('should have aria-expanded set to false initially', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      // Backdrop should be hidden initially
+      const { container } = render(<MultiselectInput {...defaultProps} />);
+      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
+      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should display dropdown when input is focused', async () => {
@@ -58,9 +57,7 @@ describe('MultiselectInput', () => {
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should render all options in dropdown when opened', async () => {
@@ -70,11 +67,9 @@ describe('MultiselectInput', () => {
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
 
-      await waitFor(() => {
-        mockOptions.forEach((option) => {
+      mockOptions.forEach((option) => {
           expect(screen.getByText(option.label)).toBeInTheDocument();
         });
-      });
     });
 
     it('should have listbox role on dropdown container', async () => {
@@ -99,20 +94,6 @@ describe('MultiselectInput', () => {
       expect(options).toHaveLength(mockOptions.length);
     });
 
-    it('should have aria-controls pointing to listbox', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
-    });
-
-    it('should have aria-autocomplete="list" for combobox', () => {
-      render(<MultiselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
-    });
-
     it('should display backdrop when dropdown is open', async () => {
       const user = userEvent.setup();
       const { container } = render(<MultiselectInput {...defaultProps} />);
@@ -124,13 +105,6 @@ describe('MultiselectInput', () => {
         const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
         expect(backdrop).not.toHaveClass('hidden');
       });
-    });
-
-    it('should hide backdrop when dropdown is closed', () => {
-      const { container } = render(<MultiselectInput {...defaultProps} />);
-
-      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should close dropdown when clicking backdrop', async () => {
@@ -147,9 +121,7 @@ describe('MultiselectInput', () => {
         await user.click(backdrop);
       }
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
   });
 
@@ -534,9 +506,7 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{ArrowDown}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should open dropdown with ArrowUp key', async () => {
@@ -548,9 +518,7 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{ArrowUp}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should navigate down through options with ArrowDown', async () => {
@@ -611,9 +579,7 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should close dropdown and move focus out with Tab key', async () => {
@@ -632,9 +598,7 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{Tab}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should set aria-activedescendant during keyboard navigation', async () => {
@@ -646,12 +610,10 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{ArrowDown}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute(
+      expect(input).toHaveAttribute(
           'aria-activedescendant',
           `${defaultProps.name}-option-1`
         );
-      });
     });
 
     it('should not go below first option with ArrowUp at start', async () => {
@@ -695,9 +657,7 @@ describe('MultiselectInput', () => {
       // Now reopen with Enter
       await user.keyboard('{Enter}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
   });
 
@@ -720,15 +680,11 @@ describe('MultiselectInput', () => {
 
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should have aria-selected on options', async () => {
@@ -773,9 +729,7 @@ describe('MultiselectInput', () => {
 
       await user.tab();
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should have role="listbox" on dropdown', async () => {
@@ -992,9 +946,7 @@ describe('MultiselectInput', () => {
       const otherField = screen.getByPlaceholderText('Other field');
       await user.click(otherField);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
 
       await user.click(input);
       expect(input).toHaveAttribute('aria-expanded', 'true');

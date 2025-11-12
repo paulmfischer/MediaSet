@@ -26,28 +26,27 @@ describe('SingleselectInput', () => {
   });
 
   describe('Dropdown Rendering', () => {
-    it('should render the input field with placeholder', () => {
+    it('should render initial component state correctly', () => {
       render(<SingleselectInput {...defaultProps} />);
 
+      // Input field with placeholder
       const input = screen.getByPlaceholderText('Select an option');
       expect(input).toBeInTheDocument();
       expect(input).toHaveAttribute('role', 'combobox');
-    });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
+      expect(input).toHaveAttribute('aria-autocomplete', 'list');
 
-    it('should render the hidden input field with correct name', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
+      // Hidden input field
       const hiddenInputs = document.querySelectorAll('input[type="hidden"][name="test-select"]');
       expect(hiddenInputs.length).toBeGreaterThan(0);
       expect(hiddenInputs[0]).toHaveAttribute('type', 'hidden');
       expect(hiddenInputs[0]).toHaveAttribute('name', 'test-select');
-    });
 
-    it('should have aria-expanded set to false initially', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      // Backdrop should be hidden initially
+      const { container } = render(<SingleselectInput {...defaultProps} />);
+      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
+      expect(backdrop).toHaveClass('hidden');
     });
 
     it('should display dropdown when input is focused', async () => {
@@ -57,9 +56,7 @@ describe('SingleselectInput', () => {
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should render all options in dropdown when opened', async () => {
@@ -69,11 +66,9 @@ describe('SingleselectInput', () => {
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      await waitFor(() => {
-        mockOptions.forEach((option) => {
+      mockOptions.forEach((option) => {
           expect(screen.getByText(option.label)).toBeInTheDocument();
         });
-      });
     });
 
     it('should have listbox role on dropdown container', async () => {
@@ -98,20 +93,6 @@ describe('SingleselectInput', () => {
       expect(options).toHaveLength(mockOptions.length);
     });
 
-    it('should have aria-controls pointing to listbox', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
-    });
-
-    it('should have aria-autocomplete="list" for combobox', () => {
-      render(<SingleselectInput {...defaultProps} />);
-
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
-    });
-
     it('should display backdrop when dropdown is open', async () => {
       const user = userEvent.setup();
       const { container } = render(<SingleselectInput {...defaultProps} />);
@@ -123,13 +104,6 @@ describe('SingleselectInput', () => {
         const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
         expect(backdrop).not.toHaveClass('hidden');
       });
-    });
-
-    it('should hide backdrop when dropdown is closed', () => {
-      const { container } = render(<SingleselectInput {...defaultProps} />);
-
-      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-      expect(backdrop).toHaveClass('hidden');
     });
   });
 
@@ -171,9 +145,7 @@ describe('SingleselectInput', () => {
       const option = screen.getByText('Option 1');
       await user.click(option);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should clear filter text after selection', async () => {
@@ -237,9 +209,7 @@ describe('SingleselectInput', () => {
         />
       );
 
-      await waitFor(() => {
-        expect(input).toHaveValue('option3');
-      });
+      expect(input).toHaveValue('option3');
     });
 
     it('should handle option with isNew flag', async () => {
@@ -393,9 +363,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{ArrowDown}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should open dropdown with ArrowUp key', async () => {
@@ -407,9 +375,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{ArrowUp}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('should navigate down through options with ArrowDown', async () => {
@@ -470,9 +436,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should close dropdown and move focus out with Tab key', async () => {
@@ -491,9 +455,7 @@ describe('SingleselectInput', () => {
 
       await user.keyboard('{Tab}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should clear selection with Backspace when input is empty', async () => {
@@ -549,12 +511,10 @@ describe('SingleselectInput', () => {
       await user.keyboard('{ArrowDown}');
 
       // After one ArrowDown, activeIndex should be 1
-      await waitFor(() => {
-        expect(input).toHaveAttribute(
+      expect(input).toHaveAttribute(
           'aria-activedescendant',
           `${defaultProps.name}-option-1`
         );
-      });
     });
 
     it('should not go below first option with ArrowUp at start', async () => {
@@ -630,15 +590,11 @@ describe('SingleselectInput', () => {
 
       await user.click(input);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'true');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'true');
 
       await user.keyboard('{Escape}');
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should have aria-selected on options', async () => {
@@ -686,9 +642,7 @@ describe('SingleselectInput', () => {
       await user.tab();
 
       // Dropdown should close when focus leaves
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('should keep dropdown open when focus moves to listbox', async () => {
@@ -892,9 +846,7 @@ describe('SingleselectInput', () => {
       const otherField = screen.getByPlaceholderText('Other field');
       await user.click(otherField);
 
-      await waitFor(() => {
-        expect(input).toHaveAttribute('aria-expanded', 'false');
-      });
+      expect(input).toHaveAttribute('aria-expanded', 'false');
 
       await user.click(input);
       expect(input).toHaveAttribute('aria-expanded', 'true');
@@ -918,9 +870,7 @@ describe('SingleselectInput', () => {
         />
       );
 
-      await waitFor(() => {
-        expect(input).toHaveValue('');
-      });
+      expect(input).toHaveValue('');
     });
 
     it('should handle options with unique values correctly', async () => {
