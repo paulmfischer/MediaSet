@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.0.8](https://github.com/paulmfischer/MediaSet/compare/v1.0.7...v1.0.8) (2025-11-12)
+
+
+### Documentation
+
+* add testing documentation and coverage reporting setup closes [#321](https://github.com/paulmfischer/MediaSet/issues/321) ([#348](https://github.com/paulmfischer/MediaSet/issues/348)) ([56cb614](https://github.com/paulmfischer/MediaSet/commit/56cb61427f9294c5c9f6fd8d7628650bb9edebae))
+* add UI testing infrastructure implementation plan [AI-assisted] refs [#249](https://github.com/paulmfischer/MediaSet/issues/249) ([#323](https://github.com/paulmfischer/MediaSet/issues/323)) ([a8a5be8](https://github.com/paulmfischer/MediaSet/commit/a8a5be80816e1a6ff39a7bbc47674e9ce4e9bb8e))
+
+
+### Tests
+
+* **ui:** add badge.tsx component tests closes [#312](https://github.com/paulmfischer/MediaSet/issues/312) [AI-assisted] ([#339](https://github.com/paulmfischer/MediaSet/issues/339)) ([6bd1688](https://github.com/paulmfischer/MediaSet/commit/6bd16884b78e60d8b7a977b826594420c35c5eea))
+* **ui:** Add book-form.tsx component tests closes [#305](https://github.com/paulmfischer/MediaSet/issues/305) ([#331](https://github.com/paulmfischer/MediaSet/issues/331)) ([146e5d2](https://github.com/paulmfischer/MediaSet/commit/146e5d2163bd8f8fc40d29c2d5520ab03d9d174c))
+* **ui:** add delete-dialog.tsx component tests closes [#311](https://github.com/paulmfischer/MediaSet/issues/311) ([#338](https://github.com/paulmfischer/MediaSet/issues/338)) ([37d9919](https://github.com/paulmfischer/MediaSet/commit/37d991918a9e33be35f8e89289f3886d43e86fd2))
+* **ui:** add entity add/create route tests ([#345](https://github.com/paulmfischer/MediaSet/issues/345)) ([2757c76](https://github.com/paulmfischer/MediaSet/commit/2757c76d46c9f072269bc5080557d6ae65e27152))
+* **ui:** Add entity delete route tests closes [#320](https://github.com/paulmfischer/MediaSet/issues/320) ([#347](https://github.com/paulmfischer/MediaSet/issues/347)) ([d86a60e](https://github.com/paulmfischer/MediaSet/commit/d86a60ec18f6a40d746d70bd1d8ec41e5b6fbd5c))
+* **ui:** Add entity edit route tests closes [#319](https://github.com/paulmfischer/MediaSet/issues/319) ([#346](https://github.com/paulmfischer/MediaSet/issues/346)) ([f75ce32](https://github.com/paulmfischer/MediaSet/commit/f75ce32928466fd752f94079ab056b75cf2a0c7b))
+* **ui:** Add entity list routes tests ([#344](https://github.com/paulmfischer/MediaSet/issues/344)) ([8a19891](https://github.com/paulmfischer/MediaSet/commit/8a1989173b1a5a09ed9e215bbee88e60befc8865)), closes [#317](https://github.com/paulmfischer/MediaSet/issues/317)
+* **ui:** Add entity-data.ts tests closes [#302](https://github.com/paulmfischer/MediaSet/issues/302) ([#328](https://github.com/paulmfischer/MediaSet/issues/328)) ([fb865e1](https://github.com/paulmfischer/MediaSet/commit/fb865e1eb1a2e816c0cf69a3f3020b5325ea0de6))
+* **ui:** Add game-form.tsx component tests ([#332](https://github.com/paulmfischer/MediaSet/issues/332)) ([151a485](https://github.com/paulmfischer/MediaSet/commit/151a48529a0f38454be3f6abe5fe3ecb783c6b3d))
+* **ui:** Add helpers.ts unit tests closes [#300](https://github.com/paulmfischer/MediaSet/issues/300) ([#326](https://github.com/paulmfischer/MediaSet/issues/326)) ([379d6bf](https://github.com/paulmfischer/MediaSet/commit/379d6bf9ebe3917666de771c3445a5f5ad3c8cdc))
+* **ui:** Add home page (_index) route tests closes [#316](https://github.com/paulmfischer/MediaSet/issues/316) ([#343](https://github.com/paulmfischer/MediaSet/issues/343)) ([ff9897a](https://github.com/paulmfischer/MediaSet/commit/ff9897a30986512bd3cf64535b1644c9013e926f))
+* **ui:** add metadata-data.ts tests closes [#303](https://github.com/paulmfischer/MediaSet/issues/303) ([#329](https://github.com/paulmfischer/MediaSet/issues/329)) ([14ea837](https://github.com/paulmfischer/MediaSet/commit/14ea83765f55ebc28265e38829aa2284a3873ef2))
+* **ui:** add models.ts type validation tests closes [#301](https://github.com/paulmfischer/MediaSet/issues/301)  ([#327](https://github.com/paulmfischer/MediaSet/issues/327)) ([5cbc45b](https://github.com/paulmfischer/MediaSet/commit/5cbc45ba9110970d1bf848da91f28f35aed976db))
+* **ui:** Add movie-form.tsx component tests closes [#307](https://github.com/paulmfischer/MediaSet/issues/307) ([#333](https://github.com/paulmfischer/MediaSet/issues/333)) ([abb89bc](https://github.com/paulmfischer/MediaSet/commit/abb89bce26e1ef8cb5fe896b0899927c36e57f9f))
+* **ui:** add multiselect-input.tsx component tests closes [#310](https://github.com/paulmfischer/MediaSet/issues/310)  ([#337](https://github.com/paulmfischer/MediaSet/issues/337)) ([4ff4f50](https://github.com/paulmfischer/MediaSet/commit/4ff4f508ef0590fc71aeaa7e1a204a54df199cc9))
+* **ui:** Add music-form.tsx component tests closes [#308](https://github.com/paulmfischer/MediaSet/issues/308) ([#335](https://github.com/paulmfischer/MediaSet/issues/335)) ([49ce7b9](https://github.com/paulmfischer/MediaSet/commit/49ce7b98368a3709b96d12ac7b4fa2a299ed8fb2))
+* **ui:** add pending-navigation.tsx component tests closes [#315](https://github.com/paulmfischer/MediaSet/issues/315) ([#342](https://github.com/paulmfischer/MediaSet/issues/342)) ([4b244f5](https://github.com/paulmfischer/MediaSet/commit/4b244f5a991d1069c6f2eebec3f1ece24c76698c))
+* **ui:** Add singleselect-input.tsx component tests closes [#309](https://github.com/paulmfischer/MediaSet/issues/309) ([#336](https://github.com/paulmfischer/MediaSet/issues/336)) ([9f0edd1](https://github.com/paulmfischer/MediaSet/commit/9f0edd1ee99806ac4f1e74e0776f9453daa8daed))
+* **ui:** Add StatCard.tsx component tests closes [#314](https://github.com/paulmfischer/MediaSet/issues/314) ([#341](https://github.com/paulmfischer/MediaSet/issues/341)) ([c99961f](https://github.com/paulmfischer/MediaSet/commit/c99961f3388b9084f95b98baa7dfe0d65c9304cc))
+* **ui:** add stats-data.ts tests closes [#304](https://github.com/paulmfischer/MediaSet/issues/304) ([#330](https://github.com/paulmfischer/MediaSet/issues/330)) ([d1b5b48](https://github.com/paulmfischer/MediaSet/commit/d1b5b48e4af9d18d6a883a766b67b12863789e19))
+* **ui:** Consolidate spinner component tests closes [#313](https://github.com/paulmfischer/MediaSet/issues/313) ([#340](https://github.com/paulmfischer/MediaSet/issues/340)) ([7c31c3c](https://github.com/paulmfischer/MediaSet/commit/7c31c3ca14986861f132dda632332a0ba15a4c51))
+* **ui:** setup Vitest, React Testing Library, and test utilities [AI-assisted] ([#325](https://github.com/paulmfischer/MediaSet/issues/325)) ([1e4ca6c](https://github.com/paulmfischer/MediaSet/commit/1e4ca6c81b584537d25244254aeb41fba7c1951a)), closes [#298](https://github.com/paulmfischer/MediaSet/issues/298)
+
+
+### Performance
+
+* **test:** optimizing some test runs closes [#249](https://github.com/paulmfischer/MediaSet/issues/249) ([#349](https://github.com/paulmfischer/MediaSet/issues/349)) ([9fd5464](https://github.com/paulmfischer/MediaSet/commit/9fd5464d4cf850504a67d73eb5b6cbcf5ed9fa96))
+
 ## [1.0.7](https://github.com/paulmfischer/MediaSet/compare/v1.0.6...v1.0.7) (2025-11-09)
 
 
