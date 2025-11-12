@@ -2,6 +2,8 @@
 
 A modern, full-stack personal media library management system for organizing your books, movies, and games collection. Built with .NET 9.0 and Remix.js, MediaSet provides an intuitive interface for cataloging, searching, and tracking your media items with automatic metadata lookup capabilities.
 
+**Status Checks:** [![API PR Checks](https://github.com/paulmfischer/MediaSet/actions/workflows/pr-checks.yml/badge.svg?query=job%3A%22API+Tests%22&label=API+PR+Checks)](https://github.com/paulmfischer/MediaSet/actions/workflows/pr-checks.yml) [![UI PR Checks](https://github.com/paulmfischer/MediaSet/actions/workflows/pr-checks.yml/badge.svg?query=job%3A%22UI+Tests%22&label=UI+PR+Checks)](https://github.com/paulmfischer/MediaSet/actions/workflows/pr-checks.yml)
+
 ## ✨ Key Features
 
 - **📚 Multi-Media Support**: Manage books, movies, games, and music in one unified application
