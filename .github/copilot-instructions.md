@@ -11,8 +11,7 @@ MediaSet is a full-stack application for managing personal media collections. Th
 
 ### Branch Protection
 - **NEVER commit to `main`**
-- Always create a feature branch from updated `main`: `git checkout -b feature/description` or `fix/description`
-- Push branches and open Pull Requests for code review
+- Always create a feature branch: `git checkout -b feature/description` or `fix/description`
 
 ### Commit Requirements
 - Follow Conventional Commits: `type(scope): description`
@@ -22,23 +21,72 @@ MediaSet is a full-stack application for managing personal media collections. Th
 - Reference issues: use `closes #N` for final commits, `refs #N` for intermediate commits
 - Add additional context in the body if needed
 - Add `[AI-assisted]` tag or `Co-authored-by: GitHub Copilot <copilot@github.com>` trailer
-- Always verify changes with user before committing
 
-## Project Overview
+### Agent Workflow
+- **Propose changes first**: Show the user the planned changes before implementation
+- **Wait for approval**: Confirm the user approves the approach
+- **Create and commit**: Only create commits once the user confirms the changes are correct
+- **Push to feature branch**: Agent pushes to the feature branch only
+- **User responsibility**: User creates PR and handles merge to `main`
 
-MediaSet is a full-stack application managing personal media collections.
+## Naming Conventions
 
-- Backend: .NET 9.0 Web API with MongoDB
-- Frontend: Remix.js with TypeScript and Tailwind CSS
+| Type | Convention | Example |
+|------|-----------|---------|
+| Classes/Components | PascalCase | `BookController`, `MovieCard` |
+| Functions/Variables | camelCase | `fetchBooks`, `formatTitle` |
+| Constants | SCREAMING_SNAKE_CASE | `MAX_ITEMS`, `DEFAULT_SORT` |
+| Interfaces | PascalCase | `IBook`, `MovieCardProps` |
 
-## Common Development Tasks
+## Code Quality
 
-1. **Add Entity Properties**: Update model → TypeScript interface → form component
-2. **Add API Endpoints**: Add controller route → data function in frontend
-3. **Add UI Features**: Create components → update routes
+- Use meaningful variable and function names that clearly indicate purpose
+- Keep functions small and focused on a single responsibility
+- Add comments only for complex logic, not obvious code
+- Remove unused imports, variables, and code
+- Remove outdated comments
+- Use const/final for values that don't change, let/var for values that do
+
+## Type Safety
+
+- Always use TypeScript/C# type annotations
+- Avoid `any` type in TypeScript; prefer `unknown` if type is truly unknown
+- Define interfaces for all data structures
+- Use union types and type guards where appropriate
+- Prefer specific types over generic types
+
+## Testing Practices
+
+- Follow AAA pattern: **Arrange** (setup), **Act** (execute), **Assert** (verify)
+- Test edge cases and error scenarios
+- Keep tests focused and single-purpose
+- Write test names that describe behavior clearly
+- Always include test updates with code changes
 
 ## Development Commands
 
 ```bash
-./dev.sh start # Start backend API and frontend UI and MongoDB
+# Start entire development environment
+./dev.sh start
+
+# Start specific components
+./dev.sh start api           # Start backend API only
+./dev.sh start frontend      # Start frontend UI only
+
+# Restart components
+./dev.sh restart api         # Restart backend API
+./dev.sh restart frontend    # Restart frontend UI
+
+# Stop components
+./dev.sh stop api            # Stop backend API
+./dev.sh stop frontend       # Stop frontend UI
+
+# Backend tests
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
+
+# Frontend tests
+cd MediaSet.Remix && npm test
+
+# Frontend build
+cd MediaSet.Remix && npm run build
 ```

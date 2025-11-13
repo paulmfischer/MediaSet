@@ -13,10 +13,11 @@ applyTo: "**/*.cs"
 
 ## Naming Conventions
 
-- **Public**: PascalCase (properties, methods, classes)
-- **Private**: camelCase for fields and parameters
-- **Injected dependencies**: Prefix underscore (e.g., `_httpClient`, `_logger`)
-- **Collections**: Use plural names (e.g., `Authors`, `Genres`, `Studios`)
+- **Files**: PascalCase | `BookController.cs`, `MovieEntity.cs`
+- **Public members**: PascalCase (properties, methods, classes)
+- **Private members**: camelCase for fields and parameters
+- **Injected dependencies**: `_camelCase` prefix | `_httpClient`, `_logger`
+- **Collections**: plural names | `Authors`, `Genres`, `Studios`
 
 ## Code Style
 
@@ -66,26 +67,13 @@ applyTo: "**/*.cs"
 ## Error Handling
 
 - Return appropriate HTTP status codes using TypedResults
-- Log errors with sufficient context for debugging
 - Validate input parameters and return BadRequest for invalid data
+- Log errors with sufficient context for debugging
 - Use pattern matching for result handling where appropriate
 
 ## Testing
 
 - Use NUnit for unit tests
+- Test naming: `MethodName_Scenario_ExpectedResult`
 - Consider in-memory MongoDB for integration tests
-- Follow AAA pattern (Arrange, Act, Assert)
-- Name tests: `MethodName_Scenario_ExpectedResult`
-- Always include test updates with code changes
-
-## Development Commands
-
-```bash
-./dev.sh start api # Start backend API
-
-./dev.sh restart api # Restart backend API
-
-./dev.sh stop api # Stop backend API
-
-dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj # Run backend tests
-```
+- Mock external dependencies appropriately
