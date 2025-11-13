@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.9](https://github.com/paulmfischer/MediaSet/compare/v1.0.8...v1.0.9) (2025-11-13)
+
+
+### Bug Fixes
+
+* **ui:** centralize page-level spinner for all form operations closes [#297](https://github.com/paulmfischer/MediaSet/issues/297) ([#353](https://github.com/paulmfischer/MediaSet/issues/353)) ([7730266](https://github.com/paulmfischer/MediaSet/commit/7730266a3f6a58d703097c98abd34d17238c8eae))
+* **ui:** fix mouse selection in dropdown inputs closes [#352](https://github.com/paulmfischer/MediaSet/issues/352) ([#354](https://github.com/paulmfischer/MediaSet/issues/354)) ([6ac6a90](https://github.com/paulmfischer/MediaSet/commit/6ac6a9006f77967631a714228f630c095d7c04af))
+
+
+### Miscellaneous
+
+* **docs:** consolidate and reorganize copilot instructions ([#350](https://github.com/paulmfischer/MediaSet/issues/350)) ([bfe3dfa](https://github.com/paulmfischer/MediaSet/commit/bfe3dfad32838dfe768f343880e1d57e44dfe419))
+
 ## [1.0.8](https://github.com/paulmfischer/MediaSet/compare/v1.0.7...v1.0.8) (2025-11-12)
 
 
