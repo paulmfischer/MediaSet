@@ -14,6 +14,14 @@ applyTo: "**/*.ts,**/*.tsx"
 - Place type definitions in `app/models.ts` or co-locate with components
 - Use `.tsx` for files with JSX, `.ts` for pure TypeScript
 
+## Naming Conventions
+
+- **Components**: PascalCase class in `kebab-case.tsx` file | `MovieCard` class in `movie-card.tsx`
+- **Functions/variables**: camelCase | `fetchBooks`, `formatTitle`
+- **Interfaces**: PascalCase (optionally `IPascalCase` prefix) | `IBook`, `MovieCardProps`
+- **Constants**: SCREAMING_SNAKE_CASE | `MAX_ITEMS`, `DEFAULT_SORT`
+- **Files**: `kebab-case.ts` or `kebab-case.tsx` | `movie-card.tsx`, `data-functions.ts`
+
 ## TypeScript
 
 - Always use TypeScript for type safety
@@ -21,14 +29,6 @@ applyTo: "**/*.ts,**/*.tsx"
 - Use type annotations for function parameters and return types
 - Avoid `any` type; prefer `unknown` if type is truly unknown
 - Use union types and type guards where appropriate
-
-## Naming Conventions
-
-- **Components**: PascalCase (e.g., `BookList.tsx`, `MovieCard.tsx`)
-- **Functions/variables**: camelCase (e.g., `fetchBooks`, `formatTitle`)
-- **Interfaces**: PascalCase (e.g., `IBook`, `MovieCardProps`)
-- **Constants**: SCREAMING_SNAKE_CASE (e.g., `MAX_ITEMS`, `DEFAULT_SORT`)
-- Use descriptive names that clearly indicate purpose
 
 ## Component Design
 
@@ -57,22 +57,6 @@ applyTo: "**/*.ts,**/*.tsx"
 - Follow mobile-first responsive design approach
 - Utilize global styles in `app/tailwind.css` for common styles
 
-## Code Quality
-
-- Use meaningful variable and function names
-- Keep functions small and focused
-- Add comments only for complex logic, not obvious code
-- Remove unused imports, variables, and code
-- Remove outdated comments
-- Use `const` for values that don't change, `let` for values that do
-
-## Error Handling
-
-- Handle errors gracefully with user-friendly messages
-- Use Remix's error boundaries for route-level errors
-- Validate form inputs on both client and server
-- Provide loading states for async operations
-
 ## Accessibility
 
 - Use semantic HTML elements
@@ -81,21 +65,24 @@ applyTo: "**/*.ts,**/*.tsx"
 - Maintain sufficient color contrast
 - Test with screen readers when possible
 
+## Error Handling
+
+- Handle errors gracefully with user-friendly messages
+- Use error boundaries for component-level error handling
+- Validate form inputs on both client and server
+- Provide loading states for async operations
+- Use Remix error boundaries for route-level errors
+
+## Logging
+
+- Log errors with sufficient context for debugging
+- Use console methods appropriately (console.error for errors, console.info for important info)
+- Avoid verbose logging in production
+
 ## Testing
 
 - Use Vitest for unit tests
 - Use React Testing Library for component tests
-- Test user interactions and edge cases
+- Test naming: `should [expected behavior] when [condition]`
+- Test user interactions over implementation details
 - Mock external dependencies appropriately
-- Name tests: `should [expected behavior] when [condition]`
-- Always include test updates with code changes
-
-## Development Commands
-
-```bash
-cd MediaSet.Remix && npm run build # Frontend build
-
-cd MediaSet.Remix && npm test # Frontend tests
-
-./dev.sh start frontend # Start frontend UI
-```
