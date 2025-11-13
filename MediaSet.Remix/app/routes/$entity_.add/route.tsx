@@ -3,7 +3,6 @@ import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigatio
 import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 import { addEntity } from "~/entity-data";
-import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
@@ -133,7 +132,6 @@ export default function Add() {
                 className="flex flex-row gap-2" 
                 disabled={isSubmitting}
               >
-                {isSubmitting && <div className="flex items-center"><Spinner /></div>}
                 Add {singular(entityType)}
               </button>
               <button 

@@ -598,14 +598,6 @@ describe('$entity_.add route', () => {
       expect(screen.getByTestId('book-form')).toBeInTheDocument();
     });
 
-    it('should show spinner when submitting', () => {
-      mockUseNavigation.mockReturnValue({ state: 'submitting' } as any);
-
-      render(<Add />);
-
-      expect(screen.getByTestId('spinner')).toBeInTheDocument();
-    });
-
     it('should disable buttons when submitting', () => {
       mockUseNavigation.mockReturnValue({ state: 'submitting' } as any);
 

@@ -15,5 +15,5 @@ export default function PendingNavigation() {
     </>
   );
 
-  return navigation.state === "loading" ? spinner : null;
+  return navigation.state === "loading" || navigation.state === "submitting" ? spinner : null;
 }
