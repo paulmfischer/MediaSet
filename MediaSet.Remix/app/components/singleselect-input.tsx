@@ -158,7 +158,7 @@ export default function SingleselectInput(props: SingleselectProps) {
       {/* click-away overlay */}
       <div
         className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? "" : "hidden"}`}
-        onClick={() => setDisplayOptions(false)}
+        onMouseDown={() => setDisplayOptions(false)}
       ></div>
 
       <div className="flex flex-col">
@@ -212,7 +212,8 @@ export default function SingleselectInput(props: SingleselectProps) {
                 role="option"
                 aria-selected={activeFlag}
                 onMouseEnter={() => setActiveIndex(idx)}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   selectOption(option);
                 }}
                 className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${

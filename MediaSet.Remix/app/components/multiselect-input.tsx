@@ -162,7 +162,7 @@ export default function MultiselectInput(props: MultiselectProps) {
       {/* click-away overlay */}
       <div
         className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? "" : "hidden"}`}
-        onClick={() => setDisplayOptions(false)}
+        onMouseDown={() => setDisplayOptions(false)}
       ></div>
 
       <div className="flex flex-col gap-2">
@@ -226,7 +226,8 @@ export default function MultiselectInput(props: MultiselectProps) {
                 role="option"
                 aria-selected={selectedFlag}
                 onMouseEnter={() => setActiveIndex(idx)}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   toggleSelected(option);
                   // Keep menu open for multiple selections; refocus input for continued typing
                   inputRef.current?.focus();
