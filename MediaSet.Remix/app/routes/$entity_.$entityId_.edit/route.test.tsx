@@ -626,17 +626,6 @@ describe('$entity_.$entityId_.edit route', () => {
       expect(hiddenInput).toHaveAttribute('name', 'type');
     });
 
-    it('should show spinner when submitting', () => {
-      mockUseNavigation.mockReturnValue({
-        state: 'submitting',
-        location: { pathname: '/books/book-1/edit' },
-      } as any);
-
-      render(<Edit />);
-
-      expect(screen.getByTestId('spinner')).toBeInTheDocument();
-    });
-
     it('should disable buttons when submitting', () => {
       mockUseNavigation.mockReturnValue({
         state: 'submitting',

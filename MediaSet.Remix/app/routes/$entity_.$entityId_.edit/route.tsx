@@ -1,7 +1,6 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { addEntity, getEntity, updateEntity } from "~/entity-data";
-import Spinner from "~/components/spinner";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
@@ -109,8 +108,7 @@ export default function Edit() {
               )}
               {formComponent}
               <div className="flex flex-row gap-2 mt-3">
-                <button type="submit" className="flex flex-row gap-2" disabled={isSubmitting}>
-                  {isSubmitting ? <div className="flex items-center"><Spinner /></div> : null}
+                <button type="submit" disabled={isSubmitting}>
                   Update
                 </button>
                 <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>Cancel</button>

@@ -52,14 +52,14 @@ describe('PendingNavigation', () => {
       expect(container.firstChild).not.toBeNull();
     });
 
-    it('should not render when navigation state is submitting', () => {
+    it('should render when navigation state is submitting', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'submitting',
       } as any);
 
       const { container } = render(<PendingNavigation />);
 
-      expect(container.firstChild).toBeNull();
+      expect(container.firstChild).not.toBeNull();
     });
 
     it('should handle state transitions from idle to loading', async () => {
@@ -478,8 +478,9 @@ describe('PendingNavigation', () => {
 
       const { container } = render(<PendingNavigation />);
 
-      // Should not show spinner during submission
-      expect(container.firstChild).toBeNull();
+      // Should show spinner during submission
+      expect(container.firstChild).not.toBeNull();
+      expect(screen.queryByTestId('spinner')).toBeInTheDocument();
     });
 
     it('should work with multiple PendingNavigation components', () => {
