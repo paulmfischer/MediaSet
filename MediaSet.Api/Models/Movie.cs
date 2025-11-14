@@ -1,8 +1,10 @@
+
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Attributes;
 using MediaSet.Api.Converters;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Models;
 
@@ -45,16 +47,19 @@ public class Movie : IEntity
     [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
     public bool IsTvSeries { get; set; }
 
+    public Image? CoverImage { get; set; }
+
     public bool IsEmpty()
     {
-        return string.IsNullOrWhiteSpace(Title) &&
-            string.IsNullOrWhiteSpace(Barcode) &&
-            string.IsNullOrWhiteSpace(Format) &&
-            string.IsNullOrWhiteSpace(ReleaseDate) &&
-            string.IsNullOrWhiteSpace(Rating) &&
-            !Runtime.HasValue &&
-            Studios.Count == 0 &&
-            Genres.Count == 0 &&
-            string.IsNullOrWhiteSpace(Plot);
+        return string.IsNullOrWhiteSpace(Title)
+            && string.IsNullOrWhiteSpace(Barcode)
+            && string.IsNullOrWhiteSpace(Format)
+            && string.IsNullOrWhiteSpace(ReleaseDate)
+            && string.IsNullOrWhiteSpace(Rating)
+            && !Runtime.HasValue
+            && Studios.Count == 0
+            && Genres.Count == 0
+            && string.IsNullOrWhiteSpace(Plot)
+            && CoverImage == null;
     }
 }

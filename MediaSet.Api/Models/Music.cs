@@ -1,7 +1,9 @@
+
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Models;
 
@@ -43,19 +45,22 @@ public class Music : IEntity
   public int? Discs { get; set; }
   public List<Disc> DiscList { get; set; } = [];
 
+  public Image? CoverImage { get; set; }
+
   public bool IsEmpty()
   {
-    return string.IsNullOrWhiteSpace(Title) &&
-      string.IsNullOrWhiteSpace(Format) &&
-      string.IsNullOrWhiteSpace(Artist) &&
-      string.IsNullOrWhiteSpace(ReleaseDate) &&
-      Genres.Count == 0 &&
-      !Duration.HasValue &&
-      string.IsNullOrWhiteSpace(Label) &&
-      string.IsNullOrWhiteSpace(Barcode) &&
-      !Tracks.HasValue &&
-      !Discs.HasValue &&
-      DiscList.Count == 0;
+    return string.IsNullOrWhiteSpace(Title)
+      && string.IsNullOrWhiteSpace(Format)
+      && string.IsNullOrWhiteSpace(Artist)
+      && string.IsNullOrWhiteSpace(ReleaseDate)
+      && Genres.Count == 0
+      && !Duration.HasValue
+      && string.IsNullOrWhiteSpace(Label)
+      && string.IsNullOrWhiteSpace(Barcode)
+      && !Tracks.HasValue
+      && !Discs.HasValue
+      && DiscList.Count == 0
+      && CoverImage == null;
   }
 }
 

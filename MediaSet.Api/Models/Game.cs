@@ -1,7 +1,9 @@
+
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Models;
 
@@ -54,17 +56,20 @@ public class Game : IEntity
     // Game description/summary
     public string Description { get; set; } = string.Empty;
 
+    public Image? CoverImage { get; set; }
+
     public bool IsEmpty()
     {
-        return string.IsNullOrWhiteSpace(Title) &&
-            string.IsNullOrWhiteSpace(Format) &&
-            string.IsNullOrWhiteSpace(Barcode) &&
-            string.IsNullOrWhiteSpace(ReleaseDate) &&
-            string.IsNullOrWhiteSpace(Rating) &&
-            Publishers.Count == 0 &&
-            string.IsNullOrWhiteSpace(Platform) &&
-            Developers.Count == 0 &&
-            Genres.Count == 0 &&
-            string.IsNullOrWhiteSpace(Description);
+        return string.IsNullOrWhiteSpace(Title)
+            && string.IsNullOrWhiteSpace(Format)
+            && string.IsNullOrWhiteSpace(Barcode)
+            && string.IsNullOrWhiteSpace(ReleaseDate)
+            && string.IsNullOrWhiteSpace(Rating)
+            && Publishers.Count == 0
+            && string.IsNullOrWhiteSpace(Platform)
+            && Developers.Count == 0
+            && Genres.Count == 0
+            && string.IsNullOrWhiteSpace(Description)
+            && CoverImage == null;
     }
 }
