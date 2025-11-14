@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/paulmfischer/MediaSet/compare/v1.0.9...v1.1.0) (2025-11-14)
+
+
+### Features
+
+* **models:** add Image model and CoverImage property closes [#356](https://github.com/paulmfischer/MediaSet/issues/356) [AI-assisted] ([#377](https://github.com/paulmfischer/MediaSet/issues/377)) ([4e18996](https://github.com/paulmfischer/MediaSet/commit/4e189965afdbc9b097a713329d2d2ff642ab3536))
+
+
+### Documentation
+
+* add image storage implementation plan [AI-assisted] refs [#151](https://github.com/paulmfischer/MediaSet/issues/151) ([#375](https://github.com/paulmfischer/MediaSet/issues/375)) ([9255039](https://github.com/paulmfischer/MediaSet/commit/92550397fd150014bcaad5560daa5bb9a520869a))
+
 ## [1.0.9](https://github.com/paulmfischer/MediaSet/compare/v1.0.8...v1.0.9) (2025-11-13)
 
 
