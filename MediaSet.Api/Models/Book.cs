@@ -1,7 +1,9 @@
+
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Models;
 
@@ -43,16 +45,19 @@ public class Book : IEntity
 
     public string Subtitle { get; set; } = string.Empty;
 
+    public Image? CoverImage { get; set; }
+
     public bool IsEmpty()
     {
-        return string.IsNullOrWhiteSpace(Title) &&
-            string.IsNullOrWhiteSpace(Format) &&
-            string.IsNullOrWhiteSpace(ISBN) &&
-            string.IsNullOrWhiteSpace(Plot) &&
-            string.IsNullOrWhiteSpace(PublicationDate) &&
-            string.IsNullOrWhiteSpace(Publisher) &&
-            !Pages.HasValue &&
-            Authors.Count == 0 &&
-            Genres.Count == 0;
+        return string.IsNullOrWhiteSpace(Title)
+            && string.IsNullOrWhiteSpace(Format)
+            && string.IsNullOrWhiteSpace(ISBN)
+            && string.IsNullOrWhiteSpace(Plot)
+            && string.IsNullOrWhiteSpace(PublicationDate)
+            && string.IsNullOrWhiteSpace(Publisher)
+            && !Pages.HasValue
+            && Authors.Count == 0
+            && Genres.Count == 0
+            && CoverImage == null;
     }
 }
