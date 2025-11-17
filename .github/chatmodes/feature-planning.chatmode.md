@@ -152,6 +152,7 @@ The planning document should follow this template structure:
 - API contract validation
 
 ## Implementation Steps
+Make these sub-tasks that get added to the parent issue using https://github.com/yahsan2/gh-sub-issue extension.
 
 1. [Step 1 - e.g., Create backend models]
 2. [Step 2 - e.g., Implement service layer]

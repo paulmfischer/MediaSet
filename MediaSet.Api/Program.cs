@@ -54,7 +54,28 @@ builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection(nameo
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
-// conditionally register open library if the configuration exists
+// Configure image storage settings and services
+builder.Services.Configure<ImageConfiguration>(builder.Configuration.GetSection(nameof(ImageConfiguration)));
+var imageConfig = builder.Configuration.GetSection(nameof(ImageConfiguration)).Get<ImageConfiguration>();
+if (imageConfig != null)
+{
+    BootstrapLog($"Image storage configured with path: {imageConfig.StoragePath}");
+    
+    // Ensure storage directory exists
+    if (!Directory.Exists(imageConfig.StoragePath))
+    {
+        Directory.CreateDirectory(imageConfig.StoragePath);
+        BootstrapLog($"Created image storage directory: {imageConfig.StoragePath}");
+    }
+    
+    builder.Services.AddSingleton<IImageStorageProvider>(new LocalFileStorageProvider(imageConfig.StoragePath, 
+        LoggerFactory.Create(logging => logging.AddSimpleConsole()).CreateLogger<LocalFileStorageProvider>()));
+    builder.Services.AddHttpClient<IImageService, ImageService>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<ImageConfiguration>>().Value;
+        client.Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds);
+    });
+}
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
