@@ -269,6 +269,7 @@ app.MapEntity<Movie>();
 app.MapEntity<Book>();
 app.MapEntity<Game>();
 app.MapEntity<Music>();
+app.MapImages();
 app.MapMetadata();
 app.MapStats();
 

@@ -1,5 +1,6 @@
 using System.Net;
 using MediaSet.Api.Models;
+using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Services;
 
@@ -18,17 +19,17 @@ public class ImageService : IImageService
     /// Initialize the ImageService with required dependencies.
     /// </summary>
     /// <param name="storageProvider">The storage backend for persisting images</param>
-    /// <param name="config">Configuration settings for image validation and storage</param>
+    /// <param name="configOptions">Configuration settings for image validation and storage</param>
     /// <param name="httpClient">HTTP client for downloading images from URLs</param>
     /// <param name="logger">Logger for diagnostic information</param>
     public ImageService(
         IImageStorageProvider storageProvider,
-        ImageConfiguration config,
+        IOptions<ImageConfiguration> configOptions,
         HttpClient httpClient,
         ILogger<ImageService> logger)
     {
         _storageProvider = storageProvider ?? throw new ArgumentNullException(nameof(storageProvider));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _config = configOptions?.Value ?? throw new ArgumentNullException(nameof(configOptions));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
