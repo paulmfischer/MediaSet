@@ -39,6 +39,7 @@ services:
     volumes:
       - ./MediaSet.Api:/app:Z
       - ./.git:/app/.git:Z
+      - ./data/images:/app/data/images:Z
       - ~/.nuget/packages:/root/.nuget/packages:Z
       - ~/.dotnet/tools:/root/.dotnet/tools:Z
     depends_on:

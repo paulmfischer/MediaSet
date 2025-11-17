@@ -39,6 +39,7 @@ services:
     volumes:
       - ./MediaSet.Api:/app
       - ./.git:/app/.git
+      - ./data/images:/app/data/images
       - ~/.nuget/packages:/home/app/.nuget/packages
       - ~/.dotnet/tools:/home/app/.dotnet/tools
     depends_on:

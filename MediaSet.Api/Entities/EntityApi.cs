@@ -1,5 +1,3 @@
-using MediaSet.Api.Clients;
-using MediaSet.Api.Helpers;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -61,16 +59,22 @@ internal static class EntityApi
                 if (context.Request.ContentType?.Contains("multipart/form-data") == true)
                 {
                     // Parse multipart form data
-                    var form = await context.Request.ReadFormAsync(cancellationToken);
+                    var multipartForm = await context.Request.ReadFormAsync(cancellationToken);
                     
                     // Deserialize entity from JSON
-                    if (!form.TryGetValue("entity", out var entityJson))
+                    if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
                     {
                         logger.LogError("Entity JSON not provided in form data for {entityType}", entityType);
                         return TypedResults.BadRequest("Entity JSON is required in form data");
                     }
 
-                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJson.ToString());
+                    var entityJsonString = entityJson[0]!;
+                    var options = new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                    };
+                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJsonString, options);
                     if (deserializedEntity is null)
                     {
                         logger.LogError("Failed to deserialize entity for {entityType}", entityType);
@@ -78,37 +82,8 @@ internal static class EntityApi
                     }
 
                     newEntity = deserializedEntity;
-
-                    // Handle image upload or download
-                    try
-                    {
-                        if (form.Files.Count > 0 || form.Keys.Contains("imageUrl"))
-                        {
-                            var (success, errorMessage, image) = await TryProcessImageAsync(
-                                form,
-                                imageService,
-                                null, // No existing entity on POST
-                                entityType,
-                                newEntity.Id!,
-                                logger,
-                                cancellationToken);
-
-                            if (!success && errorMessage is not null)
-                            {
-                                return TypedResults.BadRequest(errorMessage);
-                            }
-
-                            if (image is not null)
-                            {
-                                newEntity.CoverImage = image;
-                            }
-                        }
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        logger.LogWarning("Image validation failed: {error}", ex.Message);
-                        return TypedResults.BadRequest($"Image validation failed: {ex.Message}");
-                    }
+                    // Store form for later image processing
+                    context.Items["multipartForm"] = multipartForm;
                 }
                 else
                 {
@@ -132,6 +107,41 @@ internal static class EntityApi
                 logger.LogInformation("Creating new {entityType}", entityType);
                 await entityService.CreateAsync(newEntity, cancellationToken);
                 logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
+
+                // Process image after entity is saved so we have an ID
+                if (context.Items.ContainsKey("multipartForm") && context.Items["multipartForm"] is IFormCollection form &&
+                    (form.Files.Count > 0 || form.Keys.Contains("imageUrl")))
+                {
+                    try
+                    {
+                        var (success, errorMessage, image) = await TryProcessImageAsync(
+                            form,
+                            imageService,
+                            null, // No existing entity on POST
+                            entityType,
+                            newEntity.Id!,
+                            logger,
+                            cancellationToken);
+
+                        if (success && image is not null)
+                        {
+                            newEntity.CoverImage = image;
+                            // Update entity with image
+                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
+                            logger.LogInformation("Updated {entityType} {id} with cover image", entityType, newEntity.Id);
+                        }
+                        else if (!success && errorMessage is not null)
+                        {
+                            logger.LogWarning("Image processing failed for {entityType} {id}: {error}", entityType, newEntity.Id, errorMessage);
+                            // Continue anyway - entity was already created successfully
+                        }
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        logger.LogWarning("Image validation failed for {entityType} {id}: {error}", entityType, newEntity.Id, ex.Message);
+                        // Continue anyway - entity was already created successfully
+                    }
+                }
 
                 return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
             }
@@ -160,13 +170,19 @@ internal static class EntityApi
                     var form = await context.Request.ReadFormAsync(cancellationToken);
                     
                     // Deserialize entity from JSON
-                    if (!form.TryGetValue("entity", out var entityJson))
+                    if (!form.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
                     {
                         logger.LogError("Entity JSON not provided in form data for {entityType}/{id}", entityType, id);
                         return TypedResults.BadRequest("Entity JSON is required in form data");
                     }
 
-                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJson.ToString());
+                    var entityJsonString = entityJson[0]!;
+                    var options = new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                    };
+                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJsonString, options);
                     if (deserializedEntity is null)
                     {
                         logger.LogError("Failed to deserialize entity for {entityType}/{id}", entityType, id);
