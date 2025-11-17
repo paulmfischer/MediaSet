@@ -66,12 +66,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   let apiFormData: FormData | undefined;
   
   if (coverImageFile && coverImageFile.size > 0) {
-    // Create FormData to send to the backend API
+    // Create FormData to send to the backend API with entity as JSON and image file
     apiFormData = new FormData();
-    for (const [key, value] of formData.entries()) {
-      if (key === "intent") continue; // Skip intent field
-      apiFormData.append(key, value);
-    }
+    apiFormData.append("entity", JSON.stringify(entity));
+    apiFormData.append("coverImage", coverImageFile);
   }
 
   await updateEntity(params.entityId, entity, apiFormData);
@@ -112,7 +110,7 @@ export default function Edit() {
         </div>
         <div className="h-full mt-4">
           <div className="mt-4 flex flex-col gap-2">
-            <Form id={formId} method="post" action={actionUrl}>
+            <Form id={formId} method="post" action={actionUrl} encType="multipart/form-data">
               <input id="type" name="type" type="hidden" value={entity.type} />
               {lookupError && (
                 <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">

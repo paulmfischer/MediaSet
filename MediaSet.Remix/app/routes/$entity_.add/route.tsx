@@ -71,12 +71,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   let apiFormData: FormData | undefined;
   
   if (coverImageFile && coverImageFile.size > 0) {
-    // Create FormData to send to the backend API
+    // Create FormData to send to the backend API with entity as JSON and image file
     apiFormData = new FormData();
-    for (const [key, value] of formData.entries()) {
-      if (key === "intent") continue; // Skip intent field
-      apiFormData.append(key, value);
-    }
+    apiFormData.append("entity", JSON.stringify(entity));
+    apiFormData.append("coverImage", coverImageFile);
   }
 
   const newEntity = await addEntity(entity, apiFormData);
@@ -116,7 +114,7 @@ export default function Add() {
         <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
         
         <div className="mb-8">
-          <Form method="post">
+          <Form method="post" encType="multipart/form-data">
             <input type="hidden" name="type" value={entityType} />
             
             {formError && 'invalidForm' in formError && (
