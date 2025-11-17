@@ -78,12 +78,6 @@ internal static class EntityApi
                     }
 
                     newEntity = deserializedEntity;
-                    
-                    // Generate ID if not provided
-                    if (string.IsNullOrEmpty(newEntity.Id))
-                    {
-                        newEntity.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
-                    }
 
                     // Handle image upload or download
                     try
@@ -127,12 +121,6 @@ internal static class EntityApi
                     }
                     
                     newEntity = deserializedEntity;
-                    
-                    // Generate ID if not provided
-                    if (string.IsNullOrEmpty(newEntity.Id))
-                    {
-                        newEntity.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
-                    }
                 }
 
                 if (newEntity.IsEmpty())
