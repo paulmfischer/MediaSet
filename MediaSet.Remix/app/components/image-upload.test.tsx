@@ -131,10 +131,10 @@ describe("ImageUpload Component", () => {
       });
 
       fireEvent.dragEnter(dropZone);
-      expect(dropZone).toHaveClass("border-blue-500", "bg-blue-50");
+      expect(dropZone).toHaveClass("border-blue-400", "bg-blue-900");
 
       fireEvent.dragLeave(dropZone);
-      expect(dropZone).toHaveClass("border-gray-300", "bg-gray-50");
+      expect(dropZone).toHaveClass("border-gray-600", "bg-gray-800");
     });
 
     it("should handle dropping a valid file", async () => {

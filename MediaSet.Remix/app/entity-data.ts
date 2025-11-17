@@ -23,26 +23,48 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
   return await response.json() as TEntity;
 }
 
-export async function updateEntity<TEntity extends BaseEntity>(id: string, entity: TEntity) {
+export async function updateEntity<TEntity extends BaseEntity>(id: string, entity: TEntity, formData?: FormData) {
   const entityType = getEntityType(entity);
-  const response = await fetch(`${baseUrl}/${entityType}/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(entity),
-    headers: { 'Content-Type': 'application/json' }
-  });
+  
+  let response: Response;
+  if (formData) {
+    // Send as multipart/form-data when FormData is provided
+    response = await fetch(`${baseUrl}/${entityType}/${id}`, {
+      method: 'PUT',
+      body: formData,
+    });
+  } else {
+    // Send as JSON when no FormData is provided
+    response = await fetch(`${baseUrl}/${entityType}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(entity),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   if (!response.ok) {
     throw new Response(`Error updating a ${singular(entityType)}`, { status: 500 });
   }
 }
 
-export async function addEntity<TEntity extends BaseEntity>(entity: TEntity) {
+export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, formData?: FormData) {
   const entityType = getEntityType(entity);
-  const response = await fetch(`${baseUrl}/${entityType}`, {
-    method: 'POST',
-    body: JSON.stringify(entity),
-    headers: { 'Content-Type': 'application/json' }
-  });
+  
+  let response: Response;
+  if (formData) {
+    // Send as multipart/form-data when FormData is provided
+    response = await fetch(`${baseUrl}/${entityType}`, {
+      method: 'POST',
+      body: formData,
+    });
+  } else {
+    // Send as JSON when no FormData is provided
+    response = await fetch(`${baseUrl}/${entityType}`, {
+      method: 'POST',
+      body: JSON.stringify(entity),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   if (!response.ok) {
     throw new Response(`Error creating a new ${singular(entityType)}`, { status: 500 });

@@ -57,12 +57,25 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 
   const entity = formToDto(formData);
-  if (entity) {
-    await updateEntity(params.entityId, entity);
-    return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
-  } else {
+  if (!entity) {
     return { invalidObject: `Failed to convert form to a ${entityType}` };
   }
+
+  // Check if there's an image file to send as multipart/form-data
+  const coverImageFile = formData.get("coverImage") as File | null;
+  let apiFormData: FormData | undefined;
+  
+  if (coverImageFile && coverImageFile.size > 0) {
+    // Create FormData to send to the backend API
+    apiFormData = new FormData();
+    for (const [key, value] of formData.entries()) {
+      if (key === "intent") continue; // Skip intent field
+      apiFormData.append(key, value);
+    }
+  }
+
+  await updateEntity(params.entityId, entity, apiFormData);
+  return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
 };
 
 export default function Edit() {
