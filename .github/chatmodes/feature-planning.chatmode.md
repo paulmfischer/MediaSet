@@ -152,6 +152,11 @@ The planning document should follow this template structure:
 - API contract validation
 
 ## Implementation Steps
+
+> **Guidance on Creating Sub-Issues:**  
+> Break down implementation steps into sub-issues only when the feature is complex, involves multiple independent components, or when tasks can be worked on in parallel by different contributors.  
+> For simple features or tightly-coupled changes, a single issue may be sufficient.  
+> Use your judgment to avoid unnecessary fragmentation of work.
 Make these sub-tasks that get added to the parent issue using https://github.com/yahsan2/gh-sub-issue extension.
 
 1. [Step 1 - e.g., Create backend models]
