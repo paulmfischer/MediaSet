@@ -4,6 +4,7 @@ using Moq.Protected;
 using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
@@ -43,7 +44,7 @@ public class ImageServiceTests
 
         _imageService = new ImageService(
             _storageProviderMock!.Object,
-            _imageConfig,
+            Options.Create(_imageConfig!),
             httpClient,
             _loggerMock!.Object);
     }
@@ -225,7 +226,7 @@ public class ImageServiceTests
         var httpClient = new HttpClient(handlerMock.Object);
         var imageService = new ImageService(
             _storageProviderMock!.Object,
-            _imageConfig!,
+            Options.Create(_imageConfig!),
             httpClient,
             _loggerMock!.Object);
 
@@ -303,7 +304,7 @@ public class ImageServiceTests
         var httpClient = new HttpClient(handlerMock.Object);
         var imageService = new ImageService(
             _storageProviderMock!.Object,
-            _imageConfig!,
+            Options.Create(_imageConfig!),
             httpClient,
             _loggerMock!.Object);
 
@@ -340,7 +341,7 @@ public class ImageServiceTests
         var httpClient = new HttpClient(handlerMock.Object);
         var imageService = new ImageService(
             _storageProviderMock!.Object,
-            _imageConfig!,
+            Options.Create(_imageConfig!),
             httpClient,
             _loggerMock!.Object);
 

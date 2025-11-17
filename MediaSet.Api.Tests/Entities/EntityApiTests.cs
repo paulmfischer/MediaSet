@@ -21,7 +21,7 @@ using MongoDB.Driver;
 namespace MediaSet.Api.Tests.Entities;
 
 [TestFixture]
-public class EntityApiTests
+public class EntityApiTests : IntegrationTestBase
 {
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
@@ -45,15 +45,9 @@ public class EntityApiTests
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
 
-        _factory = new WebApplicationFactory<Program>()
+        _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                });
-                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing service registrations
@@ -197,6 +191,9 @@ public class EntityApiTests
         var gameId = "507f1f77bcf86cd799439011";
         var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
+        
+        // Mock GetAsync to return the existing entity
+        _gameServiceMock.Setup(s => s.GetAsync(gameId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Game?>(updatedGame));
         _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));
 
         // Act
@@ -453,6 +450,9 @@ public class EntityApiTests
         var bookId = "507f1f77bcf86cd799439011";
         var updatedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
+        
+        // Mock GetAsync to return the existing entity
+        _bookServiceMock.Setup(s => s.GetAsync(bookId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Book?>(updatedBook));
         _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));
 
         // Act

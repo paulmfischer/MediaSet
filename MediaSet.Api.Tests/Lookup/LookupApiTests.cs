@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace MediaSet.Api.Tests.Lookup;
 
 [TestFixture]
-public class LookupApiTests
+public class LookupApiTests : IntegrationTestBase
 {
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
@@ -30,15 +30,9 @@ public class LookupApiTests
         _openLibraryClientMock = new Mock<IOpenLibraryClient>();
         _upcItemDbClientMock = new Mock<IUpcItemDbClient>();
 
-        _factory = new WebApplicationFactory<Program>()
+        _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                });
-                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing client registrations and replace with mocks

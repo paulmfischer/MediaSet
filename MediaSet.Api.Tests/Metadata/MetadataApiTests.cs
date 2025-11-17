@@ -18,7 +18,7 @@ using System.Threading;
 namespace MediaSet.Api.Tests.Metadata;
 
 [TestFixture]
-public class MetadataApiNewTests
+public class MetadataApiNewTests : IntegrationTestBase
 {
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
@@ -29,15 +29,9 @@ public class MetadataApiNewTests
     {
         _metadataServiceMock = new Mock<IMetadataService>();
 
-        _factory = new WebApplicationFactory<Program>()
+        _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                });
-                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing MetadataService registration
