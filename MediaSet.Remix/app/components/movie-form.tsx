@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
+import ImageUpload from "~/components/image-upload";
 import { FormProps, MovieEntity } from "~/models";
 
 type Metadata = {
@@ -48,6 +49,8 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>
         <input id="title" name="title" type="text" className={inputClasses} placeholder="Title" aria-label="Title" defaultValue={movie?.title} />
       </div>
+
+      <ImageUpload name="coverImage" existingImage={movie?.coverImage} isSubmitting={isSubmitting} />
 
       <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>

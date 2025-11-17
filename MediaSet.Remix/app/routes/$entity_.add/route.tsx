@@ -62,12 +62,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   
   // Otherwise, this is an entity creation request
   const entity = formToDto(formData);
-  if (entity) {
-    const newEntity = await addEntity(entity);
-    return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
-  } else {
+  if (!entity) {
     return { error: { invalidForm: `Failed to convert form to a ${entityType}` } };
   }
+
+  // Check if there's an image file to send as multipart/form-data
+  const coverImageFile = formData.get("coverImage") as File | null;
+  let apiFormData: FormData | undefined;
+  
+  if (coverImageFile && coverImageFile.size > 0) {
+    // Create FormData to send to the backend API with entity as JSON and image file
+    apiFormData = new FormData();
+    apiFormData.append("entity", JSON.stringify(entity));
+    apiFormData.append("coverImage", coverImageFile);
+  }
+
+  const newEntity = await addEntity(entity, apiFormData);
+  return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
 };
 
 export default function Add() {
@@ -103,7 +114,7 @@ export default function Add() {
         <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
         
         <div className="mb-8">
-          <Form method="post">
+          <Form method="post" encType="multipart/form-data">
             <input type="hidden" name="type" value={entityType} />
             
             {formError && 'invalidForm' in formError && (

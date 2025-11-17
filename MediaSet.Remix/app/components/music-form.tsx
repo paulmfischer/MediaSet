@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
+import ImageUpload from "~/components/image-upload";
 import { FormProps, MusicEntity, Disc } from "~/models";
 import { millisecondsToMinutesSeconds } from "~/helpers";
 
@@ -68,6 +69,8 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>
         <input id="title" name="title" type="text" className={inputClasses} placeholder="Title" aria-label="Title" defaultValue={music?.title} />
       </div>
+
+      <ImageUpload name="coverImage" existingImage={music?.coverImage} isSubmitting={isSubmitting} />
 
       <div>
         <label htmlFor="artist" className="block text-sm font-medium text-gray-200 mb-1">Artist</label>

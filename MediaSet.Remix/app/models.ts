@@ -10,6 +10,15 @@ export type Option = {
   isNew?: boolean | undefined;
 };
 
+export type ImageData = {
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  imageUrl: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export enum Entity {
   Books = "Books",
   Movies = "Movies",
@@ -22,6 +31,7 @@ export interface BaseEntity {
   id?: string;
   title?: string;
   format?: string;
+  coverImage?: ImageData;
 }
 
 // Backend model

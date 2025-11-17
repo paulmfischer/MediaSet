@@ -57,12 +57,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 
   const entity = formToDto(formData);
-  if (entity) {
-    await updateEntity(params.entityId, entity);
-    return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
-  } else {
+  if (!entity) {
     return { invalidObject: `Failed to convert form to a ${entityType}` };
   }
+
+  // Check if there's an image file to send as multipart/form-data
+  const coverImageFile = formData.get("coverImage") as File | null;
+  let apiFormData: FormData | undefined;
+  
+  if (coverImageFile && coverImageFile.size > 0) {
+    // Create FormData to send to the backend API with entity as JSON and image file
+    apiFormData = new FormData();
+    apiFormData.append("entity", JSON.stringify(entity));
+    apiFormData.append("coverImage", coverImageFile);
+  }
+
+  await updateEntity(params.entityId, entity, apiFormData);
+  return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
 };
 
 export default function Edit() {
@@ -99,7 +110,7 @@ export default function Edit() {
         </div>
         <div className="h-full mt-4">
           <div className="mt-4 flex flex-col gap-2">
-            <Form id={formId} method="post" action={actionUrl}>
+            <Form id={formId} method="post" action={actionUrl} encType="multipart/form-data">
               <input id="type" name="type" type="hidden" value={entity.type} />
               {lookupError && (
                 <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">

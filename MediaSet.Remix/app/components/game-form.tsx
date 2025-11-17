@@ -1,5 +1,6 @@
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
+import ImageUpload from "~/components/image-upload";
 import { useSubmit } from "@remix-run/react";
 import { FormProps, GameEntity } from "~/models";
 
@@ -40,6 +41,8 @@ export default function GameForm({ game, developers, publishers, genres, formats
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>
         <input id="title" name="title" type="text" className={inputClasses} placeholder="Title" aria-label="Title" defaultValue={game?.title} />
       </div>
+      
+      <ImageUpload name="coverImage" existingImage={game?.coverImage} isSubmitting={isSubmitting} />
       
       <div>
         <label htmlFor="platform" className="block text-sm font-medium text-gray-200 mb-1">Platform</label>
