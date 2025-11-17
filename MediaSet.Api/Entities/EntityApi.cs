@@ -47,36 +47,227 @@ internal static class EntityApi
             return TypedResults.NotFound();
         });
 
-        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest>> (IEntityService<TEntity> entityService, TEntity newEntity, CancellationToken cancellationToken) =>
+        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest<string>>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            HttpContext context,
+            CancellationToken cancellationToken) =>
         {
-            if (newEntity is null || newEntity.IsEmpty())
+            try
             {
-                logger.LogError("A {entity} is required and must have some data on it", typeof(TEntity).Name);
-                return TypedResults.BadRequest();
+                TEntity newEntity;
+
+                // Check if request is multipart form data or JSON
+                if (context.Request.ContentType?.Contains("multipart/form-data") == true)
+                {
+                    // Parse multipart form data
+                    var form = await context.Request.ReadFormAsync(cancellationToken);
+                    
+                    // Deserialize entity from JSON
+                    if (!form.TryGetValue("entity", out var entityJson))
+                    {
+                        logger.LogError("Entity JSON not provided in form data for {entityType}", entityType);
+                        return TypedResults.BadRequest("Entity JSON is required in form data");
+                    }
+
+                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJson.ToString());
+                    if (deserializedEntity is null)
+                    {
+                        logger.LogError("Failed to deserialize entity for {entityType}", entityType);
+                        return TypedResults.BadRequest("Failed to deserialize entity");
+                    }
+
+                    newEntity = deserializedEntity;
+
+                    // Handle image upload or download
+                    try
+                    {
+                        if (form.Files.Count > 0 || form.Keys.Contains("imageUrl"))
+                        {
+                            var (success, errorMessage, image) = await TryProcessImageAsync(
+                                form,
+                                imageService,
+                                null, // No existing entity on POST
+                                entityType,
+                                newEntity.Id!,
+                                logger,
+                                cancellationToken);
+
+                            if (!success && errorMessage is not null)
+                            {
+                                return TypedResults.BadRequest(errorMessage);
+                            }
+
+                            if (image is not null)
+                            {
+                                newEntity.CoverImage = image;
+                            }
+                        }
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        logger.LogWarning("Image validation failed: {error}", ex.Message);
+                        return TypedResults.BadRequest($"Image validation failed: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    // For backward compatibility, try to read as JSON from body
+                    var deserializedEntity = await context.Request.ReadFromJsonAsync<TEntity>(cancellationToken);
+                    if (deserializedEntity is null)
+                    {
+                        logger.LogError("Failed to deserialize entity from request body for {entityType}", entityType);
+                        return TypedResults.BadRequest("Entity is required and must have some data");
+                    }
+                    
+                    newEntity = deserializedEntity;
+                }
+
+                if (newEntity.IsEmpty())
+                {
+                    logger.LogError("A {entity} is required and must have some data on it", typeof(TEntity).Name);
+                    return TypedResults.BadRequest("Entity is required and must have some data");
+                }
+
+                logger.LogInformation("Creating new {entityType}", entityType);
+                await entityService.CreateAsync(newEntity, cancellationToken);
+                logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
+
+                return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error creating {entityType}", entityType);
+                return TypedResults.BadRequest($"Error creating entity: {ex.Message}");
+            }
+        }).DisableAntiforgery();
+
+        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            string id,
+            HttpContext context,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                TEntity updatedEntity;
+
+                // Check if request is multipart form data or JSON
+                if (context.Request.ContentType?.Contains("multipart/form-data") == true)
+                {
+                    // Parse multipart form data
+                    var form = await context.Request.ReadFormAsync(cancellationToken);
+                    
+                    // Deserialize entity from JSON
+                    if (!form.TryGetValue("entity", out var entityJson))
+                    {
+                        logger.LogError("Entity JSON not provided in form data for {entityType}/{id}", entityType, id);
+                        return TypedResults.BadRequest("Entity JSON is required in form data");
+                    }
+
+                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJson.ToString());
+                    if (deserializedEntity is null)
+                    {
+                        logger.LogError("Failed to deserialize entity for {entityType}/{id}", entityType, id);
+                        return TypedResults.BadRequest("Failed to deserialize entity");
+                    }
+
+                    updatedEntity = deserializedEntity;
+                }
+                else
+                {
+                    // For backward compatibility, try to read as JSON from body
+                    var deserializedEntity = await context.Request.ReadFromJsonAsync<TEntity>(cancellationToken);
+                    if (deserializedEntity is null)
+                    {
+                        logger.LogError("Failed to deserialize entity from request body for {entityType}/{id}", entityType, id);
+                        return TypedResults.BadRequest("Failed to deserialize entity");
+                    }
+
+                    updatedEntity = deserializedEntity;
+                }
+
+                if (id != updatedEntity.Id)
+                {
+                    logger.LogError("Ids on the entity and the request do not match: {pathId} != {entityId}", id, updatedEntity.Id);
+                    return TypedResults.BadRequest("Ids on the entity and the request do not match");
+                }
+
+                // Get the existing entity to access old image for cleanup
+                var existingEntity = await entityService.GetAsync(id, cancellationToken);
+                if (existingEntity is null)
+                {
+                    logger.LogWarning("{entityType} not found for id {id}", entityType, id);
+                    return TypedResults.NotFound();
+                }
+
+                // Handle image upload or download (only if multipart form data)
+                if (context.Request.ContentType?.Contains("multipart/form-data") == true)
+                {
+                    var form = await context.Request.ReadFormAsync(cancellationToken);
+                    
+                    if (form.Files.Count > 0 || form.Keys.Contains("imageUrl"))
+                    {
+                        var (success, errorMessage, image) = await TryProcessImageAsync(
+                            form,
+                            imageService,
+                            existingEntity,
+                            entityType,
+                            id,
+                            logger,
+                            cancellationToken);
+
+                        if (!success && errorMessage is not null)
+                        {
+                            return TypedResults.BadRequest(errorMessage);
+                        }
+
+                        if (image is not null)
+                        {
+                            updatedEntity.CoverImage = image;
+                        }
+                    }
+                }
+
+                var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
+                logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
+                return TypedResults.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
+                return TypedResults.BadRequest($"Error updating entity: {ex.Message}");
+            }
+        }).DisableAntiforgery();
+
+        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            string id,
+            CancellationToken cancellationToken) =>
+        {
+            // Get entity to retrieve image path for cleanup
+            var entity = await entityService.GetAsync(id, cancellationToken);
+            if (entity is not null && entity.CoverImage is not null)
+            {
+                try
+                {
+                    imageService.DeleteImageAsync(entity.CoverImage.FilePath);
+                    logger.LogInformation("Deleted image during entity deletion: {imagePath}", entity.CoverImage.FilePath);
+                }
+                catch (IOException ex)
+                {
+                    logger.LogWarning("Failed to delete image during entity deletion (IO error): {error}", ex.Message);
+                    // Continue anyway - don't fail the entity deletion
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    logger.LogWarning("Failed to delete image during entity deletion (unauthorized): {error}", ex.Message);
+                    // Continue anyway - don't fail the entity deletion
+                }
             }
 
-            logger.LogInformation("Creating new {entityType}", entityType);
-            await entityService.CreateAsync(newEntity, cancellationToken);
-            logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
-
-            return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
-        });
-
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (IEntityService<TEntity> entityService, string id, TEntity updatedEntity, CancellationToken cancellationToken) =>
-        {
-            if (id != updatedEntity.Id)
-            {
-                logger.LogError("Ids on the entity and the request do not match: {pathId} != {entityId}", id, updatedEntity.Id);
-                return TypedResults.BadRequest("Ids on the entity and the request do not match");
-            }
-
-            var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
-            logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
-            return TypedResults.Ok();
-        });
-
-        group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>
-        {
             var result = await entityService.RemoveAsync(id, cancellationToken);
             logger.LogInformation("Deleted {entityType} {entityId}: {deleted}", entityType, id, result.DeletedCount > 0);
             return TypedResults.Ok();
@@ -143,5 +334,94 @@ internal static class EntityApi
        .DisableAntiforgery();
 
         return group;
+    }
+
+    /// <summary>
+    /// Helper method to process image upload or download from a multipart form.
+    /// </summary>
+    /// <returns>Tuple of (success, errorMessage, processedImage)</returns>
+    private static async Task<(bool Success, string? ErrorMessage, Image? ProcessedImage)> TryProcessImageAsync(
+        IFormCollection form,
+        IImageService imageService,
+        IEntity? existingEntity,
+        string entityType,
+        string entityId,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Check for image file in multipart form
+            var imageFile = form.Files["coverImage"];
+            if (imageFile is not null && imageFile.Length > 0)
+            {
+                logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, entityId);
+                
+                // Delete old image if it exists
+                DeleteOldImage(existingEntity, imageService, logger);
+
+                var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), entityId, cancellationToken);
+                return (true, null, image);
+            }
+            // Check for imageUrl field if no file was provided
+            else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
+            {
+                var imageUrl = imageUrlValue.ToString();
+                logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, entityId, imageUrl);
+                
+                // Delete old image if it exists
+                DeleteOldImage(existingEntity, imageService, logger);
+
+                try
+                {
+                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), entityId, cancellationToken);
+                    return (true, null, image);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
+                    return (false, $"Failed to download image: {ex.Message}", null);
+                }
+                catch (HttpRequestException ex)
+                {
+                    logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
+                    return (false, $"Failed to download image from URL: {ex.Message}", null);
+                }
+            }
+
+            return (true, null, null);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning("Image validation failed: {error}", ex.Message);
+            return (false, $"Image validation failed: {ex.Message}", null);
+        }
+    }
+
+    /// <summary>
+    /// Helper method to delete an old image with proper exception handling.
+    /// </summary>
+    private static void DeleteOldImage(IEntity? entity, IImageService imageService, ILogger logger)
+    {
+        if (entity?.CoverImage is null)
+        {
+            return;
+        }
+
+        try
+        {
+            imageService.DeleteImageAsync(entity.CoverImage.FilePath);
+            logger.LogInformation("Deleted old image: {imagePath}", entity.CoverImage.FilePath);
+        }
+        catch (IOException ex)
+        {
+            logger.LogWarning("Failed to delete old image (IO error): {error}", ex.Message);
+            // Continue anyway - don't fail the operation
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
+            // Continue anyway - don't fail the operation
+        }
     }
 }

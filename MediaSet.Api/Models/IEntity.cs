@@ -6,5 +6,6 @@ public interface IEntity
     public MediaTypes Type { get; set; }
     public string Title { get; set; }
     public string Format { get; set; }
+    public Image? CoverImage { get; set; }
     public bool IsEmpty();
 }

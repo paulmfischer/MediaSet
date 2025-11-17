@@ -17,7 +17,7 @@ using System.Threading;
 namespace MediaSet.Api.Tests.Health;
 
 [TestFixture]
-public class HealthApiTests
+public class HealthApiTests : IntegrationTestBase
 {
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
@@ -42,15 +42,9 @@ public class HealthApiTests
         _databaseServiceMock.Setup(s => s.GetCollection<BsonDocument>())
             .Returns(mockCollection.Object);
 
-        _factory = new WebApplicationFactory<Program>()
+        _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                });
-                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing DatabaseService registration

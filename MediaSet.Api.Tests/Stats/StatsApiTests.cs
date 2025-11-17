@@ -18,7 +18,7 @@ using ApiModels = MediaSet.Api.Models;
 namespace MediaSet.Api.Tests.Stats;
 
 [TestFixture]
-public class StatsApiTests
+public class StatsApiTests : IntegrationTestBase
 {
     private WebApplicationFactory<Program> _factory;
     private HttpClient _client;
@@ -29,15 +29,9 @@ public class StatsApiTests
     {
         _statsServiceMock = new Mock<IStatsService>();
 
-        _factory = new WebApplicationFactory<Program>()
+        _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
-                builder.ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                });
-                
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing StatsService registration

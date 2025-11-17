@@ -9,20 +9,11 @@ using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Helper to conditionally log during bootstrap (skip in Testing environment)
-void BootstrapLog(string message)
-{
-    if (builder.Environment.EnvironmentName != "Testing")
-    {
-        using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddSimpleConsole());
-        var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("MediaSet.Api");
-        bootstrapLogger.LogInformation(message);
-    }
-}
+// Get logger for bootstrap configuration
+var bootstrapLogger = new LoggerFactory().CreateLogger("MediaSet.Api.Bootstrap");
 
 // Configure console logging with scopes and timestamps
 builder.Logging.ClearProviders();
@@ -32,6 +23,7 @@ builder.Logging.AddSimpleConsole(options =>
     options.SingleLine = true;
     options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fff zzz ";
 });
+
 // Remove automatic TraceId/SpanId/ParentId printing from console logs
 builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.None);
 
@@ -54,11 +46,39 @@ builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection(nameo
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
-// conditionally register open library if the configuration exists
+// Configure image storage settings and services
+builder.Services.Configure<ImageConfiguration>(builder.Configuration.GetSection(nameof(ImageConfiguration)));
+var imageConfig = builder.Configuration.GetSection(nameof(ImageConfiguration)).Get<ImageConfiguration>();
+if (imageConfig != null)
+{
+    bootstrapLogger.LogInformation("Image storage configured with path: {StoragePath}", imageConfig.StoragePath);
+    
+    // Convert relative paths to absolute paths relative to the content root
+    var storagePath = Path.IsPathRooted(imageConfig.StoragePath) 
+        ? imageConfig.StoragePath 
+        : Path.Combine(builder.Environment.ContentRootPath, imageConfig.StoragePath);
+    
+    // Ensure storage directory exists
+    if (!Directory.Exists(storagePath))
+    {
+        Directory.CreateDirectory(storagePath);
+        bootstrapLogger.LogInformation("Created image storage directory: {StorageDirectory}", storagePath);
+    }
+    
+    builder.Services.AddSingleton<IImageStorageProvider>(sp => 
+        new LocalFileStorageProvider(
+            storagePath, 
+            sp.GetRequiredService<ILogger<LocalFileStorageProvider>>()));
+    builder.Services.AddHttpClient<IImageService, ImageService>((serviceProvider, client) =>
+    {
+        var config = serviceProvider.GetRequiredService<IOptions<ImageConfiguration>>().Value;
+        client.Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds);
+    });
+}
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
-    BootstrapLog("OpenLibrary configuration exists. Setting up OpenLibrary services.");
+    bootstrapLogger.LogInformation("OpenLibrary configuration exists. Setting up OpenLibrary services.");
     builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
     builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) =>
     {
@@ -74,7 +94,7 @@ if (openLibraryConfig.Exists())
 var upcItemDbConfig = builder.Configuration.GetSection(nameof(UpcItemDbConfiguration));
 if (upcItemDbConfig.Exists())
 {
-    BootstrapLog("UpcItemDb configuration exists. Setting up UpcItemDb services.");
+    bootstrapLogger.LogInformation("UpcItemDb configuration exists. Setting up UpcItemDb services.");
     builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
     builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>((serviceProvider, client) =>
     {
@@ -88,7 +108,7 @@ if (upcItemDbConfig.Exists())
 var tmdbConfig = builder.Configuration.GetSection(nameof(TmdbConfiguration));
 if (tmdbConfig.Exists())
 {
-    BootstrapLog("TMDB configuration exists. Setting up TMDB services.");
+    bootstrapLogger.LogInformation("TMDB configuration exists. Setting up TMDB services.");
     builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
     builder.Services.AddHttpClient<ITmdbClient, TmdbClient>((serviceProvider, client) =>
     {
@@ -107,7 +127,7 @@ if (tmdbConfig.Exists())
 var giantBombConfig = builder.Configuration.GetSection(nameof(GiantBombConfiguration));
 if (giantBombConfig.Exists())
 {
-    BootstrapLog("GiantBomb configuration exists. Setting up GiantBomb services.");
+    bootstrapLogger.LogInformation("GiantBomb configuration exists. Setting up GiantBomb services.");
     builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
     builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>((serviceProvider, client) =>
     {
@@ -123,7 +143,7 @@ if (giantBombConfig.Exists())
 var musicBrainzConfig = builder.Configuration.GetSection(nameof(MusicBrainzConfiguration));
 if (musicBrainzConfig.Exists())
 {
-    BootstrapLog("MusicBrainz configuration exists. Setting up MusicBrainz services.");
+    bootstrapLogger.LogInformation("MusicBrainz configuration exists. Setting up MusicBrainz services.");
     builder.Services.Configure<MusicBrainzConfiguration>(musicBrainzConfig);
     builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>((serviceProvider, client) =>
     {
@@ -248,6 +268,7 @@ app.MapEntity<Movie>();
 app.MapEntity<Book>();
 app.MapEntity<Game>();
 app.MapEntity<Music>();
+app.MapImages();
 app.MapMetadata();
 app.MapStats();
 
