@@ -16,12 +16,13 @@ using System.Threading.Tasks;
 namespace MediaSet.Api.Tests.Services;
 
 [TestFixture]
-public class ImageServiceTests
+public class ImageServiceTests : IDisposable
 {
     private Mock<IImageStorageProvider>? _storageProviderMock;
     private Mock<ILogger<ImageService>>? _loggerMock;
     private ImageConfiguration? _imageConfig;
     private ImageService? _imageService;
+    private HttpClient? _httpClient;
 
     [SetUp]
     public void Setup()
@@ -39,14 +40,26 @@ public class ImageServiceTests
             StripExifData = true
         };
 
-        var httpClient = new HttpClient();
-        httpClient.Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds);
+        _httpClient = new HttpClient();
+        _httpClient.Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds);
 
         _imageService = new ImageService(
             _storageProviderMock!.Object,
             Options.Create(_imageConfig!),
-            httpClient,
+            _httpClient,
             _loggerMock!.Object);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _httpClient?.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region GetImageStreamAsync Tests
@@ -223,26 +236,28 @@ public class ImageServiceTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(response);
 
-        var httpClient = new HttpClient(handlerMock.Object);
-        var imageService = new ImageService(
-            _storageProviderMock!.Object,
-            Options.Create(_imageConfig!),
-            httpClient,
-            _loggerMock!.Object);
+        using (var httpClient = new HttpClient(handlerMock.Object))
+        {
+            var imageService = new ImageService(
+                _storageProviderMock!.Object,
+                Options.Create(_imageConfig!),
+                httpClient,
+                _loggerMock!.Object);
 
-        _storageProviderMock
-            .Setup(sp => sp.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            _storageProviderMock
+                .Setup(sp => sp.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        // Act
-        var result = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None);
+            // Act
+            var result = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None);
 
-        // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
-        Assert.That(result.FileSize, Is.EqualTo(imageData.Length));
-        Assert.That(result.FilePath, Does.StartWith(entityType));
-        _storageProviderMock.Verify(sp => sp.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
+            Assert.That(result.FileSize, Is.EqualTo(imageData.Length));
+            Assert.That(result.FilePath, Does.StartWith(entityType));
+            _storageProviderMock.Verify(sp => sp.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 
     [Test]
@@ -301,17 +316,19 @@ public class ImageServiceTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(response);
 
-        var httpClient = new HttpClient(handlerMock.Object);
-        var imageService = new ImageService(
-            _storageProviderMock!.Object,
-            Options.Create(_imageConfig!),
-            httpClient,
-            _loggerMock!.Object);
+        using (var httpClient = new HttpClient(handlerMock.Object))
+        {
+            var imageService = new ImageService(
+                _storageProviderMock!.Object,
+                Options.Create(_imageConfig!),
+                httpClient,
+                _loggerMock!.Object);
 
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
-            await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
-        Assert.That(ex?.Message, Does.Contain("Unsupported image type"));
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+                await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
+            Assert.That(ex?.Message, Does.Contain("Unsupported image type"));
+        }
     }
 
     [Test]
@@ -338,23 +355,26 @@ public class ImageServiceTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(response);
 
-        var httpClient = new HttpClient(handlerMock.Object);
-        var imageService = new ImageService(
-            _storageProviderMock!.Object,
-            Options.Create(_imageConfig!),
-            httpClient,
-            _loggerMock!.Object);
+        using (var httpClient = new HttpClient(handlerMock.Object))
+        {
+            var imageService = new ImageService(
+                _storageProviderMock!.Object,
+                Options.Create(_imageConfig!),
+                httpClient,
+                _loggerMock!.Object);
 
-        // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
-            await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
-        Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+                await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
+            Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
+        }
     }
 
     #endregion
 
     /// <summary>
     /// Helper method to create a FormFile from raw data for testing.
+    /// Note: The returned FormFile manages the MemoryStream lifetime and will dispose it.
     /// </summary>
     private static IFormFile CreateFormFile(string fileName, byte[] fileContent, string contentType)
     {

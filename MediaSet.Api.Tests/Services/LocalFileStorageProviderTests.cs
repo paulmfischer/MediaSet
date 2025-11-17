@@ -99,12 +99,15 @@ public class LocalFileStorageProviderTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        var streamData = new MemoryStream();
-        if (result != null)
+        using (var streamData = new MemoryStream())
         {
-            await result.CopyToAsync(streamData);
+            if (result != null)
+            {
+                await result.CopyToAsync(streamData);
+            }
+            Assert.That(streamData.ToArray(), Is.EqualTo(expectedData));
         }
-        Assert.That(streamData.ToArray(), Is.EqualTo(expectedData));
+        result?.Dispose();
     }
 
     [Test]
