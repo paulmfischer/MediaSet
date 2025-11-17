@@ -321,7 +321,7 @@ describe('$entity_.$entityId_.edit route', () => {
       } as any);
 
       expect(mockFormToDto).toHaveBeenCalledWith(mockFormData);
-      expect(mockUpdateEntity).toHaveBeenCalledWith('book-1', mockBook);
+      expect(mockUpdateEntity).toHaveBeenCalledWith('book-1', mockBook, undefined);
     });
 
     it('should update a movie entity', async () => {
@@ -343,7 +343,7 @@ describe('$entity_.$entityId_.edit route', () => {
         params: { entity: 'movies', entityId: 'movie-1' },
       } as any);
 
-      expect(mockUpdateEntity).toHaveBeenCalledWith('movie-1', mockMovie);
+      expect(mockUpdateEntity).toHaveBeenCalledWith('movie-1', mockMovie, undefined);
     });
 
     it('should redirect to entity detail page after update', async () => {

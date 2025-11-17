@@ -276,7 +276,7 @@ describe('$entity_.add route', () => {
       } as any);
 
       expect(mockFormToDto).toHaveBeenCalledWith(mockFormData);
-      expect(mockAddEntity).toHaveBeenCalledWith(mockNewBook);
+      expect(mockAddEntity).toHaveBeenCalledWith(mockNewBook, undefined);
       expect(result).toBeDefined();
     });
 
@@ -307,7 +307,7 @@ describe('$entity_.add route', () => {
         params: { entity: 'movies' },
       } as any);
 
-      expect(mockAddEntity).toHaveBeenCalledWith(mockNewMovie);
+      expect(mockAddEntity).toHaveBeenCalledWith(mockNewMovie, undefined);
     });
 
     it('should create a new game entity', async () => {
@@ -337,7 +337,7 @@ describe('$entity_.add route', () => {
         params: { entity: 'games' },
       } as any);
 
-      expect(mockAddEntity).toHaveBeenCalledWith(mockNewGame);
+      expect(mockAddEntity).toHaveBeenCalledWith(mockNewGame, undefined);
     });
 
     it('should create a new music entity', async () => {
@@ -367,7 +367,7 @@ describe('$entity_.add route', () => {
         params: { entity: 'musics' },
       } as any);
 
-      expect(mockAddEntity).toHaveBeenCalledWith(mockNewMusic);
+      expect(mockAddEntity).toHaveBeenCalledWith(mockNewMusic, undefined);
     });
 
     it('should return error when formToDto returns null', async () => {
