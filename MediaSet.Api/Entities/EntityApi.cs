@@ -88,33 +88,25 @@ internal static class EntityApi
                     // Handle image upload or download
                     try
                     {
-                        // Check for image file in multipart form
-                        var imageFile = form.Files["coverImage"];
-                        if (imageFile is not null && imageFile.Length > 0)
+                        if (form.Files.Count > 0 || form.Keys.Contains("imageUrl"))
                         {
-                            logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, newEntity.Id);
-                            var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), newEntity.Id!, cancellationToken);
-                            newEntity.CoverImage = image;
-                        }
-                        // Check for imageUrl field if no file was provided
-                        else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-                        {
-                            var imageUrl = imageUrlValue.ToString();
-                            logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
-                            try
+                            var (success, errorMessage, image) = await TryProcessImageAsync(
+                                form,
+                                imageService,
+                                null, // No existing entity on POST
+                                entityType,
+                                newEntity.Id!,
+                                logger,
+                                cancellationToken);
+
+                            if (!success && errorMessage is not null)
                             {
-                                var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), newEntity.Id!, cancellationToken);
+                                return TypedResults.BadRequest(errorMessage);
+                            }
+
+                            if (image is not null)
+                            {
                                 newEntity.CoverImage = image;
-                            }
-                            catch (ArgumentException ex)
-                            {
-                                logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                                return TypedResults.BadRequest($"Failed to download image: {ex.Message}");
-                            }
-                            catch (HttpRequestException ex)
-                            {
-                                logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                                return TypedResults.BadRequest($"Failed to download image from URL: {ex.Message}");
                             }
                         }
                     }
@@ -227,74 +219,26 @@ internal static class EntityApi
                 {
                     var form = await context.Request.ReadFormAsync(cancellationToken);
                     
-                    try
+                    if (form.Files.Count > 0 || form.Keys.Contains("imageUrl"))
                     {
-                        // Check for image file in multipart form
-                        var imageFile = form.Files["coverImage"];
-                        if (imageFile is not null && imageFile.Length > 0)
-                        {
-                            logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, id);
-                            
-                            // Delete old image if it exists
-                            if (existingEntity.CoverImage is not null)
-                            {
-                                try
-                                {
-                                    imageService.DeleteImageAsync(existingEntity.CoverImage.FilePath);
-                                    logger.LogInformation("Deleted old image: {imagePath}", existingEntity.CoverImage.FilePath);
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogWarning("Failed to delete old image: {error}", ex.Message);
-                                    // Continue anyway - don't fail the update
-                                }
-                            }
+                        var (success, errorMessage, image) = await TryProcessImageAsync(
+                            form,
+                            imageService,
+                            existingEntity,
+                            entityType,
+                            id,
+                            logger,
+                            cancellationToken);
 
-                            var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), id, cancellationToken);
+                        if (!success && errorMessage is not null)
+                        {
+                            return TypedResults.BadRequest(errorMessage);
+                        }
+
+                        if (image is not null)
+                        {
                             updatedEntity.CoverImage = image;
                         }
-                        // Check for imageUrl field if no file was provided
-                        else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-                        {
-                            var imageUrl = imageUrlValue.ToString();
-                            logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
-                            
-                            // Delete old image if it exists
-                            if (existingEntity.CoverImage is not null)
-                            {
-                                try
-                                {
-                                    imageService.DeleteImageAsync(existingEntity.CoverImage.FilePath);
-                                    logger.LogInformation("Deleted old image: {imagePath}", existingEntity.CoverImage.FilePath);
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogWarning("Failed to delete old image: {error}", ex.Message);
-                                    // Continue anyway - don't fail the update
-                                }
-                            }
-
-                            try
-                            {
-                                var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), id, cancellationToken);
-                                updatedEntity.CoverImage = image;
-                            }
-                            catch (ArgumentException ex)
-                            {
-                                logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                                return TypedResults.BadRequest($"Failed to download image: {ex.Message}");
-                            }
-                            catch (HttpRequestException ex)
-                            {
-                                logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                                return TypedResults.BadRequest($"Failed to download image from URL: {ex.Message}");
-                            }
-                        }
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        logger.LogWarning("Image validation failed: {error}", ex.Message);
-                        return TypedResults.BadRequest($"Image validation failed: {ex.Message}");
                     }
                 }
 
@@ -324,9 +268,14 @@ internal static class EntityApi
                     imageService.DeleteImageAsync(entity.CoverImage.FilePath);
                     logger.LogInformation("Deleted image during entity deletion: {imagePath}", entity.CoverImage.FilePath);
                 }
-                catch (Exception ex)
+                catch (IOException ex)
                 {
-                    logger.LogWarning("Failed to delete image during entity deletion: {error}", ex.Message);
+                    logger.LogWarning("Failed to delete image during entity deletion (IO error): {error}", ex.Message);
+                    // Continue anyway - don't fail the entity deletion
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    logger.LogWarning("Failed to delete image during entity deletion (unauthorized): {error}", ex.Message);
                     // Continue anyway - don't fail the entity deletion
                 }
             }
@@ -397,5 +346,94 @@ internal static class EntityApi
        .DisableAntiforgery();
 
         return group;
+    }
+
+    /// <summary>
+    /// Helper method to process image upload or download from a multipart form.
+    /// </summary>
+    /// <returns>Tuple of (success, errorMessage, processedImage)</returns>
+    private static async Task<(bool Success, string? ErrorMessage, Image? ProcessedImage)> TryProcessImageAsync(
+        IFormCollection form,
+        IImageService imageService,
+        IEntity? existingEntity,
+        string entityType,
+        string entityId,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Check for image file in multipart form
+            var imageFile = form.Files["coverImage"];
+            if (imageFile is not null && imageFile.Length > 0)
+            {
+                logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, entityId);
+                
+                // Delete old image if it exists
+                DeleteOldImage(existingEntity, imageService, logger);
+
+                var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), entityId, cancellationToken);
+                return (true, null, image);
+            }
+            // Check for imageUrl field if no file was provided
+            else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
+            {
+                var imageUrl = imageUrlValue.ToString();
+                logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, entityId, imageUrl);
+                
+                // Delete old image if it exists
+                DeleteOldImage(existingEntity, imageService, logger);
+
+                try
+                {
+                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), entityId, cancellationToken);
+                    return (true, null, image);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
+                    return (false, $"Failed to download image: {ex.Message}", null);
+                }
+                catch (HttpRequestException ex)
+                {
+                    logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
+                    return (false, $"Failed to download image from URL: {ex.Message}", null);
+                }
+            }
+
+            return (true, null, null);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning("Image validation failed: {error}", ex.Message);
+            return (false, $"Image validation failed: {ex.Message}", null);
+        }
+    }
+
+    /// <summary>
+    /// Helper method to delete an old image with proper exception handling.
+    /// </summary>
+    private static void DeleteOldImage(IEntity? entity, IImageService imageService, ILogger logger)
+    {
+        if (entity?.CoverImage is null)
+        {
+            return;
+        }
+
+        try
+        {
+            imageService.DeleteImageAsync(entity.CoverImage.FilePath);
+            logger.LogInformation("Deleted old image: {imagePath}", entity.CoverImage.FilePath);
+        }
+        catch (IOException ex)
+        {
+            logger.LogWarning("Failed to delete old image (IO error): {error}", ex.Message);
+            // Continue anyway - don't fail the operation
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
+            // Continue anyway - don't fail the operation
+        }
     }
 }

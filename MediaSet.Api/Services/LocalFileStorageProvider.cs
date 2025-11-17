@@ -315,8 +315,10 @@ public class LocalFileStorageProvider : IImageStorageProvider
         {
             return !Directory.EnumerateFileSystemEntries(directory).Any();
         }
-        catch
+        catch (Exception)
         {
+            // Swallow all exceptions: directory may not exist, access denied, etc.
+            // This is non-critical; return false if unable to determine.
             return false;
         }
     }
