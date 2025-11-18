@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
