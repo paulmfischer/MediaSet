@@ -7,9 +7,9 @@ import type { ImageData } from "~/models";
 describe("ImageDisplay Component", () => {
   const mockImageData: ImageData = {
     fileName: "test-book.jpg",
-    mimeType: "image/jpeg",
+    contentType: "image/jpeg",
     fileSize: 2048576, // 2MB
-    imageUrl: "/api/images/books/123",
+    filePath: "books/123-uuid.jpg",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
@@ -48,7 +48,7 @@ describe("ImageDisplay Component", () => {
     expect(image).toBeInTheDocument();
 
     const imgElement = image.querySelector("img");
-    expect(imgElement).toHaveAttribute("src", "/api/images/books/123");
+    expect(imgElement).toHaveAttribute("src", "/images/books/123");
     expect(imgElement).toHaveAttribute("alt", "Test book cover");
   });
 
@@ -284,7 +284,7 @@ describe("ImageDisplay Component", () => {
       const mainImage = images[0];
       expect(mainImage).toHaveAttribute(
         "src",
-        `/api/images/${entityType.toLowerCase()}/123`
+        `/images/${entityType.toLowerCase()}/123`
       );
 
       unmount();

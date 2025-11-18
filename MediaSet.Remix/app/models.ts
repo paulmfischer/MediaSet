@@ -12,9 +12,9 @@ export type Option = {
 
 export type ImageData = {
   fileName: string;
-  mimeType: string;
+  contentType: string;
   fileSize: number;
-  imageUrl: string;
+  filePath: string;
   createdAt: string;
   updatedAt: string;
 };

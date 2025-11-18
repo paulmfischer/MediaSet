@@ -289,6 +289,48 @@ internal static class EntityApi
             return TypedResults.Ok();
         });
 
+        group.MapDelete("/{id}/image", async Task<Results<NoContent, NotFound>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            string id,
+            CancellationToken cancellationToken) =>
+        {
+            logger.LogInformation("Deleting image for {entityType}/{id}", entityType, id);
+
+            // Get the entity
+            var entity = await entityService.GetAsync(id, cancellationToken);
+            if (entity is null)
+            {
+                logger.LogWarning("{entityType} not found for id {id}", entityType, id);
+                return TypedResults.NotFound();
+            }
+
+            if (entity.CoverImage is null)
+            {
+                logger.LogWarning("No image found for {entityType}/{id}", entityType, id);
+                return TypedResults.NotFound();
+            }
+
+            // Delete the image file
+            try
+            {
+                imageService.DeleteImageAsync(entity.CoverImage.FilePath);
+                logger.LogInformation("Deleted image file: {imagePath}", entity.CoverImage.FilePath);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Failed to delete image file: {error}", ex.Message);
+                // Continue - file might already be deleted
+            }
+
+            // Remove coverImage from entity
+            entity.CoverImage = null;
+            await entityService.UpdateAsync(id, entity, cancellationToken);
+            logger.LogInformation("Removed image reference from {entityType}/{id}", entityType, id);
+
+            return TypedResults.NoContent();
+        });
+
         group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (IEntityService<TEntity> entityService, IFormFile bookUpload, CancellationToken cancellationToken) =>
        {
            logger.LogInformation("Received {fileName} file to upload to {entityType}", bookUpload.FileName, entityType);

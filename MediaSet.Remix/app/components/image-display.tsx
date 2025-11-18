@@ -7,7 +7,7 @@ type ImageDisplayProps = {
   alt: string;
   entityType?: Entity;
   entityId?: string;
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium" | "large" | "responsive";
   className?: string;
 };
 
@@ -15,6 +15,7 @@ const sizeMap = {
   small: "h-32 w-32",
   medium: "h-48 w-48",
   large: "h-64 w-64",
+  responsive: "h-48 w-48 lg:h-64 lg:w-64",
 };
 
 export default function ImageDisplay({
@@ -22,17 +23,25 @@ export default function ImageDisplay({
   alt,
   entityType,
   entityId,
-  size = "medium",
+  size = "responsive",
   className,
 }: ImageDisplayProps) {
   const [showModal, setShowModal] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const getImagePath = () => {
+    // We need imageData to confirm an image exists, entityType/entityId to construct the URL, and filePath for the direct API path
     if (!imageData || !entityType || !entityId) {
       return null;
     }
-    return `/api/images/${entityType.toLowerCase()}/${entityId}`;
+    // Construct direct API image URL: /static/images/{filePath}
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.warn("ImageDisplay: VITE_API_URL environment variable not set");
+      return null;
+    }
+    const imageUrl = `${apiUrl}/static/images/${imageData.filePath}`;
+    return imageUrl;
   };
 
   const imagePath = getImagePath();
@@ -86,7 +95,7 @@ export default function ImageDisplay({
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="relative w-full h-full hover:opacity-75 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 rounded-lg"
+            className="image-button relative w-full h-full"
             aria-label={`View full size image: ${alt}`}
           >
             <img
