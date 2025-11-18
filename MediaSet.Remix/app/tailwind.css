@@ -40,4 +40,8 @@
   button[class~="link"] {
     @apply text-blue-300 border-none underline p-0
   }
+
+  button[class~="image-button"] {
+    @apply appearance-none bg-transparent border-0 p-0 cursor-pointer hover:opacity-75 transition-opacity
+  }
 }

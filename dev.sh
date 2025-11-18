@@ -76,6 +76,16 @@ setup_container_runtime() {
         sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_APP_VERSION=$VITE_APP_VERSION" > MediaSet.Remix/.env.local
     fi
 
+    # Determine local IP for VITE_API_URL for local development
+    # Try to get the local IP address (not 127.0.0.1, but the machine's IP on the network)
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+    VITE_API_URL="http://${LOCAL_IP}:5000"
+    export VITE_API_URL
+    echo "🌐 API URL: $VITE_API_URL"
+    
+    # Update .env.local in MediaSet.Remix for Vite to pick up the API URL
+    echo "VITE_API_URL=$VITE_API_URL" >> MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_API_URL=$VITE_API_URL" > MediaSet.Remix/.env.local
+
     # Create necessary directories if they don't exist
     mkdir -p ~/.nuget/packages
     mkdir -p ~/.dotnet/tools

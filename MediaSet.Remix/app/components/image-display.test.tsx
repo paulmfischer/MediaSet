@@ -4,12 +4,15 @@ import ImageDisplay from "./image-display";
 import { Entity } from "~/models";
 import type { ImageData } from "~/models";
 
+// Mock the environment variable
+vi.stubEnv("VITE_API_URL", "http://localhost:5000");
+
 describe("ImageDisplay Component", () => {
   const mockImageData: ImageData = {
     fileName: "test-book.jpg",
-    mimeType: "image/jpeg",
+    contentType: "image/jpeg",
     fileSize: 2048576, // 2MB
-    imageUrl: "/api/images/books/123",
+    filePath: "books/123-uuid.jpg",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z",
   };
@@ -48,7 +51,8 @@ describe("ImageDisplay Component", () => {
     expect(image).toBeInTheDocument();
 
     const imgElement = image.querySelector("img");
-    expect(imgElement).toHaveAttribute("src", "/api/images/books/123");
+    // Check that the src contains the static/images path and filePath
+    expect(imgElement?.getAttribute("src")).toContain("/static/images/books/123-uuid.jpg");
     expect(imgElement).toHaveAttribute("alt", "Test book cover");
   });
 
@@ -282,10 +286,8 @@ describe("ImageDisplay Component", () => {
 
       const images = document.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
       const mainImage = images[0];
-      expect(mainImage).toHaveAttribute(
-        "src",
-        `/api/images/${entityType.toLowerCase()}/123`
-      );
+      // Check that src contains the static/images path and filePath
+      expect(mainImage.getAttribute("src")).toContain("/static/images/books/123-uuid.jpg");
 
       unmount();
     });
@@ -342,6 +344,6 @@ describe("ImageDisplay Component", () => {
     const imageButton = screen.getByRole("button", {
       name: /view full size image/i,
     });
-    expect(imageButton).toHaveClass("hover:opacity-75");
+    expect(imageButton).toHaveClass("image-button");
   });
 });

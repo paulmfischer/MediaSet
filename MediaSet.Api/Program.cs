@@ -9,6 +9,7 @@ using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -261,6 +262,32 @@ app.Use(async (context, next) =>
     }
 });
 
+// Configure static file serving for images folder
+if (imageConfig != null)
+{
+    var storagePath = Path.IsPathRooted(imageConfig.StoragePath)
+        ? imageConfig.StoragePath
+        : Path.Combine(builder.Environment.ContentRootPath, imageConfig.StoragePath);
+
+    if (Directory.Exists(storagePath))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(storagePath),
+            RequestPath = "/static/images",
+            DefaultContentType = "application/octet-stream",
+            ServeUnknownFileTypes = true,
+            HttpsCompression = Microsoft.AspNetCore.Http.Features.HttpsCompressionMode.Compress,
+            OnPrepareResponse = ctx =>
+            {
+                const int durationInSeconds = 604800; // 7 days
+                ctx.Context.Response.Headers.CacheControl = $"public, max-age={durationInSeconds}";
+                ctx.Context.Response.Headers.Expires = DateTimeOffset.UtcNow.AddSeconds(durationInSeconds).ToString("R");
+            }
+        });
+    }
+}
+
 // Health endpoint group
 app.MapHealth();
 
@@ -268,7 +295,6 @@ app.MapEntity<Movie>();
 app.MapEntity<Book>();
 app.MapEntity<Game>();
 app.MapEntity<Music>();
-app.MapImages();
 app.MapMetadata();
 app.MapStats();
 
