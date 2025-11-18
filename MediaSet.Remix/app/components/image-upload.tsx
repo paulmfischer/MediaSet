@@ -9,13 +9,14 @@ type ImageUploadProps = FormProps & {
 
 export default function ImageUpload(props: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    props.existingImage?.imageUrl ?? null
+    props.existingImage?.filePath ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}` : null
   );
   const [fileName, setFileName] = useState<string>(
     props.existingImage?.fileName ?? ""
   );
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageCleared, setImageCleared] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png"];
@@ -55,6 +56,8 @@ export default function ImageUpload(props: ImageUploadProps) {
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Clear the clear marker since a new file is selected
+      setImageCleared(false);
       handleFile(file);
     }
   };
@@ -84,6 +87,7 @@ export default function ImageUpload(props: ImageUploadProps) {
     setPreviewUrl(null);
     setFileName("");
     setError(null);
+    setImageCleared(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -104,6 +108,13 @@ export default function ImageUpload(props: ImageUploadProps) {
         disabled={props.isSubmitting}
         className="hidden"
         aria-label="Upload cover image"
+      />
+
+      <input
+        id={`${props.name}-clear-marker`}
+        type="hidden"
+        name={`${props.name}-cleared`}
+        value={imageCleared ? "true" : ""}
       />
 
       <div

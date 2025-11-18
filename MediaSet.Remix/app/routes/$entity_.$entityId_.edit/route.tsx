@@ -61,12 +61,26 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     return { invalidObject: `Failed to convert form to a ${entityType}` };
   }
 
+  // Get the existing entity to preserve coverImage if no new image is selected
+  const existingEntity = await getEntity(entityType, params.entityId);
+  
+  // Check if image was explicitly cleared
+  const imageClearedMarker = formData.get("coverImage-cleared") as string | null;
+  if (imageClearedMarker === "true") {
+    // Image was cleared, remove it
+    entity.coverImage = undefined;
+  } else if (existingEntity?.coverImage) {
+    // No new image selected and not cleared, preserve existing image
+    entity.coverImage = existingEntity.coverImage;
+  }
+
   // Check if there's an image file to send as multipart/form-data
   const coverImageFile = formData.get("coverImage") as File | null;
   let apiFormData: FormData | undefined;
   
   if (coverImageFile && coverImageFile.size > 0) {
     // Create FormData to send to the backend API with entity as JSON and image file
+    // This will replace the existing coverImage
     apiFormData = new FormData();
     apiFormData.append("entity", JSON.stringify(entity));
     apiFormData.append("coverImage", coverImageFile);
