@@ -18,9 +18,9 @@ namespace MediaSet.Api.Tests.Clients;
 [TestFixture]
 public class OpenLibraryClientTests
 {
-    private Mock<ILogger<OpenLibraryClient>> _loggerMock;
-    private Mock<HttpMessageHandler> _httpMessageHandlerMock;
-    private HttpClient _httpClient;
+    private Mock<ILogger<OpenLibraryClient>> _loggerMock = null!;
+    private Mock<HttpMessageHandler> _httpMessageHandlerMock = null!;
+    private HttpClient _httpClient = null!;
 
     [SetUp]
     public void Setup()

@@ -13,9 +13,9 @@ namespace MediaSet.Api.Tests.Services;
 [TestFixture]
 public class LocalFileStorageProviderTests
 {
-    private Mock<ILogger<LocalFileStorageProvider>>? _loggerMock;
-    private string? _testStoragePath;
-    private LocalFileStorageProvider? _storageProvider;
+    private Mock<ILogger<LocalFileStorageProvider>> _loggerMock = null!;
+    private string _testStoragePath = null!;
+    private LocalFileStorageProvider _storageProvider = null!;
 
     [SetUp]
     public void Setup()

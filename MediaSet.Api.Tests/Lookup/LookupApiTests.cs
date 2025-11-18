@@ -19,10 +19,10 @@ namespace MediaSet.Api.Tests.Lookup;
 [TestFixture]
 public class LookupApiTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
-    private Mock<IOpenLibraryClient> _openLibraryClientMock;
-    private Mock<IUpcItemDbClient> _upcItemDbClientMock;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IOpenLibraryClient> _openLibraryClientMock = null!;
+    private Mock<IUpcItemDbClient> _upcItemDbClientMock = null!;
 
     [SetUp]
     public void Setup()

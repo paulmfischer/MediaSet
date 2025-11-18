@@ -20,9 +20,9 @@ namespace MediaSet.Api.Tests.Stats;
 [TestFixture]
 public class StatsApiTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
-    private Mock<IStatsService> _statsServiceMock;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IStatsService> _statsServiceMock = null!;
 
     [SetUp]
     public void Setup()

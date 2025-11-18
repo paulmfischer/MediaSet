@@ -7,7 +7,7 @@ namespace MediaSet.Api.Tests.Converters;
 [TestFixture]
 public class RuntimeConverterTests
 {
-    private RuntimeConverter _converter;
+    private RuntimeConverter _converter = null!;
 
     [SetUp]
     public void Setup()

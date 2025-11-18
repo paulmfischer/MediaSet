@@ -10,14 +10,17 @@ using System.Threading.Tasks;
 
 namespace MediaSet.Api.Tests.Services;
 
+#nullable disable
+#pragma warning disable CS8602 // Dereference of possibly null reference - Moq expression trees cannot track null checks
+
 [TestFixture]
 public class MemoryCacheServiceTests
 {
-    private Mock<IMemoryCache> _memoryCacheMock;
-    private Mock<IOptions<CacheSettings>> _cacheSettingsMock;
-    private Mock<ILogger<MemoryCacheService>> _loggerMock;
-    private MemoryCacheService _cacheService;
-    private CacheSettings _cacheSettings;
+    private Mock<IMemoryCache> _memoryCacheMock = null!;
+    private Mock<IOptions<CacheSettings>> _cacheSettingsMock = null!;
+    private Mock<ILogger<MemoryCacheService>> _loggerMock = null!;
+    private MemoryCacheService _cacheService = null!;
+    private CacheSettings _cacheSettings = null!;
 
     [SetUp]
     public void Setup()
@@ -111,14 +114,16 @@ public class MemoryCacheServiceTests
         await _cacheService.GetAsync<string>(key);
 
         // Assert
+#nullable enable
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Cache hit")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Cache hit")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+#nullable disable
     }
 
     [Test]
@@ -135,14 +140,16 @@ public class MemoryCacheServiceTests
         await _cacheService.GetAsync<string>(key);
 
         // Assert
+#nullable enable
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Cache miss")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Cache miss")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+#nullable disable
     }
 
     #endregion
@@ -191,14 +198,16 @@ public class MemoryCacheServiceTests
         await _cacheService.RemoveAsync(key);
 
         // Assert
+#nullable enable
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Removed cache entry")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Removed cache entry")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+#nullable disable
     }
 
     #endregion
@@ -231,14 +240,16 @@ public class MemoryCacheServiceTests
         await _cacheService.RemoveByPatternAsync(pattern);
 
         // Assert
+#nullable enable
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Removed") && v.ToString().Contains("cache entries")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Removed") && v.ToString().Contains("cache entries")),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+#nullable disable
     }
 
     #endregion

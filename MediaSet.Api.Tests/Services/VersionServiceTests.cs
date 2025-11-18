@@ -7,7 +7,7 @@ namespace MediaSet.Api.Tests.Services;
 [TestFixture]
 public class VersionServiceTests
 {
-    private VersionService _versionService;
+    private VersionService _versionService = null!;
 
     [SetUp]
     public void Setup()

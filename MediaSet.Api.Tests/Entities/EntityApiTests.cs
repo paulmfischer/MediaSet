@@ -5,8 +5,6 @@ using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -23,15 +21,15 @@ namespace MediaSet.Api.Tests.Entities;
 [TestFixture]
 public class EntityApiTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
-    private Mock<IEntityService<Book>> _bookServiceMock;
-    private Mock<IEntityService<Movie>> _movieServiceMock;
-    private Mock<IEntityService<Game>> _gameServiceMock;
-    private Faker<Book> _bookFaker;
-    private Faker<Movie> _movieFaker;
-    private Faker<Game> _gameFaker;
-    private JsonSerializerOptions _jsonOptions;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IEntityService<Book>> _bookServiceMock = null!;
+    private Mock<IEntityService<Movie>> _movieServiceMock = null!;
+    private Mock<IEntityService<Game>> _gameServiceMock = null!;
+    private Faker<Book> _bookFaker = null!;
+    private Faker<Movie> _movieFaker = null!;
+    private Faker<Game> _gameFaker = null!;
+    private JsonSerializerOptions _jsonOptions = null!;
 
     [SetUp]
     public void Setup()

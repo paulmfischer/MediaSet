@@ -17,16 +17,16 @@ namespace MediaSet.Api.Tests.Services;
 [TestFixture]
 public class MetadataServiceNewTests
 {
-    private Mock<IEntityService<Book>> _bookServiceMock;
-    private Mock<IEntityService<Movie>> _movieServiceMock;
-    private Mock<IEntityService<Game>> _gameServiceMock;
-    private Mock<IEntityService<Music>> _musicServiceMock;
-    private Mock<ICacheService> _cacheServiceMock;
-    private Mock<IOptions<CacheSettings>> _cacheSettingsMock;
-    private Mock<ILogger<MetadataService>> _loggerMock;
-    private MetadataService _metadataService;
-    private ServiceProvider _serviceProvider;
-    private CacheSettings _cacheSettings;
+    private Mock<IEntityService<Book>> _bookServiceMock = null!;
+    private Mock<IEntityService<Movie>> _movieServiceMock = null!;
+    private Mock<IEntityService<Game>> _gameServiceMock = null!;
+    private Mock<IEntityService<Music>> _musicServiceMock = null!;
+    private Mock<ICacheService> _cacheServiceMock = null!;
+    private Mock<IOptions<CacheSettings>> _cacheSettingsMock = null!;
+    private Mock<ILogger<MetadataService>> _loggerMock = null!;
+    private MetadataService _metadataService = null!;
+    private IServiceProvider _serviceProvider = null!;
+    private CacheSettings _cacheSettings = null!;
 
     [SetUp]
     public void Setup()
@@ -51,7 +51,7 @@ public class MetadataServiceNewTests
 
         // Setup cache to return null (cache miss) by default
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
-            .ReturnsAsync((List<string>)null);
+            .ReturnsAsync((List<string>?)null);
 
         var services = new ServiceCollection();
         services.AddScoped<IEntityService<Book>>(_ => _bookServiceMock.Object);
@@ -68,9 +68,12 @@ public class MetadataServiceNewTests
     }
 
     [TearDown]
-    public void TearDown()
+    public async Task TearDown()
     {
-        _serviceProvider?.Dispose();
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+        {
+            await asyncDisposable.DisposeAsync();
+        }
     }
 
     [Test]
@@ -464,7 +467,7 @@ public class MetadataServiceNewTests
         };
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
-            .ReturnsAsync((List<string>)null);
+            .ReturnsAsync((List<string>?)null);
     _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
@@ -491,7 +494,7 @@ public class MetadataServiceNewTests
         };
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
-            .ReturnsAsync((List<string>)null);
+            .ReturnsAsync((List<string>?)null);
     _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act

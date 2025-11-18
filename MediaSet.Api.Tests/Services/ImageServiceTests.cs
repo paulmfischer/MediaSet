@@ -18,11 +18,11 @@ namespace MediaSet.Api.Tests.Services;
 [TestFixture]
 public class ImageServiceTests : IDisposable
 {
-    private Mock<IImageStorageProvider>? _storageProviderMock;
-    private Mock<ILogger<ImageService>>? _loggerMock;
-    private ImageConfiguration? _imageConfig;
-    private ImageService? _imageService;
-    private HttpClient? _httpClient;
+    private Mock<IImageStorageProvider> _storageProviderMock = null!;
+    private Mock<ILogger<ImageService>> _loggerMock = null!;
+    private ImageConfiguration _imageConfig = null!;
+    private ImageService _imageService = null!;
+    private HttpClient _httpClient = null!;
 
     [SetUp]
     public void Setup()
