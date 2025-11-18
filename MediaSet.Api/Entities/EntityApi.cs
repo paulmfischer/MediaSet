@@ -245,6 +245,16 @@ internal static class EntityApi
                         }
                     }
                 }
+                else
+                {
+                    // For JSON requests, check if image is being cleared (updatedEntity.CoverImage is null but existing had one)
+                    if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
+                    {
+                        logger.LogInformation("Image is being cleared for {entityType}/{id}", entityType, id);
+                        // Pass existingEntity so DeleteOldImage can access the CoverImage data to delete
+                        DeleteOldImage(existingEntity, imageService, logger);
+                    }
+                }
 
                 var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
                 logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);

@@ -206,9 +206,9 @@ describe("ImageUpload Component", () => {
     it("should display existing image preview", () => {
       const existingImage: ImageData = {
         fileName: "existing.jpg",
-        mimeType: "image/jpeg",
+        contentType: "image/jpeg",
         fileSize: 102400,
-        imageUrl: "data:image/jpeg;base64,test",
+        filePath: "books/123-uuid.jpg",
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
       };
@@ -223,7 +223,7 @@ describe("ImageUpload Component", () => {
 
       expect(screen.getByText("existing.jpg")).toBeInTheDocument();
       const preview = screen.getByAltText("Preview");
-      expect(preview).toHaveAttribute("src", "data:image/jpeg;base64,test");
+      expect(preview.getAttribute("src")).toContain("/static/images/books/123-uuid.jpg");
     });
   });
 
