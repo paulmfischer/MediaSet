@@ -5,13 +5,7 @@ import { Entity } from "~/models";
 import type { ImageData } from "~/models";
 
 // Mock the environment variable
-vi.stubGlobal("import", {
-  meta: {
-    env: {
-      VITE_API_URL: "http://localhost:5000"
-    }
-  }
-});
+vi.stubEnv("VITE_API_URL", "http://localhost:5000");
 
 describe("ImageDisplay Component", () => {
   const mockImageData: ImageData = {
