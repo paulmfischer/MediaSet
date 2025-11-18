@@ -4,7 +4,6 @@ using Bogus;
 using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -17,12 +16,12 @@ namespace MediaSet.Api.Tests.Services
     [TestFixture]
     public class EntityServiceTests
     {
-        private Mock<IDatabaseService> _databaseServiceMock;
-        private Mock<IMongoCollection<Book>> _collectionMock;
-        private Mock<ICacheService> _cacheServiceMock;
-        private Mock<ILogger<EntityService<Book>>> _loggerMock;
-        private EntityService<Book> _entityService;
-        private Faker<Book> _bookFaker;
+        private Mock<IDatabaseService> _databaseServiceMock = null!;
+        private Mock<IMongoCollection<Book>> _collectionMock = null!;
+        private Mock<ICacheService> _cacheServiceMock = null!;
+        private Mock<ILogger<EntityService<Book>>> _loggerMock = null!;
+        private EntityService<Book> _entityService = null!;
+        private Faker<Book> _bookFaker = null!;
 
         [SetUp]
         public void Setup()
@@ -103,7 +102,7 @@ namespace MediaSet.Api.Tests.Services
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _entityService.UpdateAsync(book.Id, book);
+            var result = await _entityService.UpdateAsync(book.Id ?? throw new InvalidOperationException("book.Id is null"), book);
 
             // Assert
             _collectionMock.Verify(c => c.ReplaceOneAsync(
@@ -257,7 +256,7 @@ namespace MediaSet.Api.Tests.Services
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Id, Is.EqualTo(bookId));
+            Assert.That(result?.Id, Is.EqualTo(bookId));
             _collectionMock.Verify(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
@@ -529,7 +528,7 @@ namespace MediaSet.Api.Tests.Services
                 .ReturnsAsync(expectedResult);
 
             // Act
-            await _entityService.UpdateAsync(book.Id, book);
+            await _entityService.UpdateAsync(book.Id ?? throw new InvalidOperationException("book.Id is null"), book);
 
             // Assert
             _cacheServiceMock.Verify(c => c.RemoveByPatternAsync("metadata:Books:*"), Times.Once);

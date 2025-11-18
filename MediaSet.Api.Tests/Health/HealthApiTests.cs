@@ -19,9 +19,9 @@ namespace MediaSet.Api.Tests.Health;
 [TestFixture]
 public class HealthApiTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
-    private Mock<IDatabaseService> _databaseServiceMock;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IDatabaseService> _databaseServiceMock = null!;
 
     [SetUp]
     public void Setup()

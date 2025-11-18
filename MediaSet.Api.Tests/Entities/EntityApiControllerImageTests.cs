@@ -30,12 +30,12 @@ namespace MediaSet.Api.Tests.Entities;
 [TestFixture]
 public class EntityApiControllerImageTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program>? _factory;
-    private HttpClient? _client;
-    private Mock<IImageService>? _imageServiceMock;
-    private Mock<IEntityService<Game>>? _gameServiceMock;
-    private Faker<Game>? _gameFaker;
-    private JsonSerializerOptions? _jsonOptions;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IImageService> _imageServiceMock = null!;
+    private Mock<IEntityService<Game>> _gameServiceMock = null!;
+    private Faker<Game> _gameFaker = null!;
+    private JsonSerializerOptions _jsonOptions = null!;
 
     [SetUp]
     public void Setup()

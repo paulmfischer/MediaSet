@@ -20,9 +20,9 @@ namespace MediaSet.Api.Tests.Metadata;
 [TestFixture]
 public class MetadataApiNewTests : IntegrationTestBase
 {
-    private WebApplicationFactory<Program> _factory;
-    private HttpClient _client;
-    private Mock<IMetadataService> _metadataServiceMock;
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private Mock<IMetadataService> _metadataServiceMock = null!;
 
     [SetUp]
     public void Setup()

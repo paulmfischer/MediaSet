@@ -6,7 +6,7 @@ namespace MediaSet.Api.Tests.Converters;
 [TestFixture]
 public class BoolConverterTests
 {
-    private BoolConverter _converter;
+    private BoolConverter _converter = null!;
 
     [SetUp]
     public void Setup()

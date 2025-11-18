@@ -15,19 +15,19 @@ namespace MediaSet.Api.Tests.Services;
 [TestFixture]
 public class StatsServiceTests
 {
-    private Mock<IEntityService<Book>> _bookServiceMock;
-    private Mock<IEntityService<Movie>> _movieServiceMock;
-    private Mock<IEntityService<Game>> _gameServiceMock;
-    private Mock<IEntityService<Music>> _musicServiceMock;
-    private Mock<ICacheService> _cacheServiceMock;
-    private Mock<IOptions<CacheSettings>> _cacheSettingsMock;
-    private Mock<ILogger<StatsService>> _loggerMock;
-    private StatsService _statsService;
-    private Faker<Book> _bookFaker;
-    private Faker<Movie> _movieFaker;
-    private Faker<Game> _gameFaker;
-    private Faker<Music> _musicFaker;
-    private CacheSettings _cacheSettings;
+    private Mock<IEntityService<Book>> _bookServiceMock = null!;
+    private Mock<IEntityService<Movie>> _movieServiceMock = null!;
+    private Mock<IEntityService<Game>> _gameServiceMock = null!;
+    private Mock<IEntityService<Music>> _musicServiceMock = null!;
+    private Mock<ICacheService> _cacheServiceMock = null!;
+    private Mock<IOptions<CacheSettings>> _cacheSettingsMock = null!;
+    private Mock<ILogger<StatsService>> _loggerMock = null!;
+    private StatsService _statsService = null!;
+    private Faker<Book> _bookFaker = null!;
+    private Faker<Movie> _movieFaker = null!;
+    private Faker<Game> _gameFaker = null!;
+    private Faker<Music> _musicFaker = null!;
+    private CacheSettings _cacheSettings = null!;
 
     [SetUp]
     public void Setup()
@@ -52,7 +52,7 @@ public class StatsServiceTests
 
         // Setup cache to return null (cache miss) by default
         _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats)null);
+            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
 
         _statsService = new StatsService(
             _bookServiceMock.Object,
@@ -446,7 +446,7 @@ public class StatsServiceTests
     {
       _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Stephen King" }).RuleFor(b => b.Pages, (int?)null).Generate(),
       _bookFaker.Clone().RuleFor(b => b.Authors, new List<string>()).RuleFor(b => b.Pages, (int?)null).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Authors, (List<string>)null).RuleFor(b => b.Pages, (int?)null).Generate()
+      _bookFaker.Clone().RuleFor(b => b.Authors, (List<string>?)null).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
@@ -730,7 +730,7 @@ public class StatsServiceTests
         var games = _gameFaker.Generate(1);
 
         _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats)null);
+            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
@@ -755,7 +755,7 @@ public class StatsServiceTests
         var games = _gameFaker.Generate(1);
 
         _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats)null);
+            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
