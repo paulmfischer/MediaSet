@@ -1,6 +1,9 @@
 using System.Net;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using Image = MediaSet.Api.Models.Image;
+using SixLaborsImage = SixLabors.ImageSharp.Image;
 
 namespace MediaSet.Api.Services;
 
@@ -35,7 +38,7 @@ public class ImageService : IImageService
     }
 
     /// <summary>
-    /// Save an uploaded image file to storage with validation.
+    /// Save an uploaded image file to storage with validation and EXIF data stripping.
     /// </summary>
     public async Task<Image> SaveImageAsync(IFormFile file, string entityType, string entityId, CancellationToken cancellationToken)
     {
@@ -78,10 +81,10 @@ public class ImageService : IImageService
                 throw new ArgumentException($"Unsupported file type. Allowed types: {string.Join(", ", allowedExtensions.Select(e => $".{e}"))}");
             }
 
-            // Read file data
+            // Read and process file data
             await using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream, cancellationToken);
-            var imageData = memoryStream.ToArray();
+            var imageData = await StripExifDataAsync(memoryStream.ToArray(), file.ContentType, cancellationToken);
 
             // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
             var extension = Path.GetExtension(file.FileName).TrimStart('.');
@@ -129,7 +132,7 @@ public class ImageService : IImageService
     }
 
     /// <summary>
-    /// Download an image from URL and save it to storage with validation.
+    /// Download an image from URL and save it to storage with validation and EXIF data stripping.
     /// </summary>
     public async Task<Image> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken)
     {
@@ -186,6 +189,10 @@ public class ImageService : IImageService
                 throw new ArgumentException($"Downloaded image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
             }
 
+            // Strip EXIF data
+            var mimeType = fileExtension == "png" ? "image/png" : "image/jpeg";
+            imageData = await StripExifDataAsync(imageData, mimeType, cancellationToken);
+
             // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
             var imageId = Guid.NewGuid().ToString();
             var uniqueFileName = $"{entityId}-{imageId}.{fileExtension}";
@@ -203,7 +210,7 @@ public class ImageService : IImageService
                 Id = imageId,
                 FileName = uniqueFileName,
                 FilePath = relativePath,
-                ContentType = fileExtension == "png" ? "image/png" : "image/jpeg",
+                ContentType = mimeType,
                 FileSize = imageData.Length,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -271,6 +278,48 @@ public class ImageService : IImageService
         {
             _logger.LogError(ex, "Error deleting image at path: {ImagePath}", imagePath);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Strip EXIF data and metadata from image bytes.
+    /// Returns image data with all EXIF and metadata information removed for privacy protection.
+    /// Saves in the same format as the original image.
+    /// </summary>
+    private async Task<byte[]> StripExifDataAsync(byte[] imageData, string mimeType, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var inputStream = new MemoryStream(imageData);
+            using var image = await SixLaborsImage.LoadAsync(inputStream, cancellationToken);
+            
+            // Clear all metadata properties to remove EXIF data
+            image.Metadata.ExifProfile = null;
+            image.Metadata.IptcProfile = null;
+            image.Metadata.XmpProfile = null;
+
+            // Re-encode the image without metadata to remove all embedded data
+            // Save in the same format as the original
+            await using var outputStream = new MemoryStream();
+            switch (mimeType)
+            {
+                case "image/png":
+                    await image.SaveAsPngAsync(outputStream, cancellationToken);
+                    break;
+                case "image/jpeg":
+                    await image.SaveAsJpegAsync(outputStream, cancellationToken);
+                    break;
+                default:
+                    // Default to JPEG for unknown formats
+                    await image.SaveAsJpegAsync(outputStream, cancellationToken);
+                    break;
+            }
+            return outputStream.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error stripping EXIF data from image");
+            throw new ArgumentException("Failed to process image and strip EXIF data", ex);
         }
     }
 
