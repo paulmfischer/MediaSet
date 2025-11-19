@@ -54,12 +54,13 @@ internal static class EntityApi
             try
             {
                 TEntity newEntity;
+                IFormCollection? multipartForm = null;
 
                 // Check if request is multipart form data or JSON
                 if (context.Request.ContentType?.Contains("multipart/form-data") == true)
                 {
-                    // Parse multipart form data
-                    var multipartForm = await context.Request.ReadFormAsync(cancellationToken);
+                    // Parse multipart form data once
+                    multipartForm = await context.Request.ReadFormAsync(cancellationToken);
                     
                     // Deserialize entity from JSON
                     if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
@@ -82,8 +83,6 @@ internal static class EntityApi
                     }
 
                     newEntity = deserializedEntity;
-                    // Store form for later image processing
-                    context.Items["multipartForm"] = multipartForm;
                 }
                 else
                 {
@@ -109,37 +108,89 @@ internal static class EntityApi
                 logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
 
                 // Process image after entity is saved so we have an ID
-                if (context.Items.ContainsKey("multipartForm") && context.Items["multipartForm"] is IFormCollection form &&
-                    (form.Files.Count > 0 || form.Keys.Contains("imageUrl")))
+                // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
+                if (multipartForm is not null)
                 {
-                    try
+                    // Check for image file in multipart form
+                    var imageFile = multipartForm.Files["coverImage"];
+                    if (imageFile is not null && imageFile.Length > 0)
                     {
-                        var (success, errorMessage, image) = await TryProcessImageAsync(
-                            form,
-                            imageService,
-                            null, // No existing entity on POST
-                            entityType,
-                            newEntity.Id!,
-                            logger,
-                            cancellationToken);
+                        logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, newEntity.Id);
 
-                        if (success && image is not null)
+                        try
                         {
+                            var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
                             logger.LogInformation("Updated {entityType} {id} with cover image", entityType, newEntity.Id);
                         }
-                        else if (!success && errorMessage is not null)
+                        catch (ArgumentException ex)
                         {
-                            logger.LogWarning("Image processing failed for {entityType} {id}: {error}", entityType, newEntity.Id, errorMessage);
+                            logger.LogWarning("Image validation failed: {error}", ex.Message);
+                            // Continue anyway - entity was already created successfully
+                        }
+                        
+                        // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
+                        var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                        imageUrlProp?.SetValue(newEntity, null);
+                        await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
+                    }
+                    else if (multipartForm.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
+                    {
+                        // No file provided, check for imageUrl
+                        var imageUrl = imageUrlValue.ToString();
+                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
+
+                        try
+                        {
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), newEntity.Id!, cancellationToken);
+                            newEntity.CoverImage = image;
+                            // Update entity with image
+                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
+                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, newEntity.Id);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
+                            // Continue anyway - entity was already created successfully
+                        }
+                        catch (HttpRequestException ex)
+                        {
+                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
                             // Continue anyway - entity was already created successfully
                         }
                     }
-                    catch (ArgumentException ex)
+                }
+                // Flow 2: Handle JSON update with imageUrl
+                else
+                {
+                    // Check if imageUrl is provided for download
+                    var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                    var imageUrl = imageUrlProp?.GetValue(newEntity) as string;
+                    
+                    if (!string.IsNullOrWhiteSpace(imageUrl))
                     {
-                        logger.LogWarning("Image validation failed for {entityType} {id}: {error}", entityType, newEntity.Id, ex.Message);
-                        // Continue anyway - entity was already created successfully
+                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
+
+                        try
+                        {
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), newEntity.Id!, cancellationToken);
+                            newEntity.CoverImage = image;
+                            // Update entity with image
+                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
+                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, newEntity.Id);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
+                            // Continue anyway - entity was already created successfully
+                        }
+                        catch (HttpRequestException ex)
+                        {
+                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
+                            // Continue anyway - entity was already created successfully
+                        }
                     }
                 }
 
