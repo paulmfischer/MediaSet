@@ -98,7 +98,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var imageFile = CreateImageFile("test-image.jpg", "image/jpeg");
         var imageData = new Image
         {
-            FileName = "test-image.jpg",
+            Id = "guid",
+            FileName = "507f1f77bcf86cd799439011-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,
@@ -190,7 +191,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var existingGame = _gameFaker!.Clone().RuleFor(g => g.Id, gameId).Generate();
         existingGame.CoverImage = new Image
         {
-            FileName = "old-image.jpg",
+            Id = "old-guid",
+            FileName = "507f1f77bcf86cd799439011-old-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-old-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 2048,
@@ -202,7 +204,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var newImageFile = CreateImageFile("new-image.jpg", "image/jpeg");
         var newImageData = new Image
         {
-            FileName = "new-image.jpg",
+            Id = "new-guid",
+            FileName = "507f1f77bcf86cd799439011-new-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-new-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,
@@ -235,7 +238,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var existingGame = _gameFaker!.Clone().RuleFor(g => g.Id, gameId).Generate();
         existingGame.CoverImage = new Image
         {
-            FileName = "old-image.jpg",
+            Id = "old-guid",
+            FileName = "507f1f77bcf86cd799439011-old-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-old-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 2048,
@@ -295,7 +299,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var gameWithImage = _gameFaker!.Clone().RuleFor(g => g.Id, gameId).Generate();
         gameWithImage.CoverImage = new Image
         {
-            FileName = "test-image.jpg",
+            Id = "guid",
+            FileName = "507f1f77bcf86cd799439011-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,
@@ -361,7 +366,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var gameWithImage = _gameFaker!.Clone().RuleFor(g => g.Id, gameId).Generate();
         gameWithImage.CoverImage = new Image
         {
-            FileName = "test-image.jpg",
+            Id = "guid",
+            FileName = "507f1f77bcf86cd799439011-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,
@@ -396,7 +402,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var imageUrl = "https://example.com/image.jpg";
         var imageData = new Image
         {
-            FileName = "image.jpg",
+            Id = "guid",
+            FileName = "507f1f77bcf86cd799439011-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,
@@ -447,7 +454,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var existingGame = _gameFaker!.Clone().RuleFor(g => g.Id, gameId).Generate();
         existingGame.CoverImage = new Image
         {
-            FileName = "old-image.jpg",
+            Id = "old-guid",
+            FileName = "507f1f77bcf86cd799439011-old-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-old-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 2048,
@@ -459,7 +467,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var imageUrl = "https://example.com/new-image.jpg";
         var newImageData = new Image
         {
-            FileName = "new-image.jpg",
+            Id = "new-guid",
+            FileName = "507f1f77bcf86cd799439011-new-guid.jpg",
             FilePath = "games/507f1f77bcf86cd799439011-new-guid.jpg",
             ContentType = "image/jpeg",
             FileSize = 1024,

@@ -8,7 +8,12 @@ namespace MediaSet.Api.Models
     public class Image
     {
         /// <summary>
-        /// The original filename of the uploaded image.
+        /// The unique identifier (GUID) for the saved image file.
+        /// </summary>
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The saved filename of the image in the format {entityId}-{id}.{extension}.
         /// </summary>
         public string FileName { get; set; } = string.Empty;
 
