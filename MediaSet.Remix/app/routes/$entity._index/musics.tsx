@@ -2,7 +2,8 @@ import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import DeleteDialog from "~/components/delete-dialog";
-import { MusicEntity } from "~/models";
+import ImageDisplay from "~/components/image-display";
+import { MusicEntity, Entity } from "~/models";
 
 type MusicsProps = {
   musics: MusicEntity[]
@@ -19,6 +20,7 @@ export default function Musics({ musics }: MusicsProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
             <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
             <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Artist</th>
             <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
@@ -30,6 +32,9 @@ export default function Musics({ musics }: MusicsProps) {
           {musics.map(music => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={music.id}>
+                <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
+                  {music.coverImage && <ImageDisplay imageData={music.coverImage} alt={`${music.title} cover`} entityType={Entity.Musics} entityId={music.id} size="xsmall" />}
+                </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/musics/${music.id}`}>{music.title}</Link>
                 </td>

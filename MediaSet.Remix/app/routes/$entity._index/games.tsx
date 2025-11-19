@@ -2,7 +2,8 @@ import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import DeleteDialog from "~/components/delete-dialog";
-import { GameEntity } from "~/models";
+import ImageDisplay from "~/components/image-display";
+import { GameEntity, Entity } from "~/models";
 
 type GamesProps = {
   games: GameEntity[]
@@ -19,6 +20,7 @@ export default function Games({ games }: GamesProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
             <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
             <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Platform</th>
             <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
@@ -30,6 +32,9 @@ export default function Games({ games }: GamesProps) {
           {games.map(game => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={game.id}>
+                <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
+                  {game.coverImage && <ImageDisplay imageData={game.coverImage} alt={`${game.title} cover`} entityType={Entity.Games} entityId={game.id} size="xsmall" />}
+                </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/games/${game.id}`}>{game.title}</Link>
                 </td>

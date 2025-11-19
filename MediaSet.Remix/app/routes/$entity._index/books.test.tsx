@@ -64,6 +64,7 @@ describe('Books component', () => {
 
       expect(screen.getByRole('table')).toBeInTheDocument();
       expect(screen.getByText('Title')).toBeInTheDocument();
+      expect(screen.getByText('Cover')).toBeInTheDocument();
       expect(screen.getByText('Authors')).toBeInTheDocument();
       expect(screen.getByText('Format')).toBeInTheDocument();
       expect(screen.getByText('Pages')).toBeInTheDocument();

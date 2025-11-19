@@ -69,9 +69,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   if (imageClearedMarker === "true") {
     // Image was cleared, remove it
     entity.coverImage = undefined;
-  } else if (existingEntity?.coverImage) {
-    // No new image selected and not cleared, preserve existing image
-    entity.coverImage = existingEntity.coverImage;
+  } else {
+    // Check if coverImage data was submitted as hidden fields
+    const coverImageFileName = formData.get("coverImage-fileName") as string | null;
+    if (coverImageFileName) {
+      // Reconstruct coverImage from hidden inputs
+      entity.coverImage = {
+        fileName: coverImageFileName,
+        contentType: (formData.get("coverImage-contentType") as string) || "",
+        fileSize: parseInt((formData.get("coverImage-fileSize") as string) || "0"),
+        filePath: (formData.get("coverImage-filePath") as string) || "",
+        createdAt: (formData.get("coverImage-createdAt") as string) || "",
+        updatedAt: (formData.get("coverImage-updatedAt") as string) || "",
+      };
+    } else if (existingEntity?.coverImage) {
+      // No new image selected and not cleared, preserve existing image
+      entity.coverImage = existingEntity.coverImage;
+    }
   }
 
   // Check if there's an image file to send as multipart/form-data

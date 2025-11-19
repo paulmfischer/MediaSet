@@ -3,7 +3,8 @@ import { Link } from "@remix-run/react";
 import { Pencil, Trash2, Check } from "lucide-react";
 import { useState } from "react";
 import DeleteDialog from "~/components/delete-dialog";
-import { MovieEntity } from "~/models";
+import ImageDisplay from "~/components/image-display";
+import { MovieEntity, Entity } from "~/models";
 
 type MovieProps = {
   movies: MovieEntity[]
@@ -20,6 +21,7 @@ export default function Movies({ movies }: MovieProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
             <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
             <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
             <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Runtime</th>
@@ -31,6 +33,9 @@ export default function Movies({ movies }: MovieProps) {
           {movies.map(movie => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={movie.id}>
+                <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
+                  {movie.coverImage && <ImageDisplay imageData={movie.coverImage} alt={`${movie.title} cover`} entityType={Entity.Movies} entityId={movie.id} size="xsmall" />}
+                </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/movies/${movie.id}`}>{movie.title}</Link>
                 </td>

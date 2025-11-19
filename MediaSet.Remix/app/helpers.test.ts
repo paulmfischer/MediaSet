@@ -197,7 +197,7 @@ describe('helpers.ts', () => {
           authors: ['Author 1', 'Author 2'],
           isbn: '978-1234567890',
           publisher: 'Test Publisher',
-          pages: '300',
+          pages: 300,
           format: 'Hardcover',
           genres: ['Fiction', 'Mystery'],
           publicationDate: '2023-01-15',
@@ -261,7 +261,7 @@ describe('helpers.ts', () => {
           genres: ['Action', 'Thriller'],
           releaseDate: '2023-06-15',
           plot: 'An epic adventure',
-          runtime: '120',
+          runtime: 120,
           isTvSeries: false,
           id: '456',
         });

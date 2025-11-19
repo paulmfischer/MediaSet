@@ -7,11 +7,12 @@ type ImageDisplayProps = {
   alt: string;
   entityType?: Entity;
   entityId?: string;
-  size?: "small" | "medium" | "large" | "responsive";
+  size?: "xsmall" | "small" | "medium" | "large" | "responsive";
   className?: string;
 };
 
 const sizeMap = {
+  xsmall: "h-16 w-16",
   small: "h-32 w-32",
   medium: "h-48 w-48",
   large: "h-64 w-64",
