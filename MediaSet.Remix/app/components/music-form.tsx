@@ -73,6 +73,12 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
       <ImageUpload name="coverImage" existingImage={music?.coverImage} isSubmitting={isSubmitting} />
 
       <div>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
+        <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
+        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={music?.imageUrl} />
+      </div>
+
+      <div>
         <label htmlFor="artist" className="block text-sm font-medium text-gray-200 mb-1">Artist</label>
         <input id="artist" name="artist" type="text" className={inputClasses} placeholder="Artist" aria-label="Artist" defaultValue={music?.artist} />
       </div>

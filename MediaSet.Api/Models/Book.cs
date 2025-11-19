@@ -38,12 +38,15 @@ public class Book : IEntity
 
     public string Publisher { get; set; } = string.Empty;
 
+    [Upload(HeaderName = "Subtitle")]
+    public string Subtitle { get; set; } = string.Empty;
+
     [Upload(HeaderName = "Genre")]
     public List<string> Genres { get; set; } = [];
 
     public string Plot { get; set; } = string.Empty;
 
-    public string Subtitle { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }
 

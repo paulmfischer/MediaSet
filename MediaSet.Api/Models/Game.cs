@@ -56,6 +56,8 @@ public class Game : IEntity
     // Game description/summary
     public string Description { get; set; } = string.Empty;
 
+    public string? ImageUrl { get; set; }
+
     public Image? CoverImage { get; set; }
 
     public bool IsEmpty()

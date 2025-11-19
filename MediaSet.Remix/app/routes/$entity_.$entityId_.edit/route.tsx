@@ -86,6 +86,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     apiFormData.append("coverImage", coverImageFile);
   }
 
+  console.log('Updating entity:', entity, 'with apiFormData:', apiFormData);
   await updateEntity(params.entityId, entity, apiFormData);
   return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
 };

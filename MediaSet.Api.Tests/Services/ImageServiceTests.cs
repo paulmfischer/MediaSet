@@ -34,9 +34,8 @@ public class ImageServiceTests : IDisposable
         {
             StoragePath = "/test/images",
             MaxFileSizeMb = 5,
-            AllowedMimeTypes = "image/jpeg,image/png",
+            AllowedImageExtensions = "jpg,jpeg,png",
             HttpTimeoutSeconds = 30,
-            MaxDownloadSizeMb = 10,
             StripExifData = true
         };
 
@@ -327,7 +326,7 @@ public class ImageServiceTests : IDisposable
             // Act & Assert
             var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
-            Assert.That(ex?.Message, Does.Contain("Unsupported image type"));
+            Assert.That(ex?.Message, Does.Contain("supported file format"));
         }
     }
 

@@ -67,15 +67,19 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             return null;
         }
 
-        var firstMovie = searchResult.Results[0];
+        // Find the best match by comparing titles, prioritizing exact matches
+        var bestMatch = searchResult.Results.FirstOrDefault(r => 
+            r.Title.Equals(cleanedTitle, StringComparison.OrdinalIgnoreCase)) 
+            ?? searchResult.Results[0];
+        
         _logger.LogInformation("Found TMDB movie ID {MovieId} for title: {Title}", 
-            firstMovie.Id, firstItem.Title);
+            bestMatch.Id, firstItem.Title);
 
-        var movieDetails = await _tmdbClient.GetMovieDetailsAsync(firstMovie.Id, cancellationToken);
+        var movieDetails = await _tmdbClient.GetMovieDetailsAsync(bestMatch.Id, cancellationToken);
         
         if (movieDetails == null)
         {
-            _logger.LogWarning("Could not retrieve TMDB movie details for ID: {MovieId}", firstMovie.Id);
+            _logger.LogWarning("Could not retrieve TMDB movie details for ID: {MovieId}", bestMatch.Id);
             return null;
         }
 
@@ -87,6 +91,9 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         var genres = tmdbMovie.Genres.Select(g => g.Name).ToList();
         var studios = tmdbMovie.ProductionCompanies.Select(c => c.Name).ToList();
         var rating = tmdbMovie.VoteAverage > 0 ? $"{tmdbMovie.VoteAverage:F1}/10" : string.Empty;
+        var imageUrl = !string.IsNullOrEmpty(tmdbMovie.PosterPath) 
+            ? $"https://image.tmdb.org/t/p/w500{tmdbMovie.PosterPath}"
+            : null;
 
         return new MovieResponse(
             Title: tmdbMovie.Title,
@@ -96,7 +103,8 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             Rating: rating,
             Runtime: tmdbMovie.Runtime,
             Plot: tmdbMovie.Overview ?? string.Empty,
-            Format: format
+            Format: format,
+            ImageUrl: imageUrl
         );
     }
 
@@ -145,6 +153,16 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         if (cleaned != rawTitle && (cleaned.Contains('(') || cleaned.Contains('[') || cleaned.Contains(" - ") || System.Text.RegularExpressions.Regex.IsMatch(cleaned, @"\b(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
         {
             return CleanMovieTitle(cleaned);
+        }
+
+        // Move articles from end to beginning
+        // Examples: "Scanner Darkly A" -> "A Scanner Darkly", "Matrix The" -> "The Matrix"
+        var articleMatch = System.Text.RegularExpressions.Regex.Match(cleaned, @"^(.+?)\s+(A|The)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (articleMatch.Success)
+        {
+            var mainTitle = articleMatch.Groups[1].Value.Trim();
+            var article = articleMatch.Groups[2].Value;
+            cleaned = $"{article} {mainTitle}";
         }
 
         return cleaned;

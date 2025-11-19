@@ -32,6 +32,7 @@ export interface BaseEntity {
   title?: string;
   format?: string;
   coverImage?: ImageData;
+  imageUrl?: string;
 }
 
 // Backend model
@@ -109,6 +110,7 @@ export interface BookLookupResponse {
   publishDate: string;
   subjects: Array<{ name: string; url: string }>;
   format?: string;
+  imageUrl?: string;
 }
 
 export interface MovieLookupResponse {
@@ -120,6 +122,7 @@ export interface MovieLookupResponse {
   runtime: number | null;
   plot: string;
   format?: string;
+  imageUrl?: string;
 }
 
 export interface GameLookupResponse {
@@ -132,6 +135,7 @@ export interface GameLookupResponse {
   rating: string;
   description: string;
   format?: string;
+  imageUrl?: string;
 }
 
 export interface MusicLookupResponse {
@@ -145,6 +149,7 @@ export interface MusicLookupResponse {
   discs: number | null;
   discList: Disc[];
   format?: string;
+  imageUrl?: string;
 }
 
 export interface LookupError {

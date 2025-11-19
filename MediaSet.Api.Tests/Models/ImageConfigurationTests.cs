@@ -21,35 +21,23 @@ public class ImageConfigurationTests
     }
 
     [Test]
-    public void GetMaxDownloadSizeBytes_CalculatesCorrectly()
-    {
-        // Arrange
-        var config = new ImageConfiguration { MaxDownloadSizeMb = 10 };
-
-        // Act
-        var result = config.GetMaxDownloadSizeBytes();
-
-        // Assert
-        Assert.That(result, Is.EqualTo(10 * 1024 * 1024));
-    }
-
-    [Test]
-    public void GetAllowedMimeTypes_ParsesCorrectly()
+    public void GetAllowedImageExtensions_ParsesCorrectly()
     {
         // Arrange
         var config = new ImageConfiguration
         {
-            AllowedMimeTypes = "image/jpeg, image/png, image/webp"
+            AllowedImageExtensions = "jpg, jpeg, png, webp"
         };
 
         // Act
-        var result = config.GetAllowedMimeTypes();
+        var result = config.GetAllowedImageExtensions();
 
         // Assert
-        var mimeTypeList = new List<string>(result);
-        Assert.That(mimeTypeList.Count, Is.EqualTo(3));
-        Assert.That(mimeTypeList, Does.Contain("image/jpeg"));
-        Assert.That(mimeTypeList, Does.Contain("image/png"));
-        Assert.That(mimeTypeList, Does.Contain("image/webp"));
+        var extensionList = new List<string>(result);
+        Assert.That(extensionList.Count, Is.EqualTo(4));
+        Assert.That(extensionList, Does.Contain("jpg"));
+        Assert.That(extensionList, Does.Contain("jpeg"));
+        Assert.That(extensionList, Does.Contain("png"));
+        Assert.That(extensionList, Does.Contain("webp"));
     }
 }

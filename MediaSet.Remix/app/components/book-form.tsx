@@ -49,6 +49,12 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       <ImageUpload name="coverImage" existingImage={book?.coverImage} isSubmitting={isSubmitting} />
       
       <div>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
+        <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
+        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={book?.imageUrl} />
+      </div>
+      
+      <div>
         <label htmlFor="subtitle" className="block text-sm font-medium text-gray-200 mb-1">Subtitle</label>
         <input id="subtitle" name="subtitle" type="text" className={inputClasses} placeholder="Subtitle" aria-label="Subtitle" defaultValue={book?.subtitle} />
       </div>

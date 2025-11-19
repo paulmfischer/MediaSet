@@ -123,7 +123,8 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
             Tracks: totalTracks > 0 ? totalTracks : null,
             Discs: discs,
             DiscList: discList,
-            Format: format
+            Format: format,
+            ImageUrl: null
         );
     }
 
