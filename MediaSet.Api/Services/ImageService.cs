@@ -95,7 +95,8 @@ public class ImageService : IImageService
                 };
             }
 
-            var uniqueFileName = $"{entityId}-{Guid.NewGuid()}.{extension}";
+            var imageId = Guid.NewGuid().ToString();
+            var uniqueFileName = $"{entityId}-{imageId}.{extension}";
             var relativePath = Path.Combine(entityType, uniqueFileName);
 
             // Save to storage
@@ -106,7 +107,8 @@ public class ImageService : IImageService
             // Return image metadata
             return new Image
             {
-                FileName = file.FileName,
+                Id = imageId,
+                FileName = uniqueFileName,
                 FilePath = relativePath,
                 ContentType = file.ContentType,
                 FileSize = imageData.Length,
@@ -185,7 +187,8 @@ public class ImageService : IImageService
             }
 
             // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
-            var uniqueFileName = $"{entityId}-{Guid.NewGuid()}.{fileExtension}";
+            var imageId = Guid.NewGuid().ToString();
+            var uniqueFileName = $"{entityId}-{imageId}.{fileExtension}";
             var relativePath = Path.Combine(entityType, uniqueFileName);
 
             // Save to storage
@@ -197,7 +200,8 @@ public class ImageService : IImageService
             // Return image metadata
             return new Image
             {
-                FileName = Path.GetFileName(new Uri(imageUrl).LocalPath),
+                Id = imageId,
+                FileName = uniqueFileName,
                 FilePath = relativePath,
                 ContentType = fileExtension == "png" ? "image/png" : "image/jpeg",
                 FileSize = imageData.Length,

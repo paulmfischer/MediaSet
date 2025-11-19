@@ -142,7 +142,8 @@ public class ImageServiceTests : IDisposable
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.FileName, Is.EqualTo(fileName));
+        Assert.That(result.Id, Is.Not.Null.And.Not.Empty);
+        Assert.That(result.FileName, Does.Match($@"^{entityId}-[a-f0-9\-]+\.jpg$"));
         Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
         Assert.That(result.FileSize, Is.EqualTo(fileContent.Length));
         Assert.That(result.FilePath, Does.StartWith(entityType));
