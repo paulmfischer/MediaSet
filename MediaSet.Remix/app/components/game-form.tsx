@@ -45,6 +45,12 @@ export default function GameForm({ game, developers, publishers, genres, formats
       <ImageUpload name="coverImage" existingImage={game?.coverImage} isSubmitting={isSubmitting} />
       
       <div>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
+        <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
+        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={game?.imageUrl} />
+      </div>
+      
+      <div>
         <label htmlFor="platform" className="block text-sm font-medium text-gray-200 mb-1">Platform</label>
         <SingleselectInput name="platform" placeholder="Select Platform..." addLabel="Add new Platform:" options={platforms} selectedValue={game?.platform} />
       </div>

@@ -53,6 +53,12 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
       <ImageUpload name="coverImage" existingImage={movie?.coverImage} isSubmitting={isSubmitting} />
 
       <div>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
+        <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
+        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={movie?.imageUrl} />
+      </div>
+
+      <div>
         <label htmlFor="format" className="block text-sm font-medium text-gray-200 mb-1">Format</label>
         <SingleselectInput name="format" placeholder="Select Format..." addLabel="Add new Format:" options={formats} selectedValue={movie?.format} />
       </div>

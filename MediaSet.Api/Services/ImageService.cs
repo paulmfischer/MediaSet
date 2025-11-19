@@ -156,12 +156,12 @@ public class ImageService : IImageService
                 }
 
                 // Validate file size
-                var maxSizeBytes = _config.GetMaxDownloadSizeBytes();
+                var maxSizeBytes = _config.GetMaxFileSizeBytes();
                 if (imageData.Length > maxSizeBytes)
                 {
                     _logger.LogWarning("Downloaded image size {FileSize} exceeds maximum {MaxSize} for {ImageUrl}",
                         imageData.Length, maxSizeBytes, imageUrl);
-                    throw new ArgumentException($"Downloaded image size exceeds maximum allowed size of {_config.MaxDownloadSizeMb}MB");
+                    throw new ArgumentException($"Downloaded image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
                 }            // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
             var extension = contentType switch
             {
@@ -273,17 +273,17 @@ public class ImageService : IImageService
             // Check Content-Length header if available
             if (response.Content.Headers.ContentLength.HasValue)
             {
-                var maxSizeBytes = _config.GetMaxDownloadSizeBytes();
+                var maxSizeBytes = _config.GetMaxFileSizeBytes();
                 if (response.Content.Headers.ContentLength > maxSizeBytes)
                 {
                     _logger.LogWarning("Content-Length {ContentLength} exceeds maximum {MaxSize} for {ImageUrl}",
                         response.Content.Headers.ContentLength, maxSizeBytes, imageUrl);
-                    throw new ArgumentException($"Image size exceeds maximum allowed size of {_config.MaxDownloadSizeMb}MB");
+                    throw new ArgumentException($"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
                 }
             }
 
             // Read response stream with size limit
-            var maxSizeBytes2 = _config.GetMaxDownloadSizeBytes();
+            var maxSizeBytes2 = _config.GetMaxFileSizeBytes();
             await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             await using var limitedStream = new SizeLimitedStream(contentStream, maxSizeBytes2);
             await using var memoryStream = new MemoryStream();
@@ -295,7 +295,7 @@ public class ImageService : IImageService
             catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
             {
                 _logger.LogWarning("Downloaded image exceeded size limit for {ImageUrl}", imageUrl);
-                throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxDownloadSizeMb}MB", ex);
+                throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
             }
 
             return (memoryStream.ToArray(), contentType);

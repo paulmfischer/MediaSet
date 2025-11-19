@@ -21,19 +21,6 @@ public class ImageConfigurationTests
     }
 
     [Test]
-    public void GetMaxDownloadSizeBytes_CalculatesCorrectly()
-    {
-        // Arrange
-        var config = new ImageConfiguration { MaxDownloadSizeMb = 10 };
-
-        // Act
-        var result = config.GetMaxDownloadSizeBytes();
-
-        // Assert
-        Assert.That(result, Is.EqualTo(10 * 1024 * 1024));
-    }
-
-    [Test]
     public void GetAllowedMimeTypes_ParsesCorrectly()
     {
         // Arrange

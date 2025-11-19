@@ -36,7 +36,6 @@ public class ImageServiceTests : IDisposable
             MaxFileSizeMb = 5,
             AllowedMimeTypes = "image/jpeg,image/png",
             HttpTimeoutSeconds = 30,
-            MaxDownloadSizeMb = 10,
             StripExifData = true
         };
 
