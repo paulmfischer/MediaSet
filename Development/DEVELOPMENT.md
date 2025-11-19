@@ -341,6 +341,84 @@ curl http://localhost:5000/lookup/Movies/upc/883929248842
 
 The UI also provides inline lookup buttons in the add/edit forms for books and movies.
 
+## Image Storage Configuration
+
+MediaSet stores cover images locally on the filesystem, providing fast access and efficient storage management.
+
+### Image Storage Setup
+
+Images are automatically set up when you start the development environment:
+
+```bash
+# The ./dev.sh script creates the image directory
+./dev.sh start
+
+# Images are stored locally in:
+./data/images/
+```
+
+### Image Configuration
+
+Image storage is configured in `appsettings.json` (already configured for local development):
+
+```json
+{
+  "ImageConfiguration": {
+    "StoragePath": "/app/data/images",
+    "MaxFileSizeMb": 5,
+    "AllowedImageExtensions": "jpg,jpeg,png",
+    "HttpTimeoutSeconds": 30,
+    "StripExifData": true
+  }
+}
+```
+
+**Configuration Options:**
+- **StoragePath**: Directory where images are stored (default: `/app/data/images` in containers)
+- **MaxFileSizeMb**: Maximum file size in megabytes (5MB by default)
+- **AllowedImageExtensions**: Comma-separated list of allowed file extensions (JPEG and PNG by default)
+- **HttpTimeoutSeconds**: Timeout for downloading images from URLs in seconds
+- **StripExifData**: Whether to remove EXIF metadata (enabled by default for privacy)
+
+### Image Directory Persistence
+
+- Images stored during development persist in `./data/images/`
+- Images remain available when containers are restarted
+- To clear all images: `./dev.sh clean --purge`
+
+### Testing Image Upload
+
+**Upload an image when creating a book:**
+
+```bash
+# Create a test image (JPEG, PNG, etc.)
+# Then POST to the API with multipart form data
+
+curl -X POST http://localhost:5000/api/books \
+  -F "entity={\"title\":\"Test Book\",\"authors\":\"[\\\"Author Name\\\"]\"}" \
+  -F "coverImage=@/path/to/image.jpg"
+```
+
+**Download an image via URL:**
+
+```bash
+curl -X POST http://localhost:5000/api/books \
+  -F "entity={\"title\":\"Test Book\",\"authors\":\"[\\\"Author Name\\\"]\"}" \
+  -F "imageUrl=https://example.com/cover.jpg"
+```
+
+**Retrieve a stored image:**
+
+```bash
+curl http://localhost:5000/api/images/books/{bookId}
+```
+
+**Delete an image:**
+
+```bash
+curl -X DELETE http://localhost:5000/api/books/{bookId}/image
+```
+
 ## Performance Tips
 
 1. **Use .dockerignore files** to exclude unnecessary files

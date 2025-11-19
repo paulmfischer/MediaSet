@@ -6,6 +6,7 @@ A modern, full-stack personal media library management system for organizing you
 
 - **📚 Multi-Media Support**: Manage books, movies, games, and music in one unified application
 - **🔍 Smart Metadata Lookup**: Automatic metadata retrieval using ISBN, UPC/EAN barcodes
+- **🖼️ Cover Images**: Upload cover art, download images from lookup results, or provide URLs for automatic download
 - **📱 Responsive Design**: Mobile-friendly interface built with Tailwind CSS
 - **🚀 Modern Stack**: .NET 9.0 backend API with Remix.js frontend
 - **🐳 Containerized Development**: Full Docker/Podman support with hot-reload
@@ -95,6 +96,81 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
   - Requires descriptive User-Agent header (already configured)
   - Respects 1 request per second rate limit
   - See detailed setup in [MUSICBRAINZ_SETUP.md](MUSICBRAINZ_SETUP.md)
+
+## 📸 Cover Images
+
+MediaSet allows you to manage cover images for all your media items. Images are stored locally on the filesystem and referenced in your media database, providing fast access without storing large files in MongoDB.
+
+### Adding Cover Images
+
+You can add cover images when creating or editing media items in three ways:
+
+1. **Upload Image File**
+   - Click the "Upload Image" button in the add/edit form
+   - Supported formats: JPEG, PNG (configurable)
+   - Maximum file size: 5MB (configurable)
+   - Images are automatically validated and optimized
+
+2. **Provide Image URL**
+   - Enter a URL to a cover image in the image URL field
+   - The backend automatically downloads and validates the image
+   - Useful for quickly grabbing images from online sources
+
+3. **Use Lookup Result Images**
+   - When performing barcode lookups (ISBN, UPC, EAN), the results often include cover image URLs
+   - These URLs are displayed in the add/edit form
+   - Click to use the image, which is automatically downloaded and saved
+
+### Image Storage
+
+- **Location**: Images are stored in `/data/images/{mediaType}/{entityId}-{guid}.{ext}`
+- **Persistence**: Images persist across container restarts and application updates
+- **Backup**: Include the `./data/images` directory in your backups
+- **File Size**: Uses minimal storage with 5MB limit per image
+
+### Configuration
+
+Image storage settings are configured in `appsettings.json`:
+
+```json
+{
+  "ImageConfiguration": {
+    "StoragePath": "/app/data/images",
+    "MaxFileSizeMb": 5,
+    "AllowedImageExtensions": "jpg,jpeg,png",
+    "HttpTimeoutSeconds": 30,
+    "StripExifData": true
+  }
+}
+```
+
+### Image Endpoints
+
+The API provides the following endpoints for image management:
+
+**Retrieve cover image:**
+```
+GET /static/images/{filePath}
+```
+Where `filePath` comes from the entity's `coverImage.filePath` property. Images are served with 7-day HTTP caching headers for optimal performance.
+
+**Remove cover image from entity:**
+```
+DELETE /api/{entityType}/{entityId}/image
+```
+This removes the image from the entity but keeps the entity intact. Images are also automatically deleted when the media item is deleted or when the entity is updated with a new image.
+
+**Example:**
+```bash
+# Get entity with image reference
+curl http://localhost:5000/api/books/507f1f77bcf86cd799439011
+
+# Retrieve the image using filePath from coverImage object
+curl http://localhost:5000/static/images/books/507f1f77bcf86cd799439011-a1b2c3d4.jpg
+
+# Remove image from entity
+curl -X DELETE http://localhost:5000/api/books/507f1f77bcf86cd799439011/image
+```
 
 ## 🚀 Getting Started
 
@@ -276,7 +352,7 @@ docs: update README with versioning policy
 feat(api)!: change health endpoint response format
 ```
 
-## 🛠️ Technology Stack
+## 🔖 Versioning
 
 **Backend:**
 - .NET 9.0 Web API
