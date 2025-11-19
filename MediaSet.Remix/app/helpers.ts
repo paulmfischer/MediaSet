@@ -65,6 +65,7 @@ export function millisecondsToMinutesSeconds(milliseconds: number | null | undef
 
 function baseToBookEntity(data: BaseEntity): BookEntity {
   const book = data as Book;
+  const pages = book.pages ? parseInt(String(book.pages), 10) : undefined;
   return {
     type: book.type,
     authors: book.authors ? book.authors.split(',') : undefined,
@@ -72,7 +73,7 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
     genres: book.genres ? book.genres.split(',') : undefined,
     id: getValue(book.id),
     isbn: getValue(book.isbn),
-    pages: getValue(book.pages),
+    pages: isNaN(pages || NaN) ? undefined : pages,
     plot: getValue(book.plot),
     publicationDate: getValue(book.publicationDate),
     publisher: getValue(book.publisher),
@@ -85,6 +86,7 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
 function baseToMovieEntity(data: BaseEntity): MovieEntity {
   const movie = data as Movie;
   const isTvSeries = (movie.isTvSeries as unknown) as string;
+  const runtime = movie.runtime ? parseInt(String(movie.runtime), 10) : undefined;
   return {
     type: movie.type,
     studios: movie.studios ? movie.studios.split(',') : undefined,
@@ -94,7 +96,7 @@ function baseToMovieEntity(data: BaseEntity): MovieEntity {
     barcode: getValue(movie.barcode),
     releaseDate: getValue(movie.releaseDate),
     plot: getValue(movie.plot),
-    runtime: getValue(movie.runtime),
+    runtime: isNaN(runtime || NaN) ? undefined : runtime,
     title: getValue(movie.title),
     isTvSeries: getValue(isTvSeries) ? true : false,
     imageUrl: getValue(movie.imageUrl),
@@ -151,6 +153,8 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
   
   // Convert overall duration from MM:SS to milliseconds
   const durationMs = music.duration ? durationToMilliseconds(music.duration as any) : undefined;
+  const tracks = music.tracks ? parseInt(String(music.tracks), 10) : undefined;
+  const discs = music.discs ? parseInt(String(music.discs), 10) : undefined;
   
   return {
     type: music.type,
@@ -163,8 +167,8 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     duration: durationMs ?? undefined,
     label: getValue(music.label),
     barcode: getValue(music.barcode),
-    tracks: getValue(music.tracks),
-    discs: getValue(music.discs),
+    tracks: isNaN(tracks || NaN) ? undefined : tracks,
+    discs: isNaN(discs || NaN) ? undefined : discs,
     discList: discList.length > 0 ? discList : undefined,
     imageUrl: getValue(music.imageUrl),
   };

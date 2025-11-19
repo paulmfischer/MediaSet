@@ -2,7 +2,8 @@ import { Link } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import DeleteDialog from "~/components/delete-dialog";
-import { BookEntity } from "~/models";
+import ImageDisplay from "~/components/image-display";
+import { BookEntity, Entity } from "~/models";
 
 type BooksProps = {
   books: BookEntity[]
@@ -19,6 +20,7 @@ export default function Books({ books }: BooksProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
             <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
             <th className="hidden xs:table-cell pl-2 p-1 border-r border-slate-800 underline">Authors</th>
             <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
@@ -30,6 +32,9 @@ export default function Books({ books }: BooksProps) {
           {books.map(book => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={book.id}>
+                <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
+                  {book.coverImage && <ImageDisplay imageData={book.coverImage} alt={`${book.title} cover`} entityType={Entity.Books} entityId={book.id} size="xsmall" />}
+                </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/books/${book.id}`}>{book.title}{book.subtitle && `: ${book.subtitle}`}</Link>
                 </td>
