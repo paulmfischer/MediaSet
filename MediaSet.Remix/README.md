@@ -158,6 +158,51 @@ Example:
 </div>
 ```
 
+## Cover Images
+
+MediaSet provides full support for managing cover images for all media items:
+
+### Uploading Images
+
+When adding or editing media items, you can upload cover images in three ways:
+
+1. **Upload Image File**
+   - Click the image upload section in the add/edit form
+   - Drag and drop an image file or click to browse
+   - Supported formats: JPEG, PNG
+   - Maximum size: 5MB
+   - Preview is shown before submission
+
+2. **Provide Image URL**
+   - Enter a URL to a cover image in the `imageUrl` field
+   - The backend automatically downloads and saves the image
+   - No need to download the image locally first
+
+3. **Use Lookup Result Images**
+   - When barcode lookups return image URLs, they're displayed in the form
+   - Click to use the image from the lookup result
+   - Image is automatically downloaded and saved when you submit the form
+
+### Displaying Images
+
+- Entity detail pages display cover images prominently
+- List/grid views show thumbnail images for quick browsing
+- Fallback placeholder image shown if no image is available
+- All images have descriptive alt text for accessibility
+
+### Managing Images
+
+- **Replace Image**: In the edit form, upload a new image to replace the existing one
+- **Remove Image**: Click the clear button to remove the image from an item
+- **View Full Size**: Click an image to view it at full resolution
+
+### Image Validation
+
+The frontend validates images before upload:
+- File type validation (JPEG, PNG only)
+- File size validation (5MB limit)
+- Error messages display inline for easy troubleshooting
+
 ## API Integration
 
 The frontend communicates with the MediaSet.Api backend:
