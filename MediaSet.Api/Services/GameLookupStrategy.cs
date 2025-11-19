@@ -346,6 +346,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         var releaseDate = details.OriginalReleaseDate ?? string.Empty;
         var description = details.Deck ?? string.Empty;
+        var imageUrl = details.Image?.SuperUrl ?? details.Image?.MediumUrl ?? details.Image?.SmallUrl;
 
         var title = details.Name;
         if (!string.IsNullOrEmpty(edition))
@@ -362,7 +363,8 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
             ReleaseDate: releaseDate,
             Rating: rating,
             Description: description,
-            Format: format
+            Format: format,
+            ImageUrl: imageUrl
         );
     }
 }

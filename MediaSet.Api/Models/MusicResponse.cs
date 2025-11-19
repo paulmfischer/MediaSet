@@ -10,5 +10,6 @@ public record MusicResponse(
     int? Tracks,
     int? Discs,
     List<DiscResponse> DiscList,
-    string Format
+    string Format,
+    string? ImageUrl = null
 );

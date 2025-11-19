@@ -8,5 +8,6 @@ public record MovieResponse(
     string Rating,
     int? Runtime,
     string Plot,
-    string Format
+    string Format,
+    string? ImageUrl = null
 );

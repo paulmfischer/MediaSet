@@ -53,7 +53,10 @@ public record TmdbMovieResponse(
     List<TmdbProductionCompany> ProductionCompanies,
 
     [property: JsonPropertyName("vote_average")]
-    double VoteAverage
+    double VoteAverage,
+
+    [property: JsonPropertyName("poster_path")]
+    string? PosterPath = null
 );
 
 public record TmdbGenre(

@@ -9,5 +9,6 @@ public record GameResponse(
     string ReleaseDate,
     string Rating,
     string Description,
-    string Format
+    string Format,
+    string? ImageUrl = null
 );

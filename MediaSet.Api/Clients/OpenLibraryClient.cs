@@ -123,12 +123,23 @@ public class OpenLibraryClient : IOpenLibraryClient
 
         // Extract format from details object
         var format = string.Empty;
+        string? imageUrl = null;
         if (firstRecord.Details?.TryGetValue("details", out var detailsObj) == true &&
             detailsObj is JsonElement detailsElement &&
-            detailsElement.ValueKind == JsonValueKind.Object &&
-            detailsElement.TryGetProperty("physical_format", out var formatElement))
+            detailsElement.ValueKind == JsonValueKind.Object)
         {
-            format = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(formatElement.GetString() ?? string.Empty);
+            if (detailsElement.TryGetProperty("physical_format", out var formatElement))
+            {
+                format = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(formatElement.GetString() ?? string.Empty);
+            }
+
+            if (detailsElement.TryGetProperty("covers", out var coversElement) &&
+                coversElement.ValueKind == JsonValueKind.Array &&
+                coversElement.GetArrayLength() > 0)
+            {
+                var firstCoverId = coversElement[0].GetInt64();
+                imageUrl = $"https://covers.openlibrary.org/b/id/{firstCoverId}-L.jpg";
+            }
         }
 
         return new BookResponse(
@@ -139,7 +150,8 @@ public class OpenLibraryClient : IOpenLibraryClient
           publishers,
           publishDate,
           subjects,
-          format
+          format,
+          imageUrl
         );
     }
 
@@ -236,7 +248,8 @@ public record BookResponse(
   List<Publisher> Publishers,
   string PublishDate,
   List<Subject> Subjects,
-  string? Format = null
+  string? Format = null,
+  string? ImageUrl = null
 );
 
 public record Author(

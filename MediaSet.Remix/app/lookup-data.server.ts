@@ -69,7 +69,8 @@ export async function lookup(
       title: bookLookup.title,
       subtitle: bookLookup.subtitle,
       genres: bookLookup.subjects?.map(linkMap),
-      format: bookLookup.format
+      format: bookLookup.format,
+      imageUrl: bookLookup.imageUrl
     } as BookEntity;
   } else if (entityType === Entity.Movies) {
     const movieLookup = await response.json() as MovieLookupResponse;
@@ -83,7 +84,8 @@ export async function lookup(
       runtime: movieLookup.runtime ?? undefined,
       plot: movieLookup.plot,
       barcode: identifierValue,
-      format: movieLookup.format
+      format: movieLookup.format,
+      imageUrl: movieLookup.imageUrl
     } as MovieEntity;
   } else if (entityType === Entity.Games) {
     const gameLookup = await response.json() as GameLookupResponse;
@@ -98,7 +100,8 @@ export async function lookup(
       rating: gameLookup.rating,
       description: gameLookup.description,
       barcode: identifierValue,
-      format: gameLookup.format
+      format: gameLookup.format,
+      imageUrl: gameLookup.imageUrl
     } as GameEntity;
   } else if (entityType === Entity.Musics) {
     const musicLookup = await response.json() as MusicLookupResponse;
@@ -114,7 +117,8 @@ export async function lookup(
       discs: musicLookup.discs ?? undefined,
       discList: musicLookup.discList,
       barcode: identifierValue,
-      format: musicLookup.format
+      format: musicLookup.format,
+      imageUrl: musicLookup.imageUrl
     } as MusicEntity;
   }
 
