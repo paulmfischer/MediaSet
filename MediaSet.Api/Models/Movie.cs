@@ -47,6 +47,8 @@ public class Movie : IEntity
     [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
     public bool IsTvSeries { get; set; }
 
+    public string? ImageUrl { get; set; }
+
     public Image? CoverImage { get; set; }
 
     public bool IsEmpty()

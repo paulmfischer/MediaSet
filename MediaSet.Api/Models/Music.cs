@@ -45,6 +45,8 @@ public class Music : IEntity
   public int? Discs { get; set; }
   public List<Disc> DiscList { get; set; } = [];
 
+  public string? ImageUrl { get; set; }
+
   public Image? CoverImage { get; set; }
 
   public bool IsEmpty()

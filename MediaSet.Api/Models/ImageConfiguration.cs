@@ -16,9 +16,9 @@ public class ImageConfiguration
     public int MaxFileSizeMb { get; set; } = 5;
 
     /// <summary>
-    /// Comma-separated list of allowed MIME types. Default: "image/jpeg,image/png".
+    /// Comma-separated list of allowed image file extensions. Default: "jpg,jpeg,png".
     /// </summary>
-    public string AllowedMimeTypes { get; set; } = "image/jpeg,image/png";
+    public string AllowedImageExtensions { get; set; } = "jpg,jpeg,png";
 
     /// <summary>
     /// HTTP timeout in seconds for downloading images from URLs. Default: 30 seconds.
@@ -36,11 +36,11 @@ public class ImageConfiguration
     public long GetMaxFileSizeBytes() => MaxFileSizeMb * 1024L * 1024L;
 
     /// <summary>
-    /// Parse allowed MIME types into a collection.
+    /// Parse allowed image extensions into a collection.
     /// </summary>
-    public IEnumerable<string> GetAllowedMimeTypes()
+    public IEnumerable<string> GetAllowedImageExtensions()
     {
-        return AllowedMimeTypes
+        return AllowedImageExtensions
             .Split(',')
             .Select(x => x.Trim())
             .Where(x => !string.IsNullOrEmpty(x));

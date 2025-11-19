@@ -78,6 +78,7 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
     publisher: getValue(book.publisher),
     subtitle: getValue(book.subtitle),
     title: getValue(book.title),
+    imageUrl: getValue(book.imageUrl),
   };
 }
 
@@ -96,6 +97,7 @@ function baseToMovieEntity(data: BaseEntity): MovieEntity {
     runtime: getValue(movie.runtime),
     title: getValue(movie.title),
     isTvSeries: getValue(isTvSeries) ? true : false,
+    imageUrl: getValue(movie.imageUrl),
   };
 }
 
@@ -114,6 +116,7 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
     platform: getValue(game.platform),
     description: getValue(game.description),
     title: getValue(game.title),
+    imageUrl: getValue(game.imageUrl),
   };
 }
 
@@ -163,6 +166,7 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     tracks: getValue(music.tracks),
     discs: getValue(music.discs),
     discList: discList.length > 0 ? discList : undefined,
+    imageUrl: getValue(music.imageUrl),
   };
 }
 
