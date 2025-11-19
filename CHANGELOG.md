@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.0.0](https://github.com/paulmfischer/MediaSet/compare/v1.0.9...v2.0.0) (2025-11-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **license:** License change to AGPLv3 affects all usage and distribution. release-as: 2.0.0
+
+### Features
+
+* **api:** add Id and fix FileName on Image data closes [#391](https://github.com/paulmfischer/MediaSet/issues/391) ([#393](https://github.com/paulmfischer/MediaSet/issues/393)) ([affadd6](https://github.com/paulmfischer/MediaSet/commit/affadd61f81de6bd713987c83944d47a236a0f80))
+* **api:** implement ability to save an image for an entity closes [#357](https://github.com/paulmfischer/MediaSet/issues/357), [#358](https://github.com/paulmfischer/MediaSet/issues/358), [#359](https://github.com/paulmfischer/MediaSet/issues/359), [#360](https://github.com/paulmfischer/MediaSet/issues/360), [#361](https://github.com/paulmfischer/MediaSet/issues/361), [#361](https://github.com/paulmfischer/MediaSet/issues/361) ([#379](https://github.com/paulmfischer/MediaSet/issues/379)) ([4831495](https://github.com/paulmfischer/MediaSet/commit/48314955a33c22fc4acaea4ff4d7e2f028c709a7))
+* **api:** strip EXIF data from uploaded and downloaded images closes [#389](https://github.com/paulmfischer/MediaSet/issues/389) ([#395](https://github.com/paulmfischer/MediaSet/issues/395)) ([e88dec5](https://github.com/paulmfischer/MediaSet/commit/e88dec5974b5505eda2f807f72b0076bc258ca28))
+* **frontend:** add ability to upload an image to media through the UI ([#380](https://github.com/paulmfischer/MediaSet/issues/380)) ([2a4d343](https://github.com/paulmfischer/MediaSet/commit/2a4d343faccbbe80b571e3774ae18beac50105f8))
+* **lookup:** add imageUrl to barcode lookup closes [#369](https://github.com/paulmfischer/MediaSet/issues/369) ([#388](https://github.com/paulmfischer/MediaSet/issues/388)) ([91f42a1](https://github.com/paulmfischer/MediaSet/commit/91f42a150b752de74159f6a44696966d8f20701e))
+* **models:** add Image model and CoverImage property closes [#356](https://github.com/paulmfischer/MediaSet/issues/356) [AI-assisted] ([#377](https://github.com/paulmfischer/MediaSet/issues/377)) ([4e18996](https://github.com/paulmfischer/MediaSet/commit/4e189965afdbc9b097a713329d2d2ff642ab3536))
+* **ui:** display cover images on list view closes [#390](https://github.com/paulmfischer/MediaSet/issues/390) ([#394](https://github.com/paulmfischer/MediaSet/issues/394)) ([5d8935b](https://github.com/paulmfischer/MediaSet/commit/5d8935bb1c67a0a19cdf472ab72fe75fc4e4e73b))
+* **ui:** display images on entity details closes [#367](https://github.com/paulmfischer/MediaSet/issues/367) ([#383](https://github.com/paulmfischer/MediaSet/issues/383)) ([44e810c](https://github.com/paulmfischer/MediaSet/commit/44e810c9503d5d65a4ffbef019305e55d6e37881))
+
+
+### Bug Fixes
+
+* **api,ui:** resolve image editing and deletion bugs ([#384](https://github.com/paulmfischer/MediaSet/issues/384)) ([3edfa5d](https://github.com/paulmfischer/MediaSet/commit/3edfa5dcad659fe89745fac8fa840a5728de6c08))
+* **api:** improve EntityApi multipart form deserialization ([#381](https://github.com/paulmfischer/MediaSet/issues/381)) ([b2bf386](https://github.com/paulmfischer/MediaSet/commit/b2bf386968ae077b9f8ba7f164e1572531b8fd6d))
+* **test:** eliminate warnings as part of test project closes [#373](https://github.com/paulmfischer/MediaSet/issues/373) ([#386](https://github.com/paulmfischer/MediaSet/issues/386)) ([e0c93f7](https://github.com/paulmfischer/MediaSet/commit/e0c93f7f9f51ea0428b67ff2a3861b9a4ebd98d3))
+
+
+### Documentation
+
+* add image storage implementation plan [AI-assisted] refs [#151](https://github.com/paulmfischer/MediaSet/issues/151) ([#375](https://github.com/paulmfischer/MediaSet/issues/375)) ([9255039](https://github.com/paulmfischer/MediaSet/commit/92550397fd150014bcaad5560daa5bb9a520869a))
+* update documentation for image storage and API endpoints ([#392](https://github.com/paulmfischer/MediaSet/issues/392)) ([14e536e](https://github.com/paulmfischer/MediaSet/commit/14e536ee17020bd06ea1a0bbeaa66dd53ddee52f))
+
+
+### Miscellaneous
+
+* **license:** switch to GNU AGPLv3 and update project metadata ([#385](https://github.com/paulmfischer/MediaSet/issues/385)) ([b4995a7](https://github.com/paulmfischer/MediaSet/commit/b4995a76a1108fed302efdf7ab27db07f9e420d2))
+
 ## [1.0.9](https://github.com/paulmfischer/MediaSet/compare/v1.0.8...v1.0.9) (2025-11-13)
 
 
