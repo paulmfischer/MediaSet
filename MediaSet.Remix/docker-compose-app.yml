@@ -1,12 +1,32 @@
-# example docker compose file used on a nas to run api.
+# Example docker compose file for running MediaSet UI (Remix frontend) in production
+#
+# Prerequisites:
+# - Start the API using docker-compose-api.yml from MediaSet.Api directory
+# - Both compose files use the same 'mediaset' network
+#
+# Environment variables:
+#   - API_BASE_URL: Base URL for the MediaSet API (default: http://mediaset-api:8080)
+
+version: '3.8'
+
 services:
-  site:
-    container_name: site
-    restart: always
-    build: .
+  mediaset-ui:
+    image: ghcr.io/paulmfischer/mediaset-ui:latest
+    container_name: mediaset-ui
+    restart: unless-stopped
     ports:
-      - 3000:3000
-    volumes:
-      - .:/usr/src/app
+      - "3000:3000"
     environment:
-      apiUrl: "http://cortext-mediaset:7134"
+      # API configuration
+      apiUrl: "${API_BASE_URL:-http://mediaset-api:8080}"
+      
+      # Node environment
+      NODE_ENV: "production"
+    
+    networks:
+      - mediaset
+
+networks:
+  mediaset:
+    external: true
+    name: mediaset
