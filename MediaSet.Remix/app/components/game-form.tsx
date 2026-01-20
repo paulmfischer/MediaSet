@@ -33,6 +33,13 @@ export default function GameForm({ game, developers, publishers, genres, formats
     submit(formData, { method: 'post' });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLookup();
+    }
+  };
+
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       <input hidden id="id" name="id" type="text" defaultValue={game?.id} />
@@ -88,7 +95,7 @@ export default function GameForm({ game, developers, publishers, genres, formats
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
-          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={game?.barcode} aria-label="Barcode" />
+          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={game?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
           <button
             type="button"
             onClick={handleLookup}
