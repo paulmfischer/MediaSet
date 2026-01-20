@@ -37,6 +37,13 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
     submit(formData, { method: 'post' });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLookup();
+    }
+  };
+
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       <input hidden id="id" name="id" type="text" defaultValue={book?.id} />
@@ -92,7 +99,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       <div>
         <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">ISBN</label>
         <div className="flex gap-2">
-          <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" />
+          <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" onKeyDown={handleKeyDown} />
           <button
             type="button"
             onClick={handleLookup}

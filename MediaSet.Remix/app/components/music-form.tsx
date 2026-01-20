@@ -47,6 +47,13 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
     submit(formData, { method: 'post' });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLookup();
+    }
+  };
+
   const addDisc = () => {
     setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: null }]);
   };
@@ -119,7 +126,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
-          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={music?.barcode} aria-label="Barcode" />
+          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={music?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
           <button
             type="button"
             onClick={handleLookup}

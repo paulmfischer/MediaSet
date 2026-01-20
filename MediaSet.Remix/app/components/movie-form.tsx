@@ -41,6 +41,13 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
     submit(formData, { method: 'post' });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleLookup();
+    }
+  };
+
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
       <input hidden id="id" name="id" type="text" defaultValue={movie?.id} />
@@ -91,7 +98,7 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
-          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" />
+          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
           <button
             type="button"
             onClick={handleLookup}
