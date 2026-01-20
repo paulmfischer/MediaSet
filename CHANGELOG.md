@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.1](https://github.com/paulmfischer/MediaSet/compare/v2.0.0...v2.0.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ui:** fixing search and isbn lookup submits closes [#402](https://github.com/paulmfischer/MediaSet/issues/402) and [#403](https://github.com/paulmfischer/MediaSet/issues/403) ([#409](https://github.com/paulmfischer/MediaSet/issues/409)) ([e93cbcf](https://github.com/paulmfischer/MediaSet/commit/e93cbcf3d27450eb093dc645393620ac0f2cf43f))
+
+
+### Documentation
+
+* **docker:** update example docker-compose files with complete configurations ([#396](https://github.com/paulmfischer/MediaSet/issues/396)) ([612a3a8](https://github.com/paulmfischer/MediaSet/commit/612a3a840bb3669e94d567d71f5af55e02eb4cbf))
+
 ## [2.0.0](https://github.com/paulmfischer/MediaSet/compare/v1.0.9...v2.0.0) (2025-11-19)
 
 
