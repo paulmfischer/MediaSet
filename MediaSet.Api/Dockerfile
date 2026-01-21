@@ -1,5 +1,5 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0.112 AS build
 WORKDIR /src
 
 # Accept version from build args (passed by CI/CD)
