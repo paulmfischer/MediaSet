@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/paulmfischer/MediaSet/compare/v2.0.3...v2.0.4) (2026-01-21)
+
+
+### Bug Fixes
+
+* **build:** change rollForward to latestFeature for cross-feature-band compatibility ([#419](https://github.com/paulmfischer/MediaSet/issues/419)) ([1d5d678](https://github.com/paulmfischer/MediaSet/commit/1d5d67881af7b8595673279d70a501a15c98c96b))
+
 ## [2.0.3](https://github.com/paulmfischer/MediaSet/compare/v2.0.2...v2.0.3) (2026-01-21)
 
 
