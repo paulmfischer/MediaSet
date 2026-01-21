@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/paulmfischer/MediaSet/compare/v2.0.1...v2.0.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* **build:** align .NET SDK to 9.0.112 across all environments ([#414](https://github.com/paulmfischer/MediaSet/issues/414)) ([93b0e8b](https://github.com/paulmfischer/MediaSet/commit/93b0e8b072b546e2e0794bac3f0c6100de1dc6a9))
+
 ## [2.0.1](https://github.com/paulmfischer/MediaSet/compare/v2.0.0...v2.0.1) (2026-01-20)
 
 
