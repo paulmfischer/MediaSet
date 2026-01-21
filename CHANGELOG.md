@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/paulmfischer/MediaSet/compare/v2.0.2...v2.0.3) (2026-01-21)
+
+
+### Miscellaneous
+
+* trigger release after malformed msg ([#417](https://github.com/paulmfischer/MediaSet/issues/417)) ([e60af2b](https://github.com/paulmfischer/MediaSet/commit/e60af2bb879cbd30e483b421d0dc0b7dcd3c6ca5))
+
 ## [2.0.2](https://github.com/paulmfischer/MediaSet/compare/v2.0.1...v2.0.2) (2026-01-21)
 
 
