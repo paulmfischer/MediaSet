@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/paulmfischer/MediaSet/compare/v2.0.4...v2.1.0) (2026-01-22)
+
+
+### Features
+
+* **api:** update to .NET 10 ([#423](https://github.com/paulmfischer/MediaSet/issues/423)) ([e0a6aab](https://github.com/paulmfischer/MediaSet/commit/e0a6aab07286b039044586224c4ef4c76a3ae08d))
+
 ## [2.0.4](https://github.com/paulmfischer/MediaSet/compare/v2.0.3...v2.0.4) (2026-01-21)
 
 
