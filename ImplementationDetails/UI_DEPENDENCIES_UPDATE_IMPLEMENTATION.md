@@ -45,7 +45,7 @@ This document details the plan to update UI dependencies (Remix.js frontend) to 
 | happy-dom | 20.0.10 | 20.3.4 | Patch |
 | postcss | 8.4.38 | 8.4.38 | (No update) |
 | remix-development-tools | 4.7.7 | 4.7.7 | (No update) |
-| tailwindcss | 3.4.17 | 4.1.18 | Major |
+| tailwindcss | 3.4.17 | 3.4.17 | (No update - v4 requires major CSS refactor) |
 | typescript | 5.7.3 | 5.9.3 | Minor |
 | vite | 5.4.19 | 6.4.1 | Major (cap per Remix peer) |
 | vite-tsconfig-paths | 4.3.2 | 6.0.4 | Major |
@@ -55,11 +55,13 @@ This document details the plan to update UI dependencies (Remix.js frontend) to 
 ## Breaking Changes Analysis
 
 ### Major Version Updates (Require Investigation)
-1. **TailwindCSS 3 → 4** - Significant API changes. Requires `tailwind.config.ts` updates and possible CSS rewrites.
-2. **Vite 5 → 6** - Major version jump (capped at 6.4.1 to satisfy Remix peer dependency).
-3. **vite-tsconfig-paths 4 → 6** - Major version. May require config adjustments.
-4. **eslint-plugin-react-hooks 5 → 7** - Major version. May have breaking config changes.
-5. **eslint-import-resolver-typescript 3 → 4** - Major version. May affect ESLint resolver behavior.
+1. **Vite 5 → 6** - Major version jump (capped at 6.4.1 to satisfy Remix peer dependency).
+2. **vite-tsconfig-paths 4 → 6** - Major version. May require config adjustments.
+3. **eslint-plugin-react-hooks 5 → 7** - Major version. May have breaking config changes.
+4. **eslint-import-resolver-typescript 3 → 4** - Major version. May affect ESLint resolver behavior.
+
+### Deferred Updates
+- **TailwindCSS 3 → 4** - Requires extensive CSS refactoring and config changes. The @apply directives in `app/tailwind.css` and dark mode handling need significant updates. Recommended for separate issue/iteration.
 
 ### Remix Peer Dependency Alignment
 - React must remain 18.x (Remix 2.17.x peer).
@@ -90,10 +92,11 @@ This document details the plan to update UI dependencies (Remix.js frontend) to 
 1. **eslint-import-resolver-typescript (3 → 4)** - May affect ESLint config, validate resolver behavior
 2. **eslint-plugin-react-hooks (5 → 7)** - Check ESLint config for any breaking changes
 3. **vite-tsconfig-paths (4 → 6)** - Test vite config and path resolution
- 4. **Vite (5 → 6)** - Check vite.config.ts for deprecated options, test build process; keep within Remix peer range (^5.1 || ^6.x)
-5. **TailwindCSS (3 → 4)** - Major CSS framework update, requires `tailwind.config.ts` updates and CSS testing
+4. **Vite (5 → 6)** - Check vite.config.ts for deprecated options, test build process; keep within Remix peer range (^5.1 || ^6.x)
 
 **React stays on 18.x**: Remix 2.17.x peer dependency requires React 18. No React 19 upgrade until Remix expands support.
+
+**TailwindCSS deferred to separate issue**: v4 requires `@tailwindcss/postcss` and substantial CSS refactoring. Utility class discovery changes and dark mode handling differ significantly. This should be addressed in a dedicated iteration.
 
 ### Phase 4: Final Integration & Testing
 1. Run full npm test suite
@@ -104,16 +107,7 @@ This document details the plan to update UI dependencies (Remix.js frontend) to 
 
 ## Expected Code Changes
 
-### 1. TailwindCSS v3 → v4
-**Files Affected**: `tailwind.config.ts`, `app/styles/*.css`
-
-**Changes Required**:
-- Update `tailwind.config.ts` configuration syntax
-- May need to update CSS custom properties and theme values
-- Review component CSS for deprecated Tailwind utilities
-- Update any custom CSS rules that rely on Tailwind internals
-
-### 2. Vite 5 → 6
+### 1. Vite 5 → 6
 **Files Affected**: `vite.config.ts`
 
 **Potential Changes**:
@@ -122,13 +116,20 @@ This document details the plan to update UI dependencies (Remix.js frontend) to 
 - Test HMR (Hot Module Replacement) functionality
 - Verify build process and output
 
-### 3. ESLint & Plugin Updates
-**Files Affected**: `.eslintrc.json` (if exists) or ESLint config in `package.json`
+### 2. ESLint & Plugin Updates
+**Files Affected**: `.eslintrc.cjs`
 
 **Potential Changes**:
 - May need to update ESLint resolver configuration
 - React Hooks plugin may have new rules or rule options
 - May need to update rule severity levels
+
+### 3. TailwindCSS v4 (Deferred)
+When ready to upgrade in a separate iteration:
+- Replace `tailwindcss` with `@tailwindcss/postcss` in `postcss.config.js`
+- Update `app/tailwind.css` to handle new dark mode syntax
+- Review all `@apply` directives for Tailwind 4 compatibility
+- Update `tailwind.config.ts` if custom theme values rely on Tailwind 3 syntax
 
 ## Testing Checklist
 
@@ -163,27 +164,42 @@ Expected bump: **Minor version** (no breaking changes to public API expected)
 
 ## Implementation Log
 
-(To be updated as work progresses)
-
 ### Phase 1: Patch Updates
-- [ ] Started: [date]
-- [ ] Completed: [date]
-- [ ] Issues: [any issues encountered]
+- [x] Started: January 22, 2026
+- [x] Completed: January 22, 2026
+- [x] Updated: @remix-run packages, @testing-library/react, @typescript-eslint packages, eslint, autoprefixer, happy-dom, isbot
+- [x] Tests: All 1024 tests passing
+- [x] Commit: `chore(deps): update remix and patch versions refs #413`
 
 ### Phase 2: Minor Updates
-- [ ] Started: [date]
-- [ ] Completed: [date]
-- [ ] Issues: [any issues encountered]
+- [x] Started: January 22, 2026
+- [x] Completed: January 22, 2026
+- [x] Updated: TypeScript 5.9.3, lucide-react 0.562.0, @vitejs/plugin-react 5.1.2
+- [x] Tests: All 1024 tests passing
+- [x] Commit: `chore(deps): update typescript, lucide-react, vite plugin refs #413`
 
 ### Phase 3: Major Updates
-- [ ] Started: [date]
-- [ ] Completed: [date]
-- [ ] Issues: [any issues encountered]
+- [x] Started: January 22, 2026
+- [x] Completed: January 22, 2026
+- [x] Updated: eslint-import-resolver-typescript v4, eslint-plugin-react-hooks v7, vite-tsconfig-paths v6, vite v6
+- [x] Tests: All 1024 tests passing
+- [x] Build: Succeeds
+- [x] Commits:
+  - `chore(deps): update eslint-import-resolver-typescript to v4 refs #413`
+  - `chore(deps): update eslint-plugin-react-hooks to v7 refs #413`
+  - `chore(deps): update vite-tsconfig-paths to v6 refs #413`
+  - `chore(deps): update vite to v6 refs #413`
 
-### Phase 4: Final Integration
-- [ ] Started: [date]
-- [ ] Completed: [date]
-- [ ] All tests passing: [ ]
-- [ ] PR created: [ ]
-- [ ] PR merged: [ ]
+### Phase 4: TailwindCSS v4 (Deferred)
+- [x] Evaluated: Requires `@tailwindcss/postcss`, substantial CSS refactoring
+- [x] Decision: Defer to separate issue for thorough testing and CSS review
+- [x] Commit: `chore(deps): keep tailwindcss at v3, requires major refactoring for v4 refs #413`
+
+### Phase 5: Final Integration & Testing
+- [x] npm install: Completed
+- [x] npm run typecheck: Passing
+- [x] npm test: All 1024 tests passing
+- [x] npm run build: Succeeds
+- [ ] Manual browser testing: (In progress)
+- [ ] Minor version bump in package.json: (Pending user approval)
 
