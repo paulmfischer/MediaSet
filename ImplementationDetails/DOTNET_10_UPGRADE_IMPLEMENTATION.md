@@ -26,6 +26,10 @@ The .NET 10 upgrade has been successfully completed. All components have been up
 6. ✅ **Code Migrations**: Fixed breaking changes in Swashbuckle/OpenAPI
 7. ✅ **Documentation**: Updated README.md references
 
+### Release Impact
+
+- Semantic bump: minor (feature-level change) even though the runtime upgrade is significant; deferring major until v3.
+
 ### Breaking Changes Addressed
 
 **Swashbuckle.AspNetCore v10 / Microsoft.OpenApi v2 Migration**:
