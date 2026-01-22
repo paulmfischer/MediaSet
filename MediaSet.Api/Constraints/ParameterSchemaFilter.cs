@@ -1,12 +1,12 @@
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text.Json.Nodes;
 
 namespace MediaSet.Api.Bindings;
 
 public class ParameterSchemaFilter : ISchemaFilter
 {
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         var type = context.Type;
 
@@ -31,8 +31,12 @@ public class ParameterSchemaFilter : ISchemaFilter
                 return;
             }
 
-            schema.Type = "string";
-            schema.Enum = names.OfType<string>().Select(x => new OpenApiString(x)).ToList<IOpenApiAny>();
+            if (schema is OpenApiSchema openApiSchema)
+            {
+                // The properties are only mutable on the concrete type
+                openApiSchema.Type = JsonSchemaType.String;
+                openApiSchema.Enum = names.Select(x => (JsonNode)x).ToList();
+            }
         }
     }
 }
