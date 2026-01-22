@@ -84,7 +84,9 @@ public class ImageService : IImageService
             // Read and process file data
             await using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream, cancellationToken);
-            var imageData = await StripExifDataAsync(memoryStream.ToArray(), file.ContentType, cancellationToken);
+            var imageData = _config.StripExifData
+                ? await StripExifDataAsync(memoryStream.ToArray(), file.ContentType, cancellationToken)
+                : memoryStream.ToArray();
 
             // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
             var extension = Path.GetExtension(file.FileName).TrimStart('.');
@@ -191,7 +193,10 @@ public class ImageService : IImageService
 
             // Strip EXIF data
             var mimeType = fileExtension == "png" ? "image/png" : "image/jpeg";
-            imageData = await StripExifDataAsync(imageData, mimeType, cancellationToken);
+            if (_config.StripExifData)
+            {
+                imageData = await StripExifDataAsync(imageData, mimeType, cancellationToken);
+            }
 
             // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
             var imageId = Guid.NewGuid().ToString();
