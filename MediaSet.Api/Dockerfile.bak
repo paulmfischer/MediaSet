@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
 WORKDIR /build
 
 # Disable .NET diagnostics to prevent socket creation issues in containers
@@ -23,7 +23,7 @@ RUN dotnet publish -c Release -o out
 RUN find /tmp -name "dotnet-diagnostic-*" -type s -delete 2>/dev/null || true
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /mediaset
 # Copy the published output
 COPY --from=build-env /build/MediaSet/MediaSet.Api/out .

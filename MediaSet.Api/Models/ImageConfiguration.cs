@@ -26,6 +26,11 @@ public class ImageConfiguration
     public int HttpTimeoutSeconds { get; set; } = 30;
 
     /// <summary>
+    /// Whether EXIF and metadata should be stripped from images when saving. Default: true.
+    /// </summary>
+    public bool StripExifData { get; set; } = true;
+
+    /// <summary>
     /// Get the maximum file size in bytes.
     /// </summary>
     public long GetMaxFileSizeBytes() => MaxFileSizeMb * 1024L * 1024L;
