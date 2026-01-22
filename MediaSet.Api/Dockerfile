@@ -1,5 +1,5 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Accept version from build args (passed by CI/CD)
@@ -25,7 +25,7 @@ WORKDIR /src/MediaSet.Api
 RUN dotnet publish -c Release -o /app/publish --no-restore /p:MinVerVersion=${MINVER_VERSION}
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Create non-root user for security
