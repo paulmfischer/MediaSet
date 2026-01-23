@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/paulmfischer/MediaSet/compare/v2.1.0...v2.2.0) (2026-01-23)
+
+
+### Features
+
+* **deps:** update frontend dependencies to latest versions ([#425](https://github.com/paulmfischer/MediaSet/issues/425)) ([bfa05df](https://github.com/paulmfischer/MediaSet/commit/bfa05dffd1854269b2397ee4cb3948e461c37040))
+
 ## [2.1.0](https://github.com/paulmfischer/MediaSet/compare/v2.0.4...v2.1.0) (2026-01-22)
 
 
