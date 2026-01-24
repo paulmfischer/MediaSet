@@ -22,6 +22,7 @@ internal static class HealthApi
 
             try
             {
+                logger.LogInformation("Pinging MongoDB database: {DatabaseName}", dbName);
                 // Obtain database from any collection; Database property points to the configured IMongoDatabase
                 var collection = databaseService.GetCollection<BsonDocument>();
                 var database = collection.Database;

@@ -3,6 +3,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS development
 
 WORKDIR /app
 
+# Clear NuGet cache to prevent restore issues in local development
+RUN dotnet nuget locals all --clear
+
 # Install debugger
 RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
