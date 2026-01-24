@@ -200,13 +200,42 @@ check_health() {
     echo "✅ Health checks passed"
 }
 
+# Function to clean NuGet cache to prevent restore issues
+clean_nuget_cache() {
+    # Only clean if we're starting the API (which needs the restore)
+    if [ "$CONTAINER_RUNTIME" = "podman" ] || [ "$CONTAINER_RUNTIME" = "docker" ]; then
+        echo "🧼 Clearing NuGet cache to prevent restore issues..."
+        # Clear local HTTP cache
+        rm -rf ~/.nuget/http-cache 2>/dev/null || true
+        echo "✅ NuGet cache cleared"
+    fi
+}
+
 # Function to start development environment
 start_dev() {
     local target="${1:-all}"
+    local clean_build="${2}"
+
+    # If only --clean is provided (no explicit target), treat target as all
+    if [[ "$target" == "--clean" ]]; then
+        target="all"
+        clean_build="--clean"
+    fi
     echo "🔧 Building and starting development containers (target: $target)..."
+    # Clean up any dangling images from previous builds before rebuilding
+    prune_dev_images
+    # Clear NuGet cache to prevent package resolution issues
+    clean_nuget_cache
+
+    # Check if --clean flag was passed for complete rebuild
+    local build_flags="--build"
+    if [ "$clean_build" = "--clean" ]; then
+        build_flags="--build --no-cache"
+        echo "🧹 Forcing clean rebuild (skipping Docker/Podman layer cache)..."
+    fi
 
     if [[ -z "$target" || "$target" == "all" ]]; then
-        $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d
+        $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d
     else
         # Normalize common aliases
         case "$target" in
@@ -215,13 +244,13 @@ start_dev() {
             mongo) target="mongodb" ;;
             api+frontend|frontend+api|app)
                 echo "🚀 Starting API and Frontend..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d api frontend
+                $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d api frontend
                 check_health "frontend"  # ensures api+frontend+mongo
                 echo "✅ Started API and Frontend"
                 return
                 ;;
         esac
-        $COMPOSE_COMMAND -f $COMPOSE_FILE up --build -d "$target"
+        $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d "$target"
     fi
 
     check_health "$target"
@@ -275,12 +304,14 @@ stop_dev() {
                 echo "🛑 Stopping API and Frontend (leaving MongoDB running)..."
                 $COMPOSE_COMMAND -f $COMPOSE_FILE stop api frontend
                 echo "✅ Stopped API and Frontend"
+                prune_dev_images
                 return
                 ;;
         esac
         echo "🛑 Stopping container: $target (leaving others running) ..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE stop "$target"
     fi
+    prune_dev_images
     echo "✅ Stop complete"
 }
 
@@ -307,6 +338,22 @@ restart_dev() {
         $COMPOSE_COMMAND -f $COMPOSE_FILE restart "$target"
         check_health "$target"
     fi
+}
+
+# Function to prune dangling Podman images (Podman-specific)
+prune_dev_images() {
+    # Skip if PODMAN_AUTO_PRUNE is explicitly set to 0
+    if [ "${PODMAN_AUTO_PRUNE}" = "0" ]; then
+        return
+    fi
+
+    # Only run for Podman
+    if [ "$CONTAINER_RUNTIME" != "podman" ]; then
+        return
+    fi
+
+    # Run prune to clean up dangling images from rebuilds
+    podman image prune -f > /dev/null 2>&1 || true
 }
 
 # Function to clean everything
@@ -362,10 +409,11 @@ case "$1" in
         echo "MediaSet Development Environment Manager"
         echo "🐳 Supports both Docker and Podman (auto-detected)"
         echo ""
-    echo "Usage: $0 {start|stop|restart|logs|status|shell|clean} [service]"
+    echo "Usage: $0 {start|stop|restart|logs|status|shell|clean|rebuild} [service]"
         echo ""
         echo "Commands:"
     echo "  start [service]   - Start environment or a single service (use 'api+frontend' or 'app' for both)"
+    echo "  start [service] --clean - Start with clean rebuild (no Docker/Podman layer cache)"
     echo "  stop [service]    - Stop environment or a single service (use 'api+frontend' or 'app' for both)"
     echo "  restart [service] - Restart all or a single service (use 'api+frontend' or 'app' to restart both)"
     echo "  logs [service]    - Show recent logs (add -f to follow)"
@@ -373,11 +421,14 @@ case "$1" in
     echo "  shell     - Enter container shell (api|frontend|mongo)"
     echo "  clean     - Stop and remove containers and networks (keeps data)"
     echo "  clean --purge - Also remove volumes and local ./data (deletes data)"
+    echo "  rebuild   - Rebuild everything from scratch (removes old images, clears caches, fresh build)"
+    echo "  cache-clean     - Clear NuGet cache (useful if builds fail with package not found errors)"
         echo ""
         echo "Examples:"
     echo "  $0 start                # Start everything"
     echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
     echo "  $0 start app            # Start API and Frontend (MongoDB if needed)"
+    echo "  $0 start --clean        # Clean rebuild (full rebuild without Docker/Podman layer cache)"
     echo "  $0 stop frontend        # Stop only the frontend (keep API/Mongo running)"
     echo "  $0 stop app             # Stop API and Frontend (keep MongoDB running)"
     echo "  $0 restart api          # Restart only the API"
@@ -387,17 +438,24 @@ case "$1" in
         echo "  $0 shell frontend"
         echo "  $0 clean             # Remove containers, keep data"
         echo "  $0 clean --purge     # Remove everything including data"
+        echo "  $0 rebuild           # Full rebuild from scratch (recommended if persistent build failures)"
         echo ""
         echo "Container Runtime Support:"
         echo "  🐳 Docker     - Uses docker-compose.dev.yml"
         echo "  🦭 Podman     - Uses docker-compose.podman.yml"
+        echo ""
+        echo "Environment Variables:"
+        echo "  PODMAN_AUTO_PRUNE=0 - Disable auto-pruning of dangling Podman images (default: enabled)"
+        echo ""
+        echo "Note: Podman automatically prunes dangling images on 'start' and 'stop' to prevent"
+        echo "accumulation from repeated rebuilds. Set PODMAN_AUTO_PRUNE=0 to disable this behavior."
         echo ""
         echo "Need help installing? See CONTAINER_SETUP.md"
         exit 0
         ;;
     start|up)
         setup_container_runtime
-        start_dev "$2"
+        start_dev "$2" "$3"
         ;;
     stop|down)
         setup_container_runtime
@@ -422,6 +480,22 @@ case "$1" in
     clean)
         setup_container_runtime
         clean_dev "$2"
+        ;;
+    cache-clean)
+        setup_container_runtime
+        clean_nuget_cache
+        ;;
+    rebuild)
+        setup_container_runtime
+        echo "🔨 Performing full rebuild from scratch..."
+        echo "  1️⃣  Cleaning environment and removing old images..."
+        clean_dev "purge"
+        echo ""
+        echo "  2️⃣  Clearing NuGet cache..."
+        clean_nuget_cache
+        echo ""
+        echo "  3️⃣  Rebuilding from scratch..."
+        start_dev "all" "--clean"
         ;;
     *)
         echo "❌ Unknown command: $1"
