@@ -29,6 +29,7 @@ services:
       - ASPNETCORE_URLS=http://+:5000
       - ASPNETCORE_HTTP_PORTS=5000
       - ASPNETCORE_HTTPS_PORTS=
+      - NUGET_PACKAGES=/nuget
       - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
       - MediaSetDatabaseSettings__DatabaseName=MediaSet
       - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
@@ -40,8 +41,7 @@ services:
       - ./MediaSet.Api:/app
       - ./.git:/app/.git
       - ./data/images:/app/data/images
-      - ~/.nuget/packages:/home/app/.nuget/packages
-      - ~/.dotnet/tools:/home/app/.dotnet/tools
+      - nuget_cache:/nuget
     depends_on:
       - mongodb
     networks:
@@ -71,6 +71,9 @@ services:
     networks:
       - mediaset-dev
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+volumes:
+  nuget_cache:
+
 networks:
   mediaset-dev:
     driver: bridge
