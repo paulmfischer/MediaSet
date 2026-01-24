@@ -1,4 +1,4 @@
-import { Form } from "@remix-run/react";
+import { Form, useNavigation } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
@@ -11,6 +11,9 @@ type DeleteDialogProps = {
 
 export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteAction }: DeleteDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const navigation = useNavigation();
+  const wasSubmittingRef = useRef(false);
+  const handleClose = onClose ?? (() => {});
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -23,9 +26,28 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const isSubmittingThisDialog =
+      navigation.state === "submitting" && navigation.formAction === deleteAction;
+
+    if (isSubmittingThisDialog) {
+      wasSubmittingRef.current = true;
+      handleClose();
+      return;
+    }
+
+    const returnedIdleForThisDialog =
+      wasSubmittingRef.current && navigation.state === "idle";
+
+    if (returnedIdleForThisDialog) {
+      wasSubmittingRef.current = false;
+      handleClose();
+    }
+  }, [navigation.formAction, navigation.state, deleteAction, handleClose]);
+
   const handleCancel = (event: React.MouseEvent) => {
     event.preventDefault();
-    onClose();
+    handleClose();
   };
 
   const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
@@ -41,7 +63,7 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
     );
 
     if (!isInDialog) {
-      onClose();
+      handleClose();
     }
   };
 

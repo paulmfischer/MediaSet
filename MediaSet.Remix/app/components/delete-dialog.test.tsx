@@ -3,11 +3,14 @@ import { render, screen, waitFor } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import DeleteDialog from './delete-dialog';
 
-// Mock the Remix Form component to avoid router context requirement
+// Mock the Remix Form component and navigation to avoid router context requirement
+const mockNavigationState: { state: string; formAction?: string } = { state: 'idle', formAction: undefined };
+
 vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
+    useNavigation: () => mockNavigationState,
     Form: ({ action, method, children, ...props }: any) => (
       <form action={action} method={method} {...props}>
         {children}
@@ -26,6 +29,8 @@ describe('DeleteDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigationState.state = 'idle';
+    mockNavigationState.formAction = undefined;
   });
 
   afterEach(() => {
@@ -282,6 +287,40 @@ describe('DeleteDialog', () => {
       await user.click(deleteButton);
       expect(deleteButton).toBeInTheDocument();
     });
+
+          it('should call onClose when submitting matching delete action and when navigation returns idle', async () => {
+            const onClose = vi.fn();
+            const { rerender } = render(
+              <DeleteDialog {...defaultProps} onClose={onClose} />
+            );
+
+            mockNavigationState.state = 'submitting';
+            mockNavigationState.formAction = defaultProps.deleteAction;
+
+            rerender(<DeleteDialog {...defaultProps} onClose={onClose} />);
+
+            expect(onClose).toHaveBeenCalledTimes(1);
+
+            mockNavigationState.state = 'idle';
+
+            rerender(<DeleteDialog {...defaultProps} onClose={onClose} />);
+
+            expect(onClose).toHaveBeenCalledTimes(2);
+          });
+
+          it('should not call onClose when submitting a different form action', () => {
+            const onClose = vi.fn();
+            const { rerender } = render(
+              <DeleteDialog {...defaultProps} onClose={onClose} />
+            );
+
+            mockNavigationState.state = 'submitting';
+            mockNavigationState.formAction = '/other/action';
+
+            rerender(<DeleteDialog {...defaultProps} onClose={onClose} />);
+
+            expect(onClose).not.toHaveBeenCalled();
+          });
   });
 
   describe('Accessibility', () => {
