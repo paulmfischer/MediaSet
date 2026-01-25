@@ -264,7 +264,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     }
 
     [Test]
-    public async Task UpdateGameWithImageUploadFailure_ShouldReturnBadRequest()
+    public async Task UpdateGameWithImageUploadFailure_ShouldStillUpdateEntity()
     {
         // Arrange
         var gameId = "507f1f77bcf86cd799439011";
@@ -284,7 +284,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var response = await _client!.PutAsync($"/Games/{gameId}", content);
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _gameServiceMock.Verify(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
