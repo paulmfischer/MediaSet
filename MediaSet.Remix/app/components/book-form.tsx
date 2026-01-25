@@ -46,7 +46,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
-      <input hidden id="id" name="id" type="text" defaultValue={book?.id} />
+      <input id="id" name="id" type="hidden" defaultValue={book?.id} />
       
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>

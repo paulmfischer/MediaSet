@@ -50,7 +50,7 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
-      <input hidden id="id" name="id" type="text" defaultValue={movie?.id} />
+      <input id="id" name="id" type="hidden" defaultValue={movie?.id} />
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">Title</label>
