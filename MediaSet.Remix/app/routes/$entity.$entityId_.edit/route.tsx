@@ -120,7 +120,9 @@ export default function Edit() {
   
   // Use a key to force form remount when lookup data changes
   // This ensures defaultValue props are re-applied with new lookup data
-  const formKey = lookupEntity ? `lookup-${(actionData as any)?.identifierValue}-${(actionData as any)?.fieldName}` : `entity-${entity.id}`;
+  const identifierValue = actionData && 'identifierValue' in actionData ? (actionData as any).identifierValue : undefined;
+  const fieldName = actionData && 'fieldName' in actionData ? (actionData as any).fieldName : undefined;
+  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}` : `entity-${entity.id}`;
   
   let formComponent;
   if (entity.type === Entity.Books) {
