@@ -57,7 +57,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
     const identifierType = getIdentifierTypeForField(entityType, fieldName);
     const lookupResult = await lookup(entityType, identifierType, identifierValue);
-    return { lookupResult, identifierValue, fieldName };
+    // Include a lookup timestamp so the UI can force a remount for consecutive lookups
+    return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
   }
   
   // Otherwise, this is an entity creation request
@@ -93,19 +94,26 @@ export default function Add() {
   const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
+  const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? actionData.lookupTimestamp : undefined;
   
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
+  // Use a key to force form remount when lookup data changes
+  // This ensures defaultValue props are re-applied with new lookup data
+  const identifierValue = actionData && 'identifierValue' in actionData ? actionData.identifierValue : undefined;
+  const fieldName = actionData && 'fieldName' in actionData ? actionData.fieldName : undefined;
+  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}` : 'empty';
+
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm key={formKey} book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
-    formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm key={formKey} movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
+    formComponent = <GameForm key={formKey} game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Musics) {
-    formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm key={formKey} music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (

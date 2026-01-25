@@ -105,9 +105,8 @@ describe('GameForm', () => {
       render(<GameForm {...defaultProps} game={mockGame} />);
 
       const idInput = screen.getByDisplayValue('game-1') as HTMLInputElement;
-      expect(idInput).toHaveAttribute('type', 'text');
+      expect(idInput).toHaveAttribute('type', 'hidden');
       expect(idInput).toHaveAttribute('name', 'id');
-      expect(idInput).toHaveAttribute('hidden');
     });
 
     it('should render the barcode lookup button', () => {
