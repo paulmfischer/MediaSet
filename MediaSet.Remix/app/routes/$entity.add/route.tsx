@@ -57,7 +57,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
     const identifierType = getIdentifierTypeForField(entityType, fieldName);
     const lookupResult = await lookup(entityType, identifierType, identifierValue);
-    return { lookupResult, identifierValue, fieldName };
+    // Include a lookup timestamp so the UI can force a remount for consecutive lookups
+    return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
   }
   
   // Otherwise, this is an entity creation request
@@ -93,6 +94,7 @@ export default function Add() {
   const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
+  const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? actionData.lookupTimestamp : undefined;
   
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
@@ -101,7 +103,7 @@ export default function Add() {
   // This ensures defaultValue props are re-applied with new lookup data
   const identifierValue = actionData && 'identifierValue' in actionData ? actionData.identifierValue : undefined;
   const fieldName = actionData && 'fieldName' in actionData ? actionData.fieldName : undefined;
-  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}` : 'empty';
+  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}` : 'empty';
 
   let formComponent;
   if (entityType === Entity.Books) {

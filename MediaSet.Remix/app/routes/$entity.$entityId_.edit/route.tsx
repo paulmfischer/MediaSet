@@ -53,7 +53,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
     const identifierType = getIdentifierTypeForField(entityType, fieldName);
     const lookupResult = await lookup(entityType, identifierType, identifierValue);
-    return { lookupResult, identifierValue, fieldName };
+    // Include lookup timestamp so UI can force remounts on consecutive lookups
+    return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
   }
 
   const entity = formToDto(formData);
@@ -117,15 +118,18 @@ export default function Edit() {
   const lookupResult = actionData && 'lookupResult' in actionData ? (actionData as any).lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
+  const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? (actionData as any).lookupTimestamp : undefined;
   
-  // Merge lookup data with original entity, preserving the database id
-  const mergedEntity = lookupEntity ? { ...entity, ...lookupEntity, id: entity.id } : entity;
+  // When lookup succeeds, use lookup data and preserve only the database id and type
+  // This ensures fresh lookup data isn't contaminated by stale database values
+  const mergedEntity = lookupEntity ? { ...lookupEntity, id: entity.id, type: entity.type } : entity;
   
   // Use a key to force form remount when lookup data changes
   // This ensures defaultValue props are re-applied with new lookup data
+  // Include a timestamp to ensure each lookup gets a unique key, even for the same identifier
   const identifierValue = actionData && 'identifierValue' in actionData ? (actionData as any).identifierValue : undefined;
   const fieldName = actionData && 'fieldName' in actionData ? (actionData as any).fieldName : undefined;
-  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}` : `entity-${entity.id}`;
+  const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}` : `entity-${entity.id}`;
   
   let formComponent;
   if (entity.type === Entity.Books) {
