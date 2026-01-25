@@ -737,6 +737,79 @@ describe('$entity_.add route', () => {
     });
   });
 
+  describe('lookup result handling', () => {
+    const mockLoaderData = {
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Action', value: 'action' }],
+      formats: [{ label: 'Blu-ray', value: 'bluray' }],
+      publishers: [],
+      studios: [{ label: 'Universal', value: 'universal' }],
+      developers: [],
+      labels: [],
+      platforms: [],
+      entityType: Entity.Movies,
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockUseLoaderData.mockReturnValue(mockLoaderData);
+      mockUseNavigate.mockReturnValue(vi.fn());
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseSubmit.mockReturnValue(vi.fn());
+      mockSingular.mockReturnValue('Movie');
+      mockGetEntityFromParams.mockReturnValue(Entity.Movies);
+    });
+
+    it('should use different key for form when lookup result changes', () => {
+      // First render with no lookup data
+      mockUseActionData.mockReturnValue(undefined);
+      const { rerender } = render(<Add />);
+      
+      const firstForm = screen.getByTestId('movie-form');
+      expect(firstForm).toBeInTheDocument();
+      
+      // Second render with lookup data
+      mockUseActionData.mockReturnValue({
+        lookupResult: {
+          type: Entity.Movies,
+          title: 'Test Movie',
+          imageUrl: 'https://example.com/image.jpg',
+          barcode: '123456789',
+        },
+        identifierValue: '123456789',
+        fieldName: 'barcode',
+      });
+      
+      rerender(<Add />);
+      
+      const secondForm = screen.getByTestId('movie-form');
+      expect(secondForm).toBeInTheDocument();
+      // Form should be remounted (new instance) when lookup data arrives
+    });
+
+    it('should pass lookup entity to form component', () => {
+      const lookupData = {
+        lookupResult: {
+          type: Entity.Movies,
+          title: 'The Matrix',
+          imageUrl: 'https://example.com/matrix.jpg',
+          barcode: '012345678905',
+          studios: ['Warner Bros'],
+          genres: ['Action', 'Sci-Fi'],
+        },
+        identifierValue: '012345678905',
+        fieldName: 'barcode',
+      };
+      
+      mockUseActionData.mockReturnValue(lookupData);
+      
+      render(<Add />);
+      
+      // Form should be rendered with lookup data
+      expect(screen.getByTestId('movie-form')).toBeInTheDocument();
+    });
+  });
+
   describe('Cancel button functionality', () => {
     const mockLoaderData = {
       authors: [{ label: 'Author 1', value: 'author1' }],

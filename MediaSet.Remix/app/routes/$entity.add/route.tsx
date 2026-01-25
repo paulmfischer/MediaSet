@@ -97,15 +97,19 @@ export default function Add() {
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
+  // Use a key to force form remount when lookup data changes
+  // This ensures defaultValue props are re-applied with new lookup data
+  const formKey = lookupEntity ? `lookup-${actionData?.identifierValue}-${actionData?.fieldName}` : 'empty';
+
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm key={formKey} book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entityType === Entity.Movies) {
-    formComponent = <MovieForm movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm key={formKey} movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
+    formComponent = <GameForm key={formKey} game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
   } else if (entityType === Entity.Musics) {
-    formComponent = <MusicForm music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm key={formKey} music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (

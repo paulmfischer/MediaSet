@@ -118,15 +118,19 @@ export default function Edit() {
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   
+  // Use a key to force form remount when lookup data changes
+  // This ensures defaultValue props are re-applied with new lookup data
+  const formKey = lookupEntity ? `lookup-${(actionData as any)?.identifierValue}-${(actionData as any)?.fieldName}` : `entity-${entity.id}`;
+  
   let formComponent;
   if (entity.type === Entity.Books) {
-    formComponent = <BookForm book={(lookupEntity as BookEntity) ?? (entity as BookEntity)} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm key={formKey} book={(lookupEntity as BookEntity) ?? (entity as BookEntity)} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
   } else if (entity.type === Entity.Movies) {
-    formComponent = <MovieForm movie={(lookupEntity as MovieEntity) ?? (entity as MovieEntity)} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm key={formKey} movie={(lookupEntity as MovieEntity) ?? (entity as MovieEntity)} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
   } else if (entity.type === Entity.Games) {
-    formComponent = <GameForm game={(lookupEntity as GameEntity) ?? (entity as GameEntity)} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
+    formComponent = <GameForm key={formKey} game={(lookupEntity as GameEntity) ?? (entity as GameEntity)} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
   } else if (entity.type === Entity.Musics) {
-    formComponent = <MusicForm music={(lookupEntity as MusicEntity) ?? (entity as MusicEntity)} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm key={formKey} music={(lookupEntity as MusicEntity) ?? (entity as MusicEntity)} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
   }
 
   return (
