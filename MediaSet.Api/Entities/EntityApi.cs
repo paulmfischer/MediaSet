@@ -291,7 +291,7 @@ internal static class EntityApi
                         catch (ArgumentException ex)
                         {
                             logger.LogWarning("Image validation failed: {error}", ex.Message);
-                            return TypedResults.BadRequest($"Image validation failed: {ex.Message}");
+                            // Continue anyway - entity update should succeed even if image fails
                         }
                         
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
@@ -316,12 +316,12 @@ internal static class EntityApi
                         catch (ArgumentException ex)
                         {
                             logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            return TypedResults.BadRequest($"Failed to download image: {ex.Message}");
+                            // Continue anyway - entity update should succeed even if image fails
                         }
                         catch (HttpRequestException ex)
                         {
                             logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            return TypedResults.BadRequest($"Failed to download image from URL: {ex.Message}");
+                            // Continue anyway - entity update should succeed even if image fails
                         }
                     }
                     else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
@@ -355,12 +355,12 @@ internal static class EntityApi
                         catch (ArgumentException ex)
                         {
                             logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            return TypedResults.BadRequest($"Failed to download image: {ex.Message}");
+                            // Continue anyway - entity update should succeed even if image fails
                         }
                         catch (HttpRequestException ex)
                         {
                             logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            return TypedResults.BadRequest($"Failed to download image from URL: {ex.Message}");
+                            // Continue anyway - entity update should succeed even if image fails
                         }
                     }
                     // Check if image is being cleared (updatedEntity.CoverImage is null but existing had one)
