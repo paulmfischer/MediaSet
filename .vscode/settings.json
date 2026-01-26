@@ -1,3 +1,6 @@
 {
-  "chat.promptFiles": true
+  "chat.promptFiles": true,
+  "chat.tools.terminal.autoApprove": {
+    "git commit": true
+  }
 }
