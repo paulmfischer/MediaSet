@@ -49,17 +49,8 @@ export default function ErrorScreen({
     "bg-zinc-800/50 p-8 shadow-lg",
   ];
   const actionClasses = [
-    "inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500",
-    "px-4 py-2 text-sm font-semibold text-zinc-950 shadow-lg shadow-emerald-500/25 transition",
-    "hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-    "focus-visible:outline-emerald-300",
-  ];
-  const secondaryActionClasses = [
-    "inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-400/60",
-    "px-4 py-2 text-sm font-semibold text-emerald-200 transition",
-    "hover:border-emerald-300 hover:text-emerald-100",
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-    "focus-visible:outline-emerald-300",
+    "dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400",
+    "inline-flex items-center justify-center gap-2 px-3 py-1 rounded",
   ];
 
   return (
@@ -83,9 +74,9 @@ export default function ErrorScreen({
               <button
                 type="button"
                 onClick={onRetry}
-                className={secondaryActionClasses.join(" ")}
+                className="primary"
               >
-                <span>Try Again</span>
+                Try Again
               </button>
             ) : null}
             <Link
