@@ -80,7 +80,7 @@ describe('$entity._index route', () => {
       } as any);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test');
-      expect(result).toEqual({ entities: mockBooks, entityType: Entity.Books, searchText: 'test' });
+      expect(result).toEqual({ entities: mockBooks, entityType: Entity.Books, searchText: 'test', apiUrl: expect.any(String) });
     });
 
     it('should load movies without search text', async () => {
@@ -102,7 +102,7 @@ describe('$entity._index route', () => {
       } as any);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Movies, null);
-      expect(result).toEqual({ entities: mockMovies, entityType: Entity.Movies, searchText: null });
+      expect(result).toEqual({ entities: mockMovies, entityType: Entity.Movies, searchText: null, apiUrl: expect.any(String) });
     });
 
     it('should load games with search text', async () => {
@@ -125,7 +125,7 @@ describe('$entity._index route', () => {
       } as any);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Games, 'action');
-      expect(result).toEqual({ entities: mockGames, entityType: Entity.Games, searchText: 'action' });
+      expect(result).toEqual({ entities: mockGames, entityType: Entity.Games, searchText: 'action', apiUrl: expect.any(String) });
     });
 
     it('should load musics with search text', async () => {
@@ -148,7 +148,7 @@ describe('$entity._index route', () => {
       } as any);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Musics, 'rock');
-      expect(result).toEqual({ entities: mockMusics, entityType: Entity.Musics, searchText: 'rock' });
+      expect(result).toEqual({ entities: mockMusics, entityType: Entity.Musics, searchText: 'rock', apiUrl: expect.any(String) });
     });
 
     it('should handle empty search results', async () => {
@@ -161,7 +161,7 @@ describe('$entity._index route', () => {
         params: { entity: 'books' },
       } as any);
 
-      expect(result).toEqual({ entities: [], entityType: Entity.Books, searchText: 'nonexistent' });
+      expect(result).toEqual({ entities: [], entityType: Entity.Books, searchText: 'nonexistent', apiUrl: expect.any(String) });
     });
 
     it('should throw error if entity param is missing', async () => {
