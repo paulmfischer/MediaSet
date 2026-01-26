@@ -7,9 +7,10 @@ import { MusicEntity, Entity } from "~/models";
 
 type MusicProps = {
   music: MusicEntity;
+  apiUrl?: string;
 };
 
-export default function Music({ music }: MusicProps) {
+export default function Music({ music, apiUrl }: MusicProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
@@ -41,6 +42,7 @@ export default function Music({ music }: MusicProps) {
               alt={music.title ?? "Album cover"}
               entityType={Entity.Musics}
               entityId={music.id}
+              apiUrl={apiUrl}
             />
           </div>
           <div className="lg:basis-4/5">

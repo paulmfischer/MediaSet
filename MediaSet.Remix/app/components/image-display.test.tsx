@@ -1,11 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import ImageDisplay from "./image-display";
 import { Entity } from "~/models";
 import type { ImageData } from "~/models";
-
-// Mock the environment variable
-vi.stubEnv("VITE_API_URL", "http://localhost:5000");
 
 describe("ImageDisplay Component", () => {
   const mockImageData: ImageData = {
@@ -42,6 +39,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book cover"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -64,6 +62,7 @@ describe("ImageDisplay Component", () => {
         entityType={Entity.Movies}
         entityId="456"
         size="small"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -80,6 +79,7 @@ describe("ImageDisplay Component", () => {
         entityType={Entity.Movies}
         entityId="456"
         size="large"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -98,6 +98,7 @@ describe("ImageDisplay Component", () => {
         entityType={Entity.Games}
         entityId="789"
         className="custom-class"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -112,6 +113,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -131,6 +133,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -156,6 +159,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -178,6 +182,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -200,6 +205,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -223,6 +229,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -244,6 +251,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -263,6 +271,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -281,6 +290,7 @@ describe("ImageDisplay Component", () => {
           alt={`Test ${entityType}`}
           entityType={entityType}
           entityId="123"
+          apiUrl="http://localhost:5000"
         />
       );
 
@@ -300,6 +310,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -319,6 +330,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 
@@ -338,6 +350,7 @@ describe("ImageDisplay Component", () => {
         alt="Test book"
         entityType={Entity.Books}
         entityId="123"
+        apiUrl="http://localhost:5000"
       />
     );
 

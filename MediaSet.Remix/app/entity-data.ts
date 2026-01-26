@@ -16,6 +16,7 @@ export async function searchEntities<TEntity extends BaseEntity>(entityType: Ent
 
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
   const response = await fetch(`${baseUrl}/${entityType}/${id}`);
+  console.log("getEntity: Fetch response", { status: response.status, entityType, id });
   if (response.status == 404) {
     throw new Response(`${singular(entityType)} not found.`, { status: 404 });
   }

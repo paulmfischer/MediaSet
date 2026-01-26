@@ -6,10 +6,11 @@ import ImageDisplay from "~/components/image-display";
 import { GameEntity, Entity } from "~/models";
 
 type GamesProps = {
-  games: GameEntity[]
+  games: GameEntity[];
+  apiUrl?: string;
 };
 
-export default function Games({ games }: GamesProps) {
+export default function Games({ games, apiUrl }: GamesProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; game: GameEntity | null }>({
     isOpen: false,
     game: null
@@ -33,7 +34,16 @@ export default function Games({ games }: GamesProps) {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={game.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
-                  {game.coverImage && <ImageDisplay imageData={game.coverImage} alt={`${game.title} cover`} entityType={Entity.Games} entityId={game.id} size="xsmall" />}
+                  {game.coverImage && (
+                    <ImageDisplay
+                      imageData={game.coverImage}
+                      alt={`${game.title} cover`}
+                      entityType={Entity.Games}
+                      entityId={game.id}
+                      apiUrl={apiUrl}
+                      size="xsmall"
+                    />
+                  )}
                 </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/games/${game.id}`}>{game.title}</Link>

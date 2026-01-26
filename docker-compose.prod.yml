@@ -93,11 +93,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # API configuration
-      apiUrl: "http://mediaset-api:8080"
+      # Server-side API URL - for Remix server to call API (uses Docker container name)
+      apiUrl: "${API_URL:-http://mediaset-api:8080}"
+      
+      # Client-side API URL - for browser to access API (must be externally accessible)
+      # In production, this should be the public URL of your API
+      clientApiUrl: "${CLIENT_API_URL:-http://localhost:8080}"
       
       # Node environment
       NODE_ENV: "production"
+      
+      # Optional: Enable detailed error messages (not recommended for production)
+      # SHOW_ERROR_DETAILS: "false"
     
     depends_on:
       - mediaset-api

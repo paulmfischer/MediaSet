@@ -7,6 +7,7 @@ type ImageDisplayProps = {
   alt: string;
   entityType?: Entity;
   entityId?: string;
+  apiUrl?: string;
   size?: "xsmall" | "small" | "medium" | "large" | "responsive";
   className?: string;
 };
@@ -24,6 +25,7 @@ export default function ImageDisplay({
   alt,
   entityType,
   entityId,
+  apiUrl,
   size = "responsive",
   className,
 }: ImageDisplayProps) {
@@ -36,9 +38,8 @@ export default function ImageDisplay({
       return null;
     }
     // Construct direct API image URL: /static/images/{filePath}
-    const apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
-      console.warn("ImageDisplay: VITE_API_URL environment variable not set");
+      console.warn("ImageDisplay: apiUrl not configured");
       return null;
     }
     const imageUrl = `${apiUrl}/static/images/${imageData.filePath}`;

@@ -7,9 +7,10 @@ import { MovieEntity, Entity } from "~/models";
 
 type MovieProps = {
   movie: MovieEntity;
+  apiUrl?: string;
 };
 
-export default function Movie({ movie }: MovieProps) {
+export default function Movie({ movie, apiUrl }: MovieProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
@@ -41,6 +42,7 @@ export default function Movie({ movie }: MovieProps) {
               alt={movie.title ?? "Movie poster"}
               entityType={Entity.Movies}
               entityId={movie.id}
+              apiUrl={apiUrl}
             />
           </div>
           <div className="lg:basis-4/5">

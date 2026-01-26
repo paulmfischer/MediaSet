@@ -6,10 +6,11 @@ import ImageDisplay from "~/components/image-display";
 import { MusicEntity, Entity } from "~/models";
 
 type MusicsProps = {
-  musics: MusicEntity[]
+  musics: MusicEntity[];
+  apiUrl?: string;
 };
 
-export default function Musics({ musics }: MusicsProps) {
+export default function Musics({ musics, apiUrl }: MusicsProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; music: MusicEntity | null }>({
     isOpen: false,
     music: null
@@ -33,7 +34,16 @@ export default function Musics({ musics }: MusicsProps) {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={music.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
-                  {music.coverImage && <ImageDisplay imageData={music.coverImage} alt={`${music.title} cover`} entityType={Entity.Musics} entityId={music.id} size="xsmall" />}
+                  {music.coverImage && (
+                    <ImageDisplay
+                      imageData={music.coverImage}
+                      alt={`${music.title} cover`}
+                      entityType={Entity.Musics}
+                      entityId={music.id}
+                      apiUrl={apiUrl}
+                      size="xsmall"
+                    />
+                  )}
                 </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/musics/${music.id}`}>{music.title}</Link>
