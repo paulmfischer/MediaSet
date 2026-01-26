@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { MemoryRouter } from "@remix-run/react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "~/test/test-utils";
+import { MemoryRouter } from "react-router-dom";
 import ErrorScreen from "./error-screen";
 
 describe("ErrorScreen", () => {
@@ -31,7 +31,8 @@ describe("ErrorScreen", () => {
       showDetails: true,
     });
 
-    expect(screen.getByText("500")).toBeInTheDocument();
+    // Status code appears in both badge and details, so use getAllByText
+    expect(screen.getAllByText("500")).toHaveLength(2);
     expect(screen.getByText("Internal Server Error")).toBeInTheDocument();
     expect(screen.getByText("Stacktrace here")).toBeInTheDocument();
   });
