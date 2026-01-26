@@ -74,7 +74,7 @@ export default function ErrorScreen({
               <button
                 type="button"
                 onClick={onRetry}
-                className="primary"
+                className="secondary"
               >
                 Try Again
               </button>
