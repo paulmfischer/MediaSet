@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.3.0](https://github.com/paulmfischer/MediaSet/compare/v2.2.0...v2.3.0) (2026-01-26)
+
+
+### Features
+
+* **ui:** improve error screen with better layout and actions ([#436](https://github.com/paulmfischer/MediaSet/issues/436)) ([a01fe3b](https://github.com/paulmfischer/MediaSet/commit/a01fe3bb9c84fa98b6ed2328571fd5a93972a392))
+
+
+### Bug Fixes
+
+* **api:** handle image save failures gracefully closes [#401](https://github.com/paulmfischer/MediaSet/issues/401) ([#435](https://github.com/paulmfischer/MediaSet/issues/435)) ([85caa47](https://github.com/paulmfischer/MediaSet/commit/85caa4764c8a6b1568a33ce9e5eb49d29f61867b))
+* **api:** resolve NETSDK1064 OpenAPI package error in Podman dev setup ([#431](https://github.com/paulmfischer/MediaSet/issues/431)) ([b32e132](https://github.com/paulmfischer/MediaSet/commit/b32e132fa89ce6cbb92fe8e26e62e28be81978b3))
+* **dev-env:** stabilize podman builds ([#427](https://github.com/paulmfischer/MediaSet/issues/427)) ([0a8d9ec](https://github.com/paulmfischer/MediaSet/commit/0a8d9ec7a1c9993900b2029e856551a840b59044))
+* **ui:** close delete dialog after submission closes [#399](https://github.com/paulmfischer/MediaSet/issues/399) ([#430](https://github.com/paulmfischer/MediaSet/issues/430)) ([38decda](https://github.com/paulmfischer/MediaSet/commit/38decdae3c11b3358222632faefa9e3f37dc4705))
+* **ui:** form fields not repopulating on subsequent barcode lookups  ([#432](https://github.com/paulmfischer/MediaSet/issues/432)) ([a03f5fb](https://github.com/paulmfischer/MediaSet/commit/a03f5fb166b9f6897859c912cd6e5cc770b11daf))
+
 ## [2.2.0](https://github.com/paulmfischer/MediaSet/compare/v2.1.0...v2.2.0) (2026-01-23)
 
 
