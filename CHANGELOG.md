@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/paulmfischer/MediaSet/compare/v2.3.0...v2.4.0) (2026-01-26)
+
+
+### Features
+
+* **config:** add runtime env config with separate server/client API URLs ([#438](https://github.com/paulmfischer/MediaSet/issues/438)) ([885d3cf](https://github.com/paulmfischer/MediaSet/commit/885d3cf5ad9f5e571a54fd7c9b81bd1a0d3d474b))
+
 ## [2.3.0](https://github.com/paulmfischer/MediaSet/compare/v2.2.0...v2.3.0) (2026-01-26)
 
 
