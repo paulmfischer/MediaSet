@@ -7,10 +7,11 @@ import ImageDisplay from "~/components/image-display";
 import { MovieEntity, Entity } from "~/models";
 
 type MovieProps = {
-  movies: MovieEntity[]
+  movies: MovieEntity[];
+  apiUrl?: string;
 };
 
-export default function Movies({ movies }: MovieProps) {
+export default function Movies({ movies, apiUrl }: MovieProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; movie: MovieEntity | null }>({
     isOpen: false,
     movie: null
@@ -34,7 +35,16 @@ export default function Movies({ movies }: MovieProps) {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={movie.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
-                  {movie.coverImage && <ImageDisplay imageData={movie.coverImage} alt={`${movie.title} cover`} entityType={Entity.Movies} entityId={movie.id} size="xsmall" />}
+                  {movie.coverImage && (
+                    <ImageDisplay
+                      imageData={movie.coverImage}
+                      alt={`${movie.title} cover`}
+                      entityType={Entity.Movies}
+                      entityId={movie.id}
+                      apiUrl={apiUrl}
+                      size="xsmall"
+                    />
+                  )}
                 </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/movies/${movie.id}`}>{movie.title}</Link>

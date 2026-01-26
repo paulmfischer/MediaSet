@@ -6,10 +6,11 @@ import ImageDisplay from "~/components/image-display";
 import { BookEntity, Entity } from "~/models";
 
 type BooksProps = {
-  books: BookEntity[]
+  books: BookEntity[];
+  apiUrl?: string;
 };
 
-export default function Books({ books }: BooksProps) {
+export default function Books({ books, apiUrl }: BooksProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; book: BookEntity | null }>({
     isOpen: false,
     book: null
@@ -33,7 +34,16 @@ export default function Books({ books }: BooksProps) {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={book.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
-                  {book.coverImage && <ImageDisplay imageData={book.coverImage} alt={`${book.title} cover`} entityType={Entity.Books} entityId={book.id} size="xsmall" />}
+                  {book.coverImage && (
+                    <ImageDisplay
+                      imageData={book.coverImage}
+                      alt={`${book.title} cover`}
+                      entityType={Entity.Books}
+                      entityId={book.id}
+                      apiUrl={apiUrl}
+                      size="xsmall"
+                    />
+                  )}
                 </td>
                 <td className="pl-2 p-1 border-r border-slate-800">
                   <Link to={`/books/${book.id}`}>{book.title}{book.subtitle && `: ${book.subtitle}`}</Link>

@@ -7,9 +7,10 @@ import { BookEntity, Entity } from "~/models";
 
 type BookProps = {
   book: BookEntity;
+  apiUrl?: string;
 };
 
-export default function Book({ book }: BookProps) {
+export default function Book({ book, apiUrl }: BookProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
@@ -42,6 +43,7 @@ export default function Book({ book }: BookProps) {
               alt={book.title ?? "Book cover"}
               entityType={Entity.Books}
               entityId={book.id}
+              apiUrl={apiUrl}
             />
           </div>
           <div className="lg:basis-4/5">

@@ -7,9 +7,10 @@ import { GameEntity, Entity } from "~/models";
 
 type GameProps = {
   game: GameEntity;
+  apiUrl?: string;
 };
 
-export default function Game({ game }: GameProps) {
+export default function Game({ game, apiUrl }: GameProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
@@ -41,6 +42,7 @@ export default function Game({ game }: GameProps) {
               alt={game.title ?? "Game cover art"}
               entityType={Entity.Games}
               entityId={game.id}
+              apiUrl={apiUrl}
             />
           </div>
           <div className="lg:basis-4/5">

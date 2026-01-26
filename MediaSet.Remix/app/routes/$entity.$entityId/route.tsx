@@ -4,6 +4,7 @@ import { useLoaderData } from "@remix-run/react";
 import { getEntity } from "~/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams, singular } from "~/helpers";
+import { clientApiUrl } from "~/constants.server";
 import Book from "./book";
 import Movie from "./movie";
 import Game from "./game";
@@ -22,26 +23,27 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
+  console.log("Loader: Fetching entity", { entityType, entityId: params.entityId });
   const entity = await getEntity(entityType, params.entityId);
-  return { entity };
+  return { entity, apiUrl: clientApiUrl };
 };
 
 export default function Detail() {
-  const { entity } = useLoaderData<typeof loader>();
+  const { entity, apiUrl } = useLoaderData<typeof loader>();
 
   if (entity.type === Entity.Books) {
-    return <Book book={entity as BookEntity} />;
+    return <Book book={entity as BookEntity} apiUrl={apiUrl} />;
   }
   
   if (entity.type === Entity.Movies) {
-    return <Movie movie={entity as MovieEntity} />;
+    return <Movie movie={entity as MovieEntity} apiUrl={apiUrl} />;
   }
 
   if (entity.type === Entity.Games) {
-    return <Game game={entity as GameEntity} />;
+    return <Game game={entity as GameEntity} apiUrl={apiUrl} />;
   }
 
   if (entity.type === Entity.Musics) {
-    return <Music music={entity as MusicEntity} />;
+    return <Music music={entity as MusicEntity} apiUrl={apiUrl} />;
   }
 }

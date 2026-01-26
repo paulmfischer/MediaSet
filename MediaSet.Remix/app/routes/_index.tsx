@@ -24,7 +24,9 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
+  console.log("Loader: Fetching stats");
   const stats = await getStats();
+  console.log("Loader: Fetched stats", stats);
   return json({ stats });
 };
 

@@ -5,6 +5,7 @@ import { Plus, X } from "lucide-react";
 import { searchEntities } from "~/entity-data";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams } from "~/helpers";
+import { clientApiUrl } from "~/constants.server";
 import Books from "./books";
 import Movies from "./movies";
 import Games from "./games";
@@ -26,11 +27,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const entityType: Entity = getEntityFromParams(params);
   const entities = await searchEntities(entityType, searchText);
 
-  return { entities, entityType, searchText };
+  const apiUrl = clientApiUrl;
+
+  return { entities, entityType, searchText, apiUrl };
 };
 
 export default function Index() {
-  const { entities, entityType, searchText } = useLoaderData<typeof loader>();
+  const { entities, entityType, searchText, apiUrl } = useLoaderData<typeof loader>();
 
   useEffect(() => {
     const searchField = document.getElementById("search");
@@ -83,10 +86,10 @@ export default function Index() {
           </div>
         ) : (
           <>
-            {entityType === Entity.Books && <Books books={entities as BookEntity[]} />}
-            {entityType === Entity.Movies && <Movies movies={entities as MovieEntity[]} />}
-            {entityType === Entity.Games && <Games games={entities as GameEntity[]} />}
-            {entityType === Entity.Musics && <Musics musics={entities as MusicEntity[]} />}
+            {entityType === Entity.Books && <Books books={entities as BookEntity[]} apiUrl={apiUrl} />}
+            {entityType === Entity.Movies && <Movies movies={entities as MovieEntity[]} apiUrl={apiUrl} />}
+            {entityType === Entity.Games && <Games games={entities as GameEntity[]} apiUrl={apiUrl} />}
+            {entityType === Entity.Musics && <Musics musics={entities as MusicEntity[]} apiUrl={apiUrl} />}
           </>
         )}
       </div>
