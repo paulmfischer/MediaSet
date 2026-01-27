@@ -1,5 +1,7 @@
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -33,6 +35,8 @@ public class StatsService : IStatsService
 
     public async Task<Stats> GetMediaStatsAsync(CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("GetMediaStats");
+        
         const string cacheKey = "stats";
         
         // Try to get from cache

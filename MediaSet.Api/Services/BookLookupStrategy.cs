@@ -1,5 +1,7 @@
 using MediaSet.Api.Clients;
 using MediaSet.Api.Models;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -39,6 +41,8 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         string identifierValue, 
         CancellationToken cancellationToken)
     {
+        using var activity = Log.Logger.StartActivity("BookLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        
         _logger.LogInformation("Looking up book with {IdentifierType}: {IdentifierValue}", 
             identifierType, identifierValue);
 

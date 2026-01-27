@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using MediaSet.Api.Clients;
 using MediaSet.Api.Models;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -36,6 +38,8 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         string identifierValue,
         CancellationToken cancellationToken)
     {
+        using var activity = Log.Logger.StartActivity("GameLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        
         _logger.LogInformation("Looking up game with {IdentifierType}: {IdentifierValue}", identifierType, identifierValue);
 
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
