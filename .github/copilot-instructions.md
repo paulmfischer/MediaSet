@@ -22,6 +22,11 @@ MediaSet is a full-stack application for managing personal media collections. Th
 - Add additional context in the body if needed
 - Add `[AI-assisted]` tag or `Co-authored-by: GitHub Copilot <copilot@github.com>` trailer
 
+### Commit Signing
+- **NEVER bypass GPG/SSH signing if signing is configured**
+- If GPG signing fails, resolve the signing issue rather than using `--no-gpg-sign` or `--no-verify`
+- Commits must be properly signed to maintain repository integrity and security
+
 ### Agent Workflow
 - **Propose changes first**: Show the user the planned changes before implementation
 - **Wait for approval**: Confirm the user approves the approach
