@@ -25,9 +25,18 @@ MediaSet is a full-stack application for managing personal media collections. Th
 ### Agent Workflow
 - **Propose changes first**: Show the user the planned changes before implementation
 - **Wait for approval**: Confirm the user approves the approach
-- **Create and commit**: Only create commits once the user confirms the changes are correct
+- **Create and commit**: Only create commits once the user confirms the changes are correct, waiting for passphrase input if needed
 - **Push to feature branch**: Agent pushes to the feature branch only
 - **User responsibility**: User creates PR and handles merge to `main`
+
+## Instruction Files (Consult before editing) ✅
+
+Agents must consult the project code-style and conventions documents before proposing or making changes:
+
+- `.github/instructions/backend.instructions.md` — Backend guidelines (applies to `**/*.cs`)
+- `.github/instructions/frontend.instructions.md` — Frontend guidelines (applies to `**/*.ts, **/*.tsx`)
+
+These files contain file- and language-specific rules (naming, formatting, testing, commit rules). Always follow them when proposing and implementing changes.
 
 ## Naming Conventions
 
