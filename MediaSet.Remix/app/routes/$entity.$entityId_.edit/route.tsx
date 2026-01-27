@@ -4,6 +4,7 @@ import { getEntity, updateEntity } from "~/entity-data";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
+import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
 import GameForm from "~/components/game-form";
@@ -102,6 +103,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 
   console.log('Updating entity:', entity, 'with apiFormData:', apiFormData);
+  serverLogger.info('Updating entity', { entityType, entityId: params.entityId });
   await updateEntity(params.entityId, entity, apiFormData);
   return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
 };

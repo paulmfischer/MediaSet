@@ -5,6 +5,7 @@ import { getEntity } from "~/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams, singular } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";
+import { serverLogger } from "~/utils/serverLogger";
 import Book from "./book";
 import Movie from "./movie";
 import Game from "./game";
@@ -23,7 +24,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
-  console.log("Loader: Fetching entity", { entityType, entityId: params.entityId });
+  serverLogger.info("Loader: Fetching entity", { entityType, entityId: params.entityId });
   const entity = await getEntity(entityType, params.entityId);
   return { entity, apiUrl: clientApiUrl };
 };

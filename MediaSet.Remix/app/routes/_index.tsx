@@ -1,6 +1,7 @@
 import { json, type MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getStats } from "~/stats-data";
+import { serverLogger } from "~/utils/serverLogger";
 import {
   LibraryBig,
   Clapperboard,
@@ -24,9 +25,9 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  console.log("Loader: Fetching stats");
+  serverLogger.info("Loader: Fetching stats");
   const stats = await getStats();
-  console.log("Loader: Fetched stats", stats);
+  serverLogger.info("Loader: Fetched stats", { stats });
   return json({ stats });
 };
 
