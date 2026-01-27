@@ -3,6 +3,7 @@ import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
 import ImageUpload from "~/components/image-upload";
+import ImageUrlPreview from "~/components/image-url-preview";
 import { FormProps, MovieEntity } from "~/models";
 
 type Metadata = {
@@ -62,7 +63,10 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
       <div>
         <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
         <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
-        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={movie?.imageUrl} />
+        <div className="flex items-start">
+          <input id="imageUrl" name="imageUrl" type="url" className={`${inputClasses} flex-1`} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={movie?.imageUrl} />
+          <ImageUrlPreview inputId="imageUrl" existingUrl={movie?.imageUrl} />
+        </div>
       </div>
 
       <div>
