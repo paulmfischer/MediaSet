@@ -1,5 +1,7 @@
 using MediaSet.Api.Clients;
 using MediaSet.Api.Models;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -32,6 +34,8 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         string identifierValue,
         CancellationToken cancellationToken)
     {
+        using var activity = Log.Logger.StartActivity("MusicLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        
         _logger.LogInformation("Looking up music with {IdentifierType}: {IdentifierValue}",
             identifierType, identifierValue);
 

@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -24,6 +26,8 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
     public async Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("Search {EntityType}", new { EntityType = entityTypeName, searchText, orderBy });
+        
         string orderByField = "";
         bool orderByAscending = true;
         if (!string.IsNullOrWhiteSpace(orderBy))
@@ -48,6 +52,8 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
     public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("GetList {EntityType}", new { EntityType = entityTypeName });
+        
         var findOptions = new FindOptions<TEntity>
         {
             Sort = Builders<TEntity>.Sort.Ascending(entity => entity.Title)
@@ -56,17 +62,24 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         return await cursor.ToListAsync(cancellationToken);
     }
 
-    public async Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default) => 
-        await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync(cancellationToken);
+    public async Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default)
+    {
+        using var activity = Log.Logger.StartActivity("Get {EntityType}", new { EntityType = entityTypeName, id });
+        return await entityCollection.Find(x => x.Id == id).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task CreateAsync(TEntity newEntity, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("Create {EntityType}", new { EntityType = entityTypeName, entityId = newEntity.Id });
+        
         await entityCollection.InsertOneAsync(newEntity, null, cancellationToken);
         await InvalidateCachesAsync();
     }
 
     public async Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("Update {EntityType}", new { EntityType = entityTypeName, id });
+        
         var result = await entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity, cancellationToken: cancellationToken);
         await InvalidateCachesAsync();
         return result;
@@ -74,6 +87,8 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
     public async Task<DeleteResult> RemoveAsync(string id, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("Remove {EntityType}", new { EntityType = entityTypeName, id });
+        
         var result = await entityCollection.DeleteOneAsync(x => x.Id == id, cancellationToken);
         await InvalidateCachesAsync();
         return result;
@@ -81,6 +96,8 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
     public async Task BulkCreateAsync(IEnumerable<TEntity> newEntities, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("BulkCreate {EntityType}", new { EntityType = entityTypeName, count = newEntities.Count() });
+        
         await entityCollection.InsertManyAsync(newEntities, null, cancellationToken);
         await InvalidateCachesAsync();
     }

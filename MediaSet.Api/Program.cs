@@ -1,55 +1,27 @@
-using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Clients;
 using MediaSet.Api.Entities;
+using MediaSet.Api.Extensions;
 using MediaSet.Api.Lookup;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
-using Serilog;
+
+// Configure bootstrap logger for very early configuration
+LoggingExtensions.ConfigureBootstrapLogger();
+var bootstrapLogger = LoggingExtensions.GetBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Bootstrap logger for very early configuration
-var assemblyName = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
-var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "NotSet";
-
-Log.Logger = new LoggerConfiguration()
-    .Enrich.WithProperty("Application", assemblyName)
-    .Enrich.WithProperty("Environment", envName)
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-var bootstrapLogger = Log.Logger.ForContext("BootstrapPhase", true);
-
-// Configure Serilog as the logging provider
-builder.Host.UseSerilog((context, services, cfg) =>
-{
-    var assemblyNameFromContext = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
-    var envNameFromContext = context.HostingEnvironment.EnvironmentName;
-    var externalLoggingEnabled = context.Configuration.GetValue<bool>("ExternalLogging:Enabled");
-
-    cfg.ReadFrom.Configuration(context.Configuration)
-       .Enrich.FromLogContext()
-       .Enrich.WithProperty("Application", assemblyNameFromContext)
-       .Enrich.WithProperty("Environment", envNameFromContext)
-       .WriteTo.Console();
-
-    // Conditionally add Seq sink if external logging is enabled
-    if (externalLoggingEnabled)
-    {
-        var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl") ?? "http://localhost:5341";
-        cfg.WriteTo.Seq(seqUrl);
-    }
-});
-
-// Remove automatic TraceId/SpanId/ParentId printing from logs
-builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.None);
+// Configure logging and tracing
+builder.UseSerilogConfiguration()
+       .ConfigureActivityTracking()
+       .ConfigureHttpLogging()
+       .ConfigureOpenTelemetry();
 
 // configure enums as strings
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -208,20 +180,7 @@ builder.Services.AddSwaggerGen((setup) =>
     setup.SchemaFilter<ParameterSchemaFilter>();
 });
 
-// Built-in HTTP request/response logging
-builder.Services.AddHttpLogging(logging =>
-{
-    logging.LoggingFields =
-      HttpLoggingFields.RequestMethod |
-      HttpLoggingFields.RequestPath |
-      HttpLoggingFields.ResponseStatusCode |
-      HttpLoggingFields.Duration;
-    logging.RequestHeaders.Add("User-Agent");
-    logging.RequestHeaders.Add("X-Request-ID");
-    logging.RequestHeaders.Add("X-Correlation-ID");
-    logging.ResponseHeaders.Add("X-Request-ID");
-    logging.ResponseHeaders.Add("X-Correlation-ID");
-});
+// Built-in HTTP request/response logging is configured via ConfigureHttpLogging()
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
 builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
@@ -230,6 +189,9 @@ builder.Services.AddScoped<IEntityService<Music>, EntityService<Music>>();
 builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddSingleton<IVersionService, VersionService>();
+
+// Configure SerilogTracing to capture spans and write to Seq
+using var listener = LoggingExtensions.ConfigureSerilogTracing();
 
 var app = builder.Build();
 
@@ -243,47 +205,9 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-// Enable HTTP logging
-app.UseHttpLogging();
-
-// Correlation ID + request timing middleware (no TraceId)
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices
-      .GetRequiredService<ILoggerFactory>()
-      .CreateLogger("RequestTiming");
-
-    // Get or generate correlation ID
-    var correlationId = context.Request.Headers["X-Request-ID"].FirstOrDefault()
-      ?? context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
-      ?? Guid.NewGuid().ToString();
-
-    // Add correlation ID to response headers
-    context.Response.Headers["X-Request-ID"] = correlationId;
-    context.Response.Headers["X-Correlation-ID"] = correlationId;
-
-    var sw = Stopwatch.StartNew();
-
-    // Use a formatted string scope containing just the CorrelationId
-    using (logger.BeginScope("CorrelationId:{CorrelationId}", correlationId))
-    {
-        try
-        {
-            await next();
-        }
-        finally
-        {
-            sw.Stop();
-            logger.LogDebug(
-              "HTTP {method} {path} -> {status} in {elapsedMs} ms",
-              context.Request.Method,
-              context.Request.Path.Value,
-              context.Response.StatusCode,
-              sw.Elapsed.TotalMilliseconds
-            );
-        }
-    }
-});
+// Configure logging middleware
+app.UseHttpLoggingMiddleware()
+   .UseCorrelationIdMiddleware();
 
 // Configure static file serving for images folder
 if (imageConfig != null)

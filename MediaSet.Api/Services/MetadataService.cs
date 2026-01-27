@@ -1,6 +1,8 @@
 using System.Reflection;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
+using Serilog;
+using SerilogTracing;
 
 namespace MediaSet.Api.Services;
 
@@ -25,6 +27,8 @@ public class MetadataService : IMetadataService
 
     public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName, CancellationToken cancellationToken = default)
     {
+        using var activity = Log.Logger.StartActivity("GetMetadata {MediaType}", new { MediaType = mediaType, propertyName });
+        
         var cacheKey = $"metadata:{mediaType}:{propertyName}";
         
         // Try to get from cache

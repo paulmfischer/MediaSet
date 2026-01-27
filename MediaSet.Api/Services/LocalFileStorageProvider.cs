@@ -1,3 +1,6 @@
+using Serilog;
+using SerilogTracing;
+
 namespace MediaSet.Api.Services;
 
 /// <summary>
@@ -44,6 +47,8 @@ public class LocalFileStorageProvider : IImageStorageProvider
     /// <exception cref="IOException">Thrown if file I/O operation fails</exception>
     public async Task SaveImageAsync(byte[] imageData, string relativePath, CancellationToken cancellationToken)
     {
+        using var activity = Log.Logger.StartActivity("SaveImage", new { relativePath, sizeBytes = imageData?.Length ?? 0 });
+        
         if (imageData == null || imageData.Length == 0)
         {
             throw new ArgumentException("Image data cannot be null or empty", nameof(imageData));
@@ -99,6 +104,8 @@ public class LocalFileStorageProvider : IImageStorageProvider
     /// <exception cref="ArgumentException">Thrown if relativePath attempts path traversal</exception>
     public async Task<Stream?> GetImageAsync(string relativePath, CancellationToken cancellationToken)
     {
+        using var activity = Log.Logger.StartActivity("GetImage", new { relativePath });
+        
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to get image with invalid path: {RelativePath}", relativePath);
@@ -148,6 +155,8 @@ public class LocalFileStorageProvider : IImageStorageProvider
     /// <exception cref="ArgumentException">Thrown if relativePath attempts path traversal</exception>
     public void DeleteImage(string relativePath)
     {
+        using var activity = Log.Logger.StartActivity("DeleteImage", new { relativePath });
+        
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to delete image with invalid path: {RelativePath}", relativePath);
@@ -193,6 +202,8 @@ public class LocalFileStorageProvider : IImageStorageProvider
     /// <exception cref="ArgumentException">Thrown if relativePath attempts path traversal</exception>
     public bool Exists(string relativePath)
     {
+        using var activity = Log.Logger.StartActivity("ImageExists", new { relativePath });
+        
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to check existence with invalid path: {RelativePath}", relativePath);
