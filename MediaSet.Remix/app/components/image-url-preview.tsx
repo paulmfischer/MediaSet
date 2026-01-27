@@ -14,7 +14,8 @@ export default function ImageUrlPreview({ inputId = "imageUrl", existingUrl, alt
     const el = document.getElementById(inputId) as HTMLInputElement | null;
 
     const handler = () => {
-      const val = el?.value?.trim() ?? "";
+      // Prefer the input value if present, otherwise fall back to the existingUrl prop
+      const val = el?.value?.trim() ?? existingUrl?.trim() ?? "";
       if (!val) {
         setPreviewUrl(null);
         setError(false);
