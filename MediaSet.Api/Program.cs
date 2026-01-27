@@ -11,7 +11,10 @@ using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Enrichers.Span;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +39,9 @@ builder.Host.UseSerilog((context, services, cfg) =>
 
     cfg.ReadFrom.Configuration(context.Configuration)
        .Enrich.FromLogContext()
+       .Enrich.WithSpan()
        .Enrich.WithProperty("Application", assemblyNameFromContext)
-       .Enrich.WithProperty("Environment", envNameFromContext)
-       .WriteTo.Console();
+       .Enrich.WithProperty("Environment", envNameFromContext);
 
     // Conditionally add Seq sink if external logging is enabled
     if (externalLoggingEnabled)
@@ -48,8 +51,11 @@ builder.Host.UseSerilog((context, services, cfg) =>
     }
 });
 
-// Remove automatic TraceId/SpanId/ParentId printing from logs
-builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.None);
+// Enable activity tracking for trace propagation
+builder.Logging.Configure(options => 
+    options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId | 
+                                      ActivityTrackingOptions.TraceId | 
+                                      ActivityTrackingOptions.ParentId);
 
 // configure enums as strings
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -214,7 +220,9 @@ builder.Services.AddHttpLogging(logging =>
     logging.LoggingFields =
       HttpLoggingFields.RequestMethod |
       HttpLoggingFields.RequestPath |
+      HttpLoggingFields.RequestBody |
       HttpLoggingFields.ResponseStatusCode |
+      HttpLoggingFields.ResponseBody |
       HttpLoggingFields.Duration;
     logging.RequestHeaders.Add("User-Agent");
     logging.RequestHeaders.Add("X-Request-ID");
@@ -230,6 +238,19 @@ builder.Services.AddScoped<IEntityService<Music>, EntityService<Music>>();
 builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddSingleton<IVersionService, VersionService>();
+
+// Configure OpenTelemetry - always enabled for distributed tracing
+var serviceName = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter();
+    });
 
 var app = builder.Build();
 
@@ -262,6 +283,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Request-ID"] = correlationId;
     context.Response.Headers["X-Correlation-ID"] = correlationId;
 
+    var requestStart = DateTimeOffset.UtcNow;
     var sw = Stopwatch.StartNew();
 
     // Use a formatted string scope containing just the CorrelationId
@@ -274,13 +296,17 @@ app.Use(async (context, next) =>
         finally
         {
             sw.Stop();
-            logger.LogDebug(
-              "HTTP {method} {path} -> {status} in {elapsedMs} ms",
-              context.Request.Method,
-              context.Request.Path.Value,
-              context.Response.StatusCode,
-              sw.Elapsed.TotalMilliseconds
-            );
+            // Log with @Start for Seq heatmap support
+            using (logger.BeginScope(new Dictionary<string, object> { { "@Start", requestStart } }))
+            {
+                logger.LogInformation(
+                  "HTTP {method} {path} -> {status} in {elapsedMs} ms",
+                  context.Request.Method,
+                  context.Request.Path.Value,
+                  context.Response.StatusCode,
+                  sw.Elapsed.TotalMilliseconds
+                );
+            }
         }
     }
 });

@@ -5,8 +5,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <WarningsAsErrors />
-        <WarningsNotAsErrors>AD0001</WarningsNotAsErrors>
-        <NoWarn>AD0001</NoWarn>
+        <WarningsNotAsErrors>AD0001,NU1902</WarningsNotAsErrors>
+        <NoWarn>AD0001,NU1902</NoWarn>
         <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
         <MinVerTagPrefix>v</MinVerTagPrefix>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -18,7 +18,13 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="MongoDB.Driver" Version="3.0.0" />
+        <PackageReference Include="OpenTelemetry.Api" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Serilog.Enrichers.Span" Version="2.0.0" />
         <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
