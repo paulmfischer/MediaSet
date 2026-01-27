@@ -3,6 +3,7 @@ import { useSubmit } from "@remix-run/react";
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
 import ImageUpload from "~/components/image-upload";
+import ImageUrlPreview from "~/components/image-url-preview";
 import { FormProps, MusicEntity, Disc } from "~/models";
 import { millisecondsToMinutesSeconds } from "~/helpers";
 
@@ -82,7 +83,10 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
       <div>
         <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">Image URL</label>
         <p className="text-xs text-gray-400 mb-2">Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence. Accepted: JPEG or PNG, up to 5MB.</p>
-        <input id="imageUrl" name="imageUrl" type="url" className={inputClasses} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={music?.imageUrl} />
+        <div className="flex items-start">
+          <input id="imageUrl" name="imageUrl" type="url" className={`${inputClasses} flex-1`} placeholder="https://example.com/image.jpg" aria-label="Image URL" defaultValue={music?.imageUrl} />
+          <ImageUrlPreview inputId="imageUrl" existingUrl={music?.imageUrl} />
+        </div>
       </div>
 
       <div>
