@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Clients;
@@ -10,22 +11,44 @@ using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Get logger for bootstrap configuration
-var bootstrapLogger = new LoggerFactory().CreateLogger("MediaSet.Api.Bootstrap");
+// Bootstrap logger for very early configuration
+var assemblyName = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
+var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "NotSet";
 
-// Configure console logging with scopes and timestamps
-builder.Logging.ClearProviders();
-builder.Logging.AddSimpleConsole(options =>
+Log.Logger = new LoggerConfiguration()
+    .Enrich.WithProperty("Application", assemblyName)
+    .Enrich.WithProperty("Environment", envName)
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+var bootstrapLogger = Log.Logger.ForContext("BootstrapPhase", true);
+
+// Configure Serilog as the logging provider
+builder.Host.UseSerilog((context, services, cfg) =>
 {
-    options.IncludeScopes = true;
-    options.SingleLine = true;
-    options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fff zzz ";
+    var assemblyNameFromContext = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
+    var envNameFromContext = context.HostingEnvironment.EnvironmentName;
+    var externalLoggingEnabled = context.Configuration.GetValue<bool>("ExternalLogging:Enabled");
+
+    cfg.ReadFrom.Configuration(context.Configuration)
+       .Enrich.FromLogContext()
+       .Enrich.WithProperty("Application", assemblyNameFromContext)
+       .Enrich.WithProperty("Environment", envNameFromContext)
+       .WriteTo.Console();
+
+    // Conditionally add Seq sink if external logging is enabled
+    if (externalLoggingEnabled)
+    {
+        var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl") ?? "http://localhost:5341";
+        cfg.WriteTo.Seq(seqUrl);
+    }
 });
 
-// Remove automatic TraceId/SpanId/ParentId printing from console logs
+// Remove automatic TraceId/SpanId/ParentId printing from logs
 builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.None);
 
 // configure enums as strings
@@ -52,7 +75,7 @@ builder.Services.Configure<ImageConfiguration>(builder.Configuration.GetSection(
 var imageConfig = builder.Configuration.GetSection(nameof(ImageConfiguration)).Get<ImageConfiguration>();
 if (imageConfig != null)
 {
-    bootstrapLogger.LogInformation("Image storage configured with path: {StoragePath}", imageConfig.StoragePath);
+    bootstrapLogger.Information("Image storage configured with path: {StoragePath}", imageConfig.StoragePath);
     
     // Convert relative paths to absolute paths relative to the content root
     var storagePath = Path.IsPathRooted(imageConfig.StoragePath) 
@@ -63,7 +86,7 @@ if (imageConfig != null)
     if (!Directory.Exists(storagePath))
     {
         Directory.CreateDirectory(storagePath);
-        bootstrapLogger.LogInformation("Created image storage directory: {StorageDirectory}", storagePath);
+        bootstrapLogger.Information("Created image storage directory: {StorageDirectory}", storagePath);
     }
     
     builder.Services.AddSingleton<IImageStorageProvider>(sp => 
@@ -79,7 +102,7 @@ if (imageConfig != null)
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));
 if (openLibraryConfig.Exists())
 {
-    bootstrapLogger.LogInformation("OpenLibrary configuration exists. Setting up OpenLibrary services.");
+    bootstrapLogger.Information("OpenLibrary configuration exists. Setting up OpenLibrary services.");
     builder.Services.Configure<OpenLibraryConfiguration>(openLibraryConfig);
     builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) =>
     {
@@ -95,7 +118,7 @@ if (openLibraryConfig.Exists())
 var upcItemDbConfig = builder.Configuration.GetSection(nameof(UpcItemDbConfiguration));
 if (upcItemDbConfig.Exists())
 {
-    bootstrapLogger.LogInformation("UpcItemDb configuration exists. Setting up UpcItemDb services.");
+    bootstrapLogger.Information("UpcItemDb configuration exists. Setting up UpcItemDb services.");
     builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
     builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>((serviceProvider, client) =>
     {
@@ -109,7 +132,7 @@ if (upcItemDbConfig.Exists())
 var tmdbConfig = builder.Configuration.GetSection(nameof(TmdbConfiguration));
 if (tmdbConfig.Exists())
 {
-    bootstrapLogger.LogInformation("TMDB configuration exists. Setting up TMDB services.");
+    bootstrapLogger.Information("TMDB configuration exists. Setting up TMDB services.");
     builder.Services.Configure<TmdbConfiguration>(tmdbConfig);
     builder.Services.AddHttpClient<ITmdbClient, TmdbClient>((serviceProvider, client) =>
     {
@@ -128,7 +151,7 @@ if (tmdbConfig.Exists())
 var giantBombConfig = builder.Configuration.GetSection(nameof(GiantBombConfiguration));
 if (giantBombConfig.Exists())
 {
-    bootstrapLogger.LogInformation("GiantBomb configuration exists. Setting up GiantBomb services.");
+    bootstrapLogger.Information("GiantBomb configuration exists. Setting up GiantBomb services.");
     builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
     builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>((serviceProvider, client) =>
     {
@@ -144,7 +167,7 @@ if (giantBombConfig.Exists())
 var musicBrainzConfig = builder.Configuration.GetSection(nameof(MusicBrainzConfiguration));
 if (musicBrainzConfig.Exists())
 {
-    bootstrapLogger.LogInformation("MusicBrainz configuration exists. Setting up MusicBrainz services.");
+    bootstrapLogger.Information("MusicBrainz configuration exists. Setting up MusicBrainz services.");
     builder.Services.Configure<MusicBrainzConfiguration>(musicBrainzConfig);
     builder.Services.AddHttpClient<IMusicBrainzClient, MusicBrainzClient>((serviceProvider, client) =>
     {
@@ -290,6 +313,9 @@ if (imageConfig != null)
 
 // Health endpoint group
 app.MapHealth();
+
+// Logs endpoint group for client-side log ingestion
+app.MapLogs();
 
 app.MapEntity<Movie>();
 app.MapEntity<Book>();

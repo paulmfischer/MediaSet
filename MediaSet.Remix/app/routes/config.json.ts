@@ -5,10 +5,11 @@
 
 import type { LoaderFunction } from '@remix-run/node';
 import { getClientConfig } from '~/config.server';
+import { serverLogger } from '~/utils/serverLogger';
 
 export const loader: LoaderFunction = () => {
   const config = getClientConfig();
-  console.log("Serving config.json", config);
+  serverLogger.info("Serving config.json");
   return Response.json(config, {
     headers: {
       'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
