@@ -28,6 +28,7 @@ MediaSet is a full-stack application for managing personal media collections. Th
 - Commits must be properly signed to maintain repository integrity and security
 
 ### Agent Workflow
+- **Sync with main**: Switch to `main` branch and pull the latest changes
 - **Propose changes first**: Show the user the planned changes before implementation
 - **Wait for approval**: Confirm the user approves the approach
 - **Create and commit**: Only create commits once the user confirms the changes are correct, waiting for passphrase input if needed
