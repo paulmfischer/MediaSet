@@ -6,6 +6,7 @@ import { searchEntities } from "~/entity-data";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";
+import { serverLogger } from "~/utils/serverLogger";
 import Books from "./books";
 import Movies from "./movies";
 import Games from "./games";
@@ -25,11 +26,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get("searchText");
   const entityType: Entity = getEntityFromParams(params);
-  const entities = await searchEntities(entityType, searchText);
-
-  const apiUrl = clientApiUrl;
-
-  return { entities, entityType, searchText, apiUrl };
+  
+  try {
+    const entities = await searchEntities(entityType, searchText);
+    
+    const apiUrl = clientApiUrl;
+    return { entities, entityType, searchText, apiUrl };
+  } catch (error) {
+    throw error;
+  }
 };
 
 export default function Index() {

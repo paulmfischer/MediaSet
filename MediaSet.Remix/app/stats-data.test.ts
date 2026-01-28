@@ -1,12 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getStats } from './stats-data';
 
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+// Create a global mock function before mocking
+const { mockApiFetch } = vi.hoisted(() => ({
+  mockApiFetch: vi.fn(),
+}));
+
+vi.mock('./utils/apiFetch.server', () => ({
+  apiFetch: mockApiFetch,
+}));
+
+vi.mock('./utils/serverLogger', () => ({
+  serverLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// Now import after mocking
+import { getStats } from './stats-data';
 
 describe('stats-data.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set up default mock for any apiFetch calls (e.g., from serverLogger)
+    // to prevent actual network requests during tests
+    mockApiFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    });
   });
 
   afterEach(() => {
@@ -45,7 +69,7 @@ describe('stats-data.ts', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockStats,
       });
@@ -53,7 +77,7 @@ describe('stats-data.ts', () => {
       const result = await getStats();
 
       expect(result).toEqual(mockStats);
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/stats'));
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('/stats'));
     });
 
     it('should handle zero statistics', async () => {
@@ -87,7 +111,7 @@ describe('stats-data.ts', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => emptyStats,
       });
@@ -108,7 +132,7 @@ describe('stats-data.ts', () => {
         musicStats: { total: 25, totalFormats: 1, formats: ['Music'], uniqueArtists: 10, totalTracks: 100 },
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockStats,
       });
@@ -126,7 +150,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should throw error when fetch fails', async () => {
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
       });
@@ -140,7 +164,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should handle network errors', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(getStats()).rejects.toThrow('Network error');
     });
@@ -158,7 +182,7 @@ describe('stats-data.ts', () => {
         json: vi.fn(async () => mockStats),
       };
 
-      mockFetch.mockResolvedValueOnce(mockResponse);
+      mockApiFetch.mockResolvedValueOnce(mockResponse);
 
       const result = await getStats();
 
@@ -174,7 +198,7 @@ describe('stats-data.ts', () => {
         musicStats: { total: 234, totalFormats: 2, formats: ['F1'], uniqueArtists: 156, totalTracks: 2847 },
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockStats,
       });
@@ -207,7 +231,7 @@ describe('stats-data.ts', () => {
         musicStats: { total: 10000, totalFormats: 5, formats: [], uniqueArtists: 8000, totalTracks: 100000 },
       };
 
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockStats,
       });
@@ -228,7 +252,7 @@ describe('stats-data.ts', () => {
         musicStats: { total: 25, totalFormats: 1, formats: ['D'], uniqueArtists: 10, totalTracks: 100 },
       };
 
-      mockFetch
+      mockApiFetch
         .mockResolvedValueOnce({ ok: true, json: async () => mockStats })
         .mockResolvedValueOnce({ ok: true, json: async () => mockStats });
 
@@ -236,11 +260,11 @@ describe('stats-data.ts', () => {
 
       expect(result1).toEqual(mockStats);
       expect(result2).toEqual(mockStats);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockApiFetch).toHaveBeenCalledTimes(2);
     });
 
     it('should handle JSON parsing errors', async () => {
-      mockFetch.mockResolvedValueOnce({
+      mockApiFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => {
           throw new Error('JSON parse error');

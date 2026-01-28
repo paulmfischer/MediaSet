@@ -23,19 +23,24 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType = getEntityFromParams(params);
-  const entity = await getEntity(entityType, params.entityId);
-  const [genres, formats, authors, publishers, studios, developers, labels, platforms] =
-   await Promise.all([
-    getGenres(entityType),
-    getFormats(entityType),
-    entity.type === Entity.Books ? getAuthors() : Promise.resolve([]),
-    entity.type === Entity.Books ? getPublishers() : entity.type === Entity.Games ? getGamePublishers() : Promise.resolve([]),
-    entity.type === Entity.Movies ? getStudios() : Promise.resolve([]),
-    entity.type === Entity.Games ? getDevelopers() : Promise.resolve([]),
-    entity.type === Entity.Musics ? getLabels() : Promise.resolve([]),
-    entity.type === Entity.Games ? getPlatforms() : Promise.resolve([])
-  ]);
-  return { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+  
+  try {
+    const entity = await getEntity(entityType, params.entityId);
+    const [genres, formats, authors, publishers, studios, developers, labels, platforms] =
+     await Promise.all([
+      getGenres(entityType),
+      getFormats(entityType),
+      entity.type === Entity.Books ? getAuthors() : Promise.resolve([]),
+      entity.type === Entity.Books ? getPublishers() : entity.type === Entity.Games ? getGamePublishers() : Promise.resolve([]),
+      entity.type === Entity.Movies ? getStudios() : Promise.resolve([]),
+      entity.type === Entity.Games ? getDevelopers() : Promise.resolve([]),
+      entity.type === Entity.Musics ? getLabels() : Promise.resolve([]),
+      entity.type === Entity.Games ? getPlatforms() : Promise.resolve([])
+    ]);
+    return { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+  } catch (error) {
+    throw error;
+  }
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -48,64 +53,75 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   if (intent === "lookup") {
     const fieldName = formData.get("fieldName") as string;
     const identifierValue = formData.get("identifierValue") as string;
+    
+    
     if (!identifierValue) {
+      serverLogger.warn("Action: Lookup failed - missing identifier value", { entityType, entityId: params.entityId, fieldName });
       return { error: { lookup: "Identifier value is required" } };
     }
-    const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
-    const identifierType = getIdentifierTypeForField(entityType, fieldName);
-    const lookupResult = await lookup(entityType, identifierType, identifierValue);
-    // Include lookup timestamp so UI can force remounts on consecutive lookups
-    return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+    try {
+      const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+      const identifierType = getIdentifierTypeForField(entityType, fieldName);
+      const lookupResult = await lookup(entityType, identifierType, identifierValue);
+      // Include lookup timestamp so UI can force remounts on consecutive lookups
+      return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+    } catch (error) {
+      serverLogger.error("Action: Entity lookup failed", { entityType, entityId: params.entityId, fieldName, identifierValue, error: String(error) });
+      throw error;
+    }
   }
 
   const entity = formToDto(formData);
   if (!entity) {
+    serverLogger.error("Action: Failed to convert form data to entity", { entityType, entityId: params.entityId });
     return { invalidObject: `Failed to convert form to a ${entityType}` };
   }
 
-  // Get the existing entity to preserve coverImage if no new image is selected
-  const existingEntity = await getEntity(entityType, params.entityId);
-  
-  // Check if image was explicitly cleared
-  const imageClearedMarker = formData.get("coverImage-cleared") as string | null;
-  if (imageClearedMarker === "true") {
-    // Image was cleared, remove it
-    entity.coverImage = undefined;
-  } else {
-    // Check if coverImage data was submitted as hidden fields
-    const coverImageFileName = formData.get("coverImage-fileName") as string | null;
-    if (coverImageFileName) {
-      // Reconstruct coverImage from hidden inputs
-      entity.coverImage = {
-        fileName: coverImageFileName,
-        contentType: (formData.get("coverImage-contentType") as string) || "",
-        fileSize: parseInt((formData.get("coverImage-fileSize") as string) || "0"),
-        filePath: (formData.get("coverImage-filePath") as string) || "",
-        createdAt: (formData.get("coverImage-createdAt") as string) || "",
-        updatedAt: (formData.get("coverImage-updatedAt") as string) || "",
-      };
-    } else if (existingEntity?.coverImage) {
-      // No new image selected and not cleared, preserve existing image
-      entity.coverImage = existingEntity.coverImage;
+  try {
+    // Get the existing entity to preserve coverImage if no new image is selected
+    const existingEntity = await getEntity(entityType, params.entityId);
+    
+    // Check if image was explicitly cleared
+    const imageClearedMarker = formData.get("coverImage-cleared") as string | null;
+    if (imageClearedMarker === "true") {
+      // Image was cleared, remove it
+      entity.coverImage = undefined;
+    } else {
+      // Check if coverImage data was submitted as hidden fields
+      const coverImageFileName = formData.get("coverImage-fileName") as string | null;
+      if (coverImageFileName) {
+        // Reconstruct coverImage from hidden inputs
+        entity.coverImage = {
+          fileName: coverImageFileName,
+          contentType: (formData.get("coverImage-contentType") as string) || "",
+          fileSize: parseInt((formData.get("coverImage-fileSize") as string) || "0"),
+          filePath: (formData.get("coverImage-filePath") as string) || "",
+          createdAt: (formData.get("coverImage-createdAt") as string) || "",
+          updatedAt: (formData.get("coverImage-updatedAt") as string) || "",
+        };
+      } else if (existingEntity?.coverImage) {
+        // No new image selected and not cleared, preserve existing image
+        entity.coverImage = existingEntity.coverImage;
+      }
     }
-  }
 
-  // Check if there's an image file to send as multipart/form-data
-  const coverImageFile = formData.get("coverImage") as File | null;
-  let apiFormData: FormData | undefined;
-  
-  if (coverImageFile && coverImageFile.size > 0) {
-    // Create FormData to send to the backend API with entity as JSON and image file
-    // This will replace the existing coverImage
-    apiFormData = new FormData();
-    apiFormData.append("entity", JSON.stringify(entity));
-    apiFormData.append("coverImage", coverImageFile);
-  }
+    // Check if there's an image file to send as multipart/form-data
+    const coverImageFile = formData.get("coverImage") as File | null;
+    let apiFormData: FormData | undefined;
+    
+    if (coverImageFile && coverImageFile.size > 0) {
+      // Create FormData to send to the backend API with entity as JSON and image file
+      // This will replace the existing coverImage
+      apiFormData = new FormData();
+      apiFormData.append("entity", JSON.stringify(entity));
+      apiFormData.append("coverImage", coverImageFile);
+    }
 
-  console.log('Updating entity:', entity, 'with apiFormData:', apiFormData);
-  serverLogger.info('Updating entity', { entityType, entityId: params.entityId });
-  await updateEntity(params.entityId, entity, apiFormData);
-  return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
+    await updateEntity(params.entityId, entity, apiFormData);
+    return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
+  } catch (error) {
+    throw error;
+  }
 };
 
 export default function Edit() {

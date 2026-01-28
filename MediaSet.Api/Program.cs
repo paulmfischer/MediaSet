@@ -181,6 +181,8 @@ builder.Services.AddSwaggerGen((setup) =>
 });
 
 // Built-in HTTP request/response logging is configured via ConfigureHttpLogging()
+builder.Services.AddScoped<HttpLoggingFilterMiddleware>();
+builder.Services.AddScoped<TraceIdHeaderMiddleware>();
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
 builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
@@ -195,6 +197,13 @@ using var listener = LoggingExtensions.ConfigureSerilogTracing();
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+
+// Configure logging middleware
+// Set trace ID early, before any logging occurs (must be before Swagger and other middleware)
+app.UseMiddleware<TraceIdHeaderMiddleware>();
+app.UseHttpLoggingMiddleware();
+
 // turn on swagger for all environments for now
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
@@ -202,12 +211,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 // }
-
-app.UseHttpsRedirection();
-
-// Configure logging middleware
-app.UseHttpLoggingMiddleware()
-   .UseCorrelationIdMiddleware();
 
 // Configure static file serving for images folder
 if (imageConfig != null)

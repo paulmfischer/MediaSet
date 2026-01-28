@@ -4,7 +4,12 @@
  * This module provides a logging interface that forwards logs to the API's
  * POST /api/logs endpoint, allowing server-side logs to be aggregated with
  * client-side logs and enriched with Application and Environment context.
+ * 
+ * Uses apiFetch() to automatically include W3C traceparent header for
+ * distributed tracing across the Remix server and API.
  */
+
+import { apiFetch } from "./apiFetch.server";
 
 interface ServerLogPayload {
   level: "Debug" | "Information" | "Warning" | "Error";
@@ -18,12 +23,16 @@ const API_BASE_URL = process.env.apiUrl || "http://localhost:7130";
 /**
  * Sends a log event to the API.
  * Non-blocking; errors are logged to console but don't throw.
+ * Uses apiFetch() which automatically includes the W3C traceparent header
+ * from the request context for distributed tracing.
  */
 async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/logs`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
 

@@ -6,6 +6,7 @@ import { addEntity } from "~/entity-data";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
+import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
 import GameForm from "~/components/game-form";
@@ -26,17 +27,21 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  const [genres, formats, authors, publishers, studios, developers, labels, platforms] = await Promise.all([
-    getGenres(entityType),
-    getFormats(entityType),
-    entityType === Entity.Books ? getAuthors() : Promise.resolve([]),
-    entityType === Entity.Books ? getPublishers() : entityType === Entity.Games ? getGamePublishers() : Promise.resolve([]),
-    entityType === Entity.Movies ? getStudios() : Promise.resolve([]),
-    entityType === Entity.Games ? getDevelopers() : Promise.resolve([]),
-    entityType === Entity.Musics ? getLabels() : Promise.resolve([]),
-    entityType === Entity.Games ? getPlatforms() : Promise.resolve([])
-  ]);
-  return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+  try {
+    const [genres, formats, authors, publishers, studios, developers, labels, platforms] = await Promise.all([
+      getGenres(entityType),
+      getFormats(entityType),
+      entityType === Entity.Books ? getAuthors() : Promise.resolve([]),
+      entityType === Entity.Books ? getPublishers() : entityType === Entity.Games ? getGamePublishers() : Promise.resolve([]),
+      entityType === Entity.Movies ? getStudios() : Promise.resolve([]),
+      entityType === Entity.Games ? getDevelopers() : Promise.resolve([]),
+      entityType === Entity.Musics ? getLabels() : Promise.resolve([]),
+      entityType === Entity.Games ? getPlatforms() : Promise.resolve([])
+    ]);
+    return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -50,20 +55,28 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const fieldName = formData.get("fieldName") as string;
     const identifierValue = formData.get("identifierValue") as string;
     
+    
     if (!identifierValue) {
+      serverLogger.warn("Action: Lookup failed - missing identifier value", { entityType, fieldName });
       return { error: { lookup: "Identifier value is required" } };
     }
     
-    const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
-    const identifierType = getIdentifierTypeForField(entityType, fieldName);
-    const lookupResult = await lookup(entityType, identifierType, identifierValue);
-    // Include a lookup timestamp so the UI can force a remount for consecutive lookups
-    return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+    try {
+      const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+      const identifierType = getIdentifierTypeForField(entityType, fieldName);
+      const lookupResult = await lookup(entityType, identifierType, identifierValue);
+      // Include a lookup timestamp so the UI can force a remount for consecutive lookups
+      return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+    } catch (error) {
+      serverLogger.error("Action: Entity lookup failed", { entityType, fieldName, identifierValue, error: String(error) });
+      throw error;
+    }
   }
   
   // Otherwise, this is an entity creation request
   const entity = formToDto(formData);
   if (!entity) {
+    serverLogger.error("Action: Failed to convert form data to entity", { entityType });
     return { error: { invalidForm: `Failed to convert form to a ${entityType}` } };
   }
 
@@ -78,8 +91,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     apiFormData.append("coverImage", coverImageFile);
   }
 
-  const newEntity = await addEntity(entity, apiFormData);
-  return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
+  try {
+    const newEntity = await addEntity(entity, apiFormData);
+    return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
+  } catch (error) {
+    throw error;
+  }
 };
 
 export default function Add() {

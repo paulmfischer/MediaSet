@@ -46,6 +46,9 @@ public static class LoggingExtensions
             var assemblyNameFromContext = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
             var envNameFromContext = context.HostingEnvironment.EnvironmentName;
             var externalLoggingEnabled = context.Configuration.GetValue<bool>("ExternalLogging:Enabled");
+            var httpLoggingOptions = context.Configuration
+                .GetSection(nameof(Models.HttpLoggingOptions))
+                .Get<Models.HttpLoggingOptions>() ?? new();
 
             cfg.ReadFrom.Configuration(context.Configuration)
                .Enrich.FromLogContext()
@@ -56,12 +59,33 @@ public static class LoggingExtensions
                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
 
-            // Conditionally add Seq sink if external logging is enabled
+            // Conditionally add Seq sink with filtering for excluded paths (console still logs everything)
             if (externalLoggingEnabled)
             {
                 var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl") 
                     ?? "http://localhost:5341";
-                cfg.WriteTo.Seq(seqUrl);
+                
+                // Use nested logger to apply filter only to Seq sink
+                cfg.WriteTo.Logger(lc => 
+                    lc.Filter.ByExcluding(logEvent =>
+                    {
+                        // Only filter out HTTP logging from excluded paths, not application logs
+                        // HTTP logs come from Microsoft.AspNetCore.HttpLogging
+                        var isHttpLog = logEvent.Properties.ContainsKey("RequestPath") &&
+                                       logEvent.Properties.ContainsKey("RequestMethod");
+                        
+                        if (isHttpLog)
+                        {
+                            if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) && 
+                                pathValue is ScalarValue scalarValue &&
+                                scalarValue.Value is string path)
+                            {
+                                return httpLoggingOptions.IsPathExcluded(path);
+                            }
+                        }
+                        return false;
+                    })
+                    .WriteTo.Seq(seqUrl));
             }
         });
 
@@ -83,23 +107,27 @@ public static class LoggingExtensions
 
     /// <summary>
     /// Configures built-in HTTP request/response logging with structured logging fields.
+    /// Also configures path exclusion options to prevent logging of specific endpoints.
     /// </summary>
     public static WebApplicationBuilder ConfigureHttpLogging(this WebApplicationBuilder builder)
     {
+        // Configure HTTP logging options with path exclusions
+        builder.Services.Configure<MediaSet.Api.Models.HttpLoggingOptions>(
+            builder.Configuration.GetSection(nameof(MediaSet.Api.Models.HttpLoggingOptions)));
+
+        // Register the HTTP logging interceptor to respect path exclusions
+        builder.Services.AddSingleton<IHttpLoggingInterceptor, ExcludePathHttpLoggingInterceptor>();
+
         builder.Services.AddHttpLogging(logging =>
         {
             logging.LoggingFields =
                 HttpLoggingFields.RequestMethod |
                 HttpLoggingFields.RequestPath |
                 HttpLoggingFields.RequestBody |
-                HttpLoggingFields.ResponseStatusCode |
-                HttpLoggingFields.ResponseBody |
-                HttpLoggingFields.Duration;
+                HttpLoggingFields.ResponseBody;
             logging.RequestHeaders.Add("User-Agent");
-            logging.RequestHeaders.Add("X-Request-ID");
-            logging.RequestHeaders.Add("X-Correlation-ID");
-            logging.ResponseHeaders.Add("X-Request-ID");
-            logging.ResponseHeaders.Add("X-Correlation-ID");
+            logging.RequestHeaders.Add("traceparent");
+            logging.ResponseHeaders.Add("traceparent");
         });
 
         return builder;
@@ -139,35 +167,24 @@ public static class LoggingExtensions
     }
 
     /// <summary>
+    /// Adds HTTP logging filter middleware to the request pipeline.
+    /// This middleware checks if a path should be excluded from HTTP logging
+    /// based on the HttpLoggingOptions configuration.
+    /// Must be called before UseHttpLogging() and after UseRouting().
+    /// </summary>
+    public static WebApplication UseHttpLoggingFilterMiddleware(this WebApplication app)
+    {
+        app.UseMiddleware<HttpLoggingFilterMiddleware>();
+        return app;
+    }
+
+    /// <summary>
     /// Adds HTTP logging middleware to the request pipeline.
     /// Must be called after UseRouting() and before endpoint mapping.
     /// </summary>
     public static WebApplication UseHttpLoggingMiddleware(this WebApplication app)
     {
         app.UseHttpLogging();
-        return app;
-    }
-
-    /// <summary>
-    /// Adds correlation ID middleware for request tracking.
-    /// Generates or extracts correlation ID from request headers.
-    /// </summary>
-    public static WebApplication UseCorrelationIdMiddleware(this WebApplication app)
-    {
-        app.Use(async (context, next) =>
-        {
-            // Get or generate correlation ID
-            var correlationId = context.Request.Headers["X-Request-ID"].FirstOrDefault()
-                ?? context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
-                ?? Guid.NewGuid().ToString();
-
-            // Add correlation ID to response headers
-            context.Response.Headers["X-Request-ID"] = correlationId;
-            context.Response.Headers["X-Correlation-ID"] = correlationId;
-
-            await next();
-        });
-
         return app;
     }
 }

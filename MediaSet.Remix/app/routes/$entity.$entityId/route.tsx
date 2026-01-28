@@ -24,9 +24,13 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
-  serverLogger.info("Loader: Fetching entity", { entityType, entityId: params.entityId });
-  const entity = await getEntity(entityType, params.entityId);
-  return { entity, apiUrl: clientApiUrl };
+  
+  try {
+    const entity = await getEntity(entityType, params.entityId);
+    return { entity, apiUrl: clientApiUrl };
+  } catch (error) {
+    throw error;
+  }
 };
 
 export default function Detail() {
