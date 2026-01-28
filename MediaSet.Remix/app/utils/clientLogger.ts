@@ -19,14 +19,31 @@ interface LogPayload {
 }
 
 /**
+ * Generates or retrieves a session trace ID from sessionStorage.
+ * This allows browser-based logs to be correlated across requests.
+ */
+function getOrCreateSessionTraceId(): string {
+  let traceId = sessionStorage.getItem("x-trace-id");
+  if (!traceId) {
+    traceId = crypto.randomUUID();
+    sessionStorage.setItem("x-trace-id", traceId);
+  }
+  return traceId;
+}
+
+/**
  * Sends a log event to the API.
  * Non-blocking; errors are logged to console but don't throw.
  */
 async function sendLogToApi(payload: LogPayload): Promise<void> {
   try {
+    const traceId = getOrCreateSessionTraceId();
     await fetch("/api/logs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Trace-Id": traceId,
+      },
       body: JSON.stringify(payload),
     });
   } catch (error) {

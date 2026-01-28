@@ -208,10 +208,10 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 // Configure logging middleware
-app.UseHttpLoggingFilterMiddleware()
-   .UseHttpLoggingMiddleware()
-   .UseCorrelationIdMiddleware()
-   .UseMiddleware<TraceIdHeaderMiddleware>();
+// Set trace ID early, before any logging occurs
+app.UseMiddleware<TraceIdHeaderMiddleware>();
+app.UseHttpLoggingMiddleware()
+   .UseCorrelationIdMiddleware();
 
 // Configure static file serving for images folder
 if (imageConfig != null)

@@ -6,6 +6,8 @@
  * client-side logs and enriched with Application and Environment context.
  */
 
+import { getTraceId } from "./requestContext.server";
+
 interface ServerLogPayload {
   level: "Debug" | "Information" | "Warning" | "Error";
   message: string;
@@ -18,12 +20,22 @@ const API_BASE_URL = process.env.apiUrl || "http://localhost:7130";
 /**
  * Sends a log event to the API.
  * Non-blocking; errors are logged to console but don't throw.
+ * Includes the trace ID from the current request context if available.
  */
 async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    const traceId = getTraceId();
+    if (traceId) {
+      headers["X-Trace-Id"] = traceId;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
 

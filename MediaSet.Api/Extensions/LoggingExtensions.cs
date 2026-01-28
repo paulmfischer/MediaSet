@@ -130,8 +130,10 @@ public static class LoggingExtensions
             logging.RequestHeaders.Add("User-Agent");
             logging.RequestHeaders.Add("X-Request-ID");
             logging.RequestHeaders.Add("X-Correlation-ID");
+            logging.RequestHeaders.Add("X-Trace-Id");
             logging.ResponseHeaders.Add("X-Request-ID");
             logging.ResponseHeaders.Add("X-Correlation-ID");
+            logging.ResponseHeaders.Add("X-Trace-Id");
         });
 
         return builder;
