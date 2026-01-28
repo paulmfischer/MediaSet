@@ -9,7 +9,7 @@ function getEntityType<T extends BaseEntity>(entity: T): Entity {
 }
 
 export async function searchEntities<TEntity extends BaseEntity>(entityType: Entity, searchText: string | null, orderBy: string = ''): Promise<Array<TEntity>> {
-  serverLogger.info(`Searching for ${entityType}`, { operation: "searchEntities", entityType, searchText, orderBy });
+  serverLogger.info(`Searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}`, { operation: "searchEntities", entityType, searchText, orderBy });
   try {
     const response = await apiFetch(`${baseUrl}/${entityType}/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`);
     if (!response.ok) {
