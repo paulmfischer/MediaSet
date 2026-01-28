@@ -69,12 +69,19 @@ public static class LoggingExtensions
                 cfg.WriteTo.Logger(lc => 
                     lc.Filter.ByExcluding(logEvent =>
                     {
-                        // Filter out HTTP logs for excluded paths (only for Seq, not console)
-                        if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) && 
-                            pathValue is ScalarValue scalarValue &&
-                            scalarValue.Value is string path)
+                        // Only filter out HTTP logging from excluded paths, not application logs
+                        // HTTP logs come from Microsoft.AspNetCore.HttpLogging
+                        var isHttpLog = logEvent.Properties.ContainsKey("RequestPath") &&
+                                       logEvent.Properties.ContainsKey("RequestMethod");
+                        
+                        if (isHttpLog)
                         {
-                            return httpLoggingOptions.IsPathExcluded(path);
+                            if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) && 
+                                pathValue is ScalarValue scalarValue &&
+                                scalarValue.Value is string path)
+                            {
+                                return httpLoggingOptions.IsPathExcluded(path);
+                            }
                         }
                         return false;
                     })

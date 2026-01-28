@@ -1,13 +1,28 @@
 import { baseUrl } from "./constants.server";
 import { Entity } from "./models";
+import { serverLogger } from "./utils/serverLogger";
+import { apiFetch } from "./utils/apiFetch.server";
+import { getTraceId } from "./utils/requestContext.server";
 
 /**
  * Generic function to fetch metadata for a specific property of a media type
  */
 async function getMetadata(entityType: Entity, property: string) {
-  const response = await fetch(`${baseUrl}/metadata/${entityType}/${property}`);
-  const values = await response.json() as string[];
-  return values.map(value => ({ label: value, value: value }));
+  const traceId = getTraceId();
+  serverLogger.info("Fetching metadata", { entityType, property, traceId });
+  try {
+    const response = await apiFetch(`${baseUrl}/metadata/${entityType}/${property}`);
+    if (!response.ok) {
+      serverLogger.error("Failed to fetch metadata", { entityType, property, status: response.status, traceId });
+      throw new Response(`Error fetching ${property} metadata`, { status: response.status });
+    }
+    const values = await response.json() as string[];
+    serverLogger.info("Successfully fetched metadata", { entityType, property, count: values.length, traceId });
+    return values.map(value => ({ label: value, value: value }));
+  } catch (error) {
+    serverLogger.error("Error fetching metadata", { entityType, property, error: String(error) });
+    throw error;
+  }
 }
 
 export async function getAuthors() {

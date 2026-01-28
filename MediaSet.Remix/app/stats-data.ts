@@ -1,4 +1,7 @@
 import { baseUrl } from "./constants.server";
+import { serverLogger } from "./utils/serverLogger";
+import { apiFetch } from "./utils/apiFetch.server";
+import { getTraceId } from "./utils/requestContext.server";
 
 type Stats = {
   bookStats: BookStats;
@@ -39,9 +42,25 @@ type MusicStats = {
 };
 
 export async function getStats() {
-  const response = await fetch(`${baseUrl}/stats`);
-  if (!response.ok) {
-    throw new Response("Error fetching data", { status: 500 });
+  const traceId = getTraceId();
+  serverLogger.info("Fetching stats", { traceId });
+  try {
+    const response = await apiFetch(`${baseUrl}/stats`);
+    if (!response.ok) {
+      serverLogger.error("Failed to fetch stats", { status: response.status, traceId });
+      throw new Response("Error fetching data", { status: 500 });
+    }
+    const stats = await response.json() as Stats;
+    serverLogger.info("Successfully fetched stats", {
+      totalBooks: stats.bookStats.total,
+      totalMovies: stats.movieStats.total,
+      totalGames: stats.gameStats.total,
+      totalMusic: stats.musicStats.total,
+      traceId
+    });
+    return stats;
+  } catch (error) {
+    serverLogger.error("Error fetching stats", { error: String(error) });
+    throw error;
   }
-  return await response.json() as Stats;
 }
