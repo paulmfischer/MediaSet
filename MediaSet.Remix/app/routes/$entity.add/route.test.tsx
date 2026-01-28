@@ -11,6 +11,21 @@ import * as remixReact from '@remix-run/react';
 vi.mock('~/entity-data');
 vi.mock('~/metadata-data');
 vi.mock('~/helpers');
+vi.mock('~/utils/apiFetch.server', () => ({
+  apiFetch: vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+  }),
+}));
+vi.mock('~/utils/serverLogger', () => ({
+  serverLogger: {
+    info: vi.fn(() => undefined),
+    warn: vi.fn(() => undefined),
+    error: vi.fn(() => undefined),
+    debug: vi.fn(() => undefined),
+  },
+}));
 
 // Mock form components
 vi.mock('~/components/book-form', () => ({
