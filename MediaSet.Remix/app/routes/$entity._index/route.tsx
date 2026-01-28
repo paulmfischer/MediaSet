@@ -27,15 +27,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const searchText = url.searchParams.get("searchText");
   const entityType: Entity = getEntityFromParams(params);
   
-  serverLogger.info("Loader: Searching entities", { entityType, searchText });
   try {
     const entities = await searchEntities(entityType, searchText);
-    serverLogger.info("Loader: Successfully searched entities", { entityType, count: entities.length, searchText });
     
     const apiUrl = clientApiUrl;
     return { entities, entityType, searchText, apiUrl };
   } catch (error) {
-    serverLogger.error("Loader: Error searching entities", { entityType, searchText, error: String(error) });
     throw error;
   }
 };

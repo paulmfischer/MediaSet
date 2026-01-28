@@ -54,7 +54,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const fieldName = formData.get("fieldName") as string;
     const identifierValue = formData.get("identifierValue") as string;
     
-    serverLogger.info("Action: Performing entity lookup", { entityType, entityId: params.entityId, fieldName, identifierValue });
     
     if (!identifierValue) {
       serverLogger.warn("Action: Lookup failed - missing identifier value", { entityType, entityId: params.entityId, fieldName });
@@ -64,7 +63,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
       const lookupResult = await lookup(entityType, identifierType, identifierValue);
-      serverLogger.info("Action: Entity lookup successful", { entityType, entityId: params.entityId, fieldName, identifierValue });
       // Include lookup timestamp so UI can force remounts on consecutive lookups
       return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
     } catch (error) {
