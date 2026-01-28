@@ -63,15 +63,11 @@ public abstract class IntegrationTestBase
                 builder.UseContentRoot(testProjectDir);
                 builder.UseEnvironment("Testing");
                 
-                // Configure logging to be minimal in test environment
+                // Suppress all logging output during tests
                 builder.ConfigureLogging(logging =>
                 {
                     logging.ClearProviders();
-                    logging.SetMinimumLevel(LogLevel.Warning);
-                    logging.AddSimpleConsole(options =>
-                    {
-                        options.SingleLine = true;
-                    });
+                    logging.SetMinimumLevel(LogLevel.None);
                 });
             });
     }
