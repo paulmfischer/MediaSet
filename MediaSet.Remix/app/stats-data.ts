@@ -41,7 +41,7 @@ type MusicStats = {
 };
 
 export async function getStats() {
-  serverLogger.info("Fetching stats", {});
+  serverLogger.info("Fetching stats for all entities", {});
   try {
     const response = await apiFetch(`${baseUrl}/stats`);
     if (!response.ok) {
@@ -49,7 +49,7 @@ export async function getStats() {
       throw new Response("Error fetching data", { status: 500 });
     }
     const stats = await response.json() as Stats;
-    serverLogger.info("Successfully fetched stats", {
+    serverLogger.info(`Successfully fetched stats: ${stats.bookStats.total} books, ${stats.movieStats.total} movies, ${stats.gameStats.total} games, ${stats.musicStats.total} music items`, {
       totalBooks: stats.bookStats.total,
       totalMovies: stats.movieStats.total,
       totalGames: stats.gameStats.total,
