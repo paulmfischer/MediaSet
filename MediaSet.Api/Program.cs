@@ -181,6 +181,7 @@ builder.Services.AddSwaggerGen((setup) =>
 });
 
 // Built-in HTTP request/response logging is configured via ConfigureHttpLogging()
+builder.Services.AddScoped<HttpLoggingFilterMiddleware>();
 
 builder.Services.AddScoped<IEntityService<Book>, EntityService<Book>>();
 builder.Services.AddScoped<IEntityService<Movie>, EntityService<Movie>>();
@@ -206,7 +207,8 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 // Configure logging middleware
-app.UseHttpLoggingMiddleware()
+app.UseHttpLoggingFilterMiddleware()
+   .UseHttpLoggingMiddleware()
    .UseCorrelationIdMiddleware();
 
 // Configure static file serving for images folder

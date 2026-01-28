@@ -46,6 +46,9 @@ public static class LoggingExtensions
             var assemblyNameFromContext = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
             var envNameFromContext = context.HostingEnvironment.EnvironmentName;
             var externalLoggingEnabled = context.Configuration.GetValue<bool>("ExternalLogging:Enabled");
+            var httpLoggingOptions = context.Configuration
+                .GetSection(nameof(Models.HttpLoggingOptions))
+                .Get<Models.HttpLoggingOptions>() ?? new();
 
             cfg.ReadFrom.Configuration(context.Configuration)
                .Enrich.FromLogContext()
@@ -56,12 +59,26 @@ public static class LoggingExtensions
                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
 
-            // Conditionally add Seq sink if external logging is enabled
+            // Conditionally add Seq sink with filtering for excluded paths (console still logs everything)
             if (externalLoggingEnabled)
             {
                 var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl") 
                     ?? "http://localhost:5341";
-                cfg.WriteTo.Seq(seqUrl);
+                
+                // Use nested logger to apply filter only to Seq sink
+                cfg.WriteTo.Logger(lc => 
+                    lc.Filter.ByExcluding(logEvent =>
+                    {
+                        // Filter out HTTP logs for excluded paths (only for Seq, not console)
+                        if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) && 
+                            pathValue is ScalarValue scalarValue &&
+                            scalarValue.Value is string path)
+                        {
+                            return httpLoggingOptions.IsPathExcluded(path);
+                        }
+                        return false;
+                    })
+                    .WriteTo.Seq(seqUrl));
             }
         });
 
@@ -83,9 +100,17 @@ public static class LoggingExtensions
 
     /// <summary>
     /// Configures built-in HTTP request/response logging with structured logging fields.
+    /// Also configures path exclusion options to prevent logging of specific endpoints.
     /// </summary>
     public static WebApplicationBuilder ConfigureHttpLogging(this WebApplicationBuilder builder)
     {
+        // Configure HTTP logging options with path exclusions
+        builder.Services.Configure<MediaSet.Api.Models.HttpLoggingOptions>(
+            builder.Configuration.GetSection(nameof(MediaSet.Api.Models.HttpLoggingOptions)));
+
+        // Register the HTTP logging interceptor to respect path exclusions
+        builder.Services.AddSingleton<IHttpLoggingInterceptor, ExcludePathHttpLoggingInterceptor>();
+
         builder.Services.AddHttpLogging(logging =>
         {
             logging.LoggingFields =
@@ -136,6 +161,18 @@ public static class LoggingExtensions
             .Instrument.AspNetCoreRequests()  // Captures HTTP requests as spans
             .Instrument.HttpClientRequests()  // Captures outgoing HTTP calls as spans
             .TraceToSharedLogger();            // Writes to Serilog (which goes to Seq)
+    }
+
+    /// <summary>
+    /// Adds HTTP logging filter middleware to the request pipeline.
+    /// This middleware checks if a path should be excluded from HTTP logging
+    /// based on the HttpLoggingOptions configuration.
+    /// Must be called before UseHttpLogging() and after UseRouting().
+    /// </summary>
+    public static WebApplication UseHttpLoggingFilterMiddleware(this WebApplication app)
+    {
+        app.UseMiddleware<HttpLoggingFilterMiddleware>();
+        return app;
     }
 
     /// <summary>

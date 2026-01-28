@@ -156,7 +156,7 @@ Bypass the API entirely for logging. The Remix UI sends logs directly to the Seq
 
 ---
 
-## Recommendation: Approach 1 (Ignore `/api/logs`)
+## Decision: Approach 1 (Ignore `/api/logs`) ✅ APPROVED
 
 **Rationale:**
 - Solves the immediate problem (avoiding logging-of-logs) with minimal effort
@@ -165,19 +165,124 @@ Bypass the API entirely for logging. The Remix UI sends logs directly to the Seq
 - Provides centralized log enrichment and handling
 - Easier to debug and troubleshoot
 
-**Next Steps:**
-1. Implement HTTP logging filter for `/api/logs` in `MediaSet.Api`
+**Implementation:**
+1. Configure HTTP logging filter for `/api/logs` in `MediaSet.Api`
 2. Add server-side logging to Remix `loader` and `action` functions
 3. Ensure all data operations log success/failure with relevant context
 4. Test logging output in Seq to verify no duplicate entries
 
 ---
 
+## Extensible Configuration for Endpoint Exclusion
+
+To make it easy to exclude other endpoints from HTTP logging in the future, consider these approaches:
+
+### Option A: Configuration-Based Exclusion (Recommended)
+**Most flexible and maintainable for future changes—especially for Minimal APIs**
+
+Add an `HttpLogging` section to `appsettings.json`:
+```json
+{
+  "HttpLogging": {
+    "ExcludedPaths": [
+      "/api/logs",
+      "/health",
+      "/health/ready",
+      "/health/live"
+    ],
+    "ExcludePathStartsWith": [
+      "/api/health",
+      "/swagger"
+    ]
+  }
+}
+```
+
+**Implementation:**
+- Create `HttpLoggingOptions` configuration class
+- Read from `IConfiguration` in middleware
+- Use path matching logic (exact match or prefix match) in logging middleware
+
+**Benefit:** Add/remove endpoints without code changes—just update `appsettings.json`. Works seamlessly with Minimal APIs since no code modifications are needed
+
+### Option B: Custom Metadata-Based Approach (Minimal APIs)
+**Good for declarative, code-level control with Minimal APIs**
+
+Define a custom attribute for metadata:
+```csharp
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class ExcludeFromHttpLoggingAttribute : Attribute { }
+```
+
+Apply to Minimal API endpoints using `.WithMetadata()`:
+```csharp
+app.MapPost("/api/logs", PostLogs)
+   .WithMetadata(new ExcludeFromHttpLoggingAttribute());
+
+app.MapGet("/health", GetHealth)
+   .WithMetadata(new ExcludeFromHttpLoggingAttribute());
+```
+
+Or use an extension method for cleaner syntax:
+```csharp
+app.MapPost("/api/logs", PostLogs)
+   .ExcludeFromHttpLogging();
+
+// Extension method in Program.cs or extensions file:
+public static RouteHandlerBuilder ExcludeFromHttpLogging(
+    this RouteHandlerBuilder builder) =>
+    builder.WithMetadata(new ExcludeFromHttpLoggingAttribute());
+```
+
+**Implementation:**
+- Check for metadata presence in logging middleware using reflection
+- Skip logging if metadata is present:
+```csharp
+var endpoint = context.GetEndpoint();
+if (endpoint?.Metadata.GetMetadata<ExcludeFromHttpLoggingAttribute>() != null)
+    return false;
+```
+
+**Benefit:** Clear intent at the endpoint level; easy to find excluded endpoints in code
+**Note:** Requires adding `.ExcludeFromHttpLogging()` to each endpoint—less ideal for Minimal APIs compared to configuration-based approach
+
+### Option C: Hybrid Approach
+**Combines flexibility and clarity**
+
+- Use configuration for high-level patterns (`/health/*`, `/api/logs`)
+- Use metadata for specific endpoints that need special handling (Minimal APIs only)
+- Middleware checks both configuration and metadata
+
+**Example:**
+```csharp
+private bool ShouldLogRequest(HttpContext context)
+{
+    var path = context.Request.Path.Value;
+    
+    // Check configuration first
+    if (_httpLoggingOptions.IsPathExcluded(path))
+        return false;
+    
+    // Check endpoint metadata (for Minimal API with .WithMetadata())
+    var endpoint = context.GetEndpoint();
+    if (endpoint?.Metadata.GetMetadata<ExcludeFromHttpLoggingAttribute>() != null)
+        return false;
+    
+    return true;
+}
+```
+
+**Benefit:** Flexibility of configuration combined with code-level clarity for Minimal APIs when needed
+
+---
+
 ## Future Considerations
 
-If Approach 1 becomes a bottleneck in the future:
-- Consider a hybrid: keep critical UI logs with direct Seq integration
+If the `/api/logs` endpoint becomes a bottleneck in the future:
+- Consider a hybrid approach: keep critical UI logs with direct Seq integration
 - Implement log sampling/filtering to reduce volume
 - Use queue-based log batching (e.g., Serilog batching sinks)
 - Evaluate log aggregation at the infrastructure level
+
+Implement extensible endpoint exclusion (Option A, B, or C above) to manage future changes without requiring middleware code modifications.
 
