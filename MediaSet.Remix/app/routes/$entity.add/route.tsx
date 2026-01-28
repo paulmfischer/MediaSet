@@ -27,7 +27,6 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
-  serverLogger.info("Loader: Loading add form metadata", { entityType });
   try {
     const [genres, formats, authors, publishers, studios, developers, labels, platforms] = await Promise.all([
       getGenres(entityType),
@@ -39,10 +38,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       entityType === Entity.Musics ? getLabels() : Promise.resolve([]),
       entityType === Entity.Games ? getPlatforms() : Promise.resolve([])
     ]);
-    serverLogger.info("Loader: Successfully loaded add form metadata", { entityType });
     return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
   } catch (error) {
-    serverLogger.error("Loader: Error loading add form metadata", { entityType, error: String(error) });
     throw error;
   }
 };
@@ -79,7 +76,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
   
   // Otherwise, this is an entity creation request
-  serverLogger.info("Action: Creating new entity", { entityType });
   const entity = formToDto(formData);
   if (!entity) {
     serverLogger.error("Action: Failed to convert form data to entity", { entityType });
@@ -91,7 +87,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   let apiFormData: FormData | undefined;
   
   if (coverImageFile && coverImageFile.size > 0) {
-    serverLogger.info("Action: Entity includes cover image", { entityType, fileName: coverImageFile.name });
     // Create FormData to send to the backend API with entity as JSON and image file
     apiFormData = new FormData();
     apiFormData.append("entity", JSON.stringify(entity));
@@ -100,10 +95,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   try {
     const newEntity = await addEntity(entity, apiFormData);
-    serverLogger.info("Action: Entity created successfully", { entityType, entityId: newEntity.id });
     return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
   } catch (error) {
-    serverLogger.error("Action: Failed to create entity", { entityType, error: String(error) });
     throw error;
   }
 };

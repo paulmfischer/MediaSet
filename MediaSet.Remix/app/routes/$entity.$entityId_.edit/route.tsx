@@ -24,7 +24,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entityId, "Missing entityId param");
   const entityType = getEntityFromParams(params);
   
-  serverLogger.info("Loader: Loading edit form", { entityType, entityId: params.entityId });
   try {
     const entity = await getEntity(entityType, params.entityId);
     const [genres, formats, authors, publishers, studios, developers, labels, platforms] =
@@ -38,10 +37,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       entity.type === Entity.Musics ? getLabels() : Promise.resolve([]),
       entity.type === Entity.Games ? getPlatforms() : Promise.resolve([])
     ]);
-    serverLogger.info("Loader: Successfully loaded edit form", { entityType, entityId: params.entityId });
     return { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
   } catch (error) {
-    serverLogger.error("Loader: Error loading edit form", { entityType, entityId: params.entityId, error: String(error) });
     throw error;
   }
 }
@@ -76,7 +73,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
   }
 
-  serverLogger.info("Action: Updating entity", { entityType, entityId: params.entityId });
   const entity = formToDto(formData);
   if (!entity) {
     serverLogger.error("Action: Failed to convert form data to entity", { entityType, entityId: params.entityId });
@@ -91,14 +87,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const imageClearedMarker = formData.get("coverImage-cleared") as string | null;
     if (imageClearedMarker === "true") {
       // Image was cleared, remove it
-      serverLogger.info("Action: Clearing cover image", { entityType, entityId: params.entityId });
       entity.coverImage = undefined;
     } else {
       // Check if coverImage data was submitted as hidden fields
       const coverImageFileName = formData.get("coverImage-fileName") as string | null;
       if (coverImageFileName) {
         // Reconstruct coverImage from hidden inputs
-        serverLogger.info("Action: Preserving existing cover image", { entityType, entityId: params.entityId });
         entity.coverImage = {
           fileName: coverImageFileName,
           contentType: (formData.get("coverImage-contentType") as string) || "",
@@ -118,7 +112,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     let apiFormData: FormData | undefined;
     
     if (coverImageFile && coverImageFile.size > 0) {
-      serverLogger.info("Action: Entity includes new cover image", { entityType, entityId: params.entityId, fileName: coverImageFile.name });
       // Create FormData to send to the backend API with entity as JSON and image file
       // This will replace the existing coverImage
       apiFormData = new FormData();
@@ -127,10 +120,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
 
     await updateEntity(params.entityId, entity, apiFormData);
-    serverLogger.info("Action: Entity updated successfully", { entityType, entityId: params.entityId });
     return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
   } catch (error) {
-    serverLogger.error("Action: Failed to update entity", { entityType, entityId: params.entityId, error: String(error) });
     throw error;
   }
 };
