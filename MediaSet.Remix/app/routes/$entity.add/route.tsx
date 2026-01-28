@@ -48,8 +48,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const traceId = initializeRequestContext();
-  
   invariant(params.entity, "Missing entity param");
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
@@ -102,7 +100,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   try {
     const newEntity = await addEntity(entity, apiFormData);
-    serverLogger.info("Action: Entity created successfully", { entityType, entityId: newEntity.id, traceId });
+    serverLogger.info("Action: Entity created successfully", { entityType, entityId: newEntity.id });
     return redirect(`/${entityType.toLowerCase()}/${newEntity.id}`);
   } catch (error) {
     serverLogger.error("Action: Failed to create entity", { entityType, error: String(error) });

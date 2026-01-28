@@ -47,8 +47,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const traceId = initializeRequestContext();
-  
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType = getEntityFromParams(params);
@@ -59,7 +57,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const fieldName = formData.get("fieldName") as string;
     const identifierValue = formData.get("identifierValue") as string;
     
-    serverLogger.info("Action: Performing entity lookup", { entityType, entityId: params.entityId, fieldName, identifierValue, traceId });
+    serverLogger.info("Action: Performing entity lookup", { entityType, entityId: params.entityId, fieldName, identifierValue });
     
     if (!identifierValue) {
       serverLogger.warn("Action: Lookup failed - missing identifier value", { entityType, entityId: params.entityId, fieldName });
@@ -129,7 +127,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
 
     await updateEntity(params.entityId, entity, apiFormData);
-    serverLogger.info("Action: Entity updated successfully", { entityType, entityId: params.entityId, traceId });
+    serverLogger.info("Action: Entity updated successfully", { entityType, entityId: params.entityId });
     return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
   } catch (error) {
     serverLogger.error("Action: Failed to update entity", { entityType, entityId: params.entityId, error: String(error) });

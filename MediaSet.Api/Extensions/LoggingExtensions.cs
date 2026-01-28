@@ -128,12 +128,8 @@ public static class LoggingExtensions
                 HttpLoggingFields.ResponseBody |
                 HttpLoggingFields.Duration;
             logging.RequestHeaders.Add("User-Agent");
-            logging.RequestHeaders.Add("X-Request-ID");
-            logging.RequestHeaders.Add("X-Correlation-ID");
-            logging.RequestHeaders.Add("X-Trace-Id");
-            logging.ResponseHeaders.Add("X-Request-ID");
-            logging.ResponseHeaders.Add("X-Correlation-ID");
-            logging.ResponseHeaders.Add("X-Trace-Id");
+            logging.RequestHeaders.Add("traceparent");
+            logging.ResponseHeaders.Add("traceparent");
         });
 
         return builder;
@@ -191,29 +187,6 @@ public static class LoggingExtensions
     public static WebApplication UseHttpLoggingMiddleware(this WebApplication app)
     {
         app.UseHttpLogging();
-        return app;
-    }
-
-    /// <summary>
-    /// Adds correlation ID middleware for request tracking.
-    /// Generates or extracts correlation ID from request headers.
-    /// </summary>
-    public static WebApplication UseCorrelationIdMiddleware(this WebApplication app)
-    {
-        app.Use(async (context, next) =>
-        {
-            // Get or generate correlation ID
-            var correlationId = context.Request.Headers["X-Request-ID"].FirstOrDefault()
-                ?? context.Request.Headers["X-Correlation-ID"].FirstOrDefault()
-                ?? Guid.NewGuid().ToString();
-
-            // Add correlation ID to response headers
-            context.Response.Headers["X-Request-ID"] = correlationId;
-            context.Response.Headers["X-Correlation-ID"] = correlationId;
-
-            await next();
-        });
-
         return app;
     }
 }

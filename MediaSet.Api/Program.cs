@@ -197,6 +197,13 @@ using var listener = LoggingExtensions.ConfigureSerilogTracing();
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+
+// Configure logging middleware
+// Set trace ID early, before any logging occurs (must be before Swagger and other middleware)
+app.UseMiddleware<TraceIdHeaderMiddleware>();
+app.UseHttpLoggingMiddleware();
+
 // turn on swagger for all environments for now
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
@@ -204,14 +211,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 // }
-
-app.UseHttpsRedirection();
-
-// Configure logging middleware
-// Set trace ID early, before any logging occurs
-app.UseMiddleware<TraceIdHeaderMiddleware>();
-app.UseHttpLoggingMiddleware()
-   .UseCorrelationIdMiddleware();
 
 // Configure static file serving for images folder
 if (imageConfig != null)
