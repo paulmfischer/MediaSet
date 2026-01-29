@@ -1,5 +1,13 @@
 # MediaSet
 
+![Release Version](https://img.shields.io/github/v/release/paulmfischer/MediaSet?label=release&logo=github)
+![License](https://img.shields.io/github/license/paulmfischer/MediaSet)
+
+![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
+![Remix](https://img.shields.io/badge/remix-%23000.svg?style=for-the-badge&logo=remix&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
+
+
 A modern, full-stack personal media library management system for organizing your books, movies, and games collection. Built with .NET 10.0 and Remix.js, MediaSet provides an intuitive interface for cataloging, searching, and tracking your media items with automatic metadata lookup capabilities.
 
 ## ✨ Key Features
