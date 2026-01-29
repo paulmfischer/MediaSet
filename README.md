@@ -24,7 +24,7 @@ A modern, full-stack personal media library management system for organizing you
 ## 📸 Screenshots
 
 ### Home Dashboard
-View your complete library overview with statistics and recent additions.
+View your complete library overview with statistics.
 
 ![Home screen with library information](assets/screenshots/Home-page.png)
 
@@ -39,7 +39,7 @@ Filter your collection to find specific items.
 ![Entity list page filtered](assets/screenshots/Entity-list-filtered.png)
 
 ### Detailed Item View
-View complete metadata, add notes, and track status.
+View detailed metadata.
 
 ![Entity detail page](assets/screenshots/Entity-detail.png)
 
@@ -50,72 +50,50 @@ Update and manage item information with inline metadata lookup.
 
 ## 🔧 Core Features
 
-### Metadata Lookup
+### Media Cataloging
 
-MediaSet includes built-in metadata lookup functionality to quickly populate item details using various APIs:
+MediaSet provides a comprehensive system for cataloging your personal media collection:
+
+- **Multi-Media Support**: Organize books, movies, games, and music in one unified application
+- **Rich Metadata**: Track detailed information including titles, authors/directors, release dates, genres, ratings, and more
+
+### Automatic Metadata Lookup
+
+MediaSet includes built-in metadata lookup functionality to quickly populate item details from external APIs:
 
 **Books:**
 - **ISBN Lookup**: Search by ISBN to automatically retrieve book metadata from OpenLibrary
 - Supports multiple identifier types: ISBN, LCCN, OCLC, OLID, UPC, EAN
 - Auto-populates title, authors, publisher, publication date, genres, page count, and more
-- Inline lookup button in add/edit forms - results populate the form for review before saving
 
 **Movies:**
 - **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve movie metadata
 - Two-stage lookup: UPCitemdb for product identification → TMDB for comprehensive movie data
 - Auto-populates title, genres, studios, release date, rating, runtime, and plot
-- Inline lookup button in add/edit forms
 
 **Games:**
 - **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve game metadata
 - Two-stage lookup: UPCitemdb for product identification → GiantBomb for comprehensive game data
 - Auto-populates title, platform, genres, developers, publishers, release date, rating, description, and format
-- Inline lookup button in add/edit forms
+- **Note**: GiantBomb API is currently unavailable - see [Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md) for details
 
 **Music:**
 - **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve music album metadata
 - Direct lookup via MusicBrainz API for comprehensive album information
 - Auto-populates title, artist, release date, genres, label, track count, track list with durations, and format
-- Inline lookup button in add/edit forms
 
-**Configuration:**
-- **UPCitemdb**: Free tier (100 requests/day) - no API key required
-- **TMDB**: Free API key required - [sign up here](https://www.themoviedb.org/signup)
-  - Add your TMDB Bearer Token to `appsettings.Development.json`:
-    ```json
-    "TmdbConfiguration": {
-      "BaseUrl": "https://api.themoviedb.org/3/",
-      "BearerToken": "your-tmdb-bearer-token-here",
-      "Timeout": 10
-    }
-    ```
-- **OpenLibrary**: No API key required (existing feature)
-- **GiantBomb**: Free API key required - request one at https://www.giantbomb.com/api/
-  - Add your GiantBomb settings to `appsettings.Development.json`:
-    ```json
-    "GiantBombConfiguration": {
-      "BaseUrl": "https://www.giantbomb.com/api/",
-      "ApiKey": "your-giantbomb-api-key-here",
-      "Timeout": 10
-    }
-    ```
-  - See detailed setup in [GIANTBOMB_SETUP.md](GIANTBOMB_SETUP.md)
-- **MusicBrainz**: No API key required (free and open)
-  - Requires descriptive User-Agent header (already configured)
-  - Respects 1 request per second rate limit
-  - See detailed setup in [MUSICBRAINZ_SETUP.md](MUSICBRAINZ_SETUP.md)
 
-## 📸 Cover Images
+### Cover Image Management
 
 MediaSet allows you to manage cover images for all your media items. Images are stored locally on the filesystem and referenced in your media database, providing fast access without storing large files in MongoDB.
 
-### Adding Cover Images
+**Adding Cover Images:**
 
 You can add cover images when creating or editing media items in three ways:
 
 1. **Upload Image File**
    - Click the "Upload Image" button in the add/edit form
-   - Supported formats: JPEG, PNG (configurable)
+   - Supported formats: JPEG, PNG
    - Maximum file size: 5MB (configurable)
    - Images are automatically validated and optimized
 
@@ -127,75 +105,147 @@ You can add cover images when creating or editing media items in three ways:
 3. **Use Lookup Result Images**
    - When performing barcode lookups (ISBN, UPC, EAN), the results often include cover image URLs
    - These URLs are displayed in the add/edit form
-   - Click to use the image, which is automatically downloaded and saved
 
-### Image Storage
+**Image Storage:**
 
-- **Location**: Images are stored in `/data/images/{mediaType}/{entityId}-{guid}.{ext}`
-- **Persistence**: Images persist across container restarts and application updates
-- **Backup**: Include the `./data/images` directory in your backups
-- **File Size**: Uses minimal storage with 5MB limit per image
+Images are stored in a configurable location with Docker/Podman - either inside the container or in an externally mounted folder for persistence across container rebuilds.
 
-### Configuration
-
-Image storage settings are configured in `appsettings.json`:
-
-```json
-{
-  "ImageConfiguration": {
-    "StoragePath": "/app/data/images",
-    "MaxFileSizeMb": 5,
-    "AllowedImageExtensions": "jpg,jpeg,png",
-    "HttpTimeoutSeconds": 30,
-    "StripExifData": true
-  }
-}
-```
-
-### Image Endpoints
-
-The API provides the following endpoints for image management:
-
-**Retrieve cover image:**
-```
-GET /static/images/{filePath}
-```
-Where `filePath` comes from the entity's `coverImage.filePath` property. Images are served with 7-day HTTP caching headers for optimal performance.
-
-**Remove cover image from entity:**
-```
-DELETE /api/{entityType}/{entityId}/image
-```
-This removes the image from the entity but keeps the entity intact. Images are also automatically deleted when the media item is deleted or when the entity is updated with a new image.
-
-**Example:**
-```bash
-# Get entity with image reference
-curl http://localhost:5000/api/books/507f1f77bcf86cd799439011
-
-# Retrieve the image using filePath from coverImage object
-curl http://localhost:5000/static/images/books/507f1f77bcf86cd799439011-a1b2c3d4.jpg
-
-# Remove image from entity
-curl -X DELETE http://localhost:5000/api/books/507f1f77bcf86cd799439011/image
-```
-
-## 🚀 Getting Started
+## 🚀 Setup
 
 ### Prerequisites
 
-**Option 1: Containerized Development (Recommended)**
 - Docker or Podman installed
-- No other dependencies needed!
 
-**Option 2: Local Development**
-- .NET 9.0 SDK
-- Node.js 20+
-- MongoDB
+### Running MediaSet with Docker/Podman
 
-### Quick Start with Containers
+MediaSet publishes production-ready container images to GitHub Container Registry. This is the easiest way to run MediaSet.
 
-New developers don't need to install .NET, Node.js, or MongoDB! Everything runs in containers with full hot-reload support. Both Docker and Podman are supported - the setup script automatically detects your container runtime.
+**Step 1: Create a docker-compose.yml file**
+
+Create a `docker-compose.yml` file using the [example production configuration](https://github.com/paulmfischer/MediaSet/blob/main/docker-compose.prod.yml) as a template:
+
+```yaml
+version: '3.8'
+
+services:
+  mediaset-api:
+    image: ghcr.io/paulmfischer/mediaset-api:latest
+    container_name: mediaset-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      MediaSetDatabaseSettings__ConnectionString: "mongodb://mongo:27017"
+      MediaSetDatabaseSettings__DatabaseName: "MediaSet"
+      
+      # Optional: Configure integrations (uncomment and add your API keys)
+      # OpenLibraryConfiguration__ContactEmail: "your-email@example.com"
+      # TmdbConfiguration__BearerToken: "your-tmdb-bearer-token"
+      # GiantBombConfiguration__ApiKey: "your-giantbomb-api-key"
+      # MusicBrainzConfiguration__UserAgent: "MyApp/1.0 (contact@example.com)"
+      # UpcItemDbConfiguration__ApiKey: "your-upcitemdb-api-key"
+    
+    volumes:
+      - mediaset-images:/app/data/images
+    depends_on:
+      - mongo
+    networks:
+      - mediaset
+  
+  mediaset-ui:
+    image: ghcr.io/paulmfischer/mediaset-ui:latest
+    container_name: mediaset-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Server-side API URL - for Remix server to call API (uses container name)
+      apiUrl: "http://mediaset-api:8080"
+      
+      # Client-side API URL - for browser to access API (must be externally accessible)
+      # Replace with your actual hostname/IP
+      clientApiUrl: "http://[hostname]:8080"
+    depends_on:
+      - mediaset-api
+    networks:
+      - mediaset
+  
+  mongo:
+    image: mongo:latest
+    container_name: mediaset-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mediaset-db:/data/db
+    networks:
+      - mediaset
+
+volumes:
+  mediaset-db:
+  mediaset-images:
+
+networks:
+  mediaset:
+```
+
+**Step 2: Start the services**
+
+```bash
+# Using Docker
+docker compose up -d
+
+# Using Podman
+podman-compose up -d
+```
+
+**Step 3: Access MediaSet**
+
+- Frontend UI: http://[hostname]:3000
+- Backend API: http://[hostname]:8080
+- API Documentation: http://[hostname]:8080/swagger
+
+Replace `[hostname]` with `localhost` (if running locally), your server's IP address, or domain name depending on where you're running the containers.
+
+### Available Container Images
+
+Images are published to GitHub Container Registry:
+- `ghcr.io/paulmfischer/mediaset-api` - Backend API
+- `ghcr.io/paulmfischer/mediaset-ui` - Frontend UI
+
+**Available Tags:**
+- `latest` - Most recent stable release
+- `vx.y.z` - Specific version (e.g., `v2.4.0`)
+
+### Configuration
+
+Configuration can be provided through:
+- **Environment variables** in `docker-compose.yml` (recommended)
+- **`.env` file** in the same directory as `docker-compose.yml`
+
+For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CONTAINER_SETUP.md).
+
+### Documentation
+
+- **[Setup/CONTAINER_SETUP.md](Setup/CONTAINER_SETUP.md)** - Container orchestration and configuration details
+- **[Setup/OPENLIBRARY_SETUP.md](Setup/OPENLIBRARY_SETUP.md)** - OpenLibrary API configuration for book metadata
+- **[Setup/TMDB_SETUP.md](Setup/TMDB_SETUP.md)** - The Movie Database API configuration
+- **[Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
+- **[Setup/MUSICBRAINZ_SETUP.md](Setup/MUSICBRAINZ_SETUP.md)** - MusicBrainz API configuration for music metadata
+- **[Setup/UPCITEMDB_SETUP.md](Setup/UPCITEMDB_SETUP.md)** - UPCItemDB API configuration for barcode lookup
+
+## 👨‍💻 Developer Getting Started
+
+### Prerequisites
+
+- Docker or Podman installed (for containerized development)
+- Git
+
+### Quick Start with Development Containers
+
+New developers don't need to install .NET, Node.js, or MongoDB locally! The development environment runs entirely in containers with full hot-reload support.
 
 ```bash
 # Clone the repository
@@ -207,93 +257,57 @@ cd MediaSet
 
 # Access the applications:
 # Frontend: http://localhost:3000
-# API: http://localhost:5000 
+# API: http://localhost:5000
+# API Documentation: http://localhost:5000/swagger
 # MongoDB: mongodb://localhost:27017
 ```
 
-**For complete setup instructions, debugging, and troubleshooting, see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md).**
+### Development Commands
 
-### Running from Pre-built Docker Images
-
-MediaSet publishes production-ready Docker images to GitHub Container Registry. This is the easiest way to run MediaSet without building from source.
+The `./dev.sh` script provides convenient commands for managing the development environment:
 
 ```bash
-# Clone the repository (only needed for docker-compose.prod.yml)
-git clone https://github.com/paulmfischer/MediaSet.git
-cd MediaSet
+# Start all services
+./dev.sh start
 
-# Pull and run the latest images
-docker compose -f docker-compose.prod.yml up -d
+# Start specific services
+./dev.sh start api        # Start backend API only
+./dev.sh start frontend   # Start frontend UI only
 
-# Or with Podman
-podman-compose -f docker-compose.prod.yml up -d
+# Restart services
+./dev.sh restart api      # Restart backend API
+./dev.sh restart frontend # Restart frontend UI
 
-# Access the applications:
-# Frontend: http://localhost:3000
-# API: http://localhost:8080
-# MongoDB: mongodb://localhost:27017
+# Stop services
+./dev.sh stop             # Stop all services
+./dev.sh stop api         # Stop backend API
+./dev.sh stop frontend    # Stop frontend UI
+
+# View logs
+./dev.sh logs            # View all service logs
+./dev.sh logs api        # View API logs only
 ```
 
-**Available Images:**
-- `ghcr.io/paulmfischer/mediaset-api` - Backend API
-- `ghcr.io/paulmfischer/mediaset-ui` - Frontend UI
+### Running Tests
 
-**Available Tags:**
-- `latest` - Most recent stable release
-- `edge` - Latest build from main branch (bleeding edge)
-- `v0.x.y` - Specific version (e.g., `v0.1.0`)
-- `0.x`, `0` - Major/minor version pins
-- `sha-xxxxxxx` - Specific commit builds
-
-**Example with specific version:**
 ```bash
-# Edit docker-compose.prod.yml to specify version:
-# api:
-#   image: ghcr.io/paulmfischer/mediaset-api:v0.1.0
-# ui:
-#   image: ghcr.io/paulmfischer/mediaset-ui:v0.1.0
+# Backend tests
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
 
-docker compose -f docker-compose.prod.yml up -d
+# Frontend tests
+cd MediaSet.Remix && npm test
+
+# Frontend build
+cd MediaSet.Remix && npm run build
 ```
 
-**Configuration:**
-You can customize environment variables in `docker-compose.prod.yml`:
-- API configuration (MongoDB connection, TMDB/GiantBomb API keys, etc.)
-- UI configuration (API base URL)
-- MongoDB settings
+**For complete development setup, debugging, and troubleshooting, see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md).**
 
-### Traditional Local Development
-
-If you prefer to install dependencies locally:
-
-1. **Start MongoDB locally**
-   ```bash
-   # Using Docker
-   docker run -d -p 27017:27017 --name mongodb mongo:latest
-   ```
-
-2. **Start the Backend API**
-   ```bash
-   cd MediaSet.Api
-   dotnet run
-   # API available at http://localhost:5000
-   ```
-
-3. **Start the Frontend**
-   ```bash
-   cd MediaSet.Remix
-   npm install
-   npm run dev
-   # Frontend available at http://localhost:3000
-   ```
-
-## 📚 Documentation
+### Documentation
 
 - **[Development/DEVELOPMENT.md](Development/DEVELOPMENT.md)** - Complete development environment setup and debugging
+- **[Development/TESTING.md](Development/TESTING.md)** - Testing guidelines and strategies
 - **[Development/CACHING.md](Development/CACHING.md)** - Performance optimization and caching strategy
-- **[Setup/TMDB_SETUP.md](Setup/TMDB_SETUP.md)** - The Movie Database API configuration
-- **[Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
-- **[Setup/CONTAINER_SETUP.md](Setup/CONTAINER_SETUP.md)** - Container orchestration details
 
 ## 🔖 Versioning
 
@@ -303,14 +317,6 @@ MediaSet follows [Semantic Versioning](https://semver.org/) (SemVer):
 - **MAJOR** version for incompatible API changes
 - **MINOR** version for new functionality in a backwards compatible manner
 - **PATCH** version for backwards compatible bug fixes
-
-### Pre-1.0 Development
-
-We are currently in pre-1.0 development (v0.x.x), which means:
-- The API may change without notice
-- Features are being actively developed and refined
-- Breaking changes may occur in minor versions
-- Production use is not recommended until v1.0.0
 
 ### Version Information
 
@@ -360,10 +366,10 @@ docs: update README with versioning policy
 feat(api)!: change health endpoint response format
 ```
 
-## 🔖 Versioning
+## 🏗️ Tech Stack
 
 **Backend:**
-- .NET 9.0 Web API
+- .NET 10.0 Web API
 - MongoDB database
 - RESTful API design
 
@@ -376,18 +382,9 @@ feat(api)!: change health endpoint response format
 - OpenLibrary (books metadata)
 - The Movie Database (TMDB)
 - GiantBomb (games metadata)
+- MusicBrainz (music metadata)
 - UPCitemdb (barcode lookup)
 
 ## 📝 License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow the project's code style guidelines:
-- Backend: [code-style-api.md](.github/code-style-api.md)
-- Frontend: [code-style-ui.md](.github/code-style-ui.md)
-
-**Important:** Always create a feature branch - never commit directly to `main`. See [.github/copilot-instructions.md](.github/copilot-instructions.md) for complete workflow guidelines.
-
-
