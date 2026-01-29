@@ -39,6 +39,8 @@ services:
       - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app:Z
+      - mediaset-api-bin:/app/bin:Z
+      - mediaset-api-obj:/app/obj:Z
       - ./.git:/app/.git:Z
       - ./data/images:/app/data/images:Z
       - nuget_cache:/nuget:Z
@@ -75,6 +77,8 @@ services:
 volumes:
   nuget_cache:
   node_modules_cache:
+  mediaset-api-bin:
+  mediaset-api-obj:
 
 networks:
   mediaset-dev:
