@@ -1,225 +1,140 @@
-# Container Runtime Setup Guide
+# Running MediaSet (user guide)
 
-This guide helps you install and configure either Docker or Podman for MediaSet development.
+This guide explains how to run the MediaSet application using Docker Compose and the provided `docker-compose.prod.yml`. It is written for someone who wants to run the application locally (tester / end-user), not for development work.
 
-## Option 1: Docker (Recommended for most users)
+Prerequisites
+- Docker Engine (20.10+) or Podman with Docker-compatibility
+- Docker Compose v2 (the `docker compose` CLI) or `podman compose`
+- Sufficient disk space for images and MongoDB data
 
-### Windows
-1. Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/)
-2. Install and restart your computer
-3. Start Docker Desktop
-4. Verify installation: `docker --version && docker-compose --version`
+Overview
+- The production compose file `docker-compose.prod.yml` defines three services: `mediaset-api`, `mediaset-ui`, and `mongo`.
 
-### macOS
-1. Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/)
-2. Install the `.dmg` file
-3. Start Docker Desktop from Applications
-4. Verify installation: `docker --version && docker-compose --version`
+Configuration approach
 
-### Linux (Ubuntu/Debian)
-```bash
-# Install Docker
-sudo apt update
-sudo apt install docker.io docker-compose
+- Edit `docker-compose.prod.yml` directly: open the file and update the `environment:` entries under each service (for example `mediaset-api` and `mediaset-ui`). This is the recommended approach for end users — the compose file is self-contained and explicit.
 
-# Add your user to docker group (logout/login required)
-sudo usermod -aG docker $USER
+Integration placeholders and enabling
 
-# Start Docker service
-sudo systemctl start docker
-sudo systemctl enable docker
+By default integration settings (OpenLibrary, TMDB, GiantBomb, etc.) are commented out or disabled in `docker-compose.prod.yml`. To enable an integration:
 
-# Verify installation
-docker --version && docker-compose --version
-```
+1. Edit `docker-compose.prod.yml` and uncomment the integration block you want to enable (look for the commented `# OpenLibrary configuration`, `# TMDB configuration`, etc.). You need to uncomment every line of that integration if you plan to use it.
+2. Replace any `[ReplaceThis]` placeholders in the compose file with the real values required for that integration (for example an email for OpenLibrary, API keys or bearer tokens). You can also place these values in a `.env` file next to `docker-compose.prod.yml` instead of editing the compose file directly, if you prefer.
+3. Ensure `clientApiUrl` points to the API URL your browser will use (e.g., `http://localhost:8080`). This is the URL you would directly access the API from, not the docker URL.
 
-### Linux (RHEL/CentOS/Fedora)
-```bash
-# Install Docker
-sudo dnf install docker docker-compose
+Placeholders you must replace (examples)
 
-# Add your user to docker group (logout/login required)
-sudo usermod -aG docker $USER
+- `OpenLibraryConfiguration__ContactEmail` — replace `[ReplaceThis]` with your contact email for OpenLibrary.
+- `TmdbConfiguration__BearerToken` — replace `[ReplaceThis]` with your TMDB bearer token.
+- `GiantBombConfiguration__ApiKey` — replace `[ReplaceThis]` with your GiantBomb API key.
+- `clientApiUrl` — replace `[ReplaceThis]` with the API URL browsers should use (e.g., `http://localhost:8080`).
 
-# Start Docker service
-sudo systemctl start docker
-sudo systemctl enable docker
+Starting the application
 
-# Verify installation
-docker --version && docker-compose --version
-```
-
-## Option 2: Podman (Recommended for Linux rootless containers)
-
-### Linux (Ubuntu/Debian)
-```bash
-# Install Podman
-sudo apt update
-sudo apt install podman
-
-# Install podman-compose (using pipx for isolated environment)
-sudo apt install pipx
-pipx install podman-compose
-pipx ensurepath
-# Note: After pipx ensurepath, restart your shell or run: source ~/.bashrc
-
-# OR install docker-compose to use with Podman (alternative)
-sudo apt install docker-compose
-
-# Start Podman socket (for rootless usage)
-systemctl --user start podman.socket
-systemctl --user enable podman.socket
-
-# Verify installation
-podman --version
-```
-
-### Linux (RHEL/CentOS/Fedora)
-```bash
-# Install Podman (usually pre-installed on newer versions)
-sudo dnf install podman
-
-# Install podman-compose (using pipx for isolated environment)
-sudo dnf install pipx
-pipx install podman-compose
-pipx ensurepath
-# Note: After pipx ensurepath, restart your shell or run: source ~/.bashrc
-
-# OR install docker-compose to use with Podman (alternative)
-sudo dnf install docker-compose
-
-# Start Podman socket (for rootless usage)
-systemctl --user start podman.socket
-systemctl --user enable podman.socket
-
-# Verify installation
-podman --version
-```
-
-### macOS
-```bash
-# Install via Homebrew
-brew install podman
-
-# Install podman-compose
-pip3 install podman-compose
-
-# Initialize Podman machine (required on macOS)
-podman machine init
-podman machine start
-
-# Verify installation
-podman --version
-```
-
-### Windows
-```bash
-# Install via Chocolatey
-choco install podman-desktop
-
-# Or download from: https://podman.io/getting-started/installation#windows
-# Follow the installer instructions
-
-# Install podman-compose via pip
-pip install podman-compose
-
-# Verify installation
-podman --version
-```
-
-## Verification
-
-After installation, verify your setup:
+From the repository root (where `docker-compose.prod.yml` lives) run:
 
 ```bash
-# Clone MediaSet (if you haven't already)
-git clone https://github.com/paulmfischer/MediaSet.git
-cd MediaSet
+# Pull latest images (optional)
+docker compose -f docker-compose.prod.yml pull
 
-# Test the development script
-./dev.sh start
+# Start services in background
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-You should see output like:
-- `✅ Found Docker` or `✅ Found Podman`
-- `✅ Using docker-compose` or `✅ Using podman-compose`
+If you use Podman with compose, replace `docker compose` with `podman compose`.
 
-## Troubleshooting
-
-### Docker Issues
-
-**Permission Denied (Linux):**
-```bash
-# Make sure you're in the docker group
-groups $USER
-
-# If 'docker' is not listed, add yourself and logout/login
-sudo usermod -aG docker $USER
-```
-
-**Docker Desktop not starting (Windows/macOS):**
-- Restart Docker Desktop
-- Check if virtualization is enabled in BIOS
-- Try running as administrator
-
-### Podman Issues
-
-**Socket not starting:**
-```bash
-# Check socket status
-systemctl --user status podman.socket
-
-# Restart if needed
-systemctl --user restart podman.socket
-```
-
-**SELinux issues (RHEL/Fedora/CentOS):**
-```bash
-sudo setsebool -P container_manage_cgroup true
-```
-
-**Rootless issues:**
-```bash
-# Check if user namespaces are configured
-podman unshare cat /proc/self/uid_map
-
-# If empty, configure subuid/subgid
-echo "$USER:100000:65536" | sudo tee -a /etc/subuid
-echo "$USER:100000:65536" | sudo tee -a /etc/subgid
-```
-
-## Next Steps
-
-### Known issue: docker-credential-desktop on Linux
-
-On some Linux machines the file `~/.docker/config.json` may contain a `credsStore` or `credHelpers` entry pointing to `docker-credential-desktop` (this is common if you previously used Docker Desktop). On systems where `docker-credential-desktop` isn't installed you'll get an error like:
-
-```
-docker-credential-desktop not installed or available in PATH
-```
-
-Workarounds:
-
-- Recommended (handled by `dev.sh`): The project's `./dev.sh` script detects this situation and creates a temporary `DOCKER_CONFIG` without the credential helper for the duration of the script, avoiding the error.
-
-- Manual: Edit or remove the `credsStore` / `credHelpers` entries from `~/.docker/config.json`. For example, back up and then remove the keys:
+Confirm services are running
 
 ```bash
-cp ~/.docker/config.json ~/.docker/config.json.bak
-jq 'del(.credsStore, .credHelpers)' ~/.docker/config.json.bak > ~/.docker/config.json
+docker compose -f docker-compose.prod.yml ps
+
+# or view containers directly
+docker ps --filter "name=mediaset"
 ```
 
-If you don't have `jq`, you can replace the file with a minimal config:
+Access the application
+- Frontend (UI): http://localhost:3000
+- API: http://localhost:8080
+
+Logs and health checks
+
+Stream logs:
 
 ```bash
-mv ~/.docker/config.json ~/.docker/config.json.bak
-echo '{"auths":{}}' > ~/.docker/config.json
+docker compose -f docker-compose.prod.yml logs -f mediaset-ui
+docker compose -f docker-compose.prod.yml logs -f mediaset-api
 ```
 
-Be careful: editing `~/.docker/config.json` affects Docker CLI authentication state. Back up before changing it.
+Health endpoint (API):
 
-Once your container runtime is set up:
+```bash
+curl -sS http://localhost:8080/health
+```
 
-1. Run `./dev.sh start` to start the development environment
-2. Access the application at http://localhost:3000
-3. See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development workflow
+Updating to newer images
+
+```bash
+# Stop and remove containers (retain volumes)
+docker compose -f docker-compose.prod.yml down
+
+# Pull latest images
+docker compose -f docker-compose.prod.yml pull
+
+# Start again
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Stopping and removing everything (including volumes)
+
+```bash
+docker compose -f docker-compose.prod.yml down -v
+```
+
+Troubleshooting
+
+- Port conflicts: ensure ports `3000` (UI) and `8080` (API) are free on the host. Use `ss -ltn` or `lsof -i :3000` to check.
+- Failed to pull images: confirm network access and Docker Hub/GitHub Container Registry reachability.
+- Credential helper errors (Linux): if you see messages about `docker-credential-desktop`, edit `~/.docker/config.json` after backing it up and remove `credsStore`/`credHelpers`, or run Docker commands with a temporary `DOCKER_CONFIG`:
+
+```bash
+# create a temporary Docker config dir and start compose using it
+export DOCKER_CONFIG=$(mktemp -d)
+docker compose -f docker-compose.prod.yml up -d
+```
+
+- MongoDB data: data is persisted in the `mediaset-db` named volume. To reset data, stop containers and run `docker compose -f docker-compose.prod.yml down -v` (this removes volumes).
+- Healthcheck failures: inspect API logs (`docker compose -f docker-compose.prod.yml logs mediaset-api`) for stack traces or environment errors.
+
+Notes about configuration
+
+- `CLIENT_API_URL` must be set to an address your browser can reach for the API (e.g., `http://localhost:8080` when running locally).
+- Secrets and API keys (TMDB, GiantBomb, UPCitemdb) are optional; if unset, the associated lookup features will be disabled or limited.
+
+Useful commands summary
+
+```bash
+# Start
+docker compose -f docker-compose.prod.yml up -d
+
+# Tail logs
+docker compose -f docker-compose.prod.yml logs -f
+
+# Show running services
+docker compose -f docker-compose.prod.yml ps
+
+# Stop and remove (keep volumes)
+docker compose -f docker-compose.prod.yml down
+
+# Stop and remove including volumes (data reset)
+docker compose -f docker-compose.prod.yml down -v
+
+# Pull updates
+docker compose -f docker-compose.prod.yml pull
+```
+
+Where to get help
+
+- Check container logs (`docker compose -f docker-compose.prod.yml logs`) for errors.
+- Inspect service-specific logs with `docker logs <container-name>` (container names appear in `docker ps`).
+- Open an issue in the repository if a reproducible problem remains.
+
