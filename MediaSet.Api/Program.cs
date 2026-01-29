@@ -4,6 +4,7 @@ using MediaSet.Api.Clients;
 using MediaSet.Api.Entities;
 using MediaSet.Api.Extensions;
 using MediaSet.Api.Lookup;
+using MediaSet.Api.Config;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
@@ -254,6 +255,9 @@ if (openLibraryConfig.Exists() || tmdbConfig.Exists() || giantBombConfig.Exists(
 {
     app.MapLookup();
 }
+
+// Map integrations configuration endpoint
+app.MapIntegrations();
 
 app.Run();
 
