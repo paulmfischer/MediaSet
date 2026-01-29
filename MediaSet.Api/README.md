@@ -1,150 +1,139 @@
 # MediaSet.Api
 
-Backend API service for MediaSet, built with .NET 9.0 and MongoDB.
+Backend REST API service for MediaSet, built with .NET 10.0 and MongoDB.
 
 ## Overview
 
-This is the backend REST API that powers MediaSet's media library management system. It provides endpoints for managing books, movies, and games, along with metadata lookup integration for multiple external APIs.
+The MediaSet API provides endpoints for managing your personal media library (books, movies, games, and music), along with metadata lookup integration for multiple external APIs.
 
-## Technologies
-
-- **.NET 9.0 Web API**: Modern minimal APIs with typed results
+**Technologies:**
+- **.NET 10.0 Web API**: Modern minimal APIs with typed results
 - **MongoDB**: Document database for flexible media entity storage
-- **External API Integrations**:
-  - OpenLibrary (book metadata)
-  - The Movie Database (TMDB)
-  - GiantBomb (game metadata)
-  - UPCitemdb (barcode lookup)
+- **External API Integrations**: OpenLibrary, TMDB, GiantBomb, MusicBrainz, UPCitemdb
 
-## Development
+## Getting Started
 
 ### Prerequisites
 
-- .NET 9.0 SDK
-- MongoDB (or use Docker)
+- Docker or Podman (for containerized development)
+- Git
 
-### Running Locally
+### Development
 
-```bash
-# From the MediaSet.Api directory
-dotnet run
-
-# With hot-reload (watch mode)
-dotnet watch run
-
-# API will be available at http://localhost:5000
-```
-
-### Using Docker (Recommended)
-
-**From the project root:**
+**Start the API with hot-reload:**
 
 ```bash
-# Start API only
+# From the project root
 ./dev.sh start api
 
-# Start API with MongoDB
-./dev.sh start all
+# View logs
+./dev.sh logs api
+
+# Restart after config changes
+./dev.sh restart api
+
+# Stop the API
+./dev.sh stop api
 ```
 
-**From the MediaSet.Api directory:**
-
-```bash
-# Build the Docker image
-docker build -t mediaset-api .
-
-# Run the container
-docker run -it --rm -p 5000:8080 --name mediaset-api \
-  -e "MediaSetDatabase:ConnectionString=mongodb://host.docker.internal:27017" \
-  -e "MediaSetDatabase:DatabaseName=MediaSet" \
-  mediaset-api
-```
+The API will be available at:
+- http://localhost:5000
+- Swagger Documentation: http://localhost:5000/swagger
 
 ### Building
 
 ```bash
 # Build the project
-dotnet build
+dotnet build MediaSet.Api/MediaSet.Api.csproj
 
-# Publish for production
-dotnet publish -c Release
+# Run tests
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
 ```
 
 ## Configuration
 
-API configuration is managed through `appsettings.json` and `appsettings.Development.json`.
+Configuration is managed through `appsettings.json` files and environment variables (via `.env` file).
 
-Key settings:
-- **MongoDB Connection**: Database connection string and name
-- **TMDB**: Bearer token for movie metadata
-- **GiantBomb**: API key for game metadata
-- **Caching**: In-memory cache configuration
-- **Image Storage**: Local filesystem configuration for cover images
+### Local Development Configuration
 
-See the main project [README.md](../README.md) for detailed API key setup instructions.
-
-### Image Storage Configuration
-
-Images are stored locally on the filesystem. Configure storage settings in `appsettings.json`:
+For local development, create or modify `MediaSet.Api/appsettings.Development.json`:
 
 ```json
 {
-  "ImageConfiguration": {
-    "StoragePath": "/app/data/images",
-    "MaxFileSizeMb": 5,
-    "AllowedImageExtensions": "jpg,jpeg,png",
-    "HttpTimeoutSeconds": 30,
-    "StripExifData": true
+  "MediaSetDatabaseSettings": {
+    "ConnectionString": "mongodb://localhost:27017",
+    "DatabaseName": "MediaSet"
+  },
+  "TmdbConfiguration": {
+    "BearerToken": "your-tmdb-bearer-token"
+  },
+  "OpenLibraryConfiguration": {
+    "ContactEmail": "your-email@example.com"
   }
 }
 ```
 
-**Key Settings:**
-- **StoragePath**: Directory where image files are stored (can be relative or absolute)
-- **MaxFileSizeMb**: Maximum file size per image in megabytes
-- **AllowedImageExtensions**: Comma-separated list of allowed file extensions
-- **HttpTimeoutSeconds**: Timeout for downloading images from URLs (seconds)
-- **StripExifData**: Whether to remove EXIF metadata from uploaded images
+### Docker/Podman Configuration
+
+When running with Docker/Podman, configuration is provided through environment variables in `.env`. There is an example file (`.env.example`) in the root of the project that you can copy and remove `.example` from. This contains a set of configurations for running locally but will require some updates for integrations to fully work.
+
+```bash
+# Database
+MediaSetDatabaseSettings__ConnectionString=mongodb://mongo:27017
+MediaSetDatabaseSettings__DatabaseName=MediaSet
+
+# API Keys
+TmdbConfiguration__BearerToken=your-tmdb-bearer-token
+GiantBombConfiguration__ApiKey=your-giantbomb-api-key
+OpenLibraryConfiguration__ContactEmail=your-email@example.com
+```
+
+See [Setup](../Setup/) documentation for detailed integration configuration:
+- [TMDB_SETUP.md](../Setup/TMDB_SETUP.md) - Movie metadata
+- [GIANTBOMB_SETUP.md](../Setup/GIANTBOMB_SETUP.md) - Game metadata
+- [OPENLIBRARY_SETUP.md](../Setup/OPENLIBRARY_SETUP.md) - Book metadata
+- [MUSICBRAINZ_SETUP.md](../Setup/MUSICBRAINZ_SETUP.md) - Music metadata
+- [UPCITEMDB_SETUP.md](../Setup/UPCITEMDB_SETUP.md) - Barcode lookup
 
 ## Project Structure
 
 ```
 MediaSet.Api/
-├── Attributes/       # Custom attributes (Upload, etc.)
+├── Attributes/       # Custom attributes
 ├── Clients/          # External API clients
-├── Constraints/      # Route constraints and filters
+├── Constraints/      # Route constraints
 ├── Converters/       # JSON converters
 ├── Entities/         # Entity API endpoints
 ├── Helpers/          # Utility functions
 ├── Lookup/           # Metadata lookup services
 ├── Metadata/         # Metadata management
 ├── Models/           # Data models and entities
-├── Services/         # Core business logic services
+├── Services/         # Core business logic
 └── Stats/            # Statistics services
 ```
 
-## Entity Endpoints
+## API Endpoints
 
-### Standard CRUD Operations
+### Core Entity Operations
 
-All entity types (Books, Movies, Games, Music) provide the following endpoints:
+All entity types (Books, Movies, Games, Music) support:
 
-**List all entities:**
+**List all:**
 ```
 GET /api/{entityType}
 ```
 
-**Search entities:**
+**Search:**
 ```
 GET /api/{entityType}/search?searchText={query}&orderBy={field}
 ```
 
-**Get entity by ID:**
+**Get by ID:**
 ```
 GET /api/{entityType}/{id}
 ```
 
-**Create entity with optional image:**
+**Create:**
 ```
 POST /api/{entityType}
 Content-Type: multipart/form-data
@@ -155,7 +144,7 @@ Form fields:
 - imageUrl: Optional URL to download image from
 ```
 
-**Update entity with optional image:**
+**Update:**
 ```
 PUT /api/{entityType}/{id}
 Content-Type: multipart/form-data
@@ -166,150 +155,35 @@ Form fields:
 - imageUrl: Optional URL to download image from
 ```
 
-**Delete entity:**
+**Delete:**
 ```
 DELETE /api/{entityType}/{id}
 ```
-*Note: Deleting an entity automatically deletes its associated image file.*
 
-## Image Endpoints
+### Additional Endpoints
 
-### Retrieve Cover Image
-
+**Retrieve cover image:**
 ```
 GET /static/images/{filePath}
 ```
 
-To retrieve an image, use the `filePath` property from the entity's `coverImage` object.
 
-**Response:**
-- `200 OK`: Image file with appropriate Content-Type header (image/jpeg or image/png)
-- `404 Not Found`: Image not found
-
-**Features:**
-- HTTP caching headers included for browser caching (7-day cache)
-- Efficient static file serving
-- Compressed responses for bandwidth optimization
-
-**Example:**
-
-First, get an entity to retrieve the image path:
-```bash
-curl http://localhost:5000/api/books/507f1f77bcf86cd799439011
+**Health check:**
+```
+GET /health
 ```
 
-Response includes:
-```json
-{
-  "id": "507f1f77bcf86cd799439011",
-  "title": "My Book",
-  "coverImage": {
-    "fileName": "cover.jpg",
-    "filePath": "books/507f1f77bcf86cd799439011-a1b2c3d4.jpg",
-    "fileSize": 102400,
-    "mimeType": "image/jpeg"
-  }
-}
+**Statistics:**
+```
+GET /api/stats
 ```
 
-Then retrieve the image using the `filePath`:
-```bash
-curl http://localhost:5000/static/images/books/507f1f77bcf86cd799439011-a1b2c3d4.jpg
-```
+### Swagger Documentation
 
-### Delete Cover Image
+Full API documentation is available at http://localhost:5000/swagger when running in development mode.
 
-```
-DELETE /api/{entityType}/{entityId}/image
-```
+## Development Resources
 
-**Response:**
-- `204 No Content`: Image successfully deleted
-- `404 Not Found`: Entity or image not found
-
-**Effect:**
-- Removes the image file from filesystem
-- Removes the image reference from the entity
-- Entity remains intact without image
-
-**Note:** This endpoint removes the cover image from an entity but keeps the entity itself. To delete both the entity and its image, use the entity delete endpoint.
-
-**Example:**
-```bash
-curl -X DELETE http://localhost:5000/api/books/507f1f77bcf86cd799439011/image
-```
-
-## Image Upload Features
-
-### File Upload
-
-When creating or updating an entity, include an image file in the `coverImage` multipart field:
-
-```bash
-curl -X POST http://localhost:5000/api/books \
-  -F "entity={\"title\":\"My Book\"}" \
-  -F "coverImage=@/path/to/image.jpg"
-```
-
-**Validation:**
-- File type: JPEG or PNG only
-- File size: Maximum 5MB (configurable)
-- Format: Binary image file
-
-### Image URL Download
-
-When creating or updating an entity, provide an `imageUrl` field:
-
-```bash
-curl -X POST http://localhost:5000/api/books \
-  -F "entity={\"title\":\"My Book\",\"imageUrl\":\"https://example.com/cover.jpg\"}"
-```
-
-**Behavior:**
-- Backend downloads the image from the URL
-- Image is validated (format, size)
-- Image is saved to filesystem
-- Image reference is embedded in entity
-
-**Error Handling:**
-- Returns 400 Bad Request if URL is invalid or unreachable
-- Returns 400 Bad Request if image format is not supported
-- Returns 400 Bad Request if image exceeds size limit
-
-### File Upload Takes Precedence
-
-If both `coverImage` file and `imageUrl` are provided:
-- File upload is processed
-- URL field is ignored/cleared
-- File takes precedence
-
-## Project Structure
-
-## Testing
-
-Run unit tests:
-
-```bash
-# From project root
-dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
-
-# From MediaSet.Api directory
-cd ../MediaSet.Api.Tests
-dotnet test
-```
-
-## API Documentation
-
-When running in development mode, Swagger UI is available at:
-- http://localhost:5000/swagger
-
-## Code Style
-
-Follow the backend code style guidelines in [.github/code-style-api.md](../.github/code-style-api.md).
-
-Key conventions:
-- File-scoped namespaces
-- Minimal APIs with route groups
-- Async/await for all async operations
-- Structured logging
-- Constructor injection
+- **[Development/DEVELOPMENT.md](../Development/DEVELOPMENT.md)** - Complete development setup and debugging
+- **[Development/TESTING.md](../Development/TESTING.md)** - Testing guidelines
+- **[MediaSet.Api.Tests/README.md](../MediaSet.Api.Tests/README.md)** - API testing documentation
