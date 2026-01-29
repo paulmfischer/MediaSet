@@ -1,11 +1,11 @@
 import type { Integration } from "~/integrations-data";
 
 type Props = {
-  integrations: Integration[];
+  integrations?: Integration[];
 };
 
-export default function AttributionBadges({ integrations }: Props) {
-  const enabled = integrations.filter((i) => i.enabled && i.logoPath);
+export default function AttributionBadges({ integrations = [] }: Props) {
+  const enabled = integrations.filter((i) => i && i.enabled && i.logoPath);
   if (!enabled.length) return null;
 
   return (

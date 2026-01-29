@@ -11,10 +11,12 @@ export type Integration = {
 };
 
 export async function getIntegrations(): Promise<Integration[]> {
-  const response = await apiFetch(`${baseUrl}/config/integrations`);
-  if (!response.ok) {
-    throw new Response("Error fetching integrations", { status: 500 });
+  try {
+    const response = await apiFetch(`${baseUrl}/config/integrations`);
+    if (!response.ok) return [];
+    const data = (await response.json()) as Integration[];
+    return data;
+  } catch (err) {
+    return [];
   }
-  const data = (await response.json()) as Integration[];
-  return data;
 }
