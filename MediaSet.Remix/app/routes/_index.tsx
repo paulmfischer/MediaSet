@@ -1,6 +1,8 @@
 import { json, type MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { getStats } from "~/stats-data";
+import { getIntegrations } from "~/integrations-data";
+import AttributionBadges from "~/components/AttributionBadges";
 import {
   LibraryBig,
   Clapperboard,
@@ -24,12 +26,12 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const stats = await getStats();
-  return json({ stats });
+  const [stats, integrations] = await Promise.all([getStats(), getIntegrations()]);
+  return json({ stats, integrations });
 };
 
 export default function Index() {
-  const { stats } = useLoaderData<typeof loader>();
+  const { stats, integrations } = useLoaderData<typeof loader>();
   
   const totalItems =
     stats.bookStats.total +
@@ -303,6 +305,7 @@ export default function Index() {
           )}
         </>
       )}
+      <AttributionBadges integrations={integrations} />
     </div>
   );
 }

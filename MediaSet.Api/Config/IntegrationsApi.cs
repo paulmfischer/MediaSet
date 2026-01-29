@@ -14,55 +14,34 @@ internal static class IntegrationsApi
 
         group.MapGet("/", (IConfiguration configuration) =>
         {
-            // Determine enabled integrations by checking config sections
-            bool tmdb = configuration.GetSection("TmdbConfiguration").Exists();
-            bool openLibrary = configuration.GetSection("OpenLibraryConfiguration").Exists();
-            bool upcItemDb = configuration.GetSection("UpcItemDbConfiguration").Exists();
-            bool giantBomb = configuration.GetSection("GiantBombConfiguration").Exists();
-            bool musicBrainz = configuration.GetSection("MusicBrainzConfiguration").Exists();
+            // Build integration attribution entries from configuration so values can be changed at runtime
+            var tmdbSection = configuration.GetSection("TmdbConfiguration");
+            var openLibrarySection = configuration.GetSection("OpenLibraryConfiguration");
+            var upcItemDbSection = configuration.GetSection("UpcItemDbConfiguration");
+            var giantBombSection = configuration.GetSection("GiantBombConfiguration");
+            var musicBrainzSection = configuration.GetSection("MusicBrainzConfiguration");
+
+            IntegrationAttributionDto Build(string key, string displayName, IConfigurationSection section, string defaultLogo)
+            {
+                var enabled = section.Exists();
+                return new IntegrationAttributionDto
+                {
+                    Key = key,
+                    DisplayName = displayName,
+                    Enabled = enabled,
+                    AttributionUrl = enabled ? section.GetValue<string>("AttributionUrl") : null,
+                    AttributionText = enabled ? section.GetValue<string>("AttributionText") : null,
+                    LogoPath = enabled ? section.GetValue<string>("LogoPath") ?? defaultLogo : null
+                };
+            }
 
             var result = new[]
             {
-                new IntegrationAttributionDto
-                {
-                    Key = "tmdb",
-                    DisplayName = "TMDB",
-                    Enabled = tmdb,
-                    AttributionUrl = "https://www.themoviedb.org/",
-                    LogoPath = "/integrations/tmdb.svg"
-                },
-                new IntegrationAttributionDto
-                {
-                    Key = "openlibrary",
-                    DisplayName = "OpenLibrary",
-                    Enabled = openLibrary,
-                    AttributionUrl = "https://openlibrary.org/",
-                    LogoPath = "/integrations/openlibrary.svg"
-                },
-                new IntegrationAttributionDto
-                {
-                    Key = "upcitemdb",
-                    DisplayName = "UPCitemdb",
-                    Enabled = upcItemDb,
-                    AttributionUrl = "https://upcitemdb.com/",
-                    LogoPath = "/integrations/upcitemdb.svg"
-                },
-                new IntegrationAttributionDto
-                {
-                    Key = "giantbomb",
-                    DisplayName = "GiantBomb",
-                    Enabled = giantBomb,
-                    AttributionUrl = "https://www.giantbomb.com/",
-                    LogoPath = "/integrations/giantbomb.svg"
-                },
-                new IntegrationAttributionDto
-                {
-                    Key = "musicbrainz",
-                    DisplayName = "MusicBrainz",
-                    Enabled = musicBrainz,
-                    AttributionUrl = "https://musicbrainz.org/",
-                    LogoPath = "/integrations/musicbrainz.svg"
-                }
+                Build("tmdb", "TMDB", tmdbSection, "/integrations/tmdb.svg"),
+                Build("openlibrary", "OpenLibrary", openLibrarySection, "/integrations/openlibrary.svg"),
+                Build("upcitemdb", "UPCitemdb", upcItemDbSection, "/integrations/upcitemdb.png"),
+                Build("giantbomb", "GiantBomb", giantBombSection, "/integrations/giantbomb.svg"),
+                Build("musicbrainz", "MusicBrainz", musicBrainzSection, "/integrations/musicbrainz.svg")
             };
 
             return Results.Ok(result);
