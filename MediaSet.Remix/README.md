@@ -4,124 +4,114 @@ Frontend UI for MediaSet, built with Remix.js and TypeScript.
 
 ## Overview
 
-This is the frontend application for MediaSet's media library management system. Built with Remix.js, it provides a modern, responsive interface for managing your books, movies, and games collection.
+The MediaSet frontend provides a modern, responsive interface for managing your personal media library. Built with Remix.js, it offers server-side rendering, optimistic UI updates, and seamless integration with the MediaSet API.
 
-## Technologies
-
+**Technologies:**
 - **Remix.js**: Full-stack React framework with server-side rendering
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first CSS framework
 - **Vite**: Fast build tool and dev server
 
-## Development
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+
-- npm or yarn
+- Docker or Podman (for containerized development)
+- Git
 
-### Running Locally
+### Development
 
-```bash
-# From the MediaSet.Remix directory
-
-# Install dependencies
-npm install
-
-# Start the dev server (with hot-reload)
-npm run dev
-
-# Frontend will be available at http://localhost:3000
-```
-
-### Using Docker (Recommended)
-
-**From the project root:**
+**Start the frontend with hot-reload:**
 
 ```bash
-# Start frontend only
+# From the project root
 ./dev.sh start frontend
 
-# Start everything (API + Frontend + MongoDB)
-./dev.sh start all
+# View logs
+./dev.sh logs frontend
+
+# Restart after config changes
+./dev.sh restart frontend
+
+# Stop the frontend
+./dev.sh stop frontend
 ```
 
-**Manual Docker commands (from MediaSet.Remix directory):**
+The frontend will be available at http://localhost:3000
+
+### Running Tests
 
 ```bash
-# Build the Docker image
-docker build -t mediaset-remix .
+# From MediaSet.Remix directory
+cd MediaSet.Remix
 
-# Run the container
-docker run -it --rm -p 3000:3000 --name mediaset-remix \
-  -e "API_URL=http://localhost:5000" \
-  mediaset-remix
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run with coverage
+npm test -- --coverage
 ```
 
-## Building
-
-### Development Build
-
-```bash
-npm run build
-```
-
-### Production Deployment
-
-```bash
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-The build outputs are:
-- `build/server` - Server-side code
-- `build/client` - Client-side assets
-
-## Available Scripts
-
-- `npm run dev` - Start development server with hot-reload
-- `npm run build` - Build for production
-- `npm start` - Run production server
-- `npm run typecheck` - Run TypeScript type checking
-- `npm run lint` - Run ESLint
-- `npm test` - Run tests with Vitest
+For comprehensive testing documentation, see [Development/TESTING.md](../Development/TESTING.md).
 
 ## Project Structure
 
 ```
 MediaSet.Remix/
 ├── app/
-│   ├── routes/           # Remix route components
-│   │   ├── _index.tsx    # Home page
-│   │   ├── books.tsx     # Books routes
-│   │   ├── movies.tsx    # Movies routes
-│   │   └── games.tsx     # Games routes
 │   ├── components/       # Reusable UI components
+│   ├── hooks/            # Shared React hooks
+│   ├── routes/           # Remix route modules
+│   │   ├── _index.tsx           # Home dashboard
+│   │   ├── _index.test.tsx      # Home route tests
+│   │   ├── config.json.ts       # Runtime UI configuration
+│   │   ├── $entity/             # Entity list routes
+│   │   ├── $entity._index/      # Entity list route module
+│   │   ├── $entity.add/         # Add entity route module
+│   │   ├── $entity.$entityId/   # Entity detail route module
+│   │   ├── $entity.$entityId_.edit/   # Edit entity route module
+│   │   └── $entity.$entityId_.delete/ # Delete entity route module
+│   ├── test/             # Testing utilities and fixtures
+│   ├── utils/            # Shared utilities
+│   ├── config.server.ts  # Server-side configuration
+│   ├── constants.server.ts # Server-side constants
+│   ├── entity-data.ts    # Entity API data access
+│   ├── helpers.ts        # Shared helper functions
+│   ├── integrations-data.ts # Integrations data access
+│   ├── lookup-data.server.ts # Lookup helpers (server)
+│   ├── metadata-data.ts  # Metadata API data access
 │   ├── models.ts         # TypeScript interfaces
-│   ├── entity-data.ts    # Data fetching functions
-│   ├── root.tsx          # Root component
-│   └── entry.*.tsx       # Entry points
+│   ├── root.tsx          # Root layout component
+│   ├── stats-data.ts     # Stats API data access
+│   └── tailwind.css      # Tailwind base styles
 ├── public/               # Static assets
 └── build/                # Build output (generated)
 ```
 
 ## Routing
 
-Remix uses file-based routing. Key routes:
+Remix uses file-based routing for automatic route generation:
 
-- `/` - Home dashboard
-- `/books` - Books collection
-- `/books/$id` - Book detail
-- `/books/$id/edit` - Edit book
-- `/movies` - Movies collection
-- `/games` - Games collection
+**Key routes:**
+- `/` - Home dashboard with statistics
+- `/{entityType}` - Entity list view (books, movies, games, music)
+- `/{entityType}/$id` - Entity detail view
+- `/{entityType}/$id/edit` - Edit entity
+- `/{entityType}/add` - Add new entity
 
-## Data Loading
+**Route features:**
+- Server-side data loading with loaders
+- Form handling with actions
+- Optimistic UI updates
+- Progressive enhancement
+## Key Features
 
-Use Remix loaders for server-side data fetching:
+### Data Loading
+
+Server-side data fetching with Remix loaders:
 
 ```typescript
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -130,9 +120,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 ```
 
-## Forms and Mutations
+### Form Handling
 
-Use Remix actions for form submissions:
+Form submissions with Remix actions:
 
 ```typescript
 export async function action({ request }: ActionFunctionArgs) {
@@ -142,170 +132,34 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 ```
 
-## Styling
+### Styling with Tailwind CSS
 
-This project uses **Tailwind CSS** for styling:
+Utility-first CSS approach:
 
-- Utility-first approach
-- Responsive design built-in
-- Custom configuration in `tailwind.config.ts`
-- PostCSS setup in `postcss.config.js`
-
-Example:
 ```tsx
 <div className="container mx-auto px-4 py-8">
   <h1 className="text-3xl font-bold text-gray-900">Books</h1>
 </div>
 ```
 
-## Cover Images
+### TypeScript Type Safety
 
-MediaSet provides full support for managing cover images for all media items:
-
-### Uploading Images
-
-When adding or editing media items, you can upload cover images in three ways:
-
-1. **Upload Image File**
-   - Click the image upload section in the add/edit form
-   - Drag and drop an image file or click to browse
-   - Supported formats: JPEG, PNG
-   - Maximum size: 5MB
-   - Preview is shown before submission
-
-2. **Provide Image URL**
-   - Enter a URL to a cover image in the `imageUrl` field
-   - The backend automatically downloads and saves the image
-   - No need to download the image locally first
-
-3. **Use Lookup Result Images**
-   - When barcode lookups return image URLs, they're displayed in the form
-   - Click to use the image from the lookup result
-   - Image is automatically downloaded and saved when you submit the form
-
-### Displaying Images
-
-- Entity detail pages display cover images prominently
-- List/grid views show thumbnail images for quick browsing
-- Fallback placeholder image shown if no image is available
-- All images have descriptive alt text for accessibility
-
-### Managing Images
-
-- **Replace Image**: In the edit form, upload a new image to replace the existing one
-- **Remove Image**: Click the clear button to remove the image from an item
-- **View Full Size**: Click an image to view it at full resolution
-
-### Image Validation
-
-The frontend validates images before upload:
-- File type validation (JPEG, PNG only)
-- File size validation (5MB limit)
-- Error messages display inline for easy troubleshooting
-
-## API Integration
-
-The frontend communicates with the MediaSet.Api backend:
-
-```typescript
-// In app/entity-data.ts
-const API_BASE_URL = process.env.API_URL || 'http://localhost:5000';
-
-export async function getBooks() {
-  const response = await fetch(`${API_BASE_URL}/books`);
-  return response.json();
-}
-```
-
-## Type Safety
-
-TypeScript interfaces are defined in `app/models.ts`:
+All data models are typed for safety and IntelliSense:
 
 ```typescript
 export interface Book {
   id: string;
   title: string;
   authors: string[];
-  // ... other properties
+  isbn?: string;
+  coverImage?: CoverImage;
 }
 ```
 
-## Testing
+## Development Resources
 
-The MediaSet.Remix frontend includes comprehensive test coverage using Vitest and React Testing Library. For detailed testing guidance, patterns, and best practices, see the [Testing Guide](../Development/TESTING.md).
-
-### Running Tests
-
-```bash
-# Run tests once
-npm test
-
-# Run tests in watch mode (recommended for development)
-npm test -- --watch
-
-# Run tests with coverage report
-npm test -- --coverage
-
-# Run specific test file
-npm test -- app/helpers.test.ts
-
-# Run tests matching a pattern
-npm test -- --grep "toTitleCase"
-```
-
-### Test Coverage
-
-- Generate coverage reports locally: `npm test -- --coverage`
-- View detailed HTML report: `open coverage/index.html`
-- Target coverage: 80%+ for statements, branches, functions, and lines
-
-### Testing Stack
-
-- **Vitest**: Fast unit test runner with Vite integration
-- **React Testing Library**: Component testing focusing on user interactions
-- **Happy DOM**: Lightweight DOM implementation for testing
-- **@testing-library/user-event**: User-centric testing utilities
-
-### Test Organization
-
-Tests are located alongside source code:
-- `app/helpers.test.ts` - Utility function tests
-- `app/entity-data.test.ts` - Data fetching tests
-- `app/test/` - Shared testing utilities, fixtures, and mocks
-
-For comprehensive testing documentation, see [Development/TESTING.md](../Development/TESTING.md).
-
-## Code Style
-
-Follow the frontend code style guidelines in [../.github/code-style-ui.md](../.github/code-style-ui.md).
-
-Key conventions:
-- PascalCase for components
-- camelCase for functions and variables
-- TypeScript for all code
-- Functional components with hooks
-- Tailwind CSS for styling
-
-## Environment Variables
-
-Create a `.env` file in the MediaSet.Remix directory:
-
-```env
-API_URL=http://localhost:5000
-```
-
-## Deployment
-
-For deployment options, see the [Remix deployment documentation](https://remix.run/docs/en/main/guides/deployment).
-
-Popular options:
-- Vercel
-- Netlify
-- Fly.io
-- Docker container (production-ready Dockerfile included)
-
-## Resources
-
+- **[Development/DEVELOPMENT.md](../Development/DEVELOPMENT.md)** - Complete development setup and debugging
+- **[Development/TESTING.md](../Development/TESTING.md)** - Testing guidelines and patterns
 - [Remix Documentation](https://remix.run/docs)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Vite Documentation](https://vitejs.dev/guide/)
