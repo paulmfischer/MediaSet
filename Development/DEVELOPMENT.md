@@ -172,29 +172,7 @@ Access MongoDB directly:
 - `apiUrl=http://api:5000`
 - `REMIX_DEV_HTTP_ORIGIN=http://localhost:3000`
 
-## Adding New Dependencies
 
-### .NET Packages
-```bash
-# Enter the API container
-./dev.sh shell api
-
-# Add packages as normal
-dotnet add package PackageName
-
-# The changes will persist in your local files
-```
-
-### NPM Packages
-```bash
-# Enter the frontend container
-./dev.sh shell frontend
-
-# Add packages as normal
-npm install package-name
-
-# The changes will persist in your local files
-```
 
 ## Troubleshooting
 
@@ -407,32 +385,6 @@ curl -X POST http://localhost:5000/api/books \
   -F "imageUrl=https://example.com/cover.jpg"
 ```
 
-**Retrieve a stored image:**
-
-```bash
-curl http://localhost:5000/api/images/books/{bookId}
-```
-
-**Delete an image:**
-
-```bash
-curl -X DELETE http://localhost:5000/api/books/{bookId}/image
-```
-
-## Performance Tips
-
-1. **Use .dockerignore files** to exclude unnecessary files
-2. **Keep node_modules in containers** using volumes (already configured)
-3. **Use Docker Desktop's WSL2 backend** on Windows for better performance
-
-## Production Deployment
-
-This setup is for development only. For production:
-
-1. Use the existing `Dockerfile` files (not `Dockerfile.dev`)
-2. Use the production `docker-compose-api.yml` and `docker-compose-app.yml` files
-3. Set appropriate environment variables for production
-
 ## Contributing
 
 When contributing:
@@ -449,4 +401,4 @@ If you encounter issues:
 1. Check the logs: `./dev.sh logs`
 2. Verify all containers are running: `./dev.sh status`
 3. Try cleaning and restarting: `./dev.sh clean && ./dev.sh start`
-4. Check Docker Desktop for resource usage
+

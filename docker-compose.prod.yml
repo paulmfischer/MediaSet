@@ -46,28 +46,28 @@ services:
       ImageConfiguration__HttpTimeoutSeconds: "30"
       
       # OpenLibrary configuration (for book lookup)
-      OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
-      OpenLibraryConfiguration__Timeout: "30"
-      OpenLibraryConfiguration__ContactEmail: "${OPENLIBRARY_CONTACT_EMAIL:-me@example.com}"
+      # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
+      # OpenLibraryConfiguration__Timeout: "30"
+      # OpenLibraryConfiguration__ContactEmail: "[ReplaceThis]"
       
       # TMDB configuration (for movie lookup)
-      TmdbConfiguration__BaseUrl: "https://api.themoviedb.org/3/"
-      TmdbConfiguration__BearerToken: "${TMDB_BEARER_TOKEN}"
-      TmdbConfiguration__Timeout: "10"
+      # TmdbConfiguration__BaseUrl: "https://api.themoviedb.org/3/"
+      # TmdbConfiguration__BearerToken: "[ReplaceThis]"
+      # TmdbConfiguration__Timeout: "10"
       
       # UpcItemDb configuration (for barcode lookup)
-      UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/"
-      UpcItemDbConfiguration__Timeout: "10"
+      # UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/"
+      # UpcItemDbConfiguration__Timeout: "10"
       
       # GiantBomb configuration (for game lookup)
-      GiantBombConfiguration__BaseUrl: "https://www.giantbomb.com/api/"
-      GiantBombConfiguration__ApiKey: "${GIANTBOMB_API_KEY}"
-      GiantBombConfiguration__Timeout: "10"
+      # GiantBombConfiguration__BaseUrl: "https://www.giantbomb.com/api/"
+      # GiantBombConfiguration__ApiKey: "[ReplaceThis]"
+      # GiantBombConfiguration__Timeout: "10"
       
       # MusicBrainz configuration (for music lookup)
-      MusicBrainzConfiguration__BaseUrl: "https://musicbrainz.org/"
-      MusicBrainzConfiguration__Timeout: "10"
-      MusicBrainzConfiguration__UserAgent: "${MUSICBRAINZ_USER_AGENT:-MediaSet/1.0 (https://github.com/paulmfischer/MediaSet)}"
+      # MusicBrainzConfiguration__BaseUrl: "https://musicbrainz.org/"
+      # MusicBrainzConfiguration__Timeout: "10"
+      # MusicBrainzConfiguration__UserAgent: "${MUSICBRAINZ_USER_AGENT:-MediaSet/1.0 (https://github.com/paulmfischer/MediaSet)}"
     
     volumes:
       # Persist uploaded images
@@ -98,7 +98,7 @@ services:
       
       # Client-side API URL - for browser to access API (must be externally accessible)
       # In production, this should be the public URL of your API
-      clientApiUrl: "${CLIENT_API_URL:-http://localhost:8080}"
+      clientApiUrl: "[ReplaceThis]"
       
       # Node environment
       NODE_ENV: "production"

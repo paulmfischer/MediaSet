@@ -1,52 +1,61 @@
-# Setting Up TMDB API Token
+# TMDB integration — end-user how-to
 
-The TMDB (The Movie Database) API bearer token is required for movie barcode lookup functionality. This guide covers setup for both containerized (Docker/Podman) and local development environments.
+This document explains how to obtain a TMDB bearer token and enable TMDB-based movie lookups in MediaSet. It also explains the additional UPCitemdb requirement for barcode-based movie lookup.
 
-## Setup Instructions
+1) Obtain a TMDB bearer token
 
-### 1. Get Your TMDB Bearer Token
+    - Create an account at https://www.themoviedb.org and sign in.
+    - Go to Settings → API (https://www.themoviedb.org/settings/api).
+    - Request access and copy your "API Read Access Token" (v4, Bearer). Keep this value secret.
 
-1. **Create an account** at [themoviedb.org](https://www.themoviedb.org/signup)
-2. **Navigate to Settings → API** (https://www.themoviedb.org/settings/api)
-3. **Request an API key** (choose the "Developer" option, not "Website")
-4. **Copy your "API Read Access Token"** - this is the bearer token you need
+2) Configure MediaSet (recommended: edit `docker-compose.prod.yml`)
 
-### 2. Configure for Development
+    - Open `docker-compose.prod.yml` and locate the `mediaset-api` service environment section.
+    - Find the commented TMDB entries and uncomment them
+    - Replace the placeholder value for `TmdbConfiguration__BearerToken` with your token
+      - Optionally you can set the `TMDB_BEARER_TOKEN` environment variable in your deployment tooling or `.env` file. Example lines in `docker-compose.prod.yml`:
 
-**For Containerized Development (Docker/Podman):**
+    ```bash
+    # TMDB configuration (for movie lookup)
+    # TmdbConfiguration__BaseUrl: "https://api.themoviedb.org/3/"
+    # TmdbConfiguration__BearerToken: "[ReplaceThis]"    <-- replace with your bearer token
+    # TmdbConfiguration__Timeout: "10"
+    ```
 
-1. **Create a `.env` file in the project root:**
-   ```bash
-   cp .env.example .env
-   ```
+    - After updating `docker-compose.prod.yml` (or your `.env`), restart the stack:
 
-2. **Edit the `.env` file and set your tokens:**
-   ```bash
-   TMDB_BEARER_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...your_actual_token_here
-   UPCITEMDB_API_KEY=your_api_key_here  # Optional - for better rate limits
-   ```
+    ```bash
+    docker compose -f docker-compose.prod.yml up -d --build
+    ```
 
-3. **Restart the development environment:**
-   ```bash
-   ./dev.sh restart
-   ```
+3) (Optional) Enable barcode-based movie lookup (UPCitemdb)
 
-> ⚠️ **IMPORTANT**: The `.env` file is git-ignored and should never be committed to source control!
+    - TMDB provides movie metadata but MediaSet relies on a barcode database to map UPCs to titles. To able lookup by barcode you must also enable UPCitemdb in the compose file:
 
-## Verification
+    - In `docker-compose.prod.yml` uncomment or add the UpcItemDb configuration:
 
-After setting up, you should see successful TMDB API calls in the logs when looking up a movie barcode:
+    ```bash
+    # UpcItemDb configuration (for barcode lookup)
+    # UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/" <-- uncomment
+    # UpcItemDbConfiguration__Timeout: "10" <-- uncomment
+    ```
+    - You can also provide a UPCItemDb API key if you get one by adding the following to the same section:
 
-```
-info: MediaSet.Api.Services.MovieLookupStrategy[0]
-      Looking up movie with Upc: 013023153899
-info: MediaSet.Api.Clients.TmdbClient[0]
-      Searching TMDB for movie: Akira
-info: MediaSet.Api.Clients.TmdbClient[0]
-      TMDB search found 1 results for movie: Akira
-```
+    ```bash
+    # UPCITEMDB_API_KEY: "[ReplaceThis]"    <-- replace with your UpcItemDb API key (optional but recommended)
+    ```
 
-If you see errors about authentication or the bearer token being null, double-check:
-1. The `.env` file exists in the project root
-2. The `TMDB_BEARER_TOKEN` is set correctly
-3. The Docker containers have been restarted after creating/updating `.env`
+    - Adding the API key is optional, it will just help with rate limiting but is not required for barcode lookup to work.
+
+    - If you use the project `.env` approach, set the following in the file (UPCITEMDB_API_KEY again is optional):
+
+    ```bash
+    UPCITEMDB_API_KEY=your_upcitemdb_api_key_here
+    ```
+
+4) Verification for barcode lookup
+
+    - After starting MediaSet, perform a movie lookup by barcode from the Add/Edit screen.
+      - The API logs should show results from TMDB when the movie lookup strategy is used.
+      - The Add/Edit form will also be populated with metadata if it finds a movie by that barcode.
+    - If lookups fail with authentication errors, double-check that the TMDB Bearer Token is present in the environment accessible to the `mediaset-api` container and that the Token is valid.
