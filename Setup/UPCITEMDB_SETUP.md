@@ -2,7 +2,11 @@
 
 This document explains how to enable UPCItemDb configuration to allow for UPC lookups. This is needed if you want to lookup Books/Games/Movies by barcode. These entities will first call out to UPCItemDb and get the Title from UPCItemDb and then make a call to their respective metadata service for more information.  This will only explain the configuration to enable for UPCItemDb. To enable Book/Game/Movie integrations, see their respective setup documents.
 
-Book Metadata
+[Book OpenLibrary Setup](OPENLIBRARY_SETUP.md)
+
+[Game GiantBomb Setup](GIANTBOMB_SETUP.md)
+
+[Movie TMDB Setup](TMDB_SETUP.md)
 
 1) Configure MediaSet (recommended: edit `docker-compose.prod.yml`)
 
