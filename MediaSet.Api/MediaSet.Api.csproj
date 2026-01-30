@@ -9,7 +9,7 @@
         <NoWarn>AD0001,NU1902</NoWarn>
         <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
         <MinVerTagPrefix>v</MinVerTagPrefix>
-        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+          <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
     <ItemGroup>

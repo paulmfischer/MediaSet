@@ -387,4 +387,4 @@ feat(api)!: change health endpoint response format
 
 ## 📝 License
 
-This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details. Note: this is a breaking change and will require a MAJOR version bump to v3.
