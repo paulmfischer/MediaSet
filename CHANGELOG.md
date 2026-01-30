@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.5.0](https://github.com/paulmfischer/MediaSet/compare/v2.4.0...v2.5.0) (2026-01-30)
+
+
+### Features
+
+* **api:** add distributed tracing with SerilogTracing activity spans ([#449](https://github.com/paulmfischer/MediaSet/issues/449)) ([4002c6e](https://github.com/paulmfischer/MediaSet/commit/4002c6ed9d15c74239059e29a6874a878c30b73e))
+* **frontend:** preview image URL on add/edit forms [#433](https://github.com/paulmfischer/MediaSet/issues/433) [AI-assisted] ([#444](https://github.com/paulmfischer/MediaSet/issues/444)) ([09ad9c4](https://github.com/paulmfischer/MediaSet/commit/09ad9c49b28f29a7452c7c44c60b13759d2f6db2))
+* **integrations:** add conditional attribution badges + integrations endpoint (refs [#398](https://github.com/paulmfischer/MediaSet/issues/398)) ([#453](https://github.com/paulmfischer/MediaSet/issues/453)) ([e8f4395](https://github.com/paulmfischer/MediaSet/commit/e8f4395ab105335dfdfd7798ddb7862ef67a9c98))
+* **logging:** integrate Serilog with Seq for external logging ([#441](https://github.com/paulmfischer/MediaSet/issues/441)) ([db73613](https://github.com/paulmfischer/MediaSet/commit/db7361358980dac82ddf65cdca62b580626acdf4))
+
+
+### Bug Fixes
+
+* **api:** prevent host bin/obj churn by using named volumes ([#452](https://github.com/paulmfischer/MediaSet/issues/452)) ([27e9edd](https://github.com/paulmfischer/MediaSet/commit/27e9edd495211efc3888f584169e0a787f1e531a))
+* **ui:** display full image without cropping in ImageDisplay closes [#443](https://github.com/paulmfischer/MediaSet/issues/443) ([#459](https://github.com/paulmfischer/MediaSet/issues/459)) ([e10b075](https://github.com/paulmfischer/MediaSet/commit/e10b075d1f2e249e1ac1dc7db19c21134653b126))
+
+
+### Documentation
+
+* **agent:** add sync with main as first workflow step [AI-assisted] ([#448](https://github.com/paulmfischer/MediaSet/issues/448)) ([7cbf3ec](https://github.com/paulmfischer/MediaSet/commit/7cbf3ecda6f63088638bda3e85e842f4b6aef832))
+* **readme:** add release and license badges [AI-assisted] ([#456](https://github.com/paulmfischer/MediaSet/issues/456)) ([5b41d10](https://github.com/paulmfischer/MediaSet/commit/5b41d109b33d298f8bd85bd2faed4ae137303da0))
+* reference backend and frontend instruction files [AI-assisted] ([#446](https://github.com/paulmfischer/MediaSet/issues/446)) ([c59661f](https://github.com/paulmfischer/MediaSet/commit/c59661f4069a42ce98059c738117e2d051e063de))
+* updating readme, setup docs, and dev docs closes [#454](https://github.com/paulmfischer/MediaSet/issues/454) ([#458](https://github.com/paulmfischer/MediaSet/issues/458)) ([0411d5f](https://github.com/paulmfischer/MediaSet/commit/0411d5f87d013febf13eafe3f6c5850ead30a269))
+
+
+### Refactoring
+
+* **tracing:** implement W3C standard distributed tracing across UI and API ([#450](https://github.com/paulmfischer/MediaSet/issues/450)) ([c672d05](https://github.com/paulmfischer/MediaSet/commit/c672d0522d0283bdf10248cc9f4b89b432e276c0)), closes [#437](https://github.com/paulmfischer/MediaSet/issues/437)
+
+
+### Miscellaneous
+
+* **docs:** add commit signing requirement to instructions ([#447](https://github.com/paulmfischer/MediaSet/issues/447)) ([021280c](https://github.com/paulmfischer/MediaSet/commit/021280c3ad4783558729103868be2788026b4f5b))
+
 ## [2.4.0](https://github.com/paulmfischer/MediaSet/compare/v2.3.0...v2.4.0) (2026-01-26)
 
 
