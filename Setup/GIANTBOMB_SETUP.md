@@ -1,4 +1,4 @@
-GiantBomb integration — end-user how-to
+# GiantBomb integration — end-user how-to
 
 This document explains how to obtain a GiantBomb API key and enable GiantBomb-based game lookups in MediaSet.
 
@@ -55,7 +55,7 @@ NOTE: The [Giantbomb API](https://www.giantbomb.com/api/) is no longer up and ru
 
 4) Verification for barcode lookup
 
-- After starting MediaSet, perform a game lookup (for example by searching or adding a game record). The API logs should show GiantBomb calls when the game lookup strategy is used.
-- Another way is when you do a barcode lookup in the UI from add/edit, it should populate the form with data if we found the barcode.
-
-If lookups fail with authentication errors, double-check that the GiantBomb API key is present in the environment accessible to the `mediaset-api` container.
+- After starting MediaSet, perform a game lookup by barcode from the Add/Edit screen.
+  - The API logs should show results from GiantBomb when the game lookup strategy is used.
+  - The Add/Edit form will also be populated with metadata if it finds a game by that barcode.
+- If lookups fail with authentication errors, double-check that the GiantBomb API key is present in the environment accessible to the `mediaset-api` container.

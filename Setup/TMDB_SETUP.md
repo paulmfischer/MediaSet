@@ -55,7 +55,7 @@ This document explains how to obtain a TMDB bearer token and enable TMDB-based m
 
 4) Verification for barcode lookup
 
-- After starting MediaSet, trigger a movie lookup (for example by scanning/adding a movie barcode). The API logs should show TMDB calls and, if applicable, UpcItemDb lookups.
-- Another way is when you do a barcode lookup in the UI from add/edit, it should populate the form with data if we found the barcode.
-
-If lookups fail with authentication errors, double-check that the bearer token are present in the environment accessible to the `mediaset-api` container.
+- After starting MediaSet, perform a movie lookup by barcode from the Add/Edit screen.
+  - The API logs should show results from TMDB when the movie lookup strategy is used.
+  - The Add/Edit form will also be populated with metadata if it finds a movie by that barcode.
+- If lookups fail with authentication errors, double-check that the TMDB Bearer Token is present in the environment accessible to the `mediaset-api` container and that the Token is valid.
