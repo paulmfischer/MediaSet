@@ -103,7 +103,7 @@ export default function ImageDisplay({
             <img
               src={imagePath}
               alt={alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               loading="lazy"
               onError={handleImageError}
               onLoad={handleImageLoad}
