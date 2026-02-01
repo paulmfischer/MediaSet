@@ -72,7 +72,7 @@ services:
       # Seq logging configuration (for centralized structured logging)
       # See Setup/SEQ_SETUP.md for detailed configuration guide
       # ExternalLogging__Enabled: "true"
-      # ExternalLogging__SeqUrl: "http://seq:5341"
+      # ExternalLogging__SeqUrl: "[ReplaceThis]"
       
       # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
       # HttpLoggingOptions__ExcludedPaths__0: "/api/logs"
