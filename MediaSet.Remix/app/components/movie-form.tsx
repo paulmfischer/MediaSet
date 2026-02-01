@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSubmit } from "@remix-run/react";
+import ScanButton from "~/components/scan-button";
 import MultiselectInput from "~/components/multiselect-input";
 import SingleselectInput from "~/components/singleselect-input";
 import ImageUpload from "~/components/image-upload";
@@ -110,6 +111,7 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
           >
             Lookup
           </button>
+          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
         </div>
       </div>
 

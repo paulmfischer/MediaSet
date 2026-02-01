@@ -6,6 +6,7 @@ import ImageUpload from "~/components/image-upload";
 import ImageUrlPreview from "~/components/image-url-preview";
 import { FormProps, MusicEntity, Disc } from "~/models";
 import { millisecondsToMinutesSeconds } from "~/helpers";
+import ScanButton from "~/components/scan-button";
 
 type Metadata = {
   label: string;
@@ -138,6 +139,7 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
           >
             Lookup
           </button>
+          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
         </div>
       </div>
 

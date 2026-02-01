@@ -2,9 +2,13 @@ import { vitePlugin as remix } from "@remix-run/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { remixDevTools } from "remix-development-tools";
+// Uncomment for HTTPS local testing (required for mobile camera access)
+// import mkcert from "vite-plugin-mkcert";
 
 export default defineConfig({
   plugins: [
+    // Uncomment for HTTPS local testing (required for mobile camera access)
+    // mkcert(),
     remixDevTools(),
     remix({
       future: {
@@ -16,4 +20,9 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  // Uncomment for HTTPS local testing (required for mobile camera access)
+  // server: {
+  //   https: true,
+  //   proxy: {},
+  // },
 });

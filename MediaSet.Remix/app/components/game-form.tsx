@@ -3,6 +3,7 @@ import SingleselectInput from "~/components/singleselect-input";
 import ImageUpload from "~/components/image-upload";
 import ImageUrlPreview from "~/components/image-url-preview";
 import { useSubmit } from "@remix-run/react";
+import ScanButton from "~/components/scan-button";
 import { FormProps, GameEntity } from "~/models";
 
 type Metadata = {
@@ -107,6 +108,7 @@ export default function GameForm({ game, developers, publishers, genres, formats
           >
             Lookup
           </button>
+          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
         </div>
       </div>
       
