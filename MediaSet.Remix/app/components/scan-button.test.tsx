@@ -53,14 +53,6 @@ describe('ScanButton', () => {
       render(<ScanButton inputId="isbn" fieldName="isbn" />);
       expect(screen.getByRole('button', { name: /scan/i })).toBeInTheDocument();
     });
-
-    it('should not render on desktop', () => {
-      // Note: This test is skipped because the mobile detection in the component
-      // uses multiple signals that are set in beforeEach. In a real test environment,
-      // we would need to fully reset the DOM and navigator properties between tests
-      // which is difficult with Vitest. The component correctly detects desktop
-      // environments in production.
-    });
   });
 
   describe('Button Rendering', () => {

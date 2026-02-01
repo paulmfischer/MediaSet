@@ -112,7 +112,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
           >
             Lookup
           </button>
-          <ScanButton />
+          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
         </div>
       </div>
       
