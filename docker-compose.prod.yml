@@ -68,6 +68,19 @@ services:
       # MusicBrainzConfiguration__BaseUrl: "https://musicbrainz.org/"
       # MusicBrainzConfiguration__Timeout: "10"
       # MusicBrainzConfiguration__UserAgent: "${MUSICBRAINZ_USER_AGENT:-MediaSet/1.0 (https://github.com/paulmfischer/MediaSet)}"
+      
+      # Seq logging configuration (for centralized structured logging)
+      # See Setup/SEQ_SETUP.md for detailed configuration guide
+      # ExternalLogging__Enabled: "true"
+      # ExternalLogging__SeqUrl: "[ReplaceThis]"
+      
+      # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
+      # HttpLoggingOptions__ExcludedPaths__0: "/api/logs"
+      # HttpLoggingOptions__ExcludedPaths__1: "/health"
+      # HttpLoggingOptions__ExcludedPaths__2: "/health/ready"
+      # HttpLoggingOptions__ExcludedPaths__3: "/health/live"
+      # HttpLoggingOptions__ExcludePathStartsWith__0: "/api/health"
+      # HttpLoggingOptions__ExcludePathStartsWith__1: "/swagger"
     
     volumes:
       # Persist uploaded images
