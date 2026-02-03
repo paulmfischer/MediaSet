@@ -81,7 +81,16 @@ services:
       # HttpLoggingOptions__ExcludedPaths__3: "/health/live"
       # HttpLoggingOptions__ExcludePathStartsWith__0: "/api/health"
       # HttpLoggingOptions__ExcludePathStartsWith__1: "/swagger"
-    
+
+      # Background image lookup service configuration
+      # Automatically finds and downloads cover images for entities missing them
+      # See Setup/BACKGROUND_IMAGE_LOOKUP_SETUP.md for detailed configuration guide
+      # BackgroundImageLookupConfiguration__Enabled: "true"
+      # BackgroundImageLookupConfiguration__Schedule: "0 2 * * *"
+      # BackgroundImageLookupConfiguration__MaxRuntimeMinutes: "60"
+      # BackgroundImageLookupConfiguration__BatchSize: "25"
+      # BackgroundImageLookupConfiguration__RequestsPerMinute: "30"
+
     volumes:
       # Persist uploaded images
       - mediaset-images:/app/data/images

@@ -25,6 +25,7 @@ public class Movie : IEntity
     [Required]
     public string Title { get; set; } = string.Empty;
 
+    [LookupIdentifier]
     public string Barcode { get; set; } = string.Empty;
 
     public string Format { get; set; } = string.Empty;
@@ -50,6 +51,8 @@ public class Movie : IEntity
     public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }
+
+    public ImageLookup? ImageLookup { get; set; }
 
     public bool IsEmpty()
     {

@@ -192,6 +192,42 @@ builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddSingleton<IVersionService, VersionService>();
 
+// Configure background image lookup service
+builder.Services.Configure<BackgroundImageLookupConfiguration>(
+    builder.Configuration.GetSection(nameof(BackgroundImageLookupConfiguration)));
+
+var backgroundImageLookupConfig = builder.Configuration
+    .GetSection(nameof(BackgroundImageLookupConfiguration))
+    .Get<BackgroundImageLookupConfiguration>();
+
+if (backgroundImageLookupConfig?.Enabled == true)
+{
+    // Skip validation in Development environment to allow flexible testing schedules
+    string? errorMessage = null;
+    var shouldRegister = builder.Environment.IsDevelopment() || backgroundImageLookupConfig.IsValid(out errorMessage);
+
+    if (shouldRegister)
+    {
+        bootstrapLogger.Information(
+            "Background image lookup service enabled with schedule: {Schedule} (Batch size: {BatchSize}, Max runtime: {MaxRuntime} minutes)",
+            backgroundImageLookupConfig.Schedule,
+            backgroundImageLookupConfig.BatchSize,
+            backgroundImageLookupConfig.MaxRuntimeMinutes);
+        builder.Services.AddScoped<IImageLookupService, ImageLookupService>();
+        builder.Services.AddHostedService<BackgroundImageLookupService>();
+    }
+    else
+    {
+        bootstrapLogger.Warning(
+            "Background image lookup service is enabled but has invalid configuration: {ErrorMessage}. Service will not start.",
+            errorMessage);
+    }
+}
+else
+{
+    bootstrapLogger.Information("Background image lookup service is disabled");
+}
+
 // Configure SerilogTracing to capture spans and write to Seq
 using var listener = LoggingExtensions.ConfigureSerilogTracing();
 

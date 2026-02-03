@@ -39,6 +39,7 @@ public class Music : IEntity
 
   public string Label { get; set; } = string.Empty;
 
+  [LookupIdentifier]
   public string Barcode { get; set; } = string.Empty;
 
   public int? Tracks { get; set; }
@@ -48,6 +49,8 @@ public class Music : IEntity
   public string? ImageUrl { get; set; }
 
   public Image? CoverImage { get; set; }
+
+  public ImageLookup? ImageLookup { get; set; }
 
   public bool IsEmpty()
   {
