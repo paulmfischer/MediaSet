@@ -32,11 +32,11 @@ services:
       - NUGET_PACKAGES=/nuget
       - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
       - MediaSetDatabaseSettings__DatabaseName=MediaSet
-      - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
+      # - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
       - TmdbConfiguration__BearerToken=${TMDB_BEARER_TOKEN}
       - UpcItemDbConfiguration__ApiKey=${UPCITEMDB_API_KEY}
-      - GiantBombConfiguration__BaseUrl=${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}
-      - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
+      # - GiantBombConfiguration__BaseUrl=${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}
+      # - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
     volumes:
       - ./MediaSet.Api:/app:Z
       - mediaset-api-bin:/app/bin:Z

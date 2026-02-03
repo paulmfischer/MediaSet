@@ -17,9 +17,10 @@ type MovieFormProps = FormProps & {
   studios: Metadata[];
   genres: Metadata[];
   formats: Metadata[];
+  barcodeLookupAvailable?: boolean;
 };
 
-export default function MovieForm({ movie, genres, studios, formats, isSubmitting }: MovieFormProps) {
+export default function MovieForm({ movie, genres, studios, formats, isSubmitting, barcodeLookupAvailable }: MovieFormProps) {
   const submit = useSubmit();
   const [isTvSeries, setIsTvSeries] = useState(movie?.isTvSeries ?? false);
   const isTvSeriesChanged = () => setIsTvSeries(!isTvSeries);
@@ -104,14 +105,18 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
           <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={isSubmitting}
-          >
-            Lookup
-          </button>
-          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+          {barcodeLookupAvailable && (
+            <>
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={isSubmitting}
+              >
+                Lookup
+              </button>
+              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+            </>
+          )}
         </div>
       </div>
 

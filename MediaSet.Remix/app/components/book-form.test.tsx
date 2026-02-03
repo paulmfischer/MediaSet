@@ -60,6 +60,7 @@ describe('BookForm', () => {
       { label: 'Ebook', value: 'ebook' },
     ],
     isSubmitting: false,
+    isbnLookupAvailable: true,
   };
 
   const mockBook: BookEntity = {

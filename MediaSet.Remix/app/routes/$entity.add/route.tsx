@@ -6,6 +6,7 @@ import { addEntity } from "~/entity-data";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
+import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/lookup-capabilities-data";
 import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
@@ -28,7 +29,7 @@ export const meta: MetaFunction<typeof loader> = ({ params }) => {
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const entityType = getEntityFromParams(params);
   try {
-    const [genres, formats, authors, publishers, studios, developers, labels, platforms] = await Promise.all([
+    const [genres, formats, authors, publishers, studios, developers, labels, platforms, lookupCapabilities] = await Promise.all([
       getGenres(entityType),
       getFormats(entityType),
       entityType === Entity.Books ? getAuthors() : Promise.resolve([]),
@@ -36,9 +37,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       entityType === Entity.Movies ? getStudios() : Promise.resolve([]),
       entityType === Entity.Games ? getDevelopers() : Promise.resolve([]),
       entityType === Entity.Musics ? getLabels() : Promise.resolve([]),
-      entityType === Entity.Games ? getPlatforms() : Promise.resolve([])
+      entityType === Entity.Games ? getPlatforms() : Promise.resolve([]),
+      getLookupCapabilities()
     ]);
-    return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+    const barcodeLookupAvailable = isBarcodeLookupAvailable(lookupCapabilities, entityType);
+    return { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms, barcodeLookupAvailable };
   } catch (error) {
     throw error;
   }
@@ -100,19 +103,19 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Add() {
-  const { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms } = useLoaderData<typeof loader>();
+  const { authors, genres, publishers, formats, entityType, studios, developers, labels, platforms, barcodeLookupAvailable } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
-  
+
   const isSubmitting = navigation.state === "submitting";
-  
+
   // Extract lookup result from action
   const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? actionData.lookupTimestamp : undefined;
-  
+
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
@@ -124,13 +127,13 @@ export default function Add() {
 
   let formComponent;
   if (entityType === Entity.Books) {
-    formComponent = <BookForm key={formKey} book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm key={formKey} book={lookupEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} isbnLookupAvailable={barcodeLookupAvailable} />;
   } else if (entityType === Entity.Movies) {
-    formComponent = <MovieForm key={formKey} movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm key={formKey} movie={lookupEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   } else if (entityType === Entity.Games) {
-    formComponent = <GameForm key={formKey} game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
+    formComponent = <GameForm key={formKey} game={lookupEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   } else if (entityType === Entity.Musics) {
-    formComponent = <MusicForm key={formKey} music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm key={formKey} music={lookupEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   }
 
   return (

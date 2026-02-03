@@ -292,8 +292,8 @@ if (openLibraryConfig.Exists() || tmdbConfig.Exists() || giantBombConfig.Exists(
     app.MapLookup();
 }
 
-// Map integrations configuration endpoint
-app.MapIntegrations();
+// Map configuration endpoints
+app.MapConfig();
 
 app.Run();
 

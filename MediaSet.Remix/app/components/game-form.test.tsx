@@ -64,6 +64,7 @@ describe('GameForm', () => {
       { label: 'PC', value: 'pc' },
     ],
     isSubmitting: false,
+    barcodeLookupAvailable: true,
   };
 
   const mockGame: GameEntity = {

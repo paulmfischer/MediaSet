@@ -11,6 +11,15 @@ import * as remixReact from '@remix-run/react';
 vi.mock('~/entity-data');
 vi.mock('~/metadata-data');
 vi.mock('~/helpers');
+vi.mock('~/lookup-capabilities-data', () => ({
+  getLookupCapabilities: vi.fn().mockResolvedValue({
+    supportsBookLookup: true,
+    supportsMovieLookup: true,
+    supportsGameLookup: true,
+    supportsMusicLookup: true,
+  }),
+  isBarcodeLookupAvailable: vi.fn().mockReturnValue(true),
+}));
 vi.mock('~/utils/apiFetch.server', () => ({
   apiFetch: vi.fn().mockResolvedValue({
     ok: true,

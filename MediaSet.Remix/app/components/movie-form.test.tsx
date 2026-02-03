@@ -58,6 +58,7 @@ describe('MovieForm', () => {
       { label: '4K Ultra HD', value: '4k' },
     ],
     isSubmitting: false,
+    barcodeLookupAvailable: true,
   };
 
   const mockMovie: MovieEntity = {

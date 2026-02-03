@@ -4,6 +4,7 @@ import { getEntity, updateEntity } from "~/entity-data";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
+import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/lookup-capabilities-data";
 import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
@@ -26,7 +27,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   
   try {
     const entity = await getEntity(entityType, params.entityId);
-    const [genres, formats, authors, publishers, studios, developers, labels, platforms] =
+    const [genres, formats, authors, publishers, studios, developers, labels, platforms, lookupCapabilities] =
      await Promise.all([
       getGenres(entityType),
       getFormats(entityType),
@@ -35,9 +36,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       entity.type === Entity.Movies ? getStudios() : Promise.resolve([]),
       entity.type === Entity.Games ? getDevelopers() : Promise.resolve([]),
       entity.type === Entity.Musics ? getLabels() : Promise.resolve([]),
-      entity.type === Entity.Games ? getPlatforms() : Promise.resolve([])
+      entity.type === Entity.Games ? getPlatforms() : Promise.resolve([]),
+      getLookupCapabilities()
     ]);
-    return { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms };
+    const barcodeLookupAvailable = isBarcodeLookupAvailable(lookupCapabilities, entityType);
+    return { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms, barcodeLookupAvailable };
   } catch (error) {
     throw error;
   }
@@ -125,7 +128,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Edit() {
-  const { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms } = useLoaderData<typeof loader>();
+  const { entity, authors, genres, publishers, formats, entityType, studios, developers, labels, platforms, barcodeLookupAvailable } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
   const navigation = useNavigation();
@@ -137,27 +140,27 @@ export default function Edit() {
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? (actionData as any).lookupTimestamp : undefined;
-  
+
   // When lookup succeeds, use lookup data and preserve only the database id and type
   // This ensures fresh lookup data isn't contaminated by stale database values
   const mergedEntity = lookupEntity ? { ...lookupEntity, id: entity.id, type: entity.type } : entity;
-  
+
   // Use a key to force form remount when lookup data changes
   // This ensures defaultValue props are re-applied with new lookup data
   // Include a timestamp to ensure each lookup gets a unique key, even for the same identifier
   const identifierValue = actionData && 'identifierValue' in actionData ? (actionData as any).identifierValue : undefined;
   const fieldName = actionData && 'fieldName' in actionData ? (actionData as any).fieldName : undefined;
   const formKey = lookupEntity && identifierValue && fieldName ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}` : `entity-${entity.id}`;
-  
+
   let formComponent;
   if (entity.type === Entity.Books) {
-    formComponent = <BookForm key={formKey} book={mergedEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} />;
+    formComponent = <BookForm key={formKey} book={mergedEntity as BookEntity} authors={authors} genres={genres} publishers={publishers} formats={formats} isSubmitting={isSubmitting} isbnLookupAvailable={barcodeLookupAvailable} />;
   } else if (entity.type === Entity.Movies) {
-    formComponent = <MovieForm key={formKey} movie={mergedEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} />
+    formComponent = <MovieForm key={formKey} movie={mergedEntity as MovieEntity} genres={genres} studios={studios} formats={formats} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   } else if (entity.type === Entity.Games) {
-    formComponent = <GameForm key={formKey} game={mergedEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} />
+    formComponent = <GameForm key={formKey} game={mergedEntity as GameEntity} developers={developers} publishers={publishers} genres={genres} formats={formats} platforms={platforms} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   } else if (entity.type === Entity.Musics) {
-    formComponent = <MusicForm key={formKey} music={mergedEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} />
+    formComponent = <MusicForm key={formKey} music={mergedEntity as MusicEntity} genres={genres} formats={formats} labels={labels} isSubmitting={isSubmitting} barcodeLookupAvailable={barcodeLookupAvailable} />
   }
 
   return (
