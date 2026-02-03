@@ -17,17 +17,24 @@ public static class LoggingExtensions
     /// <summary>
     /// Configures the bootstrap logger for very early configuration.
     /// This logger is used before the full Serilog configuration is in place.
+    /// Suppresses console output when running in the Testing environment.
     /// </summary>
     public static void ConfigureBootstrapLogger()
     {
         var assemblyName = Assembly.GetEntryAssembly()?.GetName().Name ?? "MediaSet.Api";
         var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "NotSet";
 
-        Log.Logger = new LoggerConfiguration()
+        var loggerConfig = new LoggerConfiguration()
             .Enrich.WithProperty("Application", assemblyName)
-            .Enrich.WithProperty("Environment", envName)
-            .WriteTo.Console()
-            .CreateBootstrapLogger();
+            .Enrich.WithProperty("Environment", envName);
+
+        // Only write to console if not in Testing environment
+        if (envName != "Testing")
+        {
+            loggerConfig.WriteTo.Console();
+        }
+
+        Log.Logger = loggerConfig.CreateBootstrapLogger();
     }
 
     /// <summary>
