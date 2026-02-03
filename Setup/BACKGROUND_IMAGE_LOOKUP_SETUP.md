@@ -92,8 +92,7 @@ BackgroundImageLookupConfiguration__Schedule: "0 2,14 * * *"
 
 **Notes**:
 - Uses UTC timezone
-- In production, intervals less than 1 hour are rejected
-- In development environments, any valid cron expression is allowed for testing
+- Intervals less than 1 hour are rejected
 - See [crontab.guru](https://crontab.guru) for help creating cron expressions
 
 ### BackgroundImageLookupConfiguration__MaxRuntimeMinutes
