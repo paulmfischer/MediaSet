@@ -1,9 +1,9 @@
 ---
-description: Code style and conventions for .NET 9.0 backend API
+description: Code style and conventions for .NET 10 backend API
 applyTo: "**/*.cs"
 ---
 
-# .NET 9.0 Backend Code Style Guide
+# .NET 10 Backend Code Style Guide
 
 ## File Organization
 
