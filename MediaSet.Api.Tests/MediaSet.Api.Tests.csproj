@@ -5,12 +5,9 @@
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <!-- Set environment to Testing when running tests -->
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/test.runsettings</RunSettingsFilePath>
     </PropertyGroup>
-
-    <!-- Set environment to Testing when running tests -->
-    <ItemGroup>
-        <RunSettingsArguments Include="EnvironmentVariables.ASPNETCORE_ENVIRONMENT" Value="Testing" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="NUnit" Version="4.2.2" />
@@ -27,6 +24,9 @@
 
     <ItemGroup>
         <None Update="appsettings.Testing.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="test.runsettings">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
