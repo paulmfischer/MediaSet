@@ -8,5 +8,6 @@ public interface IEntity
     public string Format { get; set; }
     public string? ImageUrl { get; set; }
     public Image? CoverImage { get; set; }
+    public ImageLookup? ImageLookup { get; set; }
     public bool IsEmpty();
 }

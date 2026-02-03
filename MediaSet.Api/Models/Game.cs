@@ -28,6 +28,7 @@ public class Game : IEntity
     public string Format { get; set; } = string.Empty;
 
     // Common retail identifier
+    [LookupIdentifier]
     public string Barcode { get; set; } = string.Empty;
 
     // Release date as free-form string to match existing pattern
@@ -59,6 +60,8 @@ public class Game : IEntity
     public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }
+
+    public ImageLookup? ImageLookup { get; set; }
 
     public bool IsEmpty()
     {

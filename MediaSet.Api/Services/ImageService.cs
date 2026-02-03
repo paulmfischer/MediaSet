@@ -148,6 +148,8 @@ public class ImageService : IImageService
             throw new ArgumentException("EntityType and EntityId cannot be null or empty");
         }
 
+        entityType = entityType.ToLower();
+
         try
         {
             // Validate URL format

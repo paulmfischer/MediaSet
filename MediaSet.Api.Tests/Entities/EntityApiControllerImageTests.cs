@@ -413,7 +413,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         };
 
         _gameServiceMock!.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        _imageServiceMock!.Setup(s => s.DownloadAndSaveImageAsync(imageUrl, "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _imageServiceMock!.Setup(s => s.DownloadAndSaveImageAsync(imageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(imageData);
         _gameServiceMock.Setup(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<ReplaceOneResult>());
@@ -424,7 +424,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
-        _imageServiceMock!.Verify(s => s.DownloadAndSaveImageAsync(imageUrl, "games", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _imageServiceMock!.Verify(s => s.DownloadAndSaveImageAsync(imageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -482,7 +482,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<ReplaceOneResult>());
         _imageServiceMock!.Setup(s => s.DeleteImageAsync(It.IsAny<string>()));
-        _imageServiceMock!.Setup(s => s.DownloadAndSaveImageAsync(imageUrl, "games", gameId, It.IsAny<CancellationToken>()))
+        _imageServiceMock!.Setup(s => s.DownloadAndSaveImageAsync(imageUrl, "Games", gameId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(newImageData);
 
         // Act
@@ -491,7 +491,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        _imageServiceMock!.Verify(s => s.DownloadAndSaveImageAsync(imageUrl, "games", gameId, It.IsAny<CancellationToken>()), Times.Once);
+        _imageServiceMock!.Verify(s => s.DownloadAndSaveImageAsync(imageUrl, "Games", gameId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]

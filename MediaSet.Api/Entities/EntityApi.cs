@@ -144,7 +144,7 @@ internal static class EntityApi
 
                         try
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), newEntity.Id!, cancellationToken);
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
@@ -175,7 +175,7 @@ internal static class EntityApi
 
                         try
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), newEntity.Id!, cancellationToken);
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
@@ -309,7 +309,7 @@ internal static class EntityApi
 
                         try
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), id, cancellationToken);
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken);
                             updatedEntity.CoverImage = image;
                             logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, id);
                         }
@@ -348,7 +348,7 @@ internal static class EntityApi
 
                         try
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), id, cancellationToken);
+                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken);
                             updatedEntity.CoverImage = image;
                             logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, id);
                         }
@@ -558,7 +558,7 @@ internal static class EntityApi
 
                 try
                 {
-                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType.ToLower(), entityId, cancellationToken);
+                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, cancellationToken);
                     return (true, null, image);
                 }
                 catch (ArgumentException ex)

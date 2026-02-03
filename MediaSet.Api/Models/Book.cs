@@ -24,6 +24,7 @@ public class Book : IEntity
     [Required]
     public string Title { get; set; } = string.Empty;
 
+    [LookupIdentifier]
     public string ISBN { get; set; } = string.Empty;
 
     public string Format { get; set; } = string.Empty;
@@ -49,6 +50,8 @@ public class Book : IEntity
     public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }
+
+    public ImageLookup? ImageLookup { get; set; }
 
     public bool IsEmpty()
     {
