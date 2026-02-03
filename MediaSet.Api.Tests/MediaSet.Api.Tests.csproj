@@ -5,6 +5,8 @@
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <!-- Set environment to Testing when running tests -->
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/test.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +24,9 @@
 
     <ItemGroup>
         <None Update="appsettings.Testing.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="test.runsettings">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
