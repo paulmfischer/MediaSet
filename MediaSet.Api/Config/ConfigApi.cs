@@ -3,16 +3,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace MediaSet.Api.Config;
 
-internal static class IntegrationsApi
+internal static class ConfigApi
 {
-    public static RouteGroupBuilder MapIntegrations(this IEndpointRouteBuilder routes)
+    public static RouteGroupBuilder MapConfig(this IEndpointRouteBuilder routes)
     {
         var logger = ((WebApplication)routes).Logger;
-        var group = routes.MapGroup("/config/integrations");
+        var group = routes.MapGroup("/config");
 
         group.WithTags("Config");
 
-        group.MapGet("/", (IConfiguration configuration) =>
+        // GET /config/integrations
+        group.MapGet("/integrations", (IConfiguration configuration) =>
         {
             // Build integration attribution entries from configuration so values can be changed at runtime
             var tmdbSection = configuration.GetSection("TmdbConfiguration");
@@ -45,6 +46,29 @@ internal static class IntegrationsApi
             };
 
             return Results.Ok(result);
+        });
+
+        // GET /config/lookup-capabilities
+        group.MapGet("/lookup-capabilities", (IConfiguration configuration) =>
+        {
+            // Read configuration sections (same pattern as Program.cs)
+            var tmdbSection = configuration.GetSection("TmdbConfiguration");
+            var openLibrarySection = configuration.GetSection("OpenLibraryConfiguration");
+            var upcItemDbSection = configuration.GetSection("UpcItemDbConfiguration");
+            var giantBombSection = configuration.GetSection("GiantBombConfiguration");
+            var musicBrainzSection = configuration.GetSection("MusicBrainzConfiguration");
+
+            // Calculate lookup availability based on required integrations
+            // This matches the logic in Program.cs lines 154-169
+            var capabilities = new LookupCapabilitiesDto
+            {
+                SupportsBookLookup = openLibrarySection.Exists() && upcItemDbSection.Exists(),
+                SupportsMovieLookup = upcItemDbSection.Exists() && tmdbSection.Exists(),
+                SupportsGameLookup = upcItemDbSection.Exists() && giantBombSection.Exists(),
+                SupportsMusicLookup = musicBrainzSection.Exists()
+            };
+
+            return Results.Ok(capabilities);
         });
 
         return group;

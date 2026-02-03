@@ -18,9 +18,10 @@ type MusicFormProps = FormProps & {
   genres: Metadata[];
   formats: Metadata[];
   labels: Metadata[];
+  barcodeLookupAvailable?: boolean;
 };
 
-export default function MusicForm({ music, genres, formats, labels, isSubmitting }: MusicFormProps) {
+export default function MusicForm({ music, genres, formats, labels, isSubmitting, barcodeLookupAvailable }: MusicFormProps) {
   const submit = useSubmit();
   const [discList, setDiscList] = useState<Disc[]>(music?.discList ?? []);
 
@@ -132,14 +133,18 @@ export default function MusicForm({ music, genres, formats, labels, isSubmitting
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
           <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={music?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={isSubmitting}
-          >
-            Lookup
-          </button>
-          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+          {barcodeLookupAvailable && (
+            <>
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={isSubmitting}
+              >
+                Lookup
+              </button>
+              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+            </>
+          )}
         </div>
       </div>
 

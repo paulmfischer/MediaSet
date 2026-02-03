@@ -68,6 +68,7 @@ describe('MusicForm', () => {
       { label: 'Warner Bros', value: 'warner' },
     ],
     isSubmitting: false,
+    barcodeLookupAvailable: true,
   };
 
   const mockMusic: MusicEntity = {

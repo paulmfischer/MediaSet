@@ -16,9 +16,10 @@ type BookFormProps = FormProps & {
   genres: Metadata[];
   publishers: Metadata[];
   formats: Metadata[];
+  isbnLookupAvailable?: boolean;
 };
 
-export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
+export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting, isbnLookupAvailable }: BookFormProps) {
   const submit = useSubmit();
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
@@ -105,14 +106,18 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
         <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">ISBN</label>
         <div className="flex gap-2">
           <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" onKeyDown={handleKeyDown} />
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={isSubmitting}
-          >
-            Lookup
-          </button>
-          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+          {isbnLookupAvailable && (
+            <>
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={isSubmitting}
+              >
+                Lookup
+              </button>
+              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+            </>
+          )}
         </div>
       </div>
       

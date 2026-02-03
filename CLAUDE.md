@@ -17,6 +17,27 @@ Full-stack application for managing personal media collections.
 - `Setup/` — Production setup and deployment files
 - `assets/` — Static assets
 
+## Branching & Workflow (CRITICAL)
+
+**⚠️ NEVER commit directly to `main` ⚠️**
+
+Always use feature branches:
+```bash
+# Create a new feature branch
+git checkout -b feature/description-issue-number
+
+# Or for bug fixes
+git checkout -b fix/description-issue-number
+```
+
+**Workflow:**
+1. Sync with main: `git checkout main && git pull`
+2. Create feature branch: `git checkout -b feature/your-feature`
+3. Make changes and commit to feature branch
+4. Push feature branch: `git push -u origin feature/your-feature`
+5. Create Pull Request (user responsibility)
+6. Merge to main via PR only (never direct push)
+
 ## Code Style & Conventions
 
 Before making changes, read and follow these instruction files:

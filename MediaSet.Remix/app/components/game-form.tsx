@@ -17,9 +17,10 @@ type GameFormProps = FormProps & {
   genres: Metadata[];
   formats: Metadata[];
   platforms: Metadata[];
+  barcodeLookupAvailable?: boolean;
 };
 
-export default function GameForm({ game, developers, publishers, genres, formats, platforms, isSubmitting }: GameFormProps) {
+export default function GameForm({ game, developers, publishers, genres, formats, platforms, isSubmitting, barcodeLookupAvailable }: GameFormProps) {
   const submit = useSubmit();
   const inputClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
   const textareaClasses = "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
@@ -101,14 +102,18 @@ export default function GameForm({ game, developers, publishers, genres, formats
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
           <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={game?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={isSubmitting}
-          >
-            Lookup
-          </button>
-          <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+          {barcodeLookupAvailable && (
+            <>
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={isSubmitting}
+              >
+                Lookup
+              </button>
+              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+            </>
+          )}
         </div>
       </div>
       
