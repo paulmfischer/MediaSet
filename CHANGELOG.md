@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.0.0](https://github.com/paulmfischer/MediaSet/compare/v2.5.0...v3.0.0) (2026-02-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **license:** switch project to Apache-2.0 and add NOTICE ([#461](https://github.com/paulmfischer/MediaSet/issues/461))
+
+### Features
+
+* **api,ui:** hide barcode lookup when integrations not configured closes [#457](https://github.com/paulmfischer/MediaSet/issues/457) ([#469](https://github.com/paulmfischer/MediaSet/issues/469)) ([a23ab94](https://github.com/paulmfischer/MediaSet/commit/a23ab945c408872e561808c9d282a356a3209f5f))
+* **api:** add background image lookup service closes [#434](https://github.com/paulmfischer/MediaSet/issues/434) ([#467](https://github.com/paulmfischer/MediaSet/issues/467)) ([563edb1](https://github.com/paulmfischer/MediaSet/commit/563edb1fec3058b9d5059b7882c007da72a3a1f2))
+* **docker:** add Seq logging configuration and setup documentation ([#463](https://github.com/paulmfischer/MediaSet/issues/463)) ([c2155b9](https://github.com/paulmfischer/MediaSet/commit/c2155b9a0ae60fe99114f2a1e0ae4c6d5671c1f8))
+* **license:** switch project to Apache-2.0 and add NOTICE ([#461](https://github.com/paulmfischer/MediaSet/issues/461)) ([bdbf5a3](https://github.com/paulmfischer/MediaSet/commit/bdbf5a3454deb4526afd24df411a1a5578bb7cb5))
+* **ui:** add mobile barcode scanning capability closes [#280](https://github.com/paulmfischer/MediaSet/issues/280)  ([#465](https://github.com/paulmfischer/MediaSet/issues/465)) ([f9546a0](https://github.com/paulmfischer/MediaSet/commit/f9546a0553706779a9315bd9da9bda65f7fe3a7d))
+
+
+### Bug Fixes
+
+* **tests:** suppress bootstrap logger output during tests closes [#466](https://github.com/paulmfischer/MediaSet/issues/466) ([#470](https://github.com/paulmfischer/MediaSet/issues/470)) ([374162b](https://github.com/paulmfischer/MediaSet/commit/374162b07fe1f7b7599f7f40a863b4262110f60b))
+
+
+### Documentation
+
+* add CLAUDE.md and update backend to .NET 10 ([#468](https://github.com/paulmfischer/MediaSet/issues/468)) ([76b3142](https://github.com/paulmfischer/MediaSet/commit/76b3142bd61bcdefc02aa1b00124cc0a484b1fa7))
+
 ## [2.5.0](https://github.com/paulmfischer/MediaSet/compare/v2.4.0...v2.5.0) (2026-01-30)
 
 
