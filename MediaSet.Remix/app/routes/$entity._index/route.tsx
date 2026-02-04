@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Form, Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { searchEntities } from "~/entity-data";
@@ -39,6 +39,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const { entities, entityType, searchText, apiUrl } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const searchField = document.getElementById("search");
@@ -66,13 +67,14 @@ export default function Index() {
                 name="searchText"
                 className={`w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${searchText ? 'border-r-0 rounded-l-md rounded-r-none' : 'rounded-md'}`}
               />
-              {searchText && 
+              {searchText &&
                 <button type="button" className="text-icon rounded-r-md" aria-label="Clear search" title="Clear search"
                   onClick={() => {
                     const searchEl = document.getElementById('search') as HTMLInputElement;
                     if (searchEl) {
                       searchEl.value = '';
                     }
+                    navigate(`/${entityType.toLowerCase()}`);
                   }}
                 >
                   <X />
