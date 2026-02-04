@@ -43,7 +43,7 @@ public class BackgroundImageLookupService : BackgroundService
                 try
                 {
                     var localTimeZone = TimeZoneInfo.Local; // Respects TZ environment variable
-                    var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, localTimeZone);
+                    var now = DateTime.UtcNow;
                     var nextRun = cronExpression.GetNextOccurrence(now, localTimeZone);
 
                     if (nextRun == null)
