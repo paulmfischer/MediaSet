@@ -25,6 +25,7 @@ services:
     ports:
       - "5000:5000"   # HTTP
     environment:
+      # - TZ=America/New_York
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5000
       - ASPNETCORE_HTTP_PORTS=5000
