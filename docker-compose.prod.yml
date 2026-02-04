@@ -28,7 +28,13 @@ services:
       # Core API settings
       ASPNETCORE_URLS: "http://+:8080"
       ASPNETCORE_ENVIRONMENT: "Production"
-      
+
+      # Timezone configuration (defaults to UTC if not set)
+      # Set this to your local timezone for accurate scheduling and logs
+      # Examples: America/New_York, Europe/London, Asia/Tokyo
+      # See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      # TZ: "America/New_York"
+
       # Database configuration
       MediaSetDatabaseSettings__ConnectionString: "${MONGODB_CONNECTION_STRING:-mongodb://mongo:27017}"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"

@@ -42,8 +42,9 @@ public class BackgroundImageLookupService : BackgroundService
             {
                 try
                 {
-                    var now = DateTime.UtcNow;
-                    var nextRun = cronExpression.GetNextOccurrence(now, TimeZoneInfo.Utc);
+                    var localTimeZone = TimeZoneInfo.Local; // Respects TZ environment variable
+                    var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, localTimeZone);
+                    var nextRun = cronExpression.GetNextOccurrence(now, localTimeZone);
 
                     if (nextRun == null)
                     {
@@ -53,8 +54,8 @@ public class BackgroundImageLookupService : BackgroundService
 
                     var delay = nextRun.Value - now;
                     _logger.LogInformation(
-                        "Next background image lookup run scheduled for {NextRun} (in {Delay})",
-                        nextRun.Value, delay);
+                        "Next background image lookup run scheduled for {NextRun} {TimeZone} (in {Delay})",
+                        nextRun.Value, localTimeZone.Id, delay);
 
                     await Task.Delay(delay, stoppingToken);
 

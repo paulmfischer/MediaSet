@@ -46,6 +46,42 @@ See the main MediaSet documentation for configuring these external APIs.
 
 MediaSet.Api supports the following background image lookup configuration options through environment variables in `docker-compose.prod.yml`.
 
+### Timezone Configuration (TZ)
+
+**Purpose**: Sets the timezone for the application, affecting when scheduled tasks run and how timestamps appear in logs.
+
+**Type**: String (TZ database timezone identifier)
+
+**Default**: UTC (if not set)
+
+**Environment Variable**: `TZ`
+
+**Examples**:
+```yaml
+# Eastern Time (US)
+TZ: "America/New_York"
+
+# Central European Time
+TZ: "Europe/Berlin"
+
+# Pacific Time (US)
+TZ: "America/Los_Angeles"
+
+# British Time
+TZ: "Europe/London"
+
+# Tokyo Time
+TZ: "Asia/Tokyo"
+```
+
+**Important Notes**:
+- When `TZ` is **not set**, all scheduling and logs will use **UTC time**
+- When `TZ` is **set**, the `BackgroundImageLookupConfiguration__Schedule` cron expression will run in the **specified timezone**
+- All log timestamps will appear in the specified timezone
+- See [List of TZ Database Time Zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for valid timezone identifiers
+
+**Example**: If you set `TZ: "America/New_York"` and `Schedule: "0 2 * * *"`, the service will run at 2:00 AM Eastern Time (not UTC).
+
 ### BackgroundImageLookupConfiguration__Enabled
 
 **Purpose**: Enables or disables the background image lookup service.
@@ -71,27 +107,27 @@ When set to `"true"`, the background service will start and run on the configure
 
 **Format**: Standard cron format (minute hour day month weekday)
 
-**Default**: `"0 2 * * *"` (daily at 2:00 AM UTC)
+**Default**: `"0 2 * * *"` (daily at 2:00 AM in the configured timezone)
 
 **Minimum Interval**: 1 hour (enforced in production environments only)
 
 **Examples**:
 ```yaml
-# Daily at 2:00 AM UTC
+# Daily at 2:00 AM (in your configured timezone)
 BackgroundImageLookupConfiguration__Schedule: "0 2 * * *"
 
 # Every 6 hours
 BackgroundImageLookupConfiguration__Schedule: "0 */6 * * *"
 
-# Weekly on Sunday at 3:00 AM UTC
+# Weekly on Sunday at 3:00 AM (in your configured timezone)
 BackgroundImageLookupConfiguration__Schedule: "0 3 * * 0"
 
-# Twice daily (2 AM and 2 PM UTC)
+# Twice daily (2 AM and 2 PM in your configured timezone)
 BackgroundImageLookupConfiguration__Schedule: "0 2,14 * * *"
 ```
 
 **Notes**:
-- Uses UTC timezone
+- Uses the timezone specified by the `TZ` environment variable (defaults to UTC if not set)
 - Intervals less than 1 hour are rejected
 - See [crontab.guru](https://crontab.guru) for help creating cron expressions
 
@@ -184,10 +220,13 @@ services:
   mediaset-api:
     image: ghcr.io/paulmfischer/mediaset-api:latest
     environment:
+      # Timezone configuration (optional, defaults to UTC)
+      TZ: "America/New_York"
+
       # Enable background image lookup service
       BackgroundImageLookupConfiguration__Enabled: "true"
 
-      # Run daily at 2 AM UTC
+      # Run daily at 2 AM (in timezone specified by TZ)
       BackgroundImageLookupConfiguration__Schedule: "0 2 * * *"
 
       # Maximum runtime of 2 hours per run
@@ -294,7 +333,8 @@ Entities with permanent failures will not be processed again unless you manually
 
 - Adjust the `Schedule` cron expression
 - Verify the cron expression matches your intended schedule (use [crontab.guru](https://crontab.guru))
-- Remember the schedule uses UTC timezone
+- Check the `TZ` environment variable to ensure the schedule runs in your expected timezone (defaults to UTC if not set)
+- Look at the log messages to see when the next run is scheduled and verify it matches your expectations
 
 ## Performance Considerations
 
