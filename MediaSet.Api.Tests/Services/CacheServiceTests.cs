@@ -1,7 +1,6 @@
 using NUnit.Framework;
 using Moq;
-using MediaSet.Api.Services;
-using MediaSet.Api.Models;
+using MediaSet.Api.Infrastructure.Caching;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;

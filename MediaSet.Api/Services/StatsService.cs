@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 using Serilog;

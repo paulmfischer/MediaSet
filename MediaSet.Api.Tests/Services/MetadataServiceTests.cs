@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Moq;
 using Bogus;
+using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Services;
 using MediaSet.Api.Models;
 using System;

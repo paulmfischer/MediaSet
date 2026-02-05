@@ -2,9 +2,8 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Caching;
 
 public class MemoryCacheService : ICacheService
 {

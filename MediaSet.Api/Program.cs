@@ -9,6 +9,7 @@ using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.Database;
+using MediaSet.Api.Infrastructure.Caching;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;
 

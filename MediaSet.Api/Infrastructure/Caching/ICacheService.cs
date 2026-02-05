@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Caching;
 
 public interface ICacheService
 {

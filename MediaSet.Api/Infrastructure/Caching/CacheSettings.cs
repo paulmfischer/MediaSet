@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Infrastructure.Caching;
 
 public class CacheSettings
 {
