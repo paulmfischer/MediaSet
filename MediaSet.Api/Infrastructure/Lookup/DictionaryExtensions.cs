@@ -1,7 +1,6 @@
 using System.Text.Json;
-using MediaSet.Api.Clients;
 
-namespace MediaSet.Api.Shared.Extensions;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public static class DictionaryExtensions
 {

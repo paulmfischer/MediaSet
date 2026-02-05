@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Clients;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public class UpcItemDbClient : IUpcItemDbClient
 {

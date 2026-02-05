@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using Moq;
-using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,12 +53,12 @@ public class LookupApiTests : IntegrationTestBase
                     // Ensure the BookLookupStrategy is registered with our mocks
                     // Remove existing strategy if it exists
                     var strategyDescriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(MediaSet.Api.Services.ILookupStrategy<BookResponse>));
+                        d => d.ServiceType == typeof(MediaSet.Api.Infrastructure.Lookup.ILookupStrategy<BookResponse>));
                     if (strategyDescriptor != null)
                         services.Remove(strategyDescriptor);
                     
                     // Re-register with our mocked clients
-                    services.AddScoped<MediaSet.Api.Services.ILookupStrategy<BookResponse>, MediaSet.Api.Services.BookLookupStrategy>();
+                    services.AddScoped<MediaSet.Api.Infrastructure.Lookup.ILookupStrategy<BookResponse>, MediaSet.Api.Infrastructure.Lookup.BookLookupStrategy>();
                 });
             });
 

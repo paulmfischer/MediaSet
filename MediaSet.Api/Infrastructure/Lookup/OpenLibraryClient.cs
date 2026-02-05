@@ -4,7 +4,7 @@ using System.Text.Json;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Clients;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public class OpenLibraryClient : IOpenLibraryClient
 {

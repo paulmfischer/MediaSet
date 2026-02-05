@@ -1,6 +1,6 @@
-using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Models;
-using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.Lookup;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup;
 
 [TestFixture]
 public class MovieLookupStrategyTests

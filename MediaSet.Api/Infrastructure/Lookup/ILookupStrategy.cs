@@ -1,6 +1,6 @@
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public interface ILookupStrategyBase
 {

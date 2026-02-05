@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
-using MediaSet.Api.Clients;
 using MediaSet.Api.Entities;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Lookup;
@@ -11,6 +10,7 @@ using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;

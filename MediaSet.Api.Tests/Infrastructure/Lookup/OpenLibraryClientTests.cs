@@ -10,10 +10,10 @@ using NUnit.Framework;
 using Moq;
 using Moq.Protected;
 using Microsoft.Extensions.Logging;
-using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Tests.Clients;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup;
 
 [TestFixture]
 public class OpenLibraryClientTests

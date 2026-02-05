@@ -1,7 +1,7 @@
-using MediaSet.Api.Clients;
-using MediaSet.Api.Shared.Extensions;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using MediaSet.Api.Shared.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace MediaSet.Api.Lookup;

@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,7 +12,7 @@ using Moq;
 using Moq.Protected;
 using NUnit.Framework;
 
-namespace MediaSet.Api.Tests.Clients;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup;
 
 [TestFixture]
 public class GiantBombClientTests

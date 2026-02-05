@@ -3,7 +3,7 @@ using System.Web;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 
-namespace MediaSet.Api.Clients;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public class GiantBombClient : IGiantBombClient
 {

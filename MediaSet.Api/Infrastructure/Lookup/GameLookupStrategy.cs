@@ -1,10 +1,9 @@
 using System.Text.RegularExpressions;
-using MediaSet.Api.Clients;
 using MediaSet.Api.Models;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public class GameLookupStrategy : ILookupStrategy<GameResponse>
 {

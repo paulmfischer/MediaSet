@@ -1,6 +1,6 @@
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Clients;
+namespace MediaSet.Api.Infrastructure.Lookup;
 
 public interface IGiantBombClient
 {

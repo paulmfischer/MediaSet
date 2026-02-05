@@ -1,10 +1,10 @@
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Lookup;
 using System.Text.Json;
 using System.Collections.Generic;
 
-namespace MediaSet.Api.Tests.Shared.Extensions;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup;
 
 [TestFixture]
 public class DictionaryExtensionsTests
