@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Converters;
+namespace MediaSet.Api.Infrastructure.Serialization;
 
 public interface IConverter
 {

@@ -1,6 +1,6 @@
 using System.Reflection;
 using MediaSet.Api.Attributes;
-using MediaSet.Api.Converters;
+using MediaSet.Api.Infrastructure.Serialization;
 
 namespace MediaSet.Api.Helpers;
 

@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
-using MediaSet.Api.Converters;
+using MediaSet.Api.Infrastructure.Serialization;
 
-namespace MediaSet.Api.Tests.Converters;
+namespace MediaSet.Api.Tests.Infrastructure.Serialization;
 
 [TestFixture]
 public class RuntimeConverterTests
