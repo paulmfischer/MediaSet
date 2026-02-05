@@ -1,6 +1,6 @@
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Database;
 
 public interface IDatabaseService
 {

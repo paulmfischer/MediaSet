@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.Extensions.Options;

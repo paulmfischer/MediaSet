@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 using Serilog;

@@ -1,5 +1,6 @@
 using Cronos;
 using MediaSet.Api.Clients;
+using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;

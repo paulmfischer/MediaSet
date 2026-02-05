@@ -8,6 +8,7 @@ using MediaSet.Api.Config;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.Database;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;
 

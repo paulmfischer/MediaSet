@@ -1,8 +1,7 @@
-using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Database;
 
 public class DatabaseService : IDatabaseService
 {
