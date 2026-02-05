@@ -1,8 +1,8 @@
 using System.Reflection;
-using MediaSet.Api.Attributes;
 using MediaSet.Api.Infrastructure.Serialization;
+using MediaSet.Api.Shared.Attributes;
 
-namespace MediaSet.Api.Helpers;
+namespace MediaSet.Api.Shared.Extensions;
 
 public static class StringExtensions
 {

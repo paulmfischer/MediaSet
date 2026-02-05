@@ -1,5 +1,5 @@
 using MediaSet.Api.Clients;
-using MediaSet.Api.Helpers;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;

@@ -1,6 +1,6 @@
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Helpers;
+namespace MediaSet.Api.Shared.Extensions;
 
 internal static class EntityExtensions
 {

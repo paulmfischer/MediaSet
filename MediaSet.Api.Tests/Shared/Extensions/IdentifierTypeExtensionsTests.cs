@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using MediaSet.Api.Helpers;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Tests.Helpers;
+namespace MediaSet.Api.Tests.Shared.Extensions;
 
 [TestFixture]
 public class IdentifierTypeExtensionsTests

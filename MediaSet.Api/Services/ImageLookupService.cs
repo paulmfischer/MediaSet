@@ -1,5 +1,5 @@
 using System.Reflection;
-using MediaSet.Api.Attributes;
+using MediaSet.Api.Shared.Attributes;
 using MediaSet.Api.Clients;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Models;

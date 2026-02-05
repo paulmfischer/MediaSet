@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Clients;
 using MediaSet.Api.Entities;
-using MediaSet.Api.Extensions;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Lookup;
 using MediaSet.Api.Config;
 using MediaSet.Api.Metadata;

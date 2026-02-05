@@ -1,12 +1,12 @@
 using System;
 using NUnit.Framework;
-using MediaSet.Api.Helpers;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Serialization;
 using MediaSet.Api.Models;
 using System.Reflection;
 using System.Collections.Generic;
 
-namespace MediaSet.Api.Tests.Helpers;
+namespace MediaSet.Api.Tests.Shared.Extensions;
 
 [TestFixture]
 public class StringExtensionsTests

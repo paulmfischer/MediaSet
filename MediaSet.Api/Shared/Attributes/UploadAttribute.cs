@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Attributes;
+namespace MediaSet.Api.Shared.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class UploadAttribute : Attribute

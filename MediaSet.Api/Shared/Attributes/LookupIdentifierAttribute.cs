@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Attributes;
+namespace MediaSet.Api.Shared.Attributes;
 
 /// <summary>
 /// Marks a property as the lookup identifier for background image lookup.

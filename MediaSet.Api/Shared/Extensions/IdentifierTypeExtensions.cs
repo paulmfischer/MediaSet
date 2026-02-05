@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Helpers;
+namespace MediaSet.Api.Shared.Extensions;
 
 public static class IdentifierTypeExtensions
 {

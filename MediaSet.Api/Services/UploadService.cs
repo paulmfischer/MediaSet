@@ -1,5 +1,5 @@
 using System.Reflection;
-using MediaSet.Api.Helpers;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Models;
 using Serilog;
 using SerilogTracing;

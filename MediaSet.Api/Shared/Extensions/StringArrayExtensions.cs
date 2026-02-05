@@ -1,7 +1,7 @@
 using System.Reflection;
-using MediaSet.Api.Attributes;
+using MediaSet.Api.Shared.Attributes;
 
-namespace MediaSet.Api.Helpers;
+namespace MediaSet.Api.Shared.Extensions;
 internal static class StringArrayExtensions
 {
     public static string? GetValueByHeader<TEntity>(this string[] fields, IList<string> headerFields, PropertyInfo propertyInfo)

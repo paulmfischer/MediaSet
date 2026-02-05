@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Extensions;
+namespace MediaSet.Api.Shared.Extensions;
 
 /// <summary>
 /// Middleware that extracts the W3C traceparent header from requests for distributed tracing.

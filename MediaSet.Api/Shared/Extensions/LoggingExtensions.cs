@@ -7,7 +7,7 @@ using Serilog.Enrichers.Span;
 using Serilog.Events;
 using SerilogTracing;
 
-namespace MediaSet.Api.Extensions;
+namespace MediaSet.Api.Shared.Extensions;
 
 /// <summary>
 /// Extension methods for configuring logging and tracing in the application.

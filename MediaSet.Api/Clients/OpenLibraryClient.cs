@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using MediaSet.Api.Helpers;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Clients;

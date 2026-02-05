@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Options;
 
-namespace MediaSet.Api.Extensions;
+namespace MediaSet.Api.Shared.Extensions;
 
 /// <summary>
 /// Middleware that conditionally enables HTTP logging based on path configuration.
