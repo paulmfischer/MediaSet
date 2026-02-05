@@ -26,7 +26,7 @@ function Header() {
     setOpen(false);
   }, [location]);
   return (
-    <header className="sticky top-0 z-10 dark:bg-zinc-700 p-2 lg:px-8">
+    <header className="sticky top-0 z-30 dark:bg-zinc-700 p-2 lg:px-8">
       <div className="flex items-center justify-between gap-4">
         <Link to="/">
           <h1 className="text-3xl">MediaSet</h1>
