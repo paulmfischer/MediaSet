@@ -26,7 +26,7 @@ function Header() {
     setOpen(false);
   }, [location]);
   return (
-    <header className="dark:bg-zinc-700 p-2 lg:px-8">
+    <header className="sticky top-0 z-30 dark:bg-zinc-700 p-2 lg:px-8">
       <div className="flex items-center justify-between gap-4">
         <Link to="/">
           <h1 className="text-3xl">MediaSet</h1>
@@ -99,12 +99,12 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="text-base dark:bg-zinc-800 dark:text-slate-300 overflow-hidden">
-        <div className="flex flex-col h-screen 2xl:mx-14">
+      <body className="text-base dark:bg-zinc-800 dark:text-slate-300">
+        <div className="flex flex-col min-h-screen 2xl:mx-14">
           {/** Responsive header with mobile menu toggle */}
           <Header />
           <PendingNavigation />
-          <main id="main-content" className="h-full dark:bg-zinc-900 p-2 lg:py-4 lg:px-8 overflow-scroll">
+          <main id="main-content" className="flex-1 dark:bg-zinc-900 p-2 lg:py-4 lg:px-8">
             <Outlet />
           </main>
           <Footer version={appVersion} />
@@ -142,13 +142,13 @@ export function ErrorBoundary() {
         <Meta />
         <Links />
       </head>
-      <body className="text-base dark:bg-zinc-800 dark:text-slate-300 overflow-hidden">
-        <div className="flex flex-col h-screen 2xl:mx-14">
+      <body className="text-base dark:bg-zinc-800 dark:text-slate-300">
+        <div className="flex flex-col min-h-screen 2xl:mx-14">
           <Header />
           <PendingNavigation />
           <main
             id="main-content"
-            className="flex h-full items-center justify-center overflow-scroll bg-transparent p-2 dark:bg-zinc-900 lg:py-4 lg:px-8"
+            className="flex flex-1 items-center justify-center bg-transparent p-2 dark:bg-zinc-900 lg:py-4 lg:px-8"
           >
             <ErrorScreen
               title={title}
