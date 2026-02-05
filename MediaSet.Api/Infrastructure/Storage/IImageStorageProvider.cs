@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Abstraction for image storage backend (filesystem, S3, Azure Blob, etc.)

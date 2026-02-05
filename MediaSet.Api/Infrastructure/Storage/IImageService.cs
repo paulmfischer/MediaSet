@@ -1,6 +1,4 @@
-using MediaSet.Api.Models;
-
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Service for managing image operations including validation, saving, downloading, and deletion.

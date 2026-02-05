@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using MediaSet.Api.Models;
+using MediaSet.Api.Infrastructure.Storage;
 using System.Collections.Generic;
 
 namespace MediaSet.Api.Tests.Models;

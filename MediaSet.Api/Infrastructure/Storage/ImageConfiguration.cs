@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Configuration settings for image storage and validation.

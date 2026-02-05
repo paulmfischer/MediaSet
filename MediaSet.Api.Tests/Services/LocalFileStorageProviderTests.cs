@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using Moq;
-using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;

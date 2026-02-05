@@ -1,3 +1,5 @@
+using MediaSet.Api.Infrastructure.Storage;
+
 namespace MediaSet.Api.Models;
 
 public interface IEntity

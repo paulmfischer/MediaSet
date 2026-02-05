@@ -1,7 +1,7 @@
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Implementation of IImageStorageProvider for local filesystem storage.

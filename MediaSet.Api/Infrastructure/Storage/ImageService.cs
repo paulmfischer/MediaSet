@@ -1,11 +1,9 @@
 using System.Net;
-using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
-using Image = MediaSet.Api.Models.Image;
 using SixLaborsImage = SixLabors.ImageSharp.Image;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>
 /// Implementation of IImageService providing image validation, storage, and retrieval operations.

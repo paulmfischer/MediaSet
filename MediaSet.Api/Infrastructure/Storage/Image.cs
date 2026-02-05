@@ -1,6 +1,6 @@
 using System;
 
-namespace MediaSet.Api.Models
+namespace MediaSet.Api.Infrastructure.Storage
 {
     /// <summary>
     /// Represents image metadata for a media entity (cover image).
