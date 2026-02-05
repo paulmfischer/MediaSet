@@ -3,10 +3,9 @@ using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Storage;
-using MediaSet.Api.Models;
 using MediaSet.Api.Shared.Attributes;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Images.Services;
 
 /// <summary>
 /// Service that orchestrates image lookup for entities using lookup strategies.

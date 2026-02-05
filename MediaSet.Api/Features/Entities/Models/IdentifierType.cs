@@ -1,4 +1,3 @@
-using MediaSet.Api.Models;
 using System.ComponentModel;
 
 namespace MediaSet.Api.Features.Entities.Models;

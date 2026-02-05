@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Storage;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.VisualBasic.FileIO;

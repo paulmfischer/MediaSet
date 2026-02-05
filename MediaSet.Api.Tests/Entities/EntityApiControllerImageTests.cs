@@ -5,7 +5,7 @@ using Bogus;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

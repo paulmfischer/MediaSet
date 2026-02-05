@@ -6,7 +6,7 @@ using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -3,7 +3,7 @@ using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Options;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 
 namespace MediaSet.Api.Infrastructure.Lookup;
 

@@ -2,7 +2,7 @@ using MediaSet.Api.Features.Lookup.Models;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

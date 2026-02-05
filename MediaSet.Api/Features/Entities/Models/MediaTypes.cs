@@ -1,4 +1,3 @@
-using MediaSet.Api.Models;
 namespace MediaSet.Api.Features.Entities.Models;
 
 public enum MediaTypes

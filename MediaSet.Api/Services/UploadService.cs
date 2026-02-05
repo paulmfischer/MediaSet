@@ -1,7 +1,6 @@
 using MediaSet.Api.Features.Entities.Models;
 using System.Reflection;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Models;
 using Serilog;
 using SerilogTracing;
 

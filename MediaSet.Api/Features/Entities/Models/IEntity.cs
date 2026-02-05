@@ -1,4 +1,4 @@
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Infrastructure.Storage;
 
 namespace MediaSet.Api.Features.Entities.Models;

@@ -1,6 +1,6 @@
 using Cronos;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Images.Models;
 
 /// <summary>
 /// Configuration for the background image lookup service.

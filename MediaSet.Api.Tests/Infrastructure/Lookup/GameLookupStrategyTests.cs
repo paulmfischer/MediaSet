@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.Lookup;
 using Microsoft.Extensions.Logging;
 using Moq;

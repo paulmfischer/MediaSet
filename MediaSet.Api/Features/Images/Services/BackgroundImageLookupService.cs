@@ -1,14 +1,14 @@
 using Cronos;
 using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Storage;
-using MediaSet.Api.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Images.Services;
 
 /// <summary>
 /// Background service that automatically finds and downloads cover images for entities missing them.

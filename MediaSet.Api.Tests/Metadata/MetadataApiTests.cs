@@ -3,7 +3,7 @@ using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Services;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

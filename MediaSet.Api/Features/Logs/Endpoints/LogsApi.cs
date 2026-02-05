@@ -1,8 +1,6 @@
 using MediaSet.Api.Features.Logs.Models;
 namespace MediaSet.Api.Features.Logs.Endpoints;
 
-using MediaSet.Api.Models;
-
 /// <summary>
 /// Maps HTTP endpoints for client log ingestion.
 /// </summary>

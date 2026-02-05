@@ -1,4 +1,4 @@
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Images.Models;
 
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;

@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using MediaSet.Api.Services;
-using MediaSet.Api.Models;
+using MediaSet.Api.Features.Entities.Models;
 using System.Collections.Generic;
 using System.Linq;
 
