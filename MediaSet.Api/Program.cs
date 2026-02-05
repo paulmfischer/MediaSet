@@ -8,6 +8,7 @@ using MediaSet.Api.Config;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.Storage;

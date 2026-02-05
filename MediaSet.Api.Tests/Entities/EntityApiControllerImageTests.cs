@@ -3,6 +3,7 @@ using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Http;

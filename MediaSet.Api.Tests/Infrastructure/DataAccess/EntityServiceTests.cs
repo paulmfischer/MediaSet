@@ -4,6 +4,7 @@ using Bogus;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Services;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace MediaSet.Api.Tests.Services
+namespace MediaSet.Api.Tests.Infrastructure.DataAccess
 {
     [TestFixture]
     public class EntityServiceTests

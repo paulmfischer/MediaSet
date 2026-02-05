@@ -6,7 +6,7 @@ using MongoDB.Driver;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.DataAccess;
 
 public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IEntity
 {

@@ -1,7 +1,7 @@
 using MediaSet.Api.Models;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Infrastructure.DataAccess;
 
 public interface IEntityService<TEntity> where TEntity : IEntity
 {
