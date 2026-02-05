@@ -1,9 +1,10 @@
+using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Features.Entities.Endpoints;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Lookup;
+using MediaSet.Api.Features.Lookup.Endpoints;
 using MediaSet.Api.Config;
 using MediaSet.Api.Metadata;
 using MediaSet.Api.Models;

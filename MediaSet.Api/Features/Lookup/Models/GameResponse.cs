@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Lookup.Models;
 
 public record GameResponse(
     string Title,

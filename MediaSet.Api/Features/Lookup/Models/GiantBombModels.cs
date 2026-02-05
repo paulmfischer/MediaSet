@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Lookup.Models;
 
 public record GiantBombSearchResponse(
     [property: JsonPropertyName("status_code")] int StatusCode,

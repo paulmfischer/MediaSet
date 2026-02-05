@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Lookup.Models;
 
 public record UpcItemResponse(
     [property: JsonPropertyName("code")]
