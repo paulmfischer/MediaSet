@@ -2,7 +2,7 @@ using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Nodes;
 
-namespace MediaSet.Api.Bindings;
+namespace MediaSet.Api.Shared.Constraints;
 
 public class ParameterSchemaFilter : ISchemaFilter
 {

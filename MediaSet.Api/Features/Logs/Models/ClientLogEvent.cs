@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Logs.Models;
 
 /// <summary>
 /// Represents a log event sent from the client-side UI.

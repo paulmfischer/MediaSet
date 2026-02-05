@@ -1,7 +1,8 @@
 using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Models;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Metadata.Services;
 
 public interface IMetadataService
 {

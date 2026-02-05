@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Entities.Models;
 using System.Reflection;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Health.Services;
 
 /// <summary>
 /// Implementation of version service that reads version information from assembly metadata.

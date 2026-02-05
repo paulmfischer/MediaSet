@@ -1,4 +1,5 @@
-namespace MediaSet.Api.Bindings;
+using MediaSet.Api.Features.Logs.Models;
+namespace MediaSet.Api.Features.Logs.Endpoints;
 
 using MediaSet.Api.Models;
 

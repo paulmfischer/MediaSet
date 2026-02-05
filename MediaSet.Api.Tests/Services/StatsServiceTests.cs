@@ -1,3 +1,5 @@
+using MediaSet.Api.Features.Statistics.Services;
+using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;
@@ -54,8 +56,8 @@ public class StatsServiceTests
         _cacheSettingsMock.Setup(x => x.Value).Returns(_cacheSettings);
 
         // Setup cache to return null (cache miss) by default
-        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
+        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>(It.IsAny<string>()))
+            .ReturnsAsync((MediaSet.Api.Features.Statistics.Models.Stats?)null);
 
         _statsService = new StatsService(
             _bookServiceMock.Object,
@@ -705,13 +707,13 @@ public class StatsServiceTests
     public async Task GetMediaStatsAsync_ShouldReturnCachedStats_WhenCacheHit()
     {
         // Arrange
-        var cachedStats = new MediaSet.Api.Models.Stats(
+        var cachedStats = new MediaSet.Api.Features.Statistics.Models.Stats(
             new BookStats(10, 2, new[] { "Hardcover", "Paperback" }, 5, 2500),
             new MovieStats(5, 2, new[] { "DVD", "Blu-ray" }, 1),
             new GameStats(3, 1, new[] { "Digital" }, 2, new[] { "PC", "Xbox" }),
             new MusicStats(8, 2, new[] { "CD", "Vinyl" }, 5, 120));
 
-        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>("stats"))
+        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>("stats"))
             .ReturnsAsync(cachedStats);
 
         // Act
@@ -732,8 +734,8 @@ public class StatsServiceTests
         var movies = _movieFaker.Generate(2);
         var games = _gameFaker.Generate(1);
 
-        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
+        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>(It.IsAny<string>()))
+            .ReturnsAsync((MediaSet.Api.Features.Statistics.Models.Stats?)null);
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
@@ -757,8 +759,8 @@ public class StatsServiceTests
         var movies = _movieFaker.Generate(2);
         var games = _gameFaker.Generate(1);
 
-        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Models.Stats>(It.IsAny<string>()))
-            .ReturnsAsync((MediaSet.Api.Models.Stats?)null);
+        _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>(It.IsAny<string>()))
+            .ReturnsAsync((MediaSet.Api.Features.Statistics.Models.Stats?)null);
   _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
   _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
   _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(games);
@@ -770,7 +772,7 @@ public class StatsServiceTests
         // Assert
         _cacheServiceMock.Verify(c => c.SetAsync(
             "stats",
-            It.IsAny<MediaSet.Api.Models.Stats>(),
+            It.IsAny<MediaSet.Api.Features.Statistics.Models.Stats>(),
             null), Times.Once);
     }
 
@@ -792,7 +794,7 @@ public class StatsServiceTests
         await _statsService.GetMediaStatsAsync();
 
         // Assert
-        _cacheServiceMock.Verify(c => c.GetAsync<MediaSet.Api.Models.Stats>("stats"), Times.Exactly(2));
+        _cacheServiceMock.Verify(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>("stats"), Times.Exactly(2));
     }
 
     #endregion

@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Statistics.Services;
 
 public class StatsService : IStatsService
 {

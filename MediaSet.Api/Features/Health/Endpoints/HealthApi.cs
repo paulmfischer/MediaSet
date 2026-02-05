@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Health.Services;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;
@@ -5,7 +6,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Metadata;
+namespace MediaSet.Api.Features.Health.Endpoints;
 
 internal static class HealthApi
 {

@@ -1,6 +1,9 @@
+using MediaSet.Api.Features.Statistics.Services;
+using MediaSet.Api.Features.Statistics.Models;
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Services;
 
-namespace MediaSet.Api.Metadata;
+namespace MediaSet.Api.Features.Statistics.Endpoints;
 
 internal static class StatsApi
 {

@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;

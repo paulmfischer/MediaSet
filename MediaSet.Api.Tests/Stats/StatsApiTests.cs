@@ -1,3 +1,5 @@
+using MediaSet.Api.Features.Statistics.Services;
+using MediaSet.Api.Features.Statistics.Models;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Services;
@@ -13,7 +15,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Threading;
-using ApiModels = MediaSet.Api.Models;
+using ApiModels = MediaSet.Api.Features.Statistics.Models;
 
 namespace MediaSet.Api.Tests.Stats;
 

@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Config.Models;
 
 public class IntegrationAttributionDto
 {

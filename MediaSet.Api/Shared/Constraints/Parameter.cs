@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Bindings;
+namespace MediaSet.Api.Shared.Constraints;
 
 public interface IParameter
 { }

@@ -1,5 +1,5 @@
 using MediaSet.Api.Features.Entities.Models;
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Health.Services;
 
 /// <summary>
 /// Service for retrieving application version information.

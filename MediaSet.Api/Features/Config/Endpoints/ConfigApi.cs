@@ -1,8 +1,9 @@
+using MediaSet.Api.Features.Config.Models;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Models;
 using Microsoft.Extensions.Configuration;
 
-namespace MediaSet.Api.Config;
+namespace MediaSet.Api.Features.Config.Endpoints;
 
 internal static class ConfigApi
 {
