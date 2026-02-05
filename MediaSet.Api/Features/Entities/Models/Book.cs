@@ -1,3 +1,4 @@
+using MediaSet.Api.Models;
 
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
@@ -5,7 +6,7 @@ using MediaSet.Api.Infrastructure.Storage;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Entities.Models;
 
 public class Book : IEntity
 {

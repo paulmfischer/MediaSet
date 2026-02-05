@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using MediaSet.Api.Infrastructure.Storage;
 using System.Collections.Generic;

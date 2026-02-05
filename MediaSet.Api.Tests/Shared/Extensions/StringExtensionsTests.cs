@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using System;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;

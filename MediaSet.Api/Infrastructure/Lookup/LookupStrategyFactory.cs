@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Models;
 
 namespace MediaSet.Api.Infrastructure.Lookup;

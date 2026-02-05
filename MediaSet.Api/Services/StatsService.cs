@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Models;

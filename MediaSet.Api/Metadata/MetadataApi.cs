@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Bindings;
 using MediaSet.Api.Models;
 using MediaSet.Api.Services;

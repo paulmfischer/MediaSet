@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using System.Reflection;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Storage;

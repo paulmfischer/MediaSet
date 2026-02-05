@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using Cronos;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Lookup;

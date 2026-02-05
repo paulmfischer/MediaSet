@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 namespace MediaSet.Api.Services;
 
 /// <summary>

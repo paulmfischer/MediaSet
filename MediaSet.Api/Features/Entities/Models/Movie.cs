@@ -1,17 +1,19 @@
+using MediaSet.Api.Models;
 
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
+using MediaSet.Api.Infrastructure.Serialization;
 using MediaSet.Api.Infrastructure.Storage;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace MediaSet.Api.Models;
+namespace MediaSet.Api.Features.Entities.Models;
 
-public class Game : IEntity
+public class Movie : IEntity
 {
-    public Game()
+    public Movie()
     {
-        Type = MediaTypes.Games;
+        Type = MediaTypes.Movies;
     }
 
     [BsonId]
@@ -24,38 +26,28 @@ public class Game : IEntity
     [Required]
     public string Title { get; set; } = string.Empty;
 
-    // Physical/digital format (e.g., Disc, Cartridge, Digital)
-    public string Format { get; set; } = string.Empty;
-
-    // Common retail identifier
     [LookupIdentifier]
     public string Barcode { get; set; } = string.Empty;
 
-    // Release date as free-form string to match existing pattern
+    public string Format { get; set; } = string.Empty;
+
     [Upload(HeaderName = "Release Date")]
     public string ReleaseDate { get; set; } = string.Empty;
 
-    // Age rating, e.g., ESRB: E, T, M
     [Upload(HeaderName = "Audience Rating")]
     public string Rating { get; set; } = string.Empty;
 
-    // Platform
-    public string Platform { get; set; } = string.Empty;
+    [Upload(Converter = typeof(RuntimeConverter))]
+    public int? Runtime { get; set; } = null!;
 
-    // Studios/Developers
-    [Upload(HeaderName = "Developer")]
-    public List<string> Developers { get; set; } = [];
+    public List<string> Studios { get; set; } = [];
 
-    // Publishers
-    [Upload(HeaderName = "Publisher")]
-    public List<string> Publishers { get; set; } = [];
-
-    // Genres
-    [Upload(HeaderName = "Genre")]
     public List<string> Genres { get; set; } = [];
 
-    // Game description/summary
-    public string Description { get; set; } = string.Empty;
+    public string Plot { get; set; } = string.Empty;
+
+    [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
+    public bool IsTvSeries { get; set; }
 
     public string? ImageUrl { get; set; }
 
@@ -66,15 +58,14 @@ public class Game : IEntity
     public bool IsEmpty()
     {
         return string.IsNullOrWhiteSpace(Title)
-            && string.IsNullOrWhiteSpace(Format)
             && string.IsNullOrWhiteSpace(Barcode)
+            && string.IsNullOrWhiteSpace(Format)
             && string.IsNullOrWhiteSpace(ReleaseDate)
             && string.IsNullOrWhiteSpace(Rating)
-            && Publishers.Count == 0
-            && string.IsNullOrWhiteSpace(Platform)
-            && Developers.Count == 0
+            && !Runtime.HasValue
+            && Studios.Count == 0
             && Genres.Count == 0
-            && string.IsNullOrWhiteSpace(Description)
+            && string.IsNullOrWhiteSpace(Plot)
             && CoverImage == null;
     }
 }

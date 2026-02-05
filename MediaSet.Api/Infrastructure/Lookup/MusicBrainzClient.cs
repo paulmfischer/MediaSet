@@ -1,3 +1,4 @@
+using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using MediaSet.Api.Models;
