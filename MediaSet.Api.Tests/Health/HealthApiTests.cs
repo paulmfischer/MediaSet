@@ -1,7 +1,6 @@
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Infrastructure.Database;
-using MediaSet.Api.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

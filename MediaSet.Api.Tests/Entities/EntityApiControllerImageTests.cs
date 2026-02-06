@@ -3,7 +3,6 @@ using NUnit.Framework;
 using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Storage;
-using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Features.Entities.Models;
 using Microsoft.AspNetCore.Mvc.Testing;

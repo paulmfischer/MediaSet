@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Health.Services;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Services;
+using MediaSet.Api.Features.Health.Services;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;

@@ -1,10 +1,10 @@
 using MediaSet.Api.Features.Metadata.Services;
+using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
-using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Features.Entities.Models;
 using System;
@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Features.Metadata.Services;
 
 [TestFixture]
 public class MetadataServiceNewTests

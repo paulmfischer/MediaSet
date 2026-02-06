@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Caching;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Infrastructure.Caching;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Infrastructure.Caching;
 
 #nullable disable
 #pragma warning disable CS8602 // Dereference of possibly null reference - Moq expression trees cannot track null checks

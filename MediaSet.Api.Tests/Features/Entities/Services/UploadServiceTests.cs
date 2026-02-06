@@ -1,11 +1,10 @@
 using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Features.Entities.Services;
 using NUnit.Framework;
-using MediaSet.Api.Services;
-using MediaSet.Api.Features.Entities.Models;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Features.Entities.Services;
 
 [TestFixture]
 public class UploadServiceTests

@@ -2,7 +2,7 @@ using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Shared.Constraints;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Services;
+using MediaSet.Api.Features.Metadata.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MediaSet.Api.Features.Metadata.Endpoints;

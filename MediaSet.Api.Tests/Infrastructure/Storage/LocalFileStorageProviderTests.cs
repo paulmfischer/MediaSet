@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Storage;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Infrastructure.Storage;
@@ -8,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Infrastructure.Storage;
 
 [TestFixture]
 public class LocalFileStorageProviderTests

@@ -1,9 +1,9 @@
 using MediaSet.Api.Features.Health.Services;
+using MediaSet.Api.Features.Health.Services;
 using NUnit.Framework;
-using MediaSet.Api.Services;
 using System;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Features.Health.Services;
 
 [TestFixture]
 public class VersionServiceTests

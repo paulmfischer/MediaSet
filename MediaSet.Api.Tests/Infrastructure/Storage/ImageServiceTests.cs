@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Storage;
 using NUnit.Framework;
 using Moq;
 using Moq.Protected;
@@ -13,7 +14,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Infrastructure.Storage;
 
 [TestFixture]
 public class ImageServiceTests : IDisposable

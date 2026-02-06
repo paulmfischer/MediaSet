@@ -1,11 +1,11 @@
 using MediaSet.Api.Features.Statistics.Services;
+using MediaSet.Api.Features.Statistics.Services;
 using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
-using MediaSet.Api.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Features.Entities.Models;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ using System.Linq;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 
-namespace MediaSet.Api.Tests.Services;
+namespace MediaSet.Api.Tests.Features.Statistics.Services;
 
 [TestFixture]
 public class StatsServiceTests

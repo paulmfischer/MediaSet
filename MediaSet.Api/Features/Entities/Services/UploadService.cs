@@ -4,7 +4,7 @@ using MediaSet.Api.Shared.Extensions;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Services;
+namespace MediaSet.Api.Features.Entities.Services;
 
 public class UploadService
 {
