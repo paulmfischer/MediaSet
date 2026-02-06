@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Features.Logs.Endpoints;

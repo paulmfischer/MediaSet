@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace MediaSet.Api.Features.Entities.Models;
+namespace MediaSet.Api.Shared.Models;
 
 public enum IdentifierType
 {

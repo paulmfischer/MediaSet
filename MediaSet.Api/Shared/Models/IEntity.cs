@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Infrastructure.Storage;
 
-namespace MediaSet.Api.Features.Entities.Models;
+namespace MediaSet.Api.Shared.Models;
 
 public interface IEntity
 {

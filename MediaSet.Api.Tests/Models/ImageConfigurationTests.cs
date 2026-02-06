@@ -1,3 +1,4 @@
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using MediaSet.Api.Infrastructure.Storage;

@@ -1,4 +1,4 @@
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Shared.Models;
 using System.ComponentModel;
 
 namespace MediaSet.Api.Shared.Extensions;

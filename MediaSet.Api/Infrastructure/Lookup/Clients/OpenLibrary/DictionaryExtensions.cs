@@ -1,5 +1,4 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
-using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;

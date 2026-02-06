@@ -1,4 +1,5 @@
 using Cronos;
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Infrastructure.Lookup.Models;

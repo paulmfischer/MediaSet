@@ -1,3 +1,4 @@
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Models;
 using System.Linq.Expressions;
 using MediaSet.Api.Infrastructure.Database;

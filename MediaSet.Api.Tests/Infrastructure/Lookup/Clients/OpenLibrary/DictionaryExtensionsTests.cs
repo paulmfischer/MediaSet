@@ -1,5 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Shared.Models;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;

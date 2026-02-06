@@ -1,4 +1,3 @@
-using MediaSet.Api.Features.Logs.Models;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Options;
 

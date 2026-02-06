@@ -1,5 +1,5 @@
 using MediaSet.Api.Features.Metadata.Services;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Shared.Constraints;
 using Microsoft.AspNetCore.Mvc;
 

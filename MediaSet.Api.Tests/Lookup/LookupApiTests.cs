@@ -4,7 +4,7 @@ using Moq;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

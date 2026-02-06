@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Features.Entities.Models;
+namespace MediaSet.Api.Shared.Models;
 
 public enum MediaTypes
 {
