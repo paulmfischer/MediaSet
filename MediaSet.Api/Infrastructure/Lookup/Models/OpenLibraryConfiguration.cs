@@ -1,6 +1,6 @@
 using MediaSet.Api.Features.Entities.Models;
 
-namespace MediaSet.Api.Features.Lookup.Models;
+namespace MediaSet.Api.Infrastructure.Lookup.Models;
 
 public class OpenLibraryConfiguration
 {

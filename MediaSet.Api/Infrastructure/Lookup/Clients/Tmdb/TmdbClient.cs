@@ -1,5 +1,4 @@
-using MediaSet.Api.Features.Lookup.Models;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Options;

@@ -1,9 +1,8 @@
-using MediaSet.Api.Features.Lookup.Models;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 

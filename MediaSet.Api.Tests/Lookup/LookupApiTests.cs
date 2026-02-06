@@ -1,4 +1,4 @@
-using MediaSet.Api.Features.Lookup.Models;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using NUnit.Framework;
 using Moq;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;

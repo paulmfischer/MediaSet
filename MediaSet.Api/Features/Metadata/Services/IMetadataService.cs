@@ -1,5 +1,5 @@
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Lookup.Models;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 
 namespace MediaSet.Api.Features.Metadata.Services;
 

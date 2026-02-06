@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Features.Lookup.Models;
+namespace MediaSet.Api.Infrastructure.Lookup.Models;
 
 public class GiantBombConfiguration
 {

@@ -1,4 +1,4 @@
-using MediaSet.Api.Features.Lookup.Models;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
