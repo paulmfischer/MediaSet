@@ -1,8 +1,8 @@
 using MediaSet.Api.Features.Entities.Models;
 using System.Reflection;
-using MediaSet.Api.Shared.Extensions;
 using Serilog;
 using SerilogTracing;
+using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Features.Entities.Services;
 
@@ -22,7 +22,7 @@ public class UploadService
             {
                 if (property != null)
                 {
-                    var value = dataRow.GetValueByHeader<Movie>(headerFields, property);
+                    var value = dataRow.GetValueByHeader<TEntity>(headerFields, property);
                     if (value != null)
                     {
                         property.SetValue(newEntity, value.CastTo(property));

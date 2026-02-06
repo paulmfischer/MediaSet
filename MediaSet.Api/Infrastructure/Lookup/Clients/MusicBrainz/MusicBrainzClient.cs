@@ -3,7 +3,7 @@ using MediaSet.Api.Features.Entities.Models;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 
 public class MusicBrainzClient : IMusicBrainzClient
 {

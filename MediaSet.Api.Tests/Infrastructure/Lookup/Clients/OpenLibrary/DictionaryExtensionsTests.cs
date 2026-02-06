@@ -2,11 +2,11 @@ using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using System.Text.Json;
 using System.Collections.Generic;
 
-namespace MediaSet.Api.Tests.Infrastructure.Lookup;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup.Clients.OpenLibrary;
 
 [TestFixture]
 public class DictionaryExtensionsTests

@@ -12,9 +12,9 @@ using NUnit.Framework;
 using Moq;
 using Moq.Protected;
 using Microsoft.Extensions.Logging;
-using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 
-namespace MediaSet.Api.Tests.Infrastructure.Lookup;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup.Clients.OpenLibrary;
 
 [TestFixture]
 public class OpenLibraryClientTests

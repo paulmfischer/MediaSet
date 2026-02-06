@@ -3,7 +3,7 @@ using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Infrastructure.Database;
-using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;

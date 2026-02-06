@@ -1,9 +1,11 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
+using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
 public class BookLookupStrategy : ILookupStrategy<BookResponse>
 {

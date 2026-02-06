@@ -1,13 +1,15 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Strategies;
+using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
+using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Infrastructure.Lookup;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup.Strategies;
 
 [TestFixture]
 public class BookLookupStrategyTests

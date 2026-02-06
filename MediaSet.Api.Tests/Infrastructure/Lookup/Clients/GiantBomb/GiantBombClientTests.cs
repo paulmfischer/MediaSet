@@ -6,14 +6,14 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Clients.GiantBomb;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using NUnit.Framework;
 
-namespace MediaSet.Api.Tests.Infrastructure.Lookup;
+namespace MediaSet.Api.Tests.Infrastructure.Lookup.Clients.GiantBomb;
 
 [TestFixture]
 public class GiantBombClientTests

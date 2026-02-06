@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Options;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 
 public class TmdbClient : ITmdbClient
 {

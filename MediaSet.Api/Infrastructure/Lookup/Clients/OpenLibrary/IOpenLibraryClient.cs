@@ -1,7 +1,7 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 
 public interface IOpenLibraryClient
 {

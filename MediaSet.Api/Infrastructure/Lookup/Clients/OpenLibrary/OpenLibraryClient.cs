@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using MediaSet.Api.Shared.Extensions;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 
 public class OpenLibraryClient : IOpenLibraryClient
 {
@@ -239,65 +239,4 @@ public class OpenLibraryClient : IOpenLibraryClient
         // The loop above attempts to normalize; final Trim to clean up.
         return sb.ToString().Trim();
     }
-}
-
-public record BookResponse(
-  string Title,
-  string Subtitle,
-  List<Author> Authors,
-  int NumberOfPages,
-  List<Publisher> Publishers,
-  string PublishDate,
-  List<Subject> Subjects,
-  string? Format = null,
-  string? ImageUrl = null
-);
-
-public record Author(
-  string Name,
-  string Url
-);
-
-public record Publisher(string Name);
-
-public record Subject(string Name, string Url);
-
-public record ReadApiResponse(
-  List<ReadApiItem> Items,
-  Dictionary<string, ReadApiRecord> Records
-);
-
-public record ReadApiItem(
-  string Match,
-  string Status,
-  string ItemUrl,
-  ReadApiCover? Cover,
-  string FromRecord,
-  string PublishDate,
-  string OlEditionId,
-  string OlWorkId
-);
-
-public record ReadApiCover(
-  string Small,
-  string Medium,
-  string Large
-);
-
-public record ReadApiRecord(
-  List<string> Isbns,
-  List<string> Lccns,
-  List<string> Oclcs,
-  List<string> Olids,
-  List<string> PublishDates,
-  string RecordUrl,
-  Dictionary<string, object>? Data,
-  Dictionary<string, object>? Details
-);
-
-public class OpenLibraryConfiguration
-{
-    public string BaseUrl { get; set; } = "https://openlibrary.org/";
-    public int Timeout { get; set; } = 30;
-    public string ContactEmail { get; set; }
 }

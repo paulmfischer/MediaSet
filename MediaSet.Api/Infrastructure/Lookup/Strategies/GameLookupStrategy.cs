@@ -1,10 +1,12 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Infrastructure.Lookup.Clients.GiantBomb;
+using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using System.Text.RegularExpressions;
 using Serilog;
 using SerilogTracing;
 
-namespace MediaSet.Api.Infrastructure.Lookup;
+namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
 public class GameLookupStrategy : ILookupStrategy<GameResponse>
 {
