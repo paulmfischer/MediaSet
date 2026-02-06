@@ -2,7 +2,7 @@ using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 
-namespace MediaSet.Api.Tests.Models;
+namespace MediaSet.Api.Tests.Features.Entities.Models;
 
 [TestFixture]
 public class BookTests

@@ -17,7 +17,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MediaSet.Api.Tests.Lookup;
+namespace MediaSet.Api.Tests.Features.Lookup.Endpoints;
 
 [TestFixture]
 public class LookupApiTests : IntegrationTestBase

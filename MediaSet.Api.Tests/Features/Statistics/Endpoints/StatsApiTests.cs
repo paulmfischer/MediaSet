@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using ApiModels = MediaSet.Api.Features.Statistics.Models;
 
-namespace MediaSet.Api.Tests.Stats;
+namespace MediaSet.Api.Tests.Features.Statistics.Endpoints;
 
 [TestFixture]
 public class StatsApiTests : IntegrationTestBase

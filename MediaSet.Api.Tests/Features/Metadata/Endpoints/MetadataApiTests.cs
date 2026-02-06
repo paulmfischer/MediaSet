@@ -15,7 +15,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace MediaSet.Api.Tests.Metadata;
+namespace MediaSet.Api.Tests.Features.Metadata.Endpoints;
 
 [TestFixture]
 public class MetadataApiNewTests : IntegrationTestBase

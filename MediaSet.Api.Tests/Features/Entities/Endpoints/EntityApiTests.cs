@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Tests.Entities;
+namespace MediaSet.Api.Tests.Features.Entities.Endpoints;
 
 [TestFixture]
 public class EntityApiTests : IntegrationTestBase

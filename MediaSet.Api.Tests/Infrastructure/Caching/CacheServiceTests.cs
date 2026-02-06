@@ -225,8 +225,8 @@ public class MemoryCacheServiceTests
         // Act
         await _cacheService.RemoveByPatternAsync(pattern);
 
-        // Assert - Should complete without throwing
-        Assert.Pass("RemoveByPatternAsync completed successfully");
+        // Assert - Should complete without throwing an error
+        Assert.Pass();
     }
 
     [Test]

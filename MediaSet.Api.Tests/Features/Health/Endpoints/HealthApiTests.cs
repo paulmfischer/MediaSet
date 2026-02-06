@@ -14,7 +14,7 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using System.Threading;
 
-namespace MediaSet.Api.Tests.Health;
+namespace MediaSet.Api.Tests.Features.Health.Endpoints;
 
 [TestFixture]
 public class HealthApiTests : IntegrationTestBase

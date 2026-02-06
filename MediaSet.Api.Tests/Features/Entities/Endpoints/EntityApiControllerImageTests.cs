@@ -22,7 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 
-namespace MediaSet.Api.Tests.Entities;
+namespace MediaSet.Api.Tests.Features.Entities.Endpoints;
 
 /// <summary>
 /// Unit tests for image-related Entity API controller endpoints.

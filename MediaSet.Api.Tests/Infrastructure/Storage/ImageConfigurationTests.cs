@@ -4,7 +4,7 @@ using NUnit.Framework;
 using MediaSet.Api.Infrastructure.Storage;
 using System.Collections.Generic;
 
-namespace MediaSet.Api.Tests.Models;
+namespace MediaSet.Api.Tests.Infrastructure.Storage;
 
 [TestFixture]
 public class ImageConfigurationTests
