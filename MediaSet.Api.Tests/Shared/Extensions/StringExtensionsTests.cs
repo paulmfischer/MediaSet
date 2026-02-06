@@ -3,7 +3,6 @@ using System;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Serialization;
-using MediaSet.Api.Features.Entities.Models;
 using System.Reflection;
 using System.Collections.Generic;
 

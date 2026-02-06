@@ -1,6 +1,5 @@
 using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Entities.Models;
 
 namespace MediaSet.Api.Features.Statistics.Services;
 

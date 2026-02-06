@@ -2,7 +2,6 @@ using MediaSet.Api.Infrastructure.Storage;
 using NUnit.Framework;
 using Moq;
 using Moq.Protected;
-using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Features.Entities.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

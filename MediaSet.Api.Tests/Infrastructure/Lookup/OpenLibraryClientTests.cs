@@ -13,7 +13,6 @@ using Moq;
 using Moq.Protected;
 using Microsoft.Extensions.Logging;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Features.Entities.Models;
 
 namespace MediaSet.Api.Tests.Infrastructure.Lookup;
 

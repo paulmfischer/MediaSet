@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Features.Entities.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

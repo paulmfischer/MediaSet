@@ -1,5 +1,4 @@
 using MediaSet.Api.Features.Statistics.Services;
-using MediaSet.Api.Features.Statistics.Services;
 using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
@@ -7,7 +6,6 @@ using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
-using MediaSet.Api.Features.Entities.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;

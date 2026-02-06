@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Features.Entities.Models;
 
 namespace MediaSet.Api.Infrastructure.Lookup;
 

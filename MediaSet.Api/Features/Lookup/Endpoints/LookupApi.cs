@@ -1,8 +1,6 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Shared.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 

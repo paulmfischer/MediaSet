@@ -2,7 +2,6 @@ using MediaSet.Api.Features.Entities.Models;
 using System.Linq.Expressions;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
-using MediaSet.Api.Features.Entities.Models;
 using MongoDB.Driver;
 using Serilog;
 using SerilogTracing;

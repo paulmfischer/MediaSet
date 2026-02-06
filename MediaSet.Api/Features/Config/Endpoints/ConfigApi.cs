@@ -1,6 +1,5 @@
 using MediaSet.Api.Features.Config.Models;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Entities.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace MediaSet.Api.Features.Config.Endpoints;

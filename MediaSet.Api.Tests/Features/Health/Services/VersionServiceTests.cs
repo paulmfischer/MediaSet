@@ -1,5 +1,4 @@
 using MediaSet.Api.Features.Health.Services;
-using MediaSet.Api.Features.Health.Services;
 using NUnit.Framework;
 using System;
 

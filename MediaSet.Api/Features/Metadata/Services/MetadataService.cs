@@ -3,7 +3,6 @@ using MediaSet.Api.Features.Lookup.Models;
 using System.Reflection;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
-using MediaSet.Api.Features.Entities.Models;
 using Microsoft.Extensions.Options;
 using Serilog;
 using SerilogTracing;

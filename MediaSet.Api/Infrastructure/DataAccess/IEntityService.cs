@@ -1,5 +1,4 @@
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Entities.Models;
 using MongoDB.Driver;
 
 namespace MediaSet.Api.Infrastructure.DataAccess;

@@ -1,12 +1,10 @@
 using MediaSet.Api.Features.Metadata.Services;
-using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Entities.Models;
 using NUnit.Framework;
 using Moq;
 using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
-using MediaSet.Api.Features.Entities.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

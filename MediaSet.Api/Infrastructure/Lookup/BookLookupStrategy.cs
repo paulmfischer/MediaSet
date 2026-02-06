@@ -1,6 +1,5 @@
 using MediaSet.Api.Features.Lookup.Models;
 using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Entities.Models;
 using Serilog;
 using SerilogTracing;
 
