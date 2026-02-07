@@ -23,7 +23,7 @@ internal static class ConfigApi
             var giantBombSection = configuration.GetSection("GiantBombConfiguration");
             var musicBrainzSection = configuration.GetSection("MusicBrainzConfiguration");
 
-            IntegrationAttributionDto Build(string key, string displayName, IConfigurationSection section, string defaultLogo)
+            IntegrationAttributionDto Build(string key, string displayName, IConfigurationSection section, string defaultLogo, string? defaultAttributionUrl = null, string? defaultAttributionText = null)
             {
                 var enabled = section.Exists();
                 return new IntegrationAttributionDto
@@ -31,15 +31,17 @@ internal static class ConfigApi
                     Key = key,
                     DisplayName = displayName,
                     Enabled = enabled,
-                    AttributionUrl = enabled ? section.GetValue<string>("AttributionUrl") : null,
-                    AttributionText = enabled ? section.GetValue<string>("AttributionText") : null,
+                    AttributionUrl = enabled ? (section.GetValue<string>("AttributionUrl") ?? defaultAttributionUrl) : null,
+                    AttributionText = enabled ? (section.GetValue<string>("AttributionText") ?? defaultAttributionText) : null,
                     LogoPath = enabled ? section.GetValue<string>("LogoPath") ?? defaultLogo : null
                 };
             }
 
             var result = new[]
             {
-                Build("tmdb", "TMDB", tmdbSection, "/integrations/tmdb.svg"),
+                Build("tmdb", "TMDB", tmdbSection, "/integrations/tmdb.svg",
+                    defaultAttributionUrl: "https://www.themoviedb.org/",
+                    defaultAttributionText: "This product uses the TMDB API but is not endorsed or certified by TMDB."),
                 Build("openlibrary", "OpenLibrary", openLibrarySection, "/integrations/openlibrary.svg"),
                 Build("upcitemdb", "UPCitemdb", upcItemDbSection, "/integrations/upcitemdb.png"),
                 Build("giantbomb", "GiantBomb", giantBombSection, "/integrations/giantbomb.svg"),
