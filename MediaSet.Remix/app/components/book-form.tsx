@@ -105,7 +105,7 @@ export default function BookForm({ book, authors, genres, publishers, formats, i
       <div>
         <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">ISBN</label>
         <div className="flex gap-2">
-          <input id="isbn" name="isbn" type="text" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" onKeyDown={handleKeyDown} />
+          <input id="isbn" name="isbn" type="text" inputMode="numeric" className={inputClasses} placeholder="ISBN" defaultValue={book?.isbn} aria-label="ISBN" onKeyDown={handleKeyDown} />
           {isbnLookupAvailable && (
             <>
               <button
