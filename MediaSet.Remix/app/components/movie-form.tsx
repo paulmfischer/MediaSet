@@ -104,7 +104,7 @@ export default function MovieForm({ movie, genres, studios, formats, isSubmittin
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">Barcode</label>
         <div className="flex gap-2">
-          <input id="barcode" name="barcode" type="text" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
+          <input id="barcode" name="barcode" type="text" inputMode="numeric" className={inputClasses} placeholder="Barcode" defaultValue={movie?.barcode} aria-label="Barcode" onKeyDown={handleKeyDown} />
           {barcodeLookupAvailable && (
             <>
               <button
