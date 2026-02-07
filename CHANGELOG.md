@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.1.0](https://github.com/paulmfischer/MediaSet/compare/v3.0.0...v3.1.0) (2026-02-07)
+
+
+### Features
+
+* add numeric keyboard for barcode inputs on mobile ([#489](https://github.com/paulmfischer/MediaSet/issues/489)) ([a45feeb](https://github.com/paulmfischer/MediaSet/commit/a45feebda0aebf06ce3fa927c3b6e3375f2d0d10)), closes [#483](https://github.com/paulmfischer/MediaSet/issues/483)
+* **ui:** enable native pull-to-refresh on mobile ([#479](https://github.com/paulmfischer/MediaSet/issues/479)) ([fcca1cd](https://github.com/paulmfischer/MediaSet/commit/fcca1cd8d2b7e6a6e6e120770f8deb8a1824c00b))
+
+
+### Bug Fixes
+
+* **api:** hardcode TMDB attribution text to meet API requirements ([#484](https://github.com/paulmfischer/MediaSet/issues/484)) ([2395ab8](https://github.com/paulmfischer/MediaSet/commit/2395ab8fc09c4cf01cde76b8a3205e78584a6640)), closes [#473](https://github.com/paulmfischer/MediaSet/issues/473)
+* **api:** support timezone configuration for background service ([#475](https://github.com/paulmfischer/MediaSet/issues/475)) ([c50b8e4](https://github.com/paulmfischer/MediaSet/commit/c50b8e412a347c204d1223598a6aaf02da2f6b84))
+* **ui:** search clear button styling and keyboard accessibility ([#477](https://github.com/paulmfischer/MediaSet/issues/477)) ([e66d0bb](https://github.com/paulmfischer/MediaSet/commit/e66d0bb9c4d7eaac47484232db369885961473d2))
+
+
+### Refactoring
+
+* **docs:** consolidate agent instructions into shared file ([#487](https://github.com/paulmfischer/MediaSet/issues/487)) ([40d7d88](https://github.com/paulmfischer/MediaSet/commit/40d7d883b1354b15a435fe6d31ff0481f4bf4fc5))
+* implement vertical slice architecture and fix layer dependencies ([#482](https://github.com/paulmfischer/MediaSet/issues/482)) ([846ec2a](https://github.com/paulmfischer/MediaSet/commit/846ec2a1403a83b1303721de8b70d9c1805fb33b))
+
 ## [3.0.0](https://github.com/paulmfischer/MediaSet/compare/v2.5.0...v3.0.0) (2026-02-03)
 
 
