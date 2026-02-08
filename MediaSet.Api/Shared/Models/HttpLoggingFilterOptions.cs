@@ -1,11 +1,11 @@
-namespace MediaSet.Api.Features.Logs.Models;
+namespace MediaSet.Api.Shared.Models;
 
 /// <summary>
 /// Configuration options for HTTP request/response logging.
 /// Allows excluding specific paths from being logged to prevent noise
 /// and avoid logging-of-logs scenarios.
 /// </summary>
-public class HttpLoggingOptions
+public class HttpLoggingFilterOptions
 {
     /// <summary>
     /// Paths to exclude from HTTP logging (exact match).

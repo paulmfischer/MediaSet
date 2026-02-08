@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Options;
+using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Shared.Extensions;
 
@@ -11,11 +12,11 @@ namespace MediaSet.Api.Shared.Extensions;
 public class HttpLoggingFilterMiddleware : IMiddleware
 {
     private readonly ILogger<HttpLoggingFilterMiddleware> _logger;
-    private readonly Features.Logs.Models.HttpLoggingOptions _options;
+    private readonly HttpLoggingFilterOptions _options;
 
     public HttpLoggingFilterMiddleware(
         ILogger<HttpLoggingFilterMiddleware> logger,
-        IOptions<Features.Logs.Models.HttpLoggingOptions> options)
+        IOptions<HttpLoggingFilterOptions> options)
     {
         _logger = logger;
         _options = options.Value;

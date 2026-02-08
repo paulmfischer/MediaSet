@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.AspNetCore.HttpLogging;
+using MediaSet.Api.Shared.Models;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -54,8 +55,8 @@ public static class LoggingExtensions
             var envNameFromContext = context.HostingEnvironment.EnvironmentName;
             var externalLoggingEnabled = context.Configuration.GetValue<bool>("ExternalLogging:Enabled");
             var httpLoggingOptions = context.Configuration
-                .GetSection(nameof(Features.Logs.Models.HttpLoggingOptions))
-                .Get<Features.Logs.Models.HttpLoggingOptions>() ?? new();
+                .GetSection(nameof(HttpLoggingFilterOptions))
+                .Get<HttpLoggingFilterOptions>() ?? new();
 
             cfg.ReadFrom.Configuration(context.Configuration)
                .Enrich.FromLogContext()
@@ -119,8 +120,8 @@ public static class LoggingExtensions
     public static WebApplicationBuilder ConfigureHttpLogging(this WebApplicationBuilder builder)
     {
         // Configure HTTP logging options with path exclusions
-        builder.Services.Configure<MediaSet.Api.Features.Logs.Models.HttpLoggingOptions>(
-            builder.Configuration.GetSection(nameof(MediaSet.Api.Features.Logs.Models.HttpLoggingOptions)));
+        builder.Services.Configure<HttpLoggingFilterOptions>(
+            builder.Configuration.GetSection(nameof(HttpLoggingFilterOptions)));
 
         // Register the HTTP logging interceptor to respect path exclusions
         builder.Services.AddSingleton<IHttpLoggingInterceptor, ExcludePathHttpLoggingInterceptor>();

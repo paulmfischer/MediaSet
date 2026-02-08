@@ -1,6 +1,7 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Features.Images.Models;
+
 using System.Text.Json.Serialization;
 using MediaSet.Api.Features.Logs.Endpoints;
 using MediaSet.Api.Features.Entities.Endpoints;
@@ -8,7 +9,7 @@ using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Features.Lookup.Endpoints;
 using MediaSet.Api.Features.Config.Endpoints;
 using MediaSet.Api.Features.Metadata.Endpoints; using MediaSet.Api.Features.Health.Endpoints; using MediaSet.Api.Features.Statistics.Endpoints;
-using MediaSet.Api.Features.Images.Models;
+
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Statistics.Services;

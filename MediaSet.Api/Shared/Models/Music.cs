@@ -1,4 +1,3 @@
-using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Shared.Models;
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
@@ -6,7 +5,7 @@ using MediaSet.Api.Infrastructure.Storage;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace MediaSet.Api.Features.Entities.Models;
+namespace MediaSet.Api.Shared.Models;
 
 public class Music : IEntity
 {

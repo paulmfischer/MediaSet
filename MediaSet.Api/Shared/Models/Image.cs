@@ -1,7 +1,8 @@
 using System;
 
-namespace MediaSet.Api.Infrastructure.Storage
-{
+namespace MediaSet.Api.Shared.Models;
+
+
     /// <summary>
     /// Represents image metadata for a media entity (cover image).
     /// </summary>
@@ -42,4 +43,4 @@ namespace MediaSet.Api.Infrastructure.Storage
         /// </summary>
         public DateTime UpdatedAt { get; set; }
     }
-}
+

@@ -1,6 +1,6 @@
 using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
+
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
 using Microsoft.Extensions.Options;

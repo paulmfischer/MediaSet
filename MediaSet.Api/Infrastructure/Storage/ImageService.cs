@@ -2,6 +2,8 @@ using System.Net;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLaborsImage = SixLabors.ImageSharp.Image;
+using MediaSet.Api.Shared.Models;
+using CoverImage = MediaSet.Api.Shared.Models.Image;
 
 namespace MediaSet.Api.Infrastructure.Storage;
 
@@ -38,7 +40,7 @@ public class ImageService : IImageService
     /// <summary>
     /// Save an uploaded image file to storage with validation and EXIF data stripping.
     /// </summary>
-    public async Task<Image> SaveImageAsync(IFormFile file, string entityType, string entityId, CancellationToken cancellationToken)
+    public async Task<CoverImage> SaveImageAsync(IFormFile file, string entityType, string entityId, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
         {
@@ -108,7 +110,7 @@ public class ImageService : IImageService
             _logger.LogInformation("Image saved successfully: {RelativePath} ({SizeBytes} bytes)", relativePath, imageData.Length);
 
             // Return image metadata
-            return new Image
+            return new CoverImage
             {
                 Id = imageId,
                 FileName = uniqueFileName,
@@ -134,7 +136,7 @@ public class ImageService : IImageService
     /// <summary>
     /// Download an image from URL and save it to storage with validation and EXIF data stripping.
     /// </summary>
-    public async Task<Image> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken)
+    public async Task<CoverImage> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
@@ -210,7 +212,7 @@ public class ImageService : IImageService
                 imageUrl, relativePath, imageData.Length);
 
             // Return image metadata
-            return new Image
+            return new CoverImage
             {
                 Id = imageId,
                 FileName = uniqueFileName,
