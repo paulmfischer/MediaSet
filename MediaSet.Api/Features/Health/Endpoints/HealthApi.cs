@@ -1,9 +1,7 @@
 using MediaSet.Api.Features.Health.Services;
 using MediaSet.Api.Infrastructure.Database;
-using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace MediaSet.Api.Features.Health.Endpoints;
 

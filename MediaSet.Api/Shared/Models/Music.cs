@@ -1,7 +1,5 @@
-using MediaSet.Api.Shared.Models;
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
-using MediaSet.Api.Infrastructure.Storage;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -9,69 +7,69 @@ namespace MediaSet.Api.Shared.Models;
 
 public class Music : IEntity
 {
-  public Music()
-  {
-    Type = MediaTypes.Musics;
-  }
+    public Music()
+    {
+        Type = MediaTypes.Musics;
+    }
 
-  [BsonId]
-  [BsonRepresentation(BsonType.ObjectId)]
-  public string? Id { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? Id { get; set; }
 
-  [BsonIgnore]
-  public MediaTypes Type { get; set; }
+    [BsonIgnore]
+    public MediaTypes Type { get; set; }
 
-  [Required]
-  public string Title { get; set; } = string.Empty;
+    [Required]
+    public string Title { get; set; } = string.Empty;
 
-  public string Format { get; set; } = string.Empty;
+    public string Format { get; set; } = string.Empty;
 
-  [Required]
-  public string Artist { get; set; } = string.Empty;
+    [Required]
+    public string Artist { get; set; } = string.Empty;
 
-  [Upload(HeaderName = "Release Date")]
-  public string ReleaseDate { get; set; } = string.Empty;
+    [Upload(HeaderName = "Release Date")]
+    public string ReleaseDate { get; set; } = string.Empty;
 
-  [Upload(HeaderName = "Genre")]
-  public List<string> Genres { get; set; } = [];
+    [Upload(HeaderName = "Genre")]
+    public List<string> Genres { get; set; } = [];
 
-  public int? Duration { get; set; }
+    public int? Duration { get; set; }
 
-  public string Label { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
 
-  [LookupIdentifier]
-  public string Barcode { get; set; } = string.Empty;
+    [LookupIdentifier]
+    public string Barcode { get; set; } = string.Empty;
 
-  public int? Tracks { get; set; }
-  public int? Discs { get; set; }
-  public List<Disc> DiscList { get; set; } = [];
+    public int? Tracks { get; set; }
+    public int? Discs { get; set; }
+    public List<Disc> DiscList { get; set; } = [];
 
-  public string? ImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
 
-  public Image? CoverImage { get; set; }
+    public Image? CoverImage { get; set; }
 
-  public ImageLookup? ImageLookup { get; set; }
+    public ImageLookup? ImageLookup { get; set; }
 
-  public bool IsEmpty()
-  {
-    return string.IsNullOrWhiteSpace(Title)
-      && string.IsNullOrWhiteSpace(Format)
-      && string.IsNullOrWhiteSpace(Artist)
-      && string.IsNullOrWhiteSpace(ReleaseDate)
-      && Genres.Count == 0
-      && !Duration.HasValue
-      && string.IsNullOrWhiteSpace(Label)
-      && string.IsNullOrWhiteSpace(Barcode)
-      && !Tracks.HasValue
-      && !Discs.HasValue
-      && DiscList.Count == 0
-      && CoverImage == null;
-  }
+    public bool IsEmpty()
+    {
+        return string.IsNullOrWhiteSpace(Title)
+          && string.IsNullOrWhiteSpace(Format)
+          && string.IsNullOrWhiteSpace(Artist)
+          && string.IsNullOrWhiteSpace(ReleaseDate)
+          && Genres.Count == 0
+          && !Duration.HasValue
+          && string.IsNullOrWhiteSpace(Label)
+          && string.IsNullOrWhiteSpace(Barcode)
+          && !Tracks.HasValue
+          && !Discs.HasValue
+          && DiscList.Count == 0
+          && CoverImage == null;
+    }
 }
 
 public class Disc
 {
-  public int TrackNumber { get; set; }
-  public string Title { get; set; } = string.Empty;
-  public int? Duration { get; set; }
+    public int TrackNumber { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public int? Duration { get; set; }
 }

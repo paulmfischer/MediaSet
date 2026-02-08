@@ -70,21 +70,21 @@ public static class LoggingExtensions
             // Conditionally add Seq sink with filtering for excluded paths (console still logs everything)
             if (externalLoggingEnabled)
             {
-                var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl") 
+                var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl")
                     ?? "http://localhost:5341";
-                
+
                 // Use nested logger to apply filter only to Seq sink
-                cfg.WriteTo.Logger(lc => 
+                cfg.WriteTo.Logger(lc =>
                     lc.Filter.ByExcluding(logEvent =>
                     {
                         // Only filter out HTTP logging from excluded paths, not application logs
                         // HTTP logs come from Microsoft.AspNetCore.HttpLogging
                         var isHttpLog = logEvent.Properties.ContainsKey("RequestPath") &&
                                        logEvent.Properties.ContainsKey("RequestMethod");
-                        
+
                         if (isHttpLog)
                         {
-                            if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) && 
+                            if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) &&
                                 pathValue is ScalarValue scalarValue &&
                                 scalarValue.Value is string path)
                             {

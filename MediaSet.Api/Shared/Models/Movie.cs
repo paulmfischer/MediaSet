@@ -1,4 +1,3 @@
-using MediaSet.Api.Shared.Models;
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
 using MediaSet.Api.Infrastructure.Serialization;

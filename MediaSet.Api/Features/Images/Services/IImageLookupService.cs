@@ -1,5 +1,4 @@
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Infrastructure.Storage;
 
 namespace MediaSet.Api.Features.Images.Services;
 

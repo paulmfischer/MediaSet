@@ -1,8 +1,6 @@
-using System.Net;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLaborsImage = SixLabors.ImageSharp.Image;
-using MediaSet.Api.Shared.Models;
 using CoverImage = MediaSet.Api.Shared.Models.Image;
 
 namespace MediaSet.Api.Infrastructure.Storage;
@@ -66,7 +64,7 @@ public class ImageService : IImageService
 
             // Validate MIME type by checking if we can derive an extension from allowed extensions
             var allowedExtensions = _config.GetAllowedImageExtensions().ToList();
-            
+
             // Map MIME type to extension to validate
             var extensionFromMimeType = file.ContentType switch
             {
@@ -299,7 +297,7 @@ public class ImageService : IImageService
         {
             await using var inputStream = new MemoryStream(imageData);
             using var image = await SixLaborsImage.LoadAsync(inputStream, cancellationToken);
-            
+
             // Clear all metadata properties to remove EXIF data
             image.Metadata.ExifProfile = null;
             image.Metadata.IptcProfile = null;
@@ -358,7 +356,7 @@ public class ImageService : IImageService
             await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             await using var limitedStream = new SizeLimitedStream(contentStream, maxSizeBytes2);
             await using var memoryStream = new MemoryStream();
-            
+
             try
             {
                 await limitedStream.CopyToAsync(memoryStream, cancellationToken);

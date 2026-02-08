@@ -13,7 +13,7 @@ public class TraceIdHeaderMiddleware : IMiddleware
         // OpenTelemetry's AspNetCoreInstrumentation automatically extracts the W3C traceparent header
         // and propagates it through Activity.Current. This middleware ensures the trace ID is also
         // available via context.TraceIdentifier for compatibility with Serilog enrichment.
-        if (context.Request.Headers.TryGetValue("traceparent", out var traceparentValue) && 
+        if (context.Request.Headers.TryGetValue("traceparent", out var traceparentValue) &&
             !string.IsNullOrEmpty(traceparentValue))
         {
             // traceparent format: 00-{traceId}-{spanId}-{traceFlags}

@@ -46,7 +46,7 @@ public class ExcludePathHttpLoggingInterceptor : IHttpLoggingInterceptor
     public ValueTask OnRequestAsync(HttpLoggingInterceptorContext context)
     {
         // Check if this request should be excluded from logging
-        var disableLogging = context.HttpContext.Items.TryGetValue("DisableHttpLogging", out var value) 
+        var disableLogging = context.HttpContext.Items.TryGetValue("DisableHttpLogging", out var value)
             && value is true;
 
         if (disableLogging)

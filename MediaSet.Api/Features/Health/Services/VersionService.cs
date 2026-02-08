@@ -1,4 +1,3 @@
-using MediaSet.Api.Shared.Models;
 using System.Reflection;
 
 namespace MediaSet.Api.Features.Health.Services;
