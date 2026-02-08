@@ -12,8 +12,10 @@ RUN dotnet tool install --global dotnet-ef
 RUN dotnet tool install --global dotnet-watch
 
 # Copy project files (restore deferred to runtime)
-COPY *.csproj ./
-COPY . ./
+COPY MediaSet.Api.Analyzers/*.csproj ../MediaSet.Api.Analyzers/
+COPY MediaSet.Api/*.csproj ./
+COPY MediaSet.Api.Analyzers/ ../MediaSet.Api.Analyzers/
+COPY MediaSet.Api/ ./
 
 # Set environment variables for development
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1
