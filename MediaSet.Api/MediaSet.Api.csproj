@@ -9,8 +9,8 @@
         <NoWarn>AD0001,NU1902</NoWarn>
         <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
         <MinVerTagPrefix>v</MinVerTagPrefix>
-          <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-  </PropertyGroup>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Cronos" Version="0.11.1" />
@@ -32,6 +32,13 @@
         <PackageReference Include="SerilogTracing.Instrumentation.AspNetCore" Version="2.3.1" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+    </ItemGroup>
+
+    <!-- Reference the analyzer project -->
+    <ItemGroup>
+        <ProjectReference Include="..\MediaSet.Api.Analyzers\MediaSet.Api.Analyzers.csproj" 
+                          OutputItemType="Analyzer" 
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

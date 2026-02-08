@@ -1,3 +1,5 @@
+using MediaSet.Api.Shared.Models;
+
 namespace MediaSet.Api.Infrastructure.Storage;
 
 /// <summary>

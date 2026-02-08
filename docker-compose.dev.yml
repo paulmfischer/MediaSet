@@ -18,8 +18,8 @@ services:
   # .NET API with hot reload support
   api:
     build:
-      context: ./MediaSet.Api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: MediaSet.Api/Dockerfile.dev
     container_name: mediaset-dev-api
     restart: unless-stopped
     ports:

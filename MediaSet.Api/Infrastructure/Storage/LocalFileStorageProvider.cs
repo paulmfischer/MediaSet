@@ -48,7 +48,7 @@ public class LocalFileStorageProvider : IImageStorageProvider
     public async Task SaveImageAsync(byte[] imageData, string relativePath, CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("SaveImage", new { relativePath, sizeBytes = imageData?.Length ?? 0 });
-        
+
         if (imageData == null || imageData.Length == 0)
         {
             throw new ArgumentException("Image data cannot be null or empty", nameof(imageData));
@@ -105,7 +105,7 @@ public class LocalFileStorageProvider : IImageStorageProvider
     public async Task<Stream?> GetImageAsync(string relativePath, CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("GetImage", new { relativePath });
-        
+
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to get image with invalid path: {RelativePath}", relativePath);
@@ -132,7 +132,7 @@ public class LocalFileStorageProvider : IImageStorageProvider
             // Read file asynchronously into memory
             var imageData = await File.ReadAllBytesAsync(fullPath, cancellationToken);
             _logger.LogDebug("Image read successfully: {FullPath} ({SizeBytes} bytes)", fullPath, imageData.Length);
-            
+
             // Return as MemoryStream for compatibility with stream APIs
             return new MemoryStream(imageData, writable: false);
         }
@@ -156,7 +156,7 @@ public class LocalFileStorageProvider : IImageStorageProvider
     public void DeleteImage(string relativePath)
     {
         using var activity = Log.Logger.StartActivity("DeleteImage", new { relativePath });
-        
+
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to delete image with invalid path: {RelativePath}", relativePath);
@@ -203,7 +203,7 @@ public class LocalFileStorageProvider : IImageStorageProvider
     public bool Exists(string relativePath)
     {
         using var activity = Log.Logger.StartActivity("ImageExists", new { relativePath });
-        
+
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to check existence with invalid path: {RelativePath}", relativePath);

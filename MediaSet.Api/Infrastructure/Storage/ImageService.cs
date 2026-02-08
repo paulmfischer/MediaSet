@@ -1,7 +1,7 @@
-using System.Net;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLaborsImage = SixLabors.ImageSharp.Image;
+using CoverImage = MediaSet.Api.Shared.Models.Image;
 
 namespace MediaSet.Api.Infrastructure.Storage;
 
@@ -38,7 +38,7 @@ public class ImageService : IImageService
     /// <summary>
     /// Save an uploaded image file to storage with validation and EXIF data stripping.
     /// </summary>
-    public async Task<Image> SaveImageAsync(IFormFile file, string entityType, string entityId, CancellationToken cancellationToken)
+    public async Task<CoverImage> SaveImageAsync(IFormFile file, string entityType, string entityId, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
         {
@@ -64,7 +64,7 @@ public class ImageService : IImageService
 
             // Validate MIME type by checking if we can derive an extension from allowed extensions
             var allowedExtensions = _config.GetAllowedImageExtensions().ToList();
-            
+
             // Map MIME type to extension to validate
             var extensionFromMimeType = file.ContentType switch
             {
@@ -108,7 +108,7 @@ public class ImageService : IImageService
             _logger.LogInformation("Image saved successfully: {RelativePath} ({SizeBytes} bytes)", relativePath, imageData.Length);
 
             // Return image metadata
-            return new Image
+            return new CoverImage
             {
                 Id = imageId,
                 FileName = uniqueFileName,
@@ -134,7 +134,7 @@ public class ImageService : IImageService
     /// <summary>
     /// Download an image from URL and save it to storage with validation and EXIF data stripping.
     /// </summary>
-    public async Task<Image> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken)
+    public async Task<CoverImage> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
         {
@@ -210,7 +210,7 @@ public class ImageService : IImageService
                 imageUrl, relativePath, imageData.Length);
 
             // Return image metadata
-            return new Image
+            return new CoverImage
             {
                 Id = imageId,
                 FileName = uniqueFileName,
@@ -297,7 +297,7 @@ public class ImageService : IImageService
         {
             await using var inputStream = new MemoryStream(imageData);
             using var image = await SixLaborsImage.LoadAsync(inputStream, cancellationToken);
-            
+
             // Clear all metadata properties to remove EXIF data
             image.Metadata.ExifProfile = null;
             image.Metadata.IptcProfile = null;
@@ -356,7 +356,7 @@ public class ImageService : IImageService
             await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             await using var limitedStream = new SizeLimitedStream(contentStream, maxSizeBytes2);
             await using var memoryStream = new MemoryStream();
-            
+
             try
             {
                 await limitedStream.CopyToAsync(memoryStream, cancellationToken);

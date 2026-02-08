@@ -1,18 +1,20 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Features.Images.Models;
+
 using System.Text.Json.Serialization;
 using MediaSet.Api.Features.Logs.Endpoints;
 using MediaSet.Api.Features.Entities.Endpoints;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Features.Lookup.Endpoints;
 using MediaSet.Api.Features.Config.Endpoints;
-using MediaSet.Api.Features.Metadata.Endpoints; using MediaSet.Api.Features.Health.Endpoints; using MediaSet.Api.Features.Statistics.Endpoints;
-using MediaSet.Api.Features.Images.Models;
+using MediaSet.Api.Features.Metadata.Endpoints;
+using MediaSet.Api.Features.Health.Endpoints;
+using MediaSet.Api.Features.Statistics.Endpoints;
+
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Features.Statistics.Services;
-using MediaSet.Api.Features.Statistics.Models;
 using MediaSet.Api.Features.Health.Services;
 using MediaSet.Api.Shared.Constraints;
 using MediaSet.Api.Infrastructure.DataAccess;
@@ -65,22 +67,22 @@ var imageConfig = builder.Configuration.GetSection(nameof(ImageConfiguration)).G
 if (imageConfig != null)
 {
     bootstrapLogger.Information("Image storage configured with path: {StoragePath}", imageConfig.StoragePath);
-    
+
     // Convert relative paths to absolute paths relative to the content root
-    var storagePath = Path.IsPathRooted(imageConfig.StoragePath) 
-        ? imageConfig.StoragePath 
+    var storagePath = Path.IsPathRooted(imageConfig.StoragePath)
+        ? imageConfig.StoragePath
         : Path.Combine(builder.Environment.ContentRootPath, imageConfig.StoragePath);
-    
+
     // Ensure storage directory exists
     if (!Directory.Exists(storagePath))
     {
         Directory.CreateDirectory(storagePath);
         bootstrapLogger.Information("Created image storage directory: {StorageDirectory}", storagePath);
     }
-    
-    builder.Services.AddSingleton<IImageStorageProvider>(sp => 
+
+    builder.Services.AddSingleton<IImageStorageProvider>(sp =>
         new LocalFileStorageProvider(
-            storagePath, 
+            storagePath,
             sp.GetRequiredService<ILogger<LocalFileStorageProvider>>()));
     builder.Services.AddHttpClient<IImageService, ImageService>((serviceProvider, client) =>
     {
@@ -128,7 +130,7 @@ if (tmdbConfig.Exists())
         var config = serviceProvider.GetRequiredService<IOptions<TmdbConfiguration>>().Value;
         client.BaseAddress = new Uri(config.BaseUrl);
         client.Timeout = TimeSpan.FromSeconds(config.Timeout);
-        
+
         if (!string.IsNullOrEmpty(config.BearerToken))
         {
             client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {config.BearerToken}");

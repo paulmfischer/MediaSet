@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Features.Images.Models;
+namespace MediaSet.Api.Shared.Models;
 
 /// <summary>
 /// Tracks the state of background image lookup attempts for an entity.

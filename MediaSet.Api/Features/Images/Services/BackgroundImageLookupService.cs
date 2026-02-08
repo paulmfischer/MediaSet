@@ -1,11 +1,9 @@
 using Cronos;
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
-using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
@@ -341,7 +339,7 @@ public class BackgroundImageLookupService : BackgroundService
         object collection,
         CancellationToken cancellationToken)
     {
-        var imageLookup = new Models.ImageLookup
+        var imageLookup = new ImageLookup
         {
             LookupAttemptedAt = DateTime.UtcNow,
             FailureReason = result.Success ? null : result.ErrorMessage,
@@ -368,7 +366,7 @@ public class BackgroundImageLookupService : BackgroundService
     private static async Task UpdateEntityInCollectionAsync<TEntity>(
         IMongoCollection<TEntity> collection,
         string entityId,
-        Models.ImageLookup imageLookup,
+        ImageLookup imageLookup,
         Image? coverImage,
         CancellationToken cancellationToken) where TEntity : IEntity
     {

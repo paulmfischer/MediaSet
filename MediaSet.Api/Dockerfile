@@ -13,11 +13,13 @@ COPY MediaSet.sln ./
 # Copy .git directory so MinVer can access git metadata for version calculation
 COPY .git/ .git/
 
-# Copy project file and restore dependencies
+# Copy project files and restore dependencies
+COPY MediaSet.Api.Analyzers/MediaSet.Api.Analyzers.csproj ./MediaSet.Api.Analyzers/
 COPY MediaSet.Api/MediaSet.Api.csproj ./MediaSet.Api/
 RUN dotnet restore MediaSet.Api/MediaSet.Api.csproj
 
 # Copy source code
+COPY MediaSet.Api.Analyzers/ ./MediaSet.Api.Analyzers/
 COPY MediaSet.Api/ ./MediaSet.Api/
 
 # Build and publish
