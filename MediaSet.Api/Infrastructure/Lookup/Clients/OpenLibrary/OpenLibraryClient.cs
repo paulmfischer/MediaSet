@@ -19,14 +19,32 @@ public class OpenLibraryClient : IOpenLibraryClient
 
     public async Task<BookResponse?> GetBookByIsbnAsync(string isbn, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
+        try
         {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        }, cancellationToken);
-        _logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
+            var response = await _httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            }, cancellationToken);
+            _logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
 
-        var key = $"ISBN:{isbn}";
-        return response?.ContainsKey(key) == true ? response[key] : null;
+            var key = $"ISBN:{isbn}";
+            return response?.ContainsKey(key) == true ? response[key] : null;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "HTTP error while looking up book by ISBN: {Isbn}", isbn);
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "JSON parsing error while looking up book by ISBN: {Isbn}", isbn);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error looking up book by ISBN: {Isbn}", isbn);
+            return null;
+        }
     }
 
     public async Task<BookResponse?> GetReadableBookAsync(string identifierType, string identifierValue, CancellationToken cancellationToken = default)
@@ -43,7 +61,17 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning("Failed to get readable book for {identifierType}:{identifierValue}: {error}", identifierType, identifierValue, ex.Message);
+            _logger.LogWarning(ex, "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            return null;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "JSON parsing error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
         }
     }
