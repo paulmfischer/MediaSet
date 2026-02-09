@@ -4,12 +4,12 @@ namespace MediaSet.Api.Shared.Models;
 
 public interface IEntity
 {
-    public string? Id { get; set; }
-    public MediaTypes Type { get; set; }
-    public string Title { get; set; }
-    public string Format { get; set; }
-    public string? ImageUrl { get; set; }
-    public Image? CoverImage { get; set; }
-    public ImageLookup? ImageLookup { get; set; }
-    public bool IsEmpty();
+    string? Id { get; set; }
+    MediaTypes Type { get; set; }
+    string Title { get; set; }
+    string Format { get; set; }
+    string? ImageUrl { get; set; }
+    Image? CoverImage { get; set; }
+    ImageLookup? ImageLookup { get; set; }
+    bool IsEmpty();
 }
