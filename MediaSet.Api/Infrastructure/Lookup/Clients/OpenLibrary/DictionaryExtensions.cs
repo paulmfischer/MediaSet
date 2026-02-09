@@ -8,7 +8,9 @@ public static class DictionaryExtensions
     public static string ExtractStringFromData(this Dictionary<string, object> data, string key)
     {
         if (!data.TryGetValue(key, out var value))
+        {
             return string.Empty;
+        }
 
         return value switch
         {
