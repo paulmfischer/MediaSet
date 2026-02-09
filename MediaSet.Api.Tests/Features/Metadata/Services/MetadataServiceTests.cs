@@ -1,9 +1,7 @@
-using MediaSet.Api.Features.Entities.Models;
-using MediaSet.Api.Features.Metadata.Services;
 using MediaSet.Api.Shared.Models;
+using MediaSet.Api.Features.Metadata.Services;
 using NUnit.Framework;
 using Moq;
-using Bogus;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.DataAccess;
 using System;

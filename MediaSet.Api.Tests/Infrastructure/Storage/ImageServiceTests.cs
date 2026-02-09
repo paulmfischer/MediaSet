@@ -2,7 +2,6 @@ using MediaSet.Api.Infrastructure.Storage;
 using NUnit.Framework;
 using Moq;
 using Moq.Protected;
-using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
@@ -39,8 +38,10 @@ public class ImageServiceTests : IDisposable
             StripExifData = false
         };
 
-        _httpClient = new HttpClient();
-        _httpClient.Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds);
+        _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds)
+        };
 
         _imageService = new ImageService(
             _storageProviderMock!.Object,

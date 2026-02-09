@@ -1,4 +1,3 @@
-using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Shared.Models;
 using NUnit.Framework;
 using Moq;
@@ -60,12 +59,16 @@ public class EntityApiControllerImageTests : IntegrationTestBase
                     var imageServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IImageService));
                     if (imageServiceDescriptor != null)
+                    {
                         services.Remove(imageServiceDescriptor);
+                    }
 
                     var gameServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IEntityService<Game>));
                     if (gameServiceDescriptor != null)
+                    {
                         services.Remove(gameServiceDescriptor);
+                    }
 
                     // Add mock services
                     services.AddScoped<IImageService>(_ => _imageServiceMock.Object);
@@ -173,8 +176,10 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var imageFile = CreateImageFile("test.jpg", "image/jpeg");
 
         // Act
-        var content = new MultipartFormDataContent();
-        content.Add(new StreamContent(imageFile.OpenReadStream()), "coverImage", imageFile.FileName);
+        var content = new MultipartFormDataContent
+        {
+            { new StreamContent(imageFile.OpenReadStream()), "coverImage", imageFile.FileName }
+        };
         var response = await _client!.PostAsync("/Games", content);
 
         // Assert

@@ -1,10 +1,7 @@
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
 using System;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
-using MediaSet.Api.Infrastructure.Serialization;
-using System.Reflection;
 using System.Collections.Generic;
 
 namespace MediaSet.Api.Tests.Shared.Extensions;

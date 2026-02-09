@@ -3,8 +3,6 @@ using Moq;
 using MediaSet.Api.Infrastructure.Database;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -51,7 +49,9 @@ public class HealthApiTests : IntegrationTestBase
                     var databaseServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IDatabaseService));
                     if (databaseServiceDescriptor != null)
+                    {
                         services.Remove(databaseServiceDescriptor);
+                    }
 
                     // Add mock service
                     services.AddSingleton<IDatabaseService>(_ => _databaseServiceMock.Object);

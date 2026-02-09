@@ -1,14 +1,10 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using NUnit.Framework;
 using Moq;
-using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
-using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -42,12 +38,16 @@ public class LookupApiTests : IntegrationTestBase
                     var openLibraryDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IOpenLibraryClient));
                     if (openLibraryDescriptor != null)
+                    {
                         services.Remove(openLibraryDescriptor);
+                    }
 
                     var upcItemDbDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IUpcItemDbClient));
                     if (upcItemDbDescriptor != null)
+                    {
                         services.Remove(upcItemDbDescriptor);
+                    }
 
                     // Add mock clients FIRST
                     services.AddScoped<IOpenLibraryClient>(_ => _openLibraryClientMock.Object);
@@ -58,7 +58,9 @@ public class LookupApiTests : IntegrationTestBase
                     var strategyDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(MediaSet.Api.Infrastructure.Lookup.Strategies.ILookupStrategy<BookResponse>));
                     if (strategyDescriptor != null)
+                    {
                         services.Remove(strategyDescriptor);
+                    }
 
                     // Re-register with our mocked clients
                     services.AddScoped<MediaSet.Api.Infrastructure.Lookup.Strategies.ILookupStrategy<BookResponse>, MediaSet.Api.Infrastructure.Lookup.Strategies.BookLookupStrategy>();

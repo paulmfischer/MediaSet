@@ -4,9 +4,6 @@ using NUnit.Framework;
 using Moq;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -38,7 +35,9 @@ public class MetadataApiNewTests : IntegrationTestBase
                     var metadataServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IMetadataService));
                     if (metadataServiceDescriptor != null)
+                    {
                         services.Remove(metadataServiceDescriptor);
+                    }
 
                     // Add mock service
                     services.AddScoped<IMetadataService>(_ => _metadataServiceMock.Object);

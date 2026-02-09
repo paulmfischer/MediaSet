@@ -1,5 +1,4 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
-using MediaSet.Api.Shared.Models;
 using System;
 using System.Net;
 using System.Net.Http;

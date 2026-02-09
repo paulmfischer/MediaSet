@@ -83,14 +83,18 @@ public class OpenLibraryClient : IOpenLibraryClient
     private static BookResponse? MapReadApiResponseToBookResponse(ReadApiResponse? readApiResponse)
     {
         if (readApiResponse == null || !readApiResponse.Records.Any())
+        {
             return null;
+        }
 
         // Get the first record (usually there's only one)
         var firstRecord = readApiResponse.Records.Values.First();
         var data = firstRecord.Data;
 
         if (data == null)
+        {
             return null;
+        }
 
         // Extract title and subtitle from data
         var title = data.ExtractStringFromData("title");

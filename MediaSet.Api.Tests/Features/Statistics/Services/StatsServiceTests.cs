@@ -1,7 +1,6 @@
-using MediaSet.Api.Features.Entities.Models;
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Statistics.Services;
 using MediaSet.Api.Features.Statistics.Models;
-using MediaSet.Api.Shared.Models;
 using NUnit.Framework;
 using Moq;
 using Bogus;

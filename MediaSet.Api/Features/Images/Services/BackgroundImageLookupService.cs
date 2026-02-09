@@ -119,7 +119,9 @@ public class BackgroundImageLookupService : BackgroundService
         foreach (var mediaType in availableMediaTypes)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             // Check max runtime
             if (DateTime.UtcNow - runStartTime > maxRuntime)
@@ -206,7 +208,9 @@ public class BackgroundImageLookupService : BackgroundService
             foreach (var entity in entities)
             {
                 if (cancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
 
                 // Check max runtime
                 if (DateTime.UtcNow - runStartTime > maxRuntime)
@@ -219,9 +223,13 @@ public class BackgroundImageLookupService : BackgroundService
                 processed++;
 
                 if (success)
+                {
                     succeeded++;
+                }
                 else
+                {
                     failed++;
+                }
 
                 // Apply rate limiting
                 await ApplyRateLimitAsync(cancellationToken);

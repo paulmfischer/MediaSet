@@ -15,7 +15,7 @@ public static class StringExtensions
     /// <returns>Converted value if it can be converted, otherwise the initial value.</returns>
     public static object? CastTo(this string value, PropertyInfo propertyInfo)
     {
-        UploadAttribute? uploadAttribute = (UploadAttribute?)Attribute.GetCustomAttribute(propertyInfo, typeof(UploadAttribute));
+        var uploadAttribute = (UploadAttribute?)Attribute.GetCustomAttribute(propertyInfo, typeof(UploadAttribute));
         if (uploadAttribute != null && uploadAttribute.Converter != null)
         {
             var converterType = uploadAttribute.Converter;

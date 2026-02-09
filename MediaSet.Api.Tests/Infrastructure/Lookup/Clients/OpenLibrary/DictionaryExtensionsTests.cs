@@ -1,7 +1,4 @@
-using MediaSet.Api.Infrastructure.Lookup.Models;
-using MediaSet.Api.Shared.Models;
 using NUnit.Framework;
-using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using System.Text.Json;
 using System.Collections.Generic;

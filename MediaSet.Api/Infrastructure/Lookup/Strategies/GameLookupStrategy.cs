@@ -158,9 +158,21 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
             return string.Empty;
         }
 
-        if (Regex.IsMatch(rawTitle, @"(?i)Cartridge")) return "Cartridge";
-        if (Regex.IsMatch(rawTitle, @"(?i)Disc|Blu-?ray|DVD")) return "Disc";
-        if (Regex.IsMatch(rawTitle, @"(?i)Digital")) return "Digital";
+        if (Regex.IsMatch(rawTitle, @"(?i)Cartridge"))
+        {
+            return "Cartridge";
+        }
+
+        if (Regex.IsMatch(rawTitle, @"(?i)Disc|Blu-?ray|DVD"))
+        {
+            return "Disc";
+        }
+
+        if (Regex.IsMatch(rawTitle, @"(?i)Digital"))
+        {
+            return "Digital";
+        }
+
         return string.Empty;
     }
 
@@ -183,14 +195,20 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         foreach (var (pattern, platform) in titleHints)
         {
-            if (Regex.IsMatch(title ?? string.Empty, pattern)) return platform;
+            if (Regex.IsMatch(title ?? string.Empty, pattern))
+            {
+                return platform;
+            }
         }
 
         // Try brand/category/model
         var combined = $"{category} {brand} {model}";
         foreach (var (pattern, platform) in titleHints)
         {
-            if (Regex.IsMatch(combined, pattern)) return platform;
+            if (Regex.IsMatch(combined, pattern))
+            {
+                return platform;
+            }
         }
 
         return string.Empty;
@@ -252,9 +270,9 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         }
 
         // CD-ROM platforms (PS1, Saturn, older PC games)
-        if (platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
+        if ((platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
             !platformName.Contains("playstation 3") && !platformName.Contains("playstation 4") && 
-            !platformName.Contains("playstation 5") ||
+            !platformName.Contains("playstation 5")) ||
             platformName.Contains("saturn") ||
             platformName.Contains("sega cd"))
         {

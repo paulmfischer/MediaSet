@@ -4,9 +4,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <WarningsAsErrors />
-        <WarningsNotAsErrors>AD0001,NU1902</WarningsNotAsErrors>
-        <NoWarn>AD0001,NU1902</NoWarn>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <WarningsNotAsErrors>AD0001,NU1902,CS1591,CS1574</WarningsNotAsErrors>
+        <NoWarn>AD0001,NU1902,CS1591,CS1574</NoWarn>
         <UserSecretsId>5d24416b-37f1-4c2b-a4a5-4080d6c2f765</UserSecretsId>
         <MinVerTagPrefix>v</MinVerTagPrefix>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
