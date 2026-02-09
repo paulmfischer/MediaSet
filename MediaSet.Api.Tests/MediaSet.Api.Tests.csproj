@@ -4,6 +4,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <WarningsNotAsErrors>AD0001,NU1902,CS1591,CS1574</WarningsNotAsErrors>
+        <NoWarn>AD0001,NU1902,CS1591,CS1574</NoWarn>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <!-- Set environment to Testing when running tests -->
         <RunSettingsFilePath>$(MSBuildProjectDirectory)/test.runsettings</RunSettingsFilePath>
