@@ -762,6 +762,42 @@ public class OpenLibraryClientTests
         Assert.That(result!.PublishDate, Is.EqualTo("2015"));
     }
 
+    [Test]
+    public async Task GetReadableBookByIsbnAsync_WithInvalidJson_ReturnsNull()
+    {
+        // Arrange
+        var isbn = "23423";
+        var invalidJson = "This is not valid JSON";
+
+        SetupHttpResponse(HttpStatusCode.OK, invalidJson);
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetReadableBookByIsbnAsync(isbn);
+
+        // Assert
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task GetBookByIsbnAsync_WithInvalidJson_ReturnsNull()
+    {
+        // Arrange
+        var isbn = "23423";
+        var invalidJson = "This is not valid JSON";
+
+        SetupHttpResponse(HttpStatusCode.OK, invalidJson);
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        // Act
+        var result = await client.GetBookByIsbnAsync(isbn);
+
+        // Assert
+        Assert.That(result, Is.Null);
+    }
+
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)
     {
         var response = new HttpResponseMessage
