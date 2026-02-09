@@ -1,14 +1,10 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using NUnit.Framework;
 using Moq;
-using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
-using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;

@@ -2,7 +2,6 @@ using MediaSet.Api.Infrastructure.Storage;
 using NUnit.Framework;
 using Moq;
 using Moq.Protected;
-using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;

@@ -3,8 +3,6 @@ using Moq;
 using MediaSet.Api.Infrastructure.Database;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
 using System.Linq;
 using System.Net;
 using System.Net.Http;

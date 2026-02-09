@@ -1,5 +1,4 @@
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Features.Entities.Models;
 using MediaSet.Api.Features.Entities.Services;
 using NUnit.Framework;
 using System.Collections.Generic;
