@@ -220,4 +220,4 @@ dotnet_analyzer_diagnostic.CA1716.severity = none  # Identifiers should not matc
 dotnet_analyzer_diagnostic.AD0001.severity = none  # Analyzer exceptions
 
 # Diagnostic severity levels
-# dotnet_diagnostic.IDE0005.severity = warning  # Using directive is unnecessary
+dotnet_diagnostic.IDE0005.severity = error  # Using directive is unnecessary

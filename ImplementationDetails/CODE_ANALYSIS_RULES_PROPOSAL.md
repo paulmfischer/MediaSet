@@ -71,15 +71,15 @@ This document outlines the proposed changes to enforce code quality and consiste
 
 **Estimated Impact:** ✅ **0 violations** (already cleaned up)
 
-### Category B: Important Quality Rules → `warning` (Build Succeeds with Warnings)
+### Category B: Important Quality Rules → `error` (Build-Breaking)
 
 | Rule | Current | Proposed | Rationale |
 |------|---------|----------|-----------|
-| **CA1031** | `none` | `warning` | Do not catch general exceptions - Found 20+ violations; helps identify poor error handling patterns |
-| **CA1716** | `none` | `warning` | Identifiers shouldn't match keywords - Prevents naming confusion with language keywords |
-| **IDE0008** | N/A | `warning` | Use explicit type declaration - Discourages var for non-obvious types, improves code clarity |
+| **CA1031** | `none` | `error` | Do not catch general exceptions - Found 20+ violations; helps identify poor error handling patterns |
+| **CA1716** | `none` | `error` | Identifiers shouldn't match keywords - Prevents naming confusion with language keywords |
+| **IDE0008** | N/A | `error` | Use explicit type declaration - Discourages var for non-obvious types, improves code clarity |
 
-**Estimated Impact:** ⚠️ **70-80 violations**
+**Estimated Impact:** 🛑 **70-80 violations (Build-Breaking)**
 - CA1031: ~20 violations
 - CA1716: ~0-5 violations  
 - IDE0008: ~50+ violations
@@ -95,15 +95,15 @@ This document outlines the proposed changes to enforce code quality and consiste
 
 **Rationale:** These rules don't align with ASP.NET Core best practices or current project requirements.
 
-### Category D: Style Rules → Upgrade to `warning`
+### Category D: Style Rules → Upgrade to `error`
 
 | Rule | Current | Proposed | Rationale |
 |------|---------|----------|-----------|
-| **Naming conventions** (4 rules) | `suggestion` | `warning` | Enforce interface prefix (I), PascalCase for types, camelCase for fields - Standard .NET conventions |
-| **dotnet_style_readonly_field** | `suggestion` | `warning` | Mark fields readonly when possible - Improves immutability and thread safety |
-| **dotnet_code_quality_unused_parameters** | `suggestion` | `warning` | Remove unused parameters - Indicates dead code or oversight |
+| **Naming conventions** (4 rules) | `suggestion` | `error` | Enforce interface prefix (I), PascalCase for types, camelCase for fields - Standard .NET conventions |
+| **dotnet_style_readonly_field** | `suggestion` | `error` | Mark fields readonly when possible - Improves immutability and thread safety |
+| **dotnet_code_quality_unused_parameters** | `suggestion` | `error` | Remove unused parameters - Indicates dead code or oversight |
 
-**Estimated Impact:** ⚠️ **10-30 violations**
+**Estimated Impact:** 🛑 **10-30 violations (Build-Breaking)**
 - Naming conventions: ~0-10 violations
 - Readonly fields: ~10-20 violations
 - Unused parameters: ~0-5 violations
@@ -119,11 +119,15 @@ All other existing rules remain at current severity levels:
 ## Total Estimated Impact
 
 **Build Breaking (Errors):**
-- ✅ 0 violations expected
+- 🛑 **80-110 total violations** across Categories B + D
+- CA1031 (general exceptions): ~20 violations
+- IDE0008 (var usage): ~50+ violations
+- Naming conventions: ~0-10 violations
+- Readonly fields: ~10-20 violations
+- Unused parameters: ~0-5 violations
 
 **Build Warnings:**
-- ⚠️ 80-110 total violations across all categories
-- Most violations are in CA1031 (general exceptions) and IDE0008 (var usage)
+- None (all rules are errors or disabled)
 
 ## Implementation Options
 
@@ -170,11 +174,11 @@ All other existing rules remain at current severity levels:
 
 **Immediate:**
 - IDE0005 (error)
-- CA1031 general exceptions (warning)
-- CA1716 keyword naming (warning)
-- Naming conventions (warning)
-- Readonly fields (warning)
-- Unused parameters (warning)
+- CA1031 general exceptions (error)
+- CA1716 keyword naming (error)
+- Naming conventions (error)
+- Readonly fields (error)
+- Unused parameters (error)
 
 **Deferred:**
 - IDE0008 var usage (considered too disruptive, ~50+ violations)
@@ -192,22 +196,69 @@ All other existing rules remain at current severity levels:
 
 ## Recommendation
 
-**Option 3 (Moderate Balanced)** is recommended because:
+**Option 1 (Aggressive Enforcement)** - **APPROVED**
 
-1. **Addresses critical quality issues** - Catches poor exception handling and naming problems
-2. **Practical** - Avoids large-scale var refactoring which is more stylistic than functional
-3. **Manageable** - ~30-60 violations is reasonable to fix in one PR
-4. **Room for future** - Can always add IDE0008 later if desired
+This option applies all Category A + B + D rules immediately, enforcing:
+- IDE0005 (unused usings)
+- CA1031 (general exception catching)
+- CA1716 (keyword naming conflicts)
+- IDE0008 (explicit type declarations)
+- Naming conventions (interfaces, PascalCase, camelCase)
+- Readonly field enforcement
+- Unused parameter removal
+
+All violations (~80-110 total) will be fixed in a single PR to establish a strong baseline for code quality.
 
 ## Next Steps
 
-1. **Approve Option** - Select implementation option (1, 2, or 3)
-2. **Apply Rules** - Update `.editorconfig` with approved severity changes
-3. **Build & Assess** - Run `dotnet build` to identify actual violations
-4. **Fix Violations** - Address all errors and warnings
-5. **Test** - Verify all tests pass with new rules
-6. **Document** - Update development docs with new standards
-7. **Commit** - Create PR with changes
+**Approved Approach:** Iterative rule-by-rule implementation
+
+Rather than applying all rules at once, we will implement each rule individually following this loop:
+
+### Step 0: Consolidate EditorConfig Files
+
+Before implementing individual rules, consolidate the .editorconfig hierarchy:
+
+1. **Review** - Compare MediaSet.Api/.editorconfig with root .editorconfig
+2. **Merge** - Ensure root .editorconfig has all necessary rules
+3. **Remove** - Delete MediaSet.Api/.editorconfig so all projects inherit from root
+4. **Verify** - Confirm MediaSet.Api project now uses root configuration
+
+**Benefits:**
+- Single source of truth for code analysis rules
+- All .NET projects inherit same standards
+- Individual projects can still override if needed (without `root = true`)
+- Easier maintenance and consistency
+
+### Implementation Loop (Repeat for Each Rule)
+
+1. **Update `.editorconfig`** - Change rule severity (e.g., `none` → `error`, `suggestion` → `error`)
+2. **Build & Assess** - Run `dotnet build` to identify violations for THIS rule only
+3. **Fix Violations** - Address all errors for THIS rule
+4. **Test** - Verify all tests pass with the new rule
+5. **Commit** - Create a single commit for this rule's changes with message: `chore(analysis): enforce [RULE_ID] - [description]`
+
+### Rule Implementation Order
+
+1. ✅ **IDE0005** (unused usings) - Already enabled, 0 violations
+2. ⏳ **CA1031** (catch general exceptions)
+3. ⏳ **CA1716** (identifiers match keywords)
+4. ⏳ **IDE0008/IDE0007** (explicit type vs var)
+5. ⏳ **Naming: Interface prefix** (dotnet_naming_rule.interface_should_be_prefixed_with_i)
+6. ⏳ **Naming: PascalCase types** (dotnet_naming_rule.types_should_be_pascal_case)
+7. ⏳ **Naming: PascalCase members** (dotnet_naming_rule.non_field_members_should_be_pascal_case)
+8. ⏳ **Naming: camelCase fields** (dotnet_naming_rule.private_or_internal_field_should_be_camel_case)
+9. ⏳ **Readonly fields** (dotnet_style_readonly_field)
+10. ⏳ **Unused parameters** (dotnet_code_quality_unused_parameters)
+
+**Benefits of this approach:**
+- Each commit is focused on a single rule change
+- Easier to review individual rule impacts
+- Can identify which rule causes issues if tests fail
+- Incremental progress tracking
+- Cleaner git history
+
+**Final Step:** After all rules are implemented, update this document's status to "Implemented"
 
 ## References
 
