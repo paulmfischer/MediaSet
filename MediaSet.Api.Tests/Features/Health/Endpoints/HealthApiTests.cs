@@ -49,7 +49,9 @@ public class HealthApiTests : IntegrationTestBase
                     var databaseServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IDatabaseService));
                     if (databaseServiceDescriptor != null)
+                    {
                         services.Remove(databaseServiceDescriptor);
+                    }
 
                     // Add mock service
                     services.AddSingleton<IDatabaseService>(_ => _databaseServiceMock.Object);

@@ -36,7 +36,9 @@ public class StatsApiTests : IntegrationTestBase
                     var statsServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IStatsService));
                     if (statsServiceDescriptor != null)
+                    {
                         services.Remove(statsServiceDescriptor);
+                    }
 
                     // Add mock service
                     services.AddScoped<IStatsService>(_ => _statsServiceMock.Object);

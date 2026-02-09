@@ -38,8 +38,10 @@ public class ImageServiceTests : IDisposable
             StripExifData = false
         };
 
-        _httpClient = new HttpClient();
-        _httpClient.Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds);
+        _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(_imageConfig.HttpTimeoutSeconds)
+        };
 
         _imageService = new ImageService(
             _storageProviderMock!.Object,

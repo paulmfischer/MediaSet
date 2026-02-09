@@ -463,7 +463,7 @@ public class MovieLookupStrategyTests
         Assert.That(format, Is.EqualTo("4K"));
     }
 
-    private async Task<string> TestFormatExtraction(string title, string expectedFormat)
+    private async Task<string> TestFormatExtraction(string title, string _)
     {
         var upc = "043396471238";
         var upcResponse = CreateUpcItemResponse(upc, title);

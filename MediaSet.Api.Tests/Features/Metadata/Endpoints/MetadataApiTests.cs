@@ -35,7 +35,9 @@ public class MetadataApiNewTests : IntegrationTestBase
                     var metadataServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IMetadataService));
                     if (metadataServiceDescriptor != null)
+                    {
                         services.Remove(metadataServiceDescriptor);
+                    }
 
                     // Add mock service
                     services.AddScoped<IMetadataService>(_ => _metadataServiceMock.Object);

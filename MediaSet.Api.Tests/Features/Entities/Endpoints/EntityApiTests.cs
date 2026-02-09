@@ -52,17 +52,23 @@ public class EntityApiTests : IntegrationTestBase
                     var bookServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IEntityService<Book>));
                     if (bookServiceDescriptor != null)
+                    {
                         services.Remove(bookServiceDescriptor);
+                    }
 
                     var movieServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IEntityService<Movie>));
                     if (movieServiceDescriptor != null)
+                    {
                         services.Remove(movieServiceDescriptor);
+                    }
 
                     var gameServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IEntityService<Game>));
                     if (gameServiceDescriptor != null)
+                    {
                         services.Remove(gameServiceDescriptor);
+                    }
 
                     // Add mock services
                     services.AddScoped<IEntityService<Book>>(_ => _bookServiceMock.Object);
