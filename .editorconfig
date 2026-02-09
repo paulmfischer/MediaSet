@@ -155,9 +155,6 @@ csharp_style_var_elsewhere = false:silent
 csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 
-# Field preferences
-dotnet_style_prefer_auto_properties = true:silent
-
 # Parameter preferences
 dotnet_code_quality_unused_parameters = all:error
 
