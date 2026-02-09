@@ -252,9 +252,9 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         }
 
         // CD-ROM platforms (PS1, Saturn, older PC games)
-        if (platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
+        if ((platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
             !platformName.Contains("playstation 3") && !platformName.Contains("playstation 4") && 
-            !platformName.Contains("playstation 5") ||
+            !platformName.Contains("playstation 5")) ||
             platformName.Contains("saturn") ||
             platformName.Contains("sega cd"))
         {
