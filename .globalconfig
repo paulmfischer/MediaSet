@@ -1,0 +1,26 @@
+is_global = true
+
+# Architecture enforcement rules for MediaSet solution
+# These rules apply to all .NET projects in the solution
+
+# Rule 0: Infrastructure cannot use Features
+build_metadata.NamespaceDependencyRule.Identity_0 = Infrastructure cannot use Features
+build_metadata.NamespaceDependencyRule.SourceNamespace_0 = MediaSet.Api.Infrastructure
+build_metadata.NamespaceDependencyRule.ForbiddenNamespace_0 = MediaSet.Api.Features
+build_metadata.NamespaceDependencyRule.Message_0 = Infrastructure layer cannot reference Feature types
+build_metadata.NamespaceDependencyRule.AllowSelf_0 = false
+
+# Rule 1: Features cannot cross-reference
+build_metadata.NamespaceDependencyRule.Identity_1 = Features cannot cross-reference
+build_metadata.NamespaceDependencyRule.SourceNamespace_1 = MediaSet.Api.Features
+build_metadata.NamespaceDependencyRule.ForbiddenNamespace_1 = MediaSet.Api.Features
+build_metadata.NamespaceDependencyRule.Message_1 = Features should not reference other features
+build_metadata.NamespaceDependencyRule.AllowSelf_1 = true
+build_metadata.NamespaceDependencyRule.SelfDepth_1 = 4
+
+# Rule 2: Shared cannot use Features
+build_metadata.NamespaceDependencyRule.Identity_2 = Shared cannot use Features
+build_metadata.NamespaceDependencyRule.SourceNamespace_2 = MediaSet.Api.Shared
+build_metadata.NamespaceDependencyRule.ForbiddenNamespace_2 = MediaSet.Api.Features
+build_metadata.NamespaceDependencyRule.Message_2 = Shared code cannot depend on specific features
+build_metadata.NamespaceDependencyRule.AllowSelf_2 = false
