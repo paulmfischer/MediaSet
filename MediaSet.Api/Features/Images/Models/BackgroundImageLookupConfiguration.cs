@@ -30,8 +30,9 @@ public class BackgroundImageLookupConfiguration
 
     /// <summary>
     /// Maximum number of API requests per minute to external services.
+    /// Default is 5 to accommodate UPCitemdb's free tier burst limit (6 req/min).
     /// </summary>
-    public int RequestsPerMinute { get; set; } = 30;
+    public int RequestsPerMinute { get; set; } = 5;
 
     /// <summary>
     /// Validates the configuration, ensuring the cron expression is valid and has a minimum 1-hour interval.
