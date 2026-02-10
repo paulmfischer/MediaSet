@@ -110,6 +110,15 @@ var upcItemDbConfig = builder.Configuration.GetSection(nameof(UpcItemDbConfigura
 if (upcItemDbConfig.Exists())
 {
     bootstrapLogger.Information("UpcItemDb configuration exists. Setting up UpcItemDb services.");
+
+    // Validate configuration
+    var config = upcItemDbConfig.Get<UpcItemDbConfiguration>();
+    if (config != null && !config.IsValid(out var errorMessage))
+    {
+        bootstrapLogger.Error("Invalid UpcItemDb configuration: {ErrorMessage}", errorMessage);
+        throw new InvalidOperationException($"Invalid UpcItemDb configuration: {errorMessage}");
+    }
+
     builder.Services.Configure<UpcItemDbConfiguration>(upcItemDbConfig);
     builder.Services.AddHttpClient<IUpcItemDbClient, UpcItemDbClient>((serviceProvider, client) =>
     {

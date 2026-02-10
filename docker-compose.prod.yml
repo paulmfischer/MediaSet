@@ -62,8 +62,13 @@ services:
       # TmdbConfiguration__Timeout: "10"
       
       # UpcItemDb configuration (for barcode lookup)
+      # Free tier: 100 requests/day, 6 requests/minute burst
       # UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/"
       # UpcItemDbConfiguration__Timeout: "10"
+      # UpcItemDbConfiguration__MaxRequestsPerMinute: "5"
+      # UpcItemDbConfiguration__MaxRequestsPerDay: "90"
+      # UpcItemDbConfiguration__MinDelayBetweenRequestsMs: "1000"
+      # UpcItemDbConfiguration__MaxRetryPauseSeconds: "65"
       
       # GiantBomb configuration (for game lookup)
       # GiantBombConfiguration__BaseUrl: "https://www.giantbomb.com/api/"
@@ -95,7 +100,7 @@ services:
       # BackgroundImageLookupConfiguration__Schedule: "0 2 * * *"
       # BackgroundImageLookupConfiguration__MaxRuntimeMinutes: "60"
       # BackgroundImageLookupConfiguration__BatchSize: "25"
-      # BackgroundImageLookupConfiguration__RequestsPerMinute: "30"
+      # BackgroundImageLookupConfiguration__RequestsPerMinute: "5"  # Reduced from 30 to respect UpcItemDb limits
 
     volumes:
       # Persist uploaded images
