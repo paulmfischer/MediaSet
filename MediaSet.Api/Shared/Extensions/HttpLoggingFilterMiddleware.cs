@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Options;
 using MediaSet.Api.Shared.Models;
+using Serilog.Context;
 
 namespace MediaSet.Api.Shared.Extensions;
 
@@ -26,14 +27,19 @@ public class HttpLoggingFilterMiddleware : IMiddleware
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        // If path should be excluded from logging, disable HTTP logging for this request
-        if (_options.IsPathExcluded(path))
+        // Enrich all logs in this request scope with the request path
+        // This allows the Seq sink filter to exclude ALL logs from excluded paths
+        using (LogContext.PushProperty("RequestPath", path))
         {
-            // Set a flag that the HTTP logging interceptor can check
-            context.Items["DisableHttpLogging"] = true;
-        }
+            // If path should be excluded from logging, disable HTTP logging for this request
+            if (_options.IsPathExcluded(path))
+            {
+                // Set a flag that the HTTP logging interceptor can check
+                context.Items["DisableHttpLogging"] = true;
+            }
 
-        await next(context);
+            await next(context);
+        }
     }
 }
 

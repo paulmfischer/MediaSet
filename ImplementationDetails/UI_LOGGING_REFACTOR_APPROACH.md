@@ -199,7 +199,7 @@ Add an `HttpLogging` section to `appsettings.json`:
 ```
 
 **Implementation:**
-- Create `HttpLoggingOptions` configuration class
+- Create `HttpLoggingFilterOptions` configuration class
 - Read from `IConfiguration` in middleware
 - Use path matching logic (exact match or prefix match) in logging middleware
 

@@ -52,13 +52,13 @@ ExternalLogging__SeqUrl: "http://seq.example.com:5341"
 
 MediaSet.Api includes HTTP request/response logging that can generate high log volume for frequently-accessed endpoints. The following configuration options allow you to exclude specific paths from being logged to Seq while still logging them to console.
 
-### HttpLoggingOptions__ExcludedPaths
+### HttpLoggingFilterOptions__ExcludedPaths
 
 **Purpose**: Excludes HTTP request logs for exact path matches from being sent to Seq.
 
 **Type**: Array of strings (indexed)
 
-**Format**: `HttpLoggingOptions__ExcludedPaths__N` where N is the array index (0, 1, 2, etc.)
+**Format**: `HttpLoggingFilterOptions__ExcludedPaths__N` where N is the array index (0, 1, 2, etc.)
 
 **Behavior**:
 - Performs **exact** case-insensitive path matching
@@ -73,10 +73,10 @@ MediaSet.Api includes HTTP request/response logging that can generate high log v
 
 **Example**:
 ```yaml
-HttpLoggingOptions__ExcludedPaths__0: "/api/logs"
-HttpLoggingOptions__ExcludedPaths__1: "/health"
-HttpLoggingOptions__ExcludedPaths__2: "/health/ready"
-HttpLoggingOptions__ExcludedPaths__3: "/health/live"
+HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
+HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
+HttpLoggingFilterOptions__ExcludedPaths__2: "/health/ready"
+HttpLoggingFilterOptions__ExcludedPaths__3: "/health/live"
 ```
 
 **Matching behavior**:
@@ -84,13 +84,13 @@ HttpLoggingOptions__ExcludedPaths__3: "/health/live"
 - ❌ `/health/ready` does NOT match `/health` (not an exact match)
 - ✅ `/HEALTH` matches `/health` (case-insensitive)
 
-### HttpLoggingOptions__ExcludePathStartsWith
+### HttpLoggingFilterOptions__ExcludePathStartsWith
 
 **Purpose**: Excludes HTTP request logs for paths starting with specified prefixes from being sent to Seq.
 
 **Type**: Array of strings (indexed)
 
-**Format**: `HttpLoggingOptions__ExcludePathStartsWith__N` where N is the array index (0, 1, 2, etc.)
+**Format**: `HttpLoggingFilterOptions__ExcludePathStartsWith__N` where N is the array index (0, 1, 2, etc.)
 
 **Behavior**:
 - Performs **prefix** case-insensitive path matching
@@ -105,8 +105,8 @@ HttpLoggingOptions__ExcludedPaths__3: "/health/live"
 
 **Example**:
 ```yaml
-HttpLoggingOptions__ExcludePathStartsWith__0: "/api/health"
-HttpLoggingOptions__ExcludePathStartsWith__1: "/swagger"
+HttpLoggingFilterOptions__ExcludePathStartsWith__0: "/api/health"
+HttpLoggingFilterOptions__ExcludePathStartsWith__1: "/swagger"
 ```
 
 **Matching behavior**:
@@ -143,14 +143,14 @@ services:
       ExternalLogging__SeqUrl: "http://seq:80"
       
       # Exclude exact paths from Seq (high-frequency endpoints)
-      HttpLoggingOptions__ExcludedPaths__0: "/api/logs"
-      HttpLoggingOptions__ExcludedPaths__1: "/health"
-      HttpLoggingOptions__ExcludedPaths__2: "/health/ready"
-      HttpLoggingOptions__ExcludedPaths__3: "/health/live"
+      HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
+      HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
+      HttpLoggingFilterOptions__ExcludedPaths__2: "/health/ready"
+      HttpLoggingFilterOptions__ExcludedPaths__3: "/health/live"
       
       # Exclude path hierarchies from Seq
-      HttpLoggingOptions__ExcludePathStartsWith__0: "/api/health"
-      HttpLoggingOptions__ExcludePathStartsWith__1: "/swagger"
+      HttpLoggingFilterOptions__ExcludePathStartsWith__0: "/api/health"
+      HttpLoggingFilterOptions__ExcludePathStartsWith__1: "/swagger"
 ```
 
 ## Default Configuration
@@ -162,7 +162,7 @@ If not specified, MediaSet.Api uses the following defaults from `appsettings.jso
   "ExternalLogging": {
     "Enabled": false
   },
-  "HttpLoggingOptions": {
+  "HttpLoggingFilterOptions": {
     "ExcludedPaths": [
       "/api/logs",
       "/health",

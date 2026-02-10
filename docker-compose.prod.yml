@@ -81,12 +81,12 @@ services:
       # ExternalLogging__SeqUrl: "[ReplaceThis]"
       
       # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
-      # HttpLoggingOptions__ExcludedPaths__0: "/api/logs"
-      # HttpLoggingOptions__ExcludedPaths__1: "/health"
-      # HttpLoggingOptions__ExcludedPaths__2: "/health/ready"
-      # HttpLoggingOptions__ExcludedPaths__3: "/health/live"
-      # HttpLoggingOptions__ExcludePathStartsWith__0: "/api/health"
-      # HttpLoggingOptions__ExcludePathStartsWith__1: "/swagger"
+      # HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
+      # HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
+      # HttpLoggingFilterOptions__ExcludedPaths__2: "/health/ready"
+      # HttpLoggingFilterOptions__ExcludedPaths__3: "/health/live"
+      # HttpLoggingFilterOptions__ExcludePathStartsWith__0: "/api/health"
+      # HttpLoggingFilterOptions__ExcludePathStartsWith__1: "/swagger"
 
       # Background image lookup service configuration
       # Automatically finds and downloads cover images for entities missing them
