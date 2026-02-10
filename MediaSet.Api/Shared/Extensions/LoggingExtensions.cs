@@ -77,19 +77,13 @@ public static class LoggingExtensions
                 cfg.WriteTo.Logger(lc =>
                     lc.Filter.ByExcluding(logEvent =>
                     {
-                        // Only filter out HTTP logging from excluded paths, not application logs
-                        // HTTP logs come from Microsoft.AspNetCore.HttpLogging
-                        var isHttpLog = logEvent.Properties.ContainsKey("RequestPath") &&
-                                       logEvent.Properties.ContainsKey("RequestMethod");
-
-                        if (isHttpLog)
+                        // Filter out ALL logs (HTTP logging and infrastructure logs) from excluded paths
+                        // The RequestPath is enriched by HttpLoggingFilterMiddleware for all logs in a request
+                        if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) &&
+                            pathValue is ScalarValue scalarValue &&
+                            scalarValue.Value is string path)
                         {
-                            if (logEvent.Properties.TryGetValue("RequestPath", out var pathValue) &&
-                                pathValue is ScalarValue scalarValue &&
-                                scalarValue.Value is string path)
-                            {
-                                return httpLoggingOptions.IsPathExcluded(path);
-                            }
+                            return httpLoggingOptions.IsPathExcluded(path);
                         }
                         return false;
                     })
@@ -177,7 +171,7 @@ public static class LoggingExtensions
     /// <summary>
     /// Adds HTTP logging filter middleware to the request pipeline.
     /// This middleware checks if a path should be excluded from HTTP logging
-    /// based on the HttpLoggingOptions configuration.
+    /// based on the HttpLoggingFilterOptions configuration.
     /// Must be called before UseHttpLogging() and after UseRouting().
     /// </summary>
     public static WebApplication UseHttpLoggingFilterMiddleware(this WebApplication app)

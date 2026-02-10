@@ -257,6 +257,7 @@ app.UseHttpsRedirection();
 // Configure logging middleware
 // Set trace ID early, before any logging occurs (must be before Swagger and other middleware)
 app.UseMiddleware<TraceIdHeaderMiddleware>();
+app.UseHttpLoggingFilterMiddleware();
 app.UseHttpLoggingMiddleware();
 
 // turn on swagger for all environments for now
