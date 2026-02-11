@@ -7,10 +7,10 @@ import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/mode
 import { getEntityFromParams } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
-import Books from "./books";
-import Movies from "./movies";
-import Games from "./games";
-import Musics from "./musics";
+import Books from "./components/books";
+import Movies from "./components/movies";
+import Games from "./components/games";
+import Musics from "./components/musics";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = (loader) => {
