@@ -1,4 +1,4 @@
-import type { Integration } from "~/integrations-data";
+import type { Integration } from "~/api/integrations-data";
 
 type Props = {
   integrations?: Integration[];

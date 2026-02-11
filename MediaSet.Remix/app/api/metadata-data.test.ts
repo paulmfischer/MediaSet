@@ -5,11 +5,11 @@ const { mockApiFetch } = vi.hoisted(() => ({
   mockApiFetch: vi.fn(),
 }));
 
-vi.mock('./utils/apiFetch.server', () => ({
+vi.mock('~/utils/apiFetch.server', () => ({
   apiFetch: mockApiFetch,
 }));
 
-vi.mock('./utils/serverLogger', () => ({
+vi.mock('~/utils/serverLogger', () => ({
   serverLogger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -30,8 +30,8 @@ import {
   getLabels,
   getGamePublishers,
   getArtist,
-} from './metadata-data';
-import { Entity } from './models';
+} from '~/api/metadata-data';
+import { Entity } from '~/models';
 
 describe('metadata-data.ts', () => {
   beforeEach(() => {

@@ -1,10 +1,10 @@
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import { getEntity, updateEntity } from "~/entity-data";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
+import { getEntity, updateEntity } from "~/api/entity-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/api/metadata-data";
 import { formToDto, getEntityFromParams, singular } from "~/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/lookup-capabilities-data";
+import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/api/lookup-capabilities-data";
 import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "../../components/book-form";
 import MovieForm from "~/components/movie-form";
@@ -63,7 +63,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { error: { lookup: "Identifier value is required" } };
     }
     try {
-      const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+      const { lookup, getIdentifierTypeForField } = await import("~/api/lookup-data.server");
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
       const lookupResult = await lookup(entityType, identifierType, identifierValue);
       // Include lookup timestamp so UI can force remounts on consecutive lookups

@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import invariant from "tiny-invariant"
-import { deleteEntity } from "~/entity-data";
+import { deleteEntity } from "~/api/entity-data";
 import { getEntityFromParams } from "~/helpers";
 import { serverLogger } from "~/utils/serverLogger";
 

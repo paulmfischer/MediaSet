@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { useLoaderData } from "@remix-run/react";
-import { getEntity } from "~/entity-data";
+import { getEntity } from "~/api/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams, singular } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";

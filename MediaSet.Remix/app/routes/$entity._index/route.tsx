@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Form, Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
-import { searchEntities } from "~/entity-data";
+import { searchEntities } from "~/api/entity-data";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";

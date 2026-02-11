@@ -1,8 +1,8 @@
-import { baseUrl } from "./constants.server";
-import { singular } from "./helpers";
-import { BaseEntity, Entity } from "./models";
-import { serverLogger } from "./utils/serverLogger";
-import { apiFetch } from "./utils/apiFetch.server";
+import { baseUrl } from "~/constants.server";
+import { singular } from "~/helpers";
+import { BaseEntity, Entity } from "~/models";
+import { serverLogger } from "~/utils/serverLogger";
+import { apiFetch } from "~/utils/apiFetch.server";
 
 function getEntityType<T extends BaseEntity>(entity: T): Entity {
   return entity.type;

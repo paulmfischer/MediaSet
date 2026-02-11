@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { meta, loader } from './route';
-import * as entityData from '~/entity-data';
+import * as entityData from '~/api/entity-data';
 import * as helpers from '~/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 
 // Mock modules
-vi.mock('~/entity-data');
+vi.mock('~/api/entity-data');
 vi.mock('~/helpers');
 
 const mockSearchEntities = vi.mocked(entityData.searchEntities);

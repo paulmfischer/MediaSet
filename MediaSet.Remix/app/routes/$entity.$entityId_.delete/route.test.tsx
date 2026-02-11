@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { action } from './route';
-import * as entityData from '~/entity-data';
+import * as entityData from '~/api/entity-data';
 import * as helpers from '~/helpers';
 import { Entity } from '~/models';
 import { redirect } from '@remix-run/node';
 
 // Mock modules
-vi.mock('~/entity-data');
+vi.mock('~/api/entity-data');
 vi.mock('~/helpers');
 vi.mock('@remix-run/node', async () => {
   const actual = await vi.importActual('@remix-run/node');

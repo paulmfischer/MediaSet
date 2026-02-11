@@ -1,7 +1,7 @@
 import { json, type MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getStats } from "~/stats-data";
-import { getIntegrations } from "~/integrations-data";
+import { getStats } from "~/api/stats-data";
+import { getIntegrations } from "~/api/integrations-data";
 import AttributionBadges from "~/components/attribution-badges";
 import {
   LibraryBig,
