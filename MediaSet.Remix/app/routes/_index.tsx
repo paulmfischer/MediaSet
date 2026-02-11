@@ -16,7 +16,7 @@ import {
   Monitor,
   Album,
 } from "lucide-react";
-import StatCard from "~/components/StatCard";
+import StatCard from "~/components/stat-card";
 
 export const meta: MetaFunction = () => {
   return [
