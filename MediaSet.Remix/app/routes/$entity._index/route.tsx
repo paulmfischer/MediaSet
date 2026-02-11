@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { searchEntities } from "~/api/entity-data";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getEntityFromParams } from "~/helpers";
+import { getEntityFromParams } from "~/utils/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
 import Books from "./components/books";

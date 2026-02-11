@@ -3,7 +3,7 @@ import invariant from "tiny-invariant";
 import { useLoaderData } from "@remix-run/react";
 import { getEntity } from "~/api/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getEntityFromParams, singular } from "~/helpers";
+import { getEntityFromParams, singular } from "~/utils/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
 import Book from "./components/book";

@@ -1,5 +1,5 @@
 import { baseUrl } from "~/constants.server";
-import { singular } from "~/helpers";
+import { singular } from "~/utils/helpers";
 import {
   BookEntity,
   MovieEntity,

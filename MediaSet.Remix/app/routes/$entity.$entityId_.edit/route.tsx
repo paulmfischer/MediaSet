@@ -2,7 +2,7 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
 import { getEntity, updateEntity } from "~/api/entity-data";
 import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/api/metadata-data";
-import { formToDto, getEntityFromParams, singular } from "~/helpers";
+import { formToDto, getEntityFromParams, singular } from "~/utils/helpers";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/api/lookup-capabilities-data";
 import { serverLogger } from "~/utils/serverLogger";

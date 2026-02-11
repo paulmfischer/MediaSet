@@ -1,5 +1,5 @@
 import { baseUrl } from "~/constants.server";
-import { singular } from "~/helpers";
+import { singular } from "~/utils/helpers";
 import { BaseEntity, Entity } from "~/models";
 import { serverLogger } from "~/utils/serverLogger";
 import { apiFetch } from "~/utils/apiFetch.server";

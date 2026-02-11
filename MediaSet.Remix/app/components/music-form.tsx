@@ -5,7 +5,7 @@ import SingleselectInput from "~/components/singleselect-input";
 import ImageUpload from "~/components/image-upload";
 import ImageUrlPreview from "~/components/image-url-preview";
 import { FormProps, MusicEntity, Disc } from "~/models";
-import { millisecondsToMinutesSeconds } from "~/helpers";
+import { millisecondsToMinutesSeconds } from "~/utils/helpers";
 import ScanButton from "~/components/scan-button";
 
 type Metadata = {

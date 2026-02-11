@@ -2,7 +2,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import invariant from "tiny-invariant"
 import { deleteEntity } from "~/api/entity-data";
-import { getEntityFromParams } from "~/helpers";
+import { getEntityFromParams } from "~/utils/helpers";
 import { serverLogger } from "~/utils/serverLogger";
 
 export const action = async ({ params }: ActionFunctionArgs) => {

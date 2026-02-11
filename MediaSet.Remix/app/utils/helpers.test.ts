@@ -5,8 +5,8 @@ import {
   singular,
   millisecondsToMinutesSeconds,
   formToDto,
-} from './helpers';
-import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from './models';
+} from '~/utils/helpers';
+import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 
 describe('helpers.ts', () => {
   describe('toTitleCase', () => {

@@ -3,14 +3,14 @@ import { render, screen } from '~/test/test-utils';
 import Add, { meta, loader, action } from './route';
 import * as entityData from '~/api/entity-data';
 import * as metadataData from '~/api/metadata-data';
-import * as helpers from '~/helpers';
+import * as helpers from '~/utils/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 import * as remixReact from '@remix-run/react';
 
 // Mock modules
 vi.mock('~/api/entity-data');
 vi.mock('~/api/metadata-data');
-vi.mock('~/helpers');
+vi.mock('~/utils/helpers');
 vi.mock('~/api/lookup-capabilities-data', () => ({
   getLookupCapabilities: vi.fn().mockResolvedValue({
     supportsBookLookup: true,
