@@ -6,10 +6,10 @@ import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } 
 import { getEntityFromParams, singular } from "~/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
-import Book from "./book";
-import Movie from "./movie";
-import Game from "./game";
-import Music from "./music";
+import Book from "./components/book";
+import Movie from "./components/movie";
+import Game from "./components/game";
+import Music from "./components/music";
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   const entityType = getEntityFromParams(params);
