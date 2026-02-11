@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { render, screen } from '~/test/test-utils';
 import { BarChart3, TrendingUp, Users, Book } from 'lucide-react';
-import StatCard from './StatCard';
+import StatCard from './stat-card';
 
 describe('StatCard', () => {
   describe('Card Data Display', () => {

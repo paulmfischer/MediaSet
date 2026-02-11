@@ -1,18 +1,18 @@
-import { baseUrl } from "./constants.server";
-import { singular } from "./helpers";
-import { 
-  BookEntity, 
-  MovieEntity, 
+import { baseUrl } from "~/constants.server";
+import { singular } from "~/utils/helpers";
+import {
+  BookEntity,
+  MovieEntity,
   GameEntity,
   MusicEntity,
-  Entity, 
-  IdentifierType, 
+  Entity,
+  IdentifierType,
   BookLookupResponse,
   MovieLookupResponse,
   GameLookupResponse,
   MusicLookupResponse,
   LookupError
-} from "./models";
+} from "~/models";
 
 type Link = {
   name: string;

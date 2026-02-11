@@ -5,11 +5,11 @@ const { mockApiFetch } = vi.hoisted(() => ({
   mockApiFetch: vi.fn(),
 }));
 
-vi.mock('./utils/apiFetch.server', () => ({
+vi.mock('~/utils/apiFetch.server', () => ({
   apiFetch: mockApiFetch,
 }));
 
-vi.mock('./utils/serverLogger', () => ({
+vi.mock('~/utils/serverLogger', () => ({
   serverLogger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('./utils/serverLogger', () => ({
 }));
 
 // Now import after mocking
-import { getStats } from './stats-data';
+import { getStats } from '~/api/stats-data';
 
 describe('stats-data.ts', () => {
   beforeEach(() => {

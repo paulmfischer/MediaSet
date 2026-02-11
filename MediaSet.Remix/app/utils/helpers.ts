@@ -1,5 +1,5 @@
 import { Params } from "@remix-run/react";
-import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity, Music, MusicEntity, Disc } from "./models";
+import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity, Music, MusicEntity, Disc } from "~/models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {

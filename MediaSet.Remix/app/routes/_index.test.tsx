@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, within } from '~/test/test-utils';
 import Index, { meta, loader } from './_index';
-import * as statsData from '~/stats-data';
+import * as statsData from '~/api/stats-data';
 import * as remixReact from '@remix-run/react';
 
 // Mock the stats-data module
-vi.mock('~/stats-data');
+vi.mock('~/api/stats-data');
 
 const mockGetStats = vi.mocked(statsData.getStats);
 

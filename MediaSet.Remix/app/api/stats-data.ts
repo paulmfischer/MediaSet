@@ -1,6 +1,6 @@
-import { baseUrl } from "./constants.server";
-import { serverLogger } from "./utils/serverLogger";
-import { apiFetch } from "./utils/apiFetch.server";
+import { baseUrl } from "~/constants.server";
+import { serverLogger } from "~/utils/serverLogger";
+import { apiFetch } from "~/utils/apiFetch.server";
 
 type Stats = {
   bookStats: BookStats;

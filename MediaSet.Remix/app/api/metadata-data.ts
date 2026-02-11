@@ -1,7 +1,7 @@
-import { baseUrl } from "./constants.server";
-import { Entity } from "./models";
-import { serverLogger } from "./utils/serverLogger";
-import { apiFetch } from "./utils/apiFetch.server";
+import { baseUrl } from "~/constants.server";
+import { Entity } from "~/models";
+import { serverLogger } from "~/utils/serverLogger";
+import { apiFetch } from "~/utils/apiFetch.server";
 
 /**
  * Generic function to fetch metadata for a specific property of a media type

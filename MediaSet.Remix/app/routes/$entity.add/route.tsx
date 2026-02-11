@@ -2,11 +2,11 @@ import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remi
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation, useSubmit } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
-import { addEntity } from "~/entity-data";
-import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/metadata-data";
-import { formToDto, getEntityFromParams, singular } from "~/helpers";
+import { addEntity } from "~/api/entity-data";
+import { getAuthors, getFormats, getGenres, getPublishers, getStudios, getDevelopers, getLabels, getGamePublishers, getPlatforms } from "~/api/metadata-data";
+import { formToDto, getEntityFromParams, singular } from "~/utils/helpers";
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
-import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/lookup-capabilities-data";
+import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/api/lookup-capabilities-data";
 import { serverLogger } from "~/utils/serverLogger";
 import BookForm from "~/components/book-form";
 import MovieForm from "~/components/movie-form";
@@ -65,7 +65,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
     
     try {
-      const { lookup, getIdentifierTypeForField } = await import("~/lookup-data.server");
+      const { lookup, getIdentifierTypeForField } = await import("~/api/lookup-data.server");
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
       const lookupResult = await lookup(entityType, identifierType, identifierValue);
       // Include a lookup timestamp so the UI can force a remount for consecutive lookups

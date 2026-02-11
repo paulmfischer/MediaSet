@@ -2,15 +2,15 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Form, Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect } from "react";
 import { Plus, X } from "lucide-react";
-import { searchEntities } from "~/entity-data";
+import { searchEntities } from "~/api/entity-data";
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getEntityFromParams } from "~/helpers";
+import { getEntityFromParams } from "~/utils/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
-import Books from "./books";
-import Movies from "./movies";
-import Games from "./games";
-import Musics from "./musics";
+import Books from "./components/books";
+import Movies from "./components/movies";
+import Games from "./components/games";
+import Musics from "./components/musics";
 import invariant from "tiny-invariant";
 
 export const meta: MetaFunction = (loader) => {

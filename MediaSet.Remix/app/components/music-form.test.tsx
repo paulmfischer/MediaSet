@@ -40,7 +40,7 @@ vi.mock('@remix-run/react', async () => {
 });
 
 // Mock helper function
-vi.mock('~/helpers', () => ({
+vi.mock('~/utils/helpers', () => ({
   millisecondsToMinutesSeconds: (ms: number | null | undefined) => {
     if (!ms) return '';
     const totalSeconds = Math.floor(ms / 1000);

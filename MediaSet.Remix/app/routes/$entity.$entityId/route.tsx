@@ -1,15 +1,15 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { useLoaderData } from "@remix-run/react";
-import { getEntity } from "~/entity-data";
+import { getEntity } from "~/api/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getEntityFromParams, singular } from "~/helpers";
+import { getEntityFromParams, singular } from "~/utils/helpers";
 import { clientApiUrl } from "~/constants.server";
 import { serverLogger } from "~/utils/serverLogger";
-import Book from "./book";
-import Movie from "./movie";
-import Game from "./game";
-import Music from "./music";
+import Book from "./components/book";
+import Movie from "./components/movie";
+import Game from "./components/game";
+import Music from "./components/music";
 
 export const meta: MetaFunction<typeof loader> = ({ params, data }) => {
   const entityType = getEntityFromParams(params);

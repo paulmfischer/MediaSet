@@ -5,11 +5,11 @@ const { mockApiFetch } = vi.hoisted(() => ({
   mockApiFetch: vi.fn(),
 }));
 
-vi.mock('./utils/apiFetch.server', () => ({
+vi.mock('~/utils/apiFetch.server', () => ({
   apiFetch: mockApiFetch,
 }));
 
-vi.mock('./utils/serverLogger', () => ({
+vi.mock('~/utils/serverLogger', () => ({
   serverLogger: {
     info: vi.fn(() => undefined),
     warn: vi.fn(() => undefined),
@@ -25,8 +25,8 @@ import {
   updateEntity,
   addEntity,
   deleteEntity,
-} from './entity-data';
-import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from './models';
+} from '~/api/entity-data';
+import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 
 describe('entity-data.ts', () => {
   beforeEach(() => {
