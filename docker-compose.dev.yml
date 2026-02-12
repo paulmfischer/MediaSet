@@ -9,7 +9,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=MediaSet
+      MONGO_INITDB_DATABASE: "MediaSet"
     volumes:
       - ./data/mongodb:/data/db
     networks:
@@ -25,18 +25,18 @@ services:
     ports:
       - "5000:5000"   # HTTP
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:5000
-      - ASPNETCORE_HTTP_PORTS=5000
-      - ASPNETCORE_HTTPS_PORTS=
-      - NUGET_PACKAGES=/nuget
-      - MediaSetDatabaseSettings__ConnectionString=mongodb://mongodb:27017
-      - MediaSetDatabaseSettings__DatabaseName=MediaSet
-      # - OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/
-      - TmdbConfiguration__BearerToken=${TMDB_BEARER_TOKEN}
-      - UpcItemDbConfiguration__ApiKey=${UPCITEMDB_API_KEY}
-      # - GiantBombConfiguration__BaseUrl=${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}
-      # - GiantBombConfiguration__ApiKey=${GIANTBOMB_API_KEY}
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_HTTP_PORTS: "5000"
+      ASPNETCORE_HTTPS_PORTS: ""
+      NUGET_PACKAGES: "/nuget"
+      MediaSetDatabaseSettings__ConnectionString: "mongodb://mongodb:27017"
+      MediaSetDatabaseSettings__DatabaseName: "MediaSet"
+      # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
+      TmdbConfiguration__BearerToken: "${TMDB_BEARER_TOKEN}"
+      UpcItemDbConfiguration__ApiKey: "${UPCITEMDB_API_KEY}"
+      # GiantBombConfiguration__BaseUrl: "${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}"
+      # GiantBombConfiguration__ApiKey: "${GIANTBOMB_API_KEY}"
     volumes:
       - ./MediaSet.Api:/app
       - ./.git:/app/.git
@@ -60,13 +60,13 @@ services:
     ports:
       - "3000:5173"
     environment:
-      - NODE_ENV=development
-      - REMIX_DEV_HTTP_ORIGIN=http://localhost:3000
-      - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
+      NODE_ENV: "development"
+      REMIX_DEV_HTTP_ORIGIN: "http://localhost:3000"
+      VITE_APP_VERSION: "${VITE_APP_VERSION:-0.0.0-dev}"
       # Server-side API URL (uses Docker container name)
-      # - apiUrl=http://api:5000
+      # apiUrl: "http://api:5000"
       # Client-side API URL (accessible from host browser)
-      # - clientApiUrl=http://localhost:5000
+      # clientApiUrl: "http://localhost:5000"
     volumes:
       - ./MediaSet.Remix:/app
       - /app/node_modules

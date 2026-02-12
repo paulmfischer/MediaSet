@@ -46,7 +46,7 @@ public class BackgroundImageLookupService : BackgroundService
                 try
                 {
                     var localTimeZone = TimeZoneInfo.Local; // Respects TZ environment variable
-                    var now = DateTime.UtcNow;
+                    var now = DateTimeOffset.UtcNow;
                     var nextRun = cronExpression.GetNextOccurrence(now, localTimeZone);
 
                     if (nextRun == null)
@@ -56,9 +56,11 @@ public class BackgroundImageLookupService : BackgroundService
                     }
 
                     var delay = nextRun.Value - now;
+                    var nowInTimeZone = TimeZoneInfo.ConvertTime(now, localTimeZone);
+                    var nextRunInTimeZone = nextRun.HasValue ? (DateTimeOffset?)TimeZoneInfo.ConvertTime(nextRun.Value, localTimeZone) : null;
                     _logger.LogInformation(
-                        "Next background image lookup run scheduled for {NextRun} {TimeZone} (in {Delay})",
-                        nextRun.Value, localTimeZone.Id, delay);
+                        "Next background image lookup run scheduled for {NextRun} {TimeZone} (in {Delay}) (current time: {CurrentTime})",
+                        nextRunInTimeZone, localTimeZone.Id, delay, nowInTimeZone);
 
                     await Task.Delay(delay, stoppingToken);
 
