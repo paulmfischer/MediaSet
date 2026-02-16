@@ -142,7 +142,7 @@ describe("ImageDisplay Component", () => {
     });
     fireEvent.click(imageButton);
 
-    let closeButton = screen.getByLabelText("Close image modal");
+    const closeButton = screen.getByLabelText("Close image modal");
     expect(closeButton).toBeInTheDocument();
 
     fireEvent.click(closeButton);
@@ -276,7 +276,7 @@ describe("ImageDisplay Component", () => {
     );
 
     const images = screen.getAllByRole("img", { hidden: true }) as HTMLImageElement[];
-    const mainImage = images.find(img => img.alt === "Test book") as HTMLImageElement;
+    const mainImage = images.find((img) => img.alt === "Test book") as HTMLImageElement;
     expect(mainImage).toHaveAttribute("loading", "lazy");
   });
 

@@ -115,6 +115,7 @@ export default function ImageDisplay({
       </div>
 
       {showModal && imagePath && (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div
           className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
           onClick={() => setShowModal(false)}
@@ -122,10 +123,14 @@ export default function ImageDisplay({
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
+          tabIndex={-1}
         >
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <div
             className="relative max-w-4xl max-h-screen flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
           >
             <button
               type="button"
@@ -133,33 +138,17 @@ export default function ImageDisplay({
               className="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded p-1"
               aria-label="Close image modal"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            <img
-              src={imagePath}
-              alt={alt}
-              className="max-w-full max-h-screen object-contain rounded-lg"
-            />
+            <img src={imagePath} alt={alt} className="max-w-full max-h-screen object-contain rounded-lg" />
 
             {imageData && (
               <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-75 rounded-lg p-4 text-white text-sm">
                 <p className="font-medium">{imageData.fileName}</p>
-                <p className="text-gray-300">
-                  {(imageData.fileSize / 1024 / 1024).toFixed(2)} MB
-                </p>
+                <p className="text-gray-300">{(imageData.fileSize / 1024 / 1024).toFixed(2)} MB</p>
               </div>
             )}
           </div>

@@ -1,23 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '~/test/test-utils';
-import userEvent from '@testing-library/user-event';
-import SingleselectInput from './singleselect-input';
-import type { Option } from '~/models';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, waitFor } from "~/test/test-utils";
+import userEvent from "@testing-library/user-event";
+import SingleselectInput from "./singleselect-input";
+import type { Option } from "~/models";
 
-describe('SingleselectInput', () => {
+describe("SingleselectInput", () => {
   const mockOptions: Option[] = [
-    { label: 'Option 1', value: 'option1' },
-    { label: 'Option 2', value: 'option2' },
-    { label: 'Option 3', value: 'option3' },
-    { label: 'Rock', value: 'rock' },
-    { label: 'Jazz', value: 'jazz' },
-    { label: 'Classical', value: 'classical' },
+    { label: "Option 1", value: "option1" },
+    { label: "Option 2", value: "option2" },
+    { label: "Option 3", value: "option3" },
+    { label: "Rock", value: "rock" },
+    { label: "Jazz", value: "jazz" },
+    { label: "Classical", value: "classical" },
   ];
 
   const defaultProps = {
-    name: 'test-select',
-    addLabel: 'Add new',
-    placeholder: 'Select an option',
+    name: "test-select",
+    addLabel: "Add new",
+    placeholder: "Select an option",
     options: mockOptions,
   };
 
@@ -25,249 +25,234 @@ describe('SingleselectInput', () => {
     vi.clearAllMocks();
   });
 
-  describe('Dropdown Rendering', () => {
-    it('should render initial component state correctly', () => {
+  describe("Dropdown Rendering", () => {
+    it("should render initial component state correctly", () => {
       render(<SingleselectInput {...defaultProps} />);
 
       // Input field with placeholder
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       expect(input).toBeInTheDocument();
-      expect(input).toHaveAttribute('role', 'combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
-      expect(input).toHaveAttribute('aria-controls', `${defaultProps.name}-listbox`);
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
+      expect(input).toHaveAttribute("role", "combobox");
+      expect(input).toHaveAttribute("aria-expanded", "false");
+      expect(input).toHaveAttribute("aria-controls", `${defaultProps.name}-listbox`);
+      expect(input).toHaveAttribute("aria-autocomplete", "list");
 
       // Hidden input field
       const hiddenInputs = document.querySelectorAll('input[type="hidden"][name="test-select"]');
       expect(hiddenInputs.length).toBeGreaterThan(0);
-      expect(hiddenInputs[0]).toHaveAttribute('type', 'hidden');
-      expect(hiddenInputs[0]).toHaveAttribute('name', 'test-select');
+      expect(hiddenInputs[0]).toHaveAttribute("type", "hidden");
+      expect(hiddenInputs[0]).toHaveAttribute("name", "test-select");
 
       // Backdrop should be hidden initially
       const { container } = render(<SingleselectInput {...defaultProps} />);
-      const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-      expect(backdrop).toHaveClass('hidden');
+      const backdrop = container.querySelector(".absolute.top-0.left-0.z-10");
+      expect(backdrop).toHaveClass("hidden");
     });
 
-    it('should display dropdown when input is focused', async () => {
+    it("should display dropdown when input is focused", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
     });
 
-    it('should render all options in dropdown when opened', async () => {
+    it("should render all options in dropdown when opened", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       mockOptions.forEach((option) => {
-          expect(screen.getByText(option.label)).toBeInTheDocument();
-        });
+        expect(screen.getByText(option.label)).toBeInTheDocument();
+      });
     });
 
-    it('should have listbox role on dropdown container', async () => {
+    it("should have listbox role on dropdown container", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const listbox = screen.getByRole('listbox');
-      expect(listbox).toHaveAttribute('id', `${defaultProps.name}-listbox`);
+      const listbox = screen.getByRole("listbox");
+      expect(listbox).toHaveAttribute("id", `${defaultProps.name}-listbox`);
     });
 
     it('should render options with role="option"', async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const options = screen.getAllByRole('option');
+      const options = screen.getAllByRole("option");
       expect(options).toHaveLength(mockOptions.length);
     });
 
-    it('should display backdrop when dropdown is open', async () => {
+    it("should display backdrop when dropdown is open", async () => {
       const user = userEvent.setup();
       const { container } = render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       await waitFor(() => {
-        const backdrop = container.querySelector('.absolute.top-0.left-0.z-10');
-        expect(backdrop).not.toHaveClass('hidden');
+        const backdrop = container.querySelector(".absolute.top-0.left-0.z-10");
+        expect(backdrop).not.toHaveClass("hidden");
       });
     });
   });
 
-  describe('Option Selection', () => {
-    it('should select option when clicked', async () => {
+  describe("Option Selection", () => {
+    it("should select option when clicked", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('Option 1');
+      const option = screen.getByText("Option 1");
       await user.click(option);
 
-      expect(input).toHaveValue('Option 1');
+      expect(input).toHaveValue("Option 1");
     });
 
-    it('should update hidden input with selected value', async () => {
+    it("should update hidden input with selected value", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('Option 2');
+      const option = screen.getByText("Option 2");
       await user.click(option);
 
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('option2');
+      expect(hiddenInput.value).toBe("option2");
     });
 
-    it('should close dropdown after selecting option', async () => {
+    it("should close dropdown after selecting option", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('Option 1');
+      const option = screen.getByText("Option 1");
       await user.click(option);
 
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
-    it('should clear filter text after selection', async () => {
+    it("should clear filter text after selection", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'opt');
+      await user.type(input, "opt");
 
-      const option = screen.getByText('Option 1');
+      const option = screen.getByText("Option 1");
       await user.click(option);
 
-      expect(input).toHaveValue('Option 1');
+      expect(input).toHaveValue("Option 1");
     });
 
-    it('should handle selecting new options', async () => {
+    it("should handle selecting new options", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'New Option');
+      await user.type(input, "New Option");
 
-      const newOption = screen.getByText('Add new New Option');
+      const newOption = screen.getByText("Add new New Option");
       await user.click(newOption);
 
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('New Option');
-      expect(input).toHaveValue('New Option');
+      expect(hiddenInput.value).toBe("New Option");
+      expect(input).toHaveValue("New Option");
     });
 
-    it('should initialize with selected value', () => {
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option2"
-        />
-      );
+    it("should initialize with selected value", () => {
+      render(<SingleselectInput {...defaultProps} selectedValue="option2" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       // The display value shows the value, not the label, when initialized
-      expect(input).toHaveValue('option2');
+      expect(input).toHaveValue("option2");
     });
 
-    it('should update display when selectedValue prop changes', async () => {
-      const { rerender } = render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+    it("should update display when selectedValue prop changes", async () => {
+      const { rerender } = render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
-      expect(input).toHaveValue('option1');
+      const input = screen.getByPlaceholderText("Select an option");
+      expect(input).toHaveValue("option1");
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option3"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} selectedValue="option3" />);
 
-      expect(input).toHaveValue('option3');
+      expect(input).toHaveValue("option3");
     });
 
-    it('should handle option with isNew flag', async () => {
+    it("should handle option with isNew flag", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'Custom');
+      await user.type(input, "Custom");
 
-      const newOption = screen.getByText('Add new Custom');
+      const newOption = screen.getByText("Add new Custom");
       await user.click(newOption);
 
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('Custom');
+      expect(hiddenInput.value).toBe("Custom");
     });
   });
 
-  describe('Search/Filter Functionality', () => {
-    it('should filter options based on input text', async () => {
+  describe("Search/Filter Functionality", () => {
+    it("should filter options based on input text", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'Option 1');
+      await user.type(input, "Option 1");
 
       await waitFor(() => {
-        expect(screen.getByText('Option 1')).toBeInTheDocument();
-        expect(screen.queryByText('Option 2')).not.toBeInTheDocument();
+        expect(screen.getByText("Option 1")).toBeInTheDocument();
+        expect(screen.queryByText("Option 2")).not.toBeInTheDocument();
       });
     });
 
-    it('should perform case-insensitive filtering', async () => {
+    it("should perform case-insensitive filtering", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'rock');
+      await user.type(input, "rock");
 
       await waitFor(() => {
-        expect(screen.getByText('Rock')).toBeInTheDocument();
+        expect(screen.getByText("Rock")).toBeInTheDocument();
       });
     });
 
-    it('should filter by partial match', async () => {
+    it("should filter by partial match", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'opt');
+      await user.type(input, "opt");
 
       await waitFor(() => {
-        expect(screen.getByText('Option 1')).toBeInTheDocument();
-        expect(screen.getByText('Option 2')).toBeInTheDocument();
-        expect(screen.getByText('Option 3')).toBeInTheDocument();
+        expect(screen.getByText("Option 1")).toBeInTheDocument();
+        expect(screen.getByText("Option 2")).toBeInTheDocument();
+        expect(screen.getByText("Option 3")).toBeInTheDocument();
       });
     });
 
@@ -275,12 +260,12 @@ describe('SingleselectInput', () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'NonExistent');
+      await user.type(input, "NonExistent");
 
       await waitFor(() => {
-        expect(screen.getByText('Add new NonExistent')).toBeInTheDocument();
+        expect(screen.getByText("Add new NonExistent")).toBeInTheDocument();
       });
     });
 
@@ -288,7 +273,7 @@ describe('SingleselectInput', () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       await waitFor(() => {
@@ -296,150 +281,145 @@ describe('SingleselectInput', () => {
       });
     });
 
-    it('should clear filter when dropdown closes', async () => {
+    it("should clear filter when dropdown closes", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'Option');
+      await user.type(input, "Option");
 
-      expect(input).toHaveValue('Option');
+      expect(input).toHaveValue("Option");
 
-      await user.keyboard('{Escape}');
+      await user.keyboard("{Escape}");
 
       // After closing, the input should show the selected value (or placeholder if nothing selected)
-      expect(input).toHaveValue('');
+      expect(input).toHaveValue("");
     });
 
-    it('should handle whitespace-only filter', async () => {
+    it("should handle whitespace-only filter", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, '   ');
+      await user.type(input, "   ");
 
       await waitFor(() => {
         // Should show all options (whitespace is trimmed)
-        expect(screen.getByText('Option 1')).toBeInTheDocument();
-        expect(screen.getByText('Option 2')).toBeInTheDocument();
+        expect(screen.getByText("Option 1")).toBeInTheDocument();
+        expect(screen.getByText("Option 2")).toBeInTheDocument();
       });
     });
 
-    it('should update filtered options when props.options change', async () => {
+    it("should update filtered options when props.options change", async () => {
       const { rerender } = render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await userEvent.click(input);
 
       const newOptions: Option[] = [
-        { label: 'New 1', value: 'new1' },
-        { label: 'New 2', value: 'new2' },
+        { label: "New 1", value: "new1" },
+        { label: "New 2", value: "new2" },
       ];
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          options={newOptions}
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} options={newOptions} />);
 
       await waitFor(() => {
-        expect(screen.getByText('New 1')).toBeInTheDocument();
-        expect(screen.getByText('New 2')).toBeInTheDocument();
-        expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
+        expect(screen.getByText("New 1")).toBeInTheDocument();
+        expect(screen.getByText("New 2")).toBeInTheDocument();
+        expect(screen.queryByText("Option 1")).not.toBeInTheDocument();
       });
     });
   });
 
-  describe('Keyboard Navigation', () => {
-    it('should open dropdown with ArrowDown key', async () => {
+  describe("Keyboard Navigation", () => {
+    it("should open dropdown with ArrowDown key", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      await user.keyboard('{ArrowDown}');
+      await user.keyboard("{ArrowDown}");
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
     });
 
-    it('should open dropdown with ArrowUp key', async () => {
+    it("should open dropdown with ArrowUp key", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      await user.keyboard('{ArrowUp}');
+      await user.keyboard("{ArrowUp}");
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
     });
 
-    it('should navigate down through options with ArrowDown', async () => {
+    it("should navigate down through options with ArrowDown", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       // First ArrowDown should set active to first option (index 1, since initial is 0)
-      await user.keyboard('{ArrowDown}');
+      await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
-        const option = screen.getByText('Option 2');
-        expect(option).toHaveAttribute('aria-selected', 'true');
+        const option = screen.getByText("Option 2");
+        expect(option).toHaveAttribute("aria-selected", "true");
       });
     });
 
-    it('should navigate up through options with ArrowUp', async () => {
+    it("should navigate up through options with ArrowUp", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       // Go down to first option, then up (should stay at first or wrap)
-      await user.keyboard('{ArrowDown}');
-      await user.keyboard('{ArrowUp}');
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowUp}");
 
       await waitFor(() => {
-        const option = screen.getByText('Option 1');
-        expect(option).toHaveAttribute('aria-selected', 'true');
+        const option = screen.getByText("Option 1");
+        expect(option).toHaveAttribute("aria-selected", "true");
       });
     });
 
-    it('should select option with Enter key', async () => {
+    it("should select option with Enter key", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      await user.keyboard('{ArrowDown}');
-      await user.keyboard('{Enter}');
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{Enter}");
 
       // Should select the second option (first ArrowDown moves to index 1 = Option 2)
-      expect(input).toHaveValue('Option 2');
+      expect(input).toHaveValue("Option 2");
     });
 
-    it('should close dropdown with Escape key', async () => {
+    it("should close dropdown with Escape key", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
 
-      await user.keyboard('{Escape}');
+      await user.keyboard("{Escape}");
 
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
-    it('should close dropdown and move focus out with Tab key', async () => {
+    it("should close dropdown and move focus out with Tab key", async () => {
       const user = userEvent.setup();
       render(
         <div>
@@ -448,176 +428,163 @@ describe('SingleselectInput', () => {
         </div>
       );
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
 
-      await user.keyboard('{Tab}');
+      await user.keyboard("{Tab}");
 
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
-    it('should clear selection with Backspace when input is empty', async () => {
+    it("should clear selection with Backspace when input is empty", async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       // Display shows the value initially
-      expect(input).toHaveValue('option1');
+      expect(input).toHaveValue("option1");
 
       // Click to focus and activate, then press backspace to clear
       await user.click(input);
-      await user.keyboard('{Backspace}');
+      await user.keyboard("{Backspace}");
 
       // After backspace, both display and hidden input should be empty
       await waitFor(() => {
         const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-        expect(hiddenInput.value).toBe('');
-        expect(input).toHaveValue('');
+        expect(hiddenInput.value).toBe("");
+        expect(input).toHaveValue("");
       });
     });
 
-    it('should not clear selection with Backspace when input has text', async () => {
+    it("should not clear selection with Backspace when input has text", async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'test');
+      await user.type(input, "test");
 
       // Backspace will delete the typed character, not the selection
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('option1');
+      expect(hiddenInput.value).toBe("option1");
     });
 
-    it('should set aria-activedescendant during keyboard navigation', async () => {
+    it("should set aria-activedescendant during keyboard navigation", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      await user.keyboard('{ArrowDown}');
+      await user.keyboard("{ArrowDown}");
 
       // After one ArrowDown, activeIndex should be 1
-      expect(input).toHaveAttribute(
-          'aria-activedescendant',
-          `${defaultProps.name}-option-1`
-        );
+      expect(input).toHaveAttribute("aria-activedescendant", `${defaultProps.name}-option-1`);
     });
 
-    it('should not go below first option with ArrowUp at start', async () => {
+    it("should not go below first option with ArrowUp at start", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       // Multiple ArrowUp presses shouldn't go below index 0
-      await user.keyboard('{ArrowUp}{ArrowUp}{ArrowUp}');
+      await user.keyboard("{ArrowUp}{ArrowUp}{ArrowUp}");
 
-      const option = screen.getByText('Option 1');
-      expect(option).toHaveAttribute('aria-selected', 'true');
+      const option = screen.getByText("Option 1");
+      expect(option).toHaveAttribute("aria-selected", "true");
     });
 
-    it('should not go beyond last option with ArrowDown', async () => {
+    it("should not go beyond last option with ArrowDown", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       // Navigate to last option multiple times
       for (let i = 0; i < mockOptions.length + 5; i++) {
-        await user.keyboard('{ArrowDown}');
+        await user.keyboard("{ArrowDown}");
       }
 
-      const options = screen.getAllByRole('option');
+      const options = screen.getAllByRole("option");
       const lastOption = options[options.length - 1];
-      expect(lastOption).toHaveAttribute('aria-selected', 'true');
+      expect(lastOption).toHaveAttribute("aria-selected", "true");
     });
 
-    it('should focus input on Enter when dropdown is closed', async () => {
+    it("should focus input on Enter when dropdown is closed", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      
+
       // Close dropdown with Escape
-      await user.keyboard('{Escape}');
+      await user.keyboard("{Escape}");
 
       // Press Enter with closed dropdown - should open it
-      await user.keyboard('{Enter}');
+      await user.keyboard("{Enter}");
 
       // Since dropdown was closed, Enter opens it
       await waitFor(() => {
         // The display should have actually opened the dropdown
-        const listbox = screen.getByRole('listbox');
+        const listbox = screen.getByRole("listbox");
         // Check if it's not hidden by seeing if we can interact with options
         expect(listbox).toBeInTheDocument();
       });
     });
   });
 
-  describe('Accessibility', () => {
-    it('should have proper ARIA attributes for combobox', () => {
+  describe("Accessibility", () => {
+    it("should have proper ARIA attributes for combobox", () => {
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded');
-      expect(input).toHaveAttribute('aria-controls');
-      expect(input).toHaveAttribute('aria-autocomplete', 'list');
+      const input = screen.getByRole("combobox");
+      expect(input).toHaveAttribute("aria-expanded");
+      expect(input).toHaveAttribute("aria-controls");
+      expect(input).toHaveAttribute("aria-autocomplete", "list");
     });
 
-    it('should update aria-expanded based on dropdown state', async () => {
+    it("should update aria-expanded based on dropdown state", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByRole('combobox');
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      const input = screen.getByRole("combobox");
+      expect(input).toHaveAttribute("aria-expanded", "false");
 
       await user.click(input);
 
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
 
-      await user.keyboard('{Escape}');
+      await user.keyboard("{Escape}");
 
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
-    it('should have aria-selected on options', async () => {
+    it("should have aria-selected on options", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const options = screen.getAllByRole('option');
+      const options = screen.getAllByRole("option");
       options.forEach((option) => {
-        expect(option).toHaveAttribute('aria-selected');
+        expect(option).toHaveAttribute("aria-selected");
       });
     });
 
-    it('should have unique IDs for options', async () => {
+    it("should have unique IDs for options", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const options = screen.getAllByRole('option');
+      const options = screen.getAllByRole("option");
       const ids = options.map((opt) => opt.id);
 
       // All IDs should be unique
@@ -625,7 +592,7 @@ describe('SingleselectInput', () => {
       expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('should handle focus management correctly', async () => {
+    it("should handle focus management correctly", async () => {
       const user = userEvent.setup();
       render(
         <div>
@@ -634,202 +601,187 @@ describe('SingleselectInput', () => {
         </div>
       );
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
 
       // Tab to move focus away
       await user.tab();
 
       // Dropdown should close when focus leaves
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
-    it('should keep dropdown open when focus moves to listbox', async () => {
+    it("should keep dropdown open when focus moves to listbox", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('Option 1');
+      const option = screen.getByText("Option 1");
       await user.click(option);
 
       // After selection, dropdown should close
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
     });
 
     it('should have role="listbox" on dropdown', async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const listbox = screen.getByRole('listbox');
+      const listbox = screen.getByRole("listbox");
       expect(listbox).toBeInTheDocument();
     });
 
-    it('should have accessible names for interactive elements', () => {
+    it("should have accessible names for interactive elements", () => {
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
-      expect(input).toHaveAttribute('placeholder', 'Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
+      expect(input).toHaveAttribute("placeholder", "Select an option");
     });
 
-    it('should maintain focus outline on keyboard navigation', async () => {
+    it("should maintain focus outline on keyboard navigation", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       expect(input).toHaveFocus();
 
-      await user.keyboard('{ArrowDown}');
+      await user.keyboard("{ArrowDown}");
 
       expect(input).toHaveFocus();
     });
 
-    it('should provide visual feedback for active option', async () => {
+    it("should provide visual feedback for active option", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      await user.keyboard('{ArrowDown}');
+      await user.keyboard("{ArrowDown}");
 
       // After ArrowDown, activeIndex is 1, so Option 2 should be selected
-      const option = screen.getByText('Option 2');
-      expect(option).toHaveAttribute('aria-selected', 'true');
+      const option = screen.getByText("Option 2");
+      expect(option).toHaveAttribute("aria-selected", "true");
     });
 
-    it('should scroll active option into view', async () => {
+    it("should scroll active option into view", async () => {
       const user = userEvent.setup();
       const manyOptions: Option[] = Array.from({ length: 20 }, (_, i) => ({
         label: `Option ${i + 1}`,
         value: `option${i + 1}`,
       }));
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={manyOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={manyOptions} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
       // Navigate to an option far down the list
       for (let i = 0; i < 10; i++) {
-        await user.keyboard('{ArrowDown}');
+        await user.keyboard("{ArrowDown}");
       }
 
       // The active option should be in the document
       // (scrollIntoView is called but we can verify the element exists)
-      const option = screen.getByText('Option 11');
+      const option = screen.getByText("Option 11");
       expect(option).toBeInTheDocument();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle empty options array', () => {
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={[]}
-        />
-      );
+  describe("Edge Cases", () => {
+    it("should handle empty options array", () => {
+      render(<SingleselectInput {...defaultProps} options={[]} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       expect(input).toBeInTheDocument();
     });
 
-    it('should handle rapid option selection', async () => {
+    it("should handle rapid option selection", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
 
       // Select first option
       await user.click(input);
-      await user.click(screen.getByText('Option 1'));
+      await user.click(screen.getByText("Option 1"));
 
       // Immediately open and select another
       await user.click(input);
-      await user.click(screen.getByText('Option 2'));
+      await user.click(screen.getByText("Option 2"));
 
-      expect(input).toHaveValue('Option 2');
+      expect(input).toHaveValue("Option 2");
     });
 
-    it('should handle rapid typing and selection', async () => {
+    it("should handle rapid typing and selection", async () => {
       const user = userEvent.setup();
       render(<SingleselectInput {...defaultProps} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'opt');
+      await user.type(input, "opt");
 
-      const option = screen.getByText('Option 1');
+      const option = screen.getByText("Option 1");
       await user.click(option);
 
-      expect(input).toHaveValue('Option 1');
+      expect(input).toHaveValue("Option 1");
     });
 
-    it('should handle selecting option with special characters', async () => {
+    it("should handle selecting option with special characters", async () => {
       const user = userEvent.setup();
       const specialOptions: Option[] = [
-        { label: 'Option & Special', value: 'special1' },
-        { label: 'Option "Quoted"', value: 'special2' },
+        { label: "Option & Special", value: "special1" },
+        { label: 'Option "Quoted"', value: "special2" },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={specialOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={specialOptions} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('Option & Special');
+      const option = screen.getByText("Option & Special");
       await user.click(option);
 
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('special1');
+      expect(hiddenInput.value).toBe("special1");
     });
 
-    it('should handle very long option labels', async () => {
+    it("should handle very long option labels", async () => {
       const user = userEvent.setup();
       const longOptions: Option[] = [
-        { 
-          label: 'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly', 
-          value: 'long1' 
+        {
+          label:
+            "This is a very long option label that goes on and on and on and might cause layout issues if not handled properly",
+          value: "long1",
         },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={longOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={longOptions} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const option = screen.getByText('This is a very long option label that goes on and on and on and might cause layout issues if not handled properly');
+      const option = screen.getByText(
+        "This is a very long option label that goes on and on and on and might cause layout issues if not handled properly"
+      );
       expect(option).toBeInTheDocument();
 
       await user.click(option);
 
-      expect(input).toHaveValue('This is a very long option label that goes on and on and on and might cause layout issues if not handled properly');
+      expect(input).toHaveValue(
+        "This is a very long option label that goes on and on and on and might cause layout issues if not handled properly"
+      );
     });
 
-    it('should handle blur and refocus', async () => {
+    it("should handle blur and refocus", async () => {
       const user = userEvent.setup();
       render(
         <div>
@@ -838,115 +790,85 @@ describe('SingleselectInput', () => {
         </div>
       );
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
 
       await user.click(input);
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
 
-      const otherField = screen.getByPlaceholderText('Other field');
+      const otherField = screen.getByPlaceholderText("Other field");
       await user.click(otherField);
 
-      expect(input).toHaveAttribute('aria-expanded', 'false');
+      expect(input).toHaveAttribute("aria-expanded", "false");
 
       await user.click(input);
-      expect(input).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveAttribute("aria-expanded", "true");
     });
 
-    it('should handle selectedValue changing to undefined', async () => {
-      const { rerender } = render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+    it("should handle selectedValue changing to undefined", async () => {
+      const { rerender } = render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
-      expect(input).toHaveValue('option1');
+      const input = screen.getByPlaceholderText("Select an option");
+      expect(input).toHaveValue("option1");
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue={undefined}
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} selectedValue={undefined} />);
 
-      expect(input).toHaveValue('');
+      expect(input).toHaveValue("");
     });
 
-    it('should handle options with unique values correctly', async () => {
+    it("should handle options with unique values correctly", async () => {
       const user = userEvent.setup();
       const uniqueOptions: Option[] = [
-        { label: 'First', value: 'first' },
-        { label: 'Second', value: 'second' },
+        { label: "First", value: "first" },
+        { label: "Second", value: "second" },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={uniqueOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={uniqueOptions} />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
 
-      const firstOption = screen.getByRole('option', { name: 'First' });
+      const firstOption = screen.getByRole("option", { name: "First" });
       await user.click(firstOption);
 
       const hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]') as HTMLInputElement;
-      expect(hiddenInput.value).toBe('first');
+      expect(hiddenInput.value).toBe("first");
     });
   });
 
-  describe('Prop Changes', () => {
-    it('should update placeholder when prop changes', async () => {
+  describe("Prop Changes", () => {
+    it("should update placeholder when prop changes", async () => {
       const { rerender } = render(<SingleselectInput {...defaultProps} />);
 
-      let input = screen.getByPlaceholderText('Select an option');
+      let input = screen.getByPlaceholderText("Select an option");
       expect(input).toBeInTheDocument();
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          placeholder="New placeholder"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} placeholder="New placeholder" />);
 
-      input = screen.getByPlaceholderText('New placeholder');
+      input = screen.getByPlaceholderText("New placeholder");
       expect(input).toBeInTheDocument();
     });
 
-    it('should update name attribute when prop changes', async () => {
+    it("should update name attribute when prop changes", async () => {
       const { rerender } = render(<SingleselectInput {...defaultProps} />);
 
       let hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]');
       expect(hiddenInput).toBeInTheDocument();
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          name="new-name"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} name="new-name" />);
 
       hiddenInput = document.querySelector('input[type="hidden"][name="new-name"]');
       expect(hiddenInput).toBeInTheDocument();
     });
 
-    it('should handle addLabel prop', async () => {
+    it("should handle addLabel prop", async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          addLabel="Create"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} addLabel="Create" />);
 
-      const input = screen.getByPlaceholderText('Select an option');
+      const input = screen.getByPlaceholderText("Select an option");
       await user.click(input);
-      await user.type(input, 'NewItem');
+      await user.type(input, "NewItem");
 
-      expect(screen.getByText('Create NewItem')).toBeInTheDocument();
+      expect(screen.getByText("Create NewItem")).toBeInTheDocument();
     });
   });
 });

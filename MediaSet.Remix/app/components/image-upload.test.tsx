@@ -13,29 +13,21 @@ describe("ImageUpload Component", () => {
 
   describe("Basic Rendering", () => {
     it("should render the upload area with label", () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       expect(screen.getByText("Cover Image")).toBeInTheDocument();
-      expect(
-        screen.getByText("Drag and drop your image here")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Drag and drop your image here")).toBeInTheDocument();
     });
 
     it("should render with instructions", () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       expect(screen.getByText("or click to select")).toBeInTheDocument();
       expect(screen.getByText("PNG or JPEG up to 5MB")).toBeInTheDocument();
     });
 
     it("should have hidden file input", () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const fileInput = screen.getByRole("button", {
         name: /drag and drop area/i,
@@ -47,13 +39,9 @@ describe("ImageUpload Component", () => {
   describe("File Selection", () => {
     it("should handle valid JPEG file selection", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "image.jpg", { type: "image/jpeg" });
 
       await user.upload(fileInput, file);
@@ -66,13 +54,9 @@ describe("ImageUpload Component", () => {
 
     it("should handle valid PNG file selection", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "image.png", { type: "image/png" });
 
       await user.upload(fileInput, file);
@@ -85,13 +69,9 @@ describe("ImageUpload Component", () => {
 
     it("should reject non-image files", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "document.pdf", { type: "application/pdf" });
 
       await user.upload(fileInput, file);
@@ -102,13 +82,9 @@ describe("ImageUpload Component", () => {
 
     it("should reject files larger than 5MB", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const largeFile = new File(["x".repeat(6 * 1024 * 1024)], "large.jpg", {
         type: "image/jpeg",
       });
@@ -122,9 +98,7 @@ describe("ImageUpload Component", () => {
 
   describe("Drag and Drop", () => {
     it("should change background when dragging over", async () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const dropZone = screen.getByRole("button", {
         name: /drag and drop area/i,
@@ -138,9 +112,7 @@ describe("ImageUpload Component", () => {
     });
 
     it("should handle dropping a valid file", async () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const file = new File(["test"], "image.jpg", { type: "image/jpeg" });
       const dropZone = screen.getByRole("button", {
@@ -164,9 +136,7 @@ describe("ImageUpload Component", () => {
     });
 
     it("should show error when dropping invalid file", async () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const file = new File(["test"], "document.pdf", { type: "application/pdf" });
       const dropZone = screen.getByRole("button", {
@@ -185,13 +155,9 @@ describe("ImageUpload Component", () => {
   describe("Image Preview", () => {
     it("should display preview after file selection", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "image.jpg", { type: "image/jpeg" });
 
       await user.upload(fileInput, file);
@@ -213,13 +179,7 @@ describe("ImageUpload Component", () => {
         updatedAt: "2024-01-01T00:00:00Z",
       };
 
-      render(
-        <ImageUpload
-          name="coverImage"
-          existingImage={existingImage}
-          onImageSelected={mockOnImageSelected}
-        />
-      );
+      render(<ImageUpload name="coverImage" existingImage={existingImage} onImageSelected={mockOnImageSelected} />);
 
       expect(screen.getByText("existing.jpg")).toBeInTheDocument();
       const preview = screen.getByAltText("Preview");
@@ -229,13 +189,9 @@ describe("ImageUpload Component", () => {
 
   describe("Replace and Clear Buttons", () => {
     beforeEach(async () => {
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "image.jpg", { type: "image/jpeg" });
 
       await userEvent.setup().upload(fileInput, file);
@@ -255,12 +211,8 @@ describe("ImageUpload Component", () => {
       fireEvent.click(clearButton);
 
       await waitFor(() => {
-        expect(
-          screen.queryByText("image.jpg")
-        ).not.toBeInTheDocument();
-        expect(
-          screen.getByText("Drag and drop your image here")
-        ).toBeInTheDocument();
+        expect(screen.queryByText("image.jpg")).not.toBeInTheDocument();
+        expect(screen.getByText("Drag and drop your image here")).toBeInTheDocument();
       });
     });
 
@@ -283,13 +235,9 @@ describe("ImageUpload Component", () => {
   describe("Error Handling", () => {
     it("should display error message for invalid file type", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "file.txt", { type: "text/plain" });
 
       await user.upload(fileInput, file);
@@ -300,13 +248,9 @@ describe("ImageUpload Component", () => {
 
     it("should clear error when new valid file is selected", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      let fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      let fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
 
       // First, upload invalid file
       await user.upload(fileInput, new File(["test"], "file.txt", { type: "text/plain" }));
@@ -325,9 +269,7 @@ describe("ImageUpload Component", () => {
 
   describe("Accessibility", () => {
     it("should have proper ARIA labels", () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const dropZone = screen.getByRole("button", {
         name: /drag and drop area/i,
@@ -336,9 +278,7 @@ describe("ImageUpload Component", () => {
     });
 
     it("should support keyboard interaction", async () => {
-      render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
       const dropZone = screen.getByRole("button", {
         name: /drag and drop area/i,
@@ -352,13 +292,7 @@ describe("ImageUpload Component", () => {
 
   describe("Disabled State", () => {
     it("should disable buttons when isSubmitting is true", () => {
-      render(
-        <ImageUpload 
-          name="coverImage" 
-          onImageSelected={mockOnImageSelected}
-          isSubmitting={true}
-        />
-      );
+      render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} isSubmitting={true} />);
 
       const dropZone = screen.getByRole("button", {
         name: /drag and drop area/i,
@@ -370,9 +304,7 @@ describe("ImageUpload Component", () => {
 
   describe("Props", () => {
     it("should use provided name prop for input name", () => {
-      const { container } = render(
-        <ImageUpload name="customName" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="customName" onImageSelected={mockOnImageSelected} />);
 
       const fileInput = container.querySelector('input[name="customName"]');
       expect(fileInput).toBeInTheDocument();
@@ -380,22 +312,15 @@ describe("ImageUpload Component", () => {
 
     it("should call onImageSelected callback when valid file is selected", async () => {
       const user = userEvent.setup();
-      const { container } = render(
-        <ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />
-      );
+      const { container } = render(<ImageUpload name="coverImage" onImageSelected={mockOnImageSelected} />);
 
-      const fileInput = container.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(["test"], "image.jpg", { type: "image/jpeg" });
 
       await user.upload(fileInput, file);
 
       await waitFor(() => {
-        expect(mockOnImageSelected).toHaveBeenCalledWith(
-          expect.any(File),
-          expect.stringContaining("data:image/jpeg")
-        );
+        expect(mockOnImageSelected).toHaveBeenCalledWith(expect.any(File), expect.stringContaining("data:image/jpeg"));
       });
     });
   });

@@ -25,7 +25,7 @@ export default function AttributionBadges({ integrations = [] }: Props) {
             >
               <div className="bg-zinc-800 ring-1 ring-zinc-800 rounded-md p-3 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
                 <img src={i.logoPath!} alt={i.displayName} className="h-8 w-auto object-contain" />
-                </div>
+              </div>
             </a>
             {i.attributionText ? (
               i.attributionUrl ? (

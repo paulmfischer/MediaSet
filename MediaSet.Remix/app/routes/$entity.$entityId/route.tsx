@@ -5,7 +5,6 @@ import { getEntity } from "~/api/entity-data";
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
 import { getEntityFromParams, singular } from "~/utils/helpers";
 import { clientApiUrl } from "~/constants.server";
-import { serverLogger } from "~/utils/serverLogger";
 import Book from "./components/book";
 import Movie from "./components/movie";
 import Game from "./components/game";
@@ -24,13 +23,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.entity, "Missing entity param");
   invariant(params.entityId, "Missing entityId param");
   const entityType: Entity = getEntityFromParams(params);
-  
-  try {
-    const entity = await getEntity(entityType, params.entityId);
-    return { entity, apiUrl: clientApiUrl };
-  } catch (error) {
-    throw error;
-  }
+
+  const entity = await getEntity(entityType, params.entityId);
+  return { entity, apiUrl: clientApiUrl };
 };
 
 export default function Detail() {
@@ -39,7 +34,7 @@ export default function Detail() {
   if (entity.type === Entity.Books) {
     return <Book book={entity as BookEntity} apiUrl={apiUrl} />;
   }
-  
+
   if (entity.type === Entity.Movies) {
     return <Movie movie={entity as MovieEntity} apiUrl={apiUrl} />;
   }

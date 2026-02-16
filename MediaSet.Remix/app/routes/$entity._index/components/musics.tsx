@@ -13,7 +13,7 @@ type MusicsProps = {
 export default function Musics({ musics, apiUrl }: MusicsProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; music: MusicEntity | null }>({
     isOpen: false,
-    music: null
+    music: null,
   });
 
   return (
@@ -30,7 +30,7 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
           </tr>
         </thead>
         <tbody>
-          {musics.map(music => {
+          {musics.map((music) => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={music.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
@@ -52,7 +52,9 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
                 <td className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800">{music.format}</td>
                 <td className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800">{music.tracks}</td>
                 <td className="flex flex-row gap-3 p-1 pt-2">
-                  <Link to={`/musics/${music.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={18} /></Link>
+                  <Link to={`/musics/${music.id}/edit`} aria-label="Edit" title="Edit">
+                    <Pencil size={18} />
+                  </Link>
                   <button
                     onClick={() => setDeleteDialogState({ isOpen: true, music })}
                     className="link"
@@ -64,7 +66,7 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
                   </button>
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
       </table>
@@ -75,5 +77,5 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
         deleteAction={deleteDialogState.music ? `/musics/${deleteDialogState.music.id}/delete` : ""}
       />
     </>
-  )
+  );
 }

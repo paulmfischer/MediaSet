@@ -1,9 +1,21 @@
 import { Params } from "@remix-run/react";
-import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity, Music, MusicEntity, Disc } from "~/models";
+import {
+  BaseEntity,
+  Book,
+  BookEntity,
+  Entity,
+  Game,
+  GameEntity,
+  Movie,
+  MovieEntity,
+  Music,
+  MusicEntity,
+  Disc,
+} from "~/models";
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
-    return '';
+    return "";
   }
 
   return str.replace(/\w\S*/g, (text: string) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
@@ -19,48 +31,48 @@ export function singular(entityType: Entity) {
 
 function formDataToType<T>(formData: FormData): T {
   const data: Record<string, FormDataEntryValue> = {};
-  for (let [key, value] of formData) {
+  for (const [key, value] of formData) {
     data[key] = value;
   }
   return data as T;
 }
 
-function getValue(val: any): any | undefined {
-  return val == '' ? undefined : val;
+function getValue(val: unknown): unknown | undefined {
+  return val == "" ? undefined : val;
 }
 
 // Convert MM:SS format to milliseconds
 function durationToMilliseconds(duration: string): number | null {
-  if (!duration || duration.trim() === '') {
+  if (!duration || duration.trim() === "") {
     return null;
   }
-  
-  const parts = duration.split(':');
+
+  const parts = duration.split(":");
   if (parts.length !== 2) {
     return null;
   }
-  
+
   const minutes = parseInt(parts[0], 10);
   const seconds = parseInt(parts[1], 10);
-  
+
   if (isNaN(minutes) || isNaN(seconds)) {
     return null;
   }
-  
+
   return (minutes * 60 + seconds) * 1000;
 }
 
 // Convert milliseconds to MM:SS format
 export function millisecondsToMinutesSeconds(milliseconds: number | null | undefined): string {
   if (!milliseconds || milliseconds <= 0) {
-    return '';
+    return "";
   }
-  
+
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function baseToBookEntity(data: BaseEntity): BookEntity {
@@ -68,9 +80,9 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
   const pages = book.pages ? parseInt(String(book.pages), 10) : undefined;
   return {
     type: book.type,
-    authors: book.authors ? book.authors.split(',') : undefined,
+    authors: book.authors ? book.authors.split(",") : undefined,
     format: getValue(book.format),
-    genres: book.genres ? book.genres.split(',') : undefined,
+    genres: book.genres ? book.genres.split(",") : undefined,
     id: getValue(book.id),
     isbn: getValue(book.isbn),
     pages: isNaN(pages || NaN) ? undefined : pages,
@@ -85,13 +97,13 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
 
 function baseToMovieEntity(data: BaseEntity): MovieEntity {
   const movie = data as Movie;
-  const isTvSeries = (movie.isTvSeries as unknown) as string;
+  const isTvSeries = movie.isTvSeries as unknown as string;
   const runtime = movie.runtime ? parseInt(String(movie.runtime), 10) : undefined;
   return {
     type: movie.type,
-    studios: movie.studios ? movie.studios.split(',') : undefined,
+    studios: movie.studios ? movie.studios.split(",") : undefined,
     format: getValue(movie.format),
-    genres: movie.genres ? movie.genres.split(',') : undefined,
+    genres: movie.genres ? movie.genres.split(",") : undefined,
     id: getValue(movie.id),
     barcode: getValue(movie.barcode),
     releaseDate: getValue(movie.releaseDate),
@@ -107,10 +119,10 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
   const game = data as Game;
   return {
     type: game.type,
-    developers: game.developers ? game.developers.split(',') : undefined,
-    publishers: game.publishers ? game.publishers.split(',') : undefined,
+    developers: game.developers ? game.developers.split(",") : undefined,
+    publishers: game.publishers ? game.publishers.split(",") : undefined,
     format: getValue(game.format),
-    genres: game.genres ? game.genres.split(',') : undefined,
+    genres: game.genres ? game.genres.split(",") : undefined,
     id: getValue(game.id),
     barcode: getValue(game.barcode),
     releaseDate: getValue(game.releaseDate),
@@ -124,7 +136,7 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
 
 function baseToMusicEntity(data: BaseEntity): MusicEntity {
   const music = data as Music;
-  
+
   // Parse disc list from form data
   const discList: Disc[] = [];
   let i = 0;
@@ -132,30 +144,30 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     const trackNumberKey = `discList[${i}].trackNumber` as keyof Music;
     const titleKey = `discList[${i}].title` as keyof Music;
     const durationKey = `discList[${i}].duration` as keyof Music;
-    
-    const trackNumber = (music as any)[trackNumberKey];
-    const title = (music as any)[titleKey];
-    const duration = (music as any)[durationKey];
-    
+
+    const trackNumber = (music as Record<string, unknown>)[trackNumberKey as string];
+    const title = (music as Record<string, unknown>)[titleKey as string];
+    const duration = (music as Record<string, unknown>)[durationKey as string];
+
     if (trackNumber === undefined && title === undefined && duration === undefined) {
       break;
     }
-    
+
     if (title || duration) {
       discList.push({
         trackNumber: parseInt(trackNumber) || i + 1,
-        title: title || '',
+        title: title || "",
         duration: durationToMilliseconds(duration),
       });
     }
     i++;
   }
-  
+
   // Convert overall duration from MM:SS to milliseconds
-  const durationMs = music.duration ? durationToMilliseconds(music.duration as any) : undefined;
+  const durationMs = music.duration ? durationToMilliseconds(String(music.duration)) : undefined;
   const tracks = music.tracks ? parseInt(String(music.tracks), 10) : undefined;
   const discs = music.discs ? parseInt(String(music.discs), 10) : undefined;
-  
+
   return {
     type: music.type,
     id: getValue(music.id),
@@ -163,7 +175,7 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     format: getValue(music.format),
     artist: getValue(music.artist),
     releaseDate: getValue(music.releaseDate),
-    genres: music.genres ? music.genres.split(',') : undefined,
+    genres: music.genres ? music.genres.split(",") : undefined,
     duration: durationMs ?? undefined,
     label: getValue(music.label),
     barcode: getValue(music.barcode),

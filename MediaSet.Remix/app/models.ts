@@ -24,7 +24,7 @@ export enum Entity {
   Movies = "Movies",
   Games = "Games",
   Musics = "Musics",
-};
+}
 
 export interface BaseEntity {
   type: Entity;
@@ -48,7 +48,7 @@ export interface BookEntity extends BaseEntity {
   format?: string;
 }
 // UI model
-export type Book = Override<BookEntity, { authors: string; genres: string; }>
+export type Book = Override<BookEntity, { authors: string; genres: string }>;
 
 // Backend model
 export interface MovieEntity extends BaseEntity {
@@ -62,7 +62,7 @@ export interface MovieEntity extends BaseEntity {
   isTvSeries?: boolean;
 }
 // UI model
-export type Movie = Override<MovieEntity, { studios: string; genres: string; }>
+export type Movie = Override<MovieEntity, { studios: string; genres: string }>;
 
 // Backend model
 export interface GameEntity extends BaseEntity {
@@ -76,7 +76,7 @@ export interface GameEntity extends BaseEntity {
   description?: string;
 }
 // UI model
-export type Game = Override<GameEntity, { developers: string; publishers: string; genres: string; }>
+export type Game = Override<GameEntity, { developers: string; publishers: string; genres: string }>;
 
 export interface Disc {
   trackNumber: number;
@@ -97,9 +97,9 @@ export interface MusicEntity extends BaseEntity {
   discList?: Array<Disc>;
 }
 // UI model
-export type Music = Override<MusicEntity, { genres: string; }>
+export type Music = Override<MusicEntity, { genres: string }>;
 
-export type IdentifierType = 'isbn' | 'lccn' | 'oclc' | 'olid' | 'upc' | 'ean';
+export type IdentifierType = "isbn" | "lccn" | "oclc" | "olid" | "upc" | "ean";
 
 export interface BookLookupResponse {
   title: string;

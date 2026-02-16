@@ -44,10 +44,7 @@ export default function ErrorScreen({
 }: ErrorScreenProps) {
   const dataText = formatData(data);
   const shouldShowDetails = showDetails && (statusCode || statusText || dataText);
-  const containerClasses = [
-    "w-full max-w-3xl rounded-lg border border-zinc-700",
-    "bg-zinc-800/50 p-8 shadow-lg",
-  ];
+  const containerClasses = ["w-full max-w-3xl rounded-lg border border-zinc-700", "bg-zinc-800/50 p-8 shadow-lg"];
   const actionClasses = [
     "dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400",
     "inline-flex items-center justify-center gap-2 px-3 py-1 rounded",
@@ -63,26 +60,17 @@ export default function ErrorScreen({
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-white">{title}</h2>
-              {message ? (
-                <p className="text-base leading-relaxed text-slate-300">{message}</p>
-              ) : null}
+              {message ? <p className="text-base leading-relaxed text-slate-300">{message}</p> : null}
             </div>
           </div>
 
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             {showRetry ? (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="secondary"
-              >
+              <button type="button" onClick={onRetry} className="secondary">
                 Try Again
               </button>
             ) : null}
-            <Link
-              to="/"
-              className={actionClasses.join(" ")}
-            >
+            <Link to="/" className={actionClasses.join(" ")}>
               <Home size={18} aria-hidden />
               <span>Go Home</span>
             </Link>

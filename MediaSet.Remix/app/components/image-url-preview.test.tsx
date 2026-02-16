@@ -59,7 +59,7 @@ describe("ImageUrlPreview Component", () => {
     input.value = "https://example.com/new.jpg";
     fireEvent.input(input);
 
-    let img = screen.getByAltText("Image Preview");
+    const img = screen.getByAltText("Image Preview");
     expect(img).toBeInTheDocument();
 
     // Clear the input

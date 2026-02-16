@@ -12,7 +12,7 @@ export interface ClientConfig {
 export function getClientConfig(): ClientConfig {
   return {
     // Client-side API URL must be accessible from the browser
-    apiUrl: process.env.clientApiUrl || 'http://localhost:7130',
-    showErrorDetails: (process.env.SHOW_ERROR_DETAILS ?? '').toString().toLowerCase() === 'true',
+    apiUrl: process.env.clientApiUrl || "http://localhost:7130",
+    showErrorDetails: (process.env.SHOW_ERROR_DETAILS ?? "").toString().toLowerCase() === "true",
   };
 }

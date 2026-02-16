@@ -9,11 +9,11 @@ type ImageUploadProps = FormProps & {
 
 export default function ImageUpload(props: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    props.existingImage?.filePath ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}` : null
+    props.existingImage?.filePath
+      ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}`
+      : null
   );
-  const [fileName, setFileName] = useState<string>(
-    props.existingImage?.fileName ?? ""
-  );
+  const [fileName, setFileName] = useState<string>(props.existingImage?.fileName ?? "");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageCleared, setImageCleared] = useState(false);
@@ -95,9 +95,7 @@ export default function ImageUpload(props: ImageUploadProps) {
 
   return (
     <div className="w-full space-y-4">
-      <label className="block text-sm font-medium text-gray-200">
-        Cover Image
-      </label>
+      <span className="block text-sm font-medium text-gray-200">Cover Image</span>
 
       <input
         ref={fileInputRef}
@@ -140,11 +138,7 @@ export default function ImageUpload(props: ImageUploadProps) {
       >
         {previewUrl ? (
           <div className="space-y-2">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="mx-auto h-40 w-auto object-contain"
-            />
+            <img src={previewUrl} alt="Preview" className="mx-auto h-40 w-auto object-contain" />
             <p className="text-sm text-gray-300">{fileName}</p>
           </div>
         ) : (
@@ -167,18 +161,13 @@ export default function ImageUpload(props: ImageUploadProps) {
               <p className="font-medium">Drag and drop your image here</p>
               <p className="text-xs text-gray-400">or click to select</p>
             </div>
-            <p className="text-xs text-gray-400">
-              PNG or JPEG up to 5MB
-            </p>
+            <p className="text-xs text-gray-400">PNG or JPEG up to 5MB</p>
           </div>
         )}
       </div>
 
       {error && (
-        <div
-          className="rounded-md bg-red-50 p-4 border border-red-200"
-          role="alert"
-        >
+        <div className="rounded-md bg-red-50 p-4 border border-red-200" role="alert">
           <p className="text-sm font-medium text-red-800">{error}</p>
         </div>
       )}

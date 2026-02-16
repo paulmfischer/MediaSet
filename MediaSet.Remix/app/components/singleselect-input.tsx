@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent, FocusEvent as ReactFocusEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Option } from "~/models";
 
 type SingleselectProps = {
@@ -19,7 +19,7 @@ function initializeSelected(selectedValue?: string): Option | null {
 
 export default function SingleselectInput(props: SingleselectProps) {
   const [selected, setSelected] = useState<Option | null>(() => initializeSelected(props.selectedValue));
-  const [filterText, setFilterText] = useState('');
+  const [filterText, setFilterText] = useState("");
   const [displayOptions, setDisplayOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -30,6 +30,7 @@ export default function SingleselectInput(props: SingleselectProps) {
 
   // Re-sync selected when props.selectedValue changes (e.g., lookup)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(initializeSelected(props.selectedValue));
   }, [props.selectedValue]);
 
@@ -39,12 +40,12 @@ export default function SingleselectInput(props: SingleselectProps) {
       : { label: option.label, value: option.value };
     setSelected(next);
     setDisplayOptions(false);
-    setFilterText('');
+    setFilterText("");
   };
 
   const clearSelection = () => {
     setSelected(null);
-    setFilterText('');
+    setFilterText("");
     inputRef.current?.focus();
   };
 
@@ -52,9 +53,7 @@ export default function SingleselectInput(props: SingleselectProps) {
   const filteredOptions = useMemo(() => {
     const base =
       filterText.trim().length > 0
-        ? props.options.filter((op) =>
-            op.label.toLowerCase().includes(filterText.toLowerCase())
-          )
+        ? props.options.filter((op) => op.label.toLowerCase().includes(filterText.toLowerCase()))
         : props.options;
 
     const addNew =
@@ -89,6 +88,7 @@ export default function SingleselectInput(props: SingleselectProps) {
 
   // Clear the filter when closing the menu
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!displayOptions) setFilterText("");
   }, [displayOptions]);
 
@@ -125,7 +125,7 @@ export default function SingleselectInput(props: SingleselectProps) {
   };
 
   // Close the menu when focus moves outside of the component/menu (handles tabbing out)
-  const handleBlur = (e: ReactFocusEvent<HTMLInputElement>) => {
+  const handleBlur = () => {
     // Defer check so document.activeElement reflects the newly focused element
     setTimeout(() => {
       const active = document.activeElement as HTMLElement | null;
@@ -140,6 +140,7 @@ export default function SingleselectInput(props: SingleselectProps) {
 
   // Reset active index when opening or when the filtered list changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (displayOptions) setActiveIndex(0);
   }, [displayOptions, filteredOptions.length]);
 
@@ -156,10 +157,12 @@ export default function SingleselectInput(props: SingleselectProps) {
   return (
     <>
       {/* click-away overlay */}
-      <div
+      <button
+        type="button"
+        aria-label="Close dropdown"
         className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? "" : "hidden"}`}
         onMouseDown={() => setDisplayOptions(false)}
-      ></div>
+      />
 
       <div className="flex flex-col">
         <div
@@ -181,9 +184,7 @@ export default function SingleselectInput(props: SingleselectProps) {
             aria-controls={`${props.name}-listbox`}
             aria-autocomplete="list"
             aria-activedescendant={
-              displayOptions && filteredOptions.length > 0
-                ? `${props.name}-option-${activeIndex}`
-                : undefined
+              displayOptions && filteredOptions.length > 0 ? `${props.name}-option-${activeIndex}` : undefined
             }
             onKeyDown={handleKeyDown}
           />
@@ -211,14 +212,19 @@ export default function SingleselectInput(props: SingleselectProps) {
                 ref={(el) => (optionRefs.current[idx] = el)}
                 role="option"
                 aria-selected={activeFlag}
+                tabIndex={0}
                 onMouseEnter={() => setActiveIndex(idx)}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   selectOption(option);
                 }}
-                className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${
-                  activeFlag ? "bg-gray-600" : ""
-                }`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectOption(option);
+                  }
+                }}
+                className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${activeFlag ? "bg-gray-600" : ""}`}
               >
                 {option.label}
               </div>

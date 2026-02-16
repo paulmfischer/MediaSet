@@ -32,12 +32,8 @@ export const loader = async () => {
 
 export default function Index() {
   const { stats, integrations } = useLoaderData<typeof loader>();
-  
-  const totalItems =
-    stats.bookStats.total +
-    stats.movieStats.total +
-    stats.gameStats.total +
-    stats.musicStats.total;
+
+  const totalItems = stats.bookStats.total + stats.movieStats.total + stats.gameStats.total + stats.musicStats.total;
 
   const isEmpty = totalItems === 0;
 
@@ -46,9 +42,7 @@ export default function Index() {
       {/* Hero Section */}
       <div className="rounded-lg border border-zinc-700 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 p-8">
         <h1 className="text-3xl font-bold text-white">Welcome to MediaSet</h1>
-        <p className="mt-2 text-zinc-400">
-          Your personal media collection dashboard
-        </p>
+        <p className="mt-2 text-zinc-400">Your personal media collection dashboard</p>
         <div className="mt-6 flex items-center gap-4">
           <div className="rounded-lg bg-blue-500/10 px-4 py-2">
             <span className="text-2xl font-bold text-blue-400">{totalItems}</span>
@@ -63,12 +57,8 @@ export default function Index() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-700/50">
             <LibraryBig className="h-8 w-8 text-zinc-400" />
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-white">
-            No media items yet
-          </h2>
-          <p className="mt-2 text-zinc-400">
-            Start building your collection by adding books, movies, games, or music.
-          </p>
+          <h2 className="mt-4 text-xl font-semibold text-white">No media items yet</h2>
+          <p className="mt-2 text-zinc-400">Start building your collection by adding books, movies, games, or music.</p>
         </div>
       ) : (
         <>

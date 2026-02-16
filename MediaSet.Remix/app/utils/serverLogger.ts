@@ -4,7 +4,7 @@
  * This module provides a logging interface that forwards logs to the API's
  * POST /api/logs endpoint, allowing server-side logs to be aggregated with
  * client-side logs and enriched with Application and Environment context.
- * 
+ *
  * Uses apiFetch() to automatically include W3C traceparent header for
  * distributed tracing across the Remix server and API.
  */

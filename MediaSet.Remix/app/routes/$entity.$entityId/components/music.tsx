@@ -120,7 +120,7 @@ export default function Music({ music, apiUrl }: MusicProps) {
             </div>
             {music.discList && music.discList.length > 0 && (
               <div className="flex flex-col md:flex-row mb-2 md:mb-0 mt-4">
-                <label className="basis-2/12 dark:text-slate-400">Disc List</label>
+                <span className="basis-2/12 dark:text-slate-400">Disc List</span>
                 <div className="grow">
                   <table className="w-full text-sm">
                     <thead className="border-b border-gray-600">

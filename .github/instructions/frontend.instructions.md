@@ -86,3 +86,12 @@ applyTo: "**/*.ts,**/*.tsx"
 - Test naming: `should [expected behavior] when [condition]`
 - Test user interactions over implementation details
 - Mock external dependencies appropriately
+
+## Code Quality Checks
+
+After making changes to the frontend, always verify compliance before committing:
+
+- **ESLint**: `npm run lint` — checks for code quality issues and enforces code style rules
+- **Prettier**: `npm run lint:format` — checks that all files conform to the project's formatting rules
+
+Both commands must pass without errors. Run them from the `MediaSet.Remix/` directory.

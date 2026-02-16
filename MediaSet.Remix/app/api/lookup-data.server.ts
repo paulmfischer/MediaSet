@@ -11,7 +11,7 @@ import {
   MovieLookupResponse,
   GameLookupResponse,
   MusicLookupResponse,
-  LookupError
+  LookupError,
 } from "~/models";
 
 type Link = {
@@ -21,31 +21,34 @@ type Link = {
 
 const linkMap = (link: Link) => link.name;
 
-export function isLookupError(result: any): result is LookupError {
-  return result && typeof result.message === 'string' && typeof result.statusCode === 'number';
+export function isLookupError(result: unknown): result is LookupError {
+  return result && typeof result.message === "string" && typeof result.statusCode === "number";
 }
 
 export function getIdentifierTypeForField(entityType: Entity, fieldName: string): IdentifierType {
-  if (entityType === Entity.Books && fieldName === 'isbn') {
-    return 'isbn';
+  if (entityType === Entity.Books && fieldName === "isbn") {
+    return "isbn";
   }
-  if ((entityType === Entity.Movies || entityType === Entity.Games || entityType === Entity.Musics) && fieldName === 'barcode') {
-    return 'upc';
+  if (
+    (entityType === Entity.Movies || entityType === Entity.Games || entityType === Entity.Musics) &&
+    fieldName === "barcode"
+  ) {
+    return "upc";
   }
-  return 'isbn';
+  return "isbn";
 }
 
 export async function lookup(
-  entityType: Entity, 
-  identifierType: IdentifierType, 
+  entityType: Entity,
+  identifierType: IdentifierType,
   identifierValue: string
 ): Promise<BookEntity | MovieEntity | GameEntity | MusicEntity | LookupError> {
   const response = await fetch(`${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`);
-  
+
   if (response.status === 404) {
-    return { 
+    return {
       message: `No ${singular(entityType)} found for ${identifierType.toUpperCase()} ${identifierValue}`,
-      statusCode: 404
+      statusCode: 404,
     } as LookupError;
   }
 
@@ -53,12 +56,12 @@ export async function lookup(
     const errorText = await response.text();
     return {
       message: errorText || `Failed to lookup ${singular(entityType)}`,
-      statusCode: response.status
+      statusCode: response.status,
     } as LookupError;
   }
 
   if (entityType === Entity.Books) {
-    const bookLookup = await response.json() as BookLookupResponse;
+    const bookLookup = (await response.json()) as BookLookupResponse;
     return {
       type: Entity.Books,
       authors: bookLookup.authors?.map(linkMap),
@@ -70,10 +73,10 @@ export async function lookup(
       subtitle: bookLookup.subtitle,
       genres: bookLookup.subjects?.map(linkMap),
       format: bookLookup.format,
-      imageUrl: bookLookup.imageUrl
+      imageUrl: bookLookup.imageUrl,
     } as BookEntity;
   } else if (entityType === Entity.Movies) {
-    const movieLookup = await response.json() as MovieLookupResponse;
+    const movieLookup = (await response.json()) as MovieLookupResponse;
     return {
       type: Entity.Movies,
       title: movieLookup.title,
@@ -85,10 +88,10 @@ export async function lookup(
       plot: movieLookup.plot,
       barcode: identifierValue,
       format: movieLookup.format,
-      imageUrl: movieLookup.imageUrl
+      imageUrl: movieLookup.imageUrl,
     } as MovieEntity;
   } else if (entityType === Entity.Games) {
-    const gameLookup = await response.json() as GameLookupResponse;
+    const gameLookup = (await response.json()) as GameLookupResponse;
     return {
       type: Entity.Games,
       title: gameLookup.title,
@@ -101,10 +104,10 @@ export async function lookup(
       description: gameLookup.description,
       barcode: identifierValue,
       format: gameLookup.format,
-      imageUrl: gameLookup.imageUrl
+      imageUrl: gameLookup.imageUrl,
     } as GameEntity;
   } else if (entityType === Entity.Musics) {
-    const musicLookup = await response.json() as MusicLookupResponse;
+    const musicLookup = (await response.json()) as MusicLookupResponse;
     return {
       type: Entity.Musics,
       title: musicLookup.title,
@@ -118,12 +121,12 @@ export async function lookup(
       discList: musicLookup.discList,
       barcode: identifierValue,
       format: musicLookup.format,
-      imageUrl: musicLookup.imageUrl
+      imageUrl: musicLookup.imageUrl,
     } as MusicEntity;
   }
 
   return {
     message: `Unsupported entity type: ${entityType}`,
-    statusCode: 400
+    statusCode: 400,
   } as LookupError;
 }

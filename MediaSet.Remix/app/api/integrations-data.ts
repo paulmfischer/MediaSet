@@ -16,7 +16,7 @@ export async function getIntegrations(): Promise<Integration[]> {
     if (!response.ok) return [];
     const data = (await response.json()) as Integration[];
     return data;
-  } catch (err) {
+  } catch {
     return [];
   }
 }

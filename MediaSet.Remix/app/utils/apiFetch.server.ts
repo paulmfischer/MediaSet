@@ -53,10 +53,7 @@ export function getRequestContext(): RequestContext | null {
   return requestContextStorage.getStore() ?? null;
 }
 
-export function withRequestContext<T>(
-  context: RequestContext,
-  fn: () => T | Promise<T>
-): T | Promise<T> {
+export function withRequestContext<T>(context: RequestContext, fn: () => T | Promise<T>): T | Promise<T> {
   return requestContextStorage.run(context, fn);
 }
 
@@ -71,20 +68,17 @@ export function withRequestContext<T>(
  * The request context (and traceparent header) is initialized on first fetch call
  * and reused for all subsequent API calls within the same request.
  */
-export async function apiFetch(
-  url: string | URL,
-  init?: RequestInit
-): Promise<Response> {
+export async function apiFetch(url: string | URL, init?: RequestInit): Promise<Response> {
   // Get or initialize request context (returns existing or creates new)
   const { traceparent } = initializeRequestContext();
-  
+
   const headers = new Headers(init?.headers ?? {});
-  
+
   // Add W3C traceparent header (guaranteed to exist at this point)
   if (!headers.has("traceparent")) {
     headers.set("traceparent", traceparent);
   }
-  
+
   return fetch(url, {
     ...init,
     headers,

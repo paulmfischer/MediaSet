@@ -9,7 +9,7 @@ export function mockApiResponse<T>(data: T, init?: ResponseInit): Response {
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     ...init,
   });
@@ -18,10 +18,7 @@ export function mockApiResponse<T>(data: T, init?: ResponseInit): Response {
 /**
  * Mock API error response
  */
-export function mockApiError(
-  message: string,
-  status: number = 500,
-): Response {
+export function mockApiError(message: string, status: number = 500): Response {
   return new Response(
     JSON.stringify({
       error: message,
@@ -29,9 +26,9 @@ export function mockApiError(
     {
       status,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-    },
+    }
   );
 }
 
@@ -40,16 +37,16 @@ export function mockApiError(
  * Usage: global.fetch = mockFetch(...)
  */
 export function createMockFetch(
-  responses: Record<string, Response | ((url: string, init?: RequestInit) => Response)>,
+  responses: Record<string, Response | ((url: string, init?: RequestInit) => Response)>
 ): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input.toString();
+    const url = typeof input === "string" ? input : input.toString();
 
     // Find matching response
     for (const [pattern, response] of Object.entries(responses)) {
       // Simple pattern matching - can be improved with URL pattern matching
       if (url.includes(pattern)) {
-        if (typeof response === 'function') {
+        if (typeof response === "function") {
           return response(url, init);
         }
         return response;
@@ -57,7 +54,7 @@ export function createMockFetch(
     }
 
     // Default: 404 if no match found
-    return mockApiError('Not found', 404);
+    return mockApiError("Not found", 404);
   };
 }
 

@@ -1,22 +1,15 @@
-import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { ReactElement } from "react";
+import { render, RenderOptions, waitFor, act, within, fireEvent, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
 
 /**
  * Custom render function that includes any necessary providers
  * Currently no providers are needed, but this is set up for future additions
  * (e.g., session providers, theme providers, etc.)
  */
-function customRender(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-) {
+function customRender(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">) {
   return render(ui, { ...options });
 }
 
-// Re-export everything from @testing-library/react
-export * from '@testing-library/react';
-export { customRender as render };
-
-// Explicitly re-export commonly used utilities for convenience
-export { screen, fireEvent } from '@testing-library/react';
+export { customRender as render, waitFor, act, within, fireEvent, screen };
+export type { RenderOptions };

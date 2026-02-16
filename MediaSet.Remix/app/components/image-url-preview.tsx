@@ -52,9 +52,7 @@ export default function ImageUrlPreview({ inputId = "imageUrl", existingUrl, alt
           onError={() => setError(true)}
           onLoad={() => setError(false)}
         />
-        {error ? (
-          <p className="text-xs text-red-400 mt-1">Unable to load image</p>
-        ) : null}
+        {error ? <p className="text-xs text-red-400 mt-1">Unable to load image</p> : null}
       </div>
     </div>
   );

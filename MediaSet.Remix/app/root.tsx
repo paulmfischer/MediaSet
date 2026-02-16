@@ -9,9 +9,9 @@ import {
   ScrollRestoration,
   useRouteError,
   isRouteErrorResponse,
+  useLocation,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { useLocation } from "@remix-run/react";
 import { Clapperboard, Gamepad2, Home, LibraryBig, Menu, Music, X } from "lucide-react";
 import ErrorScreen from "./components/error-screen";
 import PendingNavigation from "./components/pending-navigation";
@@ -23,6 +23,7 @@ function Header() {
 
   // Close mobile menu when navigation occurs
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
   }, [location]);
   return (
@@ -88,7 +89,7 @@ function Header() {
   );
 }
 
-const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0-local';
+const appVersion = import.meta.env.VITE_APP_VERSION || "0.0.0-local";
 
 export default function App() {
   return (
@@ -125,13 +126,12 @@ export function ErrorBoundary() {
   const errorData = routeError ? error.data : error;
 
   const title = statusCode === 404 ? "Page not found" : "Something went wrong";
-  const message = statusCode === 404
-    ? "We could not find the page you were looking for."
-    : "An unexpected error occurred. You can head back to the dashboard while we look into it.";
+  const message =
+    statusCode === 404
+      ? "We could not find the page you were looking for."
+      : "An unexpected error occurred. You can head back to the dashboard while we look into it.";
 
-  const showErrorDetails = (import.meta.env.VITE_SHOW_ERROR_DETAILS ?? "")
-    .toString()
-    .toLowerCase() === "true";
+  const showErrorDetails = (import.meta.env.VITE_SHOW_ERROR_DETAILS ?? "").toString().toLowerCase() === "true";
 
   console.error("Root Error:", error);
   return (

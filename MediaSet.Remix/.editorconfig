@@ -1,0 +1,10 @@
+# EditorConfig for MediaSet.Remix
+# https://EditorConfig.org
+
+# Inherit settings from root .editorconfig
+root = false
+
+# TypeScript and JavaScript files - enforce LF line endings and double quotes
+[*.{js,jsx,ts,tsx,mjs,cjs}]
+end_of_line = lf
+quote_type = double
