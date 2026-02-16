@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { BookEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { BookEntity, Entity } from '~/models';
 
 type BooksProps = {
   books: BookEntity[];
@@ -52,7 +52,7 @@ export default function Books({ books, apiUrl }: BooksProps) {
                   </Link>
                 </td>
                 <td className="hidden xs:table-cell pl-2 p-1 border-r border-slate-800">
-                  {book.authors?.map((auth) => auth.trimEnd()).join(",")}
+                  {book.authors?.map((auth) => auth.trimEnd()).join(',')}
                 </td>
                 <td className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">{book.format}</td>
                 <td className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800">{book.pages}</td>
@@ -79,7 +79,7 @@ export default function Books({ books, apiUrl }: BooksProps) {
         isOpen={deleteDialogState.isOpen}
         onClose={() => setDeleteDialogState({ isOpen: false, book: null })}
         entityTitle={deleteDialogState.book?.title}
-        deleteAction={deleteDialogState.book ? `/books/${deleteDialogState.book.id}/delete` : ""}
+        deleteAction={deleteDialogState.book ? `/books/${deleteDialogState.book.id}/delete` : ''}
       />
     </>
   );

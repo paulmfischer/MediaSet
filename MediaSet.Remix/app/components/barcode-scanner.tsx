@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 
 type Props = {
   open: boolean;
@@ -10,7 +10,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [scannerType, setScannerType] = useState<"native" | "zxing" | null>(null);
+  const [scannerType, setScannerType] = useState<'native' | 'zxing' | null>(null);
   const codeReaderRef = useRef<{
     reset: () => void;
     decodeFromVideoDevice: (...args: unknown[]) => Promise<unknown>;
@@ -21,7 +21,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
     if (!open) {
       // Ensure camera is released when modal closes
       if (streamRef.current) {
-        console.log("[BarcodeScanner] Closing - stopping camera stream");
+        console.log('[BarcodeScanner] Closing - stopping camera stream');
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
@@ -29,7 +29,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
         try {
           codeReaderRef.current.reset();
         } catch (e) {
-          console.debug("[BarcodeScanner] Error resetting ZXing on close:", e);
+          console.debug('[BarcodeScanner] Error resetting ZXing on close:', e);
         }
         codeReaderRef.current = null;
       }
@@ -49,8 +49,8 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
       // Check for secure context (required for getUserMedia)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setError("Camera access requires HTTPS or localhost. Current page is not secure.");
-        console.error("[BarcodeScanner] getUserMedia not available - insecure context");
+        setError('Camera access requires HTTPS or localhost. Current page is not secure.');
+        console.error('[BarcodeScanner] getUserMedia not available - insecure context');
         return;
       }
 
@@ -58,7 +58,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
         // Request higher resolution for better barcode detection
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: "environment",
+            facingMode: 'environment',
             width: { ideal: 1920, min: 640 },
             height: { ideal: 1080, min: 480 },
           },
@@ -74,13 +74,13 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
           videoRef.current.srcObject = mediaStream;
         }
 
-        console.log("[BarcodeScanner] Camera stream acquired", {
+        console.log('[BarcodeScanner] Camera stream acquired', {
           width: mediaStream.getVideoTracks()[0].getSettings().width,
           height: mediaStream.getVideoTracks()[0].getSettings().height,
         });
 
         // Try native BarcodeDetector first (Chrome/Edge)
-        if ("BarcodeDetector" in window && "ImageCapture" in window) {
+        if ('BarcodeDetector' in window && 'ImageCapture' in window) {
           try {
             // @ts-expect-error BarcodeDetector is not in all TypeScript lib definitions
             const detector = new (
@@ -90,7 +90,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
                 };
               }
             ).BarcodeDetector({
-              formats: ["ean_13", "upc_a", "code_128", "code_39", "ean_8", "upc_e"],
+              formats: ['ean_13', 'upc_a', 'code_128', 'code_39', 'ean_8', 'upc_e'],
             });
             const track = mediaStream.getVideoTracks()[0];
             // @ts-expect-error ImageCapture is not in all TypeScript lib definitions
@@ -98,8 +98,8 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
               window as { ImageCapture: new (track: MediaStreamTrack) => { grabFrame: () => Promise<ImageBitmap> } }
             ).ImageCapture(track);
 
-            setScannerType("native");
-            console.log("[BarcodeScanner] Using native BarcodeDetector");
+            setScannerType('native');
+            console.log('[BarcodeScanner] Using native BarcodeDetector');
 
             const loop = async () => {
               if (!active || detectedAlready) return;
@@ -110,7 +110,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
                 if (barcodes && barcodes.length > 0 && !detectedAlready) {
                   detectedAlready = true;
-                  console.log("[BarcodeScanner] Detected:", barcodes[0].rawValue);
+                  console.log('[BarcodeScanner] Detected:', barcodes[0].rawValue);
                   onDetected(barcodes[0].rawValue);
                   return; // Stop loop after detection
                 }
@@ -119,7 +119,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
                   detectionLoopRef.current = requestAnimationFrame(loop);
                 }
               } catch (err) {
-                console.error("[BarcodeScanner] Native detection error:", err);
+                console.error('[BarcodeScanner] Native detection error:', err);
                 // If native fails, fall back to ZXing
                 if (active && !detectedAlready) {
                   startJSFallback();
@@ -130,7 +130,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
             detectionLoopRef.current = requestAnimationFrame(loop);
             return; // Successfully started native detector
           } catch (err) {
-            console.warn("[BarcodeScanner] Native BarcodeDetector failed:", err);
+            console.warn('[BarcodeScanner] Native BarcodeDetector failed:', err);
             // Fall through to ZXing fallback
           }
         }
@@ -138,7 +138,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
         // Fallback to ZXing for Firefox and other browsers
         await startJSFallback();
       } catch (err: unknown) {
-        console.error("[BarcodeScanner] Camera access error:", err);
+        console.error('[BarcodeScanner] Camera access error:', err);
         setError((err as { message?: string })?.message ?? String(err));
       }
     }
@@ -147,10 +147,10 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
       if (!active || detectedAlready) return;
 
       try {
-        console.log("[BarcodeScanner] Starting ZXing fallback");
-        setScannerType("zxing");
+        console.log('[BarcodeScanner] Starting ZXing fallback');
+        setScannerType('zxing');
 
-        const { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } = await import("@zxing/library");
+        const { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } = await import('@zxing/library');
 
         // Configure hints for better detection
         const hints = new Map();
@@ -170,18 +170,18 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
         const videoElem = videoRef.current;
         if (!videoElem) {
-          throw new Error("Video element not found");
+          throw new Error('Video element not found');
         }
 
         // Wait for video to be ready
         if (videoElem.readyState < 2) {
-          console.log("[BarcodeScanner] Waiting for video to be ready...");
+          console.log('[BarcodeScanner] Waiting for video to be ready...');
           await new Promise((resolve) => {
-            videoElem.addEventListener("loadeddata", resolve, { once: true });
+            videoElem.addEventListener('loadeddata', resolve, { once: true });
           });
         }
 
-        console.log("[BarcodeScanner] Video ready, starting ZXing decode", {
+        console.log('[BarcodeScanner] Video ready, starting ZXing decode', {
           videoWidth: videoElem.videoWidth,
           videoHeight: videoElem.videoHeight,
           readyState: videoElem.readyState,
@@ -193,14 +193,14 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
             if (result && !detectedAlready) {
               detectedAlready = true;
               const text = result.getText();
-              console.log("[BarcodeScanner] ZXing detected:", text);
+              console.log('[BarcodeScanner] ZXing detected:', text);
               onDetected(text);
               // Stop decoding after successful detection
               if (codeReaderRef.current) {
                 try {
                   codeReaderRef.current.reset();
                 } catch (e) {
-                  console.debug("[BarcodeScanner] Error stopping after detection:", e);
+                  console.debug('[BarcodeScanner] Error stopping after detection:', e);
                 }
               }
             }
@@ -209,9 +209,9 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
           }
         );
 
-        console.log("[BarcodeScanner] ZXing decoder initialized and scanning");
+        console.log('[BarcodeScanner] ZXing decoder initialized and scanning');
       } catch (err: unknown) {
-        console.error("[BarcodeScanner] ZXing initialization failed:", err);
+        console.error('[BarcodeScanner] ZXing initialization failed:', err);
         setError(`Scanner error: ${(err as { message?: string })?.message ?? String(err)}`);
       }
     }
@@ -219,7 +219,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
     start();
 
     return () => {
-      console.log("[BarcodeScanner] Cleanup - stopping all resources");
+      console.log('[BarcodeScanner] Cleanup - stopping all resources');
       active = false;
       detectedAlready = true;
 
@@ -234,17 +234,17 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
         try {
           codeReaderRef.current.reset();
         } catch (e) {
-          console.debug("[BarcodeScanner] Error resetting ZXing:", e);
+          console.debug('[BarcodeScanner] Error resetting ZXing:', e);
         }
         codeReaderRef.current = null;
       }
 
       // Stop media stream
       if (streamRef.current) {
-        console.log("[BarcodeScanner] Stopping camera tracks");
+        console.log('[BarcodeScanner] Stopping camera tracks');
         streamRef.current.getTracks().forEach((t) => {
           t.stop();
-          console.log("[BarcodeScanner] Stopped track:", t.kind, t.label);
+          console.log('[BarcodeScanner] Stopped track:', t.kind, t.label);
         });
         streamRef.current = null;
       }
@@ -256,12 +256,12 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
     if (!file) return;
 
     setError(null);
-    console.log("[BarcodeScanner] Processing uploaded file:", file.name, file.type, file.size);
+    console.log('[BarcodeScanner] Processing uploaded file:', file.name, file.type, file.size);
     const url = URL.createObjectURL(file);
 
     try {
       // Try native BarcodeDetector first
-      if ("BarcodeDetector" in window) {
+      if ('BarcodeDetector' in window) {
         try {
           // @ts-expect-error BarcodeDetector is not in all TypeScript lib definitions
           const detector = new (
@@ -271,27 +271,27 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
               };
             }
           ).BarcodeDetector({
-            formats: ["ean_13", "upc_a", "code_128", "code_39", "ean_8", "upc_e"],
+            formats: ['ean_13', 'upc_a', 'code_128', 'code_39', 'ean_8', 'upc_e'],
           });
 
           const img = await createImageBitmap(file);
           const barcodes = await detector.detect(img);
 
           if (barcodes && barcodes.length > 0) {
-            console.log("[BarcodeScanner] File scan (native):", barcodes[0].rawValue);
+            console.log('[BarcodeScanner] File scan (native):', barcodes[0].rawValue);
             onDetected(barcodes[0].rawValue);
             URL.revokeObjectURL(url);
             return;
           }
         } catch (err) {
-          console.warn("[BarcodeScanner] Native file scan failed:", err);
+          console.warn('[BarcodeScanner] Native file scan failed:', err);
           // Fall through to ZXing
         }
       }
 
       // Fallback to ZXing with enhanced configuration
-      console.log("[BarcodeScanner] Using ZXing for file scan");
-      const { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } = await import("@zxing/library");
+      console.log('[BarcodeScanner] Using ZXing for file scan');
+      const { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } = await import('@zxing/library');
 
       // Configure hints for better image detection
       const hints = new Map();
@@ -311,21 +311,21 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
 
       if (result) {
         const text = result.getText();
-        console.log("[BarcodeScanner] File scan (ZXing):", text);
+        console.log('[BarcodeScanner] File scan (ZXing):', text);
         onDetected(text);
       } else {
-        setError("No barcode detected. Try taking a clearer photo with better lighting.");
+        setError('No barcode detected. Try taking a clearer photo with better lighting.');
       }
     } catch (err: unknown) {
-      console.error("[BarcodeScanner] File scan error:", err);
+      console.error('[BarcodeScanner] File scan error:', err);
       // Provide user-friendly error messages
       const errMsg = (err as { message?: string })?.message;
-      if (errMsg?.includes("No MultiFormat Readers")) {
+      if (errMsg?.includes('No MultiFormat Readers')) {
         setError(
-          "Could not detect barcode. Please ensure:\n• Barcode is clearly visible and in focus\n• Good lighting without glare\n• Barcode fills most of the frame"
+          'Could not detect barcode. Please ensure:\n• Barcode is clearly visible and in focus\n• Good lighting without glare\n• Barcode fills most of the frame'
         );
-      } else if (errMsg?.includes("NotFoundException")) {
-        setError("No barcode found in image. Try taking a closer, clearer photo.");
+      } else if (errMsg?.includes('NotFoundException')) {
+        setError('No barcode found in image. Try taking a closer, clearer photo.');
       } else {
         setError(`Could not read barcode: ${errMsg ?? String(err)}`);
       }
@@ -344,7 +344,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
             <h3 className="text-lg font-semibold">Scan Barcode</h3>
             {scannerType && (
               <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                {scannerType === "native" ? "Hardware" : "Software"}
+                {scannerType === 'native' ? 'Hardware' : 'Software'}
               </span>
             )}
           </div>
@@ -388,14 +388,14 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
           </label>
 
           <div className="text-xs text-center text-gray-400">
-            {scannerType === "zxing" && (
+            {scannerType === 'zxing' && (
               <div>
                 <p>Software decoder active - Hold barcode steady</p>
                 <p className="mt-1">Distance: 4-8 inches • Good lighting required</p>
               </div>
             )}
-            {scannerType === "native" && "Hardware decoder (Chrome/Edge)"}
-            {!scannerType && "Initializing scanner..."}
+            {scannerType === 'native' && 'Hardware decoder (Chrome/Edge)'}
+            {!scannerType && 'Initializing scanner...'}
           </div>
         </div>
       </div>

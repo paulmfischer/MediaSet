@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useSubmit } from "@remix-run/react";
-import MultiselectInput from "~/components/multiselect-input";
-import SingleselectInput from "~/components/singleselect-input";
-import ImageUpload from "~/components/image-upload";
-import ImageUrlPreview from "~/components/image-url-preview";
-import { FormProps, MusicEntity, Disc } from "~/models";
-import { millisecondsToMinutesSeconds } from "~/utils/helpers";
-import ScanButton from "~/components/scan-button";
+import { useState, useEffect } from 'react';
+import { useSubmit } from '@remix-run/react';
+import MultiselectInput from '~/components/multiselect-input';
+import SingleselectInput from '~/components/singleselect-input';
+import ImageUpload from '~/components/image-upload';
+import ImageUrlPreview from '~/components/image-url-preview';
+import { FormProps, MusicEntity, Disc } from '~/models';
+import { millisecondsToMinutesSeconds } from '~/utils/helpers';
+import ScanButton from '~/components/scan-button';
 
 type Metadata = {
   label: string;
@@ -41,10 +41,10 @@ export default function MusicForm({
   }, [music]);
 
   const inputClasses =
-    "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
 
   const handleLookup = () => {
-    const barcodeInput = document.getElementById("barcode") as HTMLInputElement;
+    const barcodeInput = document.getElementById('barcode') as HTMLInputElement;
     const barcodeValue = barcodeInput?.value;
 
     if (!barcodeValue) {
@@ -52,22 +52,22 @@ export default function MusicForm({
     }
 
     const formData = new FormData();
-    formData.append("intent", "lookup");
-    formData.append("fieldName", "barcode");
-    formData.append("identifierValue", barcodeValue);
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'barcode');
+    formData.append('identifierValue', barcodeValue);
 
-    submit(formData, { method: "post" });
+    submit(formData, { method: 'post' });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleLookup();
     }
   };
 
   const addDisc = () => {
-    setDiscList([...discList, { trackNumber: discList.length + 1, title: "", duration: null }]);
+    setDiscList([...discList, { trackNumber: discList.length + 1, title: '', duration: null }]);
   };
 
   const removeDisc = (index: number) => {
@@ -288,7 +288,7 @@ export default function MusicForm({
                     className={inputClasses}
                     placeholder="Track Title"
                     value={disc.title}
-                    onChange={(e) => updateDisc(index, "title", e.target.value)}
+                    onChange={(e) => updateDisc(index, 'title', e.target.value)}
                   />
                 </div>
                 <div className="w-32">
@@ -302,7 +302,7 @@ export default function MusicForm({
                     className={inputClasses}
                     placeholder="mm:ss"
                     value={millisecondsToMinutesSeconds(disc.duration)}
-                    onChange={(e) => updateDisc(index, "duration", e.target.value)}
+                    onChange={(e) => updateDisc(index, 'duration', e.target.value)}
                   />
                 </div>
                 <button

@@ -1,6 +1,6 @@
-import { Form, useNavigation } from "@remix-run/react";
-import { useCallback, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Form, useNavigation } from '@remix-run/react';
+import { useCallback, useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 
 type DeleteDialogProps = {
   isOpen: boolean;
@@ -29,7 +29,7 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
   }, [isOpen]);
 
   useEffect(() => {
-    const isSubmittingThisDialog = navigation.state === "submitting" && navigation.formAction === deleteAction;
+    const isSubmittingThisDialog = navigation.state === 'submitting' && navigation.formAction === deleteAction;
 
     if (isSubmittingThisDialog) {
       wasSubmittingRef.current = true;
@@ -37,7 +37,7 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
       return;
     }
 
-    const returnedIdleForThisDialog = wasSubmittingRef.current && navigation.state === "idle";
+    const returnedIdleForThisDialog = wasSubmittingRef.current && navigation.state === 'idle';
 
     if (returnedIdleForThisDialog) {
       wasSubmittingRef.current = false;
@@ -72,7 +72,7 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
       ref={dialogRef}
       onClick={handleBackdropClick}
       onKeyDown={(e) => {
-        if (e.key === "Escape") handleClose();
+        if (e.key === 'Escape') handleClose();
       }}
       className="backdrop:bg-gray-900 backdrop:bg-opacity-60 bg-zinc-800 text-slate-200 rounded-lg shadow-xl p-0 w-full max-w-md"
     >
@@ -85,7 +85,7 @@ export default function DeleteDialog({ isOpen, onClose, entityTitle, deleteActio
         </div>
         <div className="p-6">
           <p className="text-slate-300 mb-6">
-            Are you sure you want to delete {entityTitle ? <strong>{entityTitle}</strong> : "this item"}?
+            Are you sure you want to delete {entityTitle ? <strong>{entityTitle}</strong> : 'this item'}?
           </p>
           <p className="text-slate-400 text-sm mb-6">This action cannot be undone.</p>
           <div className="flex gap-3 justify-end">

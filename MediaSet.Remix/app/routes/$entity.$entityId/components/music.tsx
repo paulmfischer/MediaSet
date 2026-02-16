@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { MusicEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { MusicEntity, Entity } from '~/models';
 
 type MusicProps = {
   music: MusicEntity;
@@ -39,7 +39,7 @@ export default function Music({ music, apiUrl }: MusicProps) {
           <div className="lg:basis-1/5 flex justify-center mb-4 lg:mb-0">
             <ImageDisplay
               imageData={music.coverImage}
-              alt={music.title ?? "Album cover"}
+              alt={music.title ?? 'Album cover'}
               entityType={Entity.Musics}
               entityId={music.id}
               apiUrl={apiUrl}
@@ -75,7 +75,7 @@ export default function Music({ music, apiUrl }: MusicProps) {
                 Genres
               </label>
               <div id="genres" className="grow">
-                {music.genres?.join(", ")}
+                {music.genres?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">

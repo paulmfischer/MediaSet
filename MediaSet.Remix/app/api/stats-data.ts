@@ -1,6 +1,6 @@
-import { baseUrl } from "~/constants.server";
-import { serverLogger } from "~/utils/serverLogger";
-import { apiFetch } from "~/utils/apiFetch.server";
+import { baseUrl } from '~/constants.server';
+import { serverLogger } from '~/utils/serverLogger';
+import { apiFetch } from '~/utils/apiFetch.server';
 
 type Stats = {
   bookStats: BookStats;
@@ -41,12 +41,12 @@ type MusicStats = {
 };
 
 export async function getStats() {
-  serverLogger.info("Fetching stats for all entities", {});
+  serverLogger.info('Fetching stats for all entities', {});
   try {
     const response = await apiFetch(`${baseUrl}/stats`);
     if (!response.ok) {
-      serverLogger.error("Failed to fetch stats", { status: response.status });
-      throw new Response("Error fetching data", { status: 500 });
+      serverLogger.error('Failed to fetch stats', { status: response.status });
+      throw new Response('Error fetching data', { status: 500 });
     }
     const stats = (await response.json()) as Stats;
     serverLogger.info(
@@ -60,7 +60,7 @@ export async function getStats() {
     );
     return stats;
   } catch (error) {
-    serverLogger.error("Error fetching stats", { error: String(error) });
+    serverLogger.error('Error fetching stats', { error: String(error) });
     throw error;
   }
 }

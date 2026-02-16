@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { MusicEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { MusicEntity, Entity } from '~/models';
 
 type MusicsProps = {
   musics: MusicEntity[];
@@ -74,7 +74,7 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
         isOpen={deleteDialogState.isOpen}
         onClose={() => setDeleteDialogState({ isOpen: false, music: null })}
         entityTitle={deleteDialogState.music?.title}
-        deleteAction={deleteDialogState.music ? `/musics/${deleteDialogState.music.id}/delete` : ""}
+        deleteAction={deleteDialogState.music ? `/musics/${deleteDialogState.music.id}/delete` : ''}
       />
     </>
   );

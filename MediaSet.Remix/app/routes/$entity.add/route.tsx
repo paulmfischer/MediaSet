@@ -1,7 +1,7 @@
-import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import invariant from "tiny-invariant";
-import { addEntity } from "~/api/entity-data";
+import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
+import invariant from 'tiny-invariant';
+import { addEntity } from '~/api/entity-data';
 import {
   getAuthors,
   getFormats,
@@ -12,26 +12,26 @@ import {
   getLabels,
   getGamePublishers,
   getPlatforms,
-} from "~/api/metadata-data";
-import { formToDto, getEntityFromParams, singular } from "~/utils/helpers";
-import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from "~/models";
-import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/api/lookup-capabilities-data";
-import { serverLogger } from "~/utils/serverLogger";
-import BookForm from "~/components/book-form";
-import MovieForm from "~/components/movie-form";
-import GameForm from "~/components/game-form";
-import MusicForm from "~/components/music-form";
+} from '~/api/metadata-data';
+import { formToDto, getEntityFromParams, singular } from '~/utils/helpers';
+import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from '~/models';
+import { getLookupCapabilities, isBarcodeLookupAvailable } from '~/api/lookup-capabilities-data';
+import { serverLogger } from '~/utils/serverLogger';
+import BookForm from '~/components/book-form';
+import MovieForm from '~/components/movie-form';
+import GameForm from '~/components/game-form';
+import MusicForm from '~/components/music-form';
 // Server-only lookup utilities are imported dynamically inside the action to avoid client bundling
 
 function isLookupError(result: unknown): result is { message: string; statusCode: number } {
-  return result && typeof result.message === "string" && typeof result.statusCode === "number";
+  return result && typeof result.message === 'string' && typeof result.statusCode === 'number';
 }
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityType = getEntityFromParams(params);
   return [
     { title: `Add a ${singular(entityType)}` },
-    { name: "description", content: `Add a ${singular(entityType)}` },
+    { name: 'description', content: `Add a ${singular(entityType)}` },
   ];
 };
 
@@ -69,29 +69,29 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  invariant(params.entity, "Missing entity param");
+  invariant(params.entity, 'Missing entity param');
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
 
-  const intent = formData.get("intent") as string;
+  const intent = formData.get('intent') as string;
 
-  if (intent === "lookup") {
-    const fieldName = formData.get("fieldName") as string;
-    const identifierValue = formData.get("identifierValue") as string;
+  if (intent === 'lookup') {
+    const fieldName = formData.get('fieldName') as string;
+    const identifierValue = formData.get('identifierValue') as string;
 
     if (!identifierValue) {
-      serverLogger.warn("Action: Lookup failed - missing identifier value", { entityType, fieldName });
-      return { error: { lookup: "Identifier value is required" } };
+      serverLogger.warn('Action: Lookup failed - missing identifier value', { entityType, fieldName });
+      return { error: { lookup: 'Identifier value is required' } };
     }
 
     try {
-      const { lookup, getIdentifierTypeForField } = await import("~/api/lookup-data.server");
+      const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
       const lookupResult = await lookup(entityType, identifierType, identifierValue);
       // Include a lookup timestamp so the UI can force a remount for consecutive lookups
       return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
     } catch (error) {
-      serverLogger.error("Action: Entity lookup failed", {
+      serverLogger.error('Action: Entity lookup failed', {
         entityType,
         fieldName,
         identifierValue,
@@ -104,19 +104,19 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   // Otherwise, this is an entity creation request
   const entity = formToDto(formData);
   if (!entity) {
-    serverLogger.error("Action: Failed to convert form data to entity", { entityType });
+    serverLogger.error('Action: Failed to convert form data to entity', { entityType });
     return { error: { invalidForm: `Failed to convert form to a ${entityType}` } };
   }
 
   // Check if there's an image file to send as multipart/form-data
-  const coverImageFile = formData.get("coverImage") as File | null;
+  const coverImageFile = formData.get('coverImage') as File | null;
   let apiFormData: FormData | undefined;
 
   if (coverImageFile && coverImageFile.size > 0) {
     // Create FormData to send to the backend API with entity as JSON and image file
     apiFormData = new FormData();
-    apiFormData.append("entity", JSON.stringify(entity));
-    apiFormData.append("coverImage", coverImageFile);
+    apiFormData.append('entity', JSON.stringify(entity));
+    apiFormData.append('coverImage', coverImageFile);
   }
 
   const newEntity = await addEntity(entity, apiFormData);
@@ -140,25 +140,25 @@ export default function Add() {
   const navigate = useNavigate();
   const navigation = useNavigation();
 
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = navigation.state === 'submitting';
 
   // Extract lookup result from action
-  const lookupResult = actionData && "lookupResult" in actionData ? actionData.lookupResult : undefined;
+  const lookupResult = actionData && 'lookupResult' in actionData ? actionData.lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
-  const lookupTimestamp = actionData && "lookupTimestamp" in actionData ? actionData.lookupTimestamp : undefined;
+  const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? actionData.lookupTimestamp : undefined;
 
   // Handle form errors
-  const formError = actionData && "error" in actionData ? actionData.error : undefined;
+  const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
   // Use a key to force form remount when lookup data changes
   // This ensures defaultValue props are re-applied with new lookup data
-  const identifierValue = actionData && "identifierValue" in actionData ? actionData.identifierValue : undefined;
-  const fieldName = actionData && "fieldName" in actionData ? actionData.fieldName : undefined;
+  const identifierValue = actionData && 'identifierValue' in actionData ? actionData.identifierValue : undefined;
+  const fieldName = actionData && 'fieldName' in actionData ? actionData.fieldName : undefined;
   const formKey =
     lookupEntity && identifierValue && fieldName
-      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? "0"}`
-      : "empty";
+      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}`
+      : 'empty';
 
   let formComponent;
   if (entityType === Entity.Books) {
@@ -223,13 +223,13 @@ export default function Add() {
           <Form method="post" encType="multipart/form-data">
             <input type="hidden" name="type" value={entityType} />
 
-            {formError && "invalidForm" in formError && (
+            {formError && 'invalidForm' in formError && (
               <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
                 <p className="text-red-300">{formError.invalidForm}</p>
               </div>
             )}
 
-            {formError && "lookup" in formError && (
+            {formError && 'lookup' in formError && (
               <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
                 <p className="text-red-300">{formError.lookup}</p>
               </div>

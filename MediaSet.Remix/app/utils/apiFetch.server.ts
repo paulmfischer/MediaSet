@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from "async_hooks";
+import { AsyncLocalStorage } from 'async_hooks';
 
 export interface RequestContext {
   traceId: string;
@@ -15,8 +15,8 @@ const requestContextStorage = new AsyncLocalStorage<RequestContext>();
  */
 function generateRandomHex(length: number): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(length / 2)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
@@ -75,8 +75,8 @@ export async function apiFetch(url: string | URL, init?: RequestInit): Promise<R
   const headers = new Headers(init?.headers ?? {});
 
   // Add W3C traceparent header (guaranteed to exist at this point)
-  if (!headers.has("traceparent")) {
-    headers.set("traceparent", traceparent);
+  if (!headers.has('traceparent')) {
+    headers.set('traceparent', traceparent);
   }
 
   return fetch(url, {

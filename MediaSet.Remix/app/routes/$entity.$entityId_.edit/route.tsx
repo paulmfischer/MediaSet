@@ -1,6 +1,6 @@
-import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from "@remix-run/react";
-import { getEntity, updateEntity } from "~/api/entity-data";
+import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
+import { getEntity, updateEntity } from '~/api/entity-data';
 import {
   getAuthors,
   getFormats,
@@ -11,28 +11,28 @@ import {
   getLabels,
   getGamePublishers,
   getPlatforms,
-} from "~/api/metadata-data";
-import { formToDto, getEntityFromParams, singular } from "~/utils/helpers";
-import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from "~/models";
-import { getLookupCapabilities, isBarcodeLookupAvailable } from "~/api/lookup-capabilities-data";
-import { serverLogger } from "~/utils/serverLogger";
-import BookForm from "../../components/book-form";
-import MovieForm from "~/components/movie-form";
-import GameForm from "~/components/game-form";
-import MusicForm from "~/components/music-form";
-import invariant from "tiny-invariant";
+} from '~/api/metadata-data';
+import { formToDto, getEntityFromParams, singular } from '~/utils/helpers';
+import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
+import { getLookupCapabilities, isBarcodeLookupAvailable } from '~/api/lookup-capabilities-data';
+import { serverLogger } from '~/utils/serverLogger';
+import BookForm from '../../components/book-form';
+import MovieForm from '~/components/movie-form';
+import GameForm from '~/components/game-form';
+import MusicForm from '~/components/music-form';
+import invariant from 'tiny-invariant';
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
   const entityType = getEntityFromParams(params);
   return [
     { title: `Add a ${singular(entityType)}` },
-    { name: "description", content: `Add a ${singular(entityType)}` },
+    { name: 'description', content: `Add a ${singular(entityType)}` },
   ];
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  invariant(params.entity, "Missing entity param");
-  invariant(params.entityId, "Missing entityId param");
+  invariant(params.entity, 'Missing entity param');
+  invariant(params.entityId, 'Missing entityId param');
   const entityType = getEntityFromParams(params);
 
   const entity = await getEntity(entityType, params.entityId);
@@ -69,32 +69,32 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  invariant(params.entity, "Missing entity param");
-  invariant(params.entityId, "Missing entityId param");
+  invariant(params.entity, 'Missing entity param');
+  invariant(params.entityId, 'Missing entityId param');
   const entityType = getEntityFromParams(params);
   const formData = await request.formData();
-  const intent = formData.get("intent") as string;
+  const intent = formData.get('intent') as string;
 
-  if (intent === "lookup") {
-    const fieldName = formData.get("fieldName") as string;
-    const identifierValue = formData.get("identifierValue") as string;
+  if (intent === 'lookup') {
+    const fieldName = formData.get('fieldName') as string;
+    const identifierValue = formData.get('identifierValue') as string;
 
     if (!identifierValue) {
-      serverLogger.warn("Action: Lookup failed - missing identifier value", {
+      serverLogger.warn('Action: Lookup failed - missing identifier value', {
         entityType,
         entityId: params.entityId,
         fieldName,
       });
-      return { error: { lookup: "Identifier value is required" } };
+      return { error: { lookup: 'Identifier value is required' } };
     }
     try {
-      const { lookup, getIdentifierTypeForField } = await import("~/api/lookup-data.server");
+      const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
       const lookupResult = await lookup(entityType, identifierType, identifierValue);
       // Include lookup timestamp so UI can force remounts on consecutive lookups
       return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
     } catch (error) {
-      serverLogger.error("Action: Entity lookup failed", {
+      serverLogger.error('Action: Entity lookup failed', {
         entityType,
         entityId: params.entityId,
         fieldName,
@@ -107,7 +107,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   const entity = formToDto(formData);
   if (!entity) {
-    serverLogger.error("Action: Failed to convert form data to entity", { entityType, entityId: params.entityId });
+    serverLogger.error('Action: Failed to convert form data to entity', { entityType, entityId: params.entityId });
     return { invalidObject: `Failed to convert form to a ${entityType}` };
   }
 
@@ -116,22 +116,22 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const existingEntity = await getEntity(entityType, params.entityId);
 
     // Check if image was explicitly cleared
-    const imageClearedMarker = formData.get("coverImage-cleared") as string | null;
-    if (imageClearedMarker === "true") {
+    const imageClearedMarker = formData.get('coverImage-cleared') as string | null;
+    if (imageClearedMarker === 'true') {
       // Image was cleared, remove it
       entity.coverImage = undefined;
     } else {
       // Check if coverImage data was submitted as hidden fields
-      const coverImageFileName = formData.get("coverImage-fileName") as string | null;
+      const coverImageFileName = formData.get('coverImage-fileName') as string | null;
       if (coverImageFileName) {
         // Reconstruct coverImage from hidden inputs
         entity.coverImage = {
           fileName: coverImageFileName,
-          contentType: (formData.get("coverImage-contentType") as string) || "",
-          fileSize: parseInt((formData.get("coverImage-fileSize") as string) || "0"),
-          filePath: (formData.get("coverImage-filePath") as string) || "",
-          createdAt: (formData.get("coverImage-createdAt") as string) || "",
-          updatedAt: (formData.get("coverImage-updatedAt") as string) || "",
+          contentType: (formData.get('coverImage-contentType') as string) || '',
+          fileSize: parseInt((formData.get('coverImage-fileSize') as string) || '0'),
+          filePath: (formData.get('coverImage-filePath') as string) || '',
+          createdAt: (formData.get('coverImage-createdAt') as string) || '',
+          updatedAt: (formData.get('coverImage-updatedAt') as string) || '',
         };
       } else if (existingEntity?.coverImage) {
         // No new image selected and not cleared, preserve existing image
@@ -140,21 +140,21 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     }
 
     // Check if there's an image file to send as multipart/form-data
-    const coverImageFile = formData.get("coverImage") as File | null;
+    const coverImageFile = formData.get('coverImage') as File | null;
     let apiFormData: FormData | undefined;
 
     if (coverImageFile && coverImageFile.size > 0) {
       // Create FormData to send to the backend API with entity as JSON and image file
       // This will replace the existing coverImage
       apiFormData = new FormData();
-      apiFormData.append("entity", JSON.stringify(entity));
-      apiFormData.append("coverImage", coverImageFile);
+      apiFormData.append('entity', JSON.stringify(entity));
+      apiFormData.append('coverImage', coverImageFile);
     }
 
     await updateEntity(params.entityId, entity, apiFormData);
     return redirect(`/${entityType.toLowerCase()}/${entity.id}`);
   } catch (error) {
-    serverLogger.error("Action: Failed to update entity", {
+    serverLogger.error('Action: Failed to update entity', {
       entityType,
       entityId: params.entityId,
       error: String(error),
@@ -184,14 +184,14 @@ export default function Edit() {
   const actionUrl = `/${entity.type.toLowerCase()}/${entity.id}/edit`;
   const isLookupError = (r: unknown): r is { message: string; statusCode: number } =>
     !!r &&
-    typeof (r as { message?: unknown }).message === "string" &&
-    typeof (r as { statusCode?: unknown }).statusCode === "number";
+    typeof (r as { message?: unknown }).message === 'string' &&
+    typeof (r as { statusCode?: unknown }).statusCode === 'number';
   const lookupResult =
-    actionData && "lookupResult" in actionData ? (actionData as Record<string, unknown>).lookupResult : undefined;
+    actionData && 'lookupResult' in actionData ? (actionData as Record<string, unknown>).lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   const lookupTimestamp =
-    actionData && "lookupTimestamp" in actionData ? (actionData as Record<string, unknown>).lookupTimestamp : undefined;
+    actionData && 'lookupTimestamp' in actionData ? (actionData as Record<string, unknown>).lookupTimestamp : undefined;
 
   // When lookup succeeds, use lookup data and preserve only the database id and type
   // This ensures fresh lookup data isn't contaminated by stale database values
@@ -201,12 +201,12 @@ export default function Edit() {
   // This ensures defaultValue props are re-applied with new lookup data
   // Include a timestamp to ensure each lookup gets a unique key, even for the same identifier
   const identifierValue =
-    actionData && "identifierValue" in actionData ? (actionData as Record<string, unknown>).identifierValue : undefined;
+    actionData && 'identifierValue' in actionData ? (actionData as Record<string, unknown>).identifierValue : undefined;
   const fieldName =
-    actionData && "fieldName" in actionData ? (actionData as Record<string, unknown>).fieldName : undefined;
+    actionData && 'fieldName' in actionData ? (actionData as Record<string, unknown>).fieldName : undefined;
   const formKey =
     lookupEntity && identifierValue && fieldName
-      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? "0"}`
+      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}`
       : `entity-${entity.id}`;
 
   let formComponent;

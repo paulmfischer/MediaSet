@@ -1,8 +1,8 @@
-import { json, type MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { getStats } from "~/api/stats-data";
-import { getIntegrations } from "~/api/integrations-data";
-import AttributionBadges from "~/components/attribution-badges";
+import { json, type MetaFunction } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
+import { getStats } from '~/api/stats-data';
+import { getIntegrations } from '~/api/integrations-data';
+import AttributionBadges from '~/components/attribution-badges';
 import {
   LibraryBig,
   Clapperboard,
@@ -15,13 +15,13 @@ import {
   Tv,
   Monitor,
   Album,
-} from "lucide-react";
-import StatCard from "~/components/stat-card";
+} from 'lucide-react';
+import StatCard from '~/components/stat-card';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Dashboard | MediaSet" },
-    { name: "description", content: "Your personal media collection dashboard" },
+    { title: 'Dashboard | MediaSet' },
+    { name: 'description', content: 'Your personal media collection dashboard' },
   ];
 };
 

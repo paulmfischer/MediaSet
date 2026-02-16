@@ -4,7 +4,7 @@
 # Inherit settings from root .editorconfig
 root = false
 
-# TypeScript and JavaScript files - enforce LF line endings and double quotes
+# TypeScript and JavaScript files - enforce LF line endings and single quotes
 [*.{js,jsx,ts,tsx,mjs,cjs}]
 end_of_line = lf
-quote_type = double
+quote_type = single

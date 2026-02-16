@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 type Props = {
   inputId?: string;
@@ -6,7 +6,7 @@ type Props = {
   alt?: string;
 };
 
-export default function ImageUrlPreview({ inputId = "imageUrl", existingUrl, alt = "Image Preview" }: Props) {
+export default function ImageUrlPreview({ inputId = 'imageUrl', existingUrl, alt = 'Image Preview' }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(existingUrl ?? null);
   const [error, setError] = useState(false);
 
@@ -15,7 +15,7 @@ export default function ImageUrlPreview({ inputId = "imageUrl", existingUrl, alt
 
     const handler = () => {
       // Prefer the input value if present, otherwise fall back to the existingUrl prop
-      const val = el?.value?.trim() ?? existingUrl?.trim() ?? "";
+      const val = el?.value?.trim() ?? existingUrl?.trim() ?? '';
       if (!val) {
         setPreviewUrl(null);
         setError(false);
@@ -26,15 +26,15 @@ export default function ImageUrlPreview({ inputId = "imageUrl", existingUrl, alt
     };
 
     // Listen for both input and change events to catch programmatic updates
-    el?.addEventListener("input", handler);
-    el?.addEventListener("change", handler);
+    el?.addEventListener('input', handler);
+    el?.addEventListener('change', handler);
 
     // Initialize from the input value if present (takes precedence over existingUrl)
     handler();
 
     return () => {
-      el?.removeEventListener("input", handler);
-      el?.removeEventListener("change", handler);
+      el?.removeEventListener('input', handler);
+      el?.removeEventListener('change', handler);
     };
   }, [inputId, existingUrl]);
 

@@ -3,8 +3,8 @@
  * Fetches config from /config.json endpoint
  */
 
-import { useEffect, useState } from "react";
-import type { ClientConfig } from "~/config.server";
+import { useEffect, useState } from 'react';
+import type { ClientConfig } from '~/config.server';
 
 let configCache: ClientConfig | null = null;
 let configPromise: Promise<ClientConfig> | null = null;
@@ -21,10 +21,10 @@ async function fetchConfig(): Promise<ClientConfig> {
   }
 
   // Fetch config
-  console.log("Fetching runtime config from /config.json");
-  configPromise = fetch("/config.json")
+  console.log('Fetching runtime config from /config.json');
+  configPromise = fetch('/config.json')
     .then((res) => {
-      console.log("Config fetch response", { status: res.status });
+      console.log('Config fetch response', { status: res.status });
       if (!res.ok) {
         throw new Error(`Failed to fetch config: ${res.statusText}`);
       }
@@ -35,10 +35,10 @@ async function fetchConfig(): Promise<ClientConfig> {
       return config;
     })
     .catch((error) => {
-      console.error("Error fetching config:", error);
+      console.error('Error fetching config:', error);
       // Return defaults on error
       return {
-        apiUrl: "http://localhost:7130",
+        apiUrl: 'http://localhost:7130',
         showErrorDetails: false,
       };
     })

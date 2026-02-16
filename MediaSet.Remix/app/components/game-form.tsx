@@ -1,10 +1,10 @@
-import MultiselectInput from "~/components/multiselect-input";
-import SingleselectInput from "~/components/singleselect-input";
-import ImageUpload from "~/components/image-upload";
-import ImageUrlPreview from "~/components/image-url-preview";
-import { useSubmit } from "@remix-run/react";
-import ScanButton from "~/components/scan-button";
-import { FormProps, GameEntity } from "~/models";
+import MultiselectInput from '~/components/multiselect-input';
+import SingleselectInput from '~/components/singleselect-input';
+import ImageUpload from '~/components/image-upload';
+import ImageUrlPreview from '~/components/image-url-preview';
+import { useSubmit } from '@remix-run/react';
+import ScanButton from '~/components/scan-button';
+import { FormProps, GameEntity } from '~/models';
 
 type Metadata = {
   label: string;
@@ -32,23 +32,23 @@ export default function GameForm({
 }: GameFormProps) {
   const submit = useSubmit();
   const inputClasses =
-    "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
   const textareaClasses =
-    "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
 
   const handleLookup = () => {
-    const barcodeInput = document.getElementById("barcode") as HTMLInputElement;
+    const barcodeInput = document.getElementById('barcode') as HTMLInputElement;
     const barcodeValue = barcodeInput?.value;
     if (!barcodeValue) return;
     const formData = new FormData();
-    formData.append("intent", "lookup");
-    formData.append("fieldName", "barcode");
-    formData.append("identifierValue", barcodeValue);
-    submit(formData, { method: "post" });
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'barcode');
+    formData.append('identifierValue', barcodeValue);
+    submit(formData, { method: 'post' });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleLookup();
     }

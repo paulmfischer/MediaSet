@@ -1,4 +1,4 @@
-import { type LucideIcon } from "lucide-react";
+import { type LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -13,7 +13,7 @@ export default function StatCard({
   value,
   icon: Icon,
   subtitle,
-  colorClass = "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  colorClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20',
 }: StatCardProps) {
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-6 transition-all hover:border-zinc-600 hover:bg-zinc-800">

@@ -1,5 +1,5 @@
-import { baseUrl } from "~/constants.server";
-import { singular } from "~/utils/helpers";
+import { baseUrl } from '~/constants.server';
+import { singular } from '~/utils/helpers';
 import {
   BookEntity,
   MovieEntity,
@@ -12,7 +12,7 @@ import {
   GameLookupResponse,
   MusicLookupResponse,
   LookupError,
-} from "~/models";
+} from '~/models';
 
 type Link = {
   name: string;
@@ -22,20 +22,20 @@ type Link = {
 const linkMap = (link: Link) => link.name;
 
 export function isLookupError(result: unknown): result is LookupError {
-  return result && typeof result.message === "string" && typeof result.statusCode === "number";
+  return result && typeof result.message === 'string' && typeof result.statusCode === 'number';
 }
 
 export function getIdentifierTypeForField(entityType: Entity, fieldName: string): IdentifierType {
-  if (entityType === Entity.Books && fieldName === "isbn") {
-    return "isbn";
+  if (entityType === Entity.Books && fieldName === 'isbn') {
+    return 'isbn';
   }
   if (
     (entityType === Entity.Movies || entityType === Entity.Games || entityType === Entity.Musics) &&
-    fieldName === "barcode"
+    fieldName === 'barcode'
   ) {
-    return "upc";
+    return 'upc';
   }
-  return "isbn";
+  return 'isbn';
 }
 
 export async function lookup(

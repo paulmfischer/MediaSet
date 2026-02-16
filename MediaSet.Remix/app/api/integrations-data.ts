@@ -1,5 +1,5 @@
-import { baseUrl } from "~/constants.server";
-import { apiFetch } from "~/utils/apiFetch.server";
+import { baseUrl } from '~/constants.server';
+import { apiFetch } from '~/utils/apiFetch.server';
 
 export type Integration = {
   key: string;

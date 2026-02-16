@@ -1,10 +1,10 @@
-import { useSubmit } from "@remix-run/react";
-import ScanButton from "~/components/scan-button";
-import MultiselectInput from "~/components/multiselect-input";
-import SingleselectInput from "~/components/singleselect-input";
-import ImageUpload from "~/components/image-upload";
-import ImageUrlPreview from "~/components/image-url-preview";
-import { BookEntity, FormProps } from "~/models";
+import { useSubmit } from '@remix-run/react';
+import ScanButton from '~/components/scan-button';
+import MultiselectInput from '~/components/multiselect-input';
+import SingleselectInput from '~/components/singleselect-input';
+import ImageUpload from '~/components/image-upload';
+import ImageUrlPreview from '~/components/image-url-preview';
+import { BookEntity, FormProps } from '~/models';
 
 type Metadata = {
   label: string;
@@ -30,12 +30,12 @@ export default function BookForm({
 }: BookFormProps) {
   const submit = useSubmit();
   const inputClasses =
-    "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
   const textareaClasses =
-    "w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]";
+    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
 
   const handleLookup = () => {
-    const isbnInput = document.getElementById("isbn") as HTMLInputElement;
+    const isbnInput = document.getElementById('isbn') as HTMLInputElement;
     const isbnValue = isbnInput?.value;
 
     if (!isbnValue) {
@@ -43,15 +43,15 @@ export default function BookForm({
     }
 
     const formData = new FormData();
-    formData.append("intent", "lookup");
-    formData.append("fieldName", "isbn");
-    formData.append("identifierValue", isbnValue);
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'isbn');
+    formData.append('identifierValue', isbnValue);
 
-    submit(formData, { method: "post" });
+    submit(formData, { method: 'post' });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleLookup();
     }

@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { GameEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { GameEntity, Entity } from '~/models';
 
 type GamesProps = {
   games: GameEntity[];
@@ -51,7 +51,7 @@ export default function Games({ games, apiUrl }: GamesProps) {
                 <td className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">{game.platform}</td>
                 <td className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800">{game.format}</td>
                 <td className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800">
-                  {game.developers?.map((dev) => dev.trimEnd()).join(", ")}
+                  {game.developers?.map((dev) => dev.trimEnd()).join(', ')}
                 </td>
                 <td className="flex flex-row gap-3 p-1 pt-2">
                   <Link to={`/games/${game.id}/edit`} aria-label="Edit" title="Edit">
@@ -76,7 +76,7 @@ export default function Games({ games, apiUrl }: GamesProps) {
         isOpen={deleteDialogState.isOpen}
         onClose={() => setDeleteDialogState({ isOpen: false, game: null })}
         entityTitle={deleteDialogState.game?.title}
-        deleteAction={deleteDialogState.game ? `/games/${deleteDialogState.game.id}/delete` : ""}
+        deleteAction={deleteDialogState.game ? `/games/${deleteDialogState.game.id}/delete` : ''}
       />
     </>
   );

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { X } from "lucide-react";
-import { Option } from "~/models";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { X } from 'lucide-react';
+import { Option } from '~/models';
 
 type MultiselectProps = {
   name: string;
@@ -21,7 +21,7 @@ function initializeSelected(selectedValues?: string[]): Option[] {
 
 export default function MultiselectInput(props: MultiselectProps) {
   const [selected, setSelected] = useState<Option[]>(() => initializeSelected(props.selectedValues));
-  const [filterText, setFilterText] = useState("");
+  const [filterText, setFilterText] = useState('');
   const [displayOptions, setDisplayOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -79,32 +79,32 @@ export default function MultiselectInput(props: MultiselectProps) {
     };
 
     update();
-    window.addEventListener("resize", update);
+    window.addEventListener('resize', update);
     // capture scroll on ancestors too
-    window.addEventListener("scroll", update, true);
+    window.addEventListener('scroll', update, true);
     return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
     };
   }, [displayOptions]);
 
   // Clear the filter when closing the menu
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!displayOptions) setFilterText("");
+    if (!displayOptions) setFilterText('');
   }, [displayOptions]);
 
   // Keyboard handler moved out of JSX for readability
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!displayOptions) setDisplayOptions(true);
       setActiveIndex((idx) => Math.min(idx + 1, Math.max(0, filteredOptions.length - 1)));
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!displayOptions) setDisplayOptions(true);
       setActiveIndex((idx) => Math.max(0, idx - 1));
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       if (!displayOptions) {
         setDisplayOptions(true);
         return;
@@ -115,13 +115,13 @@ export default function MultiselectInput(props: MultiselectProps) {
         toggleSelected(option);
         // keep list open; focus stays on input
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       setDisplayOptions(false);
-    } else if (e.key === "Tab") {
+    } else if (e.key === 'Tab') {
       // When tabbing away, close the menu so the backdrop/dropdown doesn't linger
       setDisplayOptions(false);
-    } else if (e.key === "Backspace" && filterText === "" && selected.length > 0) {
+    } else if (e.key === 'Backspace' && filterText === '' && selected.length > 0) {
       // Remove last selected when input empty
       setSelected((prev) => prev.slice(0, -1));
     }
@@ -151,7 +151,7 @@ export default function MultiselectInput(props: MultiselectProps) {
   useEffect(() => {
     if (!displayOptions) return;
     const el = optionRefs.current[activeIndex];
-    el?.scrollIntoView({ block: "nearest" });
+    el?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex, displayOptions]);
 
   return (
@@ -160,7 +160,7 @@ export default function MultiselectInput(props: MultiselectProps) {
       <button
         type="button"
         aria-label="Close dropdown"
-        className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? "" : "hidden"}`}
+        className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? '' : 'hidden'}`}
         onMouseDown={() => setDisplayOptions(false)}
       />
 
@@ -172,7 +172,7 @@ export default function MultiselectInput(props: MultiselectProps) {
         >
           {selected.map((sel) => (
             <button
-              key={sel.value.replaceAll(" ", "")}
+              key={sel.value.replaceAll(' ', '')}
               type="button"
               onClick={() => toggleSelected(sel)}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm bg-blue-600 text-white hover:bg-blue-700"
@@ -201,12 +201,12 @@ export default function MultiselectInput(props: MultiselectProps) {
             }
             onKeyDown={handleKeyDown}
           />
-          <input type="hidden" name={props.name} value={selected.map((op) => op.value).join(",")} />
+          <input type="hidden" name={props.name} value={selected.map((op) => op.value).join(',')} />
         </div>
 
         <div
           className={`fixed py-2 z-30 rounded-md max-h-80 min-w-80 overflow-scroll bg-gray-700 border border-gray-600 shadow-lg ${
-            displayOptions ? "" : "hidden"
+            displayOptions ? '' : 'hidden'
           }`}
           style={{
             top: menuPos?.top ?? 0,
@@ -221,7 +221,7 @@ export default function MultiselectInput(props: MultiselectProps) {
             const activeFlag = idx === activeIndex;
             return (
               <div
-                key={`${option.isNew ? "new-" : ""}${option.value}`}
+                key={`${option.isNew ? 'new-' : ''}${option.value}`}
                 id={`${props.name}-option-${idx}`}
                 ref={(el) => (optionRefs.current[idx] = el)}
                 role="option"
@@ -235,15 +235,15 @@ export default function MultiselectInput(props: MultiselectProps) {
                   inputRef.current?.focus();
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     toggleSelected(option);
                     inputRef.current?.focus();
                   }
                 }}
                 className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${
-                  selectedFlag ? "bg-gray-600" : ""
-                } ${activeFlag ? "bg-gray-600" : ""}`}
+                  selectedFlag ? 'bg-gray-600' : ''
+                } ${activeFlag ? 'bg-gray-600' : ''}`}
               >
                 {option.label}
               </div>

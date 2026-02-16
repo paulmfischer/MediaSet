@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2, Check } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { MovieEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2, Check } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {
   movie: MovieEntity;
@@ -39,7 +39,7 @@ export default function Movie({ movie, apiUrl }: MovieProps) {
           <div className="lg:basis-1/5 flex justify-center mb-4 lg:mb-0">
             <ImageDisplay
               imageData={movie.coverImage}
-              alt={movie.title ?? "Movie poster"}
+              alt={movie.title ?? 'Movie poster'}
               entityType={Entity.Movies}
               entityId={movie.id}
               apiUrl={apiUrl}
@@ -83,7 +83,7 @@ export default function Movie({ movie, apiUrl }: MovieProps) {
                 Genres
               </label>
               <div id="genres" className="grow">
-                {movie.genres?.join(", ")}
+                {movie.genres?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">
@@ -91,7 +91,7 @@ export default function Movie({ movie, apiUrl }: MovieProps) {
                 Studios
               </label>
               <div id="studios" className="grow">
-                {movie.studios?.join(", ")}
+                {movie.studios?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Option } from "~/models";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { Option } from '~/models';
 
 type SingleselectProps = {
   name: string;
@@ -19,7 +19,7 @@ function initializeSelected(selectedValue?: string): Option | null {
 
 export default function SingleselectInput(props: SingleselectProps) {
   const [selected, setSelected] = useState<Option | null>(() => initializeSelected(props.selectedValue));
-  const [filterText, setFilterText] = useState("");
+  const [filterText, setFilterText] = useState('');
   const [displayOptions, setDisplayOptions] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -40,12 +40,12 @@ export default function SingleselectInput(props: SingleselectProps) {
       : { label: option.label, value: option.value };
     setSelected(next);
     setDisplayOptions(false);
-    setFilterText("");
+    setFilterText('');
   };
 
   const clearSelection = () => {
     setSelected(null);
-    setFilterText("");
+    setFilterText('');
     inputRef.current?.focus();
   };
 
@@ -77,32 +77,32 @@ export default function SingleselectInput(props: SingleselectProps) {
     };
 
     update();
-    window.addEventListener("resize", update);
+    window.addEventListener('resize', update);
     // capture scroll on ancestors too
-    window.addEventListener("scroll", update, true);
+    window.addEventListener('scroll', update, true);
     return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
     };
   }, [displayOptions]);
 
   // Clear the filter when closing the menu
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!displayOptions) setFilterText("");
+    if (!displayOptions) setFilterText('');
   }, [displayOptions]);
 
   // Keyboard handler moved out of JSX for readability
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!displayOptions) setDisplayOptions(true);
       setActiveIndex((idx) => Math.min(idx + 1, Math.max(0, filteredOptions.length - 1)));
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!displayOptions) setDisplayOptions(true);
       setActiveIndex((idx) => Math.max(0, idx - 1));
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       if (!displayOptions) {
         setDisplayOptions(true);
         return;
@@ -112,13 +112,13 @@ export default function SingleselectInput(props: SingleselectProps) {
       if (option) {
         selectOption(option);
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       setDisplayOptions(false);
-    } else if (e.key === "Tab") {
+    } else if (e.key === 'Tab') {
       // When tabbing away, close the menu so the backdrop/dropdown doesn't linger
       setDisplayOptions(false);
-    } else if (e.key === "Backspace" && filterText === "" && selected) {
+    } else if (e.key === 'Backspace' && filterText === '' && selected) {
       // Clear selection when input is empty
       clearSelection();
     }
@@ -148,11 +148,11 @@ export default function SingleselectInput(props: SingleselectProps) {
   useEffect(() => {
     if (!displayOptions) return;
     const el = optionRefs.current[activeIndex];
-    el?.scrollIntoView({ block: "nearest" });
+    el?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex, displayOptions]);
 
   // Determine what to display in the input; when opening with a value, keep showing it until user types
-  const displayValue = filterText !== "" ? filterText : (selected?.label ?? "");
+  const displayValue = filterText !== '' ? filterText : (selected?.label ?? '');
 
   return (
     <>
@@ -160,7 +160,7 @@ export default function SingleselectInput(props: SingleselectProps) {
       <button
         type="button"
         aria-label="Close dropdown"
-        className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? "" : "hidden"}`}
+        className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? '' : 'hidden'}`}
         onMouseDown={() => setDisplayOptions(false)}
       />
 
@@ -188,12 +188,12 @@ export default function SingleselectInput(props: SingleselectProps) {
             }
             onKeyDown={handleKeyDown}
           />
-          <input type="hidden" name={props.name} value={selected?.value ?? ""} />
+          <input type="hidden" name={props.name} value={selected?.value ?? ''} />
         </div>
 
         <div
           className={`fixed py-2 z-30 rounded-md max-h-80 min-w-80 overflow-scroll bg-gray-700 border border-gray-600 shadow-lg ${
-            displayOptions ? "" : "hidden"
+            displayOptions ? '' : 'hidden'
           }`}
           style={{
             top: menuPos?.top ?? 0,
@@ -207,7 +207,7 @@ export default function SingleselectInput(props: SingleselectProps) {
             const activeFlag = idx === activeIndex;
             return (
               <div
-                key={`${option.isNew ? "new-" : ""}${option.value}`}
+                key={`${option.isNew ? 'new-' : ''}${option.value}`}
                 id={`${props.name}-option-${idx}`}
                 ref={(el) => (optionRefs.current[idx] = el)}
                 role="option"
@@ -219,12 +219,12 @@ export default function SingleselectInput(props: SingleselectProps) {
                   selectOption(option);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     selectOption(option);
                   }
                 }}
-                className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${activeFlag ? "bg-gray-600" : ""}`}
+                className={`px-3 py-2 text-white cursor-pointer hover:bg-gray-600 ${activeFlag ? 'bg-gray-600' : ''}`}
               >
                 {option.label}
               </div>

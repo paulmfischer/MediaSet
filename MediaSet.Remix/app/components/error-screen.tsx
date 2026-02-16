@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
-import { AlertTriangle, Home } from "lucide-react";
+import { Link } from '@remix-run/react';
+import { AlertTriangle, Home } from 'lucide-react';
 
 interface ErrorScreenProps {
   title: string;
@@ -17,7 +17,7 @@ function formatData(data: unknown): string | undefined {
     return undefined;
   }
 
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     return data;
   }
 
@@ -44,15 +44,15 @@ export default function ErrorScreen({
 }: ErrorScreenProps) {
   const dataText = formatData(data);
   const shouldShowDetails = showDetails && (statusCode || statusText || dataText);
-  const containerClasses = ["w-full max-w-3xl rounded-lg border border-zinc-700", "bg-zinc-800/50 p-8 shadow-lg"];
+  const containerClasses = ['w-full max-w-3xl rounded-lg border border-zinc-700', 'bg-zinc-800/50 p-8 shadow-lg'];
   const actionClasses = [
-    "dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400",
-    "inline-flex items-center justify-center gap-2 px-3 py-1 rounded",
+    'dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400',
+    'inline-flex items-center justify-center gap-2 px-3 py-1 rounded',
   ];
 
   return (
     <div className="flex w-full justify-center">
-      <div className={containerClasses.join(" ")}>
+      <div className={containerClasses.join(' ')}>
         <div className="flex flex-col gap-6">
           <div className="flex items-start gap-4">
             <div className="mt-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
@@ -70,7 +70,7 @@ export default function ErrorScreen({
                 Try Again
               </button>
             ) : null}
-            <Link to="/" className={actionClasses.join(" ")}>
+            <Link to="/" className={actionClasses.join(' ')}>
               <Home size={18} aria-hidden />
               <span>Go Home</span>
             </Link>

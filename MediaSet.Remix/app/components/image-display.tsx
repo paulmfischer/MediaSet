@@ -1,6 +1,6 @@
-import { useState } from "react";
-import type { ImageData } from "~/models";
-import { Entity } from "~/models";
+import { useState } from 'react';
+import type { ImageData } from '~/models';
+import { Entity } from '~/models';
 
 type ImageDisplayProps = {
   imageData?: ImageData;
@@ -8,16 +8,16 @@ type ImageDisplayProps = {
   entityType?: Entity;
   entityId?: string;
   apiUrl?: string;
-  size?: "xsmall" | "small" | "medium" | "large" | "responsive";
+  size?: 'xsmall' | 'small' | 'medium' | 'large' | 'responsive';
   className?: string;
 };
 
 const sizeMap = {
-  xsmall: "h-16 w-16",
-  small: "h-32 w-32",
-  medium: "h-48 w-48",
-  large: "h-64 w-64",
-  responsive: "h-48 w-48 lg:h-64 lg:w-64",
+  xsmall: 'h-16 w-16',
+  small: 'h-32 w-32',
+  medium: 'h-48 w-48',
+  large: 'h-64 w-64',
+  responsive: 'h-48 w-48 lg:h-64 lg:w-64',
 };
 
 export default function ImageDisplay({
@@ -26,7 +26,7 @@ export default function ImageDisplay({
   entityType,
   entityId,
   apiUrl,
-  size = "responsive",
+  size = 'responsive',
   className,
 }: ImageDisplayProps) {
   const [showModal, setShowModal] = useState(false);
@@ -39,7 +39,7 @@ export default function ImageDisplay({
     }
     // Construct direct API image URL: /static/images/{filePath}
     if (!apiUrl) {
-      console.warn("ImageDisplay: apiUrl not configured");
+      console.warn('ImageDisplay: apiUrl not configured');
       return null;
     }
     const imageUrl = `${apiUrl}/static/images/${imageData.filePath}`;
@@ -57,7 +57,7 @@ export default function ImageDisplay({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setShowModal(false);
     }
   };
@@ -89,7 +89,7 @@ export default function ImageDisplay({
       <div
         className={`flex items-center justify-center bg-gray-800 rounded-lg overflow-hidden ${
           sizeMap[size]
-        } ${className || ""}`}
+        } ${className || ''}`}
         role="img"
         aria-label={alt}
       >

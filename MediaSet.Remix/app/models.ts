@@ -20,10 +20,10 @@ export type ImageData = {
 };
 
 export enum Entity {
-  Books = "Books",
-  Movies = "Movies",
-  Games = "Games",
-  Musics = "Musics",
+  Books = 'Books',
+  Movies = 'Movies',
+  Games = 'Games',
+  Musics = 'Musics',
 }
 
 export interface BaseEntity {
@@ -99,7 +99,7 @@ export interface MusicEntity extends BaseEntity {
 // UI model
 export type Music = Override<MusicEntity, { genres: string }>;
 
-export type IdentifierType = "isbn" | "lccn" | "oclc" | "olid" | "upc" | "ean";
+export type IdentifierType = 'isbn' | 'lccn' | 'oclc' | 'olid' | 'upc' | 'ean';
 
 export interface BookLookupResponse {
   title: string;

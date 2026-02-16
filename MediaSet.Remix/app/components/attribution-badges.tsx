@@ -1,4 +1,4 @@
-import type { Integration } from "~/api/integrations-data";
+import type { Integration } from '~/api/integrations-data';
 
 type Props = {
   integrations?: Integration[];
@@ -17,7 +17,7 @@ export default function AttributionBadges({ integrations = [] }: Props) {
         {enabled.map((i) => (
           <div key={i.key} className="inline-block w-auto">
             <a
-              href={i.attributionUrl ?? "#"}
+              href={i.attributionUrl ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={i.displayName}

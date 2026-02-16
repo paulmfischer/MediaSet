@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2, Check } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { MovieEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2, Check } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {
   movies: MovieEntity[];
@@ -76,7 +76,7 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
         isOpen={deleteDialogState.isOpen}
         onClose={() => setDeleteDialogState({ isOpen: false, movie: null })}
         entityTitle={deleteDialogState.movie?.title}
-        deleteAction={deleteDialogState.movie ? `/movies/${deleteDialogState.movie.id}/delete` : ""}
+        deleteAction={deleteDialogState.movie ? `/movies/${deleteDialogState.movie.id}/delete` : ''}
       />
     </>
   );

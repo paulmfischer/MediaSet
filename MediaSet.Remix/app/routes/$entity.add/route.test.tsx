@@ -1,19 +1,19 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "~/test/test-utils";
-import Add, { meta, loader, action } from "./route";
-import * as entityData from "~/api/entity-data";
-import * as metadataData from "~/api/metadata-data";
-import * as helpers from "~/utils/helpers";
-import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from "~/models";
-import * as remixReact from "@remix-run/react";
-import type { useNavigation } from "@remix-run/react";
-import React from "react";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen } from '~/test/test-utils';
+import Add, { meta, loader, action } from './route';
+import * as entityData from '~/api/entity-data';
+import * as metadataData from '~/api/metadata-data';
+import * as helpers from '~/utils/helpers';
+import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
+import * as remixReact from '@remix-run/react';
+import type { useNavigation } from '@remix-run/react';
+import React from 'react';
 
 // Mock modules
-vi.mock("~/api/entity-data");
-vi.mock("~/api/metadata-data");
-vi.mock("~/utils/helpers");
-vi.mock("~/api/lookup-capabilities-data", () => ({
+vi.mock('~/api/entity-data');
+vi.mock('~/api/metadata-data');
+vi.mock('~/utils/helpers');
+vi.mock('~/api/lookup-capabilities-data', () => ({
   getLookupCapabilities: vi.fn().mockResolvedValue({
     supportsBookLookup: true,
     supportsMovieLookup: true,
@@ -22,14 +22,14 @@ vi.mock("~/api/lookup-capabilities-data", () => ({
   }),
   isBarcodeLookupAvailable: vi.fn().mockReturnValue(true),
 }));
-vi.mock("~/utils/apiFetch.server", () => ({
+vi.mock('~/utils/apiFetch.server', () => ({
   apiFetch: vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
     json: async () => ({}),
   }),
 }));
-vi.mock("~/utils/serverLogger", () => ({
+vi.mock('~/utils/serverLogger', () => ({
   serverLogger: {
     info: vi.fn(() => undefined),
     warn: vi.fn(() => undefined),
@@ -39,29 +39,29 @@ vi.mock("~/utils/serverLogger", () => ({
 }));
 
 // Mock form components
-vi.mock("~/components/book-form", () => ({
+vi.mock('~/components/book-form', () => ({
   default: () => <div data-testid="book-form">Book Form</div>,
 }));
 
-vi.mock("~/components/movie-form", () => ({
+vi.mock('~/components/movie-form', () => ({
   default: () => <div data-testid="movie-form">Movie Form</div>,
 }));
 
-vi.mock("~/components/game-form", () => ({
+vi.mock('~/components/game-form', () => ({
   default: () => <div data-testid="game-form">Game Form</div>,
 }));
 
-vi.mock("~/components/music-form", () => ({
+vi.mock('~/components/music-form', () => ({
   default: () => <div data-testid="music-form">Music Form</div>,
 }));
 
-vi.mock("~/components/spinner", () => ({
+vi.mock('~/components/spinner', () => ({
   default: () => <div data-testid="spinner">Loading...</div>,
 }));
 
 // Mock Remix hooks and Form component to avoid router context requirement
-vi.mock("@remix-run/react", async () => {
-  const actualRemix = await vi.importActual("@remix-run/react");
+vi.mock('@remix-run/react', async () => {
+  const actualRemix = await vi.importActual('@remix-run/react');
   return {
     ...(actualRemix as Record<string, unknown>),
     Form: ({
@@ -107,81 +107,81 @@ const mockUseNavigate = vi.mocked(remixReact.useNavigate);
 const mockUseNavigation = vi.mocked(remixReact.useNavigation);
 const mockUseSubmit = vi.mocked(remixReact.useSubmit);
 
-describe("$entity_.add route", () => {
-  describe("meta function", () => {
+describe('$entity_.add route', () => {
+  describe('meta function', () => {
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
-    it("should return correct title for Books", () => {
+    it('should return correct title for Books', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSingular.mockReturnValue("Book");
+      mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: "books" } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(result).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ title: "Add a Book" }),
+          expect.objectContaining({ title: 'Add a Book' }),
           expect.objectContaining({
-            name: "description",
-            content: "Add a Book",
+            name: 'description',
+            content: 'Add a Book',
           }),
         ])
       );
       expect(result).toHaveLength(2);
     });
 
-    it("should return correct title for Movies", () => {
+    it('should return correct title for Movies', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-      mockSingular.mockReturnValue("Movie");
+      mockSingular.mockReturnValue('Movie');
 
-      const result = meta({ params: { entity: "movies" } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(expect.objectContaining({ title: "Add a Movie" }));
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Movie' }));
     });
 
-    it("should return correct title for Games", () => {
+    it('should return correct title for Games', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
-      mockSingular.mockReturnValue("Game");
+      mockSingular.mockReturnValue('Game');
 
-      const result = meta({ params: { entity: "games" } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(expect.objectContaining({ title: "Add a Game" }));
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Game' }));
     });
 
-    it("should return correct title for Musics", () => {
+    it('should return correct title for Musics', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-      mockSingular.mockReturnValue("Music");
+      mockSingular.mockReturnValue('Music');
 
-      const result = meta({ params: { entity: "musics" } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(expect.objectContaining({ title: "Add a Music" }));
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Music' }));
     });
 
-    it("should include both title and description meta tags", () => {
+    it('should include both title and description meta tags', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSingular.mockReturnValue("Book");
+      mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: "books" } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       const titleTags = result.filter((tag: Record<string, unknown>) => tag.title !== undefined);
-      const descriptionTags = result.filter((tag: Record<string, unknown>) => tag.name === "description");
+      const descriptionTags = result.filter((tag: Record<string, unknown>) => tag.name === 'description');
 
       expect(titleTags).toHaveLength(1);
       expect(descriptionTags).toHaveLength(1);
     });
   });
 
-  describe("loader function", () => {
+  describe('loader function', () => {
     const mockLoaderData = {
-      authors: [{ label: "Author 1", value: "author1" }],
-      genres: [{ label: "Fiction", value: "fiction" }],
-      formats: [{ label: "Hardcover", value: "hardcover" }],
-      publishers: [{ label: "Publisher 1", value: "pub1" }],
-      studios: [{ label: "Studio 1", value: "studio1" }],
-      developers: [{ label: "Developer 1", value: "dev1" }],
-      labels: [{ label: "Label 1", value: "label1" }],
-      platforms: [{ label: "PS5", value: "ps5" }],
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Fiction', value: 'fiction' }],
+      formats: [{ label: 'Hardcover', value: 'hardcover' }],
+      publishers: [{ label: 'Publisher 1', value: 'pub1' }],
+      studios: [{ label: 'Studio 1', value: 'studio1' }],
+      developers: [{ label: 'Developer 1', value: 'dev1' }],
+      labels: [{ label: 'Label 1', value: 'label1' }],
+      platforms: [{ label: 'PS5', value: 'ps5' }],
     };
 
     beforeEach(() => {
@@ -197,10 +197,10 @@ describe("$entity_.add route", () => {
       mockGetPlatforms.mockResolvedValue(mockLoaderData.platforms);
     });
 
-    it("should load metadata for Books", async () => {
+    it('should load metadata for Books', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const result = await loader({ params: { entity: "books" } } as unknown as Parameters<typeof loader>[0]);
+      const result = await loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Books);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Books);
@@ -210,10 +210,10 @@ describe("$entity_.add route", () => {
       expect(result.authors).toEqual(mockLoaderData.authors);
     });
 
-    it("should load metadata for Movies", async () => {
+    it('should load metadata for Movies', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
 
-      const result = await loader({ params: { entity: "movies" } } as unknown as Parameters<typeof loader>[0]);
+      const result = await loader({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Movies);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Movies);
@@ -221,10 +221,10 @@ describe("$entity_.add route", () => {
       expect(result.entityType).toBe(Entity.Movies);
     });
 
-    it("should load metadata for Games", async () => {
+    it('should load metadata for Games', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
 
-      const result = await loader({ params: { entity: "games" } } as unknown as Parameters<typeof loader>[0]);
+      const result = await loader({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Games);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Games);
@@ -234,10 +234,10 @@ describe("$entity_.add route", () => {
       expect(result.entityType).toBe(Entity.Games);
     });
 
-    it("should load metadata for Musics", async () => {
+    it('should load metadata for Musics', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
 
-      const result = await loader({ params: { entity: "musics" } } as unknown as Parameters<typeof loader>[0]);
+      const result = await loader({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Musics);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Musics);
@@ -245,26 +245,26 @@ describe("$entity_.add route", () => {
       expect(result.entityType).toBe(Entity.Musics);
     });
 
-    it("should return all required properties", async () => {
+    it('should return all required properties', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const result = await loader({ params: { entity: "books" } } as unknown as Parameters<typeof loader>[0]);
+      const result = await loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toHaveProperty("authors");
-      expect(result).toHaveProperty("genres");
-      expect(result).toHaveProperty("publishers");
-      expect(result).toHaveProperty("formats");
-      expect(result).toHaveProperty("entityType");
-      expect(result).toHaveProperty("studios");
-      expect(result).toHaveProperty("developers");
-      expect(result).toHaveProperty("labels");
-      expect(result).toHaveProperty("platforms");
+      expect(result).toHaveProperty('authors');
+      expect(result).toHaveProperty('genres');
+      expect(result).toHaveProperty('publishers');
+      expect(result).toHaveProperty('formats');
+      expect(result).toHaveProperty('entityType');
+      expect(result).toHaveProperty('studios');
+      expect(result).toHaveProperty('developers');
+      expect(result).toHaveProperty('labels');
+      expect(result).toHaveProperty('platforms');
     });
 
-    it("should use Promise.all for parallel loading", async () => {
+    it('should use Promise.all for parallel loading', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const loaderPromise = loader({ params: { entity: "books" } } as unknown as Parameters<typeof loader>[0]);
+      const loaderPromise = loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       // Verify Promise.all was used by checking all mocks are called
       await loaderPromise;
@@ -274,35 +274,35 @@ describe("$entity_.add route", () => {
     });
   });
 
-  describe("action function - create entity", () => {
+  describe('action function - create entity', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
     });
 
-    it("should create a new book entity", async () => {
+    it('should create a new book entity', async () => {
       const mockNewBook: BookEntity = {
-        id: "new-book-1",
+        id: 'new-book-1',
         type: Entity.Books,
-        title: "New Book",
+        title: 'New Book',
       };
 
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
-      mockFormData.append("type", Entity.Books);
-      mockFormData.append("title", "New Book");
+      mockFormData.append('intent', 'create');
+      mockFormData.append('type', Entity.Books);
+      mockFormData.append('title', 'New Book');
 
       mockFormToDto.mockReturnValue(mockNewBook);
       mockAddEntity.mockResolvedValue(mockNewBook);
 
-      const request = new Request("http://localhost/books/add", {
-        method: "POST",
+      const request = new Request('http://localhost/books/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       const result = await action({
         request,
-        params: { entity: "books" },
+        params: { entity: 'books' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(mockFormToDto).toHaveBeenCalledWith(mockFormData);
@@ -310,109 +310,109 @@ describe("$entity_.add route", () => {
       expect(result).toBeDefined();
     });
 
-    it("should create a new movie entity", async () => {
+    it('should create a new movie entity', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
 
       const mockNewMovie: MovieEntity = {
-        id: "new-movie-1",
+        id: 'new-movie-1',
         type: Entity.Movies,
-        title: "New Movie",
+        title: 'New Movie',
       };
 
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
-      mockFormData.append("type", Entity.Movies);
-      mockFormData.append("title", "New Movie");
+      mockFormData.append('intent', 'create');
+      mockFormData.append('type', Entity.Movies);
+      mockFormData.append('title', 'New Movie');
 
       mockFormToDto.mockReturnValue(mockNewMovie);
       mockAddEntity.mockResolvedValue(mockNewMovie);
 
-      const request = new Request("http://localhost/movies/add", {
-        method: "POST",
+      const request = new Request('http://localhost/movies/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       await action({
         request,
-        params: { entity: "movies" },
+        params: { entity: 'movies' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewMovie, undefined);
     });
 
-    it("should create a new game entity", async () => {
+    it('should create a new game entity', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
 
       const mockNewGame: GameEntity = {
-        id: "new-game-1",
+        id: 'new-game-1',
         type: Entity.Games,
-        title: "New Game",
-        platform: "PS5",
+        title: 'New Game',
+        platform: 'PS5',
       };
 
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
-      mockFormData.append("type", Entity.Games);
+      mockFormData.append('intent', 'create');
+      mockFormData.append('type', Entity.Games);
 
       mockFormToDto.mockReturnValue(mockNewGame);
       mockAddEntity.mockResolvedValue(mockNewGame);
 
-      const request = new Request("http://localhost/games/add", {
-        method: "POST",
+      const request = new Request('http://localhost/games/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       await action({
         request,
-        params: { entity: "games" },
+        params: { entity: 'games' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewGame, undefined);
     });
 
-    it("should create a new music entity", async () => {
+    it('should create a new music entity', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
 
       const mockNewMusic: MusicEntity = {
-        id: "new-music-1",
+        id: 'new-music-1',
         type: Entity.Musics,
-        title: "New Album",
-        artist: "Artist Name",
+        title: 'New Album',
+        artist: 'Artist Name',
       };
 
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
-      mockFormData.append("type", Entity.Musics);
+      mockFormData.append('intent', 'create');
+      mockFormData.append('type', Entity.Musics);
 
       mockFormToDto.mockReturnValue(mockNewMusic);
       mockAddEntity.mockResolvedValue(mockNewMusic);
 
-      const request = new Request("http://localhost/musics/add", {
-        method: "POST",
+      const request = new Request('http://localhost/musics/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       await action({
         request,
-        params: { entity: "musics" },
+        params: { entity: 'musics' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewMusic, undefined);
     });
 
-    it("should return error when formToDto returns null", async () => {
+    it('should return error when formToDto returns null', async () => {
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
+      mockFormData.append('intent', 'create');
       mockFormToDto.mockReturnValue(null);
 
-      const request = new Request("http://localhost/books/add", {
-        method: "POST",
+      const request = new Request('http://localhost/books/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       const result = await action({
         request,
-        params: { entity: "books" },
+        params: { entity: 'books' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
@@ -423,12 +423,12 @@ describe("$entity_.add route", () => {
       expect(mockAddEntity).not.toHaveBeenCalled();
     });
 
-    it("should throw error when entity param is missing", async () => {
+    it('should throw error when entity param is missing', async () => {
       const mockFormData = new FormData();
-      mockFormData.append("intent", "create");
+      mockFormData.append('intent', 'create');
 
-      const request = new Request("http://localhost/add", {
-        method: "POST",
+      const request = new Request('http://localhost/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
@@ -441,91 +441,91 @@ describe("$entity_.add route", () => {
     });
   });
 
-  describe("action function - lookup", () => {
+  describe('action function - lookup', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
     });
 
-    it("should handle lookup intent for ISBN", async () => {
+    it('should handle lookup intent for ISBN', async () => {
       const mockFormData = new FormData();
-      mockFormData.append("intent", "lookup");
-      mockFormData.append("fieldName", "isbn");
-      mockFormData.append("identifierValue", "978-0743273565");
+      mockFormData.append('intent', 'lookup');
+      mockFormData.append('fieldName', 'isbn');
+      mockFormData.append('identifierValue', '978-0743273565');
 
-      const request = new Request("http://localhost/books/add", {
-        method: "POST",
+      const request = new Request('http://localhost/books/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
-      vi.doMock("~/api/lookup-data.server", () => ({
+      vi.doMock('~/api/lookup-data.server', () => ({
         lookup: vi.fn().mockResolvedValue({
-          title: "Test Book",
-          isbn: "978-0743273565",
+          title: 'Test Book',
+          isbn: '978-0743273565',
         }),
-        getIdentifierTypeForField: vi.fn().mockReturnValue("isbn"),
+        getIdentifierTypeForField: vi.fn().mockReturnValue('isbn'),
       }));
 
       const result = await action({
         request,
-        params: { entity: "books" },
+        params: { entity: 'books' },
       } as unknown as Parameters<typeof action>[0]);
 
-      expect(result).toHaveProperty("lookupResult");
+      expect(result).toHaveProperty('lookupResult');
     });
 
-    it("should return error when identifierValue is missing", async () => {
+    it('should return error when identifierValue is missing', async () => {
       const mockFormData = new FormData();
-      mockFormData.append("intent", "lookup");
-      mockFormData.append("fieldName", "isbn");
+      mockFormData.append('intent', 'lookup');
+      mockFormData.append('fieldName', 'isbn');
 
-      const request = new Request("http://localhost/books/add", {
-        method: "POST",
+      const request = new Request('http://localhost/books/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       const result = await action({
         request,
-        params: { entity: "books" },
+        params: { entity: 'books' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
-        error: { lookup: "Identifier value is required" },
+        error: { lookup: 'Identifier value is required' },
       });
     });
 
-    it("should return error when identifierValue is empty string", async () => {
+    it('should return error when identifierValue is empty string', async () => {
       const mockFormData = new FormData();
-      mockFormData.append("intent", "lookup");
-      mockFormData.append("fieldName", "isbn");
-      mockFormData.append("identifierValue", "");
+      mockFormData.append('intent', 'lookup');
+      mockFormData.append('fieldName', 'isbn');
+      mockFormData.append('identifierValue', '');
 
-      const request = new Request("http://localhost/books/add", {
-        method: "POST",
+      const request = new Request('http://localhost/books/add', {
+        method: 'POST',
         body: mockFormData,
       });
 
       const result = await action({
         request,
-        params: { entity: "books" },
+        params: { entity: 'books' },
       } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
-        error: { lookup: "Identifier value is required" },
+        error: { lookup: 'Identifier value is required' },
       });
     });
   });
 
-  describe("Add component rendering", () => {
+  describe('Add component rendering', () => {
     const mockLoaderData = {
-      authors: [{ label: "Author 1", value: "author1" }],
-      genres: [{ label: "Fiction", value: "fiction" }],
-      formats: [{ label: "Hardcover", value: "hardcover" }],
-      publishers: [{ label: "Publisher 1", value: "pub1" }],
-      studios: [{ label: "Studio 1", value: "studio1" }],
-      developers: [{ label: "Developer 1", value: "dev1" }],
-      labels: [{ label: "Label 1", value: "label1" }],
-      platforms: [{ label: "PS5", value: "ps5" }],
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Fiction', value: 'fiction' }],
+      formats: [{ label: 'Hardcover', value: 'hardcover' }],
+      publishers: [{ label: 'Publisher 1', value: 'pub1' }],
+      studios: [{ label: 'Studio 1', value: 'studio1' }],
+      developers: [{ label: 'Developer 1', value: 'dev1' }],
+      labels: [{ label: 'Label 1', value: 'label1' }],
+      platforms: [{ label: 'PS5', value: 'ps5' }],
       entityType: Entity.Books,
     };
 
@@ -534,131 +534,131 @@ describe("$entity_.add route", () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: "idle" } as unknown as ReturnType<typeof useNavigation>);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
-      mockSingular.mockReturnValue("Book");
+      mockSingular.mockReturnValue('Book');
     });
 
-    it("should render the page title with entity type", () => {
+    it('should render the page title with entity type', () => {
       render(<Add />);
 
-      expect(screen.getByText("Add a Book")).toBeInTheDocument();
+      expect(screen.getByText('Add a Book')).toBeInTheDocument();
     });
 
-    it("should render the form", () => {
+    it('should render the form', () => {
       render(<Add />);
 
-      expect(screen.getByTestId("book-form")).toBeInTheDocument();
+      expect(screen.getByTestId('book-form')).toBeInTheDocument();
     });
 
-    it("should render submit button", () => {
+    it('should render submit button', () => {
       render(<Add />);
 
-      expect(screen.getByRole("button", { name: /Add Book/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Add Book/i })).toBeInTheDocument();
     });
 
-    it("should render cancel button", () => {
+    it('should render cancel button', () => {
       render(<Add />);
 
-      expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
     });
 
-    it("should render form element with post method", () => {
+    it('should render form element with post method', () => {
       const { container } = render(<Add />);
 
-      const form = container.querySelector("form");
+      const form = container.querySelector('form');
       expect(form).toBeInTheDocument();
-      expect(form).toHaveAttribute("method", "post");
+      expect(form).toHaveAttribute('method', 'post');
     });
 
-    it("should render entity type hidden input", () => {
+    it('should render entity type hidden input', () => {
       render(<Add />);
 
       const hiddenInput = screen.getByDisplayValue(Entity.Books) as HTMLInputElement;
-      expect(hiddenInput).toHaveAttribute("type", "hidden");
-      expect(hiddenInput).toHaveAttribute("name", "type");
+      expect(hiddenInput).toHaveAttribute('type', 'hidden');
+      expect(hiddenInput).toHaveAttribute('name', 'type');
     });
 
-    it("should render BookForm for Books entity", () => {
+    it('should render BookForm for Books entity', () => {
       render(<Add />);
 
-      expect(screen.getByTestId("book-form")).toBeInTheDocument();
+      expect(screen.getByTestId('book-form')).toBeInTheDocument();
     });
 
-    it("should render MovieForm for Movies entity", () => {
+    it('should render MovieForm for Movies entity', () => {
       mockUseLoaderData.mockReturnValue({
         ...mockLoaderData,
         entityType: Entity.Movies,
       });
-      mockSingular.mockReturnValue("Movie");
+      mockSingular.mockReturnValue('Movie');
 
       render(<Add />);
 
-      expect(screen.getByTestId("movie-form")).toBeInTheDocument();
+      expect(screen.getByTestId('movie-form')).toBeInTheDocument();
     });
 
-    it("should render GameForm for Games entity", () => {
+    it('should render GameForm for Games entity', () => {
       mockUseLoaderData.mockReturnValue({
         ...mockLoaderData,
         entityType: Entity.Games,
       });
-      mockSingular.mockReturnValue("Game");
+      mockSingular.mockReturnValue('Game');
 
       render(<Add />);
 
-      expect(screen.getByTestId("game-form")).toBeInTheDocument();
+      expect(screen.getByTestId('game-form')).toBeInTheDocument();
     });
 
-    it("should render MusicForm for Musics entity", () => {
+    it('should render MusicForm for Musics entity', () => {
       mockUseLoaderData.mockReturnValue({
         ...mockLoaderData,
         entityType: Entity.Musics,
       });
-      mockSingular.mockReturnValue("Music");
+      mockSingular.mockReturnValue('Music');
 
       render(<Add />);
 
-      expect(screen.getByTestId("music-form")).toBeInTheDocument();
+      expect(screen.getByTestId('music-form')).toBeInTheDocument();
     });
 
-    it("should pass loader data to form component", () => {
+    it('should pass loader data to form component', () => {
       render(<Add />);
 
       // Verify that the form component exists and is rendered with data
-      expect(screen.getByTestId("book-form")).toBeInTheDocument();
+      expect(screen.getByTestId('book-form')).toBeInTheDocument();
     });
 
-    it("should disable buttons when submitting", () => {
-      mockUseNavigation.mockReturnValue({ state: "submitting" } as unknown as ReturnType<typeof useNavigation>);
+    it('should disable buttons when submitting', () => {
+      mockUseNavigation.mockReturnValue({ state: 'submitting' } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Add />);
 
-      const submitButton = screen.getByRole("button", { name: /Add Book/i });
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const submitButton = screen.getByRole('button', { name: /Add Book/i });
+      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
 
       expect(submitButton).toBeDisabled();
       expect(cancelButton).toBeDisabled();
     });
 
-    it("should enable buttons when not submitting", () => {
-      mockUseNavigation.mockReturnValue({ state: "idle" } as unknown as ReturnType<typeof useNavigation>);
+    it('should enable buttons when not submitting', () => {
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Add />);
 
-      const submitButton = screen.getByRole("button", { name: /Add Book/i });
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const submitButton = screen.getByRole('button', { name: /Add Book/i });
+      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
 
       expect(submitButton).not.toBeDisabled();
       expect(cancelButton).not.toBeDisabled();
     });
   });
 
-  describe("error handling", () => {
+  describe('error handling', () => {
     const mockLoaderData = {
-      authors: [{ label: "Author 1", value: "author1" }],
-      genres: [{ label: "Fiction", value: "fiction" }],
-      formats: [{ label: "Hardcover", value: "hardcover" }],
-      publishers: [{ label: "Publisher 1", value: "pub1" }],
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Fiction', value: 'fiction' }],
+      formats: [{ label: 'Hardcover', value: 'hardcover' }],
+      publishers: [{ label: 'Publisher 1', value: 'pub1' }],
       studios: [],
       developers: [],
       labels: [],
@@ -670,41 +670,41 @@ describe("$entity_.add route", () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: "idle" } as unknown as ReturnType<typeof useNavigation>);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
-      mockSingular.mockReturnValue("Book");
+      mockSingular.mockReturnValue('Book');
     });
 
-    it("should display invalid form error", () => {
+    it('should display invalid form error', () => {
       const errorData = {
         error: {
-          invalidForm: "Failed to convert form to a Books",
+          invalidForm: 'Failed to convert form to a Books',
         },
       };
       mockUseActionData.mockReturnValue(errorData);
 
       render(<Add />);
 
-      expect(screen.getByText("Failed to convert form to a Books")).toBeInTheDocument();
+      expect(screen.getByText('Failed to convert form to a Books')).toBeInTheDocument();
     });
 
-    it("should display lookup error message", () => {
+    it('should display lookup error message', () => {
       const errorData = {
         error: {
-          lookup: "ISBN not found in database",
+          lookup: 'ISBN not found in database',
         },
       };
       mockUseActionData.mockReturnValue(errorData);
 
       render(<Add />);
 
-      expect(screen.getByText("ISBN not found in database")).toBeInTheDocument();
+      expect(screen.getByText('ISBN not found in database')).toBeInTheDocument();
     });
 
-    it("should display lookup error from result", () => {
+    it('should display lookup error from result', () => {
       const errorData = {
         lookupResult: {
-          message: "API Error: Service unavailable",
+          message: 'API Error: Service unavailable',
           statusCode: 503,
         },
       };
@@ -712,14 +712,14 @@ describe("$entity_.add route", () => {
 
       render(<Add />);
 
-      expect(screen.getByText("API Error: Service unavailable")).toBeInTheDocument();
+      expect(screen.getByText('API Error: Service unavailable')).toBeInTheDocument();
     });
 
-    it("should not display lookup error if lookup was successful", () => {
+    it('should not display lookup error if lookup was successful', () => {
       const successData = {
         lookupResult: {
-          title: "Found Book",
-          isbn: "978-0743273565",
+          title: 'Found Book',
+          isbn: '978-0743273565',
         },
       };
       mockUseActionData.mockReturnValue(successData);
@@ -729,24 +729,24 @@ describe("$entity_.add route", () => {
       expect(screen.queryByText(/API Error/i)).not.toBeInTheDocument();
     });
 
-    it("should show error message in red alert box for invalid form", () => {
+    it('should show error message in red alert box for invalid form', () => {
       const errorData = {
         error: {
-          invalidForm: "Form validation failed",
+          invalidForm: 'Form validation failed',
         },
       };
       mockUseActionData.mockReturnValue(errorData);
 
       const { container } = render(<Add />);
 
-      const errorBox = container.querySelector(".bg-red-900.border-red-700");
+      const errorBox = container.querySelector('.bg-red-900.border-red-700');
       expect(errorBox).toBeInTheDocument();
     });
 
-    it("should show error message in yellow alert box for lookup error", () => {
+    it('should show error message in yellow alert box for lookup error', () => {
       const errorData = {
         lookupResult: {
-          message: "Item not found",
+          message: 'Item not found',
           statusCode: 404,
         },
       };
@@ -754,18 +754,18 @@ describe("$entity_.add route", () => {
 
       const { container } = render(<Add />);
 
-      const errorBox = container.querySelector(".bg-yellow-900.border-yellow-700");
+      const errorBox = container.querySelector('.bg-yellow-900.border-yellow-700');
       expect(errorBox).toBeInTheDocument();
     });
   });
 
-  describe("lookup result handling", () => {
+  describe('lookup result handling', () => {
     const mockLoaderData = {
-      authors: [{ label: "Author 1", value: "author1" }],
-      genres: [{ label: "Action", value: "action" }],
-      formats: [{ label: "Blu-ray", value: "bluray" }],
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Action', value: 'action' }],
+      formats: [{ label: 'Blu-ray', value: 'bluray' }],
       publishers: [],
-      studios: [{ label: "Universal", value: "universal" }],
+      studios: [{ label: 'Universal', value: 'universal' }],
       developers: [],
       labels: [],
       platforms: [],
@@ -776,51 +776,51 @@ describe("$entity_.add route", () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: "idle" } as unknown as ReturnType<typeof useNavigation>);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
-      mockSingular.mockReturnValue("Movie");
+      mockSingular.mockReturnValue('Movie');
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
     });
 
-    it("should use different key for form when lookup result changes", () => {
+    it('should use different key for form when lookup result changes', () => {
       // First render with no lookup data
       mockUseActionData.mockReturnValue(undefined);
       const { rerender } = render(<Add />);
 
-      const firstForm = screen.getByTestId("movie-form");
+      const firstForm = screen.getByTestId('movie-form');
       expect(firstForm).toBeInTheDocument();
 
       // Second render with lookup data
       mockUseActionData.mockReturnValue({
         lookupResult: {
           type: Entity.Movies,
-          title: "Test Movie",
-          imageUrl: "https://example.com/image.jpg",
-          barcode: "123456789",
+          title: 'Test Movie',
+          imageUrl: 'https://example.com/image.jpg',
+          barcode: '123456789',
         },
-        identifierValue: "123456789",
-        fieldName: "barcode",
+        identifierValue: '123456789',
+        fieldName: 'barcode',
       });
 
       rerender(<Add />);
 
-      const secondForm = screen.getByTestId("movie-form");
+      const secondForm = screen.getByTestId('movie-form');
       expect(secondForm).toBeInTheDocument();
       // Form should be remounted (new instance) when lookup data arrives
     });
 
-    it("should pass lookup entity to form component", () => {
+    it('should pass lookup entity to form component', () => {
       const lookupData = {
         lookupResult: {
           type: Entity.Movies,
-          title: "The Matrix",
-          imageUrl: "https://example.com/matrix.jpg",
-          barcode: "012345678905",
-          studios: ["Warner Bros"],
-          genres: ["Action", "Sci-Fi"],
+          title: 'The Matrix',
+          imageUrl: 'https://example.com/matrix.jpg',
+          barcode: '012345678905',
+          studios: ['Warner Bros'],
+          genres: ['Action', 'Sci-Fi'],
         },
-        identifierValue: "012345678905",
-        fieldName: "barcode",
+        identifierValue: '012345678905',
+        fieldName: 'barcode',
       };
 
       mockUseActionData.mockReturnValue(lookupData);
@@ -828,16 +828,16 @@ describe("$entity_.add route", () => {
       render(<Add />);
 
       // Form should be rendered with lookup data
-      expect(screen.getByTestId("movie-form")).toBeInTheDocument();
+      expect(screen.getByTestId('movie-form')).toBeInTheDocument();
     });
   });
 
-  describe("Cancel button functionality", () => {
+  describe('Cancel button functionality', () => {
     const mockLoaderData = {
-      authors: [{ label: "Author 1", value: "author1" }],
-      genres: [{ label: "Fiction", value: "fiction" }],
-      formats: [{ label: "Hardcover", value: "hardcover" }],
-      publishers: [{ label: "Publisher 1", value: "pub1" }],
+      authors: [{ label: 'Author 1', value: 'author1' }],
+      genres: [{ label: 'Fiction', value: 'fiction' }],
+      formats: [{ label: 'Hardcover', value: 'hardcover' }],
+      publishers: [{ label: 'Publisher 1', value: 'pub1' }],
       studios: [],
       developers: [],
       labels: [],
@@ -849,20 +849,20 @@ describe("$entity_.add route", () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
-      mockUseNavigation.mockReturnValue({ state: "idle" } as unknown as ReturnType<typeof useNavigation>);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
-      mockSingular.mockReturnValue("Book");
+      mockSingular.mockReturnValue('Book');
     });
 
-    it("should have cancel button that can navigate back", () => {
+    it('should have cancel button that can navigate back', () => {
       const mockNavigate = vi.fn();
       mockUseNavigate.mockReturnValue(mockNavigate);
 
       render(<Add />);
 
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
       expect(cancelButton).toBeInTheDocument();
-      expect(cancelButton).toHaveAttribute("type", "button");
+      expect(cancelButton).toHaveAttribute('type', 'button');
     });
   });
 });

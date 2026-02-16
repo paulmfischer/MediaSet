@@ -9,16 +9,16 @@
  * distributed tracing across the Remix server and API.
  */
 
-import { apiFetch } from "./apiFetch.server";
+import { apiFetch } from './apiFetch.server';
 
 interface ServerLogPayload {
-  level: "Debug" | "Information" | "Warning" | "Error";
+  level: 'Debug' | 'Information' | 'Warning' | 'Error';
   message: string;
   timestamp: string;
   properties?: Record<string, unknown>;
 }
 
-const API_BASE_URL = process.env.apiUrl || "http://localhost:7130";
+const API_BASE_URL = process.env.apiUrl || 'http://localhost:7130';
 
 /**
  * Sends a log event to the API.
@@ -29,9 +29,9 @@ const API_BASE_URL = process.env.apiUrl || "http://localhost:7130";
 async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
   try {
     const response = await apiFetch(`${API_BASE_URL}/api/logs`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
@@ -41,7 +41,7 @@ async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
     }
   } catch (error) {
     // Silently fail on API errors to avoid infinite loops or disruptions
-    console.warn("[ServerLogger] Failed to send log to API:", error);
+    console.warn('[ServerLogger] Failed to send log to API:', error);
   }
 }
 
@@ -53,10 +53,10 @@ export const serverLogger = {
    * Log an informational message.
    */
   info(message: string, properties?: Record<string, unknown>): void {
-    console.log(`[INFO] ${message}`, properties || "");
+    console.log(`[INFO] ${message}`, properties || '');
 
     const payload: ServerLogPayload = {
-      level: "Information",
+      level: 'Information',
       message,
       timestamp: new Date().toISOString(),
       properties,
@@ -68,10 +68,10 @@ export const serverLogger = {
    * Log a warning message.
    */
   warn(message: string, properties?: Record<string, unknown>): void {
-    console.warn(`[WARN] ${message}`, properties || "");
+    console.warn(`[WARN] ${message}`, properties || '');
 
     const payload: ServerLogPayload = {
-      level: "Warning",
+      level: 'Warning',
       message,
       timestamp: new Date().toISOString(),
       properties,
@@ -90,10 +90,10 @@ export const serverLogger = {
       fullMessage = `${message}: ${errorStr}`;
     }
 
-    console.error(`[ERROR] ${fullMessage}`, properties || "");
+    console.error(`[ERROR] ${fullMessage}`, properties || '');
 
     const payload: ServerLogPayload = {
-      level: "Error",
+      level: 'Error',
       message: fullMessage,
       timestamp: new Date().toISOString(),
       properties,
@@ -105,10 +105,10 @@ export const serverLogger = {
    * Log a debug message.
    */
   debug(message: string, properties?: Record<string, unknown>): void {
-    console.debug(`[DEBUG] ${message}`, properties || "");
+    console.debug(`[DEBUG] ${message}`, properties || '');
 
     const payload: ServerLogPayload = {
-      level: "Debug",
+      level: 'Debug',
       message,
       timestamp: new Date().toISOString(),
       properties,
