@@ -92,6 +92,8 @@ applyTo: "**/*.ts,**/*.tsx"
 After making changes to the frontend, always verify compliance before committing:
 
 - **ESLint**: `npm run lint` — checks for code quality issues and enforces code style rules
+- **ESLint (auto-fix)**: `npm run lint:fix` — automatically fixes ESLint violations where possible
 - **Prettier**: `npm run lint:format` — checks that all files conform to the project's formatting rules
+- **Prettier (auto-fix)**: `npm run lint:format:fix` — automatically reformats files to conform to Prettier rules
 
-Both commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
+Both check commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
