@@ -6,6 +6,7 @@ import * as metadataData from '~/api/metadata-data';
 import * as helpers from '~/utils/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 import * as remixReact from '@remix-run/react';
+import type { useNavigation } from '@remix-run/react';
 
 // Mock modules
 vi.mock('~/api/entity-data');
@@ -38,19 +39,19 @@ vi.mock('~/utils/serverLogger', () => ({
 
 // Mock form components
 vi.mock('~/components/book-form', () => ({
-  default: (props: any) => <div data-testid="book-form">Book Form</div>,
+  default: () => <div data-testid="book-form">Book Form</div>,
 }));
 
 vi.mock('~/components/movie-form', () => ({
-  default: (props: any) => <div data-testid="movie-form">Movie Form</div>,
+  default: () => <div data-testid="movie-form">Movie Form</div>,
 }));
 
 vi.mock('~/components/game-form', () => ({
-  default: (props: any) => <div data-testid="game-form">Game Form</div>,
+  default: () => <div data-testid="game-form">Game Form</div>,
 }));
 
 vi.mock('~/components/music-form', () => ({
-  default: (props: any) => <div data-testid="music-form">Music Form</div>,
+  default: () => <div data-testid="music-form">Music Form</div>,
 }));
 
 vi.mock('~/components/spinner', () => ({
@@ -61,8 +62,18 @@ vi.mock('~/components/spinner', () => ({
 vi.mock('@remix-run/react', async () => {
   const actualRemix = await vi.importActual('@remix-run/react');
   return {
-    ...(actualRemix as any),
-    Form: ({ children, method, onSubmit, ...props }: any) => (
+    ...(actualRemix as Record<string, unknown>),
+    Form: ({
+      children,
+      method,
+      onSubmit,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      method?: string;
+      onSubmit?: React.FormEventHandler;
+      [key: string]: unknown;
+    }) => (
       <form method={method} onSubmit={onSubmit} {...props}>
         {children}
       </form>
@@ -105,7 +116,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
       mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: 'books', entityId: '1' } } as any);
+      const result = meta({ params: { entity: 'books', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(result).toEqual(
         expect.arrayContaining([
@@ -122,33 +133,27 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
       mockSingular.mockReturnValue('Movie');
 
-      const result = meta({ params: { entity: 'movies', entityId: '1' } } as any);
+      const result = meta({ params: { entity: 'movies', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Movie' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Movie' }));
     });
 
     it('should return correct title for editing a Game', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
       mockSingular.mockReturnValue('Game');
 
-      const result = meta({ params: { entity: 'games', entityId: '1' } } as any);
+      const result = meta({ params: { entity: 'games', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Game' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Game' }));
     });
 
     it('should return correct title for editing Music', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
       mockSingular.mockReturnValue('Music');
 
-      const result = meta({ params: { entity: 'musics', entityId: '1' } } as any);
+      const result = meta({ params: { entity: 'musics', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Music' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Music' }));
     });
   });
 
@@ -209,7 +214,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       const result = await loader({
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntity).toHaveBeenCalledWith(Entity.Books, 'book-1');
       expect(result.entity).toEqual(mockBook);
@@ -223,7 +228,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       const result = await loader({
         params: { entity: 'movies', entityId: 'movie-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntity).toHaveBeenCalledWith(Entity.Movies, 'movie-1');
       expect(result.entity).toEqual(mockMovie);
@@ -236,7 +241,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       const result = await loader({
         params: { entity: 'games', entityId: 'game-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntity).toHaveBeenCalledWith(Entity.Games, 'game-1');
       expect(result.entity).toEqual(mockGame);
@@ -250,7 +255,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       const result = await loader({
         params: { entity: 'musics', entityId: 'music-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntity).toHaveBeenCalledWith(Entity.Musics, 'music-1');
       expect(result.entity).toEqual(mockMusic);
@@ -263,7 +268,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       const result = await loader({
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(result).toHaveProperty('entity');
       expect(result).toHaveProperty('authors');
@@ -281,7 +286,7 @@ describe('$entity_.$entityId_.edit route', () => {
       await expect(
         loader({
           params: { entityId: 'book-1' },
-        } as any)
+        } as unknown as Parameters<typeof loader>[0])
       ).rejects.toThrow();
     });
 
@@ -291,7 +296,7 @@ describe('$entity_.$entityId_.edit route', () => {
       await expect(
         loader({
           params: { entity: 'books' },
-        } as any)
+        } as unknown as Parameters<typeof loader>[0])
       ).rejects.toThrow();
     });
 
@@ -301,7 +306,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       await loader({
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalled();
       expect(mockGetFormats).toHaveBeenCalled();
@@ -342,7 +347,7 @@ describe('$entity_.$entityId_.edit route', () => {
       await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockFormToDto).toHaveBeenCalledWith(mockFormData);
       expect(mockUpdateEntity).toHaveBeenCalledWith('book-1', mockBook, undefined);
@@ -365,7 +370,7 @@ describe('$entity_.$entityId_.edit route', () => {
       await action({
         request,
         params: { entity: 'movies', entityId: 'movie-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith('movie-1', mockMovie, undefined);
     });
@@ -386,7 +391,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toBeDefined();
     });
@@ -406,7 +411,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         invalidObject: `Failed to convert form to a ${Entity.Books}`,
@@ -425,7 +430,7 @@ describe('$entity_.$entityId_.edit route', () => {
         action({
           request,
           params: { entityId: 'book-1' },
-        } as any)
+        } as unknown as Parameters<typeof action>[0])
       ).rejects.toThrow();
     });
 
@@ -442,7 +447,7 @@ describe('$entity_.$entityId_.edit route', () => {
         action({
           request,
           params: { entity: 'books' },
-        } as any)
+        } as unknown as Parameters<typeof action>[0])
       ).rejects.toThrow();
     });
   });
@@ -475,7 +480,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toHaveProperty('lookupResult');
     });
@@ -493,7 +498,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         error: { lookup: 'Identifier value is required' },
@@ -514,7 +519,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         error: { lookup: 'Identifier value is required' },
@@ -547,7 +552,9 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
       mockSingular.mockReturnValue('Book');
     });
 
@@ -654,7 +661,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseNavigation.mockReturnValue({
         state: 'submitting',
         location: { pathname: '/books/book-1/edit' },
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Edit />);
 
@@ -666,7 +673,9 @@ describe('$entity_.$entityId_.edit route', () => {
     });
 
     it('should enable buttons when not submitting', () => {
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
 
       render(<Edit />);
 
@@ -713,7 +722,9 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
       mockSingular.mockReturnValue('Book');
     });
 
@@ -815,7 +826,9 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
       mockSingular.mockReturnValue('Book');
     });
 
@@ -835,7 +848,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
     it('should verify mock functions were called appropriately', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockGetEntity.mockResolvedValue(mockLoaderData.entity as any);
+      mockGetEntity.mockResolvedValue(mockLoaderData.entity as BookEntity);
       mockGetGenres.mockResolvedValue(mockLoaderData.genres);
       mockGetFormats.mockResolvedValue(mockLoaderData.formats);
       mockGetAuthors.mockResolvedValue(mockLoaderData.authors);
@@ -843,7 +856,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
       await loader({
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntity).toHaveBeenCalledWith(Entity.Books, 'book-1');
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Books);
@@ -875,7 +888,9 @@ describe('$entity_.$entityId_.edit route', () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
       mockSingular.mockReturnValue('Book');
     });
 
@@ -894,7 +909,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseNavigation.mockReturnValue({
         state: 'submitting',
         location: { pathname: '/books/book-1/edit' },
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Edit />);
 
@@ -926,7 +941,9 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
+        typeof import('@remix-run/react').useNavigation
+      >);
       mockSingular.mockReturnValue('Book');
     });
 
@@ -966,7 +983,7 @@ describe('$entity_.$entityId_.edit route', () => {
       const result = await action({
         request,
         params: { entity: 'books', entityId: 'book-1' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toHaveProperty('invalidObject');
     });

@@ -19,13 +19,7 @@ vi.mock('~/utils/serverLogger', () => ({
 }));
 
 // Now import after mocking
-import {
-  searchEntities,
-  getEntity,
-  updateEntity,
-  addEntity,
-  deleteEntity,
-} from '~/api/entity-data';
+import { searchEntities, getEntity, updateEntity, addEntity, deleteEntity } from '~/api/entity-data';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 
 describe('entity-data.ts', () => {
@@ -71,9 +65,7 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<BookEntity>(Entity.Books, 'test');
 
       expect(result).toEqual(mockBooks);
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Books}/search?searchText=test`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/search?searchText=test`));
       expect(result).toHaveLength(2);
     });
 
@@ -96,9 +88,7 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<MovieEntity>(Entity.Movies, 'action');
 
       expect(result).toEqual(mockMovies);
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Movies}/search?searchText=action`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/search?searchText=action`));
     });
 
     it('should fetch and return search results for games', async () => {
@@ -120,9 +110,7 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<GameEntity>(Entity.Games, 'rpg');
 
       expect(result).toEqual(mockGames);
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Games}/search?searchText=rpg`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/search?searchText=rpg`));
     });
 
     it('should fetch and return search results for music', async () => {
@@ -144,9 +132,7 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<MusicEntity>(Entity.Musics, 'rock');
 
       expect(result).toEqual(mockMusic);
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Musics}/search?searchText=rock`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/search?searchText=rock`));
     });
 
     it('should handle null searchText by using empty string', async () => {
@@ -159,9 +145,7 @@ describe('entity-data.ts', () => {
 
       await searchEntities<BookEntity>(Entity.Books, null);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining('searchText=')
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('searchText='));
     });
 
     it('should include orderBy parameter when provided', async () => {
@@ -174,9 +158,7 @@ describe('entity-data.ts', () => {
 
       await searchEntities<BookEntity>(Entity.Books, 'test', 'title');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining('orderBy=title')
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('orderBy=title'));
     });
 
     it('should handle empty orderBy parameter', async () => {
@@ -189,9 +171,7 @@ describe('entity-data.ts', () => {
 
       await searchEntities<BookEntity>(Entity.Books, 'test', '');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining('orderBy=')
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('orderBy='));
     });
 
     it('should throw error when response is not ok', async () => {
@@ -200,9 +180,7 @@ describe('entity-data.ts', () => {
         status: 500,
       });
 
-      await expect(
-        searchEntities<BookEntity>(Entity.Books, 'test')
-      ).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
     it('should return empty array when no results found', async () => {
@@ -254,9 +232,7 @@ describe('entity-data.ts', () => {
       const result = await getEntity<BookEntity>(Entity.Books, '123');
 
       expect(result).toEqual(mockBook);
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Books}/123`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/123`));
     });
 
     it('should fetch and return a specific movie entity', async () => {
@@ -322,9 +298,7 @@ describe('entity-data.ts', () => {
         status: 404,
       });
 
-      await expect(
-        getEntity<BookEntity>(Entity.Books, 'nonexistent')
-      ).rejects.toThrow();
+      await expect(getEntity<BookEntity>(Entity.Books, 'nonexistent')).rejects.toThrow();
     });
 
     it('should throw specific entity not found message for each type', async () => {
@@ -332,9 +306,7 @@ describe('entity-data.ts', () => {
         status: 404,
       });
 
-      await expect(
-        getEntity<MovieEntity>(Entity.Movies, '999')
-      ).rejects.toThrow();
+      await expect(getEntity<MovieEntity>(Entity.Movies, '999')).rejects.toThrow();
     });
 
     it('should handle entity with all fields populated', async () => {
@@ -856,10 +828,7 @@ describe('entity-data.ts', () => {
 
       await deleteEntity(Entity.Musics, '999999');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/999999'),
-        expect.any(Object)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('/999999'), expect.any(Object));
     });
   });
 
@@ -888,7 +857,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => [book],
       });
-      let result = await searchEntities<BookEntity>(Entity.Books, 'test');
+      const result = await searchEntities<BookEntity>(Entity.Books, 'test');
       expect(result[0].type).toBe(Entity.Books);
 
       // Get
@@ -897,7 +866,7 @@ describe('entity-data.ts', () => {
         status: 200,
         json: async () => ({ ...book, id: '1' }),
       });
-      let getResult = await getEntity<BookEntity>(Entity.Books, '1');
+      const getResult = await getEntity<BookEntity>(Entity.Books, '1');
       expect(getResult.type).toBe(Entity.Books);
     });
   });
@@ -906,43 +875,33 @@ describe('entity-data.ts', () => {
     it('should handle network errors during search', async () => {
       mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(
-        searchEntities<BookEntity>(Entity.Books, 'test')
-      ).rejects.toThrow('Network error');
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during get', async () => {
       mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(
-        getEntity<BookEntity>(Entity.Books, '1')
-      ).rejects.toThrow('Network error');
+      await expect(getEntity<BookEntity>(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during update', async () => {
       const book: BookEntity = { type: Entity.Books, id: '1', title: 'Test' };
       mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(updateEntity<BookEntity>('1', book)).rejects.toThrow(
-        'Network error'
-      );
+      await expect(updateEntity<BookEntity>('1', book)).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during add', async () => {
       const book: BookEntity = { type: Entity.Books, title: 'Test' };
       mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(addEntity<BookEntity>(book)).rejects.toThrow(
-        'Network error'
-      );
+      await expect(addEntity<BookEntity>(book)).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during delete', async () => {
       mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(deleteEntity(Entity.Books, '1')).rejects.toThrow(
-        'Network error'
-      );
+      await expect(deleteEntity(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
     it('should handle 5xx errors appropriately', async () => {
@@ -951,9 +910,7 @@ describe('entity-data.ts', () => {
         status: 503,
       });
 
-      await expect(
-        searchEntities<BookEntity>(Entity.Books, 'test')
-      ).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
     it('should handle 4xx errors appropriately', async () => {
@@ -962,9 +919,7 @@ describe('entity-data.ts', () => {
         status: 400,
       });
 
-      await expect(
-        searchEntities<BookEntity>(Entity.Books, 'test')
-      ).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
   });
 
@@ -981,7 +936,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => ({ ...newBook, id: '1' }),
       });
-      let created = await addEntity<BookEntity>(newBook);
+      const created = await addEntity<BookEntity>(newBook);
       expect(created.id).toBe('1');
 
       // Read
@@ -990,7 +945,7 @@ describe('entity-data.ts', () => {
         status: 200,
         json: async () => created,
       });
-      let retrieved = await getEntity<BookEntity>(Entity.Books, '1');
+      const retrieved = await getEntity<BookEntity>(Entity.Books, '1');
       expect(retrieved.title).toBe('New Book');
 
       // Update

@@ -1,4 +1,4 @@
-import { Outlet } from "@remix-run/react";
+import { Outlet } from '@remix-run/react';
 
 /**
  * Parent layout route for all entity routes.

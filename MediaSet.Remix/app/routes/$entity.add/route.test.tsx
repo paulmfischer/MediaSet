@@ -6,6 +6,8 @@ import * as metadataData from '~/api/metadata-data';
 import * as helpers from '~/utils/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
 import * as remixReact from '@remix-run/react';
+import type { useNavigation } from '@remix-run/react';
+import React from 'react';
 
 // Mock modules
 vi.mock('~/api/entity-data');
@@ -38,19 +40,19 @@ vi.mock('~/utils/serverLogger', () => ({
 
 // Mock form components
 vi.mock('~/components/book-form', () => ({
-  default: (props: any) => <div data-testid="book-form">Book Form</div>,
+  default: () => <div data-testid="book-form">Book Form</div>,
 }));
 
 vi.mock('~/components/movie-form', () => ({
-  default: (props: any) => <div data-testid="movie-form">Movie Form</div>,
+  default: () => <div data-testid="movie-form">Movie Form</div>,
 }));
 
 vi.mock('~/components/game-form', () => ({
-  default: (props: any) => <div data-testid="game-form">Game Form</div>,
+  default: () => <div data-testid="game-form">Game Form</div>,
 }));
 
 vi.mock('~/components/music-form', () => ({
-  default: (props: any) => <div data-testid="music-form">Music Form</div>,
+  default: () => <div data-testid="music-form">Music Form</div>,
 }));
 
 vi.mock('~/components/spinner', () => ({
@@ -61,8 +63,18 @@ vi.mock('~/components/spinner', () => ({
 vi.mock('@remix-run/react', async () => {
   const actualRemix = await vi.importActual('@remix-run/react');
   return {
-    ...(actualRemix as any),
-    Form: ({ children, method, onSubmit, ...props }: any) => (
+    ...(actualRemix as Record<string, unknown>),
+    Form: ({
+      children,
+      method,
+      onSubmit,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      method?: string;
+      onSubmit?: React.FormEventHandler;
+      [key: string]: unknown;
+    }) => (
       <form method={method} onSubmit={onSubmit} {...props}>
         {children}
       </form>
@@ -105,7 +117,7 @@ describe('$entity_.add route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
       mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: 'books' } } as any);
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(result).toEqual(
         expect.arrayContaining([
@@ -123,43 +135,37 @@ describe('$entity_.add route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
       mockSingular.mockReturnValue('Movie');
 
-      const result = meta({ params: { entity: 'movies' } } as any);
+      const result = meta({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Movie' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Movie' }));
     });
 
     it('should return correct title for Games', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
       mockSingular.mockReturnValue('Game');
 
-      const result = meta({ params: { entity: 'games' } } as any);
+      const result = meta({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Game' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Game' }));
     });
 
     it('should return correct title for Musics', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
       mockSingular.mockReturnValue('Music');
 
-      const result = meta({ params: { entity: 'musics' } } as any);
+      const result = meta({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: 'Add a Music' })
-      );
+      expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Music' }));
     });
 
     it('should include both title and description meta tags', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
       mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: 'books' } } as any);
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
-      const titleTags = result.filter((tag: any) => tag.title !== undefined);
-      const descriptionTags = result.filter((tag: any) => tag.name === 'description');
+      const titleTags = result.filter((tag: Record<string, unknown>) => tag.title !== undefined);
+      const descriptionTags = result.filter((tag: Record<string, unknown>) => tag.name === 'description');
 
       expect(titleTags).toHaveLength(1);
       expect(descriptionTags).toHaveLength(1);
@@ -194,7 +200,7 @@ describe('$entity_.add route', () => {
     it('should load metadata for Books', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const result = await loader({ params: { entity: 'books' } } as any);
+      const result = await loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Books);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Books);
@@ -207,7 +213,7 @@ describe('$entity_.add route', () => {
     it('should load metadata for Movies', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
 
-      const result = await loader({ params: { entity: 'movies' } } as any);
+      const result = await loader({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Movies);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Movies);
@@ -218,7 +224,7 @@ describe('$entity_.add route', () => {
     it('should load metadata for Games', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
 
-      const result = await loader({ params: { entity: 'games' } } as any);
+      const result = await loader({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Games);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Games);
@@ -231,7 +237,7 @@ describe('$entity_.add route', () => {
     it('should load metadata for Musics', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
 
-      const result = await loader({ params: { entity: 'musics' } } as any);
+      const result = await loader({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetGenres).toHaveBeenCalledWith(Entity.Musics);
       expect(mockGetFormats).toHaveBeenCalledWith(Entity.Musics);
@@ -242,7 +248,7 @@ describe('$entity_.add route', () => {
     it('should return all required properties', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const result = await loader({ params: { entity: 'books' } } as any);
+      const result = await loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       expect(result).toHaveProperty('authors');
       expect(result).toHaveProperty('genres');
@@ -258,7 +264,7 @@ describe('$entity_.add route', () => {
     it('should use Promise.all for parallel loading', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
 
-      const loaderPromise = loader({ params: { entity: 'books' } } as any);
+      const loaderPromise = loader({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
 
       // Verify Promise.all was used by checking all mocks are called
       await loaderPromise;
@@ -297,7 +303,7 @@ describe('$entity_.add route', () => {
       const result = await action({
         request,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockFormToDto).toHaveBeenCalledWith(mockFormData);
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewBook, undefined);
@@ -326,10 +332,10 @@ describe('$entity_.add route', () => {
         body: mockFormData,
       });
 
-      const result = await action({
+      await action({
         request,
         params: { entity: 'movies' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewMovie, undefined);
     });
@@ -356,10 +362,10 @@ describe('$entity_.add route', () => {
         body: mockFormData,
       });
 
-      const result = await action({
+      await action({
         request,
         params: { entity: 'games' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewGame, undefined);
     });
@@ -386,10 +392,10 @@ describe('$entity_.add route', () => {
         body: mockFormData,
       });
 
-      const result = await action({
+      await action({
         request,
         params: { entity: 'musics' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(mockAddEntity).toHaveBeenCalledWith(mockNewMusic, undefined);
     });
@@ -407,7 +413,7 @@ describe('$entity_.add route', () => {
       const result = await action({
         request,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         error: {
@@ -430,7 +436,7 @@ describe('$entity_.add route', () => {
         action({
           request,
           params: {},
-        } as any)
+        } as unknown as Parameters<typeof action>[0])
       ).rejects.toThrow();
     });
   });
@@ -463,7 +469,7 @@ describe('$entity_.add route', () => {
       const result = await action({
         request,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toHaveProperty('lookupResult');
     });
@@ -481,7 +487,7 @@ describe('$entity_.add route', () => {
       const result = await action({
         request,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         error: { lookup: 'Identifier value is required' },
@@ -502,7 +508,7 @@ describe('$entity_.add route', () => {
       const result = await action({
         request,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof action>[0]);
 
       expect(result).toEqual({
         error: { lookup: 'Identifier value is required' },
@@ -528,7 +534,7 @@ describe('$entity_.add route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
       mockSingular.mockReturnValue('Book');
     });
@@ -623,7 +629,7 @@ describe('$entity_.add route', () => {
     });
 
     it('should disable buttons when submitting', () => {
-      mockUseNavigation.mockReturnValue({ state: 'submitting' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'submitting' } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Add />);
 
@@ -635,7 +641,7 @@ describe('$entity_.add route', () => {
     });
 
     it('should enable buttons when not submitting', () => {
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
 
       render(<Add />);
 
@@ -664,7 +670,7 @@ describe('$entity_.add route', () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
       mockSingular.mockReturnValue('Book');
     });
@@ -679,9 +685,7 @@ describe('$entity_.add route', () => {
 
       render(<Add />);
 
-      expect(
-        screen.getByText('Failed to convert form to a Books')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Failed to convert form to a Books')).toBeInTheDocument();
     });
 
     it('should display lookup error message', () => {
@@ -708,9 +712,7 @@ describe('$entity_.add route', () => {
 
       render(<Add />);
 
-      expect(
-        screen.getByText('API Error: Service unavailable')
-      ).toBeInTheDocument();
+      expect(screen.getByText('API Error: Service unavailable')).toBeInTheDocument();
     });
 
     it('should not display lookup error if lookup was successful', () => {
@@ -737,9 +739,7 @@ describe('$entity_.add route', () => {
 
       const { container } = render(<Add />);
 
-      const errorBox = container.querySelector(
-        '.bg-red-900.border-red-700'
-      );
+      const errorBox = container.querySelector('.bg-red-900.border-red-700');
       expect(errorBox).toBeInTheDocument();
     });
 
@@ -754,9 +754,7 @@ describe('$entity_.add route', () => {
 
       const { container } = render(<Add />);
 
-      const errorBox = container.querySelector(
-        '.bg-yellow-900.border-yellow-700'
-      );
+      const errorBox = container.querySelector('.bg-yellow-900.border-yellow-700');
       expect(errorBox).toBeInTheDocument();
     });
   });
@@ -778,7 +776,7 @@ describe('$entity_.add route', () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseNavigate.mockReturnValue(vi.fn());
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
       mockSingular.mockReturnValue('Movie');
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
@@ -788,10 +786,10 @@ describe('$entity_.add route', () => {
       // First render with no lookup data
       mockUseActionData.mockReturnValue(undefined);
       const { rerender } = render(<Add />);
-      
+
       const firstForm = screen.getByTestId('movie-form');
       expect(firstForm).toBeInTheDocument();
-      
+
       // Second render with lookup data
       mockUseActionData.mockReturnValue({
         lookupResult: {
@@ -803,9 +801,9 @@ describe('$entity_.add route', () => {
         identifierValue: '123456789',
         fieldName: 'barcode',
       });
-      
+
       rerender(<Add />);
-      
+
       const secondForm = screen.getByTestId('movie-form');
       expect(secondForm).toBeInTheDocument();
       // Form should be remounted (new instance) when lookup data arrives
@@ -824,11 +822,11 @@ describe('$entity_.add route', () => {
         identifierValue: '012345678905',
         fieldName: 'barcode',
       };
-      
+
       mockUseActionData.mockReturnValue(lookupData);
-      
+
       render(<Add />);
-      
+
       // Form should be rendered with lookup data
       expect(screen.getByTestId('movie-form')).toBeInTheDocument();
     });
@@ -851,7 +849,7 @@ describe('$entity_.add route', () => {
       vi.clearAllMocks();
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
-      mockUseNavigation.mockReturnValue({ state: 'idle' } as any);
+      mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       mockUseSubmit.mockReturnValue(vi.fn());
       mockSingular.mockReturnValue('Book');
     });

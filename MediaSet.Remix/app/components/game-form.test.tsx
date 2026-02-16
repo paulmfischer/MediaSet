@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import GameForm from './game-form';
-import { GameEntity } from '~/models';
+import { GameEntity, Entity } from '~/models';
 
 // Mock the custom input components
 vi.mock('~/components/multiselect-input', () => ({
-  default: ({ name, selectedValues, options }: any) => (
+  default: ({ name, selectedValues }: { name: string; selectedValues?: string[] }) => (
     <input
       data-testid={`${name}-multiselect`}
       type="hidden"
@@ -18,7 +18,7 @@ vi.mock('~/components/multiselect-input', () => ({
 }));
 
 vi.mock('~/components/singleselect-input', () => ({
-  default: ({ name, selectedValue, options }: any) => (
+  default: ({ name, selectedValue }: { name: string; selectedValue?: string }) => (
     <input
       data-testid={`${name}-singleselect`}
       type="hidden"
@@ -69,7 +69,7 @@ describe('GameForm', () => {
 
   const mockGame: GameEntity = {
     id: 'game-1',
-    type: 'Games' as any,
+    type: Entity.Games,
     title: 'The Witcher 3: Wild Hunt',
     platform: 'ps5',
     format: 'physical',
@@ -181,7 +181,7 @@ describe('GameForm', () => {
 
     it('should handle game with partial data', () => {
       const partialGame: GameEntity = {
-        type: 'Games' as any,
+        type: Entity.Games,
         id: 'game-2',
         title: 'Partial Game',
       };
@@ -341,10 +341,7 @@ describe('GameForm', () => {
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
       await user.click(lookupButton);
 
-      expect(mockSubmit).toHaveBeenCalledWith(
-        expect.any(FormData),
-        expect.objectContaining({ method: 'post' })
-      );
+      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
 
       const callArgs = mockSubmit.mock.calls[0][0] as FormData;
       expect(callArgs.get('intent')).toBe('lookup');
@@ -363,7 +360,6 @@ describe('GameForm', () => {
     });
 
     it('should not call submit if lookup button is disabled during submission', async () => {
-      const user = userEvent.setup();
       render(<GameForm {...defaultProps} isSubmitting={true} />);
 
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
@@ -628,7 +624,7 @@ describe('GameForm', () => {
   describe('Edge Cases', () => {
     it('should handle game object with only required fields', () => {
       const minimalGame: GameEntity = {
-        type: 'Games' as any,
+        type: Entity.Games,
         id: 'game-minimal',
         title: 'Minimal Game',
       };
@@ -650,8 +646,7 @@ describe('GameForm', () => {
       const user = userEvent.setup();
       render(<GameForm {...defaultProps} />);
 
-      const longDescription =
-        'This is a very long description '.repeat(20);
+      const longDescription = 'This is a very long description '.repeat(20);
       const descriptionInput = screen.getByLabelText('Description') as HTMLTextAreaElement;
 
       // Use paste() instead of type() for realistic user action with better performance
@@ -666,7 +661,7 @@ describe('GameForm', () => {
       render(<GameForm {...defaultProps} />);
 
       const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
-      const specialChars = "!@#$%^&*()_+-=";
+      const specialChars = '!@#$%^&*()_+-=';
 
       await user.type(titleInput, specialChars);
 

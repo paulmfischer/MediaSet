@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import MusicForm from './music-form';
-import { MusicEntity } from '~/models';
+import { MusicEntity, Entity } from '~/models';
 
 // Mock the custom input components
 vi.mock('~/components/multiselect-input', () => ({
-  default: ({ name, selectedValues, options }: any) => (
+  default: ({ name, selectedValues }: { name: string; selectedValues?: string[] }) => (
     <input
       data-testid={`${name}-multiselect`}
       type="hidden"
@@ -18,7 +18,7 @@ vi.mock('~/components/multiselect-input', () => ({
 }));
 
 vi.mock('~/components/singleselect-input', () => ({
-  default: ({ name, selectedValue, options }: any) => (
+  default: ({ name, selectedValue }: { name: string; selectedValue?: string }) => (
     <input
       data-testid={`${name}-singleselect`}
       type="hidden"
@@ -73,7 +73,7 @@ describe('MusicForm', () => {
 
   const mockMusic: MusicEntity = {
     id: 'music-1',
-    type: 'Music' as any,
+    type: Entity.Musics,
     title: 'Abbey Road',
     artist: 'The Beatles',
     format: 'vinyl',
@@ -181,7 +181,7 @@ describe('MusicForm', () => {
 
     it('should handle music with partial data', () => {
       const partialMusic: MusicEntity = {
-        type: 'Music' as any,
+        type: Entity.Musics,
         id: 'music-2',
         title: 'Partial Album',
         artist: 'Test Artist',
@@ -326,7 +326,6 @@ describe('MusicForm', () => {
     });
 
     it('should render multiple disc inputs with correct track numbers', async () => {
-      const user = userEvent.setup();
       render(<MusicForm {...defaultProps} music={mockMusic} />);
 
       // Should display track numbers for initial discs
@@ -346,13 +345,12 @@ describe('MusicForm', () => {
     });
 
     it('should update disc duration when user types in duration field', async () => {
-      const user = userEvent.setup();
       render(<MusicForm {...defaultProps} music={mockMusic} />);
 
       // The duration field in disc list shows formatted duration
       // Get all duration inputs (main form duration + disc durations)
       const durationInputs = screen.getAllByPlaceholderText('mm:ss');
-      
+
       // The first one in mockMusic should be '4:19' (259000 ms)
       expect(durationInputs.length).toBeGreaterThan(0);
       expect(durationInputs[0]).toHaveValue('4:19');
@@ -437,10 +435,7 @@ describe('MusicForm', () => {
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
       await user.click(lookupButton);
 
-      expect(mockSubmit).toHaveBeenCalledWith(
-        expect.any(FormData),
-        expect.objectContaining({ method: 'post' })
-      );
+      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
 
       const callArgs = mockSubmit.mock.calls[0][0] as FormData;
       expect(callArgs.get('intent')).toBe('lookup');
@@ -459,7 +454,6 @@ describe('MusicForm', () => {
     });
 
     it('should not call submit if lookup button is disabled during submission', async () => {
-      const user = userEvent.setup();
       render(<MusicForm {...defaultProps} isSubmitting={true} />);
 
       const lookupButton = screen.getByRole('button', { name: /lookup/i });

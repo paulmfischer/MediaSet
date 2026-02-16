@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { GameEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { GameEntity, Entity } from '~/models';
 
 type GameProps = {
   game: GameEntity;
@@ -39,7 +39,7 @@ export default function Game({ game, apiUrl }: GameProps) {
           <div className="lg:basis-1/5 flex justify-center mb-4 lg:mb-0">
             <ImageDisplay
               imageData={game.coverImage}
-              alt={game.title ?? "Game cover art"}
+              alt={game.title ?? 'Game cover art'}
               entityType={Entity.Games}
               entityId={game.id}
               apiUrl={apiUrl}
@@ -83,7 +83,7 @@ export default function Game({ game, apiUrl }: GameProps) {
                 Developers
               </label>
               <div id="developers" className="grow">
-                {game.developers?.join(", ")}
+                {game.developers?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">
@@ -91,7 +91,7 @@ export default function Game({ game, apiUrl }: GameProps) {
                 Publishers
               </label>
               <div id="publishers" className="grow">
-                {game.publishers?.join(", ")}
+                {game.publishers?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">
@@ -99,7 +99,7 @@ export default function Game({ game, apiUrl }: GameProps) {
                 Genres
               </label>
               <div id="genres" className="grow">
-                {game.genres?.join(", ")}
+                {game.genres?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">

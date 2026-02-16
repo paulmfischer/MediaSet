@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '~/test/test-utils';
+import { render, screen } from '~/test/test-utils';
 import Index, { meta, loader } from './_index';
 import * as statsData from '~/api/stats-data';
 import * as remixReact from '@remix-run/react';
@@ -21,7 +21,7 @@ vi.mock('@remix-run/react', async () => {
 describe('_index route', () => {
   describe('meta function', () => {
     it('should return correct title and description', () => {
-      const result = meta({ params: {} } as any);
+      const result = meta({ params: {} } as unknown as Parameters<typeof loader>[0]);
       expect(result).toEqual([
         { title: 'Dashboard | MediaSet' },
         {
@@ -32,10 +32,10 @@ describe('_index route', () => {
     });
 
     it('should have all required meta tags', () => {
-      const result = meta({ params: {} } as any);
+      const result = meta({ params: {} } as unknown as Parameters<typeof loader>[0]);
       expect(result).toHaveLength(2);
-      const titles = result.filter((m: any) => m.title);
-      const descriptions = result.filter((m: any) => m.name === 'description');
+      const titles = result.filter((m: Record<string, unknown>) => m.title);
+      const descriptions = result.filter((m: Record<string, unknown>) => m.name === 'description');
       expect(titles).toHaveLength(1);
       expect(descriptions).toHaveLength(1);
     });
@@ -175,9 +175,7 @@ describe('_index route', () => {
         render(<Index />);
 
         expect(screen.getByText('Welcome to MediaSet')).toBeInTheDocument();
-        expect(
-          screen.getByText('Your personal media collection dashboard'),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Your personal media collection dashboard')).toBeInTheDocument();
       });
 
       it('should display total items count', () => {
@@ -237,13 +235,9 @@ describe('_index route', () => {
         render(<Index />);
 
         expect(screen.getByText('Total Pages')).toBeInTheDocument();
-        expect(
-          screen.getByText(mockStats.bookStats.totalPages.toLocaleString()),
-        ).toBeInTheDocument();
+        expect(screen.getByText(mockStats.bookStats.totalPages.toLocaleString())).toBeInTheDocument();
         expect(screen.getByText('Unique Authors')).toBeInTheDocument();
-        expect(
-          screen.getByText(mockStats.bookStats.uniqueAuthors.toString()),
-        ).toBeInTheDocument();
+        expect(screen.getByText(mockStats.bookStats.uniqueAuthors.toString())).toBeInTheDocument();
       });
 
       it('should display book formats as tags', () => {
@@ -258,12 +252,9 @@ describe('_index route', () => {
         render(<Index />);
 
         expect(screen.getByText('TV Series')).toBeInTheDocument();
-        expect(
-          screen.getByText(mockStats.movieStats.totalTvSeries.toString()),
-        ).toBeInTheDocument();
+        expect(screen.getByText(mockStats.movieStats.totalTvSeries.toString())).toBeInTheDocument();
 
-        const expectedMovieCount =
-          mockStats.movieStats.total - mockStats.movieStats.totalTvSeries;
+        const expectedMovieCount = mockStats.movieStats.total - mockStats.movieStats.totalTvSeries;
         expect(screen.getByText(expectedMovieCount.toString())).toBeInTheDocument();
       });
 
@@ -281,7 +272,7 @@ describe('_index route', () => {
         // Look for the platforms list in the Games detailed section
         const platformLabels = screen.getAllByText('Platforms');
         expect(platformLabels.length).toBeGreaterThan(0);
-        
+
         // Verify all game platforms are rendered
         for (const platform of mockStats.gameStats.platforms) {
           expect(screen.getByText(platform)).toBeInTheDocument();
@@ -300,11 +291,7 @@ describe('_index route', () => {
         render(<Index />);
 
         expect(screen.getByText('Total Tracks')).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            mockStats.musicStats.totalTracks.toLocaleString(),
-          ),
-        ).toBeInTheDocument();
+        expect(screen.getByText(mockStats.musicStats.totalTracks.toLocaleString())).toBeInTheDocument();
       });
 
       it('should display music formats as tags', () => {
@@ -325,14 +312,10 @@ describe('_index route', () => {
         render(<Index />);
 
         // With books at 0, we should still see total items but it should exclude books
-        const expectedTotal =
-          0 +
-          mockStats.movieStats.total +
-          mockStats.gameStats.total +
-          mockStats.musicStats.total;
-        
+        const expectedTotal = 0 + mockStats.movieStats.total + mockStats.gameStats.total + mockStats.musicStats.total;
+
         expect(screen.getByText(expectedTotal.toString())).toBeInTheDocument();
-        
+
         // Movies & TV Shows section should still be visible
         expect(screen.getByText('Movies & TV Shows')).toBeInTheDocument();
       });
@@ -375,9 +358,7 @@ describe('_index route', () => {
 
         expect(screen.getByText('No media items yet')).toBeInTheDocument();
         expect(
-          screen.getByText(
-            'Start building your collection by adding books, movies, games, or music.',
-          ),
+          screen.getByText('Start building your collection by adding books, movies, games, or music.')
         ).toBeInTheDocument();
       });
 
@@ -601,16 +582,8 @@ describe('_index route', () => {
 
         render(<Index />);
 
-        expect(
-          screen.getByText(
-            statsWithLargeNumbers.bookStats.totalPages.toLocaleString(),
-          ),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            statsWithLargeNumbers.musicStats.totalTracks.toLocaleString(),
-          ),
-        ).toBeInTheDocument();
+        expect(screen.getByText(statsWithLargeNumbers.bookStats.totalPages.toLocaleString())).toBeInTheDocument();
+        expect(screen.getByText(statsWithLargeNumbers.musicStats.totalTracks.toLocaleString())).toBeInTheDocument();
       });
 
       it('should render correct stat titles for each category', () => {

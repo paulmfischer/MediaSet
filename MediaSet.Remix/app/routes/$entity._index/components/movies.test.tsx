@@ -1,20 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent } from '~/test/test-utils';
 import Movies from './movies';
-import { MovieEntity } from '~/models';
-import { Entity } from '~/models';
+import { MovieEntity, Entity } from '~/models';
 
 // Mock the delete dialog component
 vi.mock('~/components/delete-dialog', () => ({
-  default: ({ isOpen, onClose, entityTitle, deleteAction }: any) => (
+  default: ({
+    isOpen,
+    onClose,
+    entityTitle,
+    deleteAction,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    entityTitle?: string;
+    deleteAction: string;
+  }) =>
     isOpen ? (
       <div data-testid="delete-dialog">
         <p>Delete: {entityTitle}</p>
         <button onClick={onClose}>Cancel</button>
         <a href={deleteAction}>Confirm Delete</a>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock Link to avoid router context requirement
@@ -22,7 +31,7 @@ vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    Link: ({ to, children, ...props }: any) => (
+    Link: ({ to, children, ...props }: { to: string; children?: React.ReactNode; [key: string]: unknown }) => (
       <a href={to} {...props}>
         {children}
       </a>
@@ -265,7 +274,8 @@ describe('Movies component', () => {
         {
           type: Entity.Movies,
           id: '1',
-          title: 'This is a very long movie title that should still render properly in the table without breaking the layout',
+          title:
+            'This is a very long movie title that should still render properly in the table without breaking the layout',
           format: 'DVD',
           runtime: 120,
         },

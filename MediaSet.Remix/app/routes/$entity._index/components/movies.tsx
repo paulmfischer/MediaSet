@@ -1,10 +1,9 @@
-
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2, Check } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { MovieEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2, Check } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {
   movies: MovieEntity[];
@@ -14,7 +13,7 @@ type MovieProps = {
 export default function Movies({ movies, apiUrl }: MovieProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; movie: MovieEntity | null }>({
     isOpen: false,
-    movie: null
+    movie: null,
   });
 
   return (
@@ -31,7 +30,7 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
           </tr>
         </thead>
         <tbody>
-          {movies.map(movie => {
+          {movies.map((movie) => {
             return (
               <tr className="border-b border-slate-700 dark:hover:bg-zinc-800" key={movie.id}>
                 <td className="hidden md:table-cell w-16 pl-2 p-1 border-r border-slate-800">
@@ -52,12 +51,12 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
                 <td className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">{movie.format}</td>
                 <td className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800">{movie.runtime ?? 0}</td>
                 <td className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800">
-                  <div className="flex justify-center">
-                    {movie.isTvSeries && <Check size={16} />}
-                  </div>
+                  <div className="flex justify-center">{movie.isTvSeries && <Check size={16} />}</div>
                 </td>
                 <td className="flex flex-row gap-3 p-1 pt-2">
-                  <Link to={`/movies/${movie.id}/edit`} aria-label="Edit" title="Edit"><Pencil size={18} /></Link>
+                  <Link to={`/movies/${movie.id}/edit`} aria-label="Edit" title="Edit">
+                    <Pencil size={18} />
+                  </Link>
                   <button
                     onClick={() => setDeleteDialogState({ isOpen: true, movie })}
                     className="link"
@@ -69,7 +68,7 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
                   </button>
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
       </table>
@@ -77,8 +76,8 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
         isOpen={deleteDialogState.isOpen}
         onClose={() => setDeleteDialogState({ isOpen: false, movie: null })}
         entityTitle={deleteDialogState.movie?.title}
-        deleteAction={deleteDialogState.movie ? `/movies/${deleteDialogState.movie.id}/delete` : ""}
+        deleteAction={deleteDialogState.movie ? `/movies/${deleteDialogState.movie.id}/delete` : ''}
       />
     </>
-  )
+  );
 }

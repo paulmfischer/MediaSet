@@ -12,5 +12,3 @@ global.fetch = vi.fn(async () => {
     headers: { 'Content-Type': 'application/json' },
   });
 });
-
-

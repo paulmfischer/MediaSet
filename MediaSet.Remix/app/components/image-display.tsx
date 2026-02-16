@@ -1,6 +1,6 @@
-import { useState } from "react";
-import type { ImageData } from "~/models";
-import { Entity } from "~/models";
+import { useState } from 'react';
+import type { ImageData } from '~/models';
+import { Entity } from '~/models';
 
 type ImageDisplayProps = {
   imageData?: ImageData;
@@ -8,16 +8,16 @@ type ImageDisplayProps = {
   entityType?: Entity;
   entityId?: string;
   apiUrl?: string;
-  size?: "xsmall" | "small" | "medium" | "large" | "responsive";
+  size?: 'xsmall' | 'small' | 'medium' | 'large' | 'responsive';
   className?: string;
 };
 
 const sizeMap = {
-  xsmall: "h-16 w-16",
-  small: "h-32 w-32",
-  medium: "h-48 w-48",
-  large: "h-64 w-64",
-  responsive: "h-48 w-48 lg:h-64 lg:w-64",
+  xsmall: 'h-16 w-16',
+  small: 'h-32 w-32',
+  medium: 'h-48 w-48',
+  large: 'h-64 w-64',
+  responsive: 'h-48 w-48 lg:h-64 lg:w-64',
 };
 
 export default function ImageDisplay({
@@ -26,7 +26,7 @@ export default function ImageDisplay({
   entityType,
   entityId,
   apiUrl,
-  size = "responsive",
+  size = 'responsive',
   className,
 }: ImageDisplayProps) {
   const [showModal, setShowModal] = useState(false);
@@ -39,7 +39,7 @@ export default function ImageDisplay({
     }
     // Construct direct API image URL: /static/images/{filePath}
     if (!apiUrl) {
-      console.warn("ImageDisplay: apiUrl not configured");
+      console.warn('ImageDisplay: apiUrl not configured');
       return null;
     }
     const imageUrl = `${apiUrl}/static/images/${imageData.filePath}`;
@@ -57,7 +57,7 @@ export default function ImageDisplay({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setShowModal(false);
     }
   };
@@ -89,7 +89,7 @@ export default function ImageDisplay({
       <div
         className={`flex items-center justify-center bg-gray-800 rounded-lg overflow-hidden ${
           sizeMap[size]
-        } ${className || ""}`}
+        } ${className || ''}`}
         role="img"
         aria-label={alt}
       >
@@ -115,6 +115,7 @@ export default function ImageDisplay({
       </div>
 
       {showModal && imagePath && (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div
           className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
           onClick={() => setShowModal(false)}
@@ -122,10 +123,14 @@ export default function ImageDisplay({
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
+          tabIndex={-1}
         >
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <div
             className="relative max-w-4xl max-h-screen flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
           >
             <button
               type="button"
@@ -133,33 +138,17 @@ export default function ImageDisplay({
               className="absolute top-4 right-4 text-white hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded p-1"
               aria-label="Close image modal"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            <img
-              src={imagePath}
-              alt={alt}
-              className="max-w-full max-h-screen object-contain rounded-lg"
-            />
+            <img src={imagePath} alt={alt} className="max-w-full max-h-screen object-contain rounded-lg" />
 
             {imageData && (
               <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-75 rounded-lg p-4 text-white text-sm">
                 <p className="font-medium">{imageData.fileName}</p>
-                <p className="text-gray-300">
-                  {(imageData.fileSize / 1024 / 1024).toFixed(2)} MB
-                </p>
+                <p className="text-gray-300">{(imageData.fileSize / 1024 / 1024).toFixed(2)} MB</p>
               </div>
             )}
           </div>

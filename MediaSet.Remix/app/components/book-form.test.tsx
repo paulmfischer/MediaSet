@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '~/test/test-utils';
+import { render, screen } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import BookForm from './book-form';
-import { BookEntity } from '~/models';
+import { BookEntity, Entity } from '~/models';
 
 // Mock the custom input components
 vi.mock('~/components/multiselect-input', () => ({
-  default: ({ name, selectedValues, options }: any) => (
+  default: ({ name, selectedValues }: { name: string; selectedValues?: string[] }) => (
     <input
       data-testid={`${name}-multiselect`}
       type="hidden"
@@ -18,7 +18,7 @@ vi.mock('~/components/multiselect-input', () => ({
 }));
 
 vi.mock('~/components/singleselect-input', () => ({
-  default: ({ name, selectedValue, options }: any) => (
+  default: ({ name, selectedValue }: { name: string; selectedValue?: string }) => (
     <input
       data-testid={`${name}-singleselect`}
       type="hidden"
@@ -65,7 +65,7 @@ describe('BookForm', () => {
 
   const mockBook: BookEntity = {
     id: 'book-1',
-    type: 'Books' as any,
+    type: Entity.Books,
     title: 'The Great Gatsby',
     subtitle: 'A Novel',
     isbn: '978-0743273565',
@@ -135,9 +135,7 @@ describe('BookForm', () => {
       expect(screen.getByLabelText('Pages')).toHaveValue(180);
       expect(screen.getByLabelText('Publication Date')).toHaveValue('1925-04-10');
       expect(screen.getByLabelText('ISBN')).toHaveValue('978-0743273565');
-      expect(screen.getByLabelText('Plot')).toHaveValue(
-        'A classic American novel about the Jazz Age.'
-      );
+      expect(screen.getByLabelText('Plot')).toHaveValue('A classic American novel about the Jazz Age.');
     });
 
     it('should pass initial values to multiselect and singleselect inputs', () => {
@@ -161,7 +159,7 @@ describe('BookForm', () => {
 
     it('should handle book with partial data', () => {
       const partialBook: BookEntity = {
-        type: 'Books' as any,
+        type: Entity.Books,
         id: 'book-2',
         title: 'Partial Book',
       };
@@ -301,10 +299,7 @@ describe('BookForm', () => {
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
       await user.click(lookupButton);
 
-      expect(mockSubmit).toHaveBeenCalledWith(
-        expect.any(FormData),
-        expect.objectContaining({ method: 'post' })
-      );
+      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
 
       const callArgs = mockSubmit.mock.calls[0][0] as FormData;
       expect(callArgs.get('intent')).toBe('lookup');
@@ -323,7 +318,6 @@ describe('BookForm', () => {
     });
 
     it('should not call submit if lookup button is disabled during submission', async () => {
-      const user = userEvent.setup();
       render(<BookForm {...defaultProps} isSubmitting={true} />);
 
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
@@ -436,9 +430,7 @@ describe('BookForm', () => {
       expect(screen.getByLabelText('Pages')).toHaveValue(180);
       expect(screen.getByLabelText('Publication Date')).toHaveValue('1925-04-10');
       expect(screen.getByLabelText('ISBN')).toHaveValue('978-0743273565');
-      expect(screen.getByLabelText('Plot')).toHaveValue(
-        'A classic American novel about the Jazz Age.'
-      );
+      expect(screen.getByLabelText('Plot')).toHaveValue('A classic American novel about the Jazz Age.');
 
       // Modify one field
       const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
@@ -449,9 +441,7 @@ describe('BookForm', () => {
 
       // Verify other fields unchanged
       expect(screen.getByLabelText('ISBN')).toHaveValue('978-0743273565');
-      expect(screen.getByLabelText('Plot')).toHaveValue(
-        'A classic American novel about the Jazz Age.'
-      );
+      expect(screen.getByLabelText('Plot')).toHaveValue('A classic American novel about the Jazz Age.');
     });
 
     it('should trigger lookup and maintain form state', async () => {
@@ -519,7 +509,6 @@ describe('BookForm', () => {
     it('should disable all inputs during submission', () => {
       const { container } = render(<BookForm {...defaultProps} isSubmitting={true} />);
 
-      const inputs = container.querySelectorAll('input, textarea, button');
       const fieldset = container.querySelector('fieldset');
 
       expect(fieldset).toBeDisabled();

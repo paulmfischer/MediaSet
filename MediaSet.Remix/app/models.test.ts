@@ -248,7 +248,7 @@ describe('models.ts', () => {
     });
 
     it('should accept null runtime', () => {
-      const movie: MovieEntity = { type: Entity.Movies, runtime: null as any };
+      const movie: MovieEntity = { type: Entity.Movies, runtime: null as unknown as number };
       expect(movie.runtime).toBeNull();
     });
 
@@ -425,7 +425,7 @@ describe('models.ts', () => {
     it('should allow null duration', () => {
       const music: MusicEntity = {
         type: Entity.Musics,
-        duration: null as any,
+        duration: null as unknown as string,
       };
       expect(music.duration).toBeNull();
     });
@@ -433,8 +433,8 @@ describe('models.ts', () => {
     it('should allow null tracks and discs', () => {
       const music: MusicEntity = {
         type: Entity.Musics,
-        tracks: null as any,
-        discs: null as any,
+        tracks: null as unknown as number,
+        discs: null as unknown as number,
       };
       expect(music.tracks).toBeNull();
       expect(music.discs).toBeNull();
@@ -470,27 +470,13 @@ describe('models.ts', () => {
 
   describe('IdentifierType type', () => {
     it('should allow valid identifier types', () => {
-      const identifiers: IdentifierType[] = [
-        'isbn',
-        'lccn',
-        'oclc',
-        'olid',
-        'upc',
-        'ean',
-      ];
+      const identifiers: IdentifierType[] = ['isbn', 'lccn', 'oclc', 'olid', 'upc', 'ean'];
       expect(identifiers).toContain('isbn');
       expect(identifiers).toContain('ean');
     });
 
     it('should have all 6 identifier types', () => {
-      const types: IdentifierType[] = [
-        'isbn',
-        'lccn',
-        'oclc',
-        'olid',
-        'upc',
-        'ean',
-      ];
+      const types: IdentifierType[] = ['isbn', 'lccn', 'oclc', 'olid', 'upc', 'ean'];
       expect(types).toHaveLength(6);
     });
   });
@@ -632,9 +618,7 @@ describe('models.ts', () => {
         label: 'Test Label',
         tracks: 12,
         discs: 1,
-        discList: [
-          { trackNumber: 1, title: 'Track 1', duration: 225000 },
-        ],
+        discList: [{ trackNumber: 1, title: 'Track 1', duration: 225000 }],
         format: 'CD',
       };
       expect(response.title).toBe('Test Album');
@@ -813,8 +797,8 @@ describe('models.ts', () => {
     it('should handle entities with null values in optional fields', () => {
       const book: BookEntity = {
         type: Entity.Books,
-        isbn: null as any,
-        pages: null as any,
+        isbn: null as unknown as string,
+        pages: null as unknown as number,
       };
       expect(book.isbn).toBeNull();
       expect(book.pages).toBeNull();
@@ -860,7 +844,7 @@ describe('models.ts', () => {
         type: Entity.Books,
         authors: 'Test',
         genres: 'Test',
-        publisher: 'Test Publisher' as any,
+        publisher: 'Test Publisher' as unknown as string[],
       };
       expect(typeof book.authors).toBe('string');
       expect(typeof book.genres).toBe('string');

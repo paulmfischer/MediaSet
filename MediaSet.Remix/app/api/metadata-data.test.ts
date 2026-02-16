@@ -54,9 +54,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return authors with label and value', async () => {
         const mockAuthors = ['Author One', 'Author Two', 'Author Three'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockAuthors,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
 
         const result = await getAuthors();
 
@@ -65,16 +63,12 @@ describe('metadata-data.ts', () => {
           { label: 'Author Two', value: 'Author Two' },
           { label: 'Author Three', value: 'Author Three' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Books}/authors`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/authors`));
         expect(result).toHaveLength(3);
       });
 
       it('should handle empty authors list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getAuthors();
 
@@ -85,9 +79,7 @@ describe('metadata-data.ts', () => {
       it('should handle single author', async () => {
         const mockAuthors = ['Single Author'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockAuthors,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
 
         const result = await getAuthors();
 
@@ -96,16 +88,14 @@ describe('metadata-data.ts', () => {
       });
 
       it('should preserve author names with special characters', async () => {
-        const mockAuthors = ['O\'Brien, Patrick', 'José García', "D'Amato"];
+        const mockAuthors = ["O'Brien, Patrick", 'José García', "D'Amato"];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockAuthors,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
 
         const result = await getAuthors();
 
         expect(result).toEqual([
-          { label: 'O\'Brien, Patrick', value: 'O\'Brien, Patrick' },
+          { label: "O'Brien, Patrick", value: "O'Brien, Patrick" },
           { label: 'José García', value: 'José García' },
           { label: "D'Amato", value: "D'Amato" },
         ]);
@@ -116,9 +106,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return publishers with label and value', async () => {
         const mockPublishers = ['Publisher One', 'Publisher Two'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPublishers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
 
         const result = await getPublishers();
 
@@ -126,15 +114,11 @@ describe('metadata-data.ts', () => {
           { label: 'Publisher One', value: 'Publisher One' },
           { label: 'Publisher Two', value: 'Publisher Two' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Books}/publisher`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/publisher`));
       });
 
       it('should handle empty publishers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getPublishers();
 
@@ -144,9 +128,7 @@ describe('metadata-data.ts', () => {
       it('should preserve publisher names', async () => {
         const mockPublishers = ['Penguin Books', 'Simon & Schuster', 'HarperCollins'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPublishers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
 
         const result = await getPublishers();
 
@@ -159,9 +141,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return genres for books', async () => {
         const mockGenres = ['Fiction', 'Mystery', 'Science Fiction'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockGenres,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
 
         const result = await getGenres(Entity.Books);
 
@@ -170,17 +150,13 @@ describe('metadata-data.ts', () => {
           { label: 'Mystery', value: 'Mystery' },
           { label: 'Science Fiction', value: 'Science Fiction' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Books}/genres`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/genres`));
       });
 
       it('should fetch and return genres for movies', async () => {
         const mockGenres = ['Action', 'Drama', 'Comedy'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockGenres,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
 
         const result = await getGenres(Entity.Movies);
 
@@ -189,45 +165,33 @@ describe('metadata-data.ts', () => {
           { label: 'Drama', value: 'Drama' },
           { label: 'Comedy', value: 'Comedy' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Movies}/genres`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/genres`));
       });
 
       it('should fetch and return genres for games', async () => {
         const mockGenres = ['RPG', 'Action', 'Strategy'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockGenres,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
 
         const result = await getGenres(Entity.Games);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Games}/genres`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/genres`));
         expect(result).toHaveLength(3);
       });
 
       it('should fetch and return genres for music', async () => {
         const mockGenres = ['Rock', 'Pop', 'Jazz'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockGenres,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
 
         const result = await getGenres(Entity.Musics);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Musics}/genres`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/genres`));
         expect(result).toHaveLength(3);
       });
 
       it('should handle empty genres list for any entity', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getGenres(Entity.Books);
 
@@ -239,9 +203,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return formats for books', async () => {
         const mockFormats = ['Hardcover', 'Paperback', 'eBook'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockFormats,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
 
         const result = await getFormats(Entity.Books);
 
@@ -250,58 +212,42 @@ describe('metadata-data.ts', () => {
           { label: 'Paperback', value: 'Paperback' },
           { label: 'eBook', value: 'eBook' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Books}/format`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/format`));
       });
 
       it('should fetch and return formats for movies', async () => {
         const mockFormats = ['Blu-ray', 'DVD', '4K Ultra HD'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockFormats,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
 
         const result = await getFormats(Entity.Movies);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Movies}/format`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/format`));
         expect(result).toHaveLength(3);
       });
 
       it('should fetch and return formats for games', async () => {
         const mockFormats = ['Disc', 'Digital', 'Cartridge'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockFormats,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
 
-        const result = await getFormats(Entity.Games);
+        await getFormats(Entity.Games);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Games}/format`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/format`));
       });
 
       it('should fetch and return formats for music', async () => {
         const mockFormats = ['CD', 'Vinyl', 'Cassette', 'Digital'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockFormats,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
 
-        const result = await getFormats(Entity.Musics);
+        await getFormats(Entity.Musics);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Musics}/format`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/format`));
       });
 
       it('should handle empty formats list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getFormats(Entity.Books);
 
@@ -313,9 +259,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return movie studios', async () => {
         const mockStudios = ['Warner Bros', 'Universal Pictures', 'Disney'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockStudios,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockStudios });
 
         const result = await getStudios();
 
@@ -324,15 +268,11 @@ describe('metadata-data.ts', () => {
           { label: 'Universal Pictures', value: 'Universal Pictures' },
           { label: 'Disney', value: 'Disney' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Movies}/studios`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/studios`));
       });
 
       it('should handle empty studios list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getStudios();
 
@@ -342,9 +282,7 @@ describe('metadata-data.ts', () => {
       it('should preserve studio names with special characters', async () => {
         const mockStudios = ['20th Century Studios', 'A24 Films', 'Focus Features'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockStudios,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockStudios });
 
         const result = await getStudios();
 
@@ -357,9 +295,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return game developers', async () => {
         const mockDevelopers = ['FromSoftware', 'Rockstar Games', 'Naughty Dog'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockDevelopers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockDevelopers });
 
         const result = await getDevelopers();
 
@@ -368,15 +304,11 @@ describe('metadata-data.ts', () => {
           { label: 'Rockstar Games', value: 'Rockstar Games' },
           { label: 'Naughty Dog', value: 'Naughty Dog' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Games}/developers`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/developers`));
       });
 
       it('should handle empty developers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getDevelopers();
 
@@ -386,9 +318,7 @@ describe('metadata-data.ts', () => {
       it('should handle single developer', async () => {
         const mockDevelopers = ['Nintendo'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockDevelopers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockDevelopers });
 
         const result = await getDevelopers();
 
@@ -400,9 +330,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return game platforms', async () => {
         const mockPlatforms = ['PlayStation 5', 'Xbox Series X', 'Nintendo Switch', 'PC'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPlatforms,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPlatforms });
 
         const result = await getPlatforms();
 
@@ -412,15 +340,11 @@ describe('metadata-data.ts', () => {
           { label: 'Nintendo Switch', value: 'Nintendo Switch' },
           { label: 'PC', value: 'PC' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Games}/platform`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/platform`));
       });
 
       it('should handle empty platforms list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getPlatforms();
 
@@ -430,9 +354,7 @@ describe('metadata-data.ts', () => {
       it('should handle multiple platforms', async () => {
         const mockPlatforms = Array.from({ length: 10 }, (_, i) => `Platform ${i + 1}`);
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPlatforms,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPlatforms });
 
         const result = await getPlatforms();
 
@@ -445,9 +367,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return music labels', async () => {
         const mockLabels = ['Atlantic Records', 'Sony Music', 'Universal Music Group'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockLabels,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockLabels });
 
         const result = await getLabels();
 
@@ -456,15 +376,11 @@ describe('metadata-data.ts', () => {
           { label: 'Sony Music', value: 'Sony Music' },
           { label: 'Universal Music Group', value: 'Universal Music Group' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Musics}/label`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/label`));
       });
 
       it('should handle empty labels list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getLabels();
 
@@ -474,9 +390,7 @@ describe('metadata-data.ts', () => {
       it('should preserve label names', async () => {
         const mockLabels = ['4AD', 'Sub Pop', 'Matador Records'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockLabels,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockLabels });
 
         const result = await getLabels();
 
@@ -489,9 +403,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return game publishers', async () => {
         const mockPublishers = ['Nintendo', 'Sony Interactive Entertainment', 'Microsoft'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPublishers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
 
         const result = await getGamePublishers();
 
@@ -500,15 +412,11 @@ describe('metadata-data.ts', () => {
           { label: 'Sony Interactive Entertainment', value: 'Sony Interactive Entertainment' },
           { label: 'Microsoft', value: 'Microsoft' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Games}/publishers`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/publishers`));
       });
 
       it('should handle empty publishers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getGamePublishers();
 
@@ -518,9 +426,7 @@ describe('metadata-data.ts', () => {
       it('should handle single publisher', async () => {
         const mockPublishers = ['EA Games'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockPublishers,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
 
         const result = await getGamePublishers();
 
@@ -533,9 +439,7 @@ describe('metadata-data.ts', () => {
       it('should fetch and return music artists', async () => {
         const mockArtists = ['The Beatles', 'Queen', 'David Bowie'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockArtists,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
 
         const result = await getArtist();
 
@@ -544,15 +448,11 @@ describe('metadata-data.ts', () => {
           { label: 'Queen', value: 'Queen' },
           { label: 'David Bowie', value: 'David Bowie' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/${Entity.Musics}/artist`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/artist`));
       });
 
       it('should handle empty artists list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         const result = await getArtist();
 
@@ -560,11 +460,9 @@ describe('metadata-data.ts', () => {
       });
 
       it('should preserve artist names with special characters', async () => {
-        const mockArtists = ['AC/DC', 'Guns N\' Roses', 'Wu-Tang Clan'];
+        const mockArtists = ['AC/DC', "Guns N' Roses", 'Wu-Tang Clan'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockArtists,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
 
         const result = await getArtist();
 
@@ -575,9 +473,7 @@ describe('metadata-data.ts', () => {
       it('should handle many artists', async () => {
         const mockArtists = Array.from({ length: 50 }, (_, i) => `Artist ${i + 1}`);
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => mockArtists,
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
 
         const result = await getArtist();
 
@@ -590,9 +486,7 @@ describe('metadata-data.ts', () => {
     it('should create proper label-value pair structure', async () => {
       const mockData = ['Item 1', 'Item 2'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result = await getAuthors();
 
@@ -607,9 +501,7 @@ describe('metadata-data.ts', () => {
     it('should use same value for both label and value field', async () => {
       const mockData = ['Unique Item'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result = await getPublishers();
 
@@ -619,9 +511,7 @@ describe('metadata-data.ts', () => {
     it('should preserve exact text from API response', async () => {
       const mockData = ['Item With Spaces', 'item_with_underscore', 'ITEM-WITH-DASH'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result = await getGenres(Entity.Books);
 
@@ -633,9 +523,7 @@ describe('metadata-data.ts', () => {
     it('should maintain order of items from API response', async () => {
       const mockData = ['Z', 'A', 'M', 'B'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result = await getFormats(Entity.Movies);
 
@@ -670,7 +558,8 @@ describe('metadata-data.ts', () => {
     });
 
     it('should handle JSON parsing errors', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
+      mockApiFetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => {
           throw new Error('Invalid JSON');
         },
@@ -680,17 +569,13 @@ describe('metadata-data.ts', () => {
     });
 
     it('should throw error when API returns undefined', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => undefined,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => undefined });
 
       await expect(getAuthors()).rejects.toThrow();
     });
 
     it('should throw error when API returns null', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => null,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => null });
 
       await expect(getPublishers()).rejects.toThrow();
     });
@@ -698,7 +583,8 @@ describe('metadata-data.ts', () => {
     it('should throw error if fetch is called without response being ok (implicit)', async () => {
       // The current implementation doesn't explicitly check response.ok,
       // but it should gracefully handle invalid JSON responses
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
+      mockApiFetch.mockResolvedValueOnce({
+        ok: true,
         json: async () => {
           throw new TypeError('Failed to parse JSON');
         },
@@ -710,27 +596,19 @@ describe('metadata-data.ts', () => {
 
   describe('API endpoint construction', () => {
     it('should construct correct endpoint for book authors', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getAuthors();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Books}/authors`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Books}/authors`));
     });
 
     it('should construct correct endpoint for book publishers', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getPublishers();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Books}/publisher`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Books}/publisher`));
     });
 
     it('should construct correct endpoints for different entity types', async () => {
@@ -746,24 +624,18 @@ describe('metadata-data.ts', () => {
       ];
 
       for (const testCase of testCases) {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => [],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
         await testCase.fn();
 
-        expect(mockApiFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`${testCase.entity}/${testCase.property}`)
-        );
+        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${testCase.entity}/${testCase.property}`));
 
         vi.clearAllMocks();
       }
     });
 
     it('should use baseUrl from constants in fetch call', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getAuthors();
 
@@ -773,72 +645,48 @@ describe('metadata-data.ts', () => {
     });
 
     it('should construct endpoints for game-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getDevelopers();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Games}/developers`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/developers`));
 
       vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getPlatforms();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Games}/platform`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/platform`));
 
       vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getGamePublishers();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Games}/publishers`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/publishers`));
     });
 
     it('should construct endpoints for music-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getLabels();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Musics}/label`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Musics}/label`));
 
       vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getArtist();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Musics}/artist`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Musics}/artist`));
     });
 
     it('should construct endpoints for movie-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => [],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
 
       await getStudios();
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`${Entity.Movies}/studios`)
-      );
+      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Movies}/studios`));
     });
   });
 
@@ -857,9 +705,7 @@ describe('metadata-data.ts', () => {
       ];
 
       for (const testCase of functions) {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, 
-          json: async () => ['Item 1', 'Item 2'],
-        });
+        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => ['Item 1', 'Item 2'] });
 
         const result = await testCase.fn();
 
@@ -872,9 +718,7 @@ describe('metadata-data.ts', () => {
     });
 
     it('should handle mixed success and error scenarios', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => ['Author 1'],
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => ['Author 1'] });
 
       const authorsResult = await getAuthors();
       expect(authorsResult).toHaveLength(1);
@@ -888,16 +732,12 @@ describe('metadata-data.ts', () => {
     it('should return consistently formatted responses', async () => {
       const mockData = ['Data 1', 'Data 2', 'Data 3'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result1 = await getAuthors();
 
       vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, 
-        json: async () => mockData,
-      });
+      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
 
       const result2 = await getStudios();
 

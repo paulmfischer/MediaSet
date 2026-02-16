@@ -21,10 +21,10 @@ async function fetchConfig(): Promise<ClientConfig> {
   }
 
   // Fetch config
-  console.log("Fetching runtime config from /config.json");
+  console.log('Fetching runtime config from /config.json');
   configPromise = fetch('/config.json')
     .then((res) => {
-      console.log("Config fetch response", { status: res.status });
+      console.log('Config fetch response', { status: res.status });
       if (!res.ok) {
         throw new Error(`Failed to fetch config: ${res.statusText}`);
       }

@@ -15,42 +15,32 @@ describe('$entity._index route', () => {
   describe('meta function', () => {
     it('should return correct title and description for Books', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      const result = meta({ params: { entity: 'books' } } as any);
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: expect.stringContaining('List') })
-      );
-      expect(result).toContainEqual(
-        expect.objectContaining({ name: 'description' })
-      );
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
+      expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
+      expect(result).toContainEqual(expect.objectContaining({ name: 'description' }));
     });
 
     it('should return correct title and description for Movies', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-      const result = meta({ params: { entity: 'movies' } } as any);
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: expect.stringContaining('List') })
-      );
+      const result = meta({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
+      expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should return correct title and description for Games', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
-      const result = meta({ params: { entity: 'games' } } as any);
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: expect.stringContaining('List') })
-      );
+      const result = meta({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
+      expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should return correct title and description for Musics', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-      const result = meta({ params: { entity: 'musics' } } as any);
-      expect(result).toContainEqual(
-        expect.objectContaining({ title: expect.stringContaining('List') })
-      );
+      const result = meta({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
+      expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should have 2 meta tags', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      const result = meta({ params: { entity: 'books' } } as any);
+      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
       expect(result).toHaveLength(2);
     });
   });
@@ -77,10 +67,15 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test');
-      expect(result).toEqual({ entities: mockBooks, entityType: Entity.Books, searchText: 'test', apiUrl: expect.any(String) });
+      expect(result).toEqual({
+        entities: mockBooks,
+        entityType: Entity.Books,
+        searchText: 'test',
+        apiUrl: expect.any(String),
+      });
     });
 
     it('should load movies without search text', async () => {
@@ -99,10 +94,15 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'movies' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Movies, null);
-      expect(result).toEqual({ entities: mockMovies, entityType: Entity.Movies, searchText: null, apiUrl: expect.any(String) });
+      expect(result).toEqual({
+        entities: mockMovies,
+        entityType: Entity.Movies,
+        searchText: null,
+        apiUrl: expect.any(String),
+      });
     });
 
     it('should load games with search text', async () => {
@@ -122,10 +122,15 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'games' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Games, 'action');
-      expect(result).toEqual({ entities: mockGames, entityType: Entity.Games, searchText: 'action', apiUrl: expect.any(String) });
+      expect(result).toEqual({
+        entities: mockGames,
+        entityType: Entity.Games,
+        searchText: 'action',
+        apiUrl: expect.any(String),
+      });
     });
 
     it('should load musics with search text', async () => {
@@ -145,10 +150,15 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'musics' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Musics, 'rock');
-      expect(result).toEqual({ entities: mockMusics, entityType: Entity.Musics, searchText: 'rock', apiUrl: expect.any(String) });
+      expect(result).toEqual({
+        entities: mockMusics,
+        entityType: Entity.Musics,
+        searchText: 'rock',
+        apiUrl: expect.any(String),
+      });
     });
 
     it('should handle empty search results', async () => {
@@ -159,19 +169,24 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
-      expect(result).toEqual({ entities: [], entityType: Entity.Books, searchText: 'nonexistent', apiUrl: expect.any(String) });
+      expect(result).toEqual({
+        entities: [],
+        entityType: Entity.Books,
+        searchText: 'nonexistent',
+        apiUrl: expect.any(String),
+      });
     });
 
     it('should throw error if entity param is missing', async () => {
       const mockRequest = new Request('http://localhost/test');
-      
+
       await expect(
         loader({
           request: mockRequest,
           params: {},
-        } as any)
+        } as unknown as Parameters<typeof loader>[0])
       ).rejects.toThrow();
     });
 
@@ -189,7 +204,7 @@ describe('$entity._index route', () => {
       const result = await loader({
         request: mockRequest,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(result.entities).toHaveLength(3);
       expect(result.entities).toEqual(mockBooks);
@@ -203,7 +218,7 @@ describe('$entity._index route', () => {
       await loader({
         request: mockRequest,
         params: { entity: 'games' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntityFromParams).toHaveBeenCalledWith({ entity: 'games' });
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Games, 'zelda');
@@ -217,7 +232,7 @@ describe('$entity._index route', () => {
       await loader({
         request: mockRequest,
         params: { entity: 'books' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'multiple words');
     });
@@ -230,10 +245,9 @@ describe('$entity._index route', () => {
       await loader({
         request: mockRequest,
         params: { entity: 'movies' },
-      } as any);
+      } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Movies, null);
     });
   });
 });
-

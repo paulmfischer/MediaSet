@@ -1,5 +1,17 @@
-import { Params } from "@remix-run/react";
-import { BaseEntity, Book, BookEntity, Entity, Game, GameEntity, Movie, MovieEntity, Music, MusicEntity, Disc } from "~/models";
+import { Params } from '@remix-run/react';
+import {
+  BaseEntity,
+  Book,
+  BookEntity,
+  Entity,
+  Game,
+  GameEntity,
+  Movie,
+  MovieEntity,
+  Music,
+  MusicEntity,
+  Disc,
+} from '~/models';
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -19,13 +31,13 @@ export function singular(entityType: Entity) {
 
 function formDataToType<T>(formData: FormData): T {
   const data: Record<string, FormDataEntryValue> = {};
-  for (let [key, value] of formData) {
+  for (const [key, value] of formData) {
     data[key] = value;
   }
   return data as T;
 }
 
-function getValue(val: any): any | undefined {
+function getValue(val: unknown): unknown | undefined {
   return val == '' ? undefined : val;
 }
 
@@ -34,19 +46,19 @@ function durationToMilliseconds(duration: string): number | null {
   if (!duration || duration.trim() === '') {
     return null;
   }
-  
+
   const parts = duration.split(':');
   if (parts.length !== 2) {
     return null;
   }
-  
+
   const minutes = parseInt(parts[0], 10);
   const seconds = parseInt(parts[1], 10);
-  
+
   if (isNaN(minutes) || isNaN(seconds)) {
     return null;
   }
-  
+
   return (minutes * 60 + seconds) * 1000;
 }
 
@@ -55,11 +67,11 @@ export function millisecondsToMinutesSeconds(milliseconds: number | null | undef
   if (!milliseconds || milliseconds <= 0) {
     return '';
   }
-  
+
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  
+
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -85,7 +97,7 @@ function baseToBookEntity(data: BaseEntity): BookEntity {
 
 function baseToMovieEntity(data: BaseEntity): MovieEntity {
   const movie = data as Movie;
-  const isTvSeries = (movie.isTvSeries as unknown) as string;
+  const isTvSeries = movie.isTvSeries as unknown as string;
   const runtime = movie.runtime ? parseInt(String(movie.runtime), 10) : undefined;
   return {
     type: movie.type,
@@ -124,7 +136,7 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
 
 function baseToMusicEntity(data: BaseEntity): MusicEntity {
   const music = data as Music;
-  
+
   // Parse disc list from form data
   const discList: Disc[] = [];
   let i = 0;
@@ -132,15 +144,15 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     const trackNumberKey = `discList[${i}].trackNumber` as keyof Music;
     const titleKey = `discList[${i}].title` as keyof Music;
     const durationKey = `discList[${i}].duration` as keyof Music;
-    
-    const trackNumber = (music as any)[trackNumberKey];
-    const title = (music as any)[titleKey];
-    const duration = (music as any)[durationKey];
-    
+
+    const trackNumber = (music as Record<string, unknown>)[trackNumberKey as string];
+    const title = (music as Record<string, unknown>)[titleKey as string];
+    const duration = (music as Record<string, unknown>)[durationKey as string];
+
     if (trackNumber === undefined && title === undefined && duration === undefined) {
       break;
     }
-    
+
     if (title || duration) {
       discList.push({
         trackNumber: parseInt(trackNumber) || i + 1,
@@ -150,12 +162,12 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
     }
     i++;
   }
-  
+
   // Convert overall duration from MM:SS to milliseconds
-  const durationMs = music.duration ? durationToMilliseconds(music.duration as any) : undefined;
+  const durationMs = music.duration ? durationToMilliseconds(String(music.duration)) : undefined;
   const tracks = music.tracks ? parseInt(String(music.tracks), 10) : undefined;
   const discs = music.discs ? parseInt(String(music.discs), 10) : undefined;
-  
+
   return {
     type: music.type,
     id: getValue(music.id),

@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import type { FormProps, ImageData } from "~/models";
+import { useRef, useState } from 'react';
+import type { FormProps, ImageData } from '~/models';
 
 type ImageUploadProps = FormProps & {
   name: string;
@@ -9,25 +9,25 @@ type ImageUploadProps = FormProps & {
 
 export default function ImageUpload(props: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    props.existingImage?.filePath ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}` : null
+    props.existingImage?.filePath
+      ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}`
+      : null
   );
-  const [fileName, setFileName] = useState<string>(
-    props.existingImage?.fileName ?? ""
-  );
+  const [fileName, setFileName] = useState<string>(props.existingImage?.fileName ?? '');
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageCleared, setImageCleared] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return "Only JPEG and PNG images are allowed";
+      return 'Only JPEG and PNG images are allowed';
     }
     if (file.size > MAX_FILE_SIZE) {
-      return "File size must be less than 5MB";
+      return 'File size must be less than 5MB';
     }
     return null;
   };
@@ -37,7 +37,7 @@ export default function ImageUpload(props: ImageUploadProps) {
     if (validationError) {
       setError(validationError);
       setPreviewUrl(null);
-      setFileName("");
+      setFileName('');
       return;
     }
 
@@ -65,9 +65,9 @@ export default function ImageUpload(props: ImageUploadProps) {
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   };
@@ -85,19 +85,17 @@ export default function ImageUpload(props: ImageUploadProps) {
 
   const handleClear = () => {
     setPreviewUrl(null);
-    setFileName("");
+    setFileName('');
     setError(null);
     setImageCleared(true);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
   return (
     <div className="w-full space-y-4">
-      <label className="block text-sm font-medium text-gray-200">
-        Cover Image
-      </label>
+      <span className="block text-sm font-medium text-gray-200">Cover Image</span>
 
       <input
         ref={fileInputRef}
@@ -114,7 +112,7 @@ export default function ImageUpload(props: ImageUploadProps) {
         id={`${props.name}-clear-marker`}
         type="hidden"
         name={`${props.name}-cleared`}
-        value={imageCleared ? "true" : ""}
+        value={imageCleared ? 'true' : ''}
       />
 
       <div
@@ -125,13 +123,13 @@ export default function ImageUpload(props: ImageUploadProps) {
         onClick={() => fileInputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
           dragActive
-            ? "border-blue-400 bg-blue-900 bg-opacity-30"
-            : "border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700"
-        } ${props.isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+            ? 'border-blue-400 bg-blue-900 bg-opacity-30'
+            : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
+        } ${props.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             fileInputRef.current?.click();
           }
@@ -140,11 +138,7 @@ export default function ImageUpload(props: ImageUploadProps) {
       >
         {previewUrl ? (
           <div className="space-y-2">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="mx-auto h-40 w-auto object-contain"
-            />
+            <img src={previewUrl} alt="Preview" className="mx-auto h-40 w-auto object-contain" />
             <p className="text-sm text-gray-300">{fileName}</p>
           </div>
         ) : (
@@ -167,18 +161,13 @@ export default function ImageUpload(props: ImageUploadProps) {
               <p className="font-medium">Drag and drop your image here</p>
               <p className="text-xs text-gray-400">or click to select</p>
             </div>
-            <p className="text-xs text-gray-400">
-              PNG or JPEG up to 5MB
-            </p>
+            <p className="text-xs text-gray-400">PNG or JPEG up to 5MB</p>
           </div>
         )}
       </div>
 
       {error && (
-        <div
-          className="rounded-md bg-red-50 p-4 border border-red-200"
-          role="alert"
-        >
+        <div className="rounded-md bg-red-50 p-4 border border-red-200" role="alert">
           <p className="text-sm font-medium text-red-800">{error}</p>
         </div>
       )}

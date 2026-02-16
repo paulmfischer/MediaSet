@@ -21,12 +21,12 @@ export default function ScanButton({ inputId = 'barcode', fieldName, disabled = 
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       const isMobileScreen = window.matchMedia('(max-width: 768px)').matches;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
+
       setIsMobile(hasTouch && (isMobileScreen || isMobileUA));
     };
 
     checkMobile();
-    
+
     // Recheck on resize
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -53,7 +53,9 @@ export default function ScanButton({ inputId = 'barcode', fieldName, disabled = 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} disabled={disabled}>{buttonLabel}</button>
+      <button type="button" onClick={() => setOpen(true)} disabled={disabled}>
+        {buttonLabel}
+      </button>
       <Suspense fallback={null}>
         <BarcodeScanner open={open} onClose={() => setOpen(false)} onDetected={handleDetected} />
       </Suspense>

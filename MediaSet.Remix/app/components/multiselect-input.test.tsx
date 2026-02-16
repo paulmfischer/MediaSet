@@ -38,9 +38,7 @@ describe('MultiselectInput', () => {
       expect(input).toHaveAttribute('aria-autocomplete', 'list');
 
       // Hidden input field
-      const hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      );
+      const hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`);
       expect(hiddenInput).toBeInTheDocument();
       expect(hiddenInput).toHaveAttribute('type', 'hidden');
 
@@ -68,8 +66,8 @@ describe('MultiselectInput', () => {
       await user.click(input);
 
       mockOptions.forEach((option) => {
-          expect(screen.getByText(option.label)).toBeInTheDocument();
-        });
+        expect(screen.getByText(option.label)).toBeInTheDocument();
+      });
     });
 
     it('should have listbox role on dropdown container', async () => {
@@ -233,18 +231,13 @@ describe('MultiselectInput', () => {
 
     it('should remove option by pressing Backspace on empty input', async () => {
       const user = userEvent.setup();
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1', 'option2']}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} selectedValues={['option1', 'option2']} />);
 
       const input = screen.getByPlaceholderText('Select options');
-      
+
       // Click to focus and activate
       await user.click(input);
-      
+
       // Now press Backspace to remove last selected
       await user.keyboard('{Backspace}');
 
@@ -256,12 +249,7 @@ describe('MultiselectInput', () => {
 
     it('should not remove selection with Backspace when input has text', async () => {
       const user = userEvent.setup();
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1']}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} selectedValues={['option1']} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
@@ -296,28 +284,19 @@ describe('MultiselectInput', () => {
 
     it('should remove last selected with multiple Backspaces', async () => {
       const user = userEvent.setup();
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1', 'option2', 'option3']}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} selectedValues={['option1', 'option2', 'option3']} />);
 
       const input = screen.getByPlaceholderText('Select options');
-      
+
       // Click to focus and activate
       await user.click(input);
 
       await user.keyboard('{Backspace}');
-      let hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      ) as HTMLInputElement;
+      let hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
       expect(hiddenInput.value).toBe('option1,option2');
 
       await user.keyboard('{Backspace}');
-      hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      ) as HTMLInputElement;
+      hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
       expect(hiddenInput.value).toBe('option1');
     });
   });
@@ -432,12 +411,7 @@ describe('MultiselectInput', () => {
         { label: 'New 2', value: 'new2' },
       ];
 
-      rerender(
-        <MultiselectInput
-          {...defaultProps}
-          options={newOptions}
-        />
-      );
+      rerender(<MultiselectInput {...defaultProps} options={newOptions} />);
 
       await waitFor(() => {
         expect(screen.getByText('New 1')).toBeInTheDocument();
@@ -468,15 +442,13 @@ describe('MultiselectInput', () => {
       render(<MultiselectInput {...defaultProps} />);
 
       const input = screen.getByPlaceholderText('Select options');
-      
+
       // Add first standard option
       await user.click(input);
       await user.click(screen.getByRole('option', { name: 'Option 1' }));
 
       // Verify it's added
-      let hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      ) as HTMLInputElement;
+      let hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
       expect(hiddenInput.value).toContain('option1');
 
       // Add a custom option
@@ -488,9 +460,7 @@ describe('MultiselectInput', () => {
       await user.click(addNewOption);
 
       // Verify both are in hidden input
-      hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      ) as HTMLInputElement;
+      hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
       expect(hiddenInput.value).toContain('option1');
       expect(hiddenInput.value).toContain('CustomGenre');
     });
@@ -610,10 +580,7 @@ describe('MultiselectInput', () => {
 
       await user.keyboard('{ArrowDown}');
 
-      expect(input).toHaveAttribute(
-          'aria-activedescendant',
-          `${defaultProps.name}-option-1`
-        );
+      expect(input).toHaveAttribute('aria-activedescendant', `${defaultProps.name}-option-1`);
     });
 
     it('should not go below first option with ArrowUp at start', async () => {
@@ -784,12 +751,7 @@ describe('MultiselectInput', () => {
         value: `option${i + 1}`,
       }));
 
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          options={manyOptions}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} options={manyOptions} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
@@ -804,22 +766,13 @@ describe('MultiselectInput', () => {
 
     it('should properly mark selected options', async () => {
       const user = userEvent.setup();
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1', 'option2']}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} selectedValues={['option1', 'option2']} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
 
-      const option1 = screen.getAllByText('Option 1').find(
-        (el) => el.getAttribute('role') === 'option'
-      );
-      const option2 = screen.getAllByText('Option 2').find(
-        (el) => el.getAttribute('role') === 'option'
-      );
+      const option1 = screen.getAllByText('Option 1').find((el) => el.getAttribute('role') === 'option');
+      const option2 = screen.getAllByText('Option 2').find((el) => el.getAttribute('role') === 'option');
 
       expect(option1).toHaveAttribute('aria-selected', 'true');
       expect(option2).toHaveAttribute('aria-selected', 'true');
@@ -828,12 +781,7 @@ describe('MultiselectInput', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty options array', () => {
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          options={[]}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} options={[]} />);
 
       const input = screen.getByPlaceholderText('Select options');
       expect(input).toBeInTheDocument();
@@ -880,12 +828,7 @@ describe('MultiselectInput', () => {
         { label: 'Option "Quoted"', value: 'special2' },
       ];
 
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          options={specialOptions}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} options={specialOptions} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
@@ -903,22 +846,20 @@ describe('MultiselectInput', () => {
       const user = userEvent.setup();
       const longOptions: Option[] = [
         {
-          label: 'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly',
+          label:
+            'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly',
           value: 'long1',
         },
       ];
 
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          options={longOptions}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} options={longOptions} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
 
-      const option = screen.getByText('This is a very long option label that goes on and on and on and might cause layout issues if not handled properly');
+      const option = screen.getByText(
+        'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly'
+      );
       expect(option).toBeInTheDocument();
 
       await user.click(option);
@@ -953,29 +894,15 @@ describe('MultiselectInput', () => {
     });
 
     it('should handle selectedValues changing to undefined', async () => {
-      const { rerender } = render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1', 'option2']}
-        />
-      );
+      const { rerender } = render(<MultiselectInput {...defaultProps} selectedValues={['option1', 'option2']} />);
 
-      let hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      ) as HTMLInputElement;
+      let hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
       expect(hiddenInput.value).toBe('option1,option2');
 
-      rerender(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={undefined}
-        />
-      );
+      rerender(<MultiselectInput {...defaultProps} selectedValues={undefined} />);
 
       await waitFor(() => {
-        hiddenInput = document.querySelector(
-          `input[type="hidden"][name="${defaultProps.name}"]`
-        ) as HTMLInputElement;
+        hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`) as HTMLInputElement;
         expect(hiddenInput.value).toBe('');
       });
     });
@@ -987,12 +914,7 @@ describe('MultiselectInput', () => {
         { label: 'Second', value: 'second' },
       ];
 
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          options={uniqueOptions}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} options={uniqueOptions} />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
@@ -1029,12 +951,7 @@ describe('MultiselectInput', () => {
       let input = screen.getByPlaceholderText('Select options');
       expect(input).toBeInTheDocument();
 
-      rerender(
-        <MultiselectInput
-          {...defaultProps}
-          selectText="New placeholder"
-        />
-      );
+      rerender(<MultiselectInput {...defaultProps} selectText="New placeholder" />);
 
       input = screen.getByPlaceholderText('New placeholder');
       expect(input).toBeInTheDocument();
@@ -1043,17 +960,10 @@ describe('MultiselectInput', () => {
     it('should update name attribute when prop changes', async () => {
       const { rerender } = render(<MultiselectInput {...defaultProps} />);
 
-      let hiddenInput = document.querySelector(
-        `input[type="hidden"][name="${defaultProps.name}"]`
-      );
+      let hiddenInput = document.querySelector(`input[type="hidden"][name="${defaultProps.name}"]`);
       expect(hiddenInput).toBeInTheDocument();
 
-      rerender(
-        <MultiselectInput
-          {...defaultProps}
-          name="new-name"
-        />
-      );
+      rerender(<MultiselectInput {...defaultProps} name="new-name" />);
 
       hiddenInput = document.querySelector('input[type="hidden"][name="new-name"]');
       expect(hiddenInput).toBeInTheDocument();
@@ -1061,12 +971,7 @@ describe('MultiselectInput', () => {
 
     it('should handle addLabel prop', async () => {
       const user = userEvent.setup();
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          addLabel="Create"
-        />
-      );
+      render(<MultiselectInput {...defaultProps} addLabel="Create" />);
 
       const input = screen.getByPlaceholderText('Select options');
       await user.click(input);
@@ -1076,33 +981,18 @@ describe('MultiselectInput', () => {
     });
 
     it('should initialize with selectedValues', () => {
-      render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1', 'option2']}
-        />
-      );
+      render(<MultiselectInput {...defaultProps} selectedValues={['option1', 'option2']} />);
 
       expect(screen.getByText('Option 1')).toBeInTheDocument();
       expect(screen.getByText('Option 2')).toBeInTheDocument();
     });
 
     it('should update when selectedValues prop changes', async () => {
-      const { rerender } = render(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option1']}
-        />
-      );
+      const { rerender } = render(<MultiselectInput {...defaultProps} selectedValues={['option1']} />);
 
       expect(screen.getByText('Option 1')).toBeInTheDocument();
 
-      rerender(
-        <MultiselectInput
-          {...defaultProps}
-          selectedValues={['option2', 'option3']}
-        />
-      );
+      rerender(<MultiselectInput {...defaultProps} selectedValues={['option2', 'option3']} />);
 
       await waitFor(() => {
         // Option 1 badge should not be displayed anymore

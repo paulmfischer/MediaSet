@@ -16,14 +16,14 @@ vi.mock('~/components/barcode-scanner', () => ({
 describe('ScanButton', () => {
   beforeEach(() => {
     mockSubmit.mockClear();
-    
+
     // Mock mobile environment
     Object.defineProperty(window, 'ontouchstart', {
       writable: true,
       configurable: true,
       value: true,
     });
-    
+
     Object.defineProperty(navigator, 'maxTouchPoints', {
       writable: true,
       configurable: true,
@@ -83,12 +83,12 @@ describe('ScanButton', () => {
     it('should open modal when clicked', () => {
       render(<ScanButton inputId="isbn" fieldName="isbn" />);
       const button = screen.getByRole('button', { name: /scan/i });
-      
+
       // Click the button - modal logic is tested but BarcodeScanner is mocked
       act(() => {
         button.click();
       });
-      
+
       // We can't test modal visibility since BarcodeScanner is mocked to return null
       // This test ensures the button is clickable without errors
       expect(button).toBeInTheDocument();

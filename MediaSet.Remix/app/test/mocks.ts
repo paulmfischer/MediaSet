@@ -18,10 +18,7 @@ export function mockApiResponse<T>(data: T, init?: ResponseInit): Response {
 /**
  * Mock API error response
  */
-export function mockApiError(
-  message: string,
-  status: number = 500,
-): Response {
+export function mockApiError(message: string, status: number = 500): Response {
   return new Response(
     JSON.stringify({
       error: message,
@@ -31,7 +28,7 @@ export function mockApiError(
       headers: {
         'Content-Type': 'application/json',
       },
-    },
+    }
   );
 }
 
@@ -40,7 +37,7 @@ export function mockApiError(
  * Usage: global.fetch = mockFetch(...)
  */
 export function createMockFetch(
-  responses: Record<string, Response | ((url: string, init?: RequestInit) => Response)>,
+  responses: Record<string, Response | ((url: string, init?: RequestInit) => Response)>
 ): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.toString();

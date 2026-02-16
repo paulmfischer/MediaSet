@@ -1,6 +1,6 @@
-import { baseUrl } from "~/constants.server";
-import { apiFetch } from "~/utils/apiFetch.server";
-import { Entity } from "~/models";
+import { baseUrl } from '~/constants.server';
+import { apiFetch } from '~/utils/apiFetch.server';
+import { Entity } from '~/models';
 
 export type LookupCapabilities = {
   supportsBookLookup: boolean;
@@ -22,7 +22,7 @@ export async function getLookupCapabilities(): Promise<LookupCapabilities> {
     }
     const data = (await response.json()) as LookupCapabilities;
     return data;
-  } catch (err) {
+  } catch {
     return {
       supportsBookLookup: false,
       supportsMovieLookup: false,

@@ -1,38 +1,38 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, beforeEach } from "vitest";
-import ImageDisplay from "./image-display";
-import { Entity } from "~/models";
-import type { ImageData } from "~/models";
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import ImageDisplay from './image-display';
+import { Entity } from '~/models';
+import type { ImageData } from '~/models';
 
-describe("ImageDisplay Component", () => {
+describe('ImageDisplay Component', () => {
   const mockImageData: ImageData = {
-    fileName: "test-book.jpg",
-    contentType: "image/jpeg",
+    fileName: 'test-book.jpg',
+    contentType: 'image/jpeg',
     fileSize: 2048576, // 2MB
-    filePath: "books/123-uuid.jpg",
-    createdAt: "2025-01-01T00:00:00Z",
-    updatedAt: "2025-01-01T00:00:00Z",
+    filePath: 'books/123-uuid.jpg',
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z',
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should render placeholder when no image data is provided", () => {
+  it('should render placeholder when no image data is provided', () => {
     render(<ImageDisplay alt="Test book" />);
 
-    const placeholder = screen.getByText("No image available");
+    const placeholder = screen.getByText('No image available');
     expect(placeholder).toBeInTheDocument();
   });
 
-  it("should render placeholder when image data is provided but no entity info", () => {
+  it('should render placeholder when image data is provided but no entity info', () => {
     render(<ImageDisplay imageData={mockImageData} alt="Test book" />);
 
-    const placeholder = screen.getByText("No image available");
+    const placeholder = screen.getByText('No image available');
     expect(placeholder).toBeInTheDocument();
   });
 
-  it("should render image when all required props are provided", () => {
+  it('should render image when all required props are provided', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -43,18 +43,18 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const image = screen.getByRole("button", {
+    const image = screen.getByRole('button', {
       name: /view full size image/i,
     }) as HTMLElement;
     expect(image).toBeInTheDocument();
 
-    const imgElement = image.querySelector("img");
+    const imgElement = image.querySelector('img');
     // Check that the src contains the static/images path and filePath
-    expect(imgElement?.getAttribute("src")).toContain("/static/images/books/123-uuid.jpg");
-    expect(imgElement).toHaveAttribute("alt", "Test book cover");
+    expect(imgElement?.getAttribute('src')).toContain('/static/images/books/123-uuid.jpg');
+    expect(imgElement).toHaveAttribute('alt', 'Test book cover');
   });
 
-  it("should apply correct size classes", () => {
+  it('should apply correct size classes', () => {
     const { rerender } = render(
       <ImageDisplay
         imageData={mockImageData}
@@ -66,11 +66,11 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
-    const container = imageButton.closest(".h-32");
-    expect(container).toHaveClass("h-32", "w-32");
+    const container = imageButton.closest('.h-32');
+    expect(container).toHaveClass('h-32', 'w-32');
 
     rerender(
       <ImageDisplay
@@ -83,14 +83,14 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButtonLarge = screen.getByRole("button", {
+    const imageButtonLarge = screen.getByRole('button', {
       name: /view full size image/i,
     });
-    const containerLarge = imageButtonLarge.closest(".h-64");
-    expect(containerLarge).toHaveClass("h-64", "w-64");
+    const containerLarge = imageButtonLarge.closest('.h-64');
+    expect(containerLarge).toHaveClass('h-64', 'w-64');
   });
 
-  it("should apply custom className", () => {
+  it('should apply custom className', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -102,11 +102,11 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const container = document.querySelector(".custom-class");
-    expect(container).toHaveClass("custom-class");
+    const container = document.querySelector('.custom-class');
+    expect(container).toHaveClass('custom-class');
   });
 
-  it("should open modal when image button is clicked", () => {
+  it('should open modal when image button is clicked', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -117,16 +117,16 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    const modalImages = screen.getAllByAltText("Test book");
+    const modalImages = screen.getAllByAltText('Test book');
     expect(modalImages.length).toBeGreaterThan(1);
   });
 
-  it("should close modal when close button is clicked", () => {
+  it('should close modal when close button is clicked', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -137,22 +137,22 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    let closeButton = screen.getByLabelText("Close image modal");
+    const closeButton = screen.getByLabelText('Close image modal');
     expect(closeButton).toBeInTheDocument();
 
     fireEvent.click(closeButton);
 
     // Modal should be removed
-    const closeButtonAfter = screen.queryByLabelText("Close image modal");
+    const closeButtonAfter = screen.queryByLabelText('Close image modal');
     expect(closeButtonAfter).not.toBeInTheDocument();
   });
 
-  it("should close modal when clicking on backdrop", () => {
+  it('should close modal when clicking on backdrop', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -163,19 +163,19 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    const backdrop = screen.getByRole("dialog");
+    const backdrop = screen.getByRole('dialog');
     fireEvent.click(backdrop);
 
-    const closeButton = screen.queryByLabelText("Close image modal");
+    const closeButton = screen.queryByLabelText('Close image modal');
     expect(closeButton).not.toBeInTheDocument();
   });
 
-  it("should close modal when Escape key is pressed", () => {
+  it('should close modal when Escape key is pressed', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -186,19 +186,19 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    const backdrop = screen.getByRole("dialog");
-    fireEvent.keyDown(backdrop, { key: "Escape" });
+    const backdrop = screen.getByRole('dialog');
+    fireEvent.keyDown(backdrop, { key: 'Escape' });
 
-    const closeButton = screen.queryByLabelText("Close image modal");
+    const closeButton = screen.queryByLabelText('Close image modal');
     expect(closeButton).not.toBeInTheDocument();
   });
 
-  it("should not close modal when clicking on modal content", () => {
+  it('should not close modal when clicking on modal content', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -209,20 +209,20 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    const modalImages = screen.getAllByAltText("Test book");
+    const modalImages = screen.getAllByAltText('Test book');
     const fullSizeImage = modalImages[modalImages.length - 1];
     fireEvent.click(fullSizeImage.parentElement!);
 
-    const closeButton = screen.getByLabelText("Close image modal");
+    const closeButton = screen.getByLabelText('Close image modal');
     expect(closeButton).toBeInTheDocument();
   });
 
-  it("should display image metadata in modal", () => {
+  it('should display image metadata in modal', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -233,18 +233,18 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    expect(screen.getByText("test-book.jpg")).toBeInTheDocument();
+    expect(screen.getByText('test-book.jpg')).toBeInTheDocument();
     // Check for the MB text in any element
-    const sizeElements = screen.queryAllByText((content) => content.includes("MB"));
+    const sizeElements = screen.queryAllByText((content) => content.includes('MB'));
     expect(sizeElements.length).toBeGreaterThan(0);
   });
 
-  it("should display placeholder when image fails to load", () => {
+  it('should display placeholder when image fails to load', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -255,16 +255,16 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const images = document.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
+    const images = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
     const mainImage = images[0];
     fireEvent.error(mainImage);
 
     // After error, the placeholder should appear
-    const placeholder = screen.getByText("No image available");
+    const placeholder = screen.getByText('No image available');
     expect(placeholder).toBeInTheDocument();
   });
 
-  it("should have lazy loading enabled", () => {
+  it('should have lazy loading enabled', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -275,12 +275,12 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const images = screen.getAllByRole("img", { hidden: true }) as HTMLImageElement[];
-    const mainImage = images.find(img => img.alt === "Test book") as HTMLImageElement;
-    expect(mainImage).toHaveAttribute("loading", "lazy");
+    const images = screen.getAllByRole('img', { hidden: true }) as HTMLImageElement[];
+    const mainImage = images.find((img) => img.alt === 'Test book') as HTMLImageElement;
+    expect(mainImage).toHaveAttribute('loading', 'lazy');
   });
 
-  it("should support different entity types", () => {
+  it('should support different entity types', () => {
     const entityTypes = [Entity.Books, Entity.Movies, Entity.Games, Entity.Musics];
 
     entityTypes.forEach((entityType) => {
@@ -294,16 +294,16 @@ describe("ImageDisplay Component", () => {
         />
       );
 
-      const images = document.querySelectorAll("img") as NodeListOf<HTMLImageElement>;
+      const images = document.querySelectorAll('img') as NodeListOf<HTMLImageElement>;
       const mainImage = images[0];
       // Check that src contains the static/images path and filePath
-      expect(mainImage.getAttribute("src")).toContain("/static/images/books/123-uuid.jpg");
+      expect(mainImage.getAttribute('src')).toContain('/static/images/books/123-uuid.jpg');
 
       unmount();
     });
   });
 
-  it("should have proper accessibility attributes", () => {
+  it('should have proper accessibility attributes', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -314,16 +314,16 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const button = screen.getByRole("button", {
+    const button = screen.getByRole('button', {
       name: /view full size image/i,
     });
     const container = button.parentElement;
-    expect(container).toHaveAttribute("aria-label", "Test book");
+    expect(container).toHaveAttribute('aria-label', 'Test book');
 
     expect(button).toBeInTheDocument();
   });
 
-  it("should have accessible modal dialog", () => {
+  it('should have accessible modal dialog', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -334,16 +334,16 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
     fireEvent.click(imageButton);
 
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("aria-modal", "true");
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 
-  it("should apply hover effect to image button", () => {
+  it('should apply hover effect to image button', () => {
     render(
       <ImageDisplay
         imageData={mockImageData}
@@ -354,9 +354,9 @@ describe("ImageDisplay Component", () => {
       />
     );
 
-    const imageButton = screen.getByRole("button", {
+    const imageButton = screen.getByRole('button', {
       name: /view full size image/i,
     });
-    expect(imageButton).toHaveClass("image-button");
+    expect(imageButton).toHaveClass('image-button');
   });
 });

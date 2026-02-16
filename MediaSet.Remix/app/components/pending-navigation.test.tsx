@@ -35,7 +35,7 @@ describe('PendingNavigation', () => {
     it('should not render when navigation state is idle', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -45,7 +45,7 @@ describe('PendingNavigation', () => {
     it('should render when navigation state is loading', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -55,7 +55,7 @@ describe('PendingNavigation', () => {
     it('should render when navigation state is submitting', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'submitting',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -68,7 +68,7 @@ describe('PendingNavigation', () => {
       // Initially idle
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
       expect(container.firstChild).toBeNull();
@@ -76,7 +76,7 @@ describe('PendingNavigation', () => {
       // Transition to loading
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -89,7 +89,7 @@ describe('PendingNavigation', () => {
       // Initially loading
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { rerender, container } = render(<PendingNavigation />);
 
@@ -100,7 +100,7 @@ describe('PendingNavigation', () => {
       // Transition to idle
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -111,13 +111,13 @@ describe('PendingNavigation', () => {
       const { rerender } = render(<PendingNavigation />);
 
       // Rapid state transitions
-      vi.mocked(useNavigation).mockReturnValue({ state: 'idle' } as any);
+      vi.mocked(useNavigation).mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       rerender(<PendingNavigation />);
 
-      vi.mocked(useNavigation).mockReturnValue({ state: 'loading' } as any);
+      vi.mocked(useNavigation).mockReturnValue({ state: 'loading' } as unknown as ReturnType<typeof useNavigation>);
       rerender(<PendingNavigation />);
 
-      vi.mocked(useNavigation).mockReturnValue({ state: 'idle' } as any);
+      vi.mocked(useNavigation).mockReturnValue({ state: 'idle' } as unknown as ReturnType<typeof useNavigation>);
       rerender(<PendingNavigation />);
 
       expect(vi.mocked(useNavigation)).toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe('PendingNavigation', () => {
     beforeEach(() => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
     });
 
     it('should render spinner and backdrop when loading', () => {
@@ -136,7 +136,7 @@ describe('PendingNavigation', () => {
 
       const spinner = screen.getByTestId('spinner');
       const backdrop = container.querySelector('.bg-gray-900');
-      
+
       expect(spinner).toBeInTheDocument();
       expect(spinner).toHaveAttribute('data-size', '84');
       expect(backdrop).toBeInTheDocument();
@@ -151,7 +151,14 @@ describe('PendingNavigation', () => {
 
       // Should have spinner container with correct positioning
       const spinnerContainer = container.querySelector('.fixed.z-50');
-      expect(spinnerContainer).toHaveClass('top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'flex', 'justify-center');
+      expect(spinnerContainer).toHaveClass(
+        'top-1/2',
+        'left-1/2',
+        '-translate-x-1/2',
+        '-translate-y-1/2',
+        'flex',
+        'justify-center'
+      );
 
       // Should have dialog body with correct id
       const dialogBody = container.querySelector('#dialog-body');
@@ -163,7 +170,7 @@ describe('PendingNavigation', () => {
 
       const backdrop = container.querySelector('.z-40');
       const spinnerContainer = container.querySelector('.z-50');
-      
+
       expect(backdrop).toHaveClass('z-40');
       expect(spinnerContainer).toHaveClass('z-50');
     });
@@ -171,7 +178,7 @@ describe('PendingNavigation', () => {
     it('should not render when not loading', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -184,7 +191,7 @@ describe('PendingNavigation', () => {
     beforeEach(() => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
     });
 
     it('should have semantic structure with dialog-body id', () => {
@@ -199,7 +206,7 @@ describe('PendingNavigation', () => {
 
       const backdrop = container.querySelector('.fixed.inset-0');
       const spinnerContainer = container.querySelector('.fixed.z-50');
-      
+
       expect(backdrop).toHaveClass('fixed', 'inset-0');
       expect(spinnerContainer).toHaveClass('fixed', 'z-50');
     });
@@ -239,7 +246,7 @@ describe('PendingNavigation', () => {
     it('should render nothing when navigation state is idle', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -252,7 +259,7 @@ describe('PendingNavigation', () => {
       // Set to idle
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
       expect(container.firstChild).toBeNull();
@@ -260,7 +267,7 @@ describe('PendingNavigation', () => {
       // Set to loading
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
       expect(container.firstChild).not.toBeNull();
@@ -269,15 +276,15 @@ describe('PendingNavigation', () => {
     it('should render fragment with 2 children when loading', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
       expect(container.children).toHaveLength(2);
-      
+
       const firstChild = container.children[0];
       const secondChild = container.children[1];
-      
+
       expect(firstChild).toHaveClass('fixed', 'bg-gray-900');
       expect(secondChild).toHaveClass('fixed', 'z-50');
     });
@@ -287,7 +294,7 @@ describe('PendingNavigation', () => {
     it('should call useNavigation hook on mount', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       render(<PendingNavigation />);
 
@@ -297,13 +304,13 @@ describe('PendingNavigation', () => {
     it('should re-call useNavigation on state change', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { rerender } = render(<PendingNavigation />);
 
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -313,7 +320,7 @@ describe('PendingNavigation', () => {
     it('should handle multiple mounts and unmounts', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { unmount } = render(<PendingNavigation />);
 
@@ -328,7 +335,7 @@ describe('PendingNavigation', () => {
     it('should be callable multiple times without issues', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { unmount: unmount1 } = render(<PendingNavigation />);
       unmount1();
@@ -344,7 +351,7 @@ describe('PendingNavigation', () => {
     it('should handle undefined state gracefully', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: undefined,
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -354,7 +361,7 @@ describe('PendingNavigation', () => {
     it('should handle null state gracefully', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: null,
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -364,7 +371,7 @@ describe('PendingNavigation', () => {
     it('should handle empty string state gracefully', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: '',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -374,7 +381,7 @@ describe('PendingNavigation', () => {
     it('should handle unexpected state values', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'unexpected-state',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -387,7 +394,7 @@ describe('PendingNavigation', () => {
       for (let i = 0; i < 5; i++) {
         vi.mocked(useNavigation).mockReturnValue({
           state: i % 2 === 0 ? 'loading' : 'idle',
-        } as any);
+        } as unknown as ReturnType<typeof useNavigation>);
 
         rerender(<PendingNavigation />);
       }
@@ -401,7 +408,7 @@ describe('PendingNavigation', () => {
       // Start loading
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -412,7 +419,7 @@ describe('PendingNavigation', () => {
       // Back to idle
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -422,7 +429,7 @@ describe('PendingNavigation', () => {
     it('should handle continuous loading state', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { rerender } = render(<PendingNavigation />);
 
@@ -439,7 +446,7 @@ describe('PendingNavigation', () => {
         state: 'loading',
         location: { pathname: '/' },
         formData: new FormData(),
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -454,7 +461,7 @@ describe('PendingNavigation', () => {
       // Simulate page navigation starting
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
       expect(screen.getByTestId('spinner')).toBeInTheDocument();
@@ -462,7 +469,7 @@ describe('PendingNavigation', () => {
       // Simulate page load completion
       vi.mocked(useNavigation).mockReturnValue({
         state: 'idle',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       rerender(<PendingNavigation />);
 
@@ -474,7 +481,7 @@ describe('PendingNavigation', () => {
     it('should work with form submission navigation', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'submitting',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(<PendingNavigation />);
 
@@ -486,7 +493,7 @@ describe('PendingNavigation', () => {
     it('should work with multiple PendingNavigation components', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(
         <>
@@ -502,7 +509,7 @@ describe('PendingNavigation', () => {
     it('should overlay correctly over other content', () => {
       vi.mocked(useNavigation).mockReturnValue({
         state: 'loading',
-      } as any);
+      } as unknown as ReturnType<typeof useNavigation>);
 
       const { container } = render(
         <>

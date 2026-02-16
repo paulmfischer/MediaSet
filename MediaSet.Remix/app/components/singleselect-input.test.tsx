@@ -67,8 +67,8 @@ describe('SingleselectInput', () => {
       await user.click(input);
 
       mockOptions.forEach((option) => {
-          expect(screen.getByText(option.label)).toBeInTheDocument();
-        });
+        expect(screen.getByText(option.label)).toBeInTheDocument();
+      });
     });
 
     it('should have listbox role on dropdown container', async () => {
@@ -179,12 +179,7 @@ describe('SingleselectInput', () => {
     });
 
     it('should initialize with selected value', () => {
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option2"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} selectedValue="option2" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       // The display value shows the value, not the label, when initialized
@@ -192,22 +187,12 @@ describe('SingleselectInput', () => {
     });
 
     it('should update display when selectedValue prop changes', async () => {
-      const { rerender } = render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      const { rerender } = render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       expect(input).toHaveValue('option1');
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option3"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} selectedValue="option3" />);
 
       expect(input).toHaveValue('option3');
     });
@@ -338,12 +323,7 @@ describe('SingleselectInput', () => {
         { label: 'New 2', value: 'new2' },
       ];
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          options={newOptions}
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} options={newOptions} />);
 
       await waitFor(() => {
         expect(screen.getByText('New 1')).toBeInTheDocument();
@@ -460,12 +440,7 @@ describe('SingleselectInput', () => {
 
     it('should clear selection with Backspace when input is empty', async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       // Display shows the value initially
@@ -485,12 +460,7 @@ describe('SingleselectInput', () => {
 
     it('should not clear selection with Backspace when input has text', async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
@@ -511,10 +481,7 @@ describe('SingleselectInput', () => {
       await user.keyboard('{ArrowDown}');
 
       // After one ArrowDown, activeIndex should be 1
-      expect(input).toHaveAttribute(
-          'aria-activedescendant',
-          `${defaultProps.name}-option-1`
-        );
+      expect(input).toHaveAttribute('aria-activedescendant', `${defaultProps.name}-option-1`);
     });
 
     it('should not go below first option with ArrowUp at start', async () => {
@@ -554,7 +521,7 @@ describe('SingleselectInput', () => {
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
-      
+
       // Close dropdown with Escape
       await user.keyboard('{Escape}');
 
@@ -712,12 +679,7 @@ describe('SingleselectInput', () => {
         value: `option${i + 1}`,
       }));
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={manyOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={manyOptions} />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
@@ -736,12 +698,7 @@ describe('SingleselectInput', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty options array', () => {
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={[]}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={[]} />);
 
       const input = screen.getByPlaceholderText('Select an option');
       expect(input).toBeInTheDocument();
@@ -785,12 +742,7 @@ describe('SingleselectInput', () => {
         { label: 'Option "Quoted"', value: 'special2' },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={specialOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={specialOptions} />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
@@ -805,28 +757,28 @@ describe('SingleselectInput', () => {
     it('should handle very long option labels', async () => {
       const user = userEvent.setup();
       const longOptions: Option[] = [
-        { 
-          label: 'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly', 
-          value: 'long1' 
+        {
+          label:
+            'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly',
+          value: 'long1',
         },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={longOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={longOptions} />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
 
-      const option = screen.getByText('This is a very long option label that goes on and on and on and might cause layout issues if not handled properly');
+      const option = screen.getByText(
+        'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly'
+      );
       expect(option).toBeInTheDocument();
 
       await user.click(option);
 
-      expect(input).toHaveValue('This is a very long option label that goes on and on and on and might cause layout issues if not handled properly');
+      expect(input).toHaveValue(
+        'This is a very long option label that goes on and on and on and might cause layout issues if not handled properly'
+      );
     });
 
     it('should handle blur and refocus', async () => {
@@ -853,22 +805,12 @@ describe('SingleselectInput', () => {
     });
 
     it('should handle selectedValue changing to undefined', async () => {
-      const { rerender } = render(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue="option1"
-        />
-      );
+      const { rerender } = render(<SingleselectInput {...defaultProps} selectedValue="option1" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       expect(input).toHaveValue('option1');
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          selectedValue={undefined}
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} selectedValue={undefined} />);
 
       expect(input).toHaveValue('');
     });
@@ -880,12 +822,7 @@ describe('SingleselectInput', () => {
         { label: 'Second', value: 'second' },
       ];
 
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          options={uniqueOptions}
-        />
-      );
+      render(<SingleselectInput {...defaultProps} options={uniqueOptions} />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);
@@ -905,12 +842,7 @@ describe('SingleselectInput', () => {
       let input = screen.getByPlaceholderText('Select an option');
       expect(input).toBeInTheDocument();
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          placeholder="New placeholder"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} placeholder="New placeholder" />);
 
       input = screen.getByPlaceholderText('New placeholder');
       expect(input).toBeInTheDocument();
@@ -922,12 +854,7 @@ describe('SingleselectInput', () => {
       let hiddenInput = document.querySelector('input[type="hidden"][name="test-select"]');
       expect(hiddenInput).toBeInTheDocument();
 
-      rerender(
-        <SingleselectInput
-          {...defaultProps}
-          name="new-name"
-        />
-      );
+      rerender(<SingleselectInput {...defaultProps} name="new-name" />);
 
       hiddenInput = document.querySelector('input[type="hidden"][name="new-name"]');
       expect(hiddenInput).toBeInTheDocument();
@@ -935,12 +862,7 @@ describe('SingleselectInput', () => {
 
     it('should handle addLabel prop', async () => {
       const user = userEvent.setup();
-      render(
-        <SingleselectInput
-          {...defaultProps}
-          addLabel="Create"
-        />
-      );
+      render(<SingleselectInput {...defaultProps} addLabel="Create" />);
 
       const input = screen.getByPlaceholderText('Select an option');
       await user.click(input);

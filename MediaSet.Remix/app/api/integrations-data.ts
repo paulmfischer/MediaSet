@@ -1,5 +1,5 @@
-import { baseUrl } from "~/constants.server";
-import { apiFetch } from "~/utils/apiFetch.server";
+import { baseUrl } from '~/constants.server';
+import { apiFetch } from '~/utils/apiFetch.server';
 
 export type Integration = {
   key: string;
@@ -16,7 +16,7 @@ export async function getIntegrations(): Promise<Integration[]> {
     if (!response.ok) return [];
     const data = (await response.json()) as Integration[];
     return data;
-  } catch (err) {
+  } catch {
     return [];
   }
 }

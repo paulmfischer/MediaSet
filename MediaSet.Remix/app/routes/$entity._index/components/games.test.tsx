@@ -1,20 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent } from '~/test/test-utils';
 import Games from './games';
-import { GameEntity } from '~/models';
-import { Entity } from '~/models';
+import { GameEntity, Entity } from '~/models';
 
 // Mock the delete dialog component
 vi.mock('~/components/delete-dialog', () => ({
-  default: ({ isOpen, onClose, entityTitle, deleteAction }: any) => (
+  default: ({
+    isOpen,
+    onClose,
+    entityTitle,
+    deleteAction,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    entityTitle?: string;
+    deleteAction: string;
+  }) =>
     isOpen ? (
       <div data-testid="delete-dialog">
         <p>Delete: {entityTitle}</p>
         <button onClick={onClose}>Cancel</button>
         <a href={deleteAction}>Confirm Delete</a>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock Link to avoid router context requirement
@@ -22,7 +31,7 @@ vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    Link: ({ to, children, ...props }: any) => (
+    Link: ({ to, children, ...props }: { to: string; children?: React.ReactNode; [key: string]: unknown }) => (
       <a href={to} {...props}>
         {children}
       </a>
@@ -51,7 +60,7 @@ describe('Games component', () => {
     {
       type: Entity.Games,
       id: '3',
-      title: 'Baldur\'s Gate 3',
+      title: "Baldur's Gate 3",
       platform: 'PC',
       format: 'Digital',
       developers: ['Larian Studios'],
@@ -70,7 +79,7 @@ describe('Games component', () => {
 
       expect(screen.getByText('Elden Ring')).toBeInTheDocument();
       expect(screen.getByText('The Legend of Zelda: Breath of the Wild')).toBeInTheDocument();
-      expect(screen.getByText('Baldur\'s Gate 3')).toBeInTheDocument();
+      expect(screen.getByText("Baldur's Gate 3")).toBeInTheDocument();
     });
 
     it('should display game titles as links to detail pages', () => {
@@ -218,7 +227,7 @@ describe('Games component', () => {
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
       fireEvent.click(deleteButtons[2]);
 
-      expect(screen.getByText('Delete: Baldur\'s Gate 3')).toBeInTheDocument();
+      expect(screen.getByText("Delete: Baldur's Gate 3")).toBeInTheDocument();
     });
 
     it('should allow deleting multiple games sequentially', () => {
@@ -297,7 +306,8 @@ describe('Games component', () => {
         {
           type: Entity.Games,
           id: '1',
-          title: 'This is a very long game title that should still render properly in the table without breaking the layout',
+          title:
+            'This is a very long game title that should still render properly in the table without breaking the layout',
           platform: 'PC',
           developers: ['Dev'],
         },

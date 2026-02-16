@@ -1,9 +1,9 @@
-import { Link } from "@remix-run/react";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import DeleteDialog from "~/components/delete-dialog";
-import ImageDisplay from "~/components/image-display";
-import { BookEntity, Entity } from "~/models";
+import { Link } from '@remix-run/react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import DeleteDialog from '~/components/delete-dialog';
+import ImageDisplay from '~/components/image-display';
+import { BookEntity, Entity } from '~/models';
 
 type BookProps = {
   book: BookEntity;
@@ -40,7 +40,7 @@ export default function Book({ book, apiUrl }: BookProps) {
           <div className="lg:basis-1/5 flex justify-center mb-4 lg:mb-0">
             <ImageDisplay
               imageData={book.coverImage}
-              alt={book.title ?? "Book cover"}
+              alt={book.title ?? 'Book cover'}
               entityType={Entity.Books}
               entityId={book.id}
               apiUrl={apiUrl}
@@ -76,7 +76,7 @@ export default function Book({ book, apiUrl }: BookProps) {
                 Authors
               </label>
               <div id="authors" className="grow">
-                {book.authors?.join(", ")}
+                {book.authors?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">
@@ -84,7 +84,7 @@ export default function Book({ book, apiUrl }: BookProps) {
                 Genres
               </label>
               <div id="genres" className="grow">
-                {book.genres?.join(", ")}
+                {book.genres?.join(', ')}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">

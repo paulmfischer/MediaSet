@@ -21,7 +21,7 @@ describe('BarcodeScanner', () => {
   beforeEach(() => {
     mockOnClose.mockClear();
     mockOnDetected.mockClear();
-    
+
     // Mock navigator.mediaDevices to prevent camera access attempts in tests
     Object.defineProperty(navigator, 'mediaDevices', {
       writable: true,
@@ -32,26 +32,20 @@ describe('BarcodeScanner', () => {
 
   describe('Rendering', () => {
     it('should not render when open is false', () => {
-      const { container } = render(
-        <BarcodeScanner open={false} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      const { container } = render(<BarcodeScanner open={false} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       expect(container.firstChild).toBeNull();
     });
 
     it('should render modal title when open', () => {
-      render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       expect(screen.getByText('Scan Barcode')).toBeInTheDocument();
     });
 
     it('should render video element', () => {
-      const { container } = render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      const { container } = render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       const video = container.querySelector('video');
       expect(video).toBeInTheDocument();
       expect(video).toHaveAttribute('autoPlay');
@@ -60,39 +54,31 @@ describe('BarcodeScanner', () => {
     });
 
     it('should render close button', () => {
-      render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
     });
 
     it('should render file upload button', () => {
-      render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       expect(screen.getByText('📷 Upload Photo')).toBeInTheDocument();
     });
   });
 
   describe('User Interactions', () => {
     it('should call onClose when close button clicked', () => {
-      render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       const closeButton = screen.getByRole('button', { name: /close/i });
       closeButton.click();
-      
+
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
     it('should have file input with correct attributes', () => {
-      const { container } = render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      const { container } = render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       const fileInput = container.querySelector('input[type="file"]');
       expect(fileInput).toBeInTheDocument();
       expect(fileInput).toHaveAttribute('accept', 'image/*');
@@ -102,10 +88,8 @@ describe('BarcodeScanner', () => {
 
   describe('Accessibility', () => {
     it('should have proper button types', () => {
-      render(
-        <BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />
-      );
-      
+      render(<BarcodeScanner open={true} onClose={mockOnClose} onDetected={mockOnDetected} />);
+
       const closeButton = screen.getByRole('button', { name: /close/i });
       expect(closeButton).toHaveAttribute('type', 'button');
     });

@@ -1,4 +1,4 @@
-import "./tailwind.css";
+import './tailwind.css';
 import {
   Link,
   Links,
@@ -9,13 +9,13 @@ import {
   ScrollRestoration,
   useRouteError,
   isRouteErrorResponse,
-} from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { useLocation } from "@remix-run/react";
-import { Clapperboard, Gamepad2, Home, LibraryBig, Menu, Music, X } from "lucide-react";
-import ErrorScreen from "./components/error-screen";
-import PendingNavigation from "./components/pending-navigation";
-import Footer from "./components/footer";
+  useLocation,
+} from '@remix-run/react';
+import { useEffect, useState } from 'react';
+import { Clapperboard, Gamepad2, Home, LibraryBig, Menu, Music, X } from 'lucide-react';
+import ErrorScreen from './components/error-screen';
+import PendingNavigation from './components/pending-navigation';
+import Footer from './components/footer';
 
 function Header() {
   const [open, setOpen] = useState(false);
@@ -23,6 +23,7 @@ function Header() {
 
   // Close mobile menu when navigation occurs
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
   }, [location]);
   return (
@@ -121,19 +122,18 @@ export function ErrorBoundary() {
   const routeError = isRouteErrorResponse(error);
 
   const statusCode = routeError ? error.status : 500;
-  const statusText = routeError ? error.statusText : "Unexpected error";
+  const statusText = routeError ? error.statusText : 'Unexpected error';
   const errorData = routeError ? error.data : error;
 
-  const title = statusCode === 404 ? "Page not found" : "Something went wrong";
-  const message = statusCode === 404
-    ? "We could not find the page you were looking for."
-    : "An unexpected error occurred. You can head back to the dashboard while we look into it.";
+  const title = statusCode === 404 ? 'Page not found' : 'Something went wrong';
+  const message =
+    statusCode === 404
+      ? 'We could not find the page you were looking for.'
+      : 'An unexpected error occurred. You can head back to the dashboard while we look into it.';
 
-  const showErrorDetails = (import.meta.env.VITE_SHOW_ERROR_DETAILS ?? "")
-    .toString()
-    .toLowerCase() === "true";
+  const showErrorDetails = (import.meta.env.VITE_SHOW_ERROR_DETAILS ?? '').toString().toLowerCase() === 'true';
 
-  console.error("Root Error:", error);
+  console.error('Root Error:', error);
   return (
     <html lang="en" className="dark">
       <head>

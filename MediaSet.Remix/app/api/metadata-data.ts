@@ -1,7 +1,7 @@
-import { baseUrl } from "~/constants.server";
-import { Entity } from "~/models";
-import { serverLogger } from "~/utils/serverLogger";
-import { apiFetch } from "~/utils/apiFetch.server";
+import { baseUrl } from '~/constants.server';
+import { Entity } from '~/models';
+import { serverLogger } from '~/utils/serverLogger';
+import { apiFetch } from '~/utils/apiFetch.server';
 
 /**
  * Generic function to fetch metadata for a specific property of a media type
@@ -11,54 +11,66 @@ async function getMetadata(entityType: Entity, property: string) {
   try {
     const response = await apiFetch(`${baseUrl}/metadata/${entityType}/${property}`);
     if (!response.ok) {
-      serverLogger.error(`Failed to fetch ${property} metadata for ${entityType}`, { entityType, property, status: response.status });
+      serverLogger.error(`Failed to fetch ${property} metadata for ${entityType}`, {
+        entityType,
+        property,
+        status: response.status,
+      });
       throw new Response(`Error fetching ${property} metadata`, { status: response.status });
     }
-    const values = await response.json() as string[];
-    serverLogger.info(`Successfully fetched ${values.length} ${property} values for ${entityType}`, { entityType, property, count: values.length });
-    return values.map(value => ({ label: value, value: value }));
+    const values = (await response.json()) as string[];
+    serverLogger.info(`Successfully fetched ${values.length} ${property} values for ${entityType}`, {
+      entityType,
+      property,
+      count: values.length,
+    });
+    return values.map((value) => ({ label: value, value: value }));
   } catch (error) {
-    serverLogger.error(`Error fetching ${property} metadata for ${entityType}`, { entityType, property, error: String(error) });
+    serverLogger.error(`Error fetching ${property} metadata for ${entityType}`, {
+      entityType,
+      property,
+      error: String(error),
+    });
     throw error;
   }
 }
 
 export async function getAuthors() {
-  return getMetadata(Entity.Books, "authors");
+  return getMetadata(Entity.Books, 'authors');
 }
 
 export async function getPublishers() {
-  return getMetadata(Entity.Books, "publisher");
+  return getMetadata(Entity.Books, 'publisher');
 }
 
 export async function getGenres(entityType: Entity) {
-  return getMetadata(entityType, "genres");
+  return getMetadata(entityType, 'genres');
 }
 
 export async function getFormats(entityType: Entity) {
-  return getMetadata(entityType, "format");
+  return getMetadata(entityType, 'format');
 }
 
 export async function getStudios() {
-  return getMetadata(Entity.Movies, "studios");
+  return getMetadata(Entity.Movies, 'studios');
 }
 
 export async function getDevelopers() {
-  return getMetadata(Entity.Games, "developers");
+  return getMetadata(Entity.Games, 'developers');
 }
 
 export async function getPlatforms() {
-  return getMetadata(Entity.Games, "platform");
+  return getMetadata(Entity.Games, 'platform');
 }
 
 export async function getLabels() {
-  return getMetadata(Entity.Musics, "label");
+  return getMetadata(Entity.Musics, 'label');
 }
 
 export async function getGamePublishers() {
-  return getMetadata(Entity.Games, "publishers");
+  return getMetadata(Entity.Games, 'publishers');
 }
 
 export async function getArtist() {
-  return getMetadata(Entity.Musics, "artist");
+  return getMetadata(Entity.Musics, 'artist');
 }

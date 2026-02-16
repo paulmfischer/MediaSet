@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '~/test/test-utils';
+import { render, screen } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import MovieForm from './movie-form';
-import { MovieEntity } from '~/models';
+import { MovieEntity, Entity } from '~/models';
 
 // Mock the custom input components
 vi.mock('~/components/multiselect-input', () => ({
-  default: ({ name, selectedValues, options }: any) => (
+  default: ({ name, selectedValues }: { name: string; selectedValues?: string[] }) => (
     <input
       data-testid={`${name}-multiselect`}
       type="hidden"
@@ -18,7 +18,7 @@ vi.mock('~/components/multiselect-input', () => ({
 }));
 
 vi.mock('~/components/singleselect-input', () => ({
-  default: ({ name, selectedValue, options }: any) => (
+  default: ({ name, selectedValue }: { name: string; selectedValue?: string }) => (
     <input
       data-testid={`${name}-singleselect`}
       type="hidden"
@@ -63,7 +63,7 @@ describe('MovieForm', () => {
 
   const mockMovie: MovieEntity = {
     id: 'movie-1',
-    type: 'Movies' as any,
+    type: Entity.Movies,
     title: 'Inception',
     runtime: 148,
     releaseDate: '2010-07-16',
@@ -182,7 +182,7 @@ describe('MovieForm', () => {
 
     it('should handle movie with partial data', () => {
       const partialMovie: MovieEntity = {
-        type: 'Movies' as any,
+        type: Entity.Movies,
         id: 'movie-2',
         title: 'Partial Movie',
       };
@@ -316,10 +316,7 @@ describe('MovieForm', () => {
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
       await user.click(lookupButton);
 
-      expect(mockSubmit).toHaveBeenCalledWith(
-        expect.any(FormData),
-        expect.objectContaining({ method: 'post' })
-      );
+      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
 
       const callArgs = mockSubmit.mock.calls[0][0] as FormData;
       expect(callArgs.get('intent')).toBe('lookup');
@@ -338,7 +335,6 @@ describe('MovieForm', () => {
     });
 
     it('should not call submit if lookup button is disabled during submission', async () => {
-      const user = userEvent.setup();
       render(<MovieForm {...defaultProps} isSubmitting={true} />);
 
       const lookupButton = screen.getByRole('button', { name: /lookup/i });
@@ -551,7 +547,6 @@ describe('MovieForm', () => {
     it('should disable all inputs during submission', () => {
       const { container } = render(<MovieForm {...defaultProps} isSubmitting={true} />);
 
-      const inputs = container.querySelectorAll('input, textarea, button');
       const fieldset = container.querySelector('fieldset');
 
       expect(fieldset).toBeDisabled();

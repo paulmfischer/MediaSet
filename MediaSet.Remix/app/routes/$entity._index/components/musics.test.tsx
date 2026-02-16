@@ -1,20 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent } from '~/test/test-utils';
 import Musics from './musics';
-import { MusicEntity } from '~/models';
-import { Entity } from '~/models';
+import { MusicEntity, Entity } from '~/models';
 
 // Mock the delete dialog component
 vi.mock('~/components/delete-dialog', () => ({
-  default: ({ isOpen, onClose, entityTitle, deleteAction }: any) => (
+  default: ({
+    isOpen,
+    onClose,
+    entityTitle,
+    deleteAction,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    entityTitle?: string;
+    deleteAction: string;
+  }) =>
     isOpen ? (
       <div data-testid="delete-dialog">
         <p>Delete: {entityTitle}</p>
         <button onClick={onClose}>Cancel</button>
         <a href={deleteAction}>Confirm Delete</a>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock Link to avoid router context requirement
@@ -22,7 +31,7 @@ vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    Link: ({ to, children, ...props }: any) => (
+    Link: ({ to, children, ...props }: { to: string; children?: React.ReactNode; [key: string]: unknown }) => (
       <a href={to} {...props}>
         {children}
       </a>
@@ -281,7 +290,8 @@ describe('Musics component', () => {
         {
           type: Entity.Musics,
           id: '1',
-          title: 'This is a very long music title that should still render properly in the table without breaking the layout',
+          title:
+            'This is a very long music title that should still render properly in the table without breaking the layout',
           artist: 'Artist',
           format: 'CD',
         },
@@ -306,9 +316,7 @@ describe('Musics component', () => {
 
       render(<Musics musics={longArtistMusic} />);
 
-      expect(
-        screen.getByText('This is a very long artist name that should still render properly')
-      ).toBeInTheDocument();
+      expect(screen.getByText('This is a very long artist name that should still render properly')).toBeInTheDocument();
     });
 
     it('should handle many musics', () => {

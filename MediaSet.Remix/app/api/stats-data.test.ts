@@ -173,7 +173,13 @@ describe('stats-data.ts', () => {
       const mockStats = {
         bookStats: { total: 5, totalFormats: 1, formats: ['Hardcover'], uniqueAuthors: 3, totalPages: 500 },
         movieStats: { total: 10, totalFormats: 1, formats: ['DVD'], totalTvSeries: 1 },
-        gameStats: { total: 8, totalFormats: 2, formats: ['Disc', 'Digital'], totalPlatforms: 2, platforms: ['PS5', 'PC'] },
+        gameStats: {
+          total: 8,
+          totalFormats: 2,
+          formats: ['Disc', 'Digital'],
+          totalPlatforms: 2,
+          platforms: ['PS5', 'PC'],
+        },
         musicStats: { total: 15, totalFormats: 1, formats: ['CD'], uniqueArtists: 10, totalTracks: 150 },
       };
 
