@@ -336,9 +336,117 @@ public class MovieLookupStrategyTests
         await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
     }
 
-    private async Task TestTitleCleaning(string upc, string rawTitle, string expectedCleanTitle)
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesDirectedBy()
     {
-        var upcResponse = CreateUpcItemResponse(upc, rawTitle);
+        var upc = "043396471238";
+        var rawTitle = "The Big Lebowski [WS] (DVD) directed by Joel Coen";
+        var expectedCleanTitle = "The Big Lebowski";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesTrailingStudioAndGenre()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Beverly Hills Ninja (DVD) Sony Pictures Comedy";
+        var expectedCleanTitle = "Beverly Hills Ninja";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesBrandPrefix()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Paramount - Beverly Hills Cop [DIGITAL VIDEO DISC]";
+        var expectedCleanTitle = "Beverly Hills Cop";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle, brand: "Paramount");
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesTrailingStudioComedy()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Be Kind Rewind (DVD) New Line Home Video Comedy";
+        var expectedCleanTitle = "Be Kind Rewind";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_PreservesColonInTitle()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Austin Powers: The Spy Who Shagged Me (DVD) New Line Home Video Comedy";
+        var expectedCleanTitle = "Austin Powers: The Spy Who Shagged Me";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_PreservesSeasonInfo()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Archer: The Complete Season One (Blu-ray)";
+        var expectedCleanTitle = "Archer: The Complete Season One";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_PreservesVolumeInfo()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Aqua Teen Hunger Force, Vol. 2 [2 Discs] [DVD]";
+        var expectedCleanTitle = "Aqua Teen Hunger Force, Vol. 2";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_VolumeWithColon()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Aqua Teen Hunger Force: Volume 1 (DVD)";
+        var expectedCleanTitle = "Aqua Teen Hunger Force: Volume 1";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesBrandPrefixLionsGate()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Lions Gate - American Psycho [DIGITAL VIDEO DISC]";
+        var expectedCleanTitle = "American Psycho";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle, brand: "Lions Gate");
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesGenreWords()
+    {
+        var upc = "043396471238";
+        var rawTitle = "300 (BD) [Blu-ray] Feature Action Science Fiction Action War Action Action War";
+        var expectedCleanTitle = "300";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesTrailingStudioDrama()
+    {
+        var upc = "043396471238";
+        var rawTitle = "25th Hour (DVD) Disney Drama";
+        var expectedCleanTitle = "25th Hour";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_PreservesBookCollectionInfo()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Avatar The Last Airbender: The Complete Book 3 Collection (DVD)";
+        var expectedCleanTitle = "Avatar The Last Airbender: The Complete Book 3 Collection";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    private async Task TestTitleCleaning(string upc, string rawTitle, string expectedCleanTitle, string brand = "Studio")
+    {
+        var upcResponse = CreateUpcItemResponse(upc, rawTitle, brand);
         var searchResponse = CreateSearchResponse(1, "Test Movie");
         var movieDetails = CreateMovieDetails(1, "Test Movie", "2020-01-01", 120);
 
@@ -577,14 +685,14 @@ public class MovieLookupStrategyTests
 
     #region Helper Methods
 
-    private static UpcItemResponse CreateUpcItemResponse(string code, string title)
+    private static UpcItemResponse CreateUpcItemResponse(string code, string title, string brand = "Studio")
     {
         var item = new UpcItem(
             Ean: code,
             Title: title,
             Description: $"Description for {title}",
             Category: "Movies",
-            Brand: "Studio",
+            Brand: brand,
             Model: null,
             Isbn: null);
 

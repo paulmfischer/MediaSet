@@ -60,7 +60,7 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             return null;
         }
 
-        var cleanedTitle = CleanMovieTitle(firstItem.Title);
+        var cleanedTitle = CleanMovieTitle(firstItem.Title, firstItem.Brand);
         var format = ExtractMovieFormat(firstItem.Title);
         _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' with format '{Format}' for TMDB search", 
             firstItem.Title, identifierValue, cleanedTitle, format);
@@ -69,7 +69,7 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         
         if (searchResult == null || searchResult.Results.Count == 0)
         {
-            _logger.LogWarning("No TMDB results found for title: {Title}", firstItem.Title);
+            _logger.LogWarning("No TMDB results found for title: {Title}", cleanedTitle);
             return null;
         }
 
@@ -79,7 +79,7 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             ?? searchResult.Results[0];
         
         _logger.LogInformation("Found TMDB movie ID {MovieId} for title: {Title}", 
-            bestMatch.Id, firstItem.Title);
+            bestMatch.Id, cleanedTitle);
 
         var movieDetails = await _tmdbClient.GetMovieDetailsAsync(bestMatch.Id, cancellationToken);
         
@@ -115,15 +115,15 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
     }
 
     /// <summary>
-    /// Cleans movie title from UPCitemdb by removing common format suffixes and edition details.
+    /// Cleans movie title from UPCitemdb by removing brand prefixes, format suffixes,
+    /// edition details, and trailing junk text.
     /// Examples:
     /// - "1408 (Two-Disc Collector's Edition)" -> "1408"
-    /// - "1408 [2 Discs] [Collector's Edition]" -> "1408"
-    /// - "1408 - DVD" -> "1408"
-    /// - "The Matrix (DVD)" -> "The Matrix"
-    /// - "Akira (Widescreen) [DVD] NEW" -> "Akira"
+    /// - "Paramount - Beverly Hills Cop [DIGITAL VIDEO DISC]" (brand: Paramount) -> "Beverly Hills Cop"
+    /// - "Beverly Hills Ninja (DVD) Sony Pictures Comedy" -> "Beverly Hills Ninja"
+    /// - "300 (BD) [Blu-ray] Feature Action Science Fiction" -> "300"
     /// </summary>
-    private static string CleanMovieTitle(string rawTitle)
+    private static string CleanMovieTitle(string rawTitle, string? brand = null)
     {
         if (string.IsNullOrWhiteSpace(rawTitle))
         {
@@ -132,21 +132,30 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
 
         var title = rawTitle.Trim();
 
+        // Remove brand as leading prefix (e.g., "Paramount - Beverly Hills Cop" or "Lions Gate : Title")
+        if (!string.IsNullOrWhiteSpace(brand))
+        {
+            title = System.Text.RegularExpressions.Regex.Replace(title, @"^" + System.Text.RegularExpressions.Regex.Escape(brand) + @"\s*[-:]\s*", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
         // Remove common trailing words like NEW, USED, SEALED, etc.
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+(NEW|USED|SEALED|MINT|OPENED|UNOPENED|LIKE NEW)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-        // Remove format keywords in parentheses or brackets (e.g., (DVD), [Blu-ray])
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\(([^)]*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)[^)]*)\)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\[([^\]]*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)[^\]]*)\]", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        // Truncate at first ( or [ if there's content before it
+        var bracketIndex = title.IndexOfAny(['(', '[']);
+        if (bracketIndex > 0)
+        {
+            title = title[..bracketIndex];
+        }
 
-        // Remove content in parentheses (anywhere, not just at end)
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\([^)]*\)", string.Empty);
-
-        // Remove content in square brackets (anywhere, not just at end)
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*\[[^\]]*\]", string.Empty);
+        // Remove trailing brand text
+        if (!string.IsNullOrWhiteSpace(brand))
+        {
+            title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+" + System.Text.RegularExpressions.Regex.Escape(brand) + @"\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
 
         // Remove common suffixes like " - DVD", " - Blu-ray", " - 4K", etc.
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD|DIGITAL VIDEO DISC).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         // Remove format keywords at end (e.g., 'DVD', 'Blu-ray', etc.)
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -154,24 +163,17 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         // Clean up multiple spaces and trim
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+", " ").Trim();
 
-        // Recursively clean in case there are multiple patterns
-        var cleaned = title;
-        if (cleaned != rawTitle && (cleaned.Contains('(') || cleaned.Contains('[') || cleaned.Contains(" - ") || System.Text.RegularExpressions.Regex.IsMatch(cleaned, @"\b(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
-        {
-            return CleanMovieTitle(cleaned);
-        }
-
         // Move articles from end to beginning
         // Examples: "Scanner Darkly A" -> "A Scanner Darkly", "Matrix The" -> "The Matrix"
-        var articleMatch = System.Text.RegularExpressions.Regex.Match(cleaned, @"^(.+?)\s+(A|The)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var articleMatch = System.Text.RegularExpressions.Regex.Match(title, @"^(.+?)\s+(A|The)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (articleMatch.Success)
         {
             var mainTitle = articleMatch.Groups[1].Value.Trim();
             var article = articleMatch.Groups[2].Value;
-            cleaned = $"{article} {mainTitle}";
+            title = $"{article} {mainTitle}";
         }
 
-        return cleaned;
+        return title;
     }
 
     /// <summary>
