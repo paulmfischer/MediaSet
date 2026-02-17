@@ -148,6 +148,12 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
             title = title[..bracketIndex];
         }
 
+        // Truncate at comma followed by disc-count keywords (e.g., ", Two Disc Deluxe Edition, Hologram Cover")
+        title = System.Text.RegularExpressions.Regex.Replace(title, @",\s+(?:\d+|Two|Three|Four|Five|Six)\s+Discs?\b.*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Remove format combinations with + (e.g., "Blue-Ray + DVD", "Blu-ray + Digital")
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(Blu-?ray|Blue-?ray|DVD|4K|BD|UHD|Digital|HD)\s*\+\s*(Blu-?ray|Blue-?ray|DVD|4K|BD|UHD|Digital|HD).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         // Remove trailing brand text
         if (!string.IsNullOrWhiteSpace(brand))
         {
@@ -158,7 +164,13 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD|DIGITAL VIDEO DISC).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         // Remove format keywords at end (e.g., 'DVD', 'Blu-ray', etc.)
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(DVD|Blu-?ray|Blue-?ray|4K|BD|UHD|Digital|HD)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Remove trailing disc-count edition phrases (e.g., "Two-Disc Diamond Edition")
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+(?:\d+-?Discs?|Two-?Discs?|Three-?Discs?|Four-?Discs?|Five-?Discs?|Six-?Discs?)\b.*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Remove trailing "Complete Collection"
+        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+Complete\s+Collection\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         // Clean up multiple spaces and trim
         title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+", " ").Trim();

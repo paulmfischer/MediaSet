@@ -444,6 +444,33 @@ public class MovieLookupStrategyTests
         await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
     }
 
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesCommaEditionInfo()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Batman Begins, Two Disc Deluxe Edition, Hologram Cover (DVD, 2005)";
+        var expectedCleanTitle = "Batman Begins";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesDiscEditionAndFormatCombo()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Bambi Two-Disc Diamond Edition Blue-Ray + DVD";
+        var expectedCleanTitle = "Bambi";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
+    [Test]
+    public async Task LookupAsync_CleansMovieTitleCorrectly_RemovesCompleteCollection()
+    {
+        var upc = "043396471238";
+        var rawTitle = "Berserk: Season 1 Complete Collection";
+        var expectedCleanTitle = "Berserk: Season 1";
+        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+    }
+
     private async Task TestTitleCleaning(string upc, string rawTitle, string expectedCleanTitle, string brand = "Studio")
     {
         var upcResponse = CreateUpcItemResponse(upc, rawTitle, brand);
