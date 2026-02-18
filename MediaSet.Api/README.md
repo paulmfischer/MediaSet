@@ -9,7 +9,7 @@ The MediaSet API provides endpoints for managing your personal media library (bo
 **Technologies:**
 - **.NET 10.0 Web API**: Modern minimal APIs with typed results
 - **MongoDB**: Document database for flexible media entity storage
-- **External API Integrations**: OpenLibrary, TMDB, GiantBomb, MusicBrainz, UPCitemdb
+- **External API Integrations**: OpenLibrary, TMDB, IGDB, MusicBrainz, UPCitemdb
 
 ## Getting Started
 
@@ -84,13 +84,14 @@ MediaSetDatabaseSettings__DatabaseName=MediaSet
 
 # API Keys
 TmdbConfiguration__BearerToken=your-tmdb-bearer-token
-GiantBombConfiguration__ApiKey=your-giantbomb-api-key
+IgdbConfiguration__ClientId=your-twitch-client-id
+IgdbConfiguration__ClientSecret=your-twitch-client-secret
 OpenLibraryConfiguration__ContactEmail=your-email@example.com
 ```
 
 See [Setup](../Setup/) documentation for detailed integration configuration:
 - [TMDB_SETUP.md](../Setup/TMDB_SETUP.md) - Movie metadata
-- [GIANTBOMB_SETUP.md](../Setup/GIANTBOMB_SETUP.md) - Game metadata
+- [IGDB_SETUP.md](../Setup/IGDB_SETUP.md) - Game metadata
 - [OPENLIBRARY_SETUP.md](../Setup/OPENLIBRARY_SETUP.md) - Book metadata
 - [MUSICBRAINZ_SETUP.md](../Setup/MUSICBRAINZ_SETUP.md) - Music metadata
 - [UPCITEMDB_SETUP.md](../Setup/UPCITEMDB_SETUP.md) - Barcode lookup

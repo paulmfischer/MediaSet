@@ -23,7 +23,7 @@ This file contains:
 - `MediaSet.Api/` — .NET backend API (Models, Services, Helpers, endpoints)
   - `Entities/` — MongoDB entity models and API endpoints
   - `Services/` — Business logic (EntityService, MetadataService, ImageService, CacheService, LookupStrategies)
-  - `Clients/` — HTTP clients for external APIs (OpenLibrary, TMDB, GiantBomb, MusicBrainz, UPCitemdb)
+  - `Clients/` — HTTP clients for external APIs (OpenLibrary, TMDB, IGDB, MusicBrainz, UPCitemdb)
   - `Models/` — DTOs and configuration models
   - `Config/` — Configuration classes
   - `Helpers/` — Extension methods and utilities
@@ -60,7 +60,7 @@ This file contains:
 - Base interface: `ILookupStrategy<T>` where T is entity type
 - Implementations: `BookLookupStrategy`, `MovieLookupStrategy`, `GameLookupStrategy`, `MusicLookupStrategy`
 - Factory: `LookupStrategyFactory` for runtime strategy selection
-- Two-stage lookup for movies/games: UPCitemdb → TMDB/GiantBomb
+- Two-stage lookup for movies/games: UPCitemdb → TMDB/IGDB
 - Direct lookup for books (OpenLibrary) and music (MusicBrainz)
 
 **Entity Model:**
@@ -105,9 +105,9 @@ The application integrates with several external APIs for metadata lookup:
   - Config: `TmdbConfiguration__BearerToken`
   - Service: `ITmdbClient`
 
-- **GiantBomb** — Game metadata (currently unavailable)
-  - Config: `GiantBombConfiguration__ApiKey`
-  - Service: `IGiantBombClient`
+- **IGDB (Internet Game Database)** — Game metadata
+  - Config: `IgdbConfiguration__ClientId` and `IgdbConfiguration__ClientSecret`
+  - Service: `IIgdbClient`
 
 - **MusicBrainz** — Music album metadata
   - Config: `MusicBrainzConfiguration__UserAgent`

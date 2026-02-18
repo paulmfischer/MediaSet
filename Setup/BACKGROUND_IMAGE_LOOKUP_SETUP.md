@@ -36,7 +36,7 @@ For the background image lookup service to work, you need:
 - At least one external API configured for metadata lookup:
   - **Books**: OpenLibrary API (configured via `OpenLibraryConfiguration`)
   - **Movies**: TMDB API (configured via `TmdbConfiguration`)
-  - **Games**: GiantBomb API (configured via `GiantBombConfiguration`)
+  - **Games**: IGDB API (configured via `IGDBConfiguration`)
   - **Music**: MusicBrainz API (configured via `MusicBrainzConfiguration`)
 - UpcItemDb API (optional but recommended for better barcode lookup accuracy)
 
@@ -206,10 +206,10 @@ The service calculates the delay between requests to stay within the configured 
 - Check the rate limit documentation for each external API you use:
   - OpenLibrary: Generally permissive (use appropriate contact email)
   - TMDB: 40 requests per 10 seconds (~240/minute)
-  - GiantBomb: 200 requests per hour (~3/minute)
+  - IGDB: 200 requests per hour (~3/minute)
   - MusicBrainz: 1 request per second (60/minute)
 
-**Recommendation**: Set to the lowest rate limit of the APIs you're using (e.g., if using GiantBomb, set to `3`).
+**Recommendation**: Set to the lowest rate limit of the APIs you're using (e.g., if using IGDB, set to `3`).
 
 ## Complete Configuration Example
 
@@ -235,7 +235,7 @@ services:
       # Process 50 entities per run (distributed across media types)
       BackgroundImageLookupConfiguration__BatchSize: "50"
 
-      # Maximum 20 API requests per minute (conservative for GiantBomb)
+      # Maximum 20 API requests per minute (conservative for IGDB)
       BackgroundImageLookupConfiguration__RequestsPerMinute: "20"
 ```
 
@@ -303,7 +303,7 @@ Entities with permanent failures will not be processed again unless you manually
 
 ### No images being downloaded
 
-1. Verify at least one external API is configured (OpenLibrary, TMDB, GiantBomb, or MusicBrainz)
+1. Verify at least one external API is configured (OpenLibrary, TMDB, IGDB, or MusicBrainz)
 2. Check that entities have the required identifiers (ISBN for books, barcodes for others)
 3. Review logs for "No lookup strategy available" messages
 4. Verify external API credentials are correct and not expired
@@ -360,5 +360,5 @@ Adjust based on your external API rate limits and how quickly you want to backfi
 - [Cron Expression Generator](https://crontab.guru)
 - [OpenLibrary API Documentation](https://openlibrary.org/developers/api)
 - [TMDB API Documentation](https://developers.themoviedb.org/3)
-- [GiantBomb API Documentation](https://www.giantbomb.com/api/)
+- [IGDB API Documentation](https://api-docs.igdb.com)
 - [MusicBrainz API Documentation](https://musicbrainz.org/doc/MusicBrainz_API)
