@@ -1,6 +1,6 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
-using MediaSet.Api.Infrastructure.Lookup.Clients.GiantBomb;
+using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using System.Text.RegularExpressions;
 using Serilog;
@@ -11,7 +11,7 @@ namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 public class GameLookupStrategy : ILookupStrategy<GameResponse>
 {
     private readonly IUpcItemDbClient _upcItemDbClient;
-    private readonly IGiantBombClient _giantBombClient;
+    private readonly IIgdbClient _igdbClient;
     private readonly ILogger<GameLookupStrategy> _logger;
 
     private static readonly IdentifierType[] _supportedIdentifierTypes =
@@ -22,11 +22,11 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
     public GameLookupStrategy(
         IUpcItemDbClient upcItemDbClient,
-        IGiantBombClient giantBombClient,
+        IIgdbClient igdbClient,
         ILogger<GameLookupStrategy> logger)
     {
         _upcItemDbClient = upcItemDbClient;
-        _giantBombClient = giantBombClient;
+        _igdbClient = igdbClient;
         _logger = logger;
     }
 
@@ -41,7 +41,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("GameLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
-        
+
         _logger.LogInformation("Looking up game with {IdentifierType}: {IdentifierValue}", identifierType, identifierValue);
 
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
@@ -61,13 +61,13 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         var (cleanedTitle, edition) = CleanGameTitleAndExtractEdition(firstItem.Title);
         var format = ExtractGameFormat(firstItem.Title);
         var platform = ExtractPlatformFromBarcode(firstItem.Title, firstItem.Category, firstItem.Brand, firstItem.Model);
-        _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' (edition '{Edition}'), format '{Format}', platform '{Platform}' for GiantBomb search",
+        _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' (edition '{Edition}'), format '{Format}', platform '{Platform}' for IGDB search",
             firstItem.Title, identifierValue, cleanedTitle, edition, format, platform);
 
-        var searchResults = await _giantBombClient.SearchGameAsync(cleanedTitle, cancellationToken);
+        var searchResults = await _igdbClient.SearchGameAsync(cleanedTitle, cancellationToken);
         if (searchResults == null || searchResults.Count == 0)
         {
-            _logger.LogWarning("No GiantBomb results found for title: {Title}", cleanedTitle);
+            _logger.LogWarning("No IGDB results found for title: {Title}", cleanedTitle);
             return null;
         }
 
@@ -75,25 +75,25 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         var bestMatch = FindBestMatch(searchResults, cleanedTitle);
         if (bestMatch == null)
         {
-            _logger.LogWarning("No suitable GiantBomb match found for title: {Title}", cleanedTitle);
+            _logger.LogWarning("No suitable IGDB match found for title: {Title}", cleanedTitle);
             return null;
         }
 
-        _logger.LogInformation("Best match for '{CleanedTitle}' is '{MatchName}' (id: {MatchId})", 
+        _logger.LogInformation("Best match for '{CleanedTitle}' is '{MatchName}' (id: {MatchId})",
             cleanedTitle, bestMatch.Name, bestMatch.Id);
 
-        var details = await _giantBombClient.GetGameDetailsAsync(bestMatch.ApiDetailUrl, cancellationToken);
+        var details = await _igdbClient.GetGameDetailsAsync(bestMatch.Id, cancellationToken);
         if (details == null)
         {
-            _logger.LogWarning("Could not retrieve GiantBomb game details for: {ApiUrl}", bestMatch.ApiDetailUrl);
+            _logger.LogWarning("Could not retrieve IGDB game details for id: {Id}", bestMatch.Id);
             return null;
         }
 
-        // If format is still empty, try to derive it from GiantBomb platform info
+        // If format is still empty, try to derive it from IGDB platform info
         if (string.IsNullOrWhiteSpace(format))
         {
             format = DeriveFormatFromPlatforms(details.Platforms, platform);
-            _logger.LogInformation("Format derived from GiantBomb platforms: {Format}", format);
+            _logger.LogInformation("Format derived from IGDB platforms: {Format}", format);
         }
 
         return MapToGameResponse(details, format, platform, edition);
@@ -123,10 +123,10 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         title = Regex.Replace(title, @"\s*\([^)]*(Disc|Cartridge|Digital)[^)]*\)", string.Empty, RegexOptions.IgnoreCase);
         title = Regex.Replace(title, @"\s*\[[^\]]*(Disc|Cartridge|Digital)[^\]]*\]", string.Empty, RegexOptions.IgnoreCase);
         title = Regex.Replace(title, @"\s*-\s*(Disc|Cartridge|Digital).*$", string.Empty, RegexOptions.IgnoreCase);
-    
+
         // Remove common condition/release type suffixes
         title = Regex.Replace(title, @"\s*-\s*(Pre-Played|Pre-Owned|Used|Greatest Hits|Platinum Hits|Player's Choice|Nintendo Selects|Essentials).*$", string.Empty, RegexOptions.IgnoreCase);
-        
+
         // Remove trailing hyphens left by platform removal
         title = Regex.Replace(title, @"\s*-\s*$", string.Empty);
 
@@ -214,14 +214,14 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         return string.Empty;
     }
 
-    internal static string DeriveFormatFromPlatforms(List<GiantBombPlatformRef>? platforms, string detectedPlatform)
+    internal static string DeriveFormatFromPlatforms(List<IgdbPlatform>? platforms, string detectedPlatform)
     {
         if (platforms == null || platforms.Count == 0)
         {
             return string.Empty;
         }
 
-        // Check if the detected platform (from UPC) matches any of the GiantBomb platforms
+        // Check if the detected platform (from UPC) matches any of the IGDB platforms
         // If so, derive the format based on that platform's typical media format
         var matchingPlatform = platforms.FirstOrDefault(p =>
             p.Name.Contains(detectedPlatform, StringComparison.OrdinalIgnoreCase) ||
@@ -235,13 +235,13 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         // Map platforms to typical formats
         var platformName = matchingPlatform.Name.ToLowerInvariant();
-        
+
         // GD-ROM (Dreamcast's proprietary format) - check first before CD-ROM
         if (platformName.Contains("dreamcast"))
         {
             return "GD-ROM";
         }
-        
+
         // Cartridge-based platforms
         if (platformName.Contains("nintendo switch") || platformName.Contains("switch") ||
             platformName.Contains("3ds") || platformName.Contains("ds") ||
@@ -270,8 +270,8 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         }
 
         // CD-ROM platforms (PS1, Saturn, older PC games)
-        if ((platformName.Contains("playstation") && !platformName.Contains("playstation 2") && 
-            !platformName.Contains("playstation 3") && !platformName.Contains("playstation 4") && 
+        if ((platformName.Contains("playstation") && !platformName.Contains("playstation 2") &&
+            !platformName.Contains("playstation 3") && !platformName.Contains("playstation 4") &&
             !platformName.Contains("playstation 5")) ||
             platformName.Contains("saturn") ||
             platformName.Contains("sega cd"))
@@ -288,7 +288,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         // PC - default to CD-ROM for older games, but could be DVD or digital
         // This is imperfect without release date, but CD-ROM is most common for physical PC
-        if (platformName.Contains("pc") || platformName.Contains("windows") || 
+        if (platformName.Contains("pc") || platformName.Contains("windows") ||
             platformName.Contains("mac") || platformName.Contains("linux"))
         {
             return "CD-ROM";
@@ -298,7 +298,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         return "DVD";
     }
 
-    internal static GiantBombSearchResult? FindBestMatch(List<GiantBombSearchResult> searchResults, string cleanedTitle)
+    internal static IgdbGame? FindBestMatch(List<IgdbGame> searchResults, string cleanedTitle)
     {
         if (searchResults.Count == 0)
         {
@@ -354,23 +354,28 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         return wordScore;
     }
 
-    private static GameResponse MapToGameResponse(GiantBombGameDetails details, string format, string platform, string edition)
+    private static GameResponse MapToGameResponse(IgdbGame details, string format, string platform, string edition)
     {
         var genres = details.Genres?.Select(g => g.Name).ToList() ?? new List<string>();
-        var developers = details.Developers?.Select(d => d.Name).ToList() ?? new List<string>();
-        var publishers = details.Publishers?.Select(p => p.Name).ToList() ?? new List<string>();
+        var developers = details.InvolvedCompanies?
+            .Where(c => c.Developer)
+            .Select(c => c.Company?.Name ?? string.Empty)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .ToList() ?? new List<string>();
+        var publishers = details.InvolvedCompanies?
+            .Where(c => c.Publisher)
+            .Select(c => c.Company?.Name ?? string.Empty)
+            .Where(n => !string.IsNullOrEmpty(n))
+            .ToList() ?? new List<string>();
 
-        var rating = string.Empty;
-        if (details.Ratings != null && details.Ratings.Count > 0)
-        {
-            // Prefer ESRB if present
-            var esrb = details.Ratings.FirstOrDefault(r => r.Name.Contains("ESRB", StringComparison.OrdinalIgnoreCase));
-            rating = esrb?.Name ?? details.Ratings[0].Name;
-        }
+        var rating = DecodeAgeRating(details.AgeRatings);
 
-        var releaseDate = details.OriginalReleaseDate ?? string.Empty;
-        var description = details.Deck ?? string.Empty;
-        var imageUrl = details.Image?.SuperUrl ?? details.Image?.MediumUrl ?? details.Image?.SmallUrl;
+        var releaseDate = details.FirstReleaseDate.HasValue
+            ? DateTimeOffset.FromUnixTimeSeconds(details.FirstReleaseDate.Value).ToString("yyyy-MM-dd")
+            : string.Empty;
+
+        var description = details.Summary ?? string.Empty;
+        var imageUrl = IgdbClient.FixCoverUrl(details.Cover?.Url);
 
         var title = details.Name;
         if (!string.IsNullOrEmpty(edition))
@@ -390,5 +395,52 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
             Format: format,
             ImageUrl: imageUrl
         );
+    }
+
+    internal static string DecodeAgeRating(List<IgdbAgeRating>? ageRatings)
+    {
+        if (ageRatings == null || ageRatings.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        // ESRB rating lookup (category = 1)
+        // https://api-docs.igdb.com/#age-rating
+        var esrbRatings = new Dictionary<int, string>
+        {
+            { 6, "RP" },
+            { 7, "EC" },
+            { 8, "E" },
+            { 9, "E10+" },
+            { 10, "T" },
+            { 11, "M" },
+            { 12, "AO" }
+        };
+
+        // PEGI rating lookup (category = 2)
+        var pegiRatings = new Dictionary<int, string>
+        {
+            { 1, "3" },
+            { 2, "7" },
+            { 3, "12" },
+            { 4, "16" },
+            { 5, "18" }
+        };
+
+        // Prefer ESRB (category = 1)
+        var esrb = ageRatings.FirstOrDefault(r => r.Category == 1);
+        if (esrb != null && esrbRatings.TryGetValue(esrb.Rating, out var esrbLabel))
+        {
+            return $"ESRB: {esrbLabel}";
+        }
+
+        // Fall back to PEGI (category = 2)
+        var pegi = ageRatings.FirstOrDefault(r => r.Category == 2);
+        if (pegi != null && pegiRatings.TryGetValue(pegi.Rating, out var pegiLabel))
+        {
+            return $"PEGI: {pegiLabel}";
+        }
+
+        return string.Empty;
     }
 }

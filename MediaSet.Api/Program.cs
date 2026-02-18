@@ -23,7 +23,7 @@ using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
-using MediaSet.Api.Infrastructure.Lookup.Clients.GiantBomb;
+using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Storage;
@@ -147,19 +147,18 @@ if (tmdbConfig.Exists())
     });
 }
 
-// Configure GiantBomb client
-var giantBombConfig = builder.Configuration.GetSection(nameof(GiantBombConfiguration));
-if (giantBombConfig.Exists())
+// Configure IGDB client
+var igdbConfig = builder.Configuration.GetSection(nameof(IgdbConfiguration));
+if (igdbConfig.Exists())
 {
-    bootstrapLogger.Information("GiantBomb configuration exists. Setting up GiantBomb services.");
-    builder.Services.Configure<GiantBombConfiguration>(giantBombConfig);
-    builder.Services.AddHttpClient<IGiantBombClient, GiantBombClient>((serviceProvider, client) =>
+    bootstrapLogger.Information("IGDB configuration exists. Setting up IGDB services.");
+    builder.Services.Configure<IgdbConfiguration>(igdbConfig);
+    builder.Services.AddSingleton<IIgdbTokenService, IgdbTokenService>();
+    builder.Services.AddHttpClient<IIgdbClient, IgdbClient>((sp, client) =>
     {
-        var config = serviceProvider.GetRequiredService<IOptions<GiantBombConfiguration>>().Value;
-        client.BaseAddress = new Uri(config.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(config.Timeout);
-        client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
-        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "MediaSet/1.0 (GiantBomb)");
+        var cfg = sp.GetRequiredService<IOptions<IgdbConfiguration>>().Value;
+        client.BaseAddress = new Uri(cfg.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(cfg.Timeout);
     });
 }
 
@@ -187,7 +186,7 @@ if (upcItemDbConfig.Exists() && tmdbConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<MovieResponse>, MovieLookupStrategy>();
 }
-if (upcItemDbConfig.Exists() && giantBombConfig.Exists())
+if (upcItemDbConfig.Exists() && igdbConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<GameResponse>, GameLookupStrategy>();
 }
@@ -316,7 +315,7 @@ app.MapEntity<Music>();
 app.MapMetadata();
 app.MapStats();
 
-if (openLibraryConfig.Exists() || tmdbConfig.Exists() || giantBombConfig.Exists())
+if (openLibraryConfig.Exists() || tmdbConfig.Exists() || igdbConfig.Exists())
 {
     app.MapLookup();
 }
