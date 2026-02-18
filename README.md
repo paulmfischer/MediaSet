@@ -73,9 +73,8 @@ MediaSet includes built-in metadata lookup functionality to quickly populate ite
 
 **Games:**
 - **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve game metadata
-- Two-stage lookup: UPCitemdb for product identification → GiantBomb for comprehensive game data
+- Two-stage lookup: UPCitemdb for product identification → IGDB for comprehensive game data
 - Auto-populates title, platform, genres, developers, publishers, release date, rating, description, and format
-- **Note**: GiantBomb API is currently unavailable - see [Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md) for details
 
 **Music:**
 - **Barcode Lookup**: Scan or enter UPC/EAN barcodes to retrieve music album metadata
@@ -143,7 +142,8 @@ services:
       # Optional: Configure integrations (uncomment and add your API keys)
       # OpenLibraryConfiguration__ContactEmail: "your-email@example.com"
       # TmdbConfiguration__BearerToken: "your-tmdb-bearer-token"
-      # GiantBombConfiguration__ApiKey: "your-giantbomb-api-key"
+      # IgdbConfiguration__ClientId: "your-twitch-client-id"
+      # IgdbConfiguration__ClientSecret: "your-twitch-client-secret"
       # MusicBrainzConfiguration__UserAgent: "MyApp/1.0 (contact@example.com)"
       # UpcItemDbConfiguration__ApiKey: "your-upcitemdb-api-key"
     
@@ -232,7 +232,7 @@ For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CO
 - **[Setup/CONTAINER_SETUP.md](Setup/CONTAINER_SETUP.md)** - Container orchestration and configuration details
 - **[Setup/OPENLIBRARY_SETUP.md](Setup/OPENLIBRARY_SETUP.md)** - OpenLibrary API configuration for book metadata
 - **[Setup/TMDB_SETUP.md](Setup/TMDB_SETUP.md)** - The Movie Database API configuration
-- **[Setup/GIANTBOMB_SETUP.md](Setup/GIANTBOMB_SETUP.md)** - GiantBomb API configuration for game metadata
+- **[Setup/IGDB_SETUP.md](Setup/IGDB_SETUP.md)** - IGDB API configuration for game metadata
 - **[Setup/MUSICBRAINZ_SETUP.md](Setup/MUSICBRAINZ_SETUP.md)** - MusicBrainz API configuration for music metadata
 - **[Setup/UPCITEMDB_SETUP.md](Setup/UPCITEMDB_SETUP.md)** - UPCItemDB API configuration for barcode lookup
 
@@ -381,7 +381,7 @@ feat(api)!: change health endpoint response format
 **External APIs:**
 - OpenLibrary (books metadata)
 - The Movie Database (TMDB)
-- GiantBomb (games metadata)
+- IGDB (games metadata)
 - MusicBrainz (music metadata)
 - UPCitemdb (barcode lookup)
 

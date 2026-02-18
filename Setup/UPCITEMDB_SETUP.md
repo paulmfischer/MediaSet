@@ -4,7 +4,7 @@ This document explains how to enable UPCItemDb configuration to allow for UPC lo
 
 [Book OpenLibrary Setup](OPENLIBRARY_SETUP.md)
 
-[Game GiantBomb Setup](GIANTBOMB_SETUP.md)
+[Game IGDB Setup](IGDB_SETUP.md)
 
 [Movie TMDB Setup](TMDB_SETUP.md)
 

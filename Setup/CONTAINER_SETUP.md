@@ -16,7 +16,7 @@ Configuration approach
 
 Integration placeholders and enabling
 
-By default integration settings (OpenLibrary, TMDB, GiantBomb, etc.) are commented out or disabled in `docker-compose.prod.yml`. To enable an integration:
+By default integration settings (OpenLibrary, TMDB, IGDB, etc.) are commented out or disabled in `docker-compose.prod.yml`. To enable an integration:
 
 1. Edit `docker-compose.prod.yml` and uncomment the integration block you want to enable (look for the commented `# OpenLibrary configuration`, `# TMDB configuration`, etc.). You need to uncomment every line of that integration if you plan to use it.
 2. Replace any `[ReplaceThis]` placeholders in the compose file with the real values required for that integration (for example an email for OpenLibrary, API keys or bearer tokens). You can also place these values in a `.env` file next to `docker-compose.prod.yml` instead of editing the compose file directly, if you prefer.
@@ -26,7 +26,8 @@ Placeholders you must replace (examples)
 
 - `OpenLibraryConfiguration__ContactEmail` — replace `[ReplaceThis]` with your contact email for OpenLibrary.
 - `TmdbConfiguration__BearerToken` — replace `[ReplaceThis]` with your TMDB bearer token.
-- `GiantBombConfiguration__ApiKey` — replace `[ReplaceThis]` with your GiantBomb API key.
+- `IgdbConfiguration__ClientId` — replace `[ReplaceThis]` with your Twitch Client ID.
+- `IgdbConfiguration__ClientSecret` — replace `[ReplaceThis]` with your Twitch Client Secret.
 - `clientApiUrl` — replace `[ReplaceThis]` with the API URL browsers should use (e.g., `http://localhost:8080`).
 
 Starting the application
@@ -108,7 +109,7 @@ docker compose -f docker-compose.prod.yml up -d
 Notes about configuration
 
 - `CLIENT_API_URL` must be set to an address your browser can reach for the API (e.g., `http://localhost:8080` when running locally).
-- Secrets and API keys (TMDB, GiantBomb, UPCitemdb) are optional; if unset, the associated lookup features will be disabled or limited.
+- Secrets and API keys (TMDB, IGDB, UPCitemdb) are optional; if unset, the associated lookup features will be disabled or limited.
 
 Useful commands summary
 
