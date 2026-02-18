@@ -569,6 +569,33 @@ public class GameLookupStrategyTests
         Assert.That(edition, Is.Empty);
     }
 
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesFormatAndLanguageSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Alan Wake - Xbox 360 - DVD - English");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Alan Wake"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_PreservesSubtitleWithMetadataSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Assassin's Creed IV - Black Flag - PS4 - Blu-ray");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Assassin's Creed IV - Black Flag"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesRegionSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Dark Souls - PS3 - NTSC - English");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Dark Souls"));
+        Assert.That(edition, Is.Empty);
+    }
+
     #endregion
 
     #region Helpers

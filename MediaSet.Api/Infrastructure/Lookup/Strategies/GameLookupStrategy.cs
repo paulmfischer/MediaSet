@@ -117,7 +117,19 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         }
 
         // Remove platform indicators commonly found in UPC titles
-        title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PlayStation 5|PlayStation 4|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS)\b", string.Empty);
+        title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PS3|PS2|PS1|PlayStation 5|PlayStation 4|PlayStation 3|PlayStation 2|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS)\b", string.Empty);
+
+        // Remove hyphen-separated metadata segments (formats, languages, regions, conditions)
+        // This handles UPC patterns like "Alan Wake - Xbox 360 - DVD - English"
+        // where platform removal leaves behind "Alan Wake -  - DVD - English"
+        var metadataPattern = @"(?i)^(DVD|Blu-?ray|Disc|Cartridge|Digital|CD-ROM|GD-ROM|" +
+            @"English|Spanish|French|German|Italian|Japanese|Portuguese|Chinese|Korean|Russian|Dutch|Arabic|" +
+            @"NTSC|PAL|US|USA|NA|EU|JP|UK|" +
+            @"Pre-Played|Pre-Owned|Used|New|Sealed|Refurbished|" +
+            @"Greatest Hits|Platinum Hits|Player'?s Choice|Nintendo Selects|Essentials|Classics|Favorites|Budget)$";
+        var segments = title.Split(" - ", StringSplitOptions.TrimEntries);
+        var filtered = segments.Where(s => !string.IsNullOrWhiteSpace(s) && !Regex.IsMatch(s, metadataPattern)).ToList();
+        title = string.Join(" - ", filtered);
 
         // Remove format markers like (Cartridge), [Disc], - Disc and trailing dashes
         title = Regex.Replace(title, @"\s*\([^)]*(Disc|Cartridge|Digital)[^)]*\)", string.Empty, RegexOptions.IgnoreCase);
