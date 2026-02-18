@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.2.0](https://github.com/paulmfischer/MediaSet/compare/v3.1.0...v3.2.0) (2026-02-18)
+
+
+### Features
+
+* **lookup:** replace GiantBomb with IGDB for game metadata closes [#478](https://github.com/paulmfischer/MediaSet/issues/478) ([#507](https://github.com/paulmfischer/MediaSet/issues/507)) ([bd0397c](https://github.com/paulmfischer/MediaSet/commit/bd0397cbe247c9cec9c772b4318094d41cea3585))
+
+
+### Bug Fixes
+
+* **logging:** display background image lookup schedule in service timezone ([#502](https://github.com/paulmfischer/MediaSet/issues/502)) ([5971972](https://github.com/paulmfischer/MediaSet/commit/59719723eec6577a5137cfc90774455f086cf498))
+* **lookup:** improve movie title cleaning with brand removal and truncation closes [#494](https://github.com/paulmfischer/MediaSet/issues/494) ([#506](https://github.com/paulmfischer/MediaSet/issues/506)) ([d45128b](https://github.com/paulmfischer/MediaSet/commit/d45128bf4201f0842fcbe0239f0525fd86b56928))
+
+
+### Refactoring
+
+* **docker:** standardize environment variable format in docker-compose files ([5971972](https://github.com/paulmfischer/MediaSet/commit/59719723eec6577a5137cfc90774455f086cf498))
+* **frontend:** reorganize codebase structure (issue [#485](https://github.com/paulmfischer/MediaSet/issues/485)) ([#500](https://github.com/paulmfischer/MediaSet/issues/500)) ([8f893f4](https://github.com/paulmfischer/MediaSet/commit/8f893f4f32ec0b718879c9339a70d7c5e63c19c7))
+
+
+### Miscellaneous
+
+* **frontend:** add code style tooling and fix all lint errors ([#505](https://github.com/paulmfischer/MediaSet/issues/505)) ([2d10bc6](https://github.com/paulmfischer/MediaSet/commit/2d10bc6b07efc10377d61b9b3db7e4790be026ac))
+
 ## [3.1.0](https://github.com/paulmfischer/MediaSet/compare/v3.0.0...v3.1.0) (2026-02-11)
 
 
