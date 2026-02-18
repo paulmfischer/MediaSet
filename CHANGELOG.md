@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.1](https://github.com/paulmfischer/MediaSet/compare/v3.2.0...v3.2.1) (2026-02-18)
+
+
+### Documentation
+
+* replace remaining GiantBomb references with IGDB ([#508](https://github.com/paulmfischer/MediaSet/issues/508)) ([c4622f6](https://github.com/paulmfischer/MediaSet/commit/c4622f6a26087b0a484e4b925ed06578a6e217da))
+
 ## [3.2.0](https://github.com/paulmfischer/MediaSet/compare/v3.1.0...v3.2.0) (2026-02-18)
 
 
