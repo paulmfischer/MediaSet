@@ -1,7 +1,7 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
-using MediaSet.Api.Infrastructure.Lookup.Clients.GiantBomb;
+using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,7 +16,7 @@ namespace MediaSet.Api.Tests.Infrastructure.Lookup.Strategies;
 public class GameLookupStrategyTests
 {
     private Mock<IUpcItemDbClient> _upcItemDbClientMock = null!;
-    private Mock<IGiantBombClient> _giantBombClientMock = null!;
+    private Mock<IIgdbClient> _igdbClientMock = null!;
     private Mock<ILogger<GameLookupStrategy>> _loggerMock = null!;
     private GameLookupStrategy _strategy = null!;
 
@@ -24,11 +24,11 @@ public class GameLookupStrategyTests
     public void SetUp()
     {
         _upcItemDbClientMock = new Mock<IUpcItemDbClient>();
-        _giantBombClientMock = new Mock<IGiantBombClient>();
+        _igdbClientMock = new Mock<IIgdbClient>();
         _loggerMock = new Mock<ILogger<GameLookupStrategy>>();
         _strategy = new GameLookupStrategy(
             _upcItemDbClientMock.Object,
-            _giantBombClientMock.Object,
+            _igdbClientMock.Object,
             _loggerMock.Object);
     }
 
@@ -73,34 +73,46 @@ public class GameLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var searchResults = new List<GiantBombSearchResult>
+        var searchResults = new List<IgdbGame>
         {
             new(
                 Id: 1,
                 Name: "Halo Infinite",
-                OriginalReleaseDate: "2021-12-08",
-                Deck: "The next chapter of Master Chief",
-                ApiDetailUrl: "https://www.giantbomb.com/api/game/3030-12345/")
+                Summary: "The next chapter of Master Chief",
+                FirstReleaseDate: 1638921600L,
+                Genres: null,
+                InvolvedCompanies: null,
+                Platforms: null,
+                AgeRatings: null,
+                Cover: null)
         };
 
-        _giantBombClientMock
+        _igdbClientMock
             .Setup(x => x.SearchGameAsync("Halo Infinite", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
 
-        var details = new GiantBombGameDetails(
+        var details = new IgdbGame(
+            Id: 1,
             Name: "Halo Infinite",
-            Genres: new List<GiantBombNameRef> { new("Shooter"), new("Action") },
-            Developers: new List<GiantBombCompanyRef> { new("343 Industries") },
-            Publishers: new List<GiantBombCompanyRef> { new("Xbox Game Studios") },
-            Platforms: new List<GiantBombPlatformRef> { new("Xbox Series X|S", "XBSX"), new("Xbox One", "XONE") },
-            OriginalReleaseDate: "2021-12-08",
-            Description: "<p>Master Chief returns.</p>",
-            Deck: "Master Chief returns.",
-            Ratings: new List<GiantBombRatingRef> { new("ESRB: T") }
+            Summary: "Master Chief returns.",
+            FirstReleaseDate: 1638921600L,
+            Genres: new List<IgdbNamedObject> { new(5, "Shooter"), new(14, "Action") },
+            InvolvedCompanies: new List<IgdbInvolvedCompany>
+            {
+                new(new IgdbNamedObject(1, "343 Industries"), Developer: true, Publisher: false),
+                new(new IgdbNamedObject(2, "Xbox Game Studios"), Developer: false, Publisher: true)
+            },
+            Platforms: new List<IgdbPlatform>
+            {
+                new(169, "Xbox Series X|S", "XBSX"),
+                new(49, "Xbox One", "XONE")
+            },
+            AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 10) },
+            Cover: new IgdbCover(999, "//images.igdb.com/igdb/image/upload/t_thumb/co1234.jpg")
         );
 
-        _giantBombClientMock
-            .Setup(x => x.GetGameDetailsAsync("https://www.giantbomb.com/api/game/3030-12345/", It.IsAny<CancellationToken>()))
+        _igdbClientMock
+            .Setup(x => x.GetGameDetailsAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(details);
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
@@ -126,7 +138,7 @@ public class GameLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
         Assert.That(result, Is.Null);
-        _giantBombClientMock.Verify(x => x.SearchGameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _igdbClientMock.Verify(x => x.SearchGameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -141,46 +153,35 @@ public class GameLookupStrategyTests
             .ReturnsAsync(upcResponse);
 
         // Multiple results with varying match quality
-        var searchResults = new List<GiantBombSearchResult>
+        var searchResults = new List<IgdbGame>
         {
-            new(
-                Id: 999,
-                Name: "Super Mario Bros.",
-                OriginalReleaseDate: "1985-09-13",
-                Deck: "The original",
-                ApiDetailUrl: "https://www.giantbomb.com/api/game/3030-999/"),
-            new(
-                Id: 12345,
-                Name: "Super Mario Odyssey",
-                OriginalReleaseDate: "2017-10-27",
-                Deck: "Mario goes on a globe-trotting adventure",
-                ApiDetailUrl: "https://www.giantbomb.com/api/game/3030-12345/"),
-            new(
-                Id: 888,
-                Name: "Super Mario 64",
-                OriginalReleaseDate: "1996-06-23",
-                Deck: "Classic 3D Mario",
-                ApiDetailUrl: "https://www.giantbomb.com/api/game/3030-888/")
+            new(999, "Super Mario Bros.", null, 495590400L, null, null, null, null, null),
+            new(12345, "Super Mario Odyssey", null, 1509062400L, null, null, null, null, null),
+            new(888, "Super Mario 64", null, 872352000L, null, null, null, null, null)
         };
 
-        _giantBombClientMock
+        _igdbClientMock
             .Setup(x => x.SearchGameAsync("Super Mario Odyssey", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
 
-        var details = new GiantBombGameDetails(
+        var details = new IgdbGame(
+            Id: 12345,
             Name: "Super Mario Odyssey",
-            Genres: new List<GiantBombNameRef> { new("Action"), new("Platformer") },
-            Developers: new List<GiantBombCompanyRef> { new("Nintendo EPD") },
-            Publishers: new List<GiantBombCompanyRef> { new("Nintendo") },
-            Platforms: new List<GiantBombPlatformRef> { new("Nintendo Switch", "NSW") },
-            OriginalReleaseDate: "2017-10-27",
-            Description: "<p>Mario's next big adventure</p>",
-            Deck: "Mario goes on a globe-trotting adventure",
-            Ratings: new List<GiantBombRatingRef> { new("ESRB: E10+") }
+            Summary: "Mario goes on a globe-trotting adventure",
+            FirstReleaseDate: 1509062400L,
+            Genres: new List<IgdbNamedObject> { new(8, "Platform"), new(31, "Adventure") },
+            InvolvedCompanies: new List<IgdbInvolvedCompany>
+            {
+                new(new IgdbNamedObject(70, "Nintendo EPD"), Developer: true, Publisher: false),
+                new(new IgdbNamedObject(70, "Nintendo"), Developer: false, Publisher: true)
+            },
+            Platforms: new List<IgdbPlatform> { new(130, "Nintendo Switch", "NSW") },
+            AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 9) },
+            Cover: null
         );
 
-        _giantBombClientMock
-            .Setup(x => x.GetGameDetailsAsync("https://www.giantbomb.com/api/game/3030-12345/", It.IsAny<CancellationToken>()))
+        _igdbClientMock
+            .Setup(x => x.GetGameDetailsAsync(12345, It.IsAny<CancellationToken>()))
             .ReturnsAsync(details);
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
@@ -188,13 +189,13 @@ public class GameLookupStrategyTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Title, Does.Contain("Super Mario Odyssey"));
         Assert.That(result.Platform, Is.EqualTo("Nintendo Switch"));
-        
+
         // Verify it called GetGameDetailsAsync with the best match (id 12345), not the first result (id 999)
-        _giantBombClientMock.Verify(
-            x => x.GetGameDetailsAsync("https://www.giantbomb.com/api/game/3030-12345/", It.IsAny<CancellationToken>()), 
+        _igdbClientMock.Verify(
+            x => x.GetGameDetailsAsync(12345, It.IsAny<CancellationToken>()),
             Times.Once);
-        _giantBombClientMock.Verify(
-            x => x.GetGameDetailsAsync("https://www.giantbomb.com/api/game/3030-999/", It.IsAny<CancellationToken>()), 
+        _igdbClientMock.Verify(
+            x => x.GetGameDetailsAsync(999, It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -205,11 +206,11 @@ public class GameLookupStrategyTests
     [Test]
     public void FindBestMatch_WithExactMatch_ReturnsExactMatch()
     {
-        var results = new List<GiantBombSearchResult>
+        var results = new List<IgdbGame>
         {
-            new(1, "Halo Infinite", "2021-12-08", "Description", "url1"),
-            new(2, "Halo 3", "2007-09-25", "Description", "url2"),
-            new(3, "Halo 2", "2004-11-09", "Description", "url3")
+            new(1, "Halo Infinite", null, null, null, null, null, null, null),
+            new(2, "Halo 3", null, null, null, null, null, null, null),
+            new(3, "Halo 2", null, null, null, null, null, null, null)
         };
 
         var bestMatch = GameLookupStrategy.FindBestMatch(results, "Halo Infinite");
@@ -222,11 +223,11 @@ public class GameLookupStrategyTests
     [Test]
     public void FindBestMatch_WithPartialMatch_ReturnsClosestMatch()
     {
-        var results = new List<GiantBombSearchResult>
+        var results = new List<IgdbGame>
         {
-            new(1, "Super Mario Bros.", "1985-09-13", "Description", "url1"),
-            new(2, "Super Mario Odyssey", "2017-10-27", "Description", "url2"),
-            new(3, "Super Mario 64", "1996-06-23", "Description", "url3")
+            new(1, "Super Mario Bros.", null, null, null, null, null, null, null),
+            new(2, "Super Mario Odyssey", null, null, null, null, null, null, null),
+            new(3, "Super Mario 64", null, null, null, null, null, null, null)
         };
 
         var bestMatch = GameLookupStrategy.FindBestMatch(results, "Super Mario Odyssey");
@@ -239,9 +240,9 @@ public class GameLookupStrategyTests
     [Test]
     public void FindBestMatch_WithSingleResult_ReturnsThatResult()
     {
-        var results = new List<GiantBombSearchResult>
+        var results = new List<IgdbGame>
         {
-            new(1, "The Legend of Zelda: Breath of the Wild", "2017-03-03", "Description", "url1")
+            new(1, "The Legend of Zelda: Breath of the Wild", null, null, null, null, null, null, null)
         };
 
         var bestMatch = GameLookupStrategy.FindBestMatch(results, "Breath of the Wild");
@@ -253,7 +254,7 @@ public class GameLookupStrategyTests
     [Test]
     public void FindBestMatch_WithEmptyList_ReturnsNull()
     {
-        var results = new List<GiantBombSearchResult>();
+        var results = new List<IgdbGame>();
 
         var bestMatch = GameLookupStrategy.FindBestMatch(results, "Some Game");
 
@@ -263,10 +264,10 @@ public class GameLookupStrategyTests
     [Test]
     public void FindBestMatch_WithPoorMatches_FallsBackToFirst()
     {
-        var results = new List<GiantBombSearchResult>
+        var results = new List<IgdbGame>
         {
-            new(1, "Totally Different Game", "2020-01-01", "Description", "url1"),
-            new(2, "Another Different Game", "2020-01-01", "Description", "url2")
+            new(1, "Totally Different Game", null, null, null, null, null, null, null),
+            new(2, "Another Different Game", null, null, null, null, null, null, null)
         };
 
         // When no result scores >= 0.5, should fall back to first result
@@ -279,9 +280,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithPlayStation5Platform_ReturnsBlurayDisc()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("PlayStation 5", "PS5")
+            new(167, "PlayStation 5", "PS5")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation 5");
@@ -292,9 +293,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithPlayStation3Platform_ReturnsDvd()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("PlayStation 3", "PS3")
+            new(9, "PlayStation 3", "PS3")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation 3");
@@ -305,9 +306,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithPlayStation1Platform_ReturnsCdRom()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("PlayStation", "PS")
+            new(7, "PlayStation", "PS")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PlayStation");
@@ -318,9 +319,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithPcPlatform_ReturnsCdRom()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("PC", "PC")
+            new(6, "PC (Microsoft Windows)", "PC")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "PC");
@@ -331,9 +332,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithDreamcastPlatform_ReturnsGdRom()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("Dreamcast", "DC")
+            new(23, "Dreamcast", "DC")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "Dreamcast");
@@ -344,9 +345,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithNintendoSwitchPlatform_ReturnsCartridge()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("Nintendo Switch", "NSW")
+            new(130, "Nintendo Switch", "NSW")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "Nintendo Switch");
@@ -357,9 +358,9 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithXboxSeriesXPlatform_ReturnsBlurayDisc()
     {
-        var platforms = new List<GiantBombPlatformRef>
+        var platforms = new List<IgdbPlatform>
         {
-            new("Xbox Series X|S", "XBSX")
+            new(169, "Xbox Series X|S", "XBSX")
         };
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "Xbox Series X|S");
@@ -370,7 +371,7 @@ public class GameLookupStrategyTests
     [Test]
     public void DeriveFormatFromPlatforms_WithEmptyPlatforms_ReturnsEmpty()
     {
-        var platforms = new List<GiantBombPlatformRef>();
+        var platforms = new List<IgdbPlatform>();
 
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(platforms, "");
 
@@ -383,6 +384,68 @@ public class GameLookupStrategyTests
         var format = GameLookupStrategy.DeriveFormatFromPlatforms(null, "");
 
         Assert.That(format, Is.EqualTo(string.Empty));
+    }
+
+    #endregion
+
+    #region DecodeAgeRating
+
+    [Test]
+    public void DecodeAgeRating_WithEsrbTeen_ReturnsEsrbT()
+    {
+        var ratings = new List<IgdbAgeRating> { new(Category: 1, Rating: 10) };
+        var result = GameLookupStrategy.DecodeAgeRating(ratings);
+        Assert.That(result, Is.EqualTo("ESRB: T"));
+    }
+
+    [Test]
+    public void DecodeAgeRating_WithEsrbEveryone_ReturnsEsrbE()
+    {
+        var ratings = new List<IgdbAgeRating> { new(Category: 1, Rating: 8) };
+        var result = GameLookupStrategy.DecodeAgeRating(ratings);
+        Assert.That(result, Is.EqualTo("ESRB: E"));
+    }
+
+    [Test]
+    public void DecodeAgeRating_WithEsrbMature_ReturnsEsrbM()
+    {
+        var ratings = new List<IgdbAgeRating> { new(Category: 1, Rating: 11) };
+        var result = GameLookupStrategy.DecodeAgeRating(ratings);
+        Assert.That(result, Is.EqualTo("ESRB: M"));
+    }
+
+    [Test]
+    public void DecodeAgeRating_PrefersEsrbOverPegi()
+    {
+        var ratings = new List<IgdbAgeRating>
+        {
+            new(Category: 2, Rating: 4), // PEGI 16
+            new(Category: 1, Rating: 10) // ESRB T
+        };
+        var result = GameLookupStrategy.DecodeAgeRating(ratings);
+        Assert.That(result, Is.EqualTo("ESRB: T"));
+    }
+
+    [Test]
+    public void DecodeAgeRating_WithPegiOnly_ReturnsPegiRating()
+    {
+        var ratings = new List<IgdbAgeRating> { new(Category: 2, Rating: 5) }; // PEGI 18
+        var result = GameLookupStrategy.DecodeAgeRating(ratings);
+        Assert.That(result, Is.EqualTo("PEGI: 18"));
+    }
+
+    [Test]
+    public void DecodeAgeRating_WithNull_ReturnsEmpty()
+    {
+        var result = GameLookupStrategy.DecodeAgeRating(null);
+        Assert.That(result, Is.EqualTo(string.Empty));
+    }
+
+    [Test]
+    public void DecodeAgeRating_WithEmptyList_ReturnsEmpty()
+    {
+        var result = GameLookupStrategy.DecodeAgeRating(new List<IgdbAgeRating>());
+        Assert.That(result, Is.EqualTo(string.Empty));
     }
 
     #endregion
@@ -503,6 +566,33 @@ public class GameLookupStrategyTests
         var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("   ");
 
         Assert.That(cleanedTitle, Is.Empty);
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesFormatAndLanguageSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Alan Wake - Xbox 360 - DVD - English");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Alan Wake"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_PreservesSubtitleWithMetadataSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Assassin's Creed IV - Black Flag - PS4 - Blu-ray");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Assassin's Creed IV - Black Flag"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesRegionSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Dark Souls - PS3 - NTSC - English");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Dark Souls"));
         Assert.That(edition, Is.Empty);
     }
 

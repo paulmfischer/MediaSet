@@ -18,7 +18,7 @@ internal static class ConfigApi
             var tmdbSection = configuration.GetSection("TmdbConfiguration");
             var openLibrarySection = configuration.GetSection("OpenLibraryConfiguration");
             var upcItemDbSection = configuration.GetSection("UpcItemDbConfiguration");
-            var giantBombSection = configuration.GetSection("GiantBombConfiguration");
+            var igdbSection = configuration.GetSection("IgdbConfiguration");
             var musicBrainzSection = configuration.GetSection("MusicBrainzConfiguration");
 
             IntegrationAttributionDto Build(string key, string displayName, IConfigurationSection section, string defaultLogo, string? defaultAttributionUrl = null, string? defaultAttributionText = null)
@@ -42,7 +42,9 @@ internal static class ConfigApi
                     defaultAttributionText: "This product uses the TMDB API but is not endorsed or certified by TMDB."),
                 Build("openlibrary", "OpenLibrary", openLibrarySection, "/integrations/openlibrary.svg"),
                 Build("upcitemdb", "UPCitemdb", upcItemDbSection, "/integrations/upcitemdb.png"),
-                Build("giantbomb", "GiantBomb", giantBombSection, "/integrations/giantbomb.svg"),
+                Build("igdb", "IGDB", igdbSection, "/integrations/igdb.svg",
+                    defaultAttributionUrl: "https://www.igdb.com/",
+                    defaultAttributionText: "Game data provided by IGDB."),
                 Build("musicbrainz", "MusicBrainz", musicBrainzSection, "/integrations/musicbrainz.svg")
             };
 
@@ -56,7 +58,7 @@ internal static class ConfigApi
             var tmdbSection = configuration.GetSection("TmdbConfiguration");
             var openLibrarySection = configuration.GetSection("OpenLibraryConfiguration");
             var upcItemDbSection = configuration.GetSection("UpcItemDbConfiguration");
-            var giantBombSection = configuration.GetSection("GiantBombConfiguration");
+            var igdbSection = configuration.GetSection("IgdbConfiguration");
             var musicBrainzSection = configuration.GetSection("MusicBrainzConfiguration");
 
             // Calculate lookup availability based on required integrations
@@ -65,7 +67,9 @@ internal static class ConfigApi
             {
                 SupportsBookLookup = openLibrarySection.Exists() && upcItemDbSection.Exists(),
                 SupportsMovieLookup = upcItemDbSection.Exists() && tmdbSection.Exists(),
-                SupportsGameLookup = upcItemDbSection.Exists() && giantBombSection.Exists(),
+                SupportsGameLookup = upcItemDbSection.Exists() && igdbSection.Exists()
+                    && !string.IsNullOrEmpty(igdbSection.GetValue<string>("ClientId"))
+                    && !string.IsNullOrEmpty(igdbSection.GetValue<string>("ClientSecret")),
                 SupportsMusicLookup = musicBrainzSection.Exists()
             };
 

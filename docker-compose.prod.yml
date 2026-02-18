@@ -11,7 +11,8 @@
 # Optional environment variables (for barcode/metadata lookup features):
 #   - OPENLIBRARY_CONTACT_EMAIL: Your email for OpenLibrary API (required for book lookup)
 #   - TMDB_BEARER_TOKEN: TMDB API bearer token (required for movie lookup)
-#   - GIANTBOMB_API_KEY: GiantBomb API key (required for game lookup)
+#   - IgdbConfiguration__ClientId: Twitch/IGDB Client ID (required for game lookup)
+#   - IgdbConfiguration__ClientSecret: Twitch/IGDB Client Secret (required for game lookup)
 #   - MUSICBRAINZ_USER_AGENT: MusicBrainz user agent (optional, e.g., "MyApp/1.0 (contact@example.com)")
 #   - UPCITEMDB_API_KEY: UpcItemDb API key (optional, but improves lookup accuracy)
 
@@ -70,10 +71,9 @@ services:
       # UpcItemDbConfiguration__MinDelayBetweenRequestsMs: "1000"
       # UpcItemDbConfiguration__MaxRetryPauseSeconds: "65"
       
-      # GiantBomb configuration (for game lookup)
-      # GiantBombConfiguration__BaseUrl: "https://www.giantbomb.com/api/"
-      # GiantBombConfiguration__ApiKey: "[ReplaceThis]"
-      # GiantBombConfiguration__Timeout: "10"
+      # IGDB configuration (for game lookup)
+      # IgdbConfiguration__ClientId: "[ReplaceThis]"        # Twitch Client ID
+      # IgdbConfiguration__ClientSecret: "[ReplaceThis]"    # Twitch Client Secret
       
       # MusicBrainz configuration (for music lookup)
       # MusicBrainzConfiguration__BaseUrl: "https://musicbrainz.org/"
