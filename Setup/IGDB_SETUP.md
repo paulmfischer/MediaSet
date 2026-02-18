@@ -6,7 +6,7 @@ Game data provided by [IGDB](https://www.igdb.com).
 
 1) Obtain IGDB credentials
 
-    - IGDB access requires a Twitch Developer account. Create an application at https://dev.twitch.tv/console.
+    - IGDB access requires a Twitch Developer account. Create an application at https://dev.twitch.tv/console. Note: Twitch requires two-factor authentication (2FA) to be enabled on your account before you can register an application.
     - Click **Register Your Application**, choose a name, set the OAuth Redirect URL to `http://localhost`, and select **Application Integration** as the category.
     - After creating the app, click **Manage** to retrieve your **Client ID** and generate a **Client Secret**. Keep both values secret.
 

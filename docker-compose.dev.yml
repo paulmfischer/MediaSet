@@ -35,8 +35,8 @@ services:
       # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
       TmdbConfiguration__BearerToken: "${TMDB_BEARER_TOKEN}"
       UpcItemDbConfiguration__ApiKey: "${UPCITEMDB_API_KEY}"
-      # GiantBombConfiguration__BaseUrl: "${GIANTBOMB_BASE_URL:-https://www.giantbomb.com/api/}"
-      # GiantBombConfiguration__ApiKey: "${GIANTBOMB_API_KEY}"
+      IgdbConfiguration__ClientId: "${IgdbConfiguration__ClientId}"
+      IgdbConfiguration__ClientSecret: "${IgdbConfiguration__ClientSecret}"
     volumes:
       - ./MediaSet.Api:/app
       - ./.git:/app/.git

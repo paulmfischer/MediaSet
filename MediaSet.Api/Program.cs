@@ -147,9 +147,11 @@ if (tmdbConfig.Exists())
     });
 }
 
-// Configure IGDB client
+// Configure IGDB client (requires ClientId and ClientSecret from environment)
 var igdbConfig = builder.Configuration.GetSection(nameof(IgdbConfiguration));
-if (igdbConfig.Exists())
+var igdbClientId = igdbConfig.GetValue<string>("ClientId");
+var igdbClientSecret = igdbConfig.GetValue<string>("ClientSecret");
+if (igdbConfig.Exists() && !string.IsNullOrEmpty(igdbClientId) && !string.IsNullOrEmpty(igdbClientSecret))
 {
     bootstrapLogger.Information("IGDB configuration exists. Setting up IGDB services.");
     builder.Services.Configure<IgdbConfiguration>(igdbConfig);
