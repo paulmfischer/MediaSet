@@ -115,7 +115,6 @@ public class OpenLibraryClient : IOpenLibraryClient
             var encodedTitle = Uri.EscapeDataString(title);
             var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>(
                 $"search.json?title={encodedTitle}&limit=10",
-                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower },
                 cancellationToken);
 
             if (response == null || response.Docs.Count == 0)
