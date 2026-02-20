@@ -98,13 +98,13 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("1408"));
-        Assert.That(result.ReleaseDate, Is.EqualTo("2007-06-22"));
-        Assert.That(result.Runtime, Is.EqualTo(104));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("1408"));
+        Assert.That(result[0].ReleaseDate, Is.EqualTo("2007-06-22"));
+        Assert.That(result[0].Runtime, Is.EqualTo(104));
         // Format extraction finds "DVD" from the brackets
-        Assert.That(result.Format, Is.EqualTo("DVD"));
-        Assert.That(result.Rating, Is.EqualTo("7.5/10"));
+        Assert.That(result[0].Format, Is.EqualTo("DVD"));
+        Assert.That(result[0].Rating, Is.EqualTo("7.5/10"));
 
         _upcItemDbClientMock.Verify(
             x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()),
@@ -145,9 +145,9 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Ean, ean, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("The Matrix"));
-        Assert.That(result.Format, Is.EqualTo("Blu-ray"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("The Matrix"));
+        Assert.That(result[0].Format, Is.EqualTo("Blu-ray"));
     }
 
     #endregion
@@ -165,7 +165,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
             x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -183,7 +183,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
             x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -209,7 +209,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
             x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -232,7 +232,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
             x => x.GetMovieDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -256,7 +256,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
             x => x.GetMovieDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -284,7 +284,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     #endregion
@@ -619,7 +619,7 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        return result?.Format ?? string.Empty;
+        return result.Count > 0 ? result[0].Format ?? string.Empty : string.Empty;
     }
 
     #endregion
@@ -654,18 +654,18 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("Test Movie"));
-        Assert.That(result.ReleaseDate, Is.EqualTo("2020-01-01"));
-        Assert.That(result.Runtime, Is.EqualTo(120));
-        Assert.That(result.Plot, Is.EqualTo("Test overview"));
-        Assert.That(result.Rating, Is.EqualTo("8.5/10"));
-        Assert.That(result.Genres, Has.Count.EqualTo(2));
-        Assert.That(result.Genres, Contains.Item("Action"));
-        Assert.That(result.Genres, Contains.Item("Thriller"));
-        Assert.That(result.Studios, Has.Count.EqualTo(2));
-        Assert.That(result.Studios, Contains.Item("Warner Bros."));
-        Assert.That(result.Studios, Contains.Item("Village Roadshow"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("Test Movie"));
+        Assert.That(result[0].ReleaseDate, Is.EqualTo("2020-01-01"));
+        Assert.That(result[0].Runtime, Is.EqualTo(120));
+        Assert.That(result[0].Plot, Is.EqualTo("Test overview"));
+        Assert.That(result[0].Rating, Is.EqualTo("8.5/10"));
+        Assert.That(result[0].Genres, Has.Count.EqualTo(2));
+        Assert.That(result[0].Genres, Contains.Item("Action"));
+        Assert.That(result[0].Genres, Contains.Item("Thriller"));
+        Assert.That(result[0].Studios, Has.Count.EqualTo(2));
+        Assert.That(result[0].Studios, Contains.Item("Warner Bros."));
+        Assert.That(result[0].Studios, Contains.Item("Village Roadshow"));
     }
 
     [Test]
@@ -698,14 +698,14 @@ public class MovieLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("Test Movie"));
-        Assert.That(result.ReleaseDate, Is.EqualTo(string.Empty));
-        Assert.That(result.Runtime, Is.Null);
-        Assert.That(result.Plot, Is.EqualTo(string.Empty));
-        Assert.That(result.Rating, Is.EqualTo(string.Empty));
-        Assert.That(result.Genres, Is.Empty);
-        Assert.That(result.Studios, Is.Empty);
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("Test Movie"));
+        Assert.That(result[0].ReleaseDate, Is.EqualTo(string.Empty));
+        Assert.That(result[0].Runtime, Is.Null);
+        Assert.That(result[0].Plot, Is.EqualTo(string.Empty));
+        Assert.That(result[0].Rating, Is.EqualTo(string.Empty));
+        Assert.That(result[0].Genres, Is.Empty);
+        Assert.That(result[0].Studios, Is.Empty);
     }
 
     #endregion

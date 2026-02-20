@@ -9,5 +9,5 @@ public interface ILookupStrategyBase
 
 public interface ILookupStrategy<TResponse> : ILookupStrategyBase where TResponse : class
 {
-    Task<TResponse?> LookupAsync(IdentifierType identifierType, string identifierValue, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TResponse>> LookupAsync(IdentifierType identifierType, string identifierValue, CancellationToken cancellationToken);
 }

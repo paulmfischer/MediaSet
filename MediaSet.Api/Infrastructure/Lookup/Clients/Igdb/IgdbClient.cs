@@ -31,7 +31,7 @@ public class IgdbClient : IIgdbClient
             _logger.LogInformation("Searching IGDB for game: {Title}", title);
 
             var escapedTitle = title.Replace("\"", "\\\"");
-            var body = $"fields id,name,first_release_date; search \"{escapedTitle}\"; limit 10;";
+            var body = $"fields id,name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url; search \"{escapedTitle}\"; limit 10;";
             var response = await SendRequestAsync("games", body, cancellationToken);
 
             if (response == null)

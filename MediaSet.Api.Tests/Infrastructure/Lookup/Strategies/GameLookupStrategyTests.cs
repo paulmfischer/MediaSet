@@ -117,15 +117,15 @@ public class GameLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Does.Contain("Halo Infinite"));
-        Assert.That(result.Platform, Is.EqualTo("Xbox Series X|S"));
-        Assert.That(result.Format, Is.EqualTo("Blu-ray Disc"));
-        Assert.That(result.ReleaseDate, Is.EqualTo("2021-12-08"));
-        Assert.That(result.Rating, Is.EqualTo("ESRB: T"));
-        Assert.That(result.Genres, Contains.Item("Shooter"));
-        Assert.That(result.Developers, Contains.Item("343 Industries"));
-        Assert.That(result.Publishers, Contains.Item("Xbox Game Studios"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Does.Contain("Halo Infinite"));
+        Assert.That(result[0].Platform, Is.EqualTo("Xbox Series X|S"));
+        Assert.That(result[0].Format, Is.EqualTo("Blu-ray Disc"));
+        Assert.That(result[0].ReleaseDate, Is.EqualTo("2021-12-08"));
+        Assert.That(result[0].Rating, Is.EqualTo("ESRB: T"));
+        Assert.That(result[0].Genres, Contains.Item("Shooter"));
+        Assert.That(result[0].Developers, Contains.Item("343 Industries"));
+        Assert.That(result[0].Publishers, Contains.Item("Xbox Game Studios"));
     }
 
     [Test]
@@ -137,7 +137,7 @@ public class GameLookupStrategyTests
             .ReturnsAsync((UpcItemResponse?)null);
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _igdbClientMock.Verify(x => x.SearchGameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -186,9 +186,9 @@ public class GameLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Does.Contain("Super Mario Odyssey"));
-        Assert.That(result.Platform, Is.EqualTo("Nintendo Switch"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Does.Contain("Super Mario Odyssey"));
+        Assert.That(result[0].Platform, Is.EqualTo("Nintendo Switch"));
 
         // Verify it called GetGameDetailsAsync with the best match (id 12345), not the first result (id 999)
         _igdbClientMock.Verify(

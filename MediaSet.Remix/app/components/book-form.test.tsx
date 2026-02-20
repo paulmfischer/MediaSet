@@ -109,7 +109,7 @@ describe('BookForm', () => {
     it('should render the ISBN lookup button', () => {
       render(<BookForm {...defaultProps} />);
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       expect(lookupButton).toBeInTheDocument();
       expect(lookupButton).toHaveAttribute('type', 'button');
     });
@@ -283,7 +283,7 @@ describe('BookForm', () => {
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
       await user.type(isbnInput, '978-0743273565');
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       expect(mockSubmit).toHaveBeenCalled();
@@ -296,7 +296,7 @@ describe('BookForm', () => {
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
       await user.type(isbnInput, '978-0743273565');
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
@@ -311,7 +311,7 @@ describe('BookForm', () => {
       const user = userEvent.setup();
       render(<BookForm {...defaultProps} />);
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       expect(mockSubmit).not.toHaveBeenCalled();
@@ -320,7 +320,7 @@ describe('BookForm', () => {
     it('should not call submit if lookup button is disabled during submission', async () => {
       render(<BookForm {...defaultProps} isSubmitting={true} />);
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       expect(lookupButton).toBeDisabled();
     });
 
@@ -347,7 +347,7 @@ describe('BookForm', () => {
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
       await user.type(isbnInput, '978-1111111111');
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       const formData = mockSubmit.mock.calls[0][0] as FormData;
@@ -362,7 +362,7 @@ describe('BookForm', () => {
 
       // First lookup
       await user.type(isbnInput, '978-1111111111');
-      let lookupButton = screen.getByRole('button', { name: /lookup/i });
+      let lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       expect(mockSubmit).toHaveBeenCalledTimes(1);
@@ -370,7 +370,7 @@ describe('BookForm', () => {
       // Clear and second lookup
       await user.clear(isbnInput);
       await user.type(isbnInput, '978-2222222222');
-      lookupButton = screen.getByRole('button', { name: /lookup/i });
+      lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       expect(mockSubmit).toHaveBeenCalledTimes(2);
@@ -384,7 +384,7 @@ describe('BookForm', () => {
       const testIsbn = '978-9999999999';
       await user.type(isbnInput, testIsbn);
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       const formData = mockSubmit.mock.calls[0][0] as FormData;
@@ -398,7 +398,7 @@ describe('BookForm', () => {
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
       await user.type(isbnInput, '978-3333333333');
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       const formData = mockSubmit.mock.calls[0][0] as FormData;
@@ -451,7 +451,7 @@ describe('BookForm', () => {
       const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
       const initialTitle = titleInput.value;
 
-      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
       await user.click(lookupButton);
 
       // Title should remain unchanged after lookup attempt

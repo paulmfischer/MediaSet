@@ -152,4 +152,68 @@ public class MusicBrainzClient : IMusicBrainzClient
             _rateLimiter.Release();
         }
     }
+
+    public async Task<IReadOnlyList<MusicBrainzRelease>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
+    {
+        await _rateLimiter.WaitAsync(cancellationToken);
+        try
+        {
+            var timeSinceLastRequest = DateTime.UtcNow - _lastRequestTime;
+            if (timeSinceLastRequest < TimeSpan.FromSeconds(1))
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1) - timeSinceLastRequest, cancellationToken);
+            }
+
+            _logger.LogInformation("Searching MusicBrainz releases by title: {Title}", title);
+
+            var encodedTitle = Uri.EscapeDataString(title);
+            var response = await _httpClient.GetAsync(
+                $"ws/2/release/?query=release:{encodedTitle}&limit=10&fmt=json",
+                cancellationToken);
+
+            _lastRequestTime = DateTime.UtcNow;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    _logger.LogWarning("MusicBrainz rate limit exceeded for title search: {Title}", title);
+                    throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
+                }
+
+                _logger.LogWarning("MusicBrainz returned status code {StatusCode} for title search: {Title}",
+                    response.StatusCode, title);
+                return [];
+            }
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            var result = JsonSerializer.Deserialize<MusicBrainzSearchResponse>(content,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (result?.Releases == null || result.Releases.Count == 0)
+            {
+                _logger.LogInformation("No releases found for title: {Title}", title);
+                return [];
+            }
+
+            _logger.LogInformation("MusicBrainz search found {Count} releases for title: {Title}",
+                result.Releases.Count, title);
+
+            return result.Releases;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error while searching MusicBrainz by title: {Title}", title);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching MusicBrainz by title: {Title}", title);
+            return [];
+        }
+        finally
+        {
+            _rateLimiter.Release();
+        }
+    }
 }

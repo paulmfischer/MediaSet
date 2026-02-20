@@ -113,7 +113,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Isbn, isbn, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedResponse));
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -130,7 +131,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Isbn, isbn, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     #endregion
@@ -149,7 +150,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Lccn, lccn, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedResponse));
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByLccnAsync(lccn, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -166,7 +168,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Lccn, lccn, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     #endregion
@@ -185,7 +187,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Oclc, oclc, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedResponse));
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByOclcAsync(oclc, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -202,7 +205,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Oclc, oclc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     #endregion
@@ -221,7 +224,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Olid, olid, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedResponse));
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByOlidAsync(olid, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -238,7 +242,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Olid, olid, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     #endregion
@@ -263,7 +267,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedBookResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedBookResponse));
         _upcItemDbClientMock.Verify(
             x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -283,7 +288,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -301,7 +306,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -327,7 +332,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -353,7 +358,7 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -381,7 +386,8 @@ public class BookLookupStrategyTests
 
         var result = await _strategy.LookupAsync(IdentifierType.Ean, ean, CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(expectedBookResponse));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0], Is.EqualTo(expectedBookResponse));
         _upcItemDbClientMock.Verify(
             x => x.GetItemByCodeAsync(ean, It.IsAny<CancellationToken>()),
             Times.Once);

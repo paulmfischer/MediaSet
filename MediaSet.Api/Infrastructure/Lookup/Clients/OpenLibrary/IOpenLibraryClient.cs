@@ -12,4 +12,5 @@ public interface IOpenLibraryClient
     Task<BookResponse?> GetReadableBookByOclcAsync(string oclc, CancellationToken cancellationToken = default);
     Task<BookResponse?> GetReadableBookByOlidAsync(string olid, CancellationToken cancellationToken = default);
     Task<BookResponse?> GetReadableBookAsync(IdentifierType identifierType, string identifierValue, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<BookResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken = default);
 }

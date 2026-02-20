@@ -108,6 +108,67 @@ public class OpenLibraryClient : IOpenLibraryClient
         };
     }
 
+    public async Task<IReadOnlyList<BookResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var encodedTitle = Uri.EscapeDataString(title);
+            var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>(
+                $"search.json?title={encodedTitle}&limit=10",
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
+                cancellationToken);
+
+            if (response == null || response.Docs.Count == 0)
+            {
+                _logger.LogInformation("No OpenLibrary search results for title: {Title}", title);
+                return [];
+            }
+
+            _logger.LogInformation("OpenLibrary search found {Count} results for title: {Title}", response.Docs.Count, title);
+
+            return response.Docs
+                .Where(d => !string.IsNullOrWhiteSpace(d.Title))
+                .Select(MapSearchDocToBookResponse)
+                .ToList();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by title: {Title}", title);
+            return [];
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "JSON parsing error while searching OpenLibrary by title: {Title}", title);
+            return [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching OpenLibrary by title: {Title}", title);
+            return [];
+        }
+    }
+
+    private static BookResponse MapSearchDocToBookResponse(OpenLibrarySearchDoc doc)
+    {
+        var authors = doc.AuthorName?.Select(a => new Author(a, string.Empty)).ToList() ?? [];
+        var publishers = doc.Publisher?.Take(3).Select(p => new Publisher(p)).ToList() ?? [];
+        var subjects = doc.Subject?.Take(5).Select(s => new Subject(s, string.Empty)).ToList() ?? [];
+        var publishDate = doc.FirstPublishYear.HasValue ? doc.FirstPublishYear.Value.ToString() : string.Empty;
+        var imageUrl = doc.CoverId.HasValue ? $"https://covers.openlibrary.org/b/id/{doc.CoverId.Value}-L.jpg" : null;
+
+        return new BookResponse(
+            Title: doc.Title ?? string.Empty,
+            Subtitle: string.Empty,
+            Authors: authors,
+            NumberOfPages: doc.NumberOfPagesMedian ?? 0,
+            Publishers: publishers,
+            PublishDate: publishDate,
+            Subjects: subjects,
+            Format: null,
+            ImageUrl: imageUrl
+        );
+    }
+
     private static BookResponse? MapReadApiResponseToBookResponse(ReadApiResponse? readApiResponse)
     {
         if (readApiResponse == null || !readApiResponse.Records.Any())

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import { getEntity, updateEntity } from '~/api/entity-data';
@@ -20,6 +21,7 @@ import BookForm from '../../components/book-form';
 import MovieForm from '~/components/movie-form';
 import GameForm from '~/components/game-form';
 import MusicForm from '~/components/music-form';
+import TitleLookupResultsDialog from '~/components/title-lookup-results-dialog';
 import invariant from 'tiny-invariant';
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
@@ -75,6 +77,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const intent = formData.get('intent') as string;
 
+  const isLookupError = (r: unknown): r is { message: string; statusCode: number } =>
+    !!r &&
+    typeof (r as { message?: unknown }).message === 'string' &&
+    typeof (r as { statusCode?: unknown }).statusCode === 'number';
+
   if (intent === 'lookup') {
     const fieldName = formData.get('fieldName') as string;
     const identifierValue = formData.get('identifierValue') as string;
@@ -90,9 +97,31 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     try {
       const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
-      const lookupResult = await lookup(entityType, identifierType, identifierValue);
-      // Include lookup timestamp so UI can force remounts on consecutive lookups
-      return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      const lookupArray = await lookup(entityType, identifierType, identifierValue);
+
+      if (isLookupError(lookupArray)) {
+        return { lookupResult: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      }
+
+      if (lookupArray.length === 0) {
+        return {
+          lookupResult: {
+            message: `No ${singular(entityType)} found for "${identifierValue}"`,
+            statusCode: 404,
+          },
+          identifierValue,
+          fieldName,
+          lookupTimestamp: Date.now(),
+        };
+      }
+
+      // For title search with multiple results, return all for dialog selection
+      if (fieldName === 'title' && lookupArray.length > 1) {
+        return { lookupResults: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      }
+
+      // For barcode or single title result: return first item
+      return { lookupResult: lookupArray[0], identifierValue, fieldName, lookupTimestamp: Date.now() };
     } catch (error) {
       serverLogger.error('Action: Entity lookup failed', {
         entityType,
@@ -182,10 +211,12 @@ export default function Edit() {
   const isSubmitting = navigation.location?.pathname === `/${entity.type.toLowerCase()}/${entity.id}/edit`;
   const formId = `edit-${singular(entity.type)}`;
   const actionUrl = `/${entity.type.toLowerCase()}/${entity.id}/edit`;
+
   const isLookupError = (r: unknown): r is { message: string; statusCode: number } =>
     !!r &&
     typeof (r as { message?: unknown }).message === 'string' &&
     typeof (r as { statusCode?: unknown }).statusCode === 'number';
+
   const lookupResult =
     actionData && 'lookupResult' in actionData ? (actionData as Record<string, unknown>).lookupResult : undefined;
   const lookupEntity = lookupResult && !isLookupError(lookupResult) ? lookupResult : undefined;
@@ -193,20 +224,52 @@ export default function Edit() {
   const lookupTimestamp =
     actionData && 'lookupTimestamp' in actionData ? (actionData as Record<string, unknown>).lookupTimestamp : undefined;
 
+  // Multiple title results for dialog selection
+  const lookupResults =
+    actionData && 'lookupResults' in actionData ? (actionData as Record<string, unknown>).lookupResults : undefined;
+
+  // Dialog state for title searches with multiple results
+  const [dialogState, setDialogState] = useState<{
+    open: boolean;
+    selectedEntity: BookEntity | MovieEntity | GameEntity | MusicEntity | null;
+    version: number;
+  }>({ open: false, selectedEntity: null, version: 0 });
+
+  useEffect(() => {
+    if (lookupResults && Array.isArray(lookupResults) && lookupResults.length > 1) {
+      setDialogState({ open: true, selectedEntity: null, version: 0 });
+    } else {
+      setDialogState({ open: false, selectedEntity: null, version: 0 });
+    }
+  }, [lookupTimestamp, lookupResults]);
+
+  const handleDialogSelect = (entity: BookEntity | MovieEntity | GameEntity | MusicEntity) => {
+    setDialogState((prev) => ({ open: false, selectedEntity: entity, version: prev.version + 1 }));
+  };
+
+  const handleDialogClose = () => {
+    setDialogState((prev) => ({ ...prev, open: false }));
+  };
+
+  // Use the dialog-selected entity if available, otherwise fall back to single lookup result
+  const effectiveLookupEntity = dialogState.selectedEntity ?? (lookupEntity as object | undefined);
+  const effectiveTimestamp = dialogState.selectedEntity
+    ? `dialog-${dialogState.version}`
+    : (lookupTimestamp ?? 0);
+
   // When lookup succeeds, use lookup data and preserve only the database id and type
-  // This ensures fresh lookup data isn't contaminated by stale database values
-  const mergedEntity = lookupEntity ? { ...(lookupEntity as object), id: entity.id, type: entity.type } : entity;
+  const mergedEntity = effectiveLookupEntity
+    ? { ...(effectiveLookupEntity as object), id: entity.id, type: entity.type }
+    : entity;
 
   // Use a key to force form remount when lookup data changes
-  // This ensures defaultValue props are re-applied with new lookup data
-  // Include a timestamp to ensure each lookup gets a unique key, even for the same identifier
   const identifierValue =
     actionData && 'identifierValue' in actionData ? (actionData as Record<string, unknown>).identifierValue : undefined;
   const fieldName =
     actionData && 'fieldName' in actionData ? (actionData as Record<string, unknown>).fieldName : undefined;
   const formKey =
-    lookupEntity && identifierValue && fieldName
-      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}`
+    effectiveLookupEntity && identifierValue && fieldName
+      ? `lookup-${identifierValue}-${fieldName}-${effectiveTimestamp}`
       : `entity-${entity.id}`;
 
   let formComponent;
@@ -293,6 +356,15 @@ export default function Edit() {
           </div>
         </div>
       </div>
+
+      {!!lookupResults && Array.isArray(lookupResults) && (
+        <TitleLookupResultsDialog
+          isOpen={dialogState.open}
+          results={lookupResults as Array<BookEntity | MovieEntity | GameEntity | MusicEntity>}
+          onSelect={handleDialogSelect}
+          onClose={handleDialogClose}
+        />
+      )}
     </div>
   );
 }
