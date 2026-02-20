@@ -6,6 +6,7 @@ using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -393,6 +394,51 @@ public class BookLookupStrategyTests
             Times.Once);
         _openLibraryClientMock.Verify(
             x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region LookupAsync - Title Tests
+
+    [Test]
+    public async Task LookupAsync_WithTitle_ReturnsAllSearchResults()
+    {
+        var title = "Fantastic Mr. Fox";
+        var expectedResponses = new List<BookResponse>
+        {
+            CreateBookResponse("Fantastic Mr. Fox"),
+            CreateBookResponse("Fantastic Mr. Fox: Special Edition"),
+        };
+
+        _openLibraryClientMock
+            .Setup(x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponses);
+
+        var result = await _strategy.LookupAsync(IdentifierType.Title, title, CancellationToken.None);
+
+        Assert.That(result, Has.Count.EqualTo(2));
+        Assert.That(result[0], Is.EqualTo(expectedResponses[0]));
+        Assert.That(result[1], Is.EqualTo(expectedResponses[1]));
+        _openLibraryClientMock.Verify(
+            x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task LookupAsync_WithTitle_WhenNoResults_ReturnsEmpty()
+    {
+        var title = "Nonexistent Book";
+
+        _openLibraryClientMock
+            .Setup(x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await _strategy.LookupAsync(IdentifierType.Title, title, CancellationToken.None);
+
+        Assert.That(result, Is.Empty);
+        _openLibraryClientMock.Verify(
+            x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

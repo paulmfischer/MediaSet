@@ -124,12 +124,11 @@ public class OpenLibraryClient : IOpenLibraryClient
                 return [];
             }
 
-            _logger.LogInformation("OpenLibrary search found {Count} results for title: {Title}", response.Docs.Count, title);
+            var docs = response.Docs.Where(d => !string.IsNullOrWhiteSpace(d.Title)).ToList();
+            _logger.LogInformation("OpenLibrary search found {Count} results for title: {Title}", docs.Count, title);
 
-            return response.Docs
-                .Where(d => !string.IsNullOrWhiteSpace(d.Title))
-                .Select(MapSearchDocToBookResponse)
-                .ToList();
+            var enrichmentTasks = docs.Select(doc => EnrichSearchDocAsync(doc, cancellationToken));
+            return await Task.WhenAll(enrichmentTasks);
         }
         catch (HttpRequestException ex)
         {
@@ -146,6 +145,29 @@ public class OpenLibraryClient : IOpenLibraryClient
             _logger.LogError(ex, "Error searching OpenLibrary by title: {Title}", title);
             return [];
         }
+    }
+
+    private async Task<BookResponse> EnrichSearchDocAsync(OpenLibrarySearchDoc doc, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(doc.CoverEditionKey))
+        {
+            try
+            {
+                var enriched = await GetReadableBookByOlidAsync(doc.CoverEditionKey, cancellationToken);
+                if (enriched != null)
+                {
+                    _logger.LogDebug("Enriched search result '{Title}' using OLID {Olid}", doc.Title, doc.CoverEditionKey);
+                    return enriched;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
+                    doc.Title, doc.CoverEditionKey);
+            }
+        }
+
+        return MapSearchDocToBookResponse(doc);
     }
 
     private static BookResponse MapSearchDocToBookResponse(OpenLibrarySearchDoc doc)
