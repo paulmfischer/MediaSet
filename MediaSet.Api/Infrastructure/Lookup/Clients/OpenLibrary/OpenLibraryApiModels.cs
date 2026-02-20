@@ -23,7 +23,6 @@ public record ReadApiCover(
   string Medium,
   string Large
 );
-
 public record OpenLibrarySearchResponse(
     [property: JsonPropertyName("numFound")] int NumFound,
     [property: JsonPropertyName("docs")] List<OpenLibrarySearchDoc> Docs
