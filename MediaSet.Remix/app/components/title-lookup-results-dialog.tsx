@@ -11,28 +11,33 @@ type TitleLookupResultsDialogProps = {
   onClose: () => void;
 };
 
-function getResultDetails(entity: TitleLookupEntity): string {
-  const parts: string[] = [];
-
+function getResultDetails(entity: TitleLookupEntity): string[] {
   if (entity.type === Entity.Books) {
     const book = entity as BookEntity;
-    if (book.authors?.length) parts.push(book.authors.join(', '));
-    if (book.publicationDate) parts.push(book.publicationDate);
+    return [
+      book.authors?.length ? book.authors.join(', ') : null,
+      book.publicationDate ?? null,
+    ].filter((v): v is string => v !== null);
   } else if (entity.type === Entity.Movies) {
     const movie = entity as MovieEntity;
-    if (movie.releaseDate) parts.push(movie.releaseDate);
-    if (movie.genres?.length) parts.push(movie.genres.slice(0, 3).join(', '));
+    return [
+      movie.releaseDate ?? null,
+      movie.genres?.length ? movie.genres.slice(0, 3).join(', ') : null,
+    ].filter((v): v is string => v !== null);
   } else if (entity.type === Entity.Games) {
     const game = entity as GameEntity;
-    if (game.platform) parts.push(game.platform);
-    if (game.releaseDate) parts.push(game.releaseDate);
+    return [
+      game.platform ?? null,
+      game.releaseDate ?? null,
+    ].filter((v): v is string => v !== null);
   } else if (entity.type === Entity.Musics) {
     const music = entity as MusicEntity;
-    if (music.artist) parts.push(music.artist);
-    if (music.releaseDate) parts.push(music.releaseDate);
+    return [
+      music.artist ?? null,
+      music.releaseDate ?? null,
+    ].filter((v): v is string => v !== null);
   }
-
-  return parts.join(' · ');
+  return [];
 }
 
 export default function TitleLookupResultsDialog({
@@ -96,21 +101,38 @@ export default function TitleLookupResultsDialog({
         </div>
         <div className="overflow-y-auto p-4">
           <p className="text-slate-400 text-sm mb-3">
-            {results.length} results found. Select one to populate the form.
+            {results.length} results found. Pick the one you&apos;re looking for.
           </p>
           <ul className="flex flex-col gap-2">
             {results.map((entity, index) => {
               const details = getResultDetails(entity);
               return (
-                <li key={index}>
+                <li
+                  key={index}
+                  className="flex items-center gap-3 p-3 rounded-md bg-gray-700 border border-gray-600"
+                >
                   <button
                     type="button"
                     onClick={() => handleSelect(entity)}
-                    className="w-full text-left p-3 rounded-md bg-gray-700 hover:bg-gray-600 border border-gray-600 hover:border-blue-400 transition-colors"
+                    className="shrink-0 px-3 py-1 text-sm font-medium rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
                   >
-                    <div className="font-medium text-white">{entity.title ?? '(No title)'}</div>
-                    {details && <div className="text-sm text-gray-400 mt-1">{details}</div>}
+                    Select
                   </button>
+                  <div className="shrink-0 w-10 h-14 bg-gray-600 rounded overflow-hidden flex items-center justify-center">
+                    {entity.imageUrl ? (
+                      <img
+                        src={entity.imageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">{entity.title ?? '(No title)'}</div>
+                    {details.map((line, i) => (
+                      <div key={i} className="text-sm text-gray-400 mt-0.5">{line}</div>
+                    ))}
+                  </div>
                 </li>
               );
             })}
