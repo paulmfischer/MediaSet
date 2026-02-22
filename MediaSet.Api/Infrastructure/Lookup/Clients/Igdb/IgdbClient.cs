@@ -1,7 +1,6 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
-using System.Text.Json;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 
@@ -39,11 +38,7 @@ public class IgdbClient : IIgdbClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var results = JsonSerializer.Deserialize<List<IgdbGame>>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var results = await response.Content.ReadFromJsonAsync<List<IgdbGame>>(cancellationToken);
 
             _logger.LogInformation("IGDB search found {Count} results for game: {Title}",
                 results?.Count ?? 0, title);
@@ -76,11 +71,7 @@ public class IgdbClient : IIgdbClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var results = JsonSerializer.Deserialize<List<IgdbGame>>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var results = await response.Content.ReadFromJsonAsync<List<IgdbGame>>(cancellationToken);
 
             return results?.FirstOrDefault();
         }

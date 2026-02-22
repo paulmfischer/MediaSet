@@ -14,28 +14,22 @@ type TitleLookupResultsDialogProps = {
 function getResultDetails(entity: TitleLookupEntity): string[] {
   if (entity.type === Entity.Books) {
     const book = entity as BookEntity;
-    return [
-      book.authors?.length ? book.authors.join(', ') : null,
-      book.publicationDate ?? null,
-    ].filter((v): v is string => v !== null);
+    return [book.authors?.length ? book.authors.join(', ') : null, book.publicationDate ?? null].filter(
+      (v): v is string => v !== null
+    );
   } else if (entity.type === Entity.Movies) {
     const movie = entity as MovieEntity;
-    return [
-      movie.releaseDate ?? null,
-      movie.genres?.length ? movie.genres.slice(0, 3).join(', ') : null,
-    ].filter((v): v is string => v !== null);
+    return [movie.releaseDate ?? null, movie.genres?.length ? movie.genres.slice(0, 3).join(', ') : null].filter(
+      (v): v is string => v !== null
+    );
   } else if (entity.type === Entity.Games) {
     const game = entity as GameEntity;
-    return [
-      game.platform ?? null,
-      game.releaseDate ?? null,
-    ].filter((v): v is string => v !== null);
+    return [game.platform ?? null, game.format ?? null, game.releaseDate ?? null].filter(
+      (v): v is string => v !== null
+    );
   } else if (entity.type === Entity.Musics) {
     const music = entity as MusicEntity;
-    return [
-      music.artist ?? null,
-      music.releaseDate ?? null,
-    ].filter((v): v is string => v !== null);
+    return [music.artist ?? null, music.releaseDate ?? null].filter((v): v is string => v !== null);
   }
   return [];
 }
@@ -107,10 +101,7 @@ export default function TitleLookupResultsDialog({
             {results.map((entity, index) => {
               const details = getResultDetails(entity);
               return (
-                <li
-                  key={index}
-                  className="flex items-center gap-3 p-3 rounded-md bg-gray-700 border border-gray-600"
-                >
+                <li key={index} className="flex items-center gap-3 p-3 rounded-md bg-gray-700 border border-gray-600">
                   <button
                     type="button"
                     onClick={() => handleSelect(entity)}
@@ -120,17 +111,15 @@ export default function TitleLookupResultsDialog({
                   </button>
                   <div className="shrink-0 w-10 h-14 bg-gray-600 rounded overflow-hidden flex items-center justify-center">
                     {entity.imageUrl ? (
-                      <img
-                        src={entity.imageUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={entity.imageUrl} alt="" className="w-full h-full object-cover" />
                     ) : null}
                   </div>
                   <div>
                     <div className="font-medium text-white">{entity.title ?? '(No title)'}</div>
                     {details.map((line, i) => (
-                      <div key={i} className="text-sm text-gray-400 mt-0.5">{line}</div>
+                      <div key={i} className="text-sm text-gray-400 mt-0.5">
+                        {line}
+                      </div>
                     ))}
                   </div>
                 </li>

@@ -68,7 +68,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         return searchResults
             .Take(10)
-            .Select(r => MapToGameResponse(r, DeriveFormatFromPlatforms(r.Platforms, string.Empty), string.Empty, string.Empty))
+            .Select(r => MapToGameResponse(r, DeriveFormatFromPlatforms(r.Platforms, string.Empty), r.Platforms?.FirstOrDefault()?.Name ?? string.Empty, string.Empty))
             .ToList();
     }
 
