@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import invariant from 'tiny-invariant';
@@ -21,10 +22,16 @@ import BookForm from '~/components/book-form';
 import MovieForm from '~/components/movie-form';
 import GameForm from '~/components/game-form';
 import MusicForm from '~/components/music-form';
+import TitleLookupResultsDialog from '~/components/title-lookup-results-dialog';
 // Server-only lookup utilities are imported dynamically inside the action to avoid client bundling
 
 function isLookupError(result: unknown): result is { message: string; statusCode: number } {
-  return result && typeof result.message === 'string' && typeof result.statusCode === 'number';
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    typeof (result as { message?: unknown }).message === 'string' &&
+    typeof (result as { statusCode?: unknown }).statusCode === 'number'
+  );
 }
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
@@ -87,9 +94,31 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     try {
       const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
-      const lookupResult = await lookup(entityType, identifierType, identifierValue);
-      // Include a lookup timestamp so the UI can force a remount for consecutive lookups
-      return { lookupResult, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      const lookupArray = await lookup(entityType, identifierType, identifierValue);
+
+      if (isLookupError(lookupArray)) {
+        return { lookupResult: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      }
+
+      if (lookupArray.length === 0) {
+        return {
+          lookupResult: {
+            message: `No ${singular(entityType)} found for "${identifierValue}"`,
+            statusCode: 404,
+          },
+          identifierValue,
+          fieldName,
+          lookupTimestamp: Date.now(),
+        };
+      }
+
+      // For title search with multiple results, return all for dialog selection
+      if (fieldName === 'title' && lookupArray.length > 1) {
+        return { lookupResults: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };
+      }
+
+      // For barcode or single title result: return first item
+      return { lookupResult: lookupArray[0], identifierValue, fieldName, lookupTimestamp: Date.now() };
     } catch (error) {
       serverLogger.error('Action: Entity lookup failed', {
         entityType,
@@ -148,16 +177,43 @@ export default function Add() {
   const lookupError = lookupResult && isLookupError(lookupResult) ? lookupResult.message : undefined;
   const lookupTimestamp = actionData && 'lookupTimestamp' in actionData ? actionData.lookupTimestamp : undefined;
 
+  // Multiple title results for dialog selection
+  const lookupResults = actionData && 'lookupResults' in actionData ? actionData.lookupResults : undefined;
+
+  // Dialog state for title searches with multiple results
+  const [dialogState, setDialogState] = useState<{
+    dismissedTimestamp: number | undefined;
+    selectedEntity: BookEntity | MovieEntity | GameEntity | MusicEntity | null;
+    version: number;
+  }>({ dismissedTimestamp: undefined, selectedEntity: null, version: 0 });
+
+  const dialogOpen = !!lookupResults && lookupResults.length > 1 && lookupTimestamp !== dialogState.dismissedTimestamp;
+
+  const handleDialogSelect = (entity: BookEntity | MovieEntity | GameEntity | MusicEntity) => {
+    setDialogState((prev) => ({
+      dismissedTimestamp: lookupTimestamp,
+      selectedEntity: entity,
+      version: prev.version + 1,
+    }));
+  };
+
+  const handleDialogClose = () => {
+    setDialogState((prev) => ({ ...prev, dismissedTimestamp: lookupTimestamp }));
+  };
+
   // Handle form errors
   const formError = actionData && 'error' in actionData ? actionData.error : undefined;
 
+  // Use the dialog-selected entity if available, otherwise fall back to single lookup result
+  const effectiveLookupEntity = dialogState.selectedEntity ?? lookupEntity;
+  const effectiveTimestamp = dialogState.selectedEntity ? `dialog-${dialogState.version}` : (lookupTimestamp ?? 0);
+
   // Use a key to force form remount when lookup data changes
-  // This ensures defaultValue props are re-applied with new lookup data
   const identifierValue = actionData && 'identifierValue' in actionData ? actionData.identifierValue : undefined;
   const fieldName = actionData && 'fieldName' in actionData ? actionData.fieldName : undefined;
   const formKey =
-    lookupEntity && identifierValue && fieldName
-      ? `lookup-${identifierValue}-${fieldName}-${lookupTimestamp ?? '0'}`
+    effectiveLookupEntity && identifierValue && fieldName
+      ? `lookup-${identifierValue}-${fieldName}-${effectiveTimestamp}`
       : 'empty';
 
   let formComponent;
@@ -165,7 +221,7 @@ export default function Add() {
     formComponent = (
       <BookForm
         key={formKey}
-        book={lookupEntity as BookEntity}
+        book={effectiveLookupEntity as BookEntity}
         authors={authors}
         genres={genres}
         publishers={publishers}
@@ -178,7 +234,7 @@ export default function Add() {
     formComponent = (
       <MovieForm
         key={formKey}
-        movie={lookupEntity as MovieEntity}
+        movie={effectiveLookupEntity as MovieEntity}
         genres={genres}
         studios={studios}
         formats={formats}
@@ -190,7 +246,7 @@ export default function Add() {
     formComponent = (
       <GameForm
         key={formKey}
-        game={lookupEntity as GameEntity}
+        game={effectiveLookupEntity as GameEntity}
         developers={developers}
         publishers={publishers}
         genres={genres}
@@ -204,7 +260,7 @@ export default function Add() {
     formComponent = (
       <MusicForm
         key={formKey}
-        music={lookupEntity as MusicEntity}
+        music={effectiveLookupEntity as MusicEntity}
         genres={genres}
         formats={formats}
         labels={labels}
@@ -254,6 +310,15 @@ export default function Add() {
           </Form>
         </div>
       </div>
+
+      {lookupResults && (
+        <TitleLookupResultsDialog
+          isOpen={dialogOpen}
+          results={lookupResults as Array<BookEntity | MovieEntity | GameEntity | MusicEntity>}
+          onSelect={handleDialogSelect}
+          onClose={handleDialogClose}
+        />
+      )}
     </div>
   );
 }

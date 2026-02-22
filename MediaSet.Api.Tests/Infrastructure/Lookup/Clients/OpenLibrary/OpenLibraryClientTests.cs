@@ -798,6 +798,148 @@ public class OpenLibraryClientTests
         Assert.That(result, Is.Null);
     }
 
+    #region SearchByTitleAsync Tests
+
+    [Test]
+    public async Task SearchByTitleAsync_WithCoverEditionKey_EnrichesResultViaOlidLookup()
+    {
+        var searchJson = """
+        {
+            "numFound": 1,
+            "docs": [
+                {
+                    "title": "Fantastic Mr. Fox",
+                    "author_name": ["Roald Dahl"],
+                    "first_publish_year": 1970,
+                    "cover_edition_key": "OL3778206M",
+                    "number_of_pages_median": 96
+                }
+            ]
+        }
+        """;
+
+        var olidJson = """
+        {
+            "items": [],
+            "records": {
+                "/books/OL3778206M": {
+                    "isbns": [],
+                    "lccns": [],
+                    "oclcs": [],
+                    "olids": ["OL3778206M"],
+                    "publish_dates": ["2007"],
+                    "record_url": "https://openlibrary.org/books/OL3778206M",
+                    "data": {
+                        "title": "Fantastic Mr. Fox",
+                        "subtitle": "A Novel",
+                        "authors": [{"name": "Roald Dahl", "url": "/authors/OL34184A"}],
+                        "number_of_pages": 81,
+                        "publishers": [{"name": "Puffin Books"}],
+                        "subjects": [{"name": "Children's fiction", "url": "/subjects/childrens_fiction"}]
+                    }
+                }
+            }
+        }
+        """;
+
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK, searchJson);
+        SetupHttpResponseForUrl("volumes/brief", HttpStatusCode.OK, olidJson);
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
+        Assert.That(result[0].Subtitle, Is.EqualTo("A Novel"));
+        Assert.That(result[0].NumberOfPages, Is.EqualTo(81));
+        Assert.That(result[0].PublishDate, Is.EqualTo("2007"));
+    }
+
+    [Test]
+    public async Task SearchByTitleAsync_WhenOlidLookupFails_FallsBackToSearchData()
+    {
+        var searchJson = """
+        {
+            "numFound": 1,
+            "docs": [
+                {
+                    "title": "Fantastic Mr. Fox",
+                    "author_name": ["Roald Dahl"],
+                    "first_publish_year": 1970,
+                    "cover_edition_key": "OL3778206M",
+                    "number_of_pages_median": 96
+                }
+            ]
+        }
+        """;
+
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK, searchJson);
+        SetupHttpResponseForUrl("volumes/brief", HttpStatusCode.InternalServerError, "error");
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
+        Assert.That(result[0].NumberOfPages, Is.EqualTo(96));
+    }
+
+    [Test]
+    public async Task SearchByTitleAsync_WithNoCoverEditionKey_UsesSearchDataDirectly()
+    {
+        var searchJson = """
+        {
+            "numFound": 1,
+            "docs": [
+                {
+                    "title": "Fantastic Mr. Fox",
+                    "author_name": ["Roald Dahl"],
+                    "first_publish_year": 1970,
+                    "number_of_pages_median": 96
+                }
+            ]
+        }
+        """;
+
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK, searchJson);
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
+        Assert.That(result[0].NumberOfPages, Is.EqualTo(96));
+    }
+
+    [Test]
+    public async Task SearchByTitleAsync_WithNoResults_ReturnsEmptyList()
+    {
+        SetupHttpResponse(HttpStatusCode.OK, """{"numFound": 0, "docs": []}""");
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        var result = await client.SearchByTitleAsync("Nonexistent Book");
+
+        Assert.That(result, Is.Empty);
+    }
+
+    [Test]
+    public async Task SearchByTitleAsync_WithHttpError_ReturnsEmptyList()
+    {
+        SetupHttpResponse(HttpStatusCode.InternalServerError, "error");
+
+        var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
+
+        var result = await client.SearchByTitleAsync("Some Book");
+
+        Assert.That(result, Is.Empty);
+    }
+
+    #endregion
+
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)
     {
         var response = new HttpResponseMessage
@@ -810,6 +952,22 @@ public class OpenLibraryClientTests
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
+    }
+
+    private void SetupHttpResponseForUrl(string urlSubstring, HttpStatusCode statusCode, string content)
+    {
+        var response = new HttpResponseMessage
+        {
+            StatusCode = statusCode,
+            Content = new StringContent(content, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.ToString().Contains(urlSubstring)),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(response);
     }

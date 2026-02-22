@@ -13,14 +13,15 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
     private readonly IUpcItemDbClient _upcItemDbClient;
     private readonly ILogger<BookLookupStrategy> _logger;
 
-    private static readonly IdentifierType[] _supportedIdentifierTypes = 
+    private static readonly IdentifierType[] _supportedIdentifierTypes =
     [
         IdentifierType.Isbn,
         IdentifierType.Lccn,
         IdentifierType.Oclc,
         IdentifierType.Olid,
         IdentifierType.Upc,
-        IdentifierType.Ean
+        IdentifierType.Ean,
+        IdentifierType.Title
     ];
 
     public BookLookupStrategy(
@@ -38,17 +39,22 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         return entityType == MediaTypes.Books && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<BookResponse?> LookupAsync(
-        IdentifierType identifierType, 
-        string identifierValue, 
+    public async Task<IReadOnlyList<BookResponse>> LookupAsync(
+        IdentifierType identifierType,
+        string identifierValue,
         CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("BookLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
-        
-        _logger.LogInformation("Looking up book with {IdentifierType}: {IdentifierValue}", 
+
+        _logger.LogInformation("Looking up book with {IdentifierType}: {IdentifierValue}",
             identifierType, identifierValue);
 
-        return identifierType switch
+        if (identifierType == IdentifierType.Title)
+        {
+            return await _openLibraryClient.SearchByTitleAsync(identifierValue, cancellationToken);
+        }
+
+        var result = identifierType switch
         {
             IdentifierType.Isbn => await LookupByIsbnAsync(identifierValue, cancellationToken),
             IdentifierType.Lccn => await LookupByLccnAsync(identifierValue, cancellationToken),
@@ -57,6 +63,8 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
             IdentifierType.Upc or IdentifierType.Ean => await LookupByUpcAsync(identifierValue, cancellationToken),
             _ => null
         };
+
+        return result != null ? [result] : [];
     }
 
     private async Task<BookResponse?> LookupByIsbnAsync(string isbn, CancellationToken cancellationToken)

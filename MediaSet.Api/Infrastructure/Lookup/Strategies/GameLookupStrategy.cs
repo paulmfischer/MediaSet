@@ -17,7 +17,8 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
     private static readonly IdentifierType[] _supportedIdentifierTypes =
     [
         IdentifierType.Upc,
-        IdentifierType.Ean
+        IdentifierType.Ean,
+        IdentifierType.Title
     ];
 
     public GameLookupStrategy(
@@ -35,7 +36,7 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         return entityType == MediaTypes.Games && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<GameResponse?> LookupAsync(
+    public async Task<IReadOnlyList<GameResponse>> LookupAsync(
         IdentifierType identifierType,
         string identifierValue,
         CancellationToken cancellationToken)
@@ -44,6 +45,35 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
 
         _logger.LogInformation("Looking up game with {IdentifierType}: {IdentifierValue}", identifierType, identifierValue);
 
+        if (identifierType == IdentifierType.Title)
+        {
+            return await SearchByTitleAsync(identifierValue, cancellationToken);
+        }
+
+        var result = await LookupByUpcAsync(identifierValue, cancellationToken);
+        return result != null ? [result] : [];
+    }
+
+    private async Task<IReadOnlyList<GameResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
+    {
+        var searchResults = await _igdbClient.SearchGameAsync(title, cancellationToken);
+
+        if (searchResults == null || searchResults.Count == 0)
+        {
+            _logger.LogWarning("No IGDB results found for title: {Title}", title);
+            return [];
+        }
+
+        _logger.LogInformation("IGDB search found {Count} results for title: {Title}", searchResults.Count, title);
+
+        return searchResults
+            .Take(10)
+            .Select(r => MapToGameResponse(r, DeriveFormatFromPlatforms(r.Platforms, string.Empty), r.Platforms?.FirstOrDefault()?.Name ?? string.Empty, string.Empty))
+            .ToList();
+    }
+
+    private async Task<GameResponse?> LookupByUpcAsync(string identifierValue, CancellationToken cancellationToken)
+    {
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
         if (upcResult == null || upcResult.Items.Count == 0)
         {

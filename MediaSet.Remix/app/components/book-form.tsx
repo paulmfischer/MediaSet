@@ -34,6 +34,22 @@ export default function BookForm({
   const textareaClasses =
     'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
 
+  const handleTitleLookup = () => {
+    const titleInput = document.getElementById('title') as HTMLInputElement;
+    const titleValue = titleInput?.value;
+
+    if (!titleValue) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'title');
+    formData.append('identifierValue', titleValue);
+
+    submit(formData, { method: 'post' });
+  };
+
   const handleLookup = () => {
     const isbnInput = document.getElementById('isbn') as HTMLInputElement;
     const isbnValue = isbnInput?.value;
@@ -65,15 +81,49 @@ export default function BookForm({
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
           Title
         </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          className={inputClasses}
-          placeholder="Title"
-          aria-label="Title"
-          defaultValue={book?.title}
-        />
+        <div className="flex gap-2">
+          <input
+            id="title"
+            name="title"
+            type="text"
+            className={inputClasses}
+            placeholder="Title"
+            aria-label="Title"
+            defaultValue={book?.title}
+          />
+          {isbnLookupAvailable && (
+            <button type="button" onClick={handleTitleLookup} disabled={isSubmitting}>
+              Lookup
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
+          ISBN
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="isbn"
+            name="isbn"
+            type="text"
+            inputMode="numeric"
+            className={inputClasses}
+            placeholder="ISBN"
+            defaultValue={book?.isbn}
+            aria-label="ISBN"
+            onKeyDown={handleKeyDown}
+          />
+          {isbnLookupAvailable && (
+            <>
+              <button type="button" onClick={handleLookup} disabled={isSubmitting}>
+                Lookup
+              </button>
+              <ScanButton inputId="isbn" fieldName="isbn" disabled={isSubmitting} />
+            </>
+          )}
+        </div>
       </div>
 
       <ImageUpload name="coverImage" existingImage={book?.coverImage} isSubmitting={isSubmitting} />
@@ -195,33 +245,6 @@ export default function BookForm({
           options={publishers}
           selectedValue={book?.publisher}
         />
-      </div>
-
-      <div>
-        <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
-          ISBN
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="isbn"
-            name="isbn"
-            type="text"
-            inputMode="numeric"
-            className={inputClasses}
-            placeholder="ISBN"
-            defaultValue={book?.isbn}
-            aria-label="ISBN"
-            onKeyDown={handleKeyDown}
-          />
-          {isbnLookupAvailable && (
-            <>
-              <button type="button" onClick={handleLookup} disabled={isSubmitting}>
-                Lookup
-              </button>
-              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
-            </>
-          )}
-        </div>
       </div>
 
       <div>

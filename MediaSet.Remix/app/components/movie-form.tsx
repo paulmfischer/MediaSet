@@ -37,6 +37,22 @@ export default function MovieForm({
   const textareaClasses =
     'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
 
+  const handleTitleLookup = () => {
+    const titleInput = document.getElementById('title') as HTMLInputElement;
+    const titleValue = titleInput?.value;
+
+    if (!titleValue) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('intent', 'lookup');
+    formData.append('fieldName', 'title');
+    formData.append('identifierValue', titleValue);
+
+    submit(formData, { method: 'post' });
+  };
+
   const handleLookup = () => {
     const barcodeInput = document.getElementById('barcode') as HTMLInputElement;
     const barcodeValue = barcodeInput?.value;
@@ -68,15 +84,49 @@ export default function MovieForm({
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
           Title
         </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          className={inputClasses}
-          placeholder="Title"
-          aria-label="Title"
-          defaultValue={movie?.title}
-        />
+        <div className="flex gap-2">
+          <input
+            id="title"
+            name="title"
+            type="text"
+            className={inputClasses}
+            placeholder="Title"
+            aria-label="Title"
+            defaultValue={movie?.title}
+          />
+          {barcodeLookupAvailable && (
+            <button type="button" onClick={handleTitleLookup} disabled={isSubmitting}>
+              Lookup
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">
+          Barcode
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="barcode"
+            name="barcode"
+            type="text"
+            inputMode="numeric"
+            className={inputClasses}
+            placeholder="Barcode"
+            defaultValue={movie?.barcode}
+            aria-label="Barcode"
+            onKeyDown={handleKeyDown}
+          />
+          {barcodeLookupAvailable && (
+            <>
+              <button type="button" onClick={handleLookup} disabled={isSubmitting}>
+                Lookup
+              </button>
+              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
+            </>
+          )}
+        </div>
       </div>
 
       <ImageUpload name="coverImage" existingImage={movie?.coverImage} isSubmitting={isSubmitting} />
@@ -186,33 +236,6 @@ export default function MovieForm({
           options={genres}
           selectedValues={movie?.genres}
         />
-      </div>
-
-      <div>
-        <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">
-          Barcode
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="barcode"
-            name="barcode"
-            type="text"
-            inputMode="numeric"
-            className={inputClasses}
-            placeholder="Barcode"
-            defaultValue={movie?.barcode}
-            aria-label="Barcode"
-            onKeyDown={handleKeyDown}
-          />
-          {barcodeLookupAvailable && (
-            <>
-              <button type="button" onClick={handleLookup} disabled={isSubmitting}>
-                Lookup
-              </button>
-              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
-            </>
-          )}
-        </div>
       </div>
 
       <div>

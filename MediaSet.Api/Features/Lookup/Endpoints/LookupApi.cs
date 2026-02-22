@@ -15,7 +15,7 @@ internal static class LookupApi
 
         group.WithTags("Lookup");
 
-        group.MapGet("/{entityType}/{identifierType}/{identifierValue}", async Task<Results<Ok<BookResponse>, Ok<MovieResponse>, Ok<GameResponse>, Ok<MusicResponse>, NotFound, BadRequest<string>>> (
+        group.MapGet("/{entityType}/{identifierType}/{identifierValue}", async Task<Results<Ok<IReadOnlyList<BookResponse>>, Ok<IReadOnlyList<MovieResponse>>, Ok<IReadOnlyList<GameResponse>>, Ok<IReadOnlyList<MusicResponse>>, BadRequest<string>>> (
             LookupStrategyFactory strategyFactory,
             string entityType,
             string identifierType,
@@ -34,43 +34,36 @@ internal static class LookupApi
                 return TypedResults.BadRequest($"Invalid entity type: {entityType}. Valid types are: Books, Movies, Games, Musics");
             }
 
-            logger.LogInformation("Lookup request: {EntityType} with {IdentifierType} = {IdentifierValue}", 
+            logger.LogInformation("Lookup request: {EntityType} with {IdentifierType} = {IdentifierValue}",
                 parsedEntityType, parsedIdentifierType, identifierValue);
 
             try
             {
-                object? result = parsedEntityType switch
+                switch (parsedEntityType)
                 {
-                    MediaTypes.Books => await strategyFactory.GetStrategy<BookResponse>(parsedEntityType, parsedIdentifierType)
-                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
-                    MediaTypes.Movies => await strategyFactory.GetStrategy<MovieResponse>(parsedEntityType, parsedIdentifierType)
-                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
-                    MediaTypes.Games => await strategyFactory.GetStrategy<GameResponse>(parsedEntityType, parsedIdentifierType)
-                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
-                    MediaTypes.Musics => await strategyFactory.GetStrategy<MusicResponse>(parsedEntityType, parsedIdentifierType)
-                        .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken),
-                    _ => null
-                };
-
-                if (result != null)
-                {
-                    return result switch
-                    {
-                        BookResponse book => TypedResults.Ok(book),
-                        MovieResponse movie => TypedResults.Ok(movie),
-                        GameResponse game => TypedResults.Ok(game),
-                        MusicResponse music => TypedResults.Ok(music),
-                        _ => TypedResults.NotFound()
-                    };
+                    case MediaTypes.Books:
+                        var books = await strategyFactory.GetStrategy<BookResponse>(parsedEntityType, parsedIdentifierType)
+                            .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
+                        return TypedResults.Ok(books);
+                    case MediaTypes.Movies:
+                        var movies = await strategyFactory.GetStrategy<MovieResponse>(parsedEntityType, parsedIdentifierType)
+                            .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
+                        return TypedResults.Ok(movies);
+                    case MediaTypes.Games:
+                        var games = await strategyFactory.GetStrategy<GameResponse>(parsedEntityType, parsedIdentifierType)
+                            .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
+                        return TypedResults.Ok(games);
+                    case MediaTypes.Musics:
+                        var music = await strategyFactory.GetStrategy<MusicResponse>(parsedEntityType, parsedIdentifierType)
+                            .LookupAsync(parsedIdentifierType, identifierValue, cancellationToken);
+                        return TypedResults.Ok(music);
+                    default:
+                        return TypedResults.BadRequest($"Invalid entity type: {entityType}. Valid types are: Books, Movies, Games, Musics");
                 }
-
-                logger.LogInformation("No result for {EntityType} with {IdentifierType} = {IdentifierValue}", 
-                    parsedEntityType, parsedIdentifierType, identifierValue);
-                return TypedResults.NotFound();
             }
             catch (NotSupportedException ex)
             {
-                logger.LogWarning(ex, "Unsupported combination: {EntityType} with {IdentifierType}", 
+                logger.LogWarning(ex, "Unsupported combination: {EntityType} with {IdentifierType}",
                     parsedEntityType, parsedIdentifierType);
                 return TypedResults.BadRequest(ex.Message);
             }

@@ -14,7 +14,8 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
     private static readonly IdentifierType[] _supportedIdentifierTypes =
     [
         IdentifierType.Upc,
-        IdentifierType.Ean
+        IdentifierType.Ean,
+        IdentifierType.Title
     ];
 
     public MusicLookupStrategy(
@@ -30,15 +31,21 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         return entityType == MediaTypes.Musics && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<MusicResponse?> LookupAsync(
+    public async Task<IReadOnlyList<MusicResponse>> LookupAsync(
         IdentifierType identifierType,
         string identifierValue,
         CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("MusicLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
-        
+
         _logger.LogInformation("Looking up music with {IdentifierType}: {IdentifierValue}",
             identifierType, identifierValue);
+
+        if (identifierType == IdentifierType.Title)
+        {
+            var titleResults = await _musicBrainzClient.SearchByTitleAsync(identifierValue, cancellationToken);
+            return titleResults.Select(MapToMusicResponse).ToList();
+        }
 
         // Step 1: Search by barcode to get the release ID
         var searchRelease = await _musicBrainzClient.GetReleaseByBarcodeAsync(identifierValue, cancellationToken);
@@ -46,7 +53,7 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         if (searchRelease == null)
         {
             _logger.LogWarning("No MusicBrainz release found for barcode: {Barcode}", identifierValue);
-            return null;
+            return [];
         }
 
         // Step 2: Fetch full release details including tracks
@@ -55,10 +62,10 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         if (release == null)
         {
             _logger.LogWarning("Failed to fetch full release details for ID: {ReleaseId}", searchRelease.Id);
-            return null;
+            return [];
         }
 
-        return MapToMusicResponse(release);
+        return [MapToMusicResponse(release)];
     }
 
     private MusicResponse MapToMusicResponse(MusicBrainzRelease release)

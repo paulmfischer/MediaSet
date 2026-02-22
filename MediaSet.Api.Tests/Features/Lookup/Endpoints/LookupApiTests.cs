@@ -101,15 +101,17 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("Effective Java"));
-        Assert.That(result.Authors.Count, Is.EqualTo(1));
-        Assert.That(result.Authors[0].Name, Is.EqualTo("Joshua Bloch"));
-        Assert.That(result.NumberOfPages, Is.EqualTo(416));
+        Assert.That(result, Has.Count.EqualTo(1));
+        var book = result![0];
+        Assert.That(book.Title, Is.EqualTo("Effective Java"));
+        Assert.That(book.Authors.Count, Is.EqualTo(1));
+        Assert.That(book.Authors[0].Name, Is.EqualTo("Joshua Bloch"));
+        Assert.That(book.NumberOfPages, Is.EqualTo(416));
         _openLibraryClientMock.Verify(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -127,9 +129,12 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -157,12 +162,13 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("Test Book"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result![0].Title, Is.EqualTo("Test Book"));
         _openLibraryClientMock.Verify(c => c.GetReadableBookByLccnAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -190,12 +196,13 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("OCLC Book"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result![0].Title, Is.EqualTo("OCLC Book"));
         _openLibraryClientMock.Verify(c => c.GetReadableBookByOclcAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -223,12 +230,13 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Title, Is.EqualTo("OpenLibrary Book"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result![0].Title, Is.EqualTo("OpenLibrary Book"));
         _openLibraryClientMock.Verify(c => c.GetReadableBookByOlidAsync(identifierValue, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -314,15 +322,17 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Authors.Count, Is.EqualTo(3));
-        Assert.That(result.Authors[0].Name, Is.EqualTo("Robert C. Martin"));
-        Assert.That(result.Authors[1].Name, Is.EqualTo("Contributor One"));
-        Assert.That(result.Authors[2].Name, Is.EqualTo("Contributor Two"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        var book = result![0];
+        Assert.That(book.Authors.Count, Is.EqualTo(3));
+        Assert.That(book.Authors[0].Name, Is.EqualTo("Robert C. Martin"));
+        Assert.That(book.Authors[1].Name, Is.EqualTo("Contributor One"));
+        Assert.That(book.Authors[2].Name, Is.EqualTo("Contributor Two"));
     }
 
     [Test]
@@ -353,14 +363,16 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Publishers.Count, Is.EqualTo(2));
-        Assert.That(result.Publishers[0].Name, Is.EqualTo("Addison-Wesley"));
-        Assert.That(result.Publishers[1].Name, Is.EqualTo("Pearson Education"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        var book = result![0];
+        Assert.That(book.Publishers.Count, Is.EqualTo(2));
+        Assert.That(book.Publishers[0].Name, Is.EqualTo("Addison-Wesley"));
+        Assert.That(book.Publishers[1].Name, Is.EqualTo("Pearson Education"));
     }
 
     [Test]
@@ -392,15 +404,17 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Subjects.Count, Is.EqualTo(3));
-        Assert.That(result.Subjects[0].Name, Is.EqualTo("Software Engineering"));
-        Assert.That(result.Subjects[1].Name, Is.EqualTo("Design Patterns"));
-        Assert.That(result.Subjects[2].Name, Is.EqualTo("Object-Oriented Programming"));
+        Assert.That(result, Has.Count.EqualTo(1));
+        var book = result![0];
+        Assert.That(book.Subjects.Count, Is.EqualTo(3));
+        Assert.That(book.Subjects[0].Name, Is.EqualTo("Software Engineering"));
+        Assert.That(book.Subjects[1].Name, Is.EqualTo("Design Patterns"));
+        Assert.That(book.Subjects[2].Name, Is.EqualTo("Object-Oriented Programming"));
     }
 
     [Test]
@@ -427,12 +441,13 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Subtitle, Is.Empty);
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result![0].Subtitle, Is.Empty);
     }
 
     [Test]
@@ -459,11 +474,12 @@ public class LookupApiTests : IntegrationTestBase
 
         // Act
         var response = await _client.GetAsync($"/lookup/{entityType}/{identifierType}/{identifierValue}");
-        var result = await response.Content.ReadFromJsonAsync<BookResponse>();
+        var result = await response.Content.ReadFromJsonAsync<List<BookResponse>>();
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Format, Is.Null);
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.That(result![0].Format, Is.Null);
     }
 }

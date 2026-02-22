@@ -20,5 +20,8 @@ public enum IdentifierType
     Upc,
 
     [Description("ean")]
-    Ean
+    Ean,
+
+    [Description("title")]
+    Title
 }

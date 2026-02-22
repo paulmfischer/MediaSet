@@ -13,10 +13,11 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
     private readonly ITmdbClient _tmdbClient;
     private readonly ILogger<MovieLookupStrategy> _logger;
 
-    private static readonly IdentifierType[] _supportedIdentifierTypes = 
+    private static readonly IdentifierType[] _supportedIdentifierTypes =
     [
         IdentifierType.Upc,
-        IdentifierType.Ean
+        IdentifierType.Ean,
+        IdentifierType.Title
     ];
 
     public MovieLookupStrategy(
@@ -34,18 +35,53 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         return entityType == MediaTypes.Movies && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<MovieResponse?> LookupAsync(
-        IdentifierType identifierType, 
-        string identifierValue, 
+    public async Task<IReadOnlyList<MovieResponse>> LookupAsync(
+        IdentifierType identifierType,
+        string identifierValue,
         CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("MovieLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
-        
-        _logger.LogInformation("Looking up movie with {IdentifierType}: {IdentifierValue}", 
+
+        _logger.LogInformation("Looking up movie with {IdentifierType}: {IdentifierValue}",
             identifierType, identifierValue);
 
+        if (identifierType == IdentifierType.Title)
+        {
+            return await SearchByTitleAsync(identifierValue, cancellationToken);
+        }
+
+        var result = await LookupByUpcAsync(identifierValue, cancellationToken);
+        return result != null ? [result] : [];
+    }
+
+    private async Task<IReadOnlyList<MovieResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
+    {
+        var searchResult = await _tmdbClient.SearchMovieAsync(title, cancellationToken);
+
+        if (searchResult == null || searchResult.Results.Count == 0)
+        {
+            _logger.LogWarning("No TMDB results found for title: {Title}", title);
+            return [];
+        }
+
+        _logger.LogInformation("TMDB search found {Count} results for title: {Title}", searchResult.Results.Count, title);
+
+        var detailTasks = searchResult.Results
+            .Take(10)
+            .Select(r => _tmdbClient.GetMovieDetailsAsync(r.Id, cancellationToken));
+
+        var details = await Task.WhenAll(detailTasks);
+
+        return details
+            .Where(d => d != null)
+            .Select(d => MapToMovieResponse(d!))
+            .ToList();
+    }
+
+    private async Task<MovieResponse?> LookupByUpcAsync(string identifierValue, CancellationToken cancellationToken)
+    {
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
-        
+
         if (upcResult == null || upcResult.Items.Count == 0)
         {
             _logger.LogWarning("No UPC/EAN data found for code: {Code}", identifierValue);
@@ -53,7 +89,7 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         }
 
         var firstItem = upcResult.Items[0];
-        
+
         if (string.IsNullOrEmpty(firstItem.Title))
         {
             _logger.LogWarning("UPC/EAN {Code} data does not contain title", identifierValue);
@@ -62,11 +98,11 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
 
         var cleanedTitle = CleanMovieTitle(firstItem.Title, firstItem.Brand);
         var format = ExtractMovieFormat(firstItem.Title);
-        _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' with format '{Format}' for TMDB search", 
+        _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' with format '{Format}' for TMDB search",
             firstItem.Title, identifierValue, cleanedTitle, format);
 
         var searchResult = await _tmdbClient.SearchMovieAsync(cleanedTitle, cancellationToken);
-        
+
         if (searchResult == null || searchResult.Results.Count == 0)
         {
             _logger.LogWarning("No TMDB results found for title: {Title}", cleanedTitle);
@@ -74,15 +110,15 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         }
 
         // Find the best match by comparing titles, prioritizing exact matches
-        var bestMatch = searchResult.Results.FirstOrDefault(r => 
-            r.Title.Equals(cleanedTitle, StringComparison.OrdinalIgnoreCase)) 
+        var bestMatch = searchResult.Results.FirstOrDefault(r =>
+            r.Title.Equals(cleanedTitle, StringComparison.OrdinalIgnoreCase))
             ?? searchResult.Results[0];
-        
-        _logger.LogInformation("Found TMDB movie ID {MovieId} for title: {Title}", 
+
+        _logger.LogInformation("Found TMDB movie ID {MovieId} for title: {Title}",
             bestMatch.Id, cleanedTitle);
 
         var movieDetails = await _tmdbClient.GetMovieDetailsAsync(bestMatch.Id, cancellationToken);
-        
+
         if (movieDetails == null)
         {
             _logger.LogWarning("Could not retrieve TMDB movie details for ID: {MovieId}", bestMatch.Id);
