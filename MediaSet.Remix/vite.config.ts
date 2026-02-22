@@ -1,7 +1,7 @@
-import { vitePlugin as remix } from "@remix-run/dev";
-import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { remixDevTools } from "remix-development-tools";
+import { vitePlugin as remix } from '@remix-run/dev';
+import { defineConfig } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { remixDevTools } from 'remix-development-tools';
 // Uncomment for HTTPS local testing (required for mobile camera access)
 // import mkcert from "vite-plugin-mkcert";
 

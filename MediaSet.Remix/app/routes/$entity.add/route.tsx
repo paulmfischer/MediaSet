@@ -190,7 +190,11 @@ export default function Add() {
   const dialogOpen = !!lookupResults && lookupResults.length > 1 && lookupTimestamp !== dialogState.dismissedTimestamp;
 
   const handleDialogSelect = (entity: BookEntity | MovieEntity | GameEntity | MusicEntity) => {
-    setDialogState((prev) => ({ dismissedTimestamp: lookupTimestamp, selectedEntity: entity, version: prev.version + 1 }));
+    setDialogState((prev) => ({
+      dismissedTimestamp: lookupTimestamp,
+      selectedEntity: entity,
+      version: prev.version + 1,
+    }));
   };
 
   const handleDialogClose = () => {
@@ -202,9 +206,7 @@ export default function Add() {
 
   // Use the dialog-selected entity if available, otherwise fall back to single lookup result
   const effectiveLookupEntity = dialogState.selectedEntity ?? lookupEntity;
-  const effectiveTimestamp = dialogState.selectedEntity
-    ? `dialog-${dialogState.version}`
-    : (lookupTimestamp ?? 0);
+  const effectiveTimestamp = dialogState.selectedEntity ? `dialog-${dialogState.version}` : (lookupTimestamp ?? 0);
 
   // Use a key to force form remount when lookup data changes
   const identifierValue = actionData && 'identifierValue' in actionData ? actionData.identifierValue : undefined;

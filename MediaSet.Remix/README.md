@@ -7,6 +7,7 @@ Frontend UI for MediaSet, built with Remix.js and TypeScript.
 The MediaSet frontend provides a modern, responsive interface for managing your personal media library. Built with Remix.js, it offers server-side rendering, optimistic UI updates, and seamless integration with the MediaSet API.
 
 **Technologies:**
+
 - **Remix.js**: Full-stack React framework with server-side rendering
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first CSS framework
@@ -96,6 +97,7 @@ MediaSet.Remix/
 Remix uses file-based routing for automatic route generation:
 
 **Key routes:**
+
 - `/` - Home dashboard with statistics
 - `/{entityType}` - Entity list view (books, movies, games, music)
 - `/{entityType}/$id` - Entity detail view
@@ -103,10 +105,12 @@ Remix uses file-based routing for automatic route generation:
 - `/{entityType}/add` - Add new entity
 
 **Route features:**
+
 - Server-side data loading with loaders
 - Form handling with actions
 - Optimistic UI updates
 - Progressive enhancement
+
 ## Key Features
 
 ### Data Loading

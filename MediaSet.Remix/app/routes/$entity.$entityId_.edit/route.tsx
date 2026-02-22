@@ -255,9 +255,7 @@ export default function Edit() {
 
   // Use the dialog-selected entity if available, otherwise fall back to single lookup result
   const effectiveLookupEntity = dialogState.selectedEntity ?? (lookupEntity as object | undefined);
-  const effectiveTimestamp = dialogState.selectedEntity
-    ? `dialog-${dialogState.version}`
-    : (lookupTimestamp ?? 0);
+  const effectiveTimestamp = dialogState.selectedEntity ? `dialog-${dialogState.version}` : (lookupTimestamp ?? 0);
 
   // When lookup succeeds, use lookup data and preserve only the database id and type
   const mergedEntity = effectiveLookupEntity
