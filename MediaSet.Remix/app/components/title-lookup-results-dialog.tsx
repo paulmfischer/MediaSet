@@ -29,7 +29,9 @@ function getResultDetails(entity: TitleLookupEntity): string[] {
     );
   } else if (entity.type === Entity.Musics) {
     const music = entity as MusicEntity;
-    return [music.artist ?? null, music.releaseDate ?? null].filter((v): v is string => v !== null);
+    return [music.artist ?? null, music.format ?? null, music.releaseDate ?? null].filter(
+      (v): v is string => v !== null
+    );
   }
   return [];
 }

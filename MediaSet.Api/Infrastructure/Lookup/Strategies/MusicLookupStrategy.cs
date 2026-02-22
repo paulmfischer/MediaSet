@@ -44,7 +44,13 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         if (identifierType == IdentifierType.Title)
         {
             var titleResults = await _musicBrainzClient.SearchByTitleAsync(identifierValue, cancellationToken);
-            return titleResults.Select(MapToMusicResponse).ToList();
+            var detailTasks = titleResults
+                .Take(10)
+                .Select(r => _musicBrainzClient.GetReleaseByIdAsync(r.Id, cancellationToken));
+            var details = await Task.WhenAll(detailTasks);
+            return [.. details
+                .Where(d => d != null)
+                .Select(d => MapToMusicResponse(d!))];
         }
 
         // Step 1: Search by barcode to get the release ID
@@ -68,7 +74,7 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         return [MapToMusicResponse(release)];
     }
 
-    private MusicResponse MapToMusicResponse(MusicBrainzRelease release)
+    private static MusicResponse MapToMusicResponse(MusicBrainzRelease release)
     {
         // Extract artist name
         var artist = release.ArtistCredit.Count > 0
@@ -136,7 +142,7 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
             Discs: discs,
             DiscList: discList,
             Format: format,
-            ImageUrl: null
+            ImageUrl: $"https://coverartarchive.org/release/{release.Id}/front"
         );
     }
 
