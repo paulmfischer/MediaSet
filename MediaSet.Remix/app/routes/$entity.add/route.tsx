@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
 import invariant from 'tiny-invariant';
@@ -182,25 +182,19 @@ export default function Add() {
 
   // Dialog state for title searches with multiple results
   const [dialogState, setDialogState] = useState<{
-    open: boolean;
+    dismissedTimestamp: number | undefined;
     selectedEntity: BookEntity | MovieEntity | GameEntity | MusicEntity | null;
     version: number;
-  }>({ open: false, selectedEntity: null, version: 0 });
+  }>({ dismissedTimestamp: undefined, selectedEntity: null, version: 0 });
 
-  useEffect(() => {
-    if (lookupResults && lookupResults.length > 1) {
-      setDialogState({ open: true, selectedEntity: null, version: 0 });
-    } else {
-      setDialogState({ open: false, selectedEntity: null, version: 0 });
-    }
-  }, [lookupTimestamp, lookupResults]);
+  const dialogOpen = !!lookupResults && lookupResults.length > 1 && lookupTimestamp !== dialogState.dismissedTimestamp;
 
   const handleDialogSelect = (entity: BookEntity | MovieEntity | GameEntity | MusicEntity) => {
-    setDialogState((prev) => ({ open: false, selectedEntity: entity, version: prev.version + 1 }));
+    setDialogState((prev) => ({ dismissedTimestamp: lookupTimestamp, selectedEntity: entity, version: prev.version + 1 }));
   };
 
   const handleDialogClose = () => {
-    setDialogState((prev) => ({ ...prev, open: false }));
+    setDialogState((prev) => ({ ...prev, dismissedTimestamp: lookupTimestamp }));
   };
 
   // Handle form errors
@@ -317,7 +311,7 @@ export default function Add() {
 
       {lookupResults && (
         <TitleLookupResultsDialog
-          isOpen={dialogState.open}
+          isOpen={dialogOpen}
           results={lookupResults as Array<BookEntity | MovieEntity | GameEntity | MusicEntity>}
           onSelect={handleDialogSelect}
           onClose={handleDialogClose}
