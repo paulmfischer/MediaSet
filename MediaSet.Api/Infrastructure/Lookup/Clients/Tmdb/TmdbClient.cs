@@ -1,5 +1,4 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
-using System.Text.Json;
 using System.Web;
 using Microsoft.Extensions.Options;
 
@@ -43,11 +42,7 @@ public class TmdbClient : ITmdbClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<TmdbSearchResponse>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var result = await response.Content.ReadFromJsonAsync<TmdbSearchResponse>(cancellationToken);
 
             _logger.LogInformation("TMDB search found {Count} results for movie: {Title}", 
                 result?.Results.Count ?? 0, title);
@@ -87,11 +82,7 @@ public class TmdbClient : ITmdbClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<TmdbMovieResponse>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var result = await response.Content.ReadFromJsonAsync<TmdbMovieResponse>(cancellationToken);
 
             _logger.LogInformation("Successfully retrieved TMDB movie details for ID: {MovieId}", movieId);
 

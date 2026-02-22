@@ -66,9 +66,15 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
 
         _logger.LogInformation("TMDB search found {Count} results for title: {Title}", searchResult.Results.Count, title);
 
-        return searchResult.Results
+        var detailTasks = searchResult.Results
             .Take(10)
-            .Select(r => MapSearchResultToMovieResponse(r))
+            .Select(r => _tmdbClient.GetMovieDetailsAsync(r.Id, cancellationToken));
+
+        var details = await Task.WhenAll(detailTasks);
+
+        return details
+            .Where(d => d != null)
+            .Select(d => MapToMovieResponse(d!))
             .ToList();
     }
 
@@ -120,21 +126,6 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         }
 
         return MapToMovieResponse(movieDetails, format);
-    }
-
-    private static MovieResponse MapSearchResultToMovieResponse(TmdbMovieSearchResult result)
-    {
-        return new MovieResponse(
-            Title: result.Title,
-            Genres: [],
-            Studios: [],
-            ReleaseDate: result.ReleaseDate ?? string.Empty,
-            Rating: string.Empty,
-            Runtime: null,
-            Plot: result.Overview ?? string.Empty,
-            Format: string.Empty,
-            ImageUrl: null
-        );
     }
 
     private MovieResponse MapToMovieResponse(TmdbMovieResponse tmdbMovie, string format = "")
