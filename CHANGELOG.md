@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.3.0](https://github.com/paulmfischer/MediaSet/compare/v3.2.0...v3.3.0) (2026-02-23)
+
+
+### Features
+
+* **lookup:** enrich music title search results with full metadata ([#513](https://github.com/paulmfischer/MediaSet/issues/513)) ([6f6df3d](https://github.com/paulmfischer/MediaSet/commit/6f6df3d57676dff01503bd9ca03c87c49f76dbd4))
+* **lookup:** enrich title search results with full metadata ([#510](https://github.com/paulmfischer/MediaSet/issues/510)) ([71c2cde](https://github.com/paulmfischer/MediaSet/commit/71c2cded578fbbda3da46fab2bac678d57365e0c))
+
+
+### Bug Fixes
+
+* **ui:** replace button overlay with div in select inputs ([#515](https://github.com/paulmfischer/MediaSet/issues/515)) ([8b87609](https://github.com/paulmfischer/MediaSet/commit/8b87609dda7155bf94c7d5dd502ba6ecada3585a))
+
+
+### Documentation
+
+* replace remaining GiantBomb references with IGDB ([#508](https://github.com/paulmfischer/MediaSet/issues/508)) ([c4622f6](https://github.com/paulmfischer/MediaSet/commit/c4622f6a26087b0a484e4b925ed06578a6e217da))
+
+
+### Miscellaneous
+
+* **lint:** migrate to ESLint v9 flat config closes [#511](https://github.com/paulmfischer/MediaSet/issues/511) ([#512](https://github.com/paulmfischer/MediaSet/issues/512)) ([3fed67d](https://github.com/paulmfischer/MediaSet/commit/3fed67df2bcc3a951dba12ddec72c7528469b5ab))
+
 ## [3.2.0](https://github.com/paulmfischer/MediaSet/compare/v3.1.0...v3.2.0) (2026-02-18)
 
 
