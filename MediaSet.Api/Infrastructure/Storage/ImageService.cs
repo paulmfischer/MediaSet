@@ -159,28 +159,30 @@ public class ImageService : IImageService
                 throw new ArgumentException("Image URL must be a valid HTTP or HTTPS URL");
             }
 
-            // Extract file extension from URL
-            var urlPath = uri.LocalPath.ToLower();
-            var fileExtension = Path.GetExtension(urlPath).TrimStart('.').ToLower();
+            // Download image (follows redirects automatically; validates content type from response headers)
+            var (imageData, mimeType) = await DownloadImageDataAsync(imageUrl, cancellationToken);
 
-            if (string.IsNullOrEmpty(fileExtension))
+            // Validate content type against configured allowed extensions
+            var allowedMimeTypes = _config.GetAllowedMimeTypes().ToHashSet();
+            if (!allowedMimeTypes.Contains(mimeType))
             {
-                _logger.LogWarning("No file extension found in URL {ImageUrl} for {EntityType}/{EntityId}",
-                    imageUrl, entityType, entityId);
-                throw new ArgumentException("Image URL must include a file extension");
+                _logger.LogWarning("Unsupported content type {ContentType} from URL {ImageUrl} for {EntityType}/{EntityId}",
+                    mimeType, imageUrl, entityType, entityId);
+                throw new ArgumentException($"Downloaded image has unsupported content type '{mimeType}'. Allowed types: {string.Join(", ", allowedMimeTypes)}.");
             }
 
-            // Validate extension against allowed image extensions
-            var allowedExtensions = _config.GetAllowedImageExtensions().ToList();
-            if (!allowedExtensions.Contains(fileExtension))
+            string fileExtension;
+            try
             {
-                _logger.LogWarning("Unsupported image format {Extension} in URL {ImageUrl} for {EntityType}/{EntityId}",
-                    fileExtension, imageUrl, entityType, entityId);
-                throw new ArgumentException($"Image URL must point to a supported file format: {string.Join(", ", allowedExtensions.Select(e => $".{e}"))}");
+                await using var formatStream = new MemoryStream(imageData);
+                var imageFormat = await SixLaborsImage.DetectFormatAsync(formatStream, cancellationToken);
+                fileExtension = imageFormat?.FileExtensions.FirstOrDefault()
+                    ?? _config.GetExtensionForMimeType(mimeType);
             }
-
-            // Download image
-            var imageData = await DownloadImageDataAsync(imageUrl, cancellationToken);
+            catch (UnknownImageFormatException)
+            {
+                fileExtension = _config.GetExtensionForMimeType(mimeType);
+            }
 
             // Validate file size
             var maxSizeBytes = _config.GetMaxFileSizeBytes();
@@ -192,7 +194,6 @@ public class ImageService : IImageService
             }
 
             // Strip EXIF data
-            var mimeType = fileExtension == "png" ? "image/png" : "image/jpeg";
             if (_config.StripExifData)
             {
                 imageData = await StripExifDataAsync(imageData, mimeType, cancellationToken);
@@ -330,14 +331,16 @@ public class ImageService : IImageService
 
     /// <summary>
     /// Download image data from URL with size limit enforcement.
-    /// Returns just the image data bytes.
+    /// Follows redirects automatically and returns image bytes plus the Content-Type from the final response.
     /// </summary>
-    private async Task<byte[]> DownloadImageDataAsync(string imageUrl, CancellationToken cancellationToken)
+    private async Task<(byte[] Data, string ContentType)> DownloadImageDataAsync(string imageUrl, CancellationToken cancellationToken)
     {
         try
         {
             using var response = await _httpClient.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
+
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
 
             // Check Content-Length header if available
             if (response.Content.Headers.ContentLength.HasValue)
@@ -367,7 +370,7 @@ public class ImageService : IImageService
                 throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
             }
 
-            return memoryStream.ToArray();
+            return (memoryStream.ToArray(), contentType);
         }
         catch (HttpRequestException ex)
         {

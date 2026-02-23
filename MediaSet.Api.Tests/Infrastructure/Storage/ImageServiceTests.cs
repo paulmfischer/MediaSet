@@ -328,7 +328,7 @@ public class ImageServiceTests : IDisposable
             // Act & Assert
             var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
-            Assert.That(ex?.Message, Does.Contain("supported file format"));
+            Assert.That(ex?.Message, Does.Contain("unsupported content type"));
         }
     }
 

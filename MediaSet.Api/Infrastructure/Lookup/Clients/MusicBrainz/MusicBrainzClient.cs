@@ -1,6 +1,4 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
-using System.Text.Json;
-using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 
@@ -8,18 +6,15 @@ public class MusicBrainzClient : IMusicBrainzClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<MusicBrainzClient> _logger;
-    private readonly MusicBrainzConfiguration _configuration;
     private static readonly SemaphoreSlim _rateLimiter = new(1, 1);
     private static DateTime _lastRequestTime = DateTime.MinValue;
 
     public MusicBrainzClient(
         HttpClient httpClient,
-        IOptions<MusicBrainzConfiguration> configuration,
         ILogger<MusicBrainzClient> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _configuration = configuration.Value;
     }
 
     public async Task<MusicBrainzRelease?> GetReleaseByBarcodeAsync(string barcode, CancellationToken cancellationToken)
@@ -55,9 +50,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<MusicBrainzSearchResponse>(content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = await response.Content.ReadFromJsonAsync<MusicBrainzSearchResponse>(cancellationToken);
 
             if (result?.Releases == null || result.Releases.Count == 0)
             {
@@ -122,9 +115,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var release = JsonSerializer.Deserialize<MusicBrainzRelease>(content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var release = await response.Content.ReadFromJsonAsync<MusicBrainzRelease>(cancellationToken);
 
             if (release == null)
             {
@@ -186,9 +177,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 return [];
             }
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var result = JsonSerializer.Deserialize<MusicBrainzSearchResponse>(content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = await response.Content.ReadFromJsonAsync<MusicBrainzSearchResponse>(cancellationToken);
 
             if (result?.Releases == null || result.Releases.Count == 0)
             {

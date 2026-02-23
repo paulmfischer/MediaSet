@@ -45,4 +45,35 @@ public class ImageConfiguration
             .Select(x => x.Trim())
             .Where(x => !string.IsNullOrEmpty(x));
     }
+
+    /// <summary>
+    /// Derive the set of allowed MIME types from the configured image extensions.
+    /// </summary>
+    public IEnumerable<string> GetAllowedMimeTypes()
+    {
+        return GetAllowedImageExtensions()
+            .Select(ext => ext switch
+            {
+                "jpg" or "jpeg" => "image/jpeg",
+                "png" => "image/png",
+                _ => null
+            })
+            .Where(mime => mime != null)
+            .Distinct()!;
+    }
+
+    /// <summary>
+    /// Returns the first configured file extension that corresponds to the given MIME type.
+    /// Falls back to "jpg" if no match is found.
+    /// </summary>
+    public string GetExtensionForMimeType(string mimeType)
+    {
+        return GetAllowedImageExtensions()
+            .FirstOrDefault(ext => (ext switch
+            {
+                "jpg" or "jpeg" => "image/jpeg",
+                "png" => "image/png",
+                _ => null
+            }) == mimeType) ?? "jpg";
+    }
 }
