@@ -157,9 +157,8 @@ export default function MultiselectInput(props: MultiselectProps) {
   return (
     <>
       {/* click-away overlay */}
-      <button
-        type="button"
-        aria-label="Close dropdown"
+      <div
+        aria-hidden="true"
         className={`absolute top-0 left-0 z-10 w-full h-full ${displayOptions ? '' : 'hidden'}`}
         onMouseDown={() => setDisplayOptions(false)}
       />
