@@ -23,7 +23,10 @@ FAILED=0
 # Run backend tests if any .cs files changed
 if echo "$CHANGED" | grep -qE '\.cs$'; then
   echo "Backend changes detected — running dotnet tests..." >&2
-  if ! dotnet test "$CLAUDE_PROJECT_DIR/MediaSet.Api.Tests/MediaSet.Api.Tests.csproj" 2>&1 | tail -15; then
+  OUTPUT=$(dotnet test "$CLAUDE_PROJECT_DIR/MediaSet.Api.Tests/MediaSet.Api.Tests.csproj" 2>&1)
+  TEST_EXIT=$?
+  echo "$OUTPUT" | tail -15 >&2
+  if [ "$TEST_EXIT" -ne 0 ]; then
     echo "Backend tests FAILED." >&2
     FAILED=1
   else
@@ -34,7 +37,10 @@ fi
 # Run frontend tests if any TS/JS files changed
 if echo "$CHANGED" | grep -qE '\.(ts|tsx|js|jsx)$'; then
   echo "Frontend changes detected — running Vitest..." >&2
-  if ! (cd "$CLAUDE_PROJECT_DIR/MediaSet.Remix" && npm test 2>&1 | tail -15); then
+  OUTPUT=$(cd "$CLAUDE_PROJECT_DIR/MediaSet.Remix" && npm test 2>&1)
+  TEST_EXIT=$?
+  echo "$OUTPUT" | tail -15 >&2
+  if [ "$TEST_EXIT" -ne 0 ]; then
     echo "Frontend tests FAILED." >&2
     FAILED=1
   else
