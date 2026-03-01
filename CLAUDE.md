@@ -12,7 +12,6 @@ Full-stack application for managing personal media collections.
 
 This file contains:
 - Project overview and tech stack
-- Branch protection rules (NEVER commit to `main`)
 - Commit conventions and signing requirements
 - AI agent workflow (propose → approve → commit → push)
 - Development and testing commands
@@ -89,7 +88,7 @@ This file contains:
 ## Code Style & Conventions
 
 Before making changes, read and follow these instruction files:
-- `.github/instructions/shared.md` — project-wide rules (branching, commits, workflow, commands)
+- `.github/instructions/shared.md` — project-wide rules (commits, workflow, commands)
 - `.github/instructions/backend.instructions.md` — .NET code style (applies to `*.cs` files)
 - `.github/instructions/frontend.instructions.md` — Remix/TypeScript code style (applies to `*.ts`, `*.tsx` files)
 
