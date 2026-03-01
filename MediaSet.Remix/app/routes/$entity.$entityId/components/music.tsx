@@ -4,6 +4,7 @@ import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
 import { MusicEntity, Entity } from '~/models';
+import { millisecondsToMinutesSeconds } from '~/utils/helpers';
 
 type MusicProps = {
   music: MusicEntity;
@@ -83,7 +84,7 @@ export default function Music({ music, apiUrl }: MusicProps) {
                 Duration
               </label>
               <div id="duration" className="grow">
-                {music.duration} minutes
+                {millisecondsToMinutesSeconds(music.duration)}
               </div>
             </div>
             <div className="flex flex-col md:flex-row mb-2 md:mb-0">
@@ -135,7 +136,7 @@ export default function Music({ music, apiUrl }: MusicProps) {
                         <tr key={index} className="border-b border-gray-700">
                           <td className="py-1 px-2">{disc.trackNumber}</td>
                           <td className="py-1 px-2">{disc.title}</td>
-                          <td className="py-1 px-2">{disc.duration}</td>
+                          <td className="py-1 px-2">{millisecondsToMinutesSeconds(disc.duration)}</td>
                         </tr>
                       ))}
                     </tbody>
