@@ -291,18 +291,8 @@ namespace MediaSet.Api.Tests.Infrastructure.DataAccess
             Assert.That(result, Is.Null);
         }
 
-        [Test]
-        public async Task SearchAsync_ShouldReturnMatchingEntities_WhenSearchTextMatches()
+        private Mock<IAsyncCursor<Book>> SetupCursorWithBooks(List<Book> books)
         {
-            // Arrange
-            var searchText = "fantasy";
-            var orderBy = "title:asc";
-            var books = new List<Book>
-            {
-                _bookFaker.Clone().RuleFor(b => b.Title, "Fantasy Adventure").Generate(),
-                _bookFaker.Clone().RuleFor(b => b.Title, "Epic Fantasy").Generate()
-            };
-
             var asyncCursor = new Mock<IAsyncCursor<Book>>();
             asyncCursor.Setup(c => c.Current).Returns(books);
             asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
@@ -311,15 +301,27 @@ namespace MediaSet.Api.Tests.Infrastructure.DataAccess
             asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .ReturnsAsync(false);
+            return asyncCursor;
+        }
+
+        [Test]
+        public async Task SearchAsync_ShouldReturnMatchingEntities_WhenSearchTextMatches()
+        {
+            // Arrange
+            var books = new List<Book>
+            {
+                _bookFaker.Clone().RuleFor(b => b.Title, "Fantasy Adventure").Generate(),
+                _bookFaker.Clone().RuleFor(b => b.Title, "Epic Fantasy").Generate()
+            };
 
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
 
             // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            var result = await _entityService.SearchAsync("fantasy", "title:asc");
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -334,96 +336,104 @@ namespace MediaSet.Api.Tests.Infrastructure.DataAccess
         public async Task SearchAsync_ShouldReturnEmpty_WhenNoMatchesFound()
         {
             // Arrange
-            var searchText = "nonexistent";
-            var orderBy = "title:asc";
-            var emptyList = new List<Book>();
-
-            var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(emptyList);
-            asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
-                .Returns(true)
-                .Returns(false);
-            asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
-
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks([]).Object);
 
             // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            var result = await _entityService.SearchAsync("nonexistent", "title:asc");
 
             // Assert
             Assert.That(result, Is.Empty);
         }
 
         [Test]
-        public async Task SearchAsync_ShouldHandleAscendingOrder()
+        public async Task SearchAsync_ShouldAcceptValidField_WhenOrderByFieldExists()
         {
             // Arrange
-            var searchText = "book";
-            var orderBy = "title:asc";
             var books = new List<Book>
             {
                 _bookFaker.Clone().RuleFor(b => b.Title, "Book A").Generate(),
                 _bookFaker.Clone().RuleFor(b => b.Title, "Book B").Generate()
             };
 
-            var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(books);
-            asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
-                .Returns(true)
-                .Returns(false);
-            asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
+            _collectionMock.Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<Book>>(),
+                It.IsAny<FindOptions<Book, Book>>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
+
+            // Act — sorting by "format" which is a valid Book field
+            var result = await _entityService.SearchAsync("book", "format:asc");
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count(), Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task SearchAsync_ShouldAcceptFieldNameCaseInsensitively()
+        {
+            // Arrange
+            var books = new List<Book>
+            {
+                _bookFaker.Clone().RuleFor(b => b.Title, "Book A").Generate()
+            };
 
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
 
-            // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            // Act — "TITLE" should match the "Title" property case-insensitively
+            var result = await _entityService.SearchAsync("book", "TITLE:asc");
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.Count(), Is.EqualTo(2));
+            Assert.That(result.Count(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SearchAsync_ShouldThrowArgumentException_WhenOrderByFieldIsInvalid()
+        {
+            // Arrange & Act & Assert
+            Assert.ThrowsAsync<ArgumentException>(
+                async () => await _entityService.SearchAsync("book", "nonExistentField:asc"));
+        }
+
+        [Test]
+        public void SearchAsync_ShouldThrowArgumentException_WithDescriptiveMessage_WhenOrderByFieldIsInvalid()
+        {
+            // Arrange & Act
+            var ex = Assert.ThrowsAsync<ArgumentException>(
+                async () => await _entityService.SearchAsync("book", "invalidField:asc"));
+
+            // Assert
+            Assert.That(ex!.Message, Does.Contain("invalidField"));
+            Assert.That(ex.Message, Does.Contain("Book"));
         }
 
         [Test]
         public async Task SearchAsync_ShouldHandleDescendingOrder()
         {
             // Arrange
-            var searchText = "book";
-            var orderBy = "title:desc";
             var books = new List<Book>
             {
                 _bookFaker.Clone().RuleFor(b => b.Title, "Book B").Generate(),
                 _bookFaker.Clone().RuleFor(b => b.Title, "Book A").Generate()
             };
 
-            var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(books);
-            asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
-                .Returns(true)
-                .Returns(false);
-            asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
-
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
 
             // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            var result = await _entityService.SearchAsync("book", "title:desc");
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -431,33 +441,22 @@ namespace MediaSet.Api.Tests.Infrastructure.DataAccess
         }
 
         [Test]
-        public async Task SearchAsync_ShouldDefaultToAscending_WhenOrderByIsEmpty()
+        public async Task SearchAsync_ShouldDefaultToTitleAscending_WhenOrderByIsEmpty()
         {
             // Arrange
-            var searchText = "book";
-            var orderBy = "";
             var books = new List<Book>
             {
                 _bookFaker.Clone().RuleFor(b => b.Title, "Book Title").Generate()
             };
 
-            var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(books);
-            asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
-                .Returns(true)
-                .Returns(false);
-            asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
-
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
 
             // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            var result = await _entityService.SearchAsync("book", string.Empty);
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -468,30 +467,19 @@ namespace MediaSet.Api.Tests.Infrastructure.DataAccess
         public async Task SearchAsync_ShouldBeCaseInsensitive()
         {
             // Arrange
-            var searchText = "FANTASY";
-            var orderBy = "title:asc";
             var books = new List<Book>
             {
                 _bookFaker.Clone().RuleFor(b => b.Title, "fantasy adventure").Generate()
             };
 
-            var asyncCursor = new Mock<IAsyncCursor<Book>>();
-            asyncCursor.Setup(c => c.Current).Returns(books);
-            asyncCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
-                .Returns(true)
-                .Returns(false);
-            asyncCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
-
             _collectionMock.Setup(c => c.FindAsync(
                 It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(),
                 It.IsAny<CancellationToken>()))
-                .ReturnsAsync(asyncCursor.Object);
+                .ReturnsAsync(SetupCursorWithBooks(books).Object);
 
             // Act
-            var result = await _entityService.SearchAsync(searchText, orderBy);
+            var result = await _entityService.SearchAsync("FANTASY", "title:asc");
 
             // Assert
             Assert.That(result, Is.Not.Null);

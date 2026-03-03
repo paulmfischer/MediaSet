@@ -1,8 +1,10 @@
 using MediaSet.Api.Shared.Models;
 
-using System.Linq.Expressions;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Serilog;
 using SerilogTracing;
@@ -30,27 +32,40 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("Search {EntityType}", new { EntityType = entityTypeName, searchText, orderBy });
-        
-        string orderByField = "";
+
+        string orderByField = nameof(IEntity.Title);
         bool orderByAscending = true;
+
         if (!string.IsNullOrWhiteSpace(orderBy))
         {
             var orderByArgs = orderBy.Split(":");
-            orderByField = orderByArgs[0];
-            orderByAscending = string.IsNullOrWhiteSpace(orderByArgs[1]) || orderByArgs[1].ToLower().Equals("asc");
-        }
-        var entitySearch = entityCollection.Find(entity => entity.Title.ToLower().Contains(searchText.ToLower()));
-        Expression<Func<TEntity, object>> sortFn = entity => entity.Title;
+            var requestedField = orderByArgs[0];
 
-        if (orderByAscending)
-        {
-            entitySearch.SortBy(sortFn);
+            if (!string.IsNullOrWhiteSpace(requestedField))
+            {
+                var property = typeof(TEntity).GetProperty(requestedField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                if (property == null)
+                {
+                    throw new ArgumentException($"Invalid order by field '{requestedField}' for entity type '{entityTypeName}'.");
+                }
+                orderByField = property.Name;
+            }
+
+            if (orderByArgs.Length >= 2 && !string.IsNullOrWhiteSpace(orderByArgs[1]))
+            {
+                orderByAscending = orderByArgs[1].ToLower() == "asc";
+            }
         }
-        else
-        {
-            entitySearch.SortByDescending(sortFn);
-        }
-        return await entitySearch.ToListAsync(cancellationToken);
+
+        var searchPattern = Regex.Escape(searchText);
+        var filter = Builders<TEntity>.Filter.Regex(entity => entity.Title, new BsonRegularExpression(searchPattern, "i"));
+        var sort = orderByAscending
+            ? Builders<TEntity>.Sort.Ascending(orderByField)
+            : Builders<TEntity>.Sort.Descending(orderByField);
+
+        var findOptions = new FindOptions<TEntity> { Sort = sort };
+        using var cursor = await entityCollection.FindAsync(filter, findOptions, cancellationToken);
+        return await cursor.ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)

@@ -26,7 +26,7 @@ vi.mock('~/components/delete-dialog', () => ({
     ) : null,
 }));
 
-// Mock Link to avoid router context requirement
+// Mock Remix hooks to avoid router context requirement
 vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
@@ -36,6 +36,8 @@ vi.mock('@remix-run/react', async () => {
         {children}
       </a>
     ),
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/musics' }),
   };
 });
 

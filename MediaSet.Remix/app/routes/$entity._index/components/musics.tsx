@@ -3,14 +3,17 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import SortableColumnHeader from '~/components/sortable-column-header';
 import { MusicEntity, Entity } from '~/models';
 
 type MusicsProps = {
   musics: MusicEntity[];
   apiUrl?: string;
+  orderBy?: string;
+  searchText?: string | null;
 };
 
-export default function Musics({ musics, apiUrl }: MusicsProps) {
+export default function Musics({ musics, apiUrl, orderBy = 'title:asc', searchText }: MusicsProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; music: MusicEntity | null }>({
     isOpen: false,
     music: null,
@@ -21,11 +24,29 @@ export default function Musics({ musics, apiUrl }: MusicsProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
-            <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Artist</th>
-            <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
-            <th className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800 underline">Tracks</th>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">Cover</th>
+            <SortableColumnHeader label="Title" field="title" currentOrderBy={orderBy} searchText={searchText} />
+            <SortableColumnHeader
+              label="Artist"
+              field="artist"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden md:table-cell"
+            />
+            <SortableColumnHeader
+              label="Format"
+              field="format"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden lg:table-cell"
+            />
+            <SortableColumnHeader
+              label="Tracks"
+              field="tracks"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden xl:table-cell"
+            />
             <th className="w-1"></th>
           </tr>
         </thead>

@@ -3,14 +3,17 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import SortableColumnHeader from '~/components/sortable-column-header';
 import { BookEntity, Entity } from '~/models';
 
 type BooksProps = {
   books: BookEntity[];
   apiUrl?: string;
+  orderBy?: string;
+  searchText?: string | null;
 };
 
-export default function Books({ books, apiUrl }: BooksProps) {
+export default function Books({ books, apiUrl, orderBy = 'title:asc', searchText }: BooksProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; book: BookEntity | null }>({
     isOpen: false,
     book: null,
@@ -21,11 +24,29 @@ export default function Books({ books, apiUrl }: BooksProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
-            <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
-            <th className="hidden xs:table-cell pl-2 p-1 border-r border-slate-800 underline">Authors</th>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
-            <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Pages</th>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">Cover</th>
+            <SortableColumnHeader label="Title" field="title" currentOrderBy={orderBy} searchText={searchText} />
+            <SortableColumnHeader
+              label="Authors"
+              field="authors"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden xs:table-cell"
+            />
+            <SortableColumnHeader
+              label="Format"
+              field="format"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden md:table-cell"
+            />
+            <SortableColumnHeader
+              label="Pages"
+              field="pages"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden lg:table-cell"
+            />
             <th className="w-1"></th>
           </tr>
         </thead>

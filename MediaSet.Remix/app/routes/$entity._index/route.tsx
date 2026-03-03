@@ -21,15 +21,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   invariant(params.entity, 'Missing entity param');
   const url = new URL(request.url);
   const searchText = url.searchParams.get('searchText');
+  const orderBy = url.searchParams.get('orderBy') ?? 'title:asc';
   const entityType: Entity = getEntityFromParams(params);
 
-  const entities = await searchEntities(entityType, searchText);
+  const entities = await searchEntities(entityType, searchText, orderBy);
   const apiUrl = clientApiUrl;
-  return { entities, entityType, searchText, apiUrl };
+  return { entities, entityType, searchText, orderBy, apiUrl };
 };
 
 export default function Index() {
-  const { entities, entityType, searchText, apiUrl } = useLoaderData<typeof loader>();
+  const { entities, entityType, searchText, orderBy, apiUrl } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,10 +93,18 @@ export default function Index() {
           </div>
         ) : (
           <>
-            {entityType === Entity.Books && <Books books={entities as BookEntity[]} apiUrl={apiUrl} />}
-            {entityType === Entity.Movies && <Movies movies={entities as MovieEntity[]} apiUrl={apiUrl} />}
-            {entityType === Entity.Games && <Games games={entities as GameEntity[]} apiUrl={apiUrl} />}
-            {entityType === Entity.Musics && <Musics musics={entities as MusicEntity[]} apiUrl={apiUrl} />}
+            {entityType === Entity.Books && (
+              <Books books={entities as BookEntity[]} apiUrl={apiUrl} orderBy={orderBy} searchText={searchText} />
+            )}
+            {entityType === Entity.Movies && (
+              <Movies movies={entities as MovieEntity[]} apiUrl={apiUrl} orderBy={orderBy} searchText={searchText} />
+            )}
+            {entityType === Entity.Games && (
+              <Games games={entities as GameEntity[]} apiUrl={apiUrl} orderBy={orderBy} searchText={searchText} />
+            )}
+            {entityType === Entity.Musics && (
+              <Musics musics={entities as MusicEntity[]} apiUrl={apiUrl} orderBy={orderBy} searchText={searchText} />
+            )}
           </>
         )}
       </div>

@@ -3,14 +3,17 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import SortableColumnHeader from '~/components/sortable-column-header';
 import { GameEntity, Entity } from '~/models';
 
 type GamesProps = {
   games: GameEntity[];
   apiUrl?: string;
+  orderBy?: string;
+  searchText?: string | null;
 };
 
-export default function Games({ games, apiUrl }: GamesProps) {
+export default function Games({ games, apiUrl, orderBy = 'title:asc', searchText }: GamesProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; game: GameEntity | null }>({
     isOpen: false,
     game: null,
@@ -21,11 +24,29 @@ export default function Games({ games, apiUrl }: GamesProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
-            <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Platform</th>
-            <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
-            <th className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800 underline">Developers</th>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">Cover</th>
+            <SortableColumnHeader label="Title" field="title" currentOrderBy={orderBy} searchText={searchText} />
+            <SortableColumnHeader
+              label="Platform"
+              field="platform"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden md:table-cell"
+            />
+            <SortableColumnHeader
+              label="Format"
+              field="format"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden lg:table-cell"
+            />
+            <SortableColumnHeader
+              label="Developers"
+              field="developers"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden xl:table-cell"
+            />
             <th className="w-1"></th>
           </tr>
         </thead>
