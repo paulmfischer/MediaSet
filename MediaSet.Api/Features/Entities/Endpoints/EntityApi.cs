@@ -26,12 +26,20 @@ internal static class EntityApi
             return result;
         });
 
-        group.MapGet("/search", async (IEntityService<TEntity> entityService, string searchText, string orderBy, CancellationToken cancellationToken) =>
+        group.MapGet("/search", async Task<Results<Ok<IEnumerable<TEntity>>, BadRequest<string>>> (IEntityService<TEntity> entityService, string searchText, string orderBy, CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Searching {entityType} with query '{searchText}', orderBy {orderBy}", entityType, searchText, orderBy);
-            var result = await entityService.SearchAsync(searchText, orderBy, cancellationToken);
-            logger.LogInformation("Search returned {count} {entityType}", result.Count(), entityType);
-            return result;
+            try
+            {
+                logger.LogInformation("Searching {entityType} with query '{searchText}', orderBy {orderBy}", entityType, searchText, orderBy);
+                var result = await entityService.SearchAsync(searchText, orderBy, cancellationToken);
+                logger.LogInformation("Search returned {count} {entityType}", result.Count(), entityType);
+                return TypedResults.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid orderBy field for {entityType}: {message}", entityType, ex.Message);
+                return TypedResults.BadRequest(ex.Message);
+            }
         });
 
         group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>

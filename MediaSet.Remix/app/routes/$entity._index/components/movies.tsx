@@ -3,14 +3,17 @@ import { Pencil, Trash2, Check } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import SortableColumnHeader from '~/components/sortable-column-header';
 import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {
   movies: MovieEntity[];
   apiUrl?: string;
+  orderBy?: string;
+  searchText?: string | null;
 };
 
-export default function Movies({ movies, apiUrl }: MovieProps) {
+export default function Movies({ movies, apiUrl, orderBy = 'title:asc', searchText }: MovieProps) {
   const [deleteDialogState, setDeleteDialogState] = useState<{ isOpen: boolean; movie: MovieEntity | null }>({
     isOpen: false,
     movie: null,
@@ -21,11 +24,29 @@ export default function Movies({ movies, apiUrl }: MovieProps) {
       <table className="text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Cover</th>
-            <th className="pl-2 p-1 border-r border-slate-800 underline">Title</th>
-            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800 underline">Format</th>
-            <th className="hidden lg:table-cell pl-2 p-1 border-r border-slate-800 underline">Runtime</th>
-            <th className="hidden xl:table-cell pl-2 p-1 border-r border-slate-800 underline">TV Show</th>
+            <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">Cover</th>
+            <SortableColumnHeader label="Title" field="title" currentOrderBy={orderBy} searchText={searchText} />
+            <SortableColumnHeader
+              label="Format"
+              field="format"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden md:table-cell"
+            />
+            <SortableColumnHeader
+              label="Runtime"
+              field="runtime"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden lg:table-cell"
+            />
+            <SortableColumnHeader
+              label="TV Show"
+              field="isTvSeries"
+              currentOrderBy={orderBy}
+              searchText={searchText}
+              className="hidden xl:table-cell"
+            />
             <th className="w-1"></th>
           </tr>
         </thead>
