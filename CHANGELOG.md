@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.4.0](https://github.com/paulmfischer/MediaSet/compare/v3.3.0...v3.4.0) (2026-03-04)
+
+
+### Features
+
+* **ui:** add mobile card layout for entity list views closes [#517](https://github.com/paulmfischer/MediaSet/issues/517) ([#529](https://github.com/paulmfischer/MediaSet/issues/529)) ([a0dcbc0](https://github.com/paulmfischer/MediaSet/commit/a0dcbc04cd6fcde8fb4f841473d92dafd19850aa))
+* **ui:** sortable entity list columns with dynamic API ordering closes [#525](https://github.com/paulmfischer/MediaSet/issues/525) ([#528](https://github.com/paulmfischer/MediaSet/issues/528)) ([7d390c8](https://github.com/paulmfischer/MediaSet/commit/7d390c8083fbb9be583a53cadf11e0df7539b3c8))
+
+
+### Bug Fixes
+
+* **ui:** display music duration in MM:SS format closes [#516](https://github.com/paulmfischer/MediaSet/issues/516) ([#522](https://github.com/paulmfischer/MediaSet/issues/522)) ([b9bb8c4](https://github.com/paulmfischer/MediaSet/commit/b9bb8c4e4aaa59fa6bfa7a28f9975f870914b703))
+
+
+### Miscellaneous
+
+* **claude:** add Claude Code hooks for safety and code quality ([#520](https://github.com/paulmfischer/MediaSet/issues/520)) ([eb1fbb2](https://github.com/paulmfischer/MediaSet/commit/eb1fbb25b3cc2b88a3482a5089d82fba0b3a8178))
+
 ## [3.3.0](https://github.com/paulmfischer/MediaSet/compare/v3.2.0...v3.3.0) (2026-02-23)
 
 
