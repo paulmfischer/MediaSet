@@ -21,7 +21,48 @@ export default function Books({ books, apiUrl, orderBy = 'title:asc', searchText
 
   return (
     <>
-      <table className="text-left w-full">
+      <div className="md:hidden flex flex-col divide-y divide-slate-700">
+        {books.map((book) => (
+          <div key={book.id} className="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
+            {book.coverImage && (
+              <div className="flex-shrink-0">
+                <ImageDisplay
+                  imageData={book.coverImage}
+                  alt={`${book.title} cover`}
+                  entityType={Entity.Books}
+                  entityId={book.id}
+                  apiUrl={apiUrl}
+                  size="xsmall"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <Link to={`/books/${book.id}`} className="font-medium block truncate">
+                {book.title}
+                {book.subtitle && `: ${book.subtitle}`}
+              </Link>
+              <div className="text-xs text-gray-400 truncate">
+                {[book.authors?.map((a) => a.trimEnd()).join(', '), book.format].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+            <div className="flex flex-row gap-3 flex-shrink-0">
+              <Link to={`/books/${book.id}/edit`} aria-label="Edit" title="Edit">
+                <Pencil size={18} />
+              </Link>
+              <button
+                onClick={() => setDeleteDialogState({ isOpen: true, book })}
+                className="link"
+                type="button"
+                aria-label="Delete"
+                title="Delete"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <table className="hidden md:table text-left w-full">
         <thead className="dark:bg-zinc-700 border-b-2 border-slate-600">
           <tr>
             <th className="hidden md:table-cell pl-2 p-1 border-r border-slate-800">Cover</th>
