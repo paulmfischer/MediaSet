@@ -80,16 +80,16 @@ describe('Books component', () => {
       expect(screen.getByText('Format')).toBeInTheDocument();
       expect(screen.getByText('Pages')).toBeInTheDocument();
 
-      expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
-      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
-      expect(screen.getByText('Multiple Authors Book')).toBeInTheDocument();
+      expect(screen.getAllByText('The Great Gatsby')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('To Kill a Mockingbird')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Multiple Authors Book')[0]).toBeInTheDocument();
     });
 
     it('should display book titles as links to detail pages', () => {
       render(<Books books={mockBooks} />);
 
-      expect(screen.getByText('The Great Gatsby')).toHaveAttribute('href', '/books/1');
-      expect(screen.getByText('To Kill a Mockingbird')).toHaveAttribute('href', '/books/2');
+      expect(screen.getAllByText('The Great Gatsby')[0]).toHaveAttribute('href', '/books/1');
+      expect(screen.getAllByText('To Kill a Mockingbird')[0]).toHaveAttribute('href', '/books/2');
     });
 
     it('should display authors and format correctly', () => {
@@ -120,12 +120,12 @@ describe('Books component', () => {
       render(<Books books={mockBooks} />);
 
       const editLinks = screen.getAllByRole('link', { name: /edit/i });
-      expect(editLinks).toHaveLength(mockBooks.length);
+      expect(editLinks).toHaveLength(mockBooks.length * 2);
       expect(editLinks[0]).toHaveAttribute('href', '/books/1/edit');
       expect(editLinks[1]).toHaveAttribute('href', '/books/2/edit');
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockBooks.length);
+      expect(deleteButtons).toHaveLength(mockBooks.length * 2);
     });
 
     it('should handle book with subtitle', () => {
@@ -141,7 +141,7 @@ describe('Books component', () => {
 
       render(<Books books={booksWithSubtitle} />);
 
-      expect(screen.getByText('A Book: The Subtitle')).toBeInTheDocument();
+      expect(screen.getAllByText('A Book: The Subtitle')[0]).toBeInTheDocument();
     });
 
     it('should handle book without subtitle', () => {
@@ -156,7 +156,7 @@ describe('Books component', () => {
 
       render(<Books books={booksWithoutSubtitle} />);
 
-      expect(screen.getByText('A Book')).toBeInTheDocument();
+      expect(screen.getAllByText('A Book')[0]).toBeInTheDocument();
     });
 
     it('should handle empty authors array', () => {
@@ -171,7 +171,7 @@ describe('Books component', () => {
 
       render(<Books books={booksNoAuthors} />);
 
-      expect(screen.getByText('Anonymous Book')).toBeInTheDocument();
+      expect(screen.getAllByText('Anonymous Book')[0]).toBeInTheDocument();
     });
 
     it('should handle book with undefined authors', () => {
@@ -185,7 +185,7 @@ describe('Books component', () => {
 
       render(<Books books={booksNoAuthors} />);
 
-      expect(screen.getByText('Anonymous Book')).toBeInTheDocument();
+      expect(screen.getAllByText('Anonymous Book')[0]).toBeInTheDocument();
     });
   });
 
@@ -272,7 +272,7 @@ describe('Books component', () => {
       const singleBook: BookEntity[] = [mockBooks[0]];
       render(<Books books={singleBook} />);
 
-      expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
+      expect(screen.getAllByText('The Great Gatsby')[0]).toBeInTheDocument();
       expect(screen.getAllByRole('row')).toHaveLength(2); // header + 1 book
     });
 
@@ -289,7 +289,7 @@ describe('Books component', () => {
 
       render(<Books books={longTitleBook} />);
 
-      expect(screen.getByText(/This is a very long book title/)).toBeInTheDocument();
+      expect(screen.getAllByText(/This is a very long book title/)[0]).toBeInTheDocument();
     });
 
     it('should trim trailing spaces in author names', () => {
@@ -313,7 +313,7 @@ describe('Books component', () => {
       render(<Books books={mockBooks} />);
 
       const editButtons = screen.getAllByRole('link', { name: /edit/i });
-      expect(editButtons).toHaveLength(mockBooks.length);
+      expect(editButtons).toHaveLength(mockBooks.length * 2);
 
       editButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Edit');
@@ -324,7 +324,7 @@ describe('Books component', () => {
       render(<Books books={mockBooks} />);
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockBooks.length);
+      expect(deleteButtons).toHaveLength(mockBooks.length * 2);
 
       deleteButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Delete');

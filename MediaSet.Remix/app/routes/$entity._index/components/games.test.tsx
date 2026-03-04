@@ -79,16 +79,16 @@ describe('Games component', () => {
       expect(screen.getByText('Format')).toBeInTheDocument();
       expect(screen.getByText('Developers')).toBeInTheDocument();
 
-      expect(screen.getByText('Elden Ring')).toBeInTheDocument();
-      expect(screen.getByText('The Legend of Zelda: Breath of the Wild')).toBeInTheDocument();
-      expect(screen.getByText("Baldur's Gate 3")).toBeInTheDocument();
+      expect(screen.getAllByText('Elden Ring')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('The Legend of Zelda: Breath of the Wild')[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Baldur's Gate 3")[0]).toBeInTheDocument();
     });
 
     it('should display game titles as links to detail pages', () => {
       render(<Games games={mockGames} />);
 
-      expect(screen.getByText('Elden Ring')).toHaveAttribute('href', '/games/1');
-      expect(screen.getByText('The Legend of Zelda: Breath of the Wild')).toHaveAttribute('href', '/games/2');
+      expect(screen.getAllByText('Elden Ring')[0]).toHaveAttribute('href', '/games/1');
+      expect(screen.getAllByText('The Legend of Zelda: Breath of the Wild')[0]).toHaveAttribute('href', '/games/2');
     });
 
     it('should display platform, format, and developers', () => {
@@ -109,12 +109,12 @@ describe('Games component', () => {
       render(<Games games={mockGames} />);
 
       const editLinks = screen.getAllByRole('link', { name: /edit/i });
-      expect(editLinks).toHaveLength(mockGames.length);
+      expect(editLinks).toHaveLength(mockGames.length * 2);
       expect(editLinks[0]).toHaveAttribute('href', '/games/1/edit');
       expect(editLinks[1]).toHaveAttribute('href', '/games/2/edit');
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockGames.length);
+      expect(deleteButtons).toHaveLength(mockGames.length * 2);
     });
 
     it('should handle game without platform', () => {
@@ -130,7 +130,7 @@ describe('Games component', () => {
 
       render(<Games games={gamesNoPlatform} />);
 
-      expect(screen.getByText('Test Game')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Game')[0]).toBeInTheDocument();
     });
 
     it('should handle game without developers', () => {
@@ -146,7 +146,7 @@ describe('Games component', () => {
 
       render(<Games games={gamesNoDevelopers} />);
 
-      expect(screen.getByText('Test Game')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Game')[0]).toBeInTheDocument();
     });
 
     it('should handle game with multiple developers', () => {
@@ -162,6 +162,7 @@ describe('Games component', () => {
 
       render(<Games games={gamesMultipleDev} />);
 
+      expect(screen.getAllByText('Test Game')[0]).toBeInTheDocument();
       expect(screen.getByText('Studio A, Studio B, Studio C')).toBeInTheDocument();
     });
 
@@ -178,6 +179,7 @@ describe('Games component', () => {
 
       render(<Games games={gamesSpacedDevelopers} />);
 
+      expect(screen.getAllByText('Test Game')[0]).toBeInTheDocument();
       expect(screen.getByText('Dev Studio, Another Studio')).toBeInTheDocument();
     });
   });
@@ -280,9 +282,9 @@ describe('Games component', () => {
 
       render(<Games games={gameDifferentPlatforms} />);
 
-      expect(screen.getByText('Xbox Series X')).toBeInTheDocument();
-      expect(screen.getByText('iOS')).toBeInTheDocument();
-      expect(screen.getByText('itch.io')).toBeInTheDocument();
+      expect(screen.getAllByText('Xbox Series X')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('iOS')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('itch.io')[0]).toBeInTheDocument();
     });
   });
 
@@ -299,7 +301,7 @@ describe('Games component', () => {
       const singleGame: GameEntity[] = [mockGames[0]];
       render(<Games games={singleGame} />);
 
-      expect(screen.getByText('Elden Ring')).toBeInTheDocument();
+      expect(screen.getAllByText('Elden Ring')[0]).toBeInTheDocument();
       expect(screen.getAllByRole('row')).toHaveLength(2); // header + 1 game
     });
 
@@ -317,7 +319,7 @@ describe('Games component', () => {
 
       render(<Games games={longTitleGame} />);
 
-      expect(screen.getByText(/This is a very long game title/)).toBeInTheDocument();
+      expect(screen.getAllByText(/This is a very long game title/)[0]).toBeInTheDocument();
     });
 
     it('should handle many games', () => {
@@ -331,8 +333,8 @@ describe('Games component', () => {
 
       render(<Games games={manyGames} />);
 
-      expect(screen.getByText('Game 0')).toBeInTheDocument();
-      expect(screen.getByText('Game 49')).toBeInTheDocument();
+      expect(screen.getAllByText('Game 0')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Game 49')[0]).toBeInTheDocument();
       const rows = screen.getAllByRole('row');
       expect(rows).toHaveLength(51); // header + 50 games
     });
@@ -358,7 +360,7 @@ describe('Games component', () => {
 
       render(<Games games={gamesEmptyDevelopers} />);
 
-      expect(screen.getByText('Unknown Developer Game')).toBeInTheDocument();
+      expect(screen.getAllByText('Unknown Developer Game')[0]).toBeInTheDocument();
     });
   });
 
@@ -367,7 +369,7 @@ describe('Games component', () => {
       render(<Games games={mockGames} />);
 
       const editButtons = screen.getAllByRole('link', { name: /edit/i });
-      expect(editButtons).toHaveLength(mockGames.length);
+      expect(editButtons).toHaveLength(mockGames.length * 2);
 
       editButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Edit');
@@ -378,7 +380,7 @@ describe('Games component', () => {
       render(<Games games={mockGames} />);
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockGames.length);
+      expect(deleteButtons).toHaveLength(mockGames.length * 2);
 
       deleteButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Delete');

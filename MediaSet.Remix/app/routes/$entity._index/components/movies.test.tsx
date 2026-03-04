@@ -79,16 +79,16 @@ describe('Movies component', () => {
       expect(screen.getByText('Runtime')).toBeInTheDocument();
       expect(screen.getByText('TV Show')).toBeInTheDocument();
 
-      expect(screen.getByText('The Shawshank Redemption')).toBeInTheDocument();
-      expect(screen.getByText('Breaking Bad')).toBeInTheDocument();
-      expect(screen.getByText('Inception')).toBeInTheDocument();
+      expect(screen.getAllByText('The Shawshank Redemption')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Breaking Bad')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Inception')[0]).toBeInTheDocument();
     });
 
     it('should display movie titles as links to detail pages', () => {
       render(<Movies movies={mockMovies} />);
 
-      expect(screen.getByText('The Shawshank Redemption')).toHaveAttribute('href', '/movies/1');
-      expect(screen.getByText('Breaking Bad')).toHaveAttribute('href', '/movies/2');
+      expect(screen.getAllByText('The Shawshank Redemption')[0]).toHaveAttribute('href', '/movies/1');
+      expect(screen.getAllByText('Breaking Bad')[0]).toHaveAttribute('href', '/movies/2');
     });
 
     it('should display format and runtime', () => {
@@ -106,12 +106,12 @@ describe('Movies component', () => {
       render(<Movies movies={mockMovies} />);
 
       const editLinks = screen.getAllByRole('link', { name: /edit/i });
-      expect(editLinks).toHaveLength(mockMovies.length);
+      expect(editLinks).toHaveLength(mockMovies.length * 2);
       expect(editLinks[0]).toHaveAttribute('href', '/movies/1/edit');
       expect(editLinks[1]).toHaveAttribute('href', '/movies/2/edit');
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockMovies.length);
+      expect(deleteButtons).toHaveLength(mockMovies.length * 2);
     });
 
     it('should handle movie without runtime', () => {
@@ -126,7 +126,7 @@ describe('Movies component', () => {
 
       render(<Movies movies={moviesNoRuntime} />);
 
-      expect(screen.getByText('Test Movie')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Movie')[0]).toBeInTheDocument();
       expect(screen.getByText('0')).toBeInTheDocument();
     });
 
@@ -143,7 +143,7 @@ describe('Movies component', () => {
 
       render(<Movies movies={moviesNoFlag} />);
 
-      expect(screen.getByText('Test Movie')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Movie')[0]).toBeInTheDocument();
     });
   });
 
@@ -152,11 +152,11 @@ describe('Movies component', () => {
       render(<Movies movies={mockMovies} />);
 
       // Breaking Bad (id: 2) is a TV series
-      const breakingBadRow = screen.getByText('Breaking Bad').closest('tr');
+      const breakingBadRow = screen.getAllByText('Breaking Bad')[1].closest('tr');
       expect(breakingBadRow).toBeInTheDocument();
 
       // Inception (id: 3) is not a TV series
-      const inceptionRow = screen.getByText('Inception').closest('tr');
+      const inceptionRow = screen.getAllByText('Inception')[1].closest('tr');
       expect(inceptionRow).toBeInTheDocument();
     });
 
@@ -186,9 +186,9 @@ describe('Movies component', () => {
 
       render(<Movies movies={mixedMovies} />);
 
-      expect(screen.getByText('Movie Only')).toBeInTheDocument();
-      expect(screen.getByText('TV Series Only')).toBeInTheDocument();
-      expect(screen.getByText('No Flag')).toBeInTheDocument();
+      expect(screen.getAllByText('Movie Only')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('TV Series Only')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('No Flag')[0]).toBeInTheDocument();
     });
   });
 
@@ -267,7 +267,7 @@ describe('Movies component', () => {
       const singleMovie: MovieEntity[] = [mockMovies[0]];
       render(<Movies movies={singleMovie} />);
 
-      expect(screen.getByText('The Shawshank Redemption')).toBeInTheDocument();
+      expect(screen.getAllByText('The Shawshank Redemption')[0]).toBeInTheDocument();
       expect(screen.getAllByRole('row')).toHaveLength(2); // header + 1 movie
     });
 
@@ -285,7 +285,7 @@ describe('Movies component', () => {
 
       render(<Movies movies={longTitleMovie} />);
 
-      expect(screen.getByText(/This is a very long movie title/)).toBeInTheDocument();
+      expect(screen.getAllByText(/This is a very long movie title/)[0]).toBeInTheDocument();
     });
 
     it('should handle very large runtime', () => {
@@ -325,7 +325,7 @@ describe('Movies component', () => {
       render(<Movies movies={mockMovies} />);
 
       const editButtons = screen.getAllByRole('link', { name: /edit/i });
-      expect(editButtons).toHaveLength(mockMovies.length);
+      expect(editButtons).toHaveLength(mockMovies.length * 2);
 
       editButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Edit');
@@ -336,7 +336,7 @@ describe('Movies component', () => {
       render(<Movies movies={mockMovies} />);
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockMovies.length);
+      expect(deleteButtons).toHaveLength(mockMovies.length * 2);
 
       deleteButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Delete');

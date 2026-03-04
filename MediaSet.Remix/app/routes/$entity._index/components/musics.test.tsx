@@ -79,16 +79,16 @@ describe('Musics component', () => {
       expect(screen.getByText('Format')).toBeInTheDocument();
       expect(screen.getByText('Tracks')).toBeInTheDocument();
 
-      expect(screen.getByText('Abbey Road')).toBeInTheDocument();
-      expect(screen.getByText('Dark Side of the Moon')).toBeInTheDocument();
-      expect(screen.getByText('Led Zeppelin IV')).toBeInTheDocument();
+      expect(screen.getAllByText('Abbey Road')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Dark Side of the Moon')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Led Zeppelin IV')[0]).toBeInTheDocument();
     });
 
     it('should display music titles as links to detail pages', () => {
       render(<Musics musics={mockMusics} />);
 
-      expect(screen.getByText('Abbey Road')).toHaveAttribute('href', '/musics/1');
-      expect(screen.getByText('Dark Side of the Moon')).toHaveAttribute('href', '/musics/2');
+      expect(screen.getAllByText('Abbey Road')[0]).toHaveAttribute('href', '/musics/1');
+      expect(screen.getAllByText('Dark Side of the Moon')[0]).toHaveAttribute('href', '/musics/2');
     });
 
     it('should display artist, format, and track count', () => {
@@ -108,12 +108,12 @@ describe('Musics component', () => {
       render(<Musics musics={mockMusics} />);
 
       const editLinks = screen.getAllByRole('link', { name: /edit/i });
-      expect(editLinks).toHaveLength(mockMusics.length);
+      expect(editLinks).toHaveLength(mockMusics.length * 2);
       expect(editLinks[0]).toHaveAttribute('href', '/musics/1/edit');
       expect(editLinks[1]).toHaveAttribute('href', '/musics/2/edit');
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockMusics.length);
+      expect(deleteButtons).toHaveLength(mockMusics.length * 2);
     });
 
     it('should handle music without artist', () => {
@@ -129,7 +129,7 @@ describe('Musics component', () => {
 
       render(<Musics musics={musicsNoArtist} />);
 
-      expect(screen.getByText('Unknown Artist Album')).toBeInTheDocument();
+      expect(screen.getAllByText('Unknown Artist Album')[0]).toBeInTheDocument();
     });
 
     it('should handle music without tracks count', () => {
@@ -145,7 +145,7 @@ describe('Musics component', () => {
 
       render(<Musics musics={musicsNoTracks} />);
 
-      expect(screen.getByText('Test Album')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Album')[0]).toBeInTheDocument();
     });
 
     it('should handle music without format', () => {
@@ -161,7 +161,7 @@ describe('Musics component', () => {
 
       render(<Musics musics={musicsNoFormat} />);
 
-      expect(screen.getByText('Test Album')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Album')[0]).toBeInTheDocument();
     });
 
     it('should handle different formats', () => {
@@ -283,7 +283,7 @@ describe('Musics component', () => {
       const singleMusic: MusicEntity[] = [mockMusics[0]];
       render(<Musics musics={singleMusic} />);
 
-      expect(screen.getByText('Abbey Road')).toBeInTheDocument();
+      expect(screen.getAllByText('Abbey Road')[0]).toBeInTheDocument();
       expect(screen.getAllByRole('row')).toHaveLength(2); // header + 1 music
     });
 
@@ -301,7 +301,7 @@ describe('Musics component', () => {
 
       render(<Musics musics={longTitleMusic} />);
 
-      expect(screen.getByText(/This is a very long music title/)).toBeInTheDocument();
+      expect(screen.getAllByText(/This is a very long music title/)[0]).toBeInTheDocument();
     });
 
     it('should handle very long artist name', () => {
@@ -333,8 +333,8 @@ describe('Musics component', () => {
 
       render(<Musics musics={manyMusics} />);
 
-      expect(screen.getByText('Album 0')).toBeInTheDocument();
-      expect(screen.getByText('Album 49')).toBeInTheDocument();
+      expect(screen.getAllByText('Album 0')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Album 49')[0]).toBeInTheDocument();
       const rows = screen.getAllByRole('row');
       expect(rows).toHaveLength(51); // header + 50 musics
     });
@@ -441,7 +441,7 @@ describe('Musics component', () => {
       render(<Musics musics={mockMusics} />);
 
       const editButtons = screen.getAllByRole('link', { name: /edit/i });
-      expect(editButtons).toHaveLength(mockMusics.length);
+      expect(editButtons).toHaveLength(mockMusics.length * 2);
 
       editButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Edit');
@@ -452,7 +452,7 @@ describe('Musics component', () => {
       render(<Musics musics={mockMusics} />);
 
       const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
-      expect(deleteButtons).toHaveLength(mockMusics.length);
+      expect(deleteButtons).toHaveLength(mockMusics.length * 2);
 
       deleteButtons.forEach((btn: HTMLElement) => {
         expect(btn).toHaveAttribute('aria-label', 'Delete');
