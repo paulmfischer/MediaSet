@@ -36,4 +36,10 @@ public interface IImageStorageProvider
     /// <returns>True if image exists, false otherwise</returns>
     /// <exception cref="ArgumentException">Thrown if relativePath attempts path traversal</exception>
     bool Exists(string relativePath);
+
+    /// <summary>
+    /// List all files in storage with their sizes
+    /// </summary>
+    /// <returns>Enumerable of (RelativePath, SizeBytes) tuples</returns>
+    IEnumerable<(string RelativePath, long SizeBytes)> ListFiles();
 }

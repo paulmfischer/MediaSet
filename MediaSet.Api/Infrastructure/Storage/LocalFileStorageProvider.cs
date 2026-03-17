@@ -233,6 +233,34 @@ public class LocalFileStorageProvider : IImageStorageProvider
     }
 
     /// <summary>
+    /// List all files in local storage with their sizes
+    /// </summary>
+    /// <returns>Enumerable of (RelativePath, SizeBytes) tuples</returns>
+    public IEnumerable<(string RelativePath, long SizeBytes)> ListFiles()
+    {
+        if (!Directory.Exists(_rootPath))
+        {
+            yield break;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(_rootPath, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(_rootPath, file);
+            long sizeBytes;
+            try
+            {
+                sizeBytes = new FileInfo(file).Length;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not get size for file: {File}", file);
+                continue;
+            }
+            yield return (relativePath, sizeBytes);
+        }
+    }
+
+    /// <summary>
     /// Validate that a relative path is safe (no parent directory references)
     /// </summary>
     /// <param name="relativePath">The path to validate</param>

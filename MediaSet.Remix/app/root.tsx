@@ -11,21 +11,37 @@ import {
   isRouteErrorResponse,
   useLocation,
 } from '@remix-run/react';
-import { useEffect, useState } from 'react';
-import { Clapperboard, Gamepad2, Home, LibraryBig, Menu, Music, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Clapperboard, Gamepad2, HardDrive, Home, LibraryBig, Menu, Music, Settings, X } from 'lucide-react';
 import ErrorScreen from './components/error-screen';
 import PendingNavigation from './components/pending-navigation';
 import Footer from './components/footer';
 
 function Header() {
   const [open, setOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  // Close mobile menu when navigation occurs
+  // Close menus when navigation occurs
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(false);
+
+    setToolsOpen(false);
   }, [location]);
+
+  // Close tools dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) {
+        setToolsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <header className="sticky top-0 z-30 dark:bg-zinc-700 p-2 lg:px-8">
       <div className="flex items-center justify-between gap-4">
@@ -50,6 +66,29 @@ function Header() {
           <NavLink to="/musics" className="p-3 flex gap-2 items-center rounded-lg">
             <Music /> Music
           </NavLink>
+
+          {/* Tools dropdown */}
+          <div ref={toolsRef} className="relative">
+            {/* className="p-3 flex gap-2 items-center rounded-lg hover:dark:bg-zinc-600" */}
+            <button
+              className="p-3 flex gap-2 items-center rounded-lg secondary"
+              onClick={() => setToolsOpen(!toolsOpen)}
+              aria-label="Tools"
+              aria-expanded={toolsOpen}
+            >
+              <Settings />
+            </button>
+            {toolsOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-zinc-600 dark:bg-zinc-800 shadow-lg z-50">
+                <NavLink
+                  to="/image-stats"
+                  className="flex gap-2 items-center px-4 py-3 rounded-lg hover:dark:bg-zinc-700"
+                >
+                  <HardDrive className="h-4 w-4" /> Image Statistics
+                </NavLink>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Mobile toggle */}
@@ -81,6 +120,10 @@ function Header() {
             </NavLink>
             <NavLink to="/musics" className="p-3 rounded-lg flex gap-2 items-center">
               <Music /> Music
+            </NavLink>
+            <hr className="border-zinc-600 mx-3" />
+            <NavLink to="/image-stats" className="p-3 rounded-lg flex gap-2 items-center">
+              <HardDrive className="h-4 w-4" /> Image Statistics
             </NavLink>
           </div>
         </nav>
