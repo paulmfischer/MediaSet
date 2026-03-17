@@ -221,6 +221,9 @@ builder.Services.AddScoped<IMetadataService, MetadataService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddSingleton<IVersionService, VersionService>();
 
+// Configure image stats service
+builder.Services.AddScoped<IImageStatsService, ImageStatsService>();
+
 // Configure background image lookup service
 builder.Services.Configure<BackgroundImageLookupConfiguration>(
     builder.Configuration.GetSection(nameof(BackgroundImageLookupConfiguration)));

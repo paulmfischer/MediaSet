@@ -36,6 +36,13 @@ internal static class StatsApi
             return stats;
         });
 
+        group.MapGet("/images", async (IImageStatsService imageStatsService, CancellationToken cancellationToken) =>
+        {
+            logger.LogInformation("Requesting image stats");
+            var stats = await imageStatsService.GetImageStatsAsync(cancellationToken);
+            return stats is not null ? Results.Ok(stats) : Results.NoContent();
+        });
+
         return group;
     }
 }
