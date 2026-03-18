@@ -12,7 +12,7 @@ if echo "$CMD" | grep -qE "git commit"; then
 fi
 
 # Block force push to any branch
-if echo "$CMD" | grep -qE "git push.*(--force|-f)"; then
+if echo "$CMD" | grep -qE "git push.*(--force| -f(\s|$))"; then
   echo "Blocked: Force push is not allowed." >&2
   exit 2
 fi
