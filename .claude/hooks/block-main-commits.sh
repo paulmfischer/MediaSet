@@ -11,8 +11,9 @@ if echo "$CMD" | grep -qE "git commit"; then
   fi
 fi
 
-# Block force push to any branch
-if echo "$CMD" | grep -qE "git push.*(--force| -f(\s|$))"; then
+# Block force push to any branch (check first line only to avoid matching heredoc body text)
+FIRST_LINE=$(echo "$CMD" | head -1)
+if echo "$FIRST_LINE" | grep -qE "git push.*(--force| -f(\s|$))"; then
   echo "Blocked: Force push is not allowed." >&2
   exit 2
 fi
