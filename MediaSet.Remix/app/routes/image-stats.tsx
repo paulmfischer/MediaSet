@@ -1,8 +1,9 @@
-import { type MetaFunction } from '@remix-run/node';
-import { useLoaderData, Link } from '@remix-run/react';
+import { type ActionFunctionArgs, type MetaFunction } from '@remix-run/node';
+import { useLoaderData, Link, Form, useNavigation } from '@remix-run/react';
 import { getImageStats } from '~/api/image-stats-data';
+import { deleteOrphanedImages } from '~/api/image-management-data';
 import StatCard from '~/components/stat-card';
-import { HardDrive, Files, AlertTriangle, Link2Off } from 'lucide-react';
+import { HardDrive, Files, AlertTriangle, Link2Off, Trash2 } from 'lucide-react';
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,6 +17,15 @@ export const loader = async () => {
   return { stats };
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const intent = formData.get('intent');
+  if (intent === 'delete-orphaned') {
+    await deleteOrphanedImages();
+  }
+  return null;
+};
+
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -25,6 +35,8 @@ function formatBytes(bytes: number): string {
 
 export default function ImageStatsPage() {
   const { stats } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const isDeleting = navigation.state === 'submitting' && navigation.formData?.get('intent') === 'delete-orphaned';
 
   if (!stats) {
     return (
@@ -148,10 +160,25 @@ export default function ImageStatsPage() {
       {/* Orphaned Files */}
       {stats.orphanedFiles.length > 0 && (
         <div>
-          <h2 className="mb-4 text-xl font-semibold text-white">
-            <span className="text-yellow-400">Orphaned Files</span>
-            <span className="ml-2 text-sm font-normal text-zinc-400">— files on disk not referenced by any entity</span>
-          </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">
+              <span className="text-yellow-400">Orphaned Files</span>
+              <span className="ml-2 text-sm font-normal text-zinc-400">
+                — files on disk not referenced by any entity
+              </span>
+            </h2>
+            <Form method="post">
+              <input type="hidden" name="intent" value="delete-orphaned" />
+              <button
+                type="submit"
+                disabled={isDeleting}
+                className="flex items-center gap-2 rounded-md bg-yellow-600 px-3 py-2 text-sm font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? 'Cleaning up...' : 'Clean Up Orphaned Files'}
+              </button>
+            </Form>
+          </div>
           <div className="overflow-x-auto rounded-lg border border-zinc-700">
             <table className="w-full text-sm">
               <thead className="bg-zinc-800 text-left text-zinc-400">

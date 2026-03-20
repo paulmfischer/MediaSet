@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Moq;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -21,18 +22,19 @@ public class StatsApiTests : IntegrationTestBase
     private WebApplicationFactory<Program> _factory = null!;
     private HttpClient _client = null!;
     private Mock<IStatsService> _statsServiceMock = null!;
+    private Mock<IImageStatsService> _imageStatsServiceMock = null!;
 
     [SetUp]
     public void Setup()
     {
         _statsServiceMock = new Mock<IStatsService>();
+        _imageStatsServiceMock = new Mock<IImageStatsService>();
 
         _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
                 {
-                    // Remove existing StatsService registration
                     var statsServiceDescriptor = services.SingleOrDefault(
                         d => d.ServiceType == typeof(IStatsService));
                     if (statsServiceDescriptor != null)
@@ -40,8 +42,15 @@ public class StatsApiTests : IntegrationTestBase
                         services.Remove(statsServiceDescriptor);
                     }
 
-                    // Add mock service
+                    var imageStatsServiceDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(IImageStatsService));
+                    if (imageStatsServiceDescriptor != null)
+                    {
+                        services.Remove(imageStatsServiceDescriptor);
+                    }
+
                     services.AddScoped<IStatsService>(_ => _statsServiceMock.Object);
+                    services.AddScoped<IImageStatsService>(_ => _imageStatsServiceMock.Object);
                 });
             });
 
@@ -485,6 +494,47 @@ public class StatsApiTests : IntegrationTestBase
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.MovieStats.TotalTvSeries, Is.EqualTo(0));
         _statsServiceMock.Verify(s => s.GetMediaStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GetImageStats_ShouldReturnOk_WhenStatsExist()
+    {
+        // Arrange
+        var expectedStats = new ApiModels.ImageStats(
+            TotalFiles: 5,
+            TotalSizeBytes: 10240,
+            FilesByEntityType: new Dictionary<string, int> { { "books", 5 } },
+            SizeByEntityType: new Dictionary<string, long> { { "books", 10240 } },
+            BrokenLinks: new List<ApiModels.BrokenImageLink>(),
+            OrphanedFiles: new List<ApiModels.OrphanedImageFile>(),
+            LastUpdated: DateTime.UtcNow
+        );
+        _imageStatsServiceMock.Setup(s => s.GetImageStatsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStats);
+
+        // Act
+        var response = await _client.GetAsync("/stats/images");
+        var result = await response.Content.ReadFromJsonAsync<ApiModels.ImageStats>();
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.TotalFiles, Is.EqualTo(5));
+        _imageStatsServiceMock.Verify(s => s.GetImageStatsAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task GetImageStats_ShouldReturnNoContent_WhenStatsUnavailable()
+    {
+        // Arrange
+        _imageStatsServiceMock.Setup(s => s.GetImageStatsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApiModels.ImageStats?)null);
+
+        // Act
+        var response = await _client.GetAsync("/stats/images");
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
     }
 
     [Test]

@@ -10,6 +10,7 @@ using MediaSet.Api.Features.Lookup.Endpoints;
 using MediaSet.Api.Features.Config.Endpoints;
 using MediaSet.Api.Features.Metadata.Endpoints;
 using MediaSet.Api.Features.Health.Endpoints;
+using MediaSet.Api.Features.Images.Endpoints;
 using MediaSet.Api.Features.Statistics.Endpoints;
 
 using MediaSet.Api.Features.Images.Services;
@@ -224,6 +225,9 @@ builder.Services.AddSingleton<IVersionService, VersionService>();
 // Configure image stats service
 builder.Services.AddScoped<IImageStatsService, ImageStatsService>();
 
+// Configure image management service
+builder.Services.AddScoped<IImageManagementService, ImageManagementService>();
+
 // Configure background image lookup service
 builder.Services.Configure<BackgroundImageLookupConfiguration>(
     builder.Configuration.GetSection(nameof(BackgroundImageLookupConfiguration)));
@@ -319,6 +323,7 @@ app.MapEntity<Game>();
 app.MapEntity<Music>();
 app.MapMetadata();
 app.MapStats();
+app.MapImages();
 
 if (openLibraryConfig.Exists() || tmdbConfig.Exists() || igdbConfig.Exists())
 {
