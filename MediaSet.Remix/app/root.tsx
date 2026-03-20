@@ -69,9 +69,8 @@ function Header() {
 
           {/* Tools dropdown */}
           <div ref={toolsRef} className="relative">
-            {/* className="p-3 flex gap-2 items-center rounded-lg hover:dark:bg-zinc-600" */}
             <button
-              className="p-3 flex gap-2 items-center rounded-lg secondary"
+              className="p-3 flex gap-2 items-center rounded-lg tertiary"
               onClick={() => setToolsOpen(!toolsOpen)}
               aria-label="Tools"
               aria-expanded={toolsOpen}
