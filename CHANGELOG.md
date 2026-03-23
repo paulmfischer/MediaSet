@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.4.0](https://github.com/paulmfischer/MediaSet/compare/v3.3.0...v3.4.0) (2026-03-23)
+
+
+### Features
+
+* **images:** add orphaned image cleanup endpoint and UI closes [#523](https://github.com/paulmfischer/MediaSet/issues/523) ([#534](https://github.com/paulmfischer/MediaSet/issues/534)) ([9b1f90b](https://github.com/paulmfischer/MediaSet/commit/9b1f90bf50267ea80ea9c83d4844427cbf449700))
+* **stats:** add image folder statistics page closes [#526](https://github.com/paulmfischer/MediaSet/issues/526) ([#532](https://github.com/paulmfischer/MediaSet/issues/532)) ([c56c99e](https://github.com/paulmfischer/MediaSet/commit/c56c99e26a75cb0017f1c9987a5a72ac4efc46a5))
+* **ui:** add mobile card layout for entity list views closes [#517](https://github.com/paulmfischer/MediaSet/issues/517) ([#529](https://github.com/paulmfischer/MediaSet/issues/529)) ([a0dcbc0](https://github.com/paulmfischer/MediaSet/commit/a0dcbc04cd6fcde8fb4f841473d92dafd19850aa))
+* **ui:** sortable entity list columns with dynamic API ordering closes [#525](https://github.com/paulmfischer/MediaSet/issues/525) ([#528](https://github.com/paulmfischer/MediaSet/issues/528)) ([7d390c8](https://github.com/paulmfischer/MediaSet/commit/7d390c8083fbb9be583a53cadf11e0df7539b3c8))
+
+
+### Bug Fixes
+
+* **hooks:** correct force-push detection in block-main-commits hook ([#533](https://github.com/paulmfischer/MediaSet/issues/533)) ([396efa7](https://github.com/paulmfischer/MediaSet/commit/396efa7c6aa45bf699ae000d3ac588845d6fcec6))
+* **lookup,ui:** fix music title search and button styles ([#537](https://github.com/paulmfischer/MediaSet/issues/537)) ([57e89e1](https://github.com/paulmfischer/MediaSet/commit/57e89e1b95f27e5d4de43deff1db0534bc346f94))
+* **ui:** display music duration in MM:SS format closes [#516](https://github.com/paulmfischer/MediaSet/issues/516) ([#522](https://github.com/paulmfischer/MediaSet/issues/522)) ([b9bb8c4](https://github.com/paulmfischer/MediaSet/commit/b9bb8c4e4aaa59fa6bfa7a28f9975f870914b703))
+
+
+### Miscellaneous
+
+* **claude:** add Claude Code hooks for safety and code quality ([#520](https://github.com/paulmfischer/MediaSet/issues/520)) ([eb1fbb2](https://github.com/paulmfischer/MediaSet/commit/eb1fbb25b3cc2b88a3482a5089d82fba0b3a8178))
+
 ## [3.3.0](https://github.com/paulmfischer/MediaSet/compare/v3.2.0...v3.3.0) (2026-02-23)
 
 
