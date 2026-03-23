@@ -159,7 +159,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             var encodedTitle = Uri.EscapeDataString(title);
             var response = await _httpClient.GetAsync(
-                $"ws/2/release/?query=release:{encodedTitle}&limit=10&fmt=json",
+                $"ws/2/release/?query={encodedTitle}&limit=10&fmt=json",
                 cancellationToken);
 
             _lastRequestTime = DateTime.UtcNow;
