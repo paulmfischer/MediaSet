@@ -202,8 +202,6 @@ public class LocalFileStorageProvider : IImageStorageProvider
     /// <exception cref="ArgumentException">Thrown if relativePath attempts path traversal</exception>
     public bool Exists(string relativePath)
     {
-        using var activity = Log.Logger.StartActivity("ImageExists", new { relativePath });
-
         if (!ValidatePath(relativePath))
         {
             _logger.LogWarning("Attempted to check existence with invalid path: {RelativePath}", relativePath);

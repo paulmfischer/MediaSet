@@ -95,7 +95,7 @@ public class ImageLookupService : IImageLookupService
 
             if (string.IsNullOrWhiteSpace(imageUrl))
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "No image URL found for entity {EntityId} with {IdentifierType}: {IdentifierValue}",
                     entity.Id, identifierType, identifierValue);
 
