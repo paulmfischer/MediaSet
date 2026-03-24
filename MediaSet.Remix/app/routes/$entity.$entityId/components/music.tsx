@@ -1,8 +1,9 @@
-import { Link } from '@remix-run/react';
+import { Link, useNavigation } from '@remix-run/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import ImageLookupInfo from '~/components/image-lookup-info';
 import { MusicEntity, Entity } from '~/models';
 import { millisecondsToMinutesSeconds } from '~/utils/helpers';
 
@@ -13,6 +14,9 @@ type MusicProps = {
 
 export default function Music({ music, apiUrl }: MusicProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const navigation = useNavigation();
+  const isClearingLookup =
+    navigation.state === 'submitting' && navigation.formData?.get('intent') === 'clear-image-lookup';
 
   return (
     <div className="flex flex-col">
@@ -143,6 +147,9 @@ export default function Music({ music, apiUrl }: MusicProps) {
                   </table>
                 </div>
               </div>
+            )}
+            {music.imageLookup && (music.imageLookup.failureReason || music.imageLookup.permanentFailure) && (
+              <ImageLookupInfo imageLookup={music.imageLookup} isClearing={isClearingLookup} />
             )}
           </div>
         </div>

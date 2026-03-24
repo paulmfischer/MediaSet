@@ -87,14 +87,28 @@ public class ImageStatsService : IImageStatsService
             (Entities: musicTask.Result.Cast<IEntity>(), TypeLabel: "musics"),
         };
 
-        // Compute broken links and collect all referenced file paths
+        // Compute broken links, lookup failures, and collect all referenced file paths
         var referencedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var brokenLinks = new List<BrokenImageLink>();
+        var imageLookupFailures = new List<ImageLookupFailure>();
 
         foreach (var (entities, typeLabel) in entityGroups)
         {
             foreach (var entity in entities)
             {
+                if (entity.ImageLookup != null &&
+                    (!string.IsNullOrEmpty(entity.ImageLookup.FailureReason) || entity.ImageLookup.PermanentFailure))
+                {
+                    imageLookupFailures.Add(new ImageLookupFailure(
+                        EntityId: entity.Id!,
+                        EntityType: typeLabel,
+                        Title: entity.Title,
+                        LookupAttemptedAt: entity.ImageLookup.LookupAttemptedAt,
+                        FailureReason: entity.ImageLookup.FailureReason,
+                        PermanentFailure: entity.ImageLookup.PermanentFailure
+                    ));
+                }
+
                 if (entity.CoverImage == null || string.IsNullOrEmpty(entity.CoverImage.FilePath))
                 {
                     continue;
@@ -127,6 +141,7 @@ public class ImageStatsService : IImageStatsService
             SizeByEntityType: sizeByEntityType,
             BrokenLinks: brokenLinks,
             OrphanedFiles: orphanedFiles,
+            ImageLookupFailures: imageLookupFailures,
             LastUpdated: DateTime.UtcNow
         );
 
@@ -134,8 +149,8 @@ public class ImageStatsService : IImageStatsService
             TimeSpan.FromMinutes(cacheSettings.StatsCacheDurationMinutes));
 
         logger.LogInformation(
-            "Image statistics computed: {TotalFiles} files, {TotalSizeBytes} bytes, {OrphanedFiles} orphaned, {BrokenLinks} broken links",
-            stats.TotalFiles, stats.TotalSizeBytes, stats.OrphanedFiles.Count, stats.BrokenLinks.Count);
+            "Image statistics computed: {TotalFiles} files, {TotalSizeBytes} bytes, {OrphanedFiles} orphaned, {BrokenLinks} broken links, {LookupFailures} lookup failures",
+            stats.TotalFiles, stats.TotalSizeBytes, stats.OrphanedFiles.Count, stats.BrokenLinks.Count, stats.ImageLookupFailures.Count);
 
         return stats;
     }

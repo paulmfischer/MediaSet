@@ -14,6 +14,15 @@ export type OrphanedImageFile = {
   sizeBytes: number;
 };
 
+export type ImageLookupFailure = {
+  entityId: string;
+  entityType: string;
+  title: string;
+  lookupAttemptedAt: string;
+  failureReason?: string;
+  permanentFailure: boolean;
+};
+
 export type ImageStats = {
   totalFiles: number;
   totalSizeBytes: number;
@@ -21,6 +30,7 @@ export type ImageStats = {
   sizeByEntityType: Record<string, number>;
   brokenLinks: BrokenImageLink[];
   orphanedFiles: OrphanedImageFile[];
+  imageLookupFailures: ImageLookupFailure[];
   lastUpdated: string;
 };
 

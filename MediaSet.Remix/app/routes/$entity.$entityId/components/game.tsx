@@ -1,8 +1,9 @@
-import { Link } from '@remix-run/react';
+import { Link, useNavigation } from '@remix-run/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import ImageLookupInfo from '~/components/image-lookup-info';
 import { GameEntity, Entity } from '~/models';
 
 type GameProps = {
@@ -12,6 +13,9 @@ type GameProps = {
 
 export default function Game({ game, apiUrl }: GameProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const navigation = useNavigation();
+  const isClearingLookup =
+    navigation.state === 'submitting' && navigation.formData?.get('intent') === 'clear-image-lookup';
 
   return (
     <div className="flex flex-col">
@@ -118,6 +122,9 @@ export default function Game({ game, apiUrl }: GameProps) {
                 {game.description}
               </div>
             </div>
+            {game.imageLookup && (game.imageLookup.failureReason || game.imageLookup.permanentFailure) && (
+              <ImageLookupInfo imageLookup={game.imageLookup} isClearing={isClearingLookup} />
+            )}
           </div>
         </div>
       </div>

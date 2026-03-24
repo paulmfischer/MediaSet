@@ -507,6 +507,7 @@ public class StatsApiTests : IntegrationTestBase
             SizeByEntityType: new Dictionary<string, long> { { "books", 10240 } },
             BrokenLinks: new List<ApiModels.BrokenImageLink>(),
             OrphanedFiles: new List<ApiModels.OrphanedImageFile>(),
+            ImageLookupFailures: new List<ApiModels.ImageLookupFailure>(),
             LastUpdated: DateTime.UtcNow
         );
         _imageStatsServiceMock.Setup(s => s.GetImageStatsAsync(It.IsAny<CancellationToken>()))

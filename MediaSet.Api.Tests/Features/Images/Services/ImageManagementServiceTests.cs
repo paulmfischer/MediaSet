@@ -6,6 +6,7 @@ using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -121,6 +122,138 @@ public class ImageManagementServiceTests
         Assert.That(result, Is.EqualTo(3));
         _storageProviderMock.Verify(s => s.DeleteImage(It.IsAny<string>()), Times.Exactly(3));
     }
+
+    #region ResetImageLookupAsync Tests
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldReturnZero_WhenNoMatchingEntities()
+    {
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "nonexistent-id" }, "books");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldClearImageLookup_ForMatchingBookIds()
+    {
+        // Arrange
+        var imageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow, FailureReason = "Not found" };
+        var book = new Book { Id = "1", Title = "Test Book", Format = "Paperback", ImageLookup = imageLookup };
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book> { book });
+        _bookServiceMock.Setup(s => s.UpdateAsync(book.Id!, book, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<MongoDB.Driver.ReplaceOneResult>());
+
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "1" }, "books");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(book.ImageLookup, Is.Null);
+        _bookServiceMock.Verify(s => s.UpdateAsync("1", book, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldOnlyUpdateMatchingIds()
+    {
+        // Arrange
+        var book1 = new Book { Id = "1", Title = "Book One", Format = "Paperback", ImageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow } };
+        var book2 = new Book { Id = "2", Title = "Book Two", Format = "Paperback", ImageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow } };
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book> { book1, book2 });
+        _bookServiceMock.Setup(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Book>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<MongoDB.Driver.ReplaceOneResult>());
+
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "1" }, "books");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(book1.ImageLookup, Is.Null);
+        Assert.That(book2.ImageLookup, Is.Not.Null);
+        _bookServiceMock.Verify(s => s.UpdateAsync("1", book1, It.IsAny<CancellationToken>()), Times.Once);
+        _bookServiceMock.Verify(s => s.UpdateAsync("2", book2, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldWork_ForMovies()
+    {
+        // Arrange
+        var movie = new Movie { Id = "10", Title = "Test Movie", Format = "Blu-ray", ImageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow } };
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Movie> { movie });
+        _movieServiceMock.Setup(s => s.UpdateAsync(movie.Id!, movie, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<MongoDB.Driver.ReplaceOneResult>());
+
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "10" }, "movies");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(movie.ImageLookup, Is.Null);
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldWork_ForGames()
+    {
+        // Arrange
+        var game = new Game { Id = "20", Title = "Test Game", Format = "Disc", ImageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow } };
+        _gameServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Game> { game });
+        _gameServiceMock.Setup(s => s.UpdateAsync(game.Id!, game, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<MongoDB.Driver.ReplaceOneResult>());
+
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "20" }, "games");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(game.ImageLookup, Is.Null);
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldWork_ForMusics()
+    {
+        // Arrange
+        var music = new Music { Id = "30", Title = "Test Album", Format = "CD", ImageLookup = new ImageLookup { LookupAttemptedAt = DateTime.UtcNow } };
+        _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Music> { music });
+        _musicServiceMock.Setup(s => s.UpdateAsync(music.Id!, music, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<MongoDB.Driver.ReplaceOneResult>());
+
+        // Act
+        var result = await _imageManagementService.ResetImageLookupAsync(new[] { "30" }, "musics");
+
+        // Assert
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(music.ImageLookup, Is.Null);
+    }
+
+    [Test]
+    public void ResetImageLookupAsync_ShouldThrowArgumentException_ForUnknownEntityType()
+    {
+        // Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(
+            async () => await _imageManagementService.ResetImageLookupAsync(new[] { "1" }, "unknown"));
+    }
+
+    [Test]
+    public async Task ResetImageLookupAsync_ShouldInvalidateImageStatsCache()
+    {
+        // Arrange
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Book>());
+
+        // Act
+        await _imageManagementService.ResetImageLookupAsync(new[] { "1" }, "books");
+
+        // Assert
+        _cacheServiceMock.Verify(c => c.RemoveAsync("image-stats"), Times.Once);
+    }
+
+    #endregion
 
     [Test]
     public async Task DeleteOrphanedImagesAsync_ShouldNotDeleteReferencedFiles()

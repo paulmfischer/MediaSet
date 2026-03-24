@@ -1,6 +1,9 @@
 using MediaSet.Api.Features.Images.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MediaSet.Api.Features.Images.Endpoints;
+
+internal record ResetImageLookupRequest(IEnumerable<string> EntityIds);
 
 internal static class ImagesApi
 {
@@ -16,6 +19,20 @@ internal static class ImagesApi
             logger.LogInformation("Deleting orphaned images");
             var count = await imageManagementService.DeleteOrphanedImagesAsync(cancellationToken);
             return Results.Ok(new { deleted = count });
+        });
+
+        group.MapDelete("/lookup/{entityType}", async (string entityType, [FromBody] ResetImageLookupRequest request, IImageManagementService imageManagementService, CancellationToken cancellationToken) =>
+        {
+            logger.LogInformation("Resetting ImageLookup for entity type {EntityType}", entityType);
+            try
+            {
+                var count = await imageManagementService.ResetImageLookupAsync(request.EntityIds, entityType, cancellationToken);
+                return Results.Ok(new { reset = count });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
         });
 
         return group;

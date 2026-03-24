@@ -79,4 +79,64 @@ public class ImageManagementService : IImageManagementService
 
         return orphanedFiles.Count;
     }
+
+    public async Task<int> ResetImageLookupAsync(IEnumerable<string> entityIds, string entityType, CancellationToken cancellationToken = default)
+    {
+        using var activity = Log.Logger.StartActivity("ResetImageLookup");
+
+        var idSet = new HashSet<string>(entityIds, StringComparer.OrdinalIgnoreCase);
+        var count = 0;
+
+        switch (entityType.ToLowerInvariant())
+        {
+            case "books":
+                var books = (await bookService.GetListAsync(cancellationToken))
+                    .Where(e => e.Id != null && idSet.Contains(e.Id));
+                foreach (var book in books)
+                {
+                    book.ImageLookup = null;
+                    await bookService.UpdateAsync(book.Id!, book, cancellationToken);
+                    count++;
+                }
+                break;
+            case "movies":
+                var movies = (await movieService.GetListAsync(cancellationToken))
+                    .Where(e => e.Id != null && idSet.Contains(e.Id));
+                foreach (var movie in movies)
+                {
+                    movie.ImageLookup = null;
+                    await movieService.UpdateAsync(movie.Id!, movie, cancellationToken);
+                    count++;
+                }
+                break;
+            case "games":
+                var games = (await gameService.GetListAsync(cancellationToken))
+                    .Where(e => e.Id != null && idSet.Contains(e.Id));
+                foreach (var game in games)
+                {
+                    game.ImageLookup = null;
+                    await gameService.UpdateAsync(game.Id!, game, cancellationToken);
+                    count++;
+                }
+                break;
+            case "musics":
+                var musics = (await musicService.GetListAsync(cancellationToken))
+                    .Where(e => e.Id != null && idSet.Contains(e.Id));
+                foreach (var music in musics)
+                {
+                    music.ImageLookup = null;
+                    await musicService.UpdateAsync(music.Id!, music, cancellationToken);
+                    count++;
+                }
+                break;
+            default:
+                throw new ArgumentException($"Unknown entity type: {entityType}");
+        }
+
+        await cacheService.RemoveAsync(ImageStatsCacheKey);
+
+        logger.LogInformation("Reset ImageLookup for {Count} entities of type {EntityType}", count, entityType);
+
+        return count;
+    }
 }
