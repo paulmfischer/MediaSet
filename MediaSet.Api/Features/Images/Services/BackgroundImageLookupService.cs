@@ -307,7 +307,7 @@ public class BackgroundImageLookupService : BackgroundService
             }
             else
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Failed to find image for {MediaType} entity {EntityId}: {Error}",
                     mediaType, entity.Id, result.ErrorMessage);
             }

@@ -78,42 +78,26 @@ public class GameLookupStrategyTests
             new(
                 Id: 1,
                 Name: "Halo Infinite",
-                Summary: "The next chapter of Master Chief",
+                Summary: "Master Chief returns.",
                 FirstReleaseDate: 1638921600L,
-                Genres: null,
-                InvolvedCompanies: null,
-                Platforms: null,
-                AgeRatings: null,
-                Cover: null)
+                Genres: new List<IgdbNamedObject> { new(5, "Shooter"), new(14, "Action") },
+                InvolvedCompanies: new List<IgdbInvolvedCompany>
+                {
+                    new(new IgdbNamedObject(1, "343 Industries"), Developer: true, Publisher: false),
+                    new(new IgdbNamedObject(2, "Xbox Game Studios"), Developer: false, Publisher: true)
+                },
+                Platforms: new List<IgdbPlatform>
+                {
+                    new(169, "Xbox Series X|S", "XBSX"),
+                    new(49, "Xbox One", "XONE")
+                },
+                AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 10) },
+                Cover: new IgdbCover(999, "//images.igdb.com/igdb/image/upload/t_thumb/co1234.jpg"))
         };
 
         _igdbClientMock
             .Setup(x => x.SearchGameAsync("Halo Infinite", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
-
-        var details = new IgdbGame(
-            Id: 1,
-            Name: "Halo Infinite",
-            Summary: "Master Chief returns.",
-            FirstReleaseDate: 1638921600L,
-            Genres: new List<IgdbNamedObject> { new(5, "Shooter"), new(14, "Action") },
-            InvolvedCompanies: new List<IgdbInvolvedCompany>
-            {
-                new(new IgdbNamedObject(1, "343 Industries"), Developer: true, Publisher: false),
-                new(new IgdbNamedObject(2, "Xbox Game Studios"), Developer: false, Publisher: true)
-            },
-            Platforms: new List<IgdbPlatform>
-            {
-                new(169, "Xbox Series X|S", "XBSX"),
-                new(49, "Xbox One", "XONE")
-            },
-            AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 10) },
-            Cover: new IgdbCover(999, "//images.igdb.com/igdb/image/upload/t_thumb/co1234.jpg")
-        );
-
-        _igdbClientMock
-            .Setup(x => x.GetGameDetailsAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(details);
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
@@ -156,7 +140,18 @@ public class GameLookupStrategyTests
         var searchResults = new List<IgdbGame>
         {
             new(999, "Super Mario Bros.", null, 495590400L, null, null, null, null, null),
-            new(12345, "Super Mario Odyssey", null, 1509062400L, null, null, null, null, null),
+            new(12345, "Super Mario Odyssey",
+                Summary: "Mario goes on a globe-trotting adventure",
+                FirstReleaseDate: 1509062400L,
+                Genres: new List<IgdbNamedObject> { new(8, "Platform"), new(31, "Adventure") },
+                InvolvedCompanies: new List<IgdbInvolvedCompany>
+                {
+                    new(new IgdbNamedObject(70, "Nintendo EPD"), Developer: true, Publisher: false),
+                    new(new IgdbNamedObject(70, "Nintendo"), Developer: false, Publisher: true)
+                },
+                Platforms: new List<IgdbPlatform> { new(130, "Nintendo Switch", "NSW") },
+                AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 9) },
+                Cover: null),
             new(888, "Super Mario 64", null, 872352000L, null, null, null, null, null)
         };
 
@@ -164,38 +159,15 @@ public class GameLookupStrategyTests
             .Setup(x => x.SearchGameAsync("Super Mario Odyssey", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
 
-        var details = new IgdbGame(
-            Id: 12345,
-            Name: "Super Mario Odyssey",
-            Summary: "Mario goes on a globe-trotting adventure",
-            FirstReleaseDate: 1509062400L,
-            Genres: new List<IgdbNamedObject> { new(8, "Platform"), new(31, "Adventure") },
-            InvolvedCompanies: new List<IgdbInvolvedCompany>
-            {
-                new(new IgdbNamedObject(70, "Nintendo EPD"), Developer: true, Publisher: false),
-                new(new IgdbNamedObject(70, "Nintendo"), Developer: false, Publisher: true)
-            },
-            Platforms: new List<IgdbPlatform> { new(130, "Nintendo Switch", "NSW") },
-            AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 9) },
-            Cover: null
-        );
-
-        _igdbClientMock
-            .Setup(x => x.GetGameDetailsAsync(12345, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(details);
-
         var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Does.Contain("Super Mario Odyssey"));
         Assert.That(result[0].Platform, Is.EqualTo("Nintendo Switch"));
 
-        // Verify it called GetGameDetailsAsync with the best match (id 12345), not the first result (id 999)
+        // Verify GetGameDetailsAsync is never called — search results are used directly
         _igdbClientMock.Verify(
-            x => x.GetGameDetailsAsync(12345, It.IsAny<CancellationToken>()),
-            Times.Once);
-        _igdbClientMock.Verify(
-            x => x.GetGameDetailsAsync(999, It.IsAny<CancellationToken>()),
+            x => x.GetGameDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

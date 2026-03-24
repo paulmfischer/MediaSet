@@ -112,21 +112,14 @@ public class GameLookupStrategy : ILookupStrategy<GameResponse>
         _logger.LogInformation("Best match for '{CleanedTitle}' is '{MatchName}' (id: {MatchId})",
             cleanedTitle, bestMatch.Name, bestMatch.Id);
 
-        var details = await _igdbClient.GetGameDetailsAsync(bestMatch.Id, cancellationToken);
-        if (details == null)
-        {
-            _logger.LogWarning("Could not retrieve IGDB game details for id: {Id}", bestMatch.Id);
-            return null;
-        }
-
         // If format is still empty, try to derive it from IGDB platform info
         if (string.IsNullOrWhiteSpace(format))
         {
-            format = DeriveFormatFromPlatforms(details.Platforms, platform);
+            format = DeriveFormatFromPlatforms(bestMatch.Platforms, platform);
             _logger.LogInformation("Format derived from IGDB platforms: {Format}", format);
         }
 
-        return MapToGameResponse(details, format, platform, edition);
+        return MapToGameResponse(bestMatch, format, platform, edition);
     }
 
     internal static (string CleanedTitle, string Edition) CleanGameTitleAndExtractEdition(string rawTitle)
