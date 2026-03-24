@@ -1,8 +1,9 @@
-import { Link } from '@remix-run/react';
+import { Link, useNavigation } from '@remix-run/react';
 import { Pencil, Trash2, Check } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/delete-dialog';
 import ImageDisplay from '~/components/image-display';
+import ImageLookupInfo from '~/components/image-lookup-info';
 import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {
@@ -12,6 +13,9 @@ type MovieProps = {
 
 export default function Movie({ movie, apiUrl }: MovieProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const navigation = useNavigation();
+  const isClearingLookup =
+    navigation.state === 'submitting' && navigation.formData?.get('intent') === 'clear-image-lookup';
 
   return (
     <div className="flex flex-col">
@@ -110,6 +114,9 @@ export default function Movie({ movie, apiUrl }: MovieProps) {
                 {movie.plot}
               </div>
             </div>
+            {movie.imageLookup && (movie.imageLookup.failureReason || movie.imageLookup.permanentFailure) && (
+              <ImageLookupInfo imageLookup={movie.imageLookup} isClearing={isClearingLookup} />
+            )}
           </div>
         </div>
       </div>

@@ -19,6 +19,12 @@ export type ImageData = {
   updatedAt: string;
 };
 
+export type ImageLookupData = {
+  lookupAttemptedAt: string;
+  failureReason?: string;
+  permanentFailure: boolean;
+};
+
 export enum Entity {
   Books = 'Books',
   Movies = 'Movies',
@@ -33,6 +39,7 @@ export interface BaseEntity {
   format?: string;
   coverImage?: ImageData;
   imageUrl?: string;
+  imageLookup?: ImageLookupData;
 }
 
 // Backend model

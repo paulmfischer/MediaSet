@@ -79,7 +79,7 @@ public class ImageStatsServiceTests
     {
         // Arrange
         var cachedStats = new ImageStats(5, 1024, new Dictionary<string, int>(), new Dictionary<string, long>(),
-            new List<BrokenImageLink>(), new List<OrphanedImageFile>(), DateTime.UtcNow);
+            new List<BrokenImageLink>(), new List<OrphanedImageFile>(), new List<ImageLookupFailure>(), DateTime.UtcNow);
         _cacheServiceMock.Setup(c => c.GetAsync<ImageStats>(It.IsAny<string>()))
             .ReturnsAsync(cachedStats);
 

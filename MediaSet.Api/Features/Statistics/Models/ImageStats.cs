@@ -18,6 +18,18 @@ public record OrphanedImageFile(
     long SizeBytes
 );
 
+/// <summary>
+/// An entity for which background image lookup was attempted but failed.
+/// </summary>
+public record ImageLookupFailure(
+    string EntityId,
+    string EntityType,
+    string Title,
+    DateTime LookupAttemptedAt,
+    string? FailureReason,
+    bool PermanentFailure
+);
+
 public record ImageStats(
     int TotalFiles,
     long TotalSizeBytes,
@@ -25,5 +37,6 @@ public record ImageStats(
     Dictionary<string, long> SizeByEntityType,
     IReadOnlyList<BrokenImageLink> BrokenLinks,
     IReadOnlyList<OrphanedImageFile> OrphanedFiles,
+    IReadOnlyList<ImageLookupFailure> ImageLookupFailures,
     DateTime LastUpdated
 );

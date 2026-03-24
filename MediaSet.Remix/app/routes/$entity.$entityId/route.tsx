@@ -1,7 +1,8 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import invariant from 'tiny-invariant';
 import { useLoaderData } from '@remix-run/react';
 import { getEntity } from '~/api/entity-data';
+import { resetImageLookup } from '~/api/image-management-data';
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
 import { getEntityFromParams, singular } from '~/utils/helpers';
 import { clientApiUrl } from '~/constants.server';
@@ -26,6 +27,17 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const entity = await getEntity(entityType, params.entityId);
   return { entity, apiUrl: clientApiUrl };
+};
+
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  invariant(params.entity, 'Missing entity param');
+  invariant(params.entityId, 'Missing entityId param');
+  const formData = await request.formData();
+  const intent = formData.get('intent');
+  if (intent === 'clear-image-lookup') {
+    await resetImageLookup([params.entityId], params.entity);
+  }
+  return null;
 };
 
 export default function Detail() {
