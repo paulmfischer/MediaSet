@@ -17,10 +17,10 @@ import { formToDto, getEntityFromParams, singular } from '~/utils/helpers';
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
 import { getLookupCapabilities, isBarcodeLookupAvailable } from '~/api/lookup-capabilities-data';
 import { serverLogger } from '~/utils/serverLogger';
-import BookForm from '../../components/book-form';
-import MovieForm from '~/components/movie-form';
-import GameForm from '~/components/game-form';
-import MusicForm from '~/components/music-form';
+import BookForm, { BookLookupSection } from '../../components/book-form';
+import MovieForm, { MovieLookupSection } from '~/components/movie-form';
+import GameForm, { GameLookupSection } from '~/components/game-form';
+import MusicForm, { MusicLookupSection } from '~/components/music-form';
 import TitleLookupResultsDialog from '~/components/title-lookup-results-dialog';
 import invariant from 'tiny-invariant';
 
@@ -278,6 +278,19 @@ export default function Edit() {
       ? `lookup-${identifierValue}-${fieldName}-${effectiveTimestamp}`
       : `entity-${entity.id}`;
 
+  let lookupSection;
+  if (barcodeLookupAvailable) {
+    if (entity.type === Entity.Books) {
+      lookupSection = <BookLookupSection isSubmitting={isSubmitting} />;
+    } else if (entity.type === Entity.Movies) {
+      lookupSection = <MovieLookupSection isSubmitting={isSubmitting} />;
+    } else if (entity.type === Entity.Games) {
+      lookupSection = <GameLookupSection isSubmitting={isSubmitting} />;
+    } else if (entity.type === Entity.Musics) {
+      lookupSection = <MusicLookupSection isSubmitting={isSubmitting} />;
+    }
+  }
+
   let formComponent;
   if (entity.type === Entity.Books) {
     formComponent = (
@@ -289,7 +302,6 @@ export default function Edit() {
         publishers={publishers}
         formats={formats}
         isSubmitting={isSubmitting}
-        isbnLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entity.type === Entity.Movies) {
@@ -301,7 +313,6 @@ export default function Edit() {
         studios={studios}
         formats={formats}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entity.type === Entity.Games) {
@@ -315,7 +326,6 @@ export default function Edit() {
         formats={formats}
         platforms={platforms}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entity.type === Entity.Musics) {
@@ -327,7 +337,6 @@ export default function Edit() {
         formats={formats}
         labels={labels}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   }
@@ -340,26 +349,26 @@ export default function Edit() {
             <h2 className="text-2xl">Editing {entity.title}</h2>
           </div>
         </div>
-        <div className="h-full mt-4">
-          <div className="mt-4 flex flex-col gap-2">
-            <Form id={formId} method="post" action={actionUrl} encType="multipart/form-data">
-              <input id="type" name="type" type="hidden" value={entity.type} />
-              {lookupError && (
-                <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
-                  <p className="text-yellow-300">{lookupError}</p>
-                </div>
-              )}
-              {formComponent}
-              <div className="flex flex-row gap-2 mt-3">
-                <button type="submit" disabled={isSubmitting}>
-                  Update
-                </button>
-                <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>
-                  Cancel
-                </button>
-              </div>
-            </Form>
-          </div>
+        <div className="h-full mt-4 flex flex-col gap-6">
+          {lookupSection}
+          {lookupError && (
+            <div className="p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+              <p className="text-yellow-300">{lookupError}</p>
+            </div>
+          )}
+
+          <Form id={formId} method="post" action={actionUrl} encType="multipart/form-data">
+            <input id="type" name="type" type="hidden" value={entity.type} />
+            {formComponent}
+            <div className="flex flex-row gap-2 mt-3">
+              <button type="submit" disabled={isSubmitting}>
+                Update
+              </button>
+              <button type="button" onClick={() => navigate(-1)} className="secondary" disabled={isSubmitting}>
+                Cancel
+              </button>
+            </div>
+          </Form>
         </div>
       </div>
 

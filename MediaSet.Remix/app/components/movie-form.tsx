@@ -1,80 +1,95 @@
 import { useState } from 'react';
-import { useSubmit } from '@remix-run/react';
-import ScanButton from '~/components/scan-button';
+import { Form } from '@remix-run/react';
 import MultiselectInput from '~/components/multiselect-input';
 import SingleselectInput from '~/components/singleselect-input';
 import ImageUpload from '~/components/image-upload';
 import ImageUrlPreview from '~/components/image-url-preview';
+import ScanButton from '~/components/scan-button';
 import { FormProps, MovieEntity } from '~/models';
 
 type Metadata = {
   label: string;
   value: string;
 };
+
+const inputClasses =
+  'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
+
+export function MovieLookupSection({ isSubmitting }: { isSubmitting?: boolean }) {
+  return (
+    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-col gap-4">
+      <p className="text-sm font-semibold text-gray-300">Movie Lookup</p>
+
+      <Form method="post" className="flex flex-col gap-3">
+        <input type="hidden" name="intent" value="lookup" />
+        <input type="hidden" name="fieldName" value="title" />
+        <div>
+          <label htmlFor="lookup-title" className="block text-sm font-medium text-gray-200 mb-1">
+            Title
+          </label>
+          <input
+            id="lookup-title"
+            name="identifierValue"
+            type="text"
+            className={inputClasses}
+            placeholder="Title"
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="flex justify-end">
+          <button type="submit" disabled={isSubmitting}>
+            Search
+          </button>
+        </div>
+      </Form>
+
+      <div className="flex items-center gap-3">
+        <div className="flex-1 border-t border-gray-700" />
+        <span className="text-xs text-gray-500">or</span>
+        <div className="flex-1 border-t border-gray-700" />
+      </div>
+
+      <Form method="post" className="flex flex-col gap-3">
+        <input type="hidden" name="intent" value="lookup" />
+        <input type="hidden" name="fieldName" value="barcode" />
+        <div>
+          <label htmlFor="lookup-barcode" className="block text-sm font-medium text-gray-200 mb-1">
+            Barcode
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="lookup-barcode"
+              name="identifierValue"
+              type="text"
+              inputMode="numeric"
+              className={inputClasses}
+              placeholder="Barcode"
+              disabled={isSubmitting}
+            />
+            <button type="submit" disabled={isSubmitting}>
+              Search
+            </button>
+            <ScanButton inputId="lookup-barcode" fieldName="barcode" disabled={isSubmitting} />
+          </div>
+        </div>
+      </Form>
+    </div>
+  );
+}
+
 type MovieFormProps = FormProps & {
-  isSubmitting?: boolean;
   movie?: MovieEntity;
   studios: Metadata[];
   genres: Metadata[];
   formats: Metadata[];
-  barcodeLookupAvailable?: boolean;
 };
 
-export default function MovieForm({
-  movie,
-  genres,
-  studios,
-  formats,
-  isSubmitting,
-  barcodeLookupAvailable,
-}: MovieFormProps) {
-  const submit = useSubmit();
+export default function MovieForm({ movie, genres, studios, formats, isSubmitting }: MovieFormProps) {
   const [isTvSeries, setIsTvSeries] = useState(movie?.isTvSeries ?? false);
   const isTvSeriesChanged = () => setIsTvSeries(!isTvSeries);
 
-  const inputClasses =
-    'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
   const textareaClasses =
     'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
-
-  const handleTitleLookup = () => {
-    const titleInput = document.getElementById('title') as HTMLInputElement;
-    const titleValue = titleInput?.value;
-
-    if (!titleValue) {
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('intent', 'lookup');
-    formData.append('fieldName', 'title');
-    formData.append('identifierValue', titleValue);
-
-    submit(formData, { method: 'post' });
-  };
-
-  const handleLookup = () => {
-    const barcodeInput = document.getElementById('barcode') as HTMLInputElement;
-    const barcodeValue = barcodeInput?.value;
-
-    if (!barcodeValue) {
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('intent', 'lookup');
-    formData.append('fieldName', 'barcode');
-    formData.append('identifierValue', barcodeValue);
-
-    submit(formData, { method: 'post' });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleLookup();
-    }
-  };
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
@@ -84,49 +99,31 @@ export default function MovieForm({
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
           Title
         </label>
-        <div className="flex gap-2">
-          <input
-            id="title"
-            name="title"
-            type="text"
-            className={inputClasses}
-            placeholder="Title"
-            aria-label="Title"
-            defaultValue={movie?.title}
-          />
-          {barcodeLookupAvailable && (
-            <button type="button" onClick={handleTitleLookup} disabled={isSubmitting}>
-              Lookup
-            </button>
-          )}
-        </div>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          className={inputClasses}
+          placeholder="Title"
+          aria-label="Title"
+          defaultValue={movie?.title}
+        />
       </div>
 
       <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">
           Barcode
         </label>
-        <div className="flex gap-2">
-          <input
-            id="barcode"
-            name="barcode"
-            type="text"
-            inputMode="numeric"
-            className={inputClasses}
-            placeholder="Barcode"
-            defaultValue={movie?.barcode}
-            aria-label="Barcode"
-            onKeyDown={handleKeyDown}
-          />
-          {barcodeLookupAvailable && (
-            <>
-              <button type="button" onClick={handleLookup} disabled={isSubmitting}>
-                Lookup
-              </button>
-              <ScanButton inputId="barcode" fieldName="barcode" disabled={isSubmitting} />
-            </>
-          )}
-        </div>
+        <input
+          id="barcode"
+          name="barcode"
+          type="text"
+          inputMode="numeric"
+          className={inputClasses}
+          placeholder="Barcode"
+          defaultValue={movie?.barcode}
+          aria-label="Barcode"
+        />
       </div>
 
       <ImageUpload name="coverImage" existingImage={movie?.coverImage} isSubmitting={isSubmitting} />

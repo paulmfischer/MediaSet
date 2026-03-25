@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import BookForm from './book-form';
+import BookForm, { BookLookupSection } from './book-form';
 import { BookEntity, Entity } from '~/models';
 
 // Mock the custom input components
@@ -29,13 +30,14 @@ vi.mock('~/components/singleselect-input', () => ({
   ),
 }));
 
-// Mock useSubmit
-const mockSubmit = vi.fn();
 vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    useSubmit: () => mockSubmit,
+    Form: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <form {...props}>{children}</form>
+    ),
+    useSubmit: () => vi.fn(),
   };
 });
 
@@ -60,7 +62,6 @@ describe('BookForm', () => {
       { label: 'Ebook', value: 'ebook' },
     ],
     isSubmitting: false,
-    isbnLookupAvailable: true,
   };
 
   const mockBook: BookEntity = {
@@ -104,14 +105,6 @@ describe('BookForm', () => {
       const idInput = screen.getByDisplayValue('book-1') as HTMLInputElement;
       expect(idInput).toHaveAttribute('type', 'hidden');
       expect(idInput).toHaveAttribute('name', 'id');
-    });
-
-    it('should render the ISBN lookup button', () => {
-      render(<BookForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeInTheDocument();
-      expect(lookupButton).toHaveAttribute('type', 'button');
     });
 
     it('should render all inputs with aria-labels', () => {
@@ -275,55 +268,7 @@ describe('BookForm', () => {
     });
   });
 
-  describe('Form Submission', () => {
-    it('should call submit when lookup button is clicked with ISBN', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
-
-      const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-      await user.type(isbnInput, '978-0743273565');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalled();
-    });
-
-    it('should pass correct form data to submit on lookup', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
-
-      const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-      await user.type(isbnInput, '978-0743273565');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
-
-      const callArgs = mockSubmit.mock.calls[0][0] as FormData;
-      expect(callArgs.get('intent')).toBe('lookup');
-      expect(callArgs.get('fieldName')).toBe('isbn');
-      expect(callArgs.get('identifierValue')).toBe('978-0743273565');
-    });
-
-    it('should not call submit if ISBN is empty', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).not.toHaveBeenCalled();
-    });
-
-    it('should not call submit if lookup button is disabled during submission', async () => {
-      render(<BookForm {...defaultProps} isSubmitting={true} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeDisabled();
-    });
-
+  describe('Form State', () => {
     it('should disable fieldset when isSubmitting is true', () => {
       const { container } = render(<BookForm {...defaultProps} isSubmitting={true} />);
 
@@ -339,70 +284,82 @@ describe('BookForm', () => {
     });
   });
 
-  describe('Mock API Calls', () => {
-    it('should format lookup request with correct field name', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
+  describe('BookLookupSection', () => {
+    it('should render title, author, and ISBN inputs', () => {
+      render(<BookLookupSection />);
 
-      const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-      await user.type(isbnInput, '978-1111111111');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('fieldName')).toBe('isbn');
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Author')).toBeInTheDocument();
+      expect(screen.getByLabelText('ISBN')).toBeInTheDocument();
     });
 
-    it('should handle multiple lookup calls', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
+    it('should render two Search buttons', () => {
+      render(<BookLookupSection />);
 
-      const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-
-      // First lookup
-      await user.type(isbnInput, '978-1111111111');
-      let lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(1);
-
-      // Clear and second lookup
-      await user.clear(isbnInput);
-      await user.type(isbnInput, '978-2222222222');
-      lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(2);
+      const searchButtons = screen.getAllByRole('button', { name: /search/i });
+      expect(searchButtons).toHaveLength(2);
     });
 
-    it('should pass correct identifierValue to submit', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
+    it('should have correct hidden inputs for title form', () => {
+      const { container } = render(<BookLookupSection />);
 
-      const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-      const testIsbn = '978-9999999999';
-      await user.type(isbnInput, testIsbn);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('identifierValue')).toBe(testIsbn);
+      const forms = container.querySelectorAll('form');
+      const titleForm = forms[0];
+      const intentInput = titleForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = titleForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('title');
     });
 
-    it('should set intent to lookup for API call', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} />);
+    it('should have correct hidden inputs for ISBN form', () => {
+      const { container } = render(<BookLookupSection />);
+
+      const forms = container.querySelectorAll('form');
+      const isbnForm = forms[1];
+      const intentInput = isbnForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = isbnForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('isbn');
+    });
+
+    it('should disable inputs when isSubmitting is true', () => {
+      render(<BookLookupSection isSubmitting={true} />);
+
+      expect(screen.getByLabelText('Title')).toBeDisabled();
+      expect(screen.getByLabelText('Author')).toBeDisabled();
+      expect(screen.getByLabelText('ISBN')).toBeDisabled();
+      screen.getAllByRole('button', { name: /search/i }).forEach((btn) => {
+        expect(btn).toBeDisabled();
+      });
+    });
+
+    it('should enable inputs when isSubmitting is false', () => {
+      render(<BookLookupSection isSubmitting={false} />);
+
+      expect(screen.getByLabelText('Title')).not.toBeDisabled();
+      expect(screen.getByLabelText('Author')).not.toBeDisabled();
+      expect(screen.getByLabelText('ISBN')).not.toBeDisabled();
+    });
+
+    it('should have identifierValue name on title input', () => {
+      render(<BookLookupSection />);
+
+      const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
+      expect(titleInput.name).toBe('identifierValue');
+    });
+
+    it('should have lookupParam.author name on author input', () => {
+      render(<BookLookupSection />);
+
+      const authorInput = screen.getByLabelText('Author') as HTMLInputElement;
+      expect(authorInput.name).toBe('lookupParam.author');
+    });
+
+    it('should have identifierValue name on ISBN input', () => {
+      render(<BookLookupSection />);
 
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
-      await user.type(isbnInput, '978-3333333333');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('intent')).toBe('lookup');
+      expect(isbnInput.name).toBe('identifierValue');
     });
   });
 
@@ -424,7 +381,6 @@ describe('BookForm', () => {
       const user = userEvent.setup();
       render(<BookForm {...defaultProps} book={mockBook} />);
 
-      // Verify all fields are populated
       expect(screen.getByLabelText('Title')).toHaveValue('The Great Gatsby');
       expect(screen.getByLabelText('Subtitle')).toHaveValue('A Novel');
       expect(screen.getByLabelText('Pages')).toHaveValue(180);
@@ -432,30 +388,13 @@ describe('BookForm', () => {
       expect(screen.getByLabelText('ISBN')).toHaveValue('978-0743273565');
       expect(screen.getByLabelText('Plot')).toHaveValue('A classic American novel about the Jazz Age.');
 
-      // Modify one field
       const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
       await user.clear(titleInput);
       await user.type(titleInput, 'Updated Title');
 
       expect(titleInput.value).toBe('Updated Title');
-
-      // Verify other fields unchanged
       expect(screen.getByLabelText('ISBN')).toHaveValue('978-0743273565');
       expect(screen.getByLabelText('Plot')).toHaveValue('A classic American novel about the Jazz Age.');
-    });
-
-    it('should trigger lookup and maintain form state', async () => {
-      const user = userEvent.setup();
-      render(<BookForm {...defaultProps} book={mockBook} />);
-
-      const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
-      const initialTitle = titleInput.value;
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      // Title should remain unchanged after lookup attempt
-      expect(screen.getByLabelText('Title')).toHaveValue(initialTitle);
     });
 
     it('should handle rapid input changes', async () => {
@@ -478,7 +417,7 @@ describe('BookForm', () => {
     it('should have proper label associations', () => {
       render(<BookForm {...defaultProps} />);
 
-      const titleLabel = screen.getByText('Title');
+      const titleLabel = screen.getAllByText('Title')[0];
       const titleInput = screen.getByLabelText('Title');
 
       expect(titleLabel).toBeInTheDocument();
@@ -502,7 +441,7 @@ describe('BookForm', () => {
       ];
 
       labels.forEach((label) => {
-        expect(screen.getByText(label)).toBeInTheDocument();
+        expect(screen.getAllByText(label)[0]).toBeInTheDocument();
       });
     });
 
@@ -510,7 +449,6 @@ describe('BookForm', () => {
       const { container } = render(<BookForm {...defaultProps} isSubmitting={true} />);
 
       const fieldset = container.querySelector('fieldset');
-
       expect(fieldset).toBeDisabled();
     });
   });
