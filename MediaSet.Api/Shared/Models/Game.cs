@@ -20,6 +20,7 @@ public class Game : IEntity
     public MediaTypes Type { get; set; }
 
     [Required]
+    [LookupProperty]
     public string Title { get; set; } = string.Empty;
 
     // Physical/digital format (e.g., Disc, Cartridge, Digital)

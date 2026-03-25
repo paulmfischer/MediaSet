@@ -7,7 +7,7 @@ using SerilogTracing;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
-public class BookLookupStrategy : ILookupStrategy<BookResponse>
+public class BookLookupStrategy : LookupStrategyBase<Book, BookResponse>
 {
     private readonly IOpenLibraryClient _openLibraryClient;
     private readonly IUpcItemDbClient _upcItemDbClient;
@@ -21,7 +21,7 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         IdentifierType.Olid,
         IdentifierType.Upc,
         IdentifierType.Ean,
-        IdentifierType.Title
+        IdentifierType.Entity
     ];
 
     public BookLookupStrategy(
@@ -34,25 +34,26 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         _logger = logger;
     }
 
-    public bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
+    public override bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
     {
         return entityType == MediaTypes.Books && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<IReadOnlyList<BookResponse>> LookupAsync(
+    public override async Task<IReadOnlyList<BookResponse>> LookupAsync(
         IdentifierType identifierType,
-        string identifierValue,
+        IReadOnlyDictionary<string, string> searchParams,
         CancellationToken cancellationToken)
     {
-        using var activity = Log.Logger.StartActivity("BookLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        using var activity = Log.Logger.StartActivity("BookLookup {IdentifierType}", new { IdentifierType = identifierType });
 
-        _logger.LogInformation("Looking up book with {IdentifierType}: {IdentifierValue}",
-            identifierType, identifierValue);
+        _logger.LogInformation("Looking up book with {IdentifierType}", identifierType);
 
-        if (identifierType == IdentifierType.Title)
+        if (identifierType == IdentifierType.Entity)
         {
-            return await _openLibraryClient.SearchByTitleAsync(identifierValue, cancellationToken);
+            return await _openLibraryClient.SearchByEntityPropertiesAsync(searchParams, cancellationToken);
         }
+
+        var identifierValue = searchParams.Values.FirstOrDefault() ?? string.Empty;
 
         var result = identifierType switch
         {
@@ -92,7 +93,7 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         _logger.LogInformation("Looking up UPC/EAN: {Upc} to find ISBN", upc);
 
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(upc, cancellationToken);
-        
+
         if (upcResult == null || upcResult.Items.Count == 0)
         {
             _logger.LogWarning("No UPC/EAN data found for code: {Upc}", upc);
@@ -100,10 +101,10 @@ public class BookLookupStrategy : ILookupStrategy<BookResponse>
         }
 
         var firstItem = upcResult.Items[0];
-        
+
         if (!string.IsNullOrEmpty(firstItem.Isbn))
         {
-            _logger.LogInformation("Found ISBN {Isbn} from UPC/EAN {Upc}, looking up book data", 
+            _logger.LogInformation("Found ISBN {Isbn} from UPC/EAN {Upc}, looking up book data",
                 firstItem.Isbn, upc);
             return await LookupByIsbnAsync(firstItem.Isbn, cancellationToken);
         }

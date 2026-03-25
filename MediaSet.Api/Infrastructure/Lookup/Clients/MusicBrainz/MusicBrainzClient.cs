@@ -144,7 +144,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         }
     }
 
-    public async Task<IReadOnlyList<MusicBrainzRelease>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MusicBrainzRelease>> SearchByEntityPropertiesAsync(IReadOnlyDictionary<string, string> searchParams, CancellationToken cancellationToken)
     {
         await _rateLimiter.WaitAsync(cancellationToken);
         try
@@ -155,11 +155,28 @@ public class MusicBrainzClient : IMusicBrainzClient
                 await Task.Delay(TimeSpan.FromSeconds(1) - timeSinceLastRequest, cancellationToken);
             }
 
-            _logger.LogInformation("Searching MusicBrainz releases by title: {Title}", title);
+            searchParams.TryGetValue("title", out var title);
+            searchParams.TryGetValue("artist", out var artist);
 
-            var encodedTitle = Uri.EscapeDataString(title);
+            _logger.LogInformation("Searching MusicBrainz releases by entity properties: title={Title}, artist={Artist}", title, artist);
+
+            string query;
+            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(artist))
+            {
+                query = $"release:\"{Uri.EscapeDataString(title)}\" AND artist:\"{Uri.EscapeDataString(artist)}\"";
+            }
+            else if (!string.IsNullOrWhiteSpace(title))
+            {
+                query = Uri.EscapeDataString(title);
+            }
+            else
+            {
+                _logger.LogWarning("No title provided for MusicBrainz entity search");
+                return [];
+            }
+
             var response = await _httpClient.GetAsync(
-                $"ws/2/release/?query={encodedTitle}&limit=10&fmt=json",
+                $"ws/2/release/?query={query}&limit=10&fmt=json",
                 cancellationToken);
 
             _lastRequestTime = DateTime.UtcNow;
@@ -168,11 +185,11 @@ public class MusicBrainzClient : IMusicBrainzClient
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    _logger.LogWarning("MusicBrainz rate limit exceeded for title search: {Title}", title);
+                    _logger.LogWarning("MusicBrainz rate limit exceeded for entity search: title={Title}", title);
                     throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
                 }
 
-                _logger.LogWarning("MusicBrainz returned status code {StatusCode} for title search: {Title}",
+                _logger.LogWarning("MusicBrainz returned status code {StatusCode} for entity search: title={Title}",
                     response.StatusCode, title);
                 return [];
             }
@@ -181,23 +198,23 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             if (result?.Releases == null || result.Releases.Count == 0)
             {
-                _logger.LogInformation("No releases found for title: {Title}", title);
+                _logger.LogInformation("No releases found for entity search: title={Title}", title);
                 return [];
             }
 
-            _logger.LogInformation("MusicBrainz search found {Count} releases for title: {Title}",
+            _logger.LogInformation("MusicBrainz search found {Count} releases for entity search: title={Title}",
                 result.Releases.Count, title);
 
             return result.Releases;
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "HTTP error while searching MusicBrainz by title: {Title}", title);
+            _logger.LogError(ex, "HTTP error while searching MusicBrainz by entity properties");
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching MusicBrainz by title: {Title}", title);
+            _logger.LogError(ex, "Error searching MusicBrainz by entity properties");
             return [];
         }
         finally

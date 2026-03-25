@@ -1,5 +1,6 @@
 using MediaSet.Api.Shared.Models;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -798,10 +799,10 @@ public class OpenLibraryClientTests
         Assert.That(result, Is.Null);
     }
 
-    #region SearchByTitleAsync Tests
+    #region SearchByEntityPropertiesAsync Tests
 
     [Test]
-    public async Task SearchByTitleAsync_WithCoverEditionKey_EnrichesResultViaOlidLookup()
+    public async Task SearchByEntityPropertiesAsync_WithCoverEditionKey_EnrichesResultViaOlidLookup()
     {
         var searchJson = """
         {
@@ -847,7 +848,7 @@ public class OpenLibraryClientTests
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Fantastic Mr. Fox" });
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
@@ -879,7 +880,7 @@ public class OpenLibraryClientTests
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Fantastic Mr. Fox" });
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
@@ -887,7 +888,7 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public async Task SearchByTitleAsync_WithNoCoverEditionKey_UsesSearchDataDirectly()
+    public async Task SearchByEntityPropertiesAsync_WithNoCoverEditionKey_UsesSearchDataDirectly()
     {
         var searchJson = """
         {
@@ -907,7 +908,7 @@ public class OpenLibraryClientTests
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByTitleAsync("Fantastic Mr. Fox");
+        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Fantastic Mr. Fox" });
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("Fantastic Mr. Fox"));
@@ -915,25 +916,25 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public async Task SearchByTitleAsync_WithNoResults_ReturnsEmptyList()
+    public async Task SearchByEntityPropertiesAsync_WithNoResults_ReturnsEmptyList()
     {
         SetupHttpResponse(HttpStatusCode.OK, """{"numFound": 0, "docs": []}""");
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByTitleAsync("Nonexistent Book");
+        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Nonexistent Book" });
 
         Assert.That(result, Is.Empty);
     }
 
     [Test]
-    public async Task SearchByTitleAsync_WithHttpError_ReturnsEmptyList()
+    public async Task SearchByEntityPropertiesAsync_WithHttpError_ReturnsEmptyList()
     {
         SetupHttpResponse(HttpStatusCode.InternalServerError, "error");
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByTitleAsync("Some Book");
+        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Some Book" });
 
         Assert.That(result, Is.Empty);
     }

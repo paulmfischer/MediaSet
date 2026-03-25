@@ -108,40 +108,57 @@ public class OpenLibraryClient : IOpenLibraryClient
         };
     }
 
-    public async Task<IReadOnlyList<BookResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<BookResponse>> SearchByEntityPropertiesAsync(IReadOnlyDictionary<string, string> searchParams, CancellationToken cancellationToken = default)
     {
+        searchParams.TryGetValue("title", out var title);
+        searchParams.TryGetValue("author", out var author);
+
+        _logger.LogInformation("Searching OpenLibrary by entity properties: title={Title}, author={Author}", title, author);
+
         try
         {
-            var encodedTitle = Uri.EscapeDataString(title);
-            var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>(
-                $"search.json?q={encodedTitle}&limit=10",
-                cancellationToken);
+            string url;
+            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(author))
+            {
+                url = $"search.json?title={Uri.EscapeDataString(title)}&author={Uri.EscapeDataString(author)}&limit=10";
+            }
+            else if (!string.IsNullOrWhiteSpace(title))
+            {
+                url = $"search.json?q={Uri.EscapeDataString(title)}&limit=10";
+            }
+            else
+            {
+                _logger.LogWarning("No title provided for OpenLibrary entity search");
+                return [];
+            }
+
+            var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>(url, cancellationToken);
 
             if (response == null || response.Docs.Count == 0)
             {
-                _logger.LogInformation("No OpenLibrary search results for title: {Title}", title);
+                _logger.LogInformation("No OpenLibrary search results for entity search: title={Title}", title);
                 return [];
             }
 
             var docs = response.Docs.Where(d => !string.IsNullOrWhiteSpace(d.Title)).ToList();
-            _logger.LogInformation("OpenLibrary search found {Count} results for title: {Title}", docs.Count, title);
+            _logger.LogInformation("OpenLibrary search found {Count} results for entity search: title={Title}", docs.Count, title);
 
             var enrichmentTasks = docs.Select(doc => EnrichSearchDocAsync(doc, cancellationToken));
             return await Task.WhenAll(enrichmentTasks);
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by title: {Title}", title);
+            _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "JSON parsing error while searching OpenLibrary by title: {Title}", title);
+            _logger.LogWarning(ex, "JSON parsing error while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching OpenLibrary by title: {Title}", title);
+            _logger.LogError(ex, "Error searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
     }

@@ -7,7 +7,7 @@ using SerilogTracing;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
-public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
+public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 {
     private readonly IUpcItemDbClient _upcItemDbClient;
     private readonly ITmdbClient _tmdbClient;
@@ -17,7 +17,7 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
     [
         IdentifierType.Upc,
         IdentifierType.Ean,
-        IdentifierType.Title
+        IdentifierType.Entity
     ];
 
     public MovieLookupStrategy(
@@ -30,26 +30,27 @@ public class MovieLookupStrategy : ILookupStrategy<MovieResponse>
         _logger = logger;
     }
 
-    public bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
+    public override bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
     {
         return entityType == MediaTypes.Movies && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<IReadOnlyList<MovieResponse>> LookupAsync(
+    public override async Task<IReadOnlyList<MovieResponse>> LookupAsync(
         IdentifierType identifierType,
-        string identifierValue,
+        IReadOnlyDictionary<string, string> searchParams,
         CancellationToken cancellationToken)
     {
-        using var activity = Log.Logger.StartActivity("MovieLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        using var activity = Log.Logger.StartActivity("MovieLookup {IdentifierType}", new { IdentifierType = identifierType });
 
-        _logger.LogInformation("Looking up movie with {IdentifierType}: {IdentifierValue}",
-            identifierType, identifierValue);
+        _logger.LogInformation("Looking up movie with {IdentifierType}", identifierType);
 
-        if (identifierType == IdentifierType.Title)
+        if (identifierType == IdentifierType.Entity)
         {
-            return await SearchByTitleAsync(identifierValue, cancellationToken);
+            searchParams.TryGetValue("title", out var title);
+            return await SearchByTitleAsync(title ?? string.Empty, cancellationToken);
         }
 
+        var identifierValue = searchParams.Values.FirstOrDefault() ?? string.Empty;
         var result = await LookupByUpcAsync(identifierValue, cancellationToken);
         return result != null ? [result] : [];
     }

@@ -6,7 +6,7 @@ using SerilogTracing;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
-public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
+public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
 {
     private readonly IMusicBrainzClient _musicBrainzClient;
     private readonly ILogger<MusicLookupStrategy> _logger;
@@ -15,7 +15,7 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
     [
         IdentifierType.Upc,
         IdentifierType.Ean,
-        IdentifierType.Title
+        IdentifierType.Entity
     ];
 
     public MusicLookupStrategy(
@@ -26,25 +26,24 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
         _logger = logger;
     }
 
-    public bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
+    public override bool CanHandle(MediaTypes entityType, IdentifierType identifierType)
     {
         return entityType == MediaTypes.Musics && _supportedIdentifierTypes.Contains(identifierType);
     }
 
-    public async Task<IReadOnlyList<MusicResponse>> LookupAsync(
+    public override async Task<IReadOnlyList<MusicResponse>> LookupAsync(
         IdentifierType identifierType,
-        string identifierValue,
+        IReadOnlyDictionary<string, string> searchParams,
         CancellationToken cancellationToken)
     {
-        using var activity = Log.Logger.StartActivity("MusicLookup {IdentifierType}", new { IdentifierType = identifierType, identifierValue });
+        using var activity = Log.Logger.StartActivity("MusicLookup {IdentifierType}", new { IdentifierType = identifierType });
 
-        _logger.LogInformation("Looking up music with {IdentifierType}: {IdentifierValue}",
-            identifierType, identifierValue);
+        _logger.LogInformation("Looking up music with {IdentifierType}", identifierType);
 
-        if (identifierType == IdentifierType.Title)
+        if (identifierType == IdentifierType.Entity)
         {
-            var titleResults = await _musicBrainzClient.SearchByTitleAsync(identifierValue, cancellationToken);
-            var detailTasks = titleResults
+            var entityResults = await _musicBrainzClient.SearchByEntityPropertiesAsync(searchParams, cancellationToken);
+            var detailTasks = entityResults
                 .Take(10)
                 .Select(r => _musicBrainzClient.GetReleaseByIdAsync(r.Id, cancellationToken));
             var details = await Task.WhenAll(detailTasks);
@@ -52,6 +51,11 @@ public class MusicLookupStrategy : ILookupStrategy<MusicResponse>
                 .Where(d => d != null)
                 .Select(d => MapToMusicResponse(d!))];
         }
+
+        searchParams.TryGetValue("barcode", out var identifierValue);
+        identifierValue ??= searchParams.Values.FirstOrDefault() ?? string.Empty;
+
+        _logger.LogInformation("Looking up music by barcode: {Barcode}", identifierValue);
 
         // Step 1: Search by barcode to get the release ID
         var searchRelease = await _musicBrainzClient.GetReleaseByBarcodeAsync(identifierValue, cancellationToken);
