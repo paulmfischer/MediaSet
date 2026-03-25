@@ -47,6 +47,12 @@ export default function BookForm({
     formData.append('fieldName', 'title');
     formData.append('identifierValue', titleValue);
 
+    const authorInput = document.getElementById('author') as HTMLInputElement;
+    const authorValue = authorInput?.value;
+    if (authorValue) {
+      formData.append('lookupParam.author', authorValue);
+    }
+
     submit(formData, { method: 'post' });
   };
 
@@ -97,6 +103,21 @@ export default function BookForm({
             </button>
           )}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="author" className="block text-sm font-medium text-gray-200 mb-1">
+          Author
+        </label>
+        <input
+          id="author"
+          name="author"
+          type="text"
+          className={inputClasses}
+          placeholder="Author"
+          aria-label="Author"
+          defaultValue={book?.authors?.[0]}
+        />
       </div>
 
       <div>

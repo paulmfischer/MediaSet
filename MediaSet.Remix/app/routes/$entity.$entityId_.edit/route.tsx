@@ -97,7 +97,13 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     try {
       const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
-      const lookupArray = await lookup(entityType, identifierType, identifierValue);
+      const searchParams: Record<string, string> = { [fieldName]: identifierValue };
+      for (const [key, value] of formData.entries()) {
+        if (key.startsWith('lookupParam.') && value) {
+          searchParams[key.slice('lookupParam.'.length)] = value as string;
+        }
+      }
+      const lookupArray = await lookup(entityType, identifierType, searchParams);
 
       if (isLookupError(lookupArray)) {
         return { lookupResult: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };

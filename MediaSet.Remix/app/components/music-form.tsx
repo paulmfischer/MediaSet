@@ -56,6 +56,12 @@ export default function MusicForm({
     formData.append('fieldName', 'title');
     formData.append('identifierValue', titleValue);
 
+    const artistInput = document.getElementById('artist') as HTMLInputElement;
+    const artistValue = artistInput?.value;
+    if (artistValue) {
+      formData.append('lookupParam.artist', artistValue);
+    }
+
     submit(formData, { method: 'post' });
   };
 
@@ -123,6 +129,21 @@ export default function MusicForm({
       </div>
 
       <div>
+        <label htmlFor="artist" className="block text-sm font-medium text-gray-200 mb-1">
+          Artist
+        </label>
+        <input
+          id="artist"
+          name="artist"
+          type="text"
+          className={inputClasses}
+          placeholder="Artist"
+          aria-label="Artist"
+          defaultValue={music?.artist}
+        />
+      </div>
+
+      <div>
         <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">
           Barcode
         </label>
@@ -171,21 +192,6 @@ export default function MusicForm({
           />
           <ImageUrlPreview inputId="imageUrl" existingUrl={music?.imageUrl} />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="artist" className="block text-sm font-medium text-gray-200 mb-1">
-          Artist
-        </label>
-        <input
-          id="artist"
-          name="artist"
-          type="text"
-          className={inputClasses}
-          placeholder="Artist"
-          aria-label="Artist"
-          defaultValue={music?.artist}
-        />
       </div>
 
       <div>

@@ -32,7 +32,7 @@ export function isLookupError(result: unknown): result is LookupError {
 
 export function getIdentifierTypeForField(entityType: Entity, fieldName: string): IdentifierType {
   if (fieldName === 'title') {
-    return 'title';
+    return 'entity';
   }
   if (entityType === Entity.Books && fieldName === 'isbn') {
     return 'isbn';
@@ -49,9 +49,18 @@ export function getIdentifierTypeForField(entityType: Entity, fieldName: string)
 export async function lookup(
   entityType: Entity,
   identifierType: IdentifierType,
-  identifierValue: string
+  searchParams: Record<string, string>
 ): Promise<Array<BookEntity | MovieEntity | GameEntity | MusicEntity> | LookupError> {
-  const response = await fetch(`${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`);
+  let url: string;
+  if (identifierType === 'entity') {
+    const qs = new URLSearchParams(searchParams).toString();
+    url = `${baseUrl}/lookup/${entityType}/entity?${qs}`;
+  } else {
+    const identifierValue = searchParams[identifierType] ?? Object.values(searchParams)[0] ?? '';
+    url = `${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`;
+  }
+
+  const response = await fetch(url);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -61,7 +70,7 @@ export async function lookup(
     } as LookupError;
   }
 
-  const isTitleSearch = identifierType === 'title';
+  const isEntitySearch = identifierType === 'entity';
 
   if (entityType === Entity.Books) {
     const bookLookups = (await response.json()) as BookLookupResponse[];
@@ -71,7 +80,7 @@ export async function lookup(
           type: Entity.Books,
           authors: bookLookup.authors?.map(linkMap),
           pages: bookLookup.numberOfPages,
-          isbn: isTitleSearch ? undefined : identifierValue,
+          isbn: isEntitySearch ? undefined : searchParams['isbn'],
           publicationDate: bookLookup.publishDate,
           publisher: bookLookup.publishers?.[0]?.name,
           title: bookLookup.title,
@@ -94,7 +103,7 @@ export async function lookup(
           rating: movieLookup.rating,
           runtime: movieLookup.runtime ?? undefined,
           plot: movieLookup.plot,
-          barcode: isTitleSearch ? undefined : identifierValue,
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
           format: movieLookup.format,
           imageUrl: movieLookup.imageUrl,
         }) as MovieEntity
@@ -113,7 +122,7 @@ export async function lookup(
           releaseDate: gameLookup.releaseDate,
           rating: gameLookup.rating,
           description: gameLookup.description,
-          barcode: isTitleSearch ? undefined : identifierValue,
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
           format: gameLookup.format,
           imageUrl: gameLookup.imageUrl,
         }) as GameEntity
@@ -133,7 +142,7 @@ export async function lookup(
           tracks: musicLookup.tracks ?? undefined,
           discs: musicLookup.discs ?? undefined,
           discList: musicLookup.discList,
-          barcode: isTitleSearch ? undefined : identifierValue,
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
           format: musicLookup.format,
           imageUrl: musicLookup.imageUrl,
         }) as MusicEntity
