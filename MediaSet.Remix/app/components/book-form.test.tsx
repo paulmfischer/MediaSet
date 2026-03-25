@@ -286,7 +286,7 @@ describe('BookForm', () => {
 
   describe('BookLookupSection', () => {
     it('should render title, author, and ISBN inputs', () => {
-      render(<BookLookupSection />);
+      render(<BookLookupSection defaultOpen />);
 
       expect(screen.getByLabelText('Title')).toBeInTheDocument();
       expect(screen.getByLabelText('Author')).toBeInTheDocument();
@@ -294,14 +294,14 @@ describe('BookForm', () => {
     });
 
     it('should render two Search buttons', () => {
-      render(<BookLookupSection />);
+      render(<BookLookupSection defaultOpen />);
 
       const searchButtons = screen.getAllByRole('button', { name: /search/i });
       expect(searchButtons).toHaveLength(2);
     });
 
     it('should have correct hidden inputs for title form', () => {
-      const { container } = render(<BookLookupSection />);
+      const { container } = render(<BookLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const titleForm = forms[0];
@@ -312,7 +312,7 @@ describe('BookForm', () => {
     });
 
     it('should have correct hidden inputs for ISBN form', () => {
-      const { container } = render(<BookLookupSection />);
+      const { container } = render(<BookLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const isbnForm = forms[1];
@@ -323,7 +323,7 @@ describe('BookForm', () => {
     });
 
     it('should disable inputs when isSubmitting is true', () => {
-      render(<BookLookupSection isSubmitting={true} />);
+      render(<BookLookupSection defaultOpen isSubmitting={true} />);
 
       expect(screen.getByLabelText('Title')).toBeDisabled();
       expect(screen.getByLabelText('Author')).toBeDisabled();
@@ -334,7 +334,7 @@ describe('BookForm', () => {
     });
 
     it('should enable inputs when isSubmitting is false', () => {
-      render(<BookLookupSection isSubmitting={false} />);
+      render(<BookLookupSection defaultOpen isSubmitting={false} />);
 
       expect(screen.getByLabelText('Title')).not.toBeDisabled();
       expect(screen.getByLabelText('Author')).not.toBeDisabled();
@@ -342,24 +342,52 @@ describe('BookForm', () => {
     });
 
     it('should have identifierValue name on title input', () => {
-      render(<BookLookupSection />);
+      render(<BookLookupSection defaultOpen />);
 
       const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
       expect(titleInput.name).toBe('identifierValue');
     });
 
     it('should have lookupParam.author name on author input', () => {
-      render(<BookLookupSection />);
+      render(<BookLookupSection defaultOpen />);
 
       const authorInput = screen.getByLabelText('Author') as HTMLInputElement;
       expect(authorInput.name).toBe('lookupParam.author');
     });
 
     it('should have identifierValue name on ISBN input', () => {
-      render(<BookLookupSection />);
+      render(<BookLookupSection defaultOpen />);
 
       const isbnInput = screen.getByLabelText('ISBN') as HTMLInputElement;
       expect(isbnInput.name).toBe('identifierValue');
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<BookLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('ISBN')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
+      const user = userEvent.setup();
+      render(<BookLookupSection />);
+
+      await user.click(screen.getByRole('button', { name: /book lookup/i }));
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('ISBN')).toBeInTheDocument();
+    });
+
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<BookLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 

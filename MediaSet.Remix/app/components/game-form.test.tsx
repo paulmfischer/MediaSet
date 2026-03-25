@@ -328,21 +328,21 @@ describe('GameForm', () => {
 
   describe('GameLookupSection', () => {
     it('should render title and barcode inputs', () => {
-      render(<GameLookupSection />);
+      render(<GameLookupSection defaultOpen />);
 
       expect(screen.getByLabelText('Title')).toBeInTheDocument();
       expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
     });
 
     it('should render two Search buttons', () => {
-      render(<GameLookupSection />);
+      render(<GameLookupSection defaultOpen />);
 
       const searchButtons = screen.getAllByRole('button', { name: /search/i });
       expect(searchButtons).toHaveLength(2);
     });
 
     it('should have correct hidden inputs for title form', () => {
-      const { container } = render(<GameLookupSection />);
+      const { container } = render(<GameLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const titleForm = forms[0];
@@ -353,7 +353,7 @@ describe('GameForm', () => {
     });
 
     it('should have correct hidden inputs for barcode form', () => {
-      const { container } = render(<GameLookupSection />);
+      const { container } = render(<GameLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const barcodeForm = forms[1];
@@ -364,7 +364,7 @@ describe('GameForm', () => {
     });
 
     it('should disable inputs when isSubmitting is true', () => {
-      render(<GameLookupSection isSubmitting={true} />);
+      render(<GameLookupSection defaultOpen isSubmitting={true} />);
 
       expect(screen.getByLabelText('Title')).toBeDisabled();
       expect(screen.getByLabelText('Barcode')).toBeDisabled();
@@ -374,17 +374,45 @@ describe('GameForm', () => {
     });
 
     it('should enable inputs when isSubmitting is false', () => {
-      render(<GameLookupSection isSubmitting={false} />);
+      render(<GameLookupSection defaultOpen isSubmitting={false} />);
 
       expect(screen.getByLabelText('Title')).not.toBeDisabled();
       expect(screen.getByLabelText('Barcode')).not.toBeDisabled();
     });
 
     it('should have identifierValue name on title and barcode inputs', () => {
-      render(<GameLookupSection />);
+      render(<GameLookupSection defaultOpen />);
 
       const inputs = screen.getAllByRole('textbox').filter((el) => (el as HTMLInputElement).name === 'identifierValue');
       expect(inputs.length).toBe(2);
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<GameLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Barcode')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
+      const user = userEvent.setup();
+      render(<GameLookupSection />);
+
+      await user.click(screen.getByRole('button', { name: /game lookup/i }));
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
+    });
+
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<GameLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 

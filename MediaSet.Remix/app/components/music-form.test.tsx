@@ -422,7 +422,7 @@ describe('MusicForm', () => {
 
   describe('MusicLookupSection', () => {
     it('should render title, artist, and barcode inputs', () => {
-      render(<MusicLookupSection />);
+      render(<MusicLookupSection defaultOpen />);
 
       expect(screen.getByLabelText('Title')).toBeInTheDocument();
       expect(screen.getByLabelText('Artist')).toBeInTheDocument();
@@ -430,14 +430,14 @@ describe('MusicForm', () => {
     });
 
     it('should render two Search buttons', () => {
-      render(<MusicLookupSection />);
+      render(<MusicLookupSection defaultOpen />);
 
       const searchButtons = screen.getAllByRole('button', { name: /search/i });
       expect(searchButtons).toHaveLength(2);
     });
 
     it('should have correct hidden inputs for title form', () => {
-      const { container } = render(<MusicLookupSection />);
+      const { container } = render(<MusicLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const titleForm = forms[0];
@@ -448,7 +448,7 @@ describe('MusicForm', () => {
     });
 
     it('should have correct hidden inputs for barcode form', () => {
-      const { container } = render(<MusicLookupSection />);
+      const { container } = render(<MusicLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const barcodeForm = forms[1];
@@ -459,7 +459,7 @@ describe('MusicForm', () => {
     });
 
     it('should disable inputs when isSubmitting is true', () => {
-      render(<MusicLookupSection isSubmitting={true} />);
+      render(<MusicLookupSection defaultOpen isSubmitting={true} />);
 
       expect(screen.getByLabelText('Title')).toBeDisabled();
       expect(screen.getByLabelText('Artist')).toBeDisabled();
@@ -470,7 +470,7 @@ describe('MusicForm', () => {
     });
 
     it('should enable inputs when isSubmitting is false', () => {
-      render(<MusicLookupSection isSubmitting={false} />);
+      render(<MusicLookupSection defaultOpen isSubmitting={false} />);
 
       expect(screen.getByLabelText('Title')).not.toBeDisabled();
       expect(screen.getByLabelText('Artist')).not.toBeDisabled();
@@ -478,10 +478,40 @@ describe('MusicForm', () => {
     });
 
     it('should have lookupParam.artist name on artist input', () => {
-      render(<MusicLookupSection />);
+      render(<MusicLookupSection defaultOpen />);
 
       const artistInput = screen.getByLabelText('Artist') as HTMLInputElement;
       expect(artistInput.name).toBe('lookupParam.artist');
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<MusicLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Artist')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Barcode')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
+      const user = userEvent.setup();
+      render(<MusicLookupSection />);
+
+      await user.click(screen.getByRole('button', { name: /music lookup/i }));
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Artist')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
+    });
+
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<MusicLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 

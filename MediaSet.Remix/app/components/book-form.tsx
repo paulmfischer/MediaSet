@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Form } from '@remix-run/react';
 import MultiselectInput from '~/components/multiselect-input';
 import SingleselectInput from '~/components/singleselect-input';
@@ -14,77 +15,105 @@ type Metadata = {
 const inputClasses =
   'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
 
-export function BookLookupSection({ isSubmitting }: { isSubmitting?: boolean }) {
+export function BookLookupSection({
+  isSubmitting,
+  defaultOpen = false,
+}: {
+  isSubmitting?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-col gap-4">
-      <p className="text-sm font-semibold text-gray-300">Book Lookup</p>
+    <div className="bg-gray-900 border border-gray-700 rounded-lg">
+      <button
+        type="button"
+        className="image-button w-full flex items-center justify-between px-4 py-3"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+      >
+        <span className="text-sm font-semibold text-gray-300">Book Lookup</span>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-      <Form method="post" className="flex flex-col gap-3">
-        <input type="hidden" name="intent" value="lookup" />
-        <input type="hidden" name="fieldName" value="title" />
-        <div>
-          <label htmlFor="lookup-title" className="block text-sm font-medium text-gray-200 mb-1">
-            Title
-          </label>
-          <input
-            id="lookup-title"
-            name="identifierValue"
-            type="text"
-            className={inputClasses}
-            placeholder="Title"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div>
-          <label htmlFor="lookup-author" className="block text-sm font-medium text-gray-200 mb-1">
-            Author
-          </label>
-          <input
-            id="lookup-author"
-            name="lookupParam.author"
-            type="text"
-            className={inputClasses}
-            placeholder="Author"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="flex justify-end">
-          <button type="submit" disabled={isSubmitting}>
-            Search
-          </button>
-        </div>
-      </Form>
+      {isOpen && (
+        <div className="px-4 pb-4 flex flex-col gap-4">
+          <Form method="post" className="flex flex-col gap-3">
+            <input type="hidden" name="intent" value="lookup" />
+            <input type="hidden" name="fieldName" value="title" />
+            <div>
+              <label htmlFor="lookup-title" className="block text-sm font-medium text-gray-200 mb-1">
+                Title
+              </label>
+              <input
+                id="lookup-title"
+                name="identifierValue"
+                type="text"
+                className={inputClasses}
+                placeholder="Title"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label htmlFor="lookup-author" className="block text-sm font-medium text-gray-200 mb-1">
+                Author
+              </label>
+              <input
+                id="lookup-author"
+                name="lookupParam.author"
+                type="text"
+                className={inputClasses}
+                placeholder="Author"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" disabled={isSubmitting}>
+                Search
+              </button>
+            </div>
+          </Form>
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-gray-700" />
-        <span className="text-xs text-gray-500">or</span>
-        <div className="flex-1 border-t border-gray-700" />
-      </div>
-
-      <Form method="post" className="flex flex-col gap-3">
-        <input type="hidden" name="intent" value="lookup" />
-        <input type="hidden" name="fieldName" value="isbn" />
-        <div>
-          <label htmlFor="lookup-isbn" className="block text-sm font-medium text-gray-200 mb-1">
-            ISBN
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="lookup-isbn"
-              name="identifierValue"
-              type="text"
-              inputMode="numeric"
-              className={inputClasses}
-              placeholder="ISBN"
-              disabled={isSubmitting}
-            />
-            <button type="submit" disabled={isSubmitting}>
-              Search
-            </button>
-            <ScanButton inputId="lookup-isbn" fieldName="isbn" disabled={isSubmitting} />
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-gray-700" />
+            <span className="text-xs text-gray-500">or</span>
+            <div className="flex-1 border-t border-gray-700" />
           </div>
+
+          <Form method="post" className="flex flex-col gap-3">
+            <input type="hidden" name="intent" value="lookup" />
+            <input type="hidden" name="fieldName" value="isbn" />
+            <div>
+              <label htmlFor="lookup-isbn" className="block text-sm font-medium text-gray-200 mb-1">
+                ISBN
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="lookup-isbn"
+                  name="identifierValue"
+                  type="text"
+                  inputMode="numeric"
+                  className={inputClasses}
+                  placeholder="ISBN"
+                  disabled={isSubmitting}
+                />
+                <button type="submit" disabled={isSubmitting}>
+                  Search
+                </button>
+                <ScanButton inputId="lookup-isbn" fieldName="isbn" disabled={isSubmitting} />
+              </div>
+            </div>
+          </Form>
         </div>
-      </Form>
+      )}
     </div>
   );
 }

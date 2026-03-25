@@ -225,13 +225,13 @@ export default function Add() {
   let lookupSection;
   if (barcodeLookupAvailable) {
     if (entityType === Entity.Books) {
-      lookupSection = <BookLookupSection isSubmitting={isSubmitting} />;
+      lookupSection = <BookLookupSection isSubmitting={isSubmitting} defaultOpen />;
     } else if (entityType === Entity.Movies) {
-      lookupSection = <MovieLookupSection isSubmitting={isSubmitting} />;
+      lookupSection = <MovieLookupSection isSubmitting={isSubmitting} defaultOpen />;
     } else if (entityType === Entity.Games) {
-      lookupSection = <GameLookupSection isSubmitting={isSubmitting} />;
+      lookupSection = <GameLookupSection isSubmitting={isSubmitting} defaultOpen />;
     } else if (entityType === Entity.Musics) {
-      lookupSection = <MusicLookupSection isSubmitting={isSubmitting} />;
+      lookupSection = <MusicLookupSection isSubmitting={isSubmitting} defaultOpen />;
     }
   }
 

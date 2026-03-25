@@ -303,21 +303,21 @@ describe('MovieForm', () => {
 
   describe('MovieLookupSection', () => {
     it('should render title and barcode inputs', () => {
-      render(<MovieLookupSection />);
+      render(<MovieLookupSection defaultOpen />);
 
       expect(screen.getByLabelText('Title')).toBeInTheDocument();
       expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
     });
 
     it('should render two Search buttons', () => {
-      render(<MovieLookupSection />);
+      render(<MovieLookupSection defaultOpen />);
 
       const searchButtons = screen.getAllByRole('button', { name: /search/i });
       expect(searchButtons).toHaveLength(2);
     });
 
     it('should have correct hidden inputs for title form', () => {
-      const { container } = render(<MovieLookupSection />);
+      const { container } = render(<MovieLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const titleForm = forms[0];
@@ -328,7 +328,7 @@ describe('MovieForm', () => {
     });
 
     it('should have correct hidden inputs for barcode form', () => {
-      const { container } = render(<MovieLookupSection />);
+      const { container } = render(<MovieLookupSection defaultOpen />);
 
       const forms = container.querySelectorAll('form');
       const barcodeForm = forms[1];
@@ -339,7 +339,7 @@ describe('MovieForm', () => {
     });
 
     it('should disable inputs when isSubmitting is true', () => {
-      render(<MovieLookupSection isSubmitting={true} />);
+      render(<MovieLookupSection defaultOpen isSubmitting={true} />);
 
       expect(screen.getByLabelText('Title')).toBeDisabled();
       expect(screen.getByLabelText('Barcode')).toBeDisabled();
@@ -349,17 +349,45 @@ describe('MovieForm', () => {
     });
 
     it('should enable inputs when isSubmitting is false', () => {
-      render(<MovieLookupSection isSubmitting={false} />);
+      render(<MovieLookupSection defaultOpen isSubmitting={false} />);
 
       expect(screen.getByLabelText('Title')).not.toBeDisabled();
       expect(screen.getByLabelText('Barcode')).not.toBeDisabled();
     });
 
     it('should have identifierValue name on title and barcode inputs', () => {
-      render(<MovieLookupSection />);
+      render(<MovieLookupSection defaultOpen />);
 
       const inputs = screen.getAllByRole('textbox').filter((el) => (el as HTMLInputElement).name === 'identifierValue');
       expect(inputs.length).toBe(2);
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<MovieLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Barcode')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
+      const user = userEvent.setup();
+      render(<MovieLookupSection />);
+
+      await user.click(screen.getByRole('button', { name: /movie lookup/i }));
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
+    });
+
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<MovieLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 
