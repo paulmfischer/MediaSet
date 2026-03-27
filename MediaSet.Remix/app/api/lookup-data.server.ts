@@ -103,7 +103,7 @@ export async function lookup(
           rating: movieLookup.rating,
           runtime: movieLookup.runtime ?? undefined,
           plot: movieLookup.plot,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
           format: movieLookup.format,
           imageUrl: movieLookup.imageUrl,
         }) as MovieEntity
@@ -122,7 +122,7 @@ export async function lookup(
           releaseDate: gameLookup.releaseDate,
           rating: gameLookup.rating,
           description: gameLookup.description,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
           format: gameLookup.format,
           imageUrl: gameLookup.imageUrl,
         }) as GameEntity
@@ -142,7 +142,7 @@ export async function lookup(
           tracks: musicLookup.tracks ?? undefined,
           discs: musicLookup.discs ?? undefined,
           discList: musicLookup.discList,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean']),
+          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
           format: musicLookup.format,
           imageUrl: musicLookup.imageUrl,
         }) as MusicEntity
