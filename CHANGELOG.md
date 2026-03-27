@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.5.0](https://github.com/paulmfischer/MediaSet/compare/v3.4.0...v3.5.0) (2026-03-27)
+
+
+### Features
+
+* **images:** display image lookup failures and add reset endpoint ([#540](https://github.com/paulmfischer/MediaSet/issues/540)) ([2657764](https://github.com/paulmfischer/MediaSet/commit/2657764de4a675505df1a7acc2d41ac235bb4477))
+* **lookup:** add additional lookup fields with collapsible sections ([#545](https://github.com/paulmfischer/MediaSet/issues/545)) ([5edeb7e](https://github.com/paulmfischer/MediaSet/commit/5edeb7e96b82f82e2008da22d3a7cbe409e541cd))
+
+
+### Bug Fixes
+
+* **lookup:** fix background image lookup not finding cover URL for games ([#542](https://github.com/paulmfischer/MediaSet/issues/542)) ([8980825](https://github.com/paulmfischer/MediaSet/commit/89808256f5ad134cc43264ccd9bbe458067f4383))
+* **lookup:** retain barcode/isbn value after successful lookup closes [#543](https://github.com/paulmfischer/MediaSet/issues/543) ([#547](https://github.com/paulmfischer/MediaSet/issues/547)) ([2172585](https://github.com/paulmfischer/MediaSet/commit/21725854772b81379084bb6f7ebb3a53d7fbc497))
+
 ## [3.4.0](https://github.com/paulmfischer/MediaSet/compare/v3.3.0...v3.4.0) (2026-03-23)
 
 
