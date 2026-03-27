@@ -22,6 +22,6 @@ public enum IdentifierType
     [Description("ean")]
     Ean,
 
-    [Description("title")]
-    Title
+    [Description("entity")]
+    Entity
 }

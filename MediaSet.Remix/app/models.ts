@@ -106,7 +106,7 @@ export interface MusicEntity extends BaseEntity {
 // UI model
 export type Music = Override<MusicEntity, { genres: string }>;
 
-export type IdentifierType = 'isbn' | 'lccn' | 'oclc' | 'olid' | 'upc' | 'ean' | 'title';
+export type IdentifierType = 'isbn' | 'lccn' | 'oclc' | 'olid' | 'upc' | 'ean' | 'entity';
 
 export interface BookLookupResponse {
   title: string;

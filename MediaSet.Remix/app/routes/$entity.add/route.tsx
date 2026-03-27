@@ -18,10 +18,10 @@ import { formToDto, getEntityFromParams, singular } from '~/utils/helpers';
 import { BookEntity, Entity, GameEntity, MusicEntity, MovieEntity } from '~/models';
 import { getLookupCapabilities, isBarcodeLookupAvailable } from '~/api/lookup-capabilities-data';
 import { serverLogger } from '~/utils/serverLogger';
-import BookForm from '~/components/book-form';
-import MovieForm from '~/components/movie-form';
-import GameForm from '~/components/game-form';
-import MusicForm from '~/components/music-form';
+import BookForm, { BookLookupSection } from '~/components/book-form';
+import MovieForm, { MovieLookupSection } from '~/components/movie-form';
+import GameForm, { GameLookupSection } from '~/components/game-form';
+import MusicForm, { MusicLookupSection } from '~/components/music-form';
 import TitleLookupResultsDialog from '~/components/title-lookup-results-dialog';
 // Server-only lookup utilities are imported dynamically inside the action to avoid client bundling
 
@@ -94,7 +94,13 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     try {
       const { lookup, getIdentifierTypeForField } = await import('~/api/lookup-data.server');
       const identifierType = getIdentifierTypeForField(entityType, fieldName);
-      const lookupArray = await lookup(entityType, identifierType, identifierValue);
+      const searchParams: Record<string, string> = { [fieldName]: identifierValue };
+      for (const [key, value] of formData.entries()) {
+        if (key.startsWith('lookupParam.') && value) {
+          searchParams[key.slice('lookupParam.'.length)] = value as string;
+        }
+      }
+      const lookupArray = await lookup(entityType, identifierType, searchParams);
 
       if (isLookupError(lookupArray)) {
         return { lookupResult: lookupArray, identifierValue, fieldName, lookupTimestamp: Date.now() };
@@ -216,6 +222,19 @@ export default function Add() {
       ? `lookup-${identifierValue}-${fieldName}-${effectiveTimestamp}`
       : 'empty';
 
+  let lookupSection;
+  if (barcodeLookupAvailable) {
+    if (entityType === Entity.Books) {
+      lookupSection = <BookLookupSection isSubmitting={isSubmitting} defaultOpen />;
+    } else if (entityType === Entity.Movies) {
+      lookupSection = <MovieLookupSection isSubmitting={isSubmitting} defaultOpen />;
+    } else if (entityType === Entity.Games) {
+      lookupSection = <GameLookupSection isSubmitting={isSubmitting} defaultOpen />;
+    } else if (entityType === Entity.Musics) {
+      lookupSection = <MusicLookupSection isSubmitting={isSubmitting} defaultOpen />;
+    }
+  }
+
   let formComponent;
   if (entityType === Entity.Books) {
     formComponent = (
@@ -227,7 +246,6 @@ export default function Add() {
         publishers={publishers}
         formats={formats}
         isSubmitting={isSubmitting}
-        isbnLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entityType === Entity.Movies) {
@@ -239,7 +257,6 @@ export default function Add() {
         studios={studios}
         formats={formats}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entityType === Entity.Games) {
@@ -253,7 +270,6 @@ export default function Add() {
         formats={formats}
         platforms={platforms}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   } else if (entityType === Entity.Musics) {
@@ -265,7 +281,6 @@ export default function Add() {
         formats={formats}
         labels={labels}
         isSubmitting={isSubmitting}
-        barcodeLookupAvailable={barcodeLookupAvailable}
       />
     );
   }
@@ -275,7 +290,14 @@ export default function Add() {
       <div className="w-full max-w-3xl mx-auto px-2">
         <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
 
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col gap-6">
+          {lookupSection}
+          {lookupError && (
+            <div className="p-4 bg-yellow-900 border border-yellow-700 rounded-md">
+              <p className="text-yellow-300">{lookupError}</p>
+            </div>
+          )}
+
           <Form method="post" encType="multipart/form-data">
             <input type="hidden" name="type" value={entityType} />
 
@@ -288,12 +310,6 @@ export default function Add() {
             {formError && 'lookup' in formError && (
               <div className="mb-4 p-4 bg-red-900 border border-red-700 rounded-md">
                 <p className="text-red-300">{formError.lookup}</p>
-              </div>
-            )}
-
-            {lookupError && (
-              <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-md">
-                <p className="text-yellow-300">{lookupError}</p>
               </div>
             )}
 

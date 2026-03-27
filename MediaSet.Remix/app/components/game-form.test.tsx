@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import GameForm from './game-form';
+import GameForm, { GameLookupSection } from './game-form';
 import { GameEntity, Entity } from '~/models';
 
 // Mock the custom input components
@@ -29,13 +30,14 @@ vi.mock('~/components/singleselect-input', () => ({
   ),
 }));
 
-// Mock useSubmit
-const mockSubmit = vi.fn();
 vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    useSubmit: () => mockSubmit,
+    Form: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <form {...props}>{children}</form>
+    ),
+    useSubmit: () => vi.fn(),
   };
 });
 
@@ -64,7 +66,6 @@ describe('GameForm', () => {
       { label: 'PC', value: 'pc' },
     ],
     isSubmitting: false,
-    barcodeLookupAvailable: true,
   };
 
   const mockGame: GameEntity = {
@@ -110,14 +111,6 @@ describe('GameForm', () => {
       expect(idInput).toHaveAttribute('name', 'id');
     });
 
-    it('should render the barcode lookup button', () => {
-      render(<GameForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeInTheDocument();
-      expect(lookupButton).toHaveAttribute('type', 'button');
-    });
-
     it('should render all inputs with aria-labels', () => {
       render(<GameForm {...defaultProps} />);
 
@@ -131,7 +124,7 @@ describe('GameForm', () => {
     it('should have proper label associations', () => {
       render(<GameForm {...defaultProps} />);
 
-      const titleLabel = screen.getByText('Title');
+      const titleLabel = screen.getAllByText('Title')[0];
       const titleInput = screen.getByLabelText('Title');
 
       expect(titleLabel).toBeInTheDocument();
@@ -317,55 +310,7 @@ describe('GameForm', () => {
     });
   });
 
-  describe('Form Submission', () => {
-    it('should call submit when lookup button is clicked with barcode', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
-
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '9120000000001');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalled();
-    });
-
-    it('should pass correct form data to submit on lookup', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
-
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '9120000000001');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
-
-      const callArgs = mockSubmit.mock.calls[0][0] as FormData;
-      expect(callArgs.get('intent')).toBe('lookup');
-      expect(callArgs.get('fieldName')).toBe('barcode');
-      expect(callArgs.get('identifierValue')).toBe('9120000000001');
-    });
-
-    it('should not call submit if barcode is empty', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).not.toHaveBeenCalled();
-    });
-
-    it('should not call submit if lookup button is disabled during submission', async () => {
-      render(<GameForm {...defaultProps} isSubmitting={true} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeDisabled();
-    });
-
+  describe('Form State', () => {
     it('should disable fieldset when isSubmitting is true', () => {
       const { container } = render(<GameForm {...defaultProps} isSubmitting={true} />);
 
@@ -379,101 +324,95 @@ describe('GameForm', () => {
       const fieldset = container.querySelector('fieldset');
       expect(fieldset).not.toBeDisabled();
     });
-
-    it('should submit with FormData method POST', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
-
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '5555555555555');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const submitCall = mockSubmit.mock.calls[0];
-      expect(submitCall[1]).toHaveProperty('method', 'post');
-    });
   });
 
-  describe('Mock API Calls', () => {
-    it('should format lookup request with correct field name', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
+  describe('GameLookupSection', () => {
+    it('should render title and barcode inputs', () => {
+      render(<GameLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '1111111111111');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('fieldName')).toBe('barcode');
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
     });
 
-    it('should handle multiple lookup calls', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
+    it('should render two Search buttons', () => {
+      render(<GameLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-
-      // First lookup
-      await user.type(barcodeInput, '1111111111111');
-      let lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(1);
-
-      // Clear and second lookup
-      await user.clear(barcodeInput);
-      await user.type(barcodeInput, '2222222222222');
-      lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(2);
+      const searchButtons = screen.getAllByRole('button', { name: /search/i });
+      expect(searchButtons).toHaveLength(2);
     });
 
-    it('should pass correct identifierValue to submit', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
+    it('should have correct hidden inputs for title form', () => {
+      const { container } = render(<GameLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      const testBarcode = '9999999999999';
-      await user.type(barcodeInput, testBarcode);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('identifierValue')).toBe(testBarcode);
+      const forms = container.querySelectorAll('form');
+      const titleForm = forms[0];
+      const intentInput = titleForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = titleForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('title');
     });
 
-    it('should set intent to lookup for API call', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
+    it('should have correct hidden inputs for barcode form', () => {
+      const { container } = render(<GameLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '3333333333333');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('intent')).toBe('lookup');
+      const forms = container.querySelectorAll('form');
+      const barcodeForm = forms[1];
+      const intentInput = barcodeForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = barcodeForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('barcode');
     });
 
-    it('should use document.getElementById to retrieve barcode input', async () => {
+    it('should disable inputs when isSubmitting is true', () => {
+      render(<GameLookupSection defaultOpen isSubmitting={true} />);
+
+      expect(screen.getByLabelText('Title')).toBeDisabled();
+      expect(screen.getByLabelText('Barcode')).toBeDisabled();
+      screen.getAllByRole('button', { name: /search/i }).forEach((btn) => {
+        expect(btn).toBeDisabled();
+      });
+    });
+
+    it('should enable inputs when isSubmitting is false', () => {
+      render(<GameLookupSection defaultOpen isSubmitting={false} />);
+
+      expect(screen.getByLabelText('Title')).not.toBeDisabled();
+      expect(screen.getByLabelText('Barcode')).not.toBeDisabled();
+    });
+
+    it('should have identifierValue name on title and barcode inputs', () => {
+      render(<GameLookupSection defaultOpen />);
+
+      const inputs = screen.getAllByRole('textbox').filter((el) => (el as HTMLInputElement).name === 'identifierValue');
+      expect(inputs.length).toBe(2);
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<GameLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Barcode')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
       const user = userEvent.setup();
-      render(<GameForm {...defaultProps} />);
+      render(<GameLookupSection />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '4444444444444');
+      await user.click(screen.getByRole('button', { name: /game lookup/i }));
 
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
+    });
 
-      // Verify the mock was called with the correct barcode value
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('identifierValue')).toBe('4444444444444');
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<GameLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 
@@ -516,20 +455,6 @@ describe('GameForm', () => {
       expect(screen.getByLabelText('Description')).toHaveValue(
         'An open-world action RPG based on the novels by Andrzej Sapkowski.'
       );
-    });
-
-    it('should trigger lookup and maintain form state', async () => {
-      const user = userEvent.setup();
-      render(<GameForm {...defaultProps} game={mockGame} />);
-
-      const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
-      const initialTitle = titleInput.value;
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      // Title should remain unchanged after lookup attempt
-      expect(screen.getByLabelText('Title')).toHaveValue(initialTitle);
     });
 
     it('should handle rapid input changes across multiple fields', async () => {
@@ -597,7 +522,7 @@ describe('GameForm', () => {
       ];
 
       labels.forEach((label) => {
-        expect(screen.getByText(label)).toBeInTheDocument();
+        expect(screen.getAllByText(label)[0]).toBeInTheDocument();
       });
     });
 

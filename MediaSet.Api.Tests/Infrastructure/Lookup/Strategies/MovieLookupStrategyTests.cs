@@ -96,7 +96,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1408, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("1408"));
@@ -143,7 +143,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(603, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Ean, ean, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Ean, new Dictionary<string, string> { ["ean"] = ean }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("The Matrix"));
@@ -163,7 +163,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UpcItemResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
@@ -181,7 +181,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
@@ -207,7 +207,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
@@ -230,7 +230,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TmdbSearchResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
@@ -254,7 +254,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(emptySearchResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _tmdbClientMock.Verify(
@@ -282,7 +282,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1408, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TmdbMovieResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
     }
@@ -489,7 +489,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         _tmdbClientMock.Verify(
             x => x.SearchMovieAsync(expectedCleanTitle, It.IsAny<CancellationToken>()),
@@ -617,7 +617,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         return result.Count > 0 ? result[0].Format ?? string.Empty : string.Empty;
     }
@@ -652,7 +652,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("Test Movie"));
@@ -696,7 +696,7 @@ public class MovieLookupStrategyTests
             .Setup(x => x.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(movieDetails);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Is.EqualTo("Test Movie"));

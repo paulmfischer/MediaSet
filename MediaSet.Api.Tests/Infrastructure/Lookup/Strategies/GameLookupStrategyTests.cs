@@ -99,7 +99,7 @@ public class GameLookupStrategyTests
             .Setup(x => x.SearchGameAsync("Halo Infinite", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Does.Contain("Halo Infinite"));
@@ -120,7 +120,7 @@ public class GameLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UpcItemResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
         Assert.That(result, Is.Empty);
         _igdbClientMock.Verify(x => x.SearchGameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -159,7 +159,7 @@ public class GameLookupStrategyTests
             .Setup(x => x.SearchGameAsync("Super Mario Odyssey", It.IsAny<CancellationToken>()))
             .ReturnsAsync(searchResults);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].Title, Does.Contain("Super Mario Odyssey"));

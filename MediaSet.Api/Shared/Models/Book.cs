@@ -20,6 +20,7 @@ public class Book : IEntity
     public MediaTypes Type { get; set; }
 
     [Required]
+    [LookupProperty]
     public string Title { get; set; } = string.Empty;
 
     [LookupIdentifier]
@@ -32,6 +33,7 @@ public class Book : IEntity
     [Upload(HeaderName = "Publication Date")]
     public string PublicationDate { get; set; } = string.Empty;
 
+    [LookupProperty("author")]
     [Upload(HeaderName = "Author")]
     public List<string> Authors { get; set; } = [];
 

@@ -20,11 +20,13 @@ public class Music : IEntity
     public MediaTypes Type { get; set; }
 
     [Required]
+    [LookupProperty]
     public string Title { get; set; } = string.Empty;
 
     public string Format { get; set; } = string.Empty;
 
     [Required]
+    [LookupProperty]
     public string Artist { get; set; } = string.Empty;
 
     [Upload(HeaderName = "Release Date")]

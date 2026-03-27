@@ -4,6 +4,7 @@ using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Shared.Attributes;
+using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Features.Images.Services;
 
@@ -172,20 +173,21 @@ public class ImageLookupService : IImageLookupService
         string identifierValue,
         CancellationToken cancellationToken)
     {
+        var searchParams = new Dictionary<string, string> { [identifierType.ToApiString()] = identifierValue };
         object? response = mediaType switch
         {
             MediaTypes.Books => await _strategyFactory
                 .GetStrategy<BookResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, identifierValue, cancellationToken),
+                .LookupAsync(identifierType, searchParams, cancellationToken),
             MediaTypes.Movies => await _strategyFactory
                 .GetStrategy<MovieResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, identifierValue, cancellationToken),
+                .LookupAsync(identifierType, searchParams, cancellationToken),
             MediaTypes.Games => await _strategyFactory
                 .GetStrategy<GameResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, identifierValue, cancellationToken),
+                .LookupAsync(identifierType, searchParams, cancellationToken),
             MediaTypes.Musics => await _strategyFactory
                 .GetStrategy<MusicResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, identifierValue, cancellationToken),
+                .LookupAsync(identifierType, searchParams, cancellationToken),
             _ => null
         };
 

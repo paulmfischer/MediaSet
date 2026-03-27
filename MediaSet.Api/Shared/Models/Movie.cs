@@ -21,6 +21,7 @@ public class Movie : IEntity
     public MediaTypes Type { get; set; }
 
     [Required]
+    [LookupProperty]
     public string Title { get; set; } = string.Empty;
 
     [LookupIdentifier]

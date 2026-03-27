@@ -83,6 +83,14 @@ public class BookLookupStrategyTests
     }
 
     [Test]
+    public void CanHandle_WithBooksAndEntity_ReturnsTrue()
+    {
+        var result = _strategy.CanHandle(MediaTypes.Books, IdentifierType.Entity);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
     public void CanHandle_WithMoviesAndIsbn_ReturnsFalse()
     {
         var result = _strategy.CanHandle(MediaTypes.Movies, IdentifierType.Isbn);
@@ -100,6 +108,17 @@ public class BookLookupStrategyTests
 
     #endregion
 
+    #region SupportedProperties Tests
+
+    [Test]
+    public void SupportedProperties_ContainsTitleAndAuthor()
+    {
+        Assert.That(_strategy.SupportedProperties, Contains.Item("title"));
+        Assert.That(_strategy.SupportedProperties, Contains.Item("author"));
+    }
+
+    #endregion
+
     #region LookupAsync - ISBN Tests
 
     [Test]
@@ -112,7 +131,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Isbn, isbn, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Isbn, new Dictionary<string, string> { ["isbn"] = isbn }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedResponse));
@@ -130,7 +149,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Isbn, isbn, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Isbn, new Dictionary<string, string> { ["isbn"] = isbn }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
     }
@@ -149,7 +168,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByLccnAsync(lccn, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Lccn, lccn, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Lccn, new Dictionary<string, string> { ["lccn"] = lccn }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedResponse));
@@ -167,7 +186,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByLccnAsync(lccn, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Lccn, lccn, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Lccn, new Dictionary<string, string> { ["lccn"] = lccn }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
     }
@@ -186,7 +205,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByOclcAsync(oclc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Oclc, oclc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Oclc, new Dictionary<string, string> { ["oclc"] = oclc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedResponse));
@@ -204,7 +223,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByOclcAsync(oclc, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Oclc, oclc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Oclc, new Dictionary<string, string> { ["oclc"] = oclc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
     }
@@ -223,7 +242,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByOlidAsync(olid, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Olid, olid, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Olid, new Dictionary<string, string> { ["olid"] = olid }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedResponse));
@@ -241,7 +260,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByOlidAsync(olid, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Olid, olid, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Olid, new Dictionary<string, string> { ["olid"] = olid }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
     }
@@ -266,7 +285,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedBookResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedBookResponse));
@@ -287,7 +306,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UpcItemResponse?)null);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
@@ -305,7 +324,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
@@ -331,7 +350,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
@@ -357,7 +376,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
             .ReturnsAsync(upcResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Upc, upc, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
@@ -385,7 +404,7 @@ public class BookLookupStrategyTests
             .Setup(x => x.GetReadableBookByIsbnAsync(isbn, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedBookResponse);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Ean, ean, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Ean, new Dictionary<string, string> { ["ean"] = ean }, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(expectedBookResponse));
@@ -399,12 +418,12 @@ public class BookLookupStrategyTests
 
     #endregion
 
-    #region LookupAsync - Title Tests
+    #region LookupAsync - Entity Tests
 
     [Test]
-    public async Task LookupAsync_WithTitle_ReturnsAllSearchResults()
+    public async Task LookupAsync_WithEntity_ReturnsAllSearchResults()
     {
-        var title = "Fantastic Mr. Fox";
+        var searchParams = new Dictionary<string, string> { ["title"] = "Fantastic Mr. Fox" };
         var expectedResponses = new List<BookResponse>
         {
             CreateBookResponse("Fantastic Mr. Fox"),
@@ -412,33 +431,33 @@ public class BookLookupStrategyTests
         };
 
         _openLibraryClientMock
-            .Setup(x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SearchByEntityPropertiesAsync(searchParams, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponses);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Title, title, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Entity, searchParams, CancellationToken.None);
 
         Assert.That(result, Has.Count.EqualTo(2));
         Assert.That(result[0], Is.EqualTo(expectedResponses[0]));
         Assert.That(result[1], Is.EqualTo(expectedResponses[1]));
         _openLibraryClientMock.Verify(
-            x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()),
+            x => x.SearchByEntityPropertiesAsync(searchParams, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Test]
-    public async Task LookupAsync_WithTitle_WhenNoResults_ReturnsEmpty()
+    public async Task LookupAsync_WithEntity_WhenNoResults_ReturnsEmpty()
     {
-        var title = "Nonexistent Book";
+        var searchParams = new Dictionary<string, string> { ["title"] = "Nonexistent Book" };
 
         _openLibraryClientMock
-            .Setup(x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SearchByEntityPropertiesAsync(searchParams, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
-        var result = await _strategy.LookupAsync(IdentifierType.Title, title, CancellationToken.None);
+        var result = await _strategy.LookupAsync(IdentifierType.Entity, searchParams, CancellationToken.None);
 
         Assert.That(result, Is.Empty);
         _openLibraryClientMock.Verify(
-            x => x.SearchByTitleAsync(title, It.IsAny<CancellationToken>()),
+            x => x.SearchByEntityPropertiesAsync(searchParams, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

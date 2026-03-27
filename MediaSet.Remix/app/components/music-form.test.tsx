@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen, waitFor } from '~/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import MusicForm from './music-form';
+import MusicForm, { MusicLookupSection } from './music-form';
 import { MusicEntity, Entity } from '~/models';
 
 // Mock the custom input components
@@ -29,13 +30,14 @@ vi.mock('~/components/singleselect-input', () => ({
   ),
 }));
 
-// Mock useSubmit
-const mockSubmit = vi.fn();
 vi.mock('@remix-run/react', async () => {
   const actual = await vi.importActual('@remix-run/react');
   return {
     ...actual,
-    useSubmit: () => mockSubmit,
+    Form: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
+      <form {...props}>{children}</form>
+    ),
+    useSubmit: () => vi.fn(),
   };
 });
 
@@ -68,7 +70,6 @@ describe('MusicForm', () => {
       { label: 'Warner Bros', value: 'warner' },
     ],
     isSubmitting: false,
-    barcodeLookupAvailable: true,
   };
 
   const mockMusic: MusicEntity = {
@@ -117,14 +118,6 @@ describe('MusicForm', () => {
       const idInput = screen.getByDisplayValue('music-1') as HTMLInputElement;
       expect(idInput).toHaveAttribute('type', 'hidden');
       expect(idInput).toHaveAttribute('name', 'id');
-    });
-
-    it('should render the barcode lookup button', () => {
-      render(<MusicForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeInTheDocument();
-      expect(lookupButton).toHaveAttribute('type', 'button');
     });
 
     it('should render the Add Track button', () => {
@@ -344,7 +337,7 @@ describe('MusicForm', () => {
       expect(trackTitleInput.value).toBe('Updated Track Title');
     });
 
-    it('should update disc duration when user types in duration field', async () => {
+    it('should update disc duration when user types in duration field', () => {
       render(<MusicForm {...defaultProps} music={mockMusic} />);
 
       // The duration field in disc list shows formatted duration
@@ -412,54 +405,6 @@ describe('MusicForm', () => {
   });
 
   describe('Form Submission', () => {
-    it('should call submit when lookup button is clicked with barcode', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
-
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '5901234123457');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalled();
-    });
-
-    it('should pass correct form data to submit on lookup', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
-
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '9120074540614');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledWith(expect.any(FormData), expect.objectContaining({ method: 'post' }));
-
-      const callArgs = mockSubmit.mock.calls[0][0] as FormData;
-      expect(callArgs.get('intent')).toBe('lookup');
-      expect(callArgs.get('fieldName')).toBe('barcode');
-      expect(callArgs.get('identifierValue')).toBe('9120074540614');
-    });
-
-    it('should not call submit if barcode is empty', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).not.toHaveBeenCalled();
-    });
-
-    it('should not call submit if lookup button is disabled during submission', async () => {
-      render(<MusicForm {...defaultProps} isSubmitting={true} />);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      expect(lookupButton).toBeDisabled();
-    });
-
     it('should disable fieldset when isSubmitting is true', () => {
       const { container } = render(<MusicForm {...defaultProps} isSubmitting={true} />);
 
@@ -475,70 +420,98 @@ describe('MusicForm', () => {
     });
   });
 
-  describe('Mock API Calls', () => {
-    it('should format lookup request with correct field name', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
+  describe('MusicLookupSection', () => {
+    it('should render title, artist, and barcode inputs', () => {
+      render(<MusicLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '1234567890');
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('fieldName')).toBe('barcode');
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Artist')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
     });
 
-    it('should handle multiple lookup calls', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
+    it('should render two Search buttons', () => {
+      render(<MusicLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-
-      // First lookup
-      await user.type(barcodeInput, '1111111111');
-      let lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(1);
-
-      // Clear and second lookup
-      await user.clear(barcodeInput);
-      await user.type(barcodeInput, '2222222222');
-      lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      expect(mockSubmit).toHaveBeenCalledTimes(2);
+      const searchButtons = screen.getAllByRole('button', { name: /search/i });
+      expect(searchButtons).toHaveLength(2);
     });
 
-    it('should pass correct identifierValue to submit', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
+    it('should have correct hidden inputs for title form', () => {
+      const { container } = render(<MusicLookupSection defaultOpen />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      const testBarcode = '9999999999';
-      await user.type(barcodeInput, testBarcode);
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('identifierValue')).toBe(testBarcode);
+      const forms = container.querySelectorAll('form');
+      const titleForm = forms[0];
+      const intentInput = titleForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = titleForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('title');
     });
 
-    it('should set intent to lookup for API call', async () => {
+    it('should have correct hidden inputs for barcode form', () => {
+      const { container } = render(<MusicLookupSection defaultOpen />);
+
+      const forms = container.querySelectorAll('form');
+      const barcodeForm = forms[1];
+      const intentInput = barcodeForm.querySelector('input[name="intent"]') as HTMLInputElement;
+      const fieldNameInput = barcodeForm.querySelector('input[name="fieldName"]') as HTMLInputElement;
+      expect(intentInput.value).toBe('lookup');
+      expect(fieldNameInput.value).toBe('barcode');
+    });
+
+    it('should disable inputs when isSubmitting is true', () => {
+      render(<MusicLookupSection defaultOpen isSubmitting={true} />);
+
+      expect(screen.getByLabelText('Title')).toBeDisabled();
+      expect(screen.getByLabelText('Artist')).toBeDisabled();
+      expect(screen.getByLabelText('Barcode')).toBeDisabled();
+      screen.getAllByRole('button', { name: /search/i }).forEach((btn) => {
+        expect(btn).toBeDisabled();
+      });
+    });
+
+    it('should enable inputs when isSubmitting is false', () => {
+      render(<MusicLookupSection defaultOpen isSubmitting={false} />);
+
+      expect(screen.getByLabelText('Title')).not.toBeDisabled();
+      expect(screen.getByLabelText('Artist')).not.toBeDisabled();
+      expect(screen.getByLabelText('Barcode')).not.toBeDisabled();
+    });
+
+    it('should have lookupParam.artist name on artist input', () => {
+      render(<MusicLookupSection defaultOpen />);
+
+      const artistInput = screen.getByLabelText('Artist') as HTMLInputElement;
+      expect(artistInput.name).toBe('lookupParam.artist');
+    });
+
+    it('should hide content when collapsed by default', () => {
+      render(<MusicLookupSection />);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Artist')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Barcode')).not.toBeInTheDocument();
+    });
+
+    it('should show content after clicking the toggle button', async () => {
       const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} />);
+      render(<MusicLookupSection />);
 
-      const barcodeInput = screen.getByLabelText('Barcode') as HTMLInputElement;
-      await user.type(barcodeInput, '3333333333');
+      await user.click(screen.getByRole('button', { name: /music lookup/i }));
 
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+      expect(screen.getByLabelText('Artist')).toBeInTheDocument();
+      expect(screen.getByLabelText('Barcode')).toBeInTheDocument();
+    });
 
-      const formData = mockSubmit.mock.calls[0][0] as FormData;
-      expect(formData.get('intent')).toBe('lookup');
+    it('should toggle closed when clicked while open', async () => {
+      const user = userEvent.setup();
+      render(<MusicLookupSection defaultOpen />);
+
+      expect(screen.getByLabelText('Title')).toBeInTheDocument();
+
+      await user.click(screen.getAllByRole('button')[0]);
+
+      expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
     });
   });
 
@@ -580,20 +553,6 @@ describe('MusicForm', () => {
       expect(screen.getByLabelText('Barcode')).toHaveValue('9120074540614');
     });
 
-    it('should trigger lookup and maintain form state', async () => {
-      const user = userEvent.setup();
-      render(<MusicForm {...defaultProps} music={mockMusic} />);
-
-      const titleInput = screen.getByLabelText('Title') as HTMLInputElement;
-      const initialTitle = titleInput.value;
-
-      const lookupButton = screen.getAllByRole('button', { name: /lookup/i })[1];
-      await user.click(lookupButton);
-
-      // Title should remain unchanged after lookup attempt (no barcode)
-      expect(screen.getByLabelText('Title')).toHaveValue(initialTitle);
-    });
-
     it('should handle rapid input changes', async () => {
       const user = userEvent.setup();
       render(<MusicForm {...defaultProps} />);
@@ -629,7 +588,7 @@ describe('MusicForm', () => {
     it('should have proper label associations', () => {
       render(<MusicForm {...defaultProps} />);
 
-      const titleLabel = screen.getByText('Title');
+      const titleLabel = screen.getAllByText('Title')[0];
       const titleInput = screen.getByLabelText('Title');
 
       expect(titleLabel).toBeInTheDocument();
@@ -653,7 +612,7 @@ describe('MusicForm', () => {
       ];
 
       labels.forEach((label) => {
-        expect(screen.getByText(label)).toBeInTheDocument();
+        expect(screen.getAllByText(label)[0]).toBeInTheDocument();
       });
     });
 
