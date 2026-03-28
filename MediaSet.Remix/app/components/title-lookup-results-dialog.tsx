@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Loader2, X } from 'lucide-react';
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
 
 type TitleLookupEntity = BookEntity | MovieEntity | GameEntity | MusicEntity;
@@ -43,6 +43,7 @@ export default function TitleLookupResultsDialog({
   onClose,
 }: TitleLookupResultsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   const handleClose = useCallback(() => {
     onClose();
@@ -104,16 +105,23 @@ export default function TitleLookupResultsDialog({
               const details = getResultDetails(entity);
               return (
                 <li key={index} className="flex items-center gap-3 p-3 rounded-md bg-gray-700 border border-gray-600">
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(entity)}
-                    className="shrink-0 px-3 py-1 text-sm font-medium rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-                  >
+                  <button type="button" onClick={() => handleSelect(entity)} className="shrink-0">
                     Select
                   </button>
                   <div className="shrink-0 w-10 h-14 bg-gray-600 rounded overflow-hidden flex items-center justify-center">
                     {entity.imageUrl ? (
-                      <img src={entity.imageUrl} alt="" className="w-full h-full object-cover" />
+                      <>
+                        {!loadedImages.has(entity.imageUrl) && (
+                          <Loader2 size={16} className="animate-spin text-gray-400" />
+                        )}
+                        <img
+                          src={entity.imageUrl}
+                          alt=""
+                          className={`w-full h-full object-cover ${loadedImages.has(entity.imageUrl) ? '' : 'hidden'}`}
+                          onLoad={() => setLoadedImages((prev) => new Set([...prev, entity.imageUrl!]))}
+                          onError={() => setLoadedImages((prev) => new Set([...prev, entity.imageUrl!]))}
+                        />
+                      </>
                     ) : null}
                   </div>
                   <div>
