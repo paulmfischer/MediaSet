@@ -1,6 +1,6 @@
 import { type ActionFunctionArgs, type MetaFunction } from '@remix-run/node';
-import { useState } from 'react';
 import { useLoaderData, Link, Form, useNavigation } from '@remix-run/react';
+import Tabs, { type TabConfig } from '~/components/tabs';
 import {
   getImageStats,
   type BrokenImageLink,
@@ -131,8 +131,6 @@ export default function ImageStatsPage() {
       )
     : [];
 
-  const [activeTab, setActiveTab] = useState<string>(() => allEntityTypes[0] ?? '');
-
   if (!stats) {
     return (
       <div className="space-y-6">
@@ -148,10 +146,191 @@ export default function ImageStatsPage() {
     );
   }
 
-  const activeConfig = activeTab ? (ENTITY_TYPE_CONFIG[activeTab] ?? null) : null;
-  const activeBrokenLinks = activeTab ? (brokenLinksByType[activeTab] ?? []) : [];
-  const activeLookupFailures = activeTab ? (lookupFailuresByType[activeTab] ?? []) : [];
-  const activeOrphanedFiles = activeTab ? (orphanedByType[activeTab] ?? []) : [];
+  const entityTabs: TabConfig[] = allEntityTypes.map((entityType) => {
+    const config = ENTITY_TYPE_CONFIG[entityType];
+    const Icon = config?.icon ?? HardDrive;
+    const hasOrphaned = (orphanedByType[entityType]?.length ?? 0) > 0;
+    const hasBrokenLinks = (brokenLinksByType[entityType]?.length ?? 0) > 0;
+    const hasLookupFailures = (lookupFailuresByType[entityType]?.length ?? 0) > 0;
+    const fileCount = stats.filesByEntityType[entityType] ?? 0;
+    const sizeBytes = stats.sizeByEntityType[entityType] ?? 0;
+    const brokenLinks = brokenLinksByType[entityType] ?? [];
+    const lookupFailures = lookupFailuresByType[entityType] ?? [];
+    const orphanedFiles = orphanedByType[entityType] ?? [];
+
+    return {
+      id: entityType,
+      activeTopBorderClass: config?.activeTopBorderClass,
+      label: (
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-zinc-400">{config?.label ?? entityType}</p>
+              {hasOrphaned && <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />}
+              {hasBrokenLinks && <Link2Off className="h-3.5 w-3.5 text-red-400" />}
+              {hasLookupFailures && <ImageOff className="h-3.5 w-3.5 text-orange-400" />}
+            </div>
+            <p className="mt-2 text-3xl font-bold text-white">
+              {fileCount.toLocaleString()} files ({formatBytes(sizeBytes)})
+            </p>
+          </div>
+          <div
+            className={`rounded-lg border p-3 ${config?.iconColorClass ?? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}
+          >
+            <Icon className="h-6 w-6" />
+          </div>
+        </div>
+      ),
+      panel: (
+        <div className="space-y-6 p-4">
+          {/* Broken Links */}
+          {brokenLinks.length > 0 && (
+            <div>
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-red-400">
+                <Link2Off className="h-4 w-4" />
+                Broken Links
+                <span className="text-zinc-500">— entities referencing missing image files</span>
+              </h3>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3">Title</th>
+                      <th className="px-4 py-3">Missing File</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-700">
+                    {brokenLinks.map((link) => (
+                      <tr key={`${link.entityType}-${link.entityId}`} className="bg-zinc-900 hover:bg-zinc-800">
+                        <td className="px-4 py-3">
+                          <Link to={`/${link.entityType}/${link.entityId}`} className="text-cyan-400 hover:underline">
+                            {link.title}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-zinc-500">{link.missingFilePath}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Lookup Failures */}
+          {lookupFailures.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-orange-400">
+                  <ImageOff className="h-4 w-4" />
+                  Lookup Failures
+                  <span className="text-zinc-500">— entities where background image lookup failed</span>
+                </h3>
+                <Form method="post">
+                  <input type="hidden" name="intent" value="reset-lookup" />
+                  <input type="hidden" name="entityType" value={entityType} />
+                  <input type="hidden" name="entityIds" value={JSON.stringify(lookupFailures.map((f) => f.entityId))} />
+                  <button type="submit" disabled={isResettingLookup} className="flex items-center gap-2">
+                    <ImageOff className="h-4 w-4" />
+                    {isResettingLookup ? 'Resetting...' : 'Reset All'}
+                  </button>
+                </Form>
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3">Title</th>
+                      <th className="px-4 py-3">Attempted At</th>
+                      <th className="px-4 py-3">Failure Reason</th>
+                      <th className="px-4 py-3">Permanent</th>
+                      <th className="px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-700">
+                    {lookupFailures.map((failure) => (
+                      <tr key={`${failure.entityType}-${failure.entityId}`} className="bg-zinc-900 hover:bg-zinc-800">
+                        <td className="px-4 py-3">
+                          <Link
+                            to={`/${failure.entityType}/${failure.entityId}`}
+                            className="text-cyan-400 hover:underline"
+                          >
+                            {failure.title}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-400" suppressHydrationWarning>
+                          {new Date(failure.lookupAttemptedAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-400">{failure.failureReason ?? '—'}</td>
+                        <td className="px-4 py-3">
+                          {failure.permanentFailure ? (
+                            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">Yes</span>
+                          ) : (
+                            <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-400">No</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Form method="post">
+                            <input type="hidden" name="intent" value="reset-lookup" />
+                            <input type="hidden" name="entityType" value={failure.entityType} />
+                            <input type="hidden" name="entityIds" value={JSON.stringify([failure.entityId])} />
+                            <button type="submit" disabled={isResettingLookup}>
+                              Reset
+                            </button>
+                          </Form>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Orphaned Files */}
+          {orphanedFiles.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-yellow-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  Orphaned Files
+                  <span className="text-zinc-500">— files on disk not referenced by any entity</span>
+                </h3>
+                <Form method="post">
+                  <input type="hidden" name="intent" value="delete-orphaned" />
+                  <button type="submit" disabled={isDeleting} className="flex items-center gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    {isDeleting ? 'Cleaning up...' : 'Clean Up All'}
+                  </button>
+                </Form>
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
+                    <tr>
+                      <th className="px-4 py-3">File Path</th>
+                      <th className="px-4 py-3">Size</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-700">
+                    {orphanedFiles.map((file) => (
+                      <tr key={file.relativePath} className="bg-zinc-900 hover:bg-zinc-800">
+                        <td className="px-4 py-3 font-mono text-xs text-zinc-400">{file.relativePath}</td>
+                        <td className="px-4 py-3 text-zinc-400">{formatBytes(file.sizeBytes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {brokenLinks.length === 0 && lookupFailures.length === 0 && orphanedFiles.length === 0 && (
+            <p className="text-sm text-zinc-500">No image issues for this entity type.</p>
+          )}
+        </div>
+      ),
+    };
+  });
 
   return (
     <div className="space-y-8">
@@ -214,214 +393,10 @@ export default function ImageStatsPage() {
       </div>
 
       {/* Per Entity Type Tabs */}
-      {allEntityTypes.length > 0 && (
+      {entityTabs.length > 0 && (
         <div>
           <h2 className="mb-4 text-xl font-semibold text-white">By Entity Type</h2>
-          {/* Card-style tab buttons */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {allEntityTypes.map((entityType) => {
-              const config = ENTITY_TYPE_CONFIG[entityType];
-              const Icon = config?.icon ?? HardDrive;
-              const hasOrphaned = (orphanedByType[entityType]?.length ?? 0) > 0;
-              const hasBrokenLinks = (brokenLinksByType[entityType]?.length ?? 0) > 0;
-              const hasLookupFailures = (lookupFailuresByType[entityType]?.length ?? 0) > 0;
-              const isActive = activeTab === entityType;
-              const fileCount = stats.filesByEntityType[entityType] ?? 0;
-              const sizeBytes = stats.sizeByEntityType[entityType] ?? 0;
-              return (
-                <button
-                  key={entityType}
-                  onClick={() => setActiveTab(entityType)}
-                  className={`tertiary !p-6 w-full text-left ${isActive ? `relative -mb-px z-10 !bg-zinc-800 !border-x-zinc-700 !border-b-zinc-900 ${config?.activeTopBorderClass ?? '!border-t-cyan-500'}` : ''}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-zinc-400">{config?.label ?? entityType}</p>
-                        {hasOrphaned && <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />}
-                        {hasBrokenLinks && <Link2Off className="h-3.5 w-3.5 text-red-400" />}
-                        {hasLookupFailures && <ImageOff className="h-3.5 w-3.5 text-orange-400" />}
-                      </div>
-                      <p className="mt-2 text-3xl font-bold text-white">
-                        {fileCount.toLocaleString()} files ({formatBytes(sizeBytes)})
-                      </p>
-                    </div>
-                    <div
-                      className={`rounded-lg border p-3 ${config?.iconColorClass ?? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}
-                    >
-                      <Icon className="h-6 w-6" />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="relative rounded-lg border border-zinc-700">
-            {/* Tab panel */}
-            {activeTab && activeConfig && (
-              <div className="space-y-6 p-4">
-                {/* Broken Links */}
-                {activeBrokenLinks.length > 0 && (
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-red-400">
-                      <Link2Off className="h-4 w-4" />
-                      Broken Links
-                      <span className="text-zinc-500">— entities referencing missing image files</span>
-                    </h3>
-                    <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
-                          <tr>
-                            <th className="px-4 py-3">Title</th>
-                            <th className="px-4 py-3">Missing File</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-700">
-                          {activeBrokenLinks.map((link) => (
-                            <tr key={`${link.entityType}-${link.entityId}`} className="bg-zinc-900 hover:bg-zinc-800">
-                              <td className="px-4 py-3">
-                                <Link
-                                  to={`/${link.entityType}/${link.entityId}`}
-                                  className="text-cyan-400 hover:underline"
-                                >
-                                  {link.title}
-                                </Link>
-                              </td>
-                              <td className="px-4 py-3 font-mono text-xs text-zinc-500">{link.missingFilePath}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Lookup Failures */}
-                {activeLookupFailures.length > 0 && (
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-orange-400">
-                        <ImageOff className="h-4 w-4" />
-                        Lookup Failures
-                        <span className="text-zinc-500">— entities where background image lookup failed</span>
-                      </h3>
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="reset-lookup" />
-                        <input type="hidden" name="entityType" value={activeTab} />
-                        <input
-                          type="hidden"
-                          name="entityIds"
-                          value={JSON.stringify(activeLookupFailures.map((f) => f.entityId))}
-                        />
-                        <button type="submit" disabled={isResettingLookup} className="flex items-center gap-2">
-                          <ImageOff className="h-4 w-4" />
-                          {isResettingLookup ? 'Resetting...' : 'Reset All'}
-                        </button>
-                      </Form>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
-                          <tr>
-                            <th className="px-4 py-3">Title</th>
-                            <th className="px-4 py-3">Attempted At</th>
-                            <th className="px-4 py-3">Failure Reason</th>
-                            <th className="px-4 py-3">Permanent</th>
-                            <th className="px-4 py-3"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-700">
-                          {activeLookupFailures.map((failure) => (
-                            <tr
-                              key={`${failure.entityType}-${failure.entityId}`}
-                              className="bg-zinc-900 hover:bg-zinc-800"
-                            >
-                              <td className="px-4 py-3">
-                                <Link
-                                  to={`/${failure.entityType}/${failure.entityId}`}
-                                  className="text-cyan-400 hover:underline"
-                                >
-                                  {failure.title}
-                                </Link>
-                              </td>
-                              <td className="px-4 py-3 text-zinc-400" suppressHydrationWarning>
-                                {new Date(failure.lookupAttemptedAt).toLocaleString()}
-                              </td>
-                              <td className="px-4 py-3 text-zinc-400">{failure.failureReason ?? '—'}</td>
-                              <td className="px-4 py-3">
-                                {failure.permanentFailure ? (
-                                  <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">
-                                    Yes
-                                  </span>
-                                ) : (
-                                  <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-400">No</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3">
-                                <Form method="post">
-                                  <input type="hidden" name="intent" value="reset-lookup" />
-                                  <input type="hidden" name="entityType" value={failure.entityType} />
-                                  <input type="hidden" name="entityIds" value={JSON.stringify([failure.entityId])} />
-                                  <button type="submit" disabled={isResettingLookup}>
-                                    Reset
-                                  </button>
-                                </Form>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Orphaned Files */}
-                {activeOrphanedFiles.length > 0 && (
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-yellow-400">
-                        <AlertTriangle className="h-4 w-4" />
-                        Orphaned Files
-                        <span className="text-zinc-500">— files on disk not referenced by any entity</span>
-                      </h3>
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="delete-orphaned" />
-                        <button type="submit" disabled={isDeleting} className="flex items-center gap-2">
-                          <Trash2 className="h-4 w-4" />
-                          {isDeleting ? 'Cleaning up...' : 'Clean Up All'}
-                        </button>
-                      </Form>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-700">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-zinc-800 text-left text-zinc-400">
-                          <tr>
-                            <th className="px-4 py-3">File Path</th>
-                            <th className="px-4 py-3">Size</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-700">
-                          {activeOrphanedFiles.map((file) => (
-                            <tr key={file.relativePath} className="bg-zinc-900 hover:bg-zinc-800">
-                              <td className="px-4 py-3 font-mono text-xs text-zinc-400">{file.relativePath}</td>
-                              <td className="px-4 py-3 text-zinc-400">{formatBytes(file.sizeBytes)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {activeBrokenLinks.length === 0 &&
-                  activeLookupFailures.length === 0 &&
-                  activeOrphanedFiles.length === 0 && (
-                    <p className="text-sm text-zinc-500">No image issues for this entity type.</p>
-                  )}
-              </div>
-            )}
-          </div>
+          <Tabs tabs={entityTabs} />
         </div>
       )}
     </div>
