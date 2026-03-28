@@ -16,7 +16,7 @@ export default function StatCard({
   colorClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20',
 }: StatCardProps) {
   return (
-    <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-6 transition-all hover:border-zinc-600 hover:bg-zinc-800">
+    <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-6 transition-all">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-zinc-400">{title}</p>
