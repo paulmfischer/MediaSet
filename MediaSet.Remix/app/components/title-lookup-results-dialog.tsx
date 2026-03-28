@@ -102,7 +102,6 @@ export default function TitleLookupResultsDialog({
           </p>
           <ul className="flex flex-col gap-2">
             {results.map((entity, index) => {
-               
               const details = getResultDetails(entity);
               return (
                 <li key={index} className="flex items-center gap-3 p-3 rounded-md bg-gray-700 border border-gray-600">
