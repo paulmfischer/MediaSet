@@ -21,9 +21,10 @@ public class Book : IEntity
 
     [Required]
     [LookupProperty]
+    [LookupIdentifier(2, IdentifierType.Entity)]
     public string Title { get; set; } = string.Empty;
 
-    [LookupIdentifier]
+    [LookupIdentifier(1, IdentifierType.Isbn)]
     public string ISBN { get; set; } = string.Empty;
 
     public string Format { get; set; } = string.Empty;

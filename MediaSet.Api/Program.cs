@@ -262,6 +262,12 @@ if (backgroundImageLookupConfig?.Enabled == true)
 else
 {
     bootstrapLogger.Information("Background image lookup service is disabled");
+
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddScoped<IImageLookupService, ImageLookupService>();
+        bootstrapLogger.Information("IImageLookupService registered for development use only");
+    }
 }
 
 // Configure SerilogTracing to capture spans and write to Seq
