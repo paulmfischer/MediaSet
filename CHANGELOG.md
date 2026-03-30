@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.6.0](https://github.com/paulmfischer/MediaSet/compare/v3.5.0...v3.6.0) (2026-03-30)
+
+
+### Features
+
+* **images:** tabbed image stats by entity type with reusable Tabs component ([#550](https://github.com/paulmfischer/MediaSet/issues/550)) ([266d390](https://github.com/paulmfischer/MediaSet/commit/266d390f3d42c58f0b8d77723cc78b0d4bfcbcc5))
+* **lookup:** title fallback for image lookup when barcode/ISBN is missing ([#555](https://github.com/paulmfischer/MediaSet/issues/555)) ([72f2800](https://github.com/paulmfischer/MediaSet/commit/72f2800999813ccb6446893312e56b0202f769c9))
+
+
+### Bug Fixes
+
+* **lookup:** clear stale images and show spinner in select result dialog ([#553](https://github.com/paulmfischer/MediaSet/issues/553)) ([536764f](https://github.com/paulmfischer/MediaSet/commit/536764ffaaf5f09a398edd1da06a7ae7326de484))
+
 ## [3.5.0](https://github.com/paulmfischer/MediaSet/compare/v3.4.0...v3.5.0) (2026-03-27)
 
 
