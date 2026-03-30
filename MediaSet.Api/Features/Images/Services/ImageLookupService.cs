@@ -66,9 +66,9 @@ public class ImageLookupService : IImageLookupService
                 entity.Id, existingUrlResult.ErrorMessage);
         }
 
-        // Step 2: Find the lookup identifier property
-        var identifierValue = GetLookupIdentifierValue(entity);
-        if (string.IsNullOrWhiteSpace(identifierValue))
+        // Step 2: Find the lookup identifier — tries properties in Order, uses first with a value
+        var lookupIdentifier = GetLookupIdentifier(entity);
+        if (lookupIdentifier == null)
         {
             _logger.LogWarning(
                 "Entity {EntityId} of type {MediaType} has no lookup identifier value",
@@ -82,10 +82,9 @@ public class ImageLookupService : IImageLookupService
                 PermanentFailure: true);
         }
 
-        // Step 3: Determine the identifier type based on media type
-        var identifierType = GetIdentifierType(mediaType, identifierValue);
+        var (identifierType, identifierValue) = lookupIdentifier.Value;
 
-        // Step 4: Perform external API lookup
+        // Step 3: Perform external API lookup
         _logger.LogInformation(
             "Looking up image for entity {EntityId} with {IdentifierType}: {IdentifierValue}",
             entity.Id, identifierType, identifierValue);
@@ -107,7 +106,7 @@ public class ImageLookupService : IImageLookupService
                     ErrorMessage: "No image URL returned from lookup");
             }
 
-            // Step 5: Download and save the image
+            // Step 4: Download and save the image
             return await TryDownloadImageAsync(imageUrl, mediaType.ToString(), entity.Id, cancellationToken);
         }
         catch (NotSupportedException ex)
@@ -137,34 +136,30 @@ public class ImageLookupService : IImageLookupService
         }
     }
 
-    private string? GetLookupIdentifierValue(IEntity entity)
+    /// <summary>
+    /// Finds all properties marked with <see cref="LookupIdentifierAttribute"/>, sorts them by
+    /// <see cref="LookupIdentifierAttribute.Order"/>, and returns the identifier type and value
+    /// from the first property that has a non-empty value. Returns null if no property has a value.
+    /// </summary>
+    private static (IdentifierType IdentifierType, string Value)? GetLookupIdentifier(IEntity entity)
     {
-        var entityType = entity.GetType();
-        var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var properties = entity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-        foreach (var property in properties)
+        var candidates = properties
+            .Select(p => (Prop: p, Attr: p.GetCustomAttribute<LookupIdentifierAttribute>()))
+            .Where(x => x.Attr != null)
+            .OrderBy(x => x.Attr!.Order);
+
+        foreach (var (prop, attr) in candidates)
         {
-            var lookupIdentifierAttr = property.GetCustomAttribute<LookupIdentifierAttribute>();
-            if (lookupIdentifierAttr != null)
+            var value = prop.GetValue(entity)?.ToString();
+            if (!string.IsNullOrWhiteSpace(value))
             {
-                var value = property.GetValue(entity);
-                return value?.ToString();
+                return (attr!.IdentifierType, value);
             }
         }
 
         return null;
-    }
-
-    private static IdentifierType GetIdentifierType(MediaTypes mediaType, string identifierValue)
-    {
-        // Books use ISBN, others use UPC/EAN (barcode)
-        if (mediaType == MediaTypes.Books)
-        {
-            return IdentifierType.Isbn;
-        }
-
-        // For Movies, Games, Music - determine if it's UPC (12 digits) or EAN (13 digits)
-        return identifierValue.Length == 13 ? IdentifierType.Ean : IdentifierType.Upc;
     }
 
     private async Task<string?> LookupImageUrlAsync(
@@ -173,7 +168,10 @@ public class ImageLookupService : IImageLookupService
         string identifierValue,
         CancellationToken cancellationToken)
     {
-        var searchParams = new Dictionary<string, string> { [identifierType.ToApiString()] = identifierValue };
+        var searchParams = identifierType == IdentifierType.Entity
+            ? new Dictionary<string, string> { ["title"] = identifierValue }
+            : new Dictionary<string, string> { [identifierType.ToApiString()] = identifierValue };
+
         object? response = mediaType switch
         {
             MediaTypes.Books => await _strategyFactory
@@ -193,10 +191,10 @@ public class ImageLookupService : IImageLookupService
 
         return response switch
         {
-            BookResponse book => book.ImageUrl,
-            MovieResponse movie => movie.ImageUrl,
-            GameResponse game => game.ImageUrl,
-            MusicResponse music => music.ImageUrl,
+            IReadOnlyList<BookResponse> books => books.FirstOrDefault()?.ImageUrl,
+            IReadOnlyList<MovieResponse> movies => movies.FirstOrDefault()?.ImageUrl,
+            IReadOnlyList<GameResponse> games => games.FirstOrDefault()?.ImageUrl,
+            IReadOnlyList<MusicResponse> music => music.FirstOrDefault()?.ImageUrl,
             _ => null
         };
     }

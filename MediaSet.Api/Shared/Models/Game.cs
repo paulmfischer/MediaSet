@@ -21,13 +21,14 @@ public class Game : IEntity
 
     [Required]
     [LookupProperty]
+    [LookupIdentifier(2, IdentifierType.Entity)]
     public string Title { get; set; } = string.Empty;
 
     // Physical/digital format (e.g., Disc, Cartridge, Digital)
     public string Format { get; set; } = string.Empty;
 
     // Common retail identifier
-    [LookupIdentifier]
+    [LookupIdentifier(1, IdentifierType.Upc)]
     public string Barcode { get; set; } = string.Empty;
 
     // Release date as free-form string to match existing pattern

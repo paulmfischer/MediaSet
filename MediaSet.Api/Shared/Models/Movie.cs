@@ -22,9 +22,10 @@ public class Movie : IEntity
 
     [Required]
     [LookupProperty]
+    [LookupIdentifier(2, IdentifierType.Entity)]
     public string Title { get; set; } = string.Empty;
 
-    [LookupIdentifier]
+    [LookupIdentifier(1, IdentifierType.Upc)]
     public string Barcode { get; set; } = string.Empty;
 
     public string Format { get; set; } = string.Empty;
