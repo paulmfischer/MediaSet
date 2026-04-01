@@ -90,7 +90,7 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
             return null;
         }
 
-        var (cleanedTitle, edition) = CleanGameTitleAndExtractEdition(firstItem.Title);
+        var (cleanedTitle, edition) = CleanGameTitleAndExtractEdition(firstItem.Title, firstItem.Brand);
         var format = ExtractGameFormat(firstItem.Title);
         var platform = ExtractPlatformFromBarcode(firstItem.Title, firstItem.Category, firstItem.Brand, firstItem.Model);
         _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' (edition '{Edition}'), format '{Format}', platform '{Platform}' for IGDB search",
@@ -124,7 +124,7 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         return MapToGameResponse(bestMatch, format, platform, edition);
     }
 
-    internal static (string CleanedTitle, string Edition) CleanGameTitleAndExtractEdition(string rawTitle)
+    internal static (string CleanedTitle, string Edition) CleanGameTitleAndExtractEdition(string rawTitle, string? brand = null)
     {
         if (string.IsNullOrWhiteSpace(rawTitle))
         {
@@ -132,6 +132,12 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         }
 
         var title = rawTitle.Trim();
+
+        // Strip leading brand name if present (e.g., "Atari Test Drive Le Mans" with brand "Atari" → "Test Drive Le Mans")
+        if (!string.IsNullOrWhiteSpace(brand))
+        {
+            title = Regex.Replace(title, @"^" + Regex.Escape(brand.Trim()) + @"\s+", string.Empty, RegexOptions.IgnoreCase);
+        }
 
         // Extract edition markers to re-append later: Deluxe, GOTY, Definitive, Collector's, Complete, Ultimate
         var edition = string.Empty;
@@ -142,12 +148,12 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         }
 
         // Remove platform indicators commonly found in UPC titles
-        title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PS3|PS2|PS1|PlayStation 5|PlayStation 4|PlayStation 3|PlayStation 2|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS)\b", string.Empty);
+        title = Regex.Replace(title, @"(?i)\b(PS5|PS4|PS3|PS2|PS1|PlayStation 5|PlayStation 4|PlayStation 3|PlayStation 2|PlayStation|Xbox Series X\|S|Xbox Series X|Xbox One|Xbox 360|Xbox|Nintendo Switch|Switch|Wii U|Wii|3DS|DS|Sega Dreamcast|Dreamcast|Sega Saturn|Saturn|Sega Genesis|Genesis|N64|Nintendo 64|GameCube|Game Cube|Game Boy Advance|GBA|Game Boy Color|GBC|Game Boy|Sega CD|Sega Master System|Master System)\b", string.Empty);
 
         // Remove hyphen-separated metadata segments (formats, languages, regions, conditions)
         // This handles UPC patterns like "Alan Wake - Xbox 360 - DVD - English"
         // where platform removal leaves behind "Alan Wake -  - DVD - English"
-        var metadataPattern = @"(?i)^(DVD|Blu-?ray|Disc|Cartridge|Digital|CD-ROM|GD-ROM|" +
+        var metadataPattern = @"(?i)^(DVD|Blu-?ray|Disc|Cartridge|Game Cartridge|Game Disc|Digital|CD-ROM|GD-ROM|" +
             @"English|Spanish|French|German|Italian|Japanese|Portuguese|Chinese|Korean|Russian|Dutch|Arabic|" +
             @"NTSC|PAL|US|USA|NA|EU|JP|UK|" +
             @"Pre-Played|Pre-Owned|Used|New|Sealed|Refurbished|" +
@@ -228,6 +234,9 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
             ("(?i)Wii", "Wii"),
             ("(?i)3DS", "Nintendo 3DS"),
             ("(?i)DS", "Nintendo DS"),
+            ("(?i)Sega Dreamcast|Dreamcast", "Dreamcast"),
+            ("(?i)Sega Saturn|Saturn", "Sega Saturn"),
+            ("(?i)Sega Genesis|Genesis", "Sega Genesis"),
         };
 
         foreach (var (pattern, platform) in titleHints)

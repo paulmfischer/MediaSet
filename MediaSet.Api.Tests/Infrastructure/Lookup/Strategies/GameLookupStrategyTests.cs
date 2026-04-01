@@ -551,6 +551,51 @@ public class GameLookupStrategyTests
     }
 
     [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesDreamcastPlatformSegment()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Shenmue - Dreamcast");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Shenmue"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesTrailingDreamcast()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("NHL 2K Dreamcast");
+
+        Assert.That(cleanedTitle, Is.EqualTo("NHL 2K"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesSegaDreamcastSegment()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("NFL 2K1 - Sega Dreamcast");
+
+        Assert.That(cleanedTitle, Is.EqualTo("NFL 2K1"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_RemovesDreamcastAndGameCartridgeSegments()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("NFL 2K - Dreamcast - game cartridge");
+
+        Assert.That(cleanedTitle, Is.EqualTo("NFL 2K"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
+    public void CleanGameTitleAndExtractEdition_StripsLeadingBrandAndRemovesPlatform()
+    {
+        var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Atari Test Drive Le Mans Dreamcast", brand: "Atari");
+
+        Assert.That(cleanedTitle, Is.EqualTo("Test Drive Le Mans"));
+        Assert.That(edition, Is.Empty);
+    }
+
+    [Test]
     public void CleanGameTitleAndExtractEdition_PreservesSubtitleWithMetadataSegments()
     {
         var (cleanedTitle, edition) = GameLookupStrategy.CleanGameTitleAndExtractEdition("Assassin's Creed IV - Black Flag - PS4 - Blu-ray");
