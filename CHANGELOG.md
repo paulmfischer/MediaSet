@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1](https://github.com/paulmfischer/MediaSet/compare/v3.6.0...v3.6.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* **lookup:** improve game title cleanup for Dreamcast and brand prefixes closes [#556](https://github.com/paulmfischer/MediaSet/issues/556) ([#557](https://github.com/paulmfischer/MediaSet/issues/557)) ([c6c665d](https://github.com/paulmfischer/MediaSet/commit/c6c665d024fd644137182c7c824ea67a74cac7b5))
+
 ## [3.6.0](https://github.com/paulmfischer/MediaSet/compare/v3.5.0...v3.6.0) (2026-03-30)
 
 
