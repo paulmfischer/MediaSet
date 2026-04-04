@@ -15,6 +15,7 @@ type BookStats = {
   formats: string[];
   uniqueAuthors: number;
   totalPages: number;
+  formatBreakdown: Record<string, number>;
 };
 
 type MovieStats = {
@@ -22,6 +23,7 @@ type MovieStats = {
   totalFormats: number;
   formats: string[];
   totalTvSeries: number;
+  formatBreakdown: Record<string, number>;
 };
 
 type GameStats = {
@@ -30,6 +32,8 @@ type GameStats = {
   formats: string[];
   totalPlatforms: number;
   platforms: string[];
+  formatBreakdown: Record<string, number>;
+  platformBreakdown: Record<string, number>;
 };
 
 type MusicStats = {
@@ -38,6 +42,7 @@ type MusicStats = {
   formats: string[];
   uniqueArtists: number;
   totalTracks: number;
+  formatBreakdown: Record<string, number>;
 };
 
 export async function getStats() {
