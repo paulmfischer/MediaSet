@@ -7,14 +7,16 @@ public record BookStats(
   int TotalFormats,
   IEnumerable<string> Formats,
   int UniqueAuthors,
-  int TotalPages
+  int TotalPages,
+  IReadOnlyDictionary<string, int> FormatBreakdown
 );
 
 public record MovieStats(
   int Total,
   int TotalFormats,
   IEnumerable<string> Formats,
-  int TotalTvSeries
+  int TotalTvSeries,
+  IReadOnlyDictionary<string, int> FormatBreakdown
 );
 
 public record GameStats(
@@ -22,7 +24,9 @@ public record GameStats(
   int TotalFormats,
   IEnumerable<string> Formats,
   int TotalPlatforms,
-  IEnumerable<string> Platforms
+  IEnumerable<string> Platforms,
+  IReadOnlyDictionary<string, int> FormatBreakdown,
+  IReadOnlyDictionary<string, int> PlatformBreakdown
 );
 
 public record MusicStats(
@@ -30,5 +34,6 @@ public record MusicStats(
   int TotalFormats,
   IEnumerable<string> Formats,
   int UniqueArtists,
-  int TotalTracks
+  int TotalTracks,
+  IReadOnlyDictionary<string, int> FormatBreakdown
 );

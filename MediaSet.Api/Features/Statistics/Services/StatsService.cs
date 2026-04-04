@@ -68,20 +68,44 @@ public class StatsService : IStatsService
         var gameFormats = games.Where(game => !string.IsNullOrWhiteSpace(game.Format)).Select(game => game.Format.Trim()).Distinct();
         var gamePlatforms = games.Where(game => !string.IsNullOrWhiteSpace(game.Platform)).Select(game => game.Platform.Trim()).Distinct();
         var musicFormats = musics.Where(music => !string.IsNullOrWhiteSpace(music.Format)).Select(music => music.Format.Trim()).Distinct();
+
+        var bookFormatBreakdown = books
+            .Where(b => !string.IsNullOrWhiteSpace(b.Format))
+            .GroupBy(b => b.Format.Trim())
+            .ToDictionary(g => g.Key, g => g.Count());
+        var movieFormatBreakdown = movies
+            .Where(m => !string.IsNullOrWhiteSpace(m.Format))
+            .GroupBy(m => m.Format.Trim())
+            .ToDictionary(g => g.Key, g => g.Count());
+        var gameFormatBreakdown = games
+            .Where(g => !string.IsNullOrWhiteSpace(g.Format))
+            .GroupBy(g => g.Format.Trim())
+            .ToDictionary(g => g.Key, g => g.Count());
+        var gamePlatformBreakdown = games
+            .Where(g => !string.IsNullOrWhiteSpace(g.Platform))
+            .GroupBy(g => g.Platform.Trim())
+            .ToDictionary(g => g.Key, g => g.Count());
+        var musicFormatBreakdown = musics
+            .Where(m => !string.IsNullOrWhiteSpace(m.Format))
+            .GroupBy(m => m.Format.Trim())
+            .ToDictionary(g => g.Key, g => g.Count());
+
         var bookStats = new BookStats
         (
           books.Count(),
           bookFormats.Count(),
           bookFormats,
           books.Where(book => book.Authors?.Count > 0).SelectMany(book => book.Authors).Select(author => author.Trim()).Distinct().Count(),
-          books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum()
+          books.Where(book => book.Pages.HasValue).Select(book => book.Pages ?? 0).Sum(),
+          bookFormatBreakdown
         );
         var movieStats = new MovieStats
         (
           movies.Count(),
           movieFormats.Count(),
           movieFormats,
-          movies.Where(movie => movie.IsTvSeries).Count()
+          movies.Where(movie => movie.IsTvSeries).Count(),
+          movieFormatBreakdown
         );
         var gameStats = new GameStats
         (
@@ -89,7 +113,9 @@ public class StatsService : IStatsService
           gameFormats.Count(),
           gameFormats,
           gamePlatforms.Count(),
-          gamePlatforms
+          gamePlatforms,
+          gameFormatBreakdown,
+          gamePlatformBreakdown
         );
         var musicStats = new MusicStats
         (
@@ -97,7 +123,8 @@ public class StatsService : IStatsService
           musicFormats.Count(),
           musicFormats,
           musics.Where(music => !string.IsNullOrWhiteSpace(music.Artist)).Select(music => music.Artist.Trim()).Distinct().Count(),
-          musics.Where(music => music.Tracks.HasValue).Select(music => music.Tracks ?? 0).Sum()
+          musics.Where(music => music.Tracks.HasValue).Select(music => music.Tracks ?? 0).Sum(),
+          musicFormatBreakdown
         );
 
         var stats = new Stats(bookStats, movieStats, gameStats, musicStats);
