@@ -89,18 +89,6 @@ export default function Index() {
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
-      <div className="rounded-lg border border-zinc-700 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 p-8">
-        <h1 className="text-3xl font-bold text-white">Welcome to MediaSet</h1>
-        <p className="mt-2 text-zinc-400">Your personal media collection dashboard</p>
-        <div className="mt-6 flex items-center gap-4">
-          <div className="rounded-lg bg-blue-500/10 px-4 py-2">
-            <span className="text-2xl font-bold text-blue-400">{totalItems}</span>
-            <span className="ml-2 text-sm text-zinc-400">Total Items</span>
-          </div>
-        </div>
-      </div>
-
       {isEmpty ? (
         <div className="rounded-lg border border-zinc-700 bg-zinc-800/30 p-12 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-700/50">
@@ -112,9 +100,13 @@ export default function Index() {
       ) : (
         <div className="rounded-lg border border-zinc-700 bg-zinc-800/30 p-6">
           <h2 className="mb-6 text-xl font-semibold text-white">Collection Overview</h2>
-          <div className="grid gap-8 lg:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-[2fr_3fr]">
             {/* Left: overview pie chart */}
-            <div className="flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-start">
+              <div className="mb-4 rounded-lg bg-blue-500/10 px-4 py-2 text-center">
+                <span className="text-2xl font-bold text-blue-400">{totalItems}</span>
+                <span className="ml-2 text-sm text-zinc-400">Total Items</span>
+              </div>
               <p className="mb-4 text-sm text-zinc-400">Click a slice to explore</p>
               <PieChart
                 data={overviewData}

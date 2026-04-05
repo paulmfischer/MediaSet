@@ -11,6 +11,9 @@ type PieChartProps = {
   activeSlice?: string;
 };
 
+// Minimum visible/clickable slice — 8 degrees
+const MIN_ANGLE = (8 * Math.PI) / 180;
+
 function polarToCartesian(cx: number, cy: number, r: number, angleRad: number) {
   return {
     x: cx + r * Math.cos(angleRad),
@@ -25,6 +28,19 @@ function slicePath(cx: number, cy: number, r: number, startAngle: number, endAng
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
+function computeAngles(data: PieSlice[], total: number): number[] {
+  const natural = data.map((d) => (d.value / total) * 2 * Math.PI);
+  const needsMin = natural.map((a) => a < MIN_ANGLE);
+  const smallCount = needsMin.filter(Boolean).length;
+  const remainingAngle = 2 * Math.PI - smallCount * MIN_ANGLE;
+  const largeTotal = data.reduce((sum, d, i) => (needsMin[i] ? sum : sum + d.value), 0);
+
+  return natural.map((a, i) => {
+    if (needsMin[i]) return MIN_ANGLE;
+    return largeTotal > 0 ? (data[i].value / largeTotal) * remainingAngle : a;
+  });
+}
+
 export default function PieChart({ data, colors, size = 220, onSliceClick, activeSlice }: PieChartProps) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) return null;
@@ -33,30 +49,75 @@ export default function PieChart({ data, colors, size = 220, onSliceClick, activ
   const cy = size / 2;
   const r = size / 2 - 4;
 
+  const angles = computeAngles(data, total);
   const slices: { path: string; color: string; name: string; value: number; pct: string }[] = [];
   let angle = -Math.PI / 2;
 
   for (let i = 0; i < data.length; i++) {
-    const slice = data[i];
-    const sweep = (slice.value / total) * 2 * Math.PI;
-    const endAngle = angle + sweep;
+    const endAngle = angle + angles[i];
     slices.push({
       path: slicePath(cx, cy, r, angle, endAngle),
       color: colors[i % colors.length],
-      name: slice.name,
-      value: slice.value,
-      pct: ((slice.value / total) * 100).toFixed(1),
+      name: data[i].name,
+      value: data[i].value,
+      pct: ((data[i].value / total) * 100).toFixed(1),
     });
     angle = endAngle;
   }
 
   return (
-    <div>
+    <div className="flex items-center gap-4">
+      {/* Left: entity buttons */}
+      <ul className="flex flex-col gap-2">
+        {slices.map((slice) => {
+          const isActive = activeSlice === undefined || activeSlice === slice.name;
+          return (
+            <li
+              key={slice.name}
+              className={`transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-40'}`}
+            >
+              {onSliceClick ? (
+                <button
+                  type="button"
+                  className="tertiary flex w-full cursor-pointer items-center gap-2 text-left"
+                  onClick={() => onSliceClick(slice.name)}
+                >
+                  <span
+                    className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: slice.color }}
+                  />
+                  <span className="flex flex-col">
+                    <span className="text-xs font-medium text-zinc-200">{slice.name}</span>
+                    <span className="text-xs text-zinc-400">
+                      {slice.value.toLocaleString()} · {slice.pct}%
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: slice.color }}
+                  />
+                  <span className="flex flex-col">
+                    <span className="text-xs font-medium text-zinc-200">{slice.name}</span>
+                    <span className="text-xs text-zinc-400">
+                      {slice.value.toLocaleString()} · {slice.pct}%
+                    </span>
+                  </span>
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* Right: pie chart SVG */}
       <svg
         viewBox={`0 0 ${size} ${size}`}
         width={size}
         height={size}
-        className="mx-auto block"
+        className="flex-shrink-0"
         aria-label="Pie chart"
         role="img"
       >
@@ -84,21 +145,6 @@ export default function PieChart({ data, colors, size = 220, onSliceClick, activ
           );
         })}
       </svg>
-      <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
-        {slices.map((slice) => (
-          <li
-            key={slice.name}
-            className={`flex items-center gap-1.5 text-xs transition-opacity duration-200 ${activeSlice && activeSlice !== slice.name ? 'opacity-40' : 'opacity-100'}`}
-          >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: slice.color }}
-            />
-            <span className="text-zinc-300">{slice.name}</span>
-            <span className="text-zinc-500">({slice.pct}%)</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

@@ -119,12 +119,6 @@ describe('_index route', () => {
     });
 
     describe('hero section', () => {
-      it('should render welcome message', () => {
-        render(<Index />);
-        expect(screen.getByText('Welcome to MediaSet')).toBeInTheDocument();
-        expect(screen.getByText('Your personal media collection dashboard')).toBeInTheDocument();
-      });
-
       it('should display total items count', () => {
         render(<Index />);
         const expectedTotal =
@@ -210,11 +204,9 @@ describe('_index route', () => {
         ).toBeInTheDocument();
       });
 
-      it('should still display the hero section', () => {
+      it('should not show the total items count in empty state', () => {
         render(<Index />);
-        expect(screen.getByText('Welcome to MediaSet')).toBeInTheDocument();
-        expect(screen.getByText('0')).toBeInTheDocument();
-        expect(screen.getByText('Total Items')).toBeInTheDocument();
+        expect(screen.queryByText('Total Items')).not.toBeInTheDocument();
       });
 
       it('should not show Collection Overview in empty state', () => {
