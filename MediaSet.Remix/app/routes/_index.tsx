@@ -4,8 +4,9 @@ import { getStats, type NameCount } from '~/api/stats-data';
 import { getIntegrations } from '~/api/integrations-data';
 import AttributionBadges from '~/components/attribution-badges';
 import Tabs, { type TabConfig } from '~/components/tabs';
-import PieChart from '~/components/charts/pie-chart';
 import BarChart from '~/components/charts/bar-chart';
+import ChartCard from '~/components/charts/chart-card';
+import PieChart from '~/components/charts/pie-chart';
 import StatCard from '~/components/stat-card';
 import {
   LibraryBig,
@@ -64,15 +65,6 @@ function nameCountToBarData(items: NameCount[] | undefined) {
 
 function pct(value: number, total: number) {
   return ((value / total) * 100).toFixed(1);
-}
-
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="flex max-h-96 flex-col rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
-      <p className="mb-3 text-sm font-medium text-zinc-400">{title}</p>
-      <div className="min-h-0 flex-1">{children}</div>
-    </div>
-  );
 }
 
 export default function Index() {
