@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import ChartTooltip from './chart-tooltip';
 
 type PieSlice = {
   name: string;
@@ -44,20 +45,6 @@ function computeAngles(data: PieSlice[], total: number): number[] {
     if (needsMin[i]) return MIN_ANGLE;
     return largeTotal > 0 ? (data[i].value / largeTotal) * remainingAngle : a;
   });
-}
-
-function SliceTooltip({ name, value, pct, color }: { name: string; value: number; pct: string; color: string }) {
-  return (
-    <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 shadow-xl">
-      <p className="text-xs font-semibold text-zinc-200">{name}</p>
-      <div className="mt-1 flex items-center gap-1.5">
-        <span className="inline-block h-2 w-2 flex-shrink-0 rounded-sm" style={{ backgroundColor: color }} />
-        <span className="text-xs text-zinc-300">
-          {value.toLocaleString()} · {pct}%
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export default function PieChart({
@@ -144,12 +131,13 @@ export default function PieChart({
   );
 
   const tooltipEl = tooltip && (
-    <div
-      className="pointer-events-none absolute z-20 whitespace-nowrap"
-      style={{ left: tooltip.x + 14, top: Math.max(4, tooltip.y - 40) }}
-    >
-      <SliceTooltip name={tooltip.name} value={tooltip.value} pct={tooltip.pct} color={tooltip.color} />
-    </div>
+    <ChartTooltip
+      x={tooltip.x}
+      y={tooltip.y}
+      name={tooltip.name}
+      color={tooltip.color}
+      label={`${tooltip.value.toLocaleString()} · ${tooltip.pct}%`}
+    />
   );
 
   if (compact) {

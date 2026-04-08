@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import ChartTooltip from './chart-tooltip';
 
 type BarChartItem = {
   name: string;
@@ -35,18 +36,13 @@ export default function BarChart({ data, color, orientation = 'horizontal', maxI
     return (
       <div ref={containerRef} className="relative flex flex-col gap-2" onMouseLeave={handleMouseLeave}>
         {tooltip && (
-          <div
-            className="pointer-events-none absolute z-20 whitespace-nowrap"
-            style={{ left: tooltip.x + 14, top: Math.max(4, tooltip.y - 40) }}
-          >
-            <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 shadow-xl">
-              <p className="text-xs font-semibold text-zinc-200">{tooltip.name}</p>
-              <div className="mt-1 flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 flex-shrink-0 rounded-sm" style={{ backgroundColor: color }} />
-                <span className="text-xs text-zinc-300">{tooltip.value.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+          <ChartTooltip
+            x={tooltip.x}
+            y={tooltip.y}
+            name={tooltip.name}
+            color={color}
+            label={tooltip.value.toLocaleString()}
+          />
         )}
         <div className="relative flex items-end" style={{ aspectRatio: '3 / 2' }}>
           {items.map((item) => {
