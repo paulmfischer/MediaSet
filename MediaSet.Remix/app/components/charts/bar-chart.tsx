@@ -34,7 +34,7 @@ export default function BarChart({ data, color, orientation = 'horizontal', maxI
 
   if (orientation === 'vertical') {
     return (
-      <div ref={containerRef} className="relative flex flex-col gap-2" onMouseLeave={handleMouseLeave}>
+      <div ref={containerRef} className="relative flex h-full flex-col gap-2" onMouseLeave={handleMouseLeave}>
         {tooltip && (
           <ChartTooltip
             x={tooltip.x}
@@ -44,7 +44,7 @@ export default function BarChart({ data, color, orientation = 'horizontal', maxI
             label={tooltip.value.toLocaleString()}
           />
         )}
-        <div className="relative flex items-end" style={{ aspectRatio: '3 / 2' }}>
+        <div className="relative min-h-0 flex-1 flex items-end">
           {items.map((item) => {
             const heightPct = max > 0 ? Math.max((item.value / max) * 100, 1) : 1;
             return (
@@ -61,7 +61,7 @@ export default function BarChart({ data, color, orientation = 'horizontal', maxI
             );
           })}
         </div>
-        <div className="flex">
+        <div className="flex flex-shrink-0">
           {items.map((item) => (
             <span
               key={item.name}
