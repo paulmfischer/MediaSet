@@ -342,11 +342,11 @@ export default function Edit() {
   }
 
   return (
-    <div className="min-h-screen flex text-white py-4">
+    <div className={`entity-${entity.type.toLowerCase()} min-h-screen flex text-white py-4`}>
       <div className="w-full max-w-3xl mx-auto px-2">
         <div className="flex flex-row items-center justify-between">
           <div className="flex flex-row gap-4 items-end">
-            <h2 className="text-2xl">Editing {entity.title}</h2>
+            <h2 className="text-2xl text-entity">Editing {entity.title}</h2>
           </div>
         </div>
         <div className="h-full mt-4 flex flex-col gap-6">

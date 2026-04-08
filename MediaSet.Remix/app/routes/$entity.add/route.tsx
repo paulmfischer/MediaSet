@@ -286,9 +286,9 @@ export default function Add() {
   }
 
   return (
-    <div className="min-h-screen flex text-white py-4">
+    <div className={`entity-${entityType.toLowerCase()} min-h-screen flex text-white py-4`}>
       <div className="w-full max-w-3xl mx-auto px-2">
-        <h1 className="text-2xl font-bold mb-6 text-white">Add a {singular(entityType)}</h1>
+        <h1 className="text-2xl font-bold mb-6 text-entity">Add a {singular(entityType)}</h1>
 
         <div className="mb-8 flex flex-col gap-6">
           {lookupSection}

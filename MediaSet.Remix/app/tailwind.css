@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer components {
   a {
     @apply dark:text-blue-300 underline;

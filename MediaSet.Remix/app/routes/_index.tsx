@@ -37,11 +37,11 @@ export const loader = async () => {
   return { stats, integrations };
 };
 
-const ACCENT = {
+const CHART_HEX = {
   books: '#22c55e',
   movies: '#ef4444',
   games: '#a855f7',
-  music: '#ec4899',
+  musics: '#ec4899',
 };
 
 const FORMAT_PALETTES = {
@@ -104,43 +104,44 @@ export default function Index() {
   const tabs: TabConfig[] = [
     stats.bookStats.total > 0 && {
       id: 'books',
-      activeTopBorderClass: '!border-t-green-500',
+      className: 'entity-books',
+      activeTopBorderClass: '!border-t-entity',
       label: (
         <div>
           <div className="flex items-center gap-2">
-            <LibraryBig className="h-4 w-4 text-green-400" />
+            <LibraryBig className="h-4 w-4 text-entity" />
             <span className="font-semibold text-white">Books</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-green-400">{stats.bookStats.total.toLocaleString()}</div>
+          <div className="mt-2 text-2xl font-bold text-entity">{stats.bookStats.total.toLocaleString()}</div>
           <div className="text-xs text-zinc-400">{pct(stats.bookStats.total, totalItems)}% of collection</div>
         </div>
       ),
       panel: (
-        <div className="space-y-4 p-6">
+        <div className="entity-books space-y-4 p-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               title="Total Pages"
               value={stats.bookStats.totalPages.toLocaleString()}
               icon={BookOpen}
-              colorClass="bg-green-500/10 text-green-400 border-green-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Avg Pages"
               value={stats.bookStats.avgPages.toLocaleString()}
               icon={Hash}
-              colorClass="bg-green-500/10 text-green-400 border-green-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Unique Authors"
               value={stats.bookStats.uniqueAuthors}
               icon={Users}
-              colorClass="bg-green-500/10 text-green-400 border-green-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Formats"
               value={stats.bookStats.totalFormats}
               icon={FileText}
-              colorClass="bg-green-500/10 text-green-400 border-green-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -151,22 +152,22 @@ export default function Index() {
             )}
             {bookPageBucketData.length > 0 && (
               <ChartCard title="Page Count Distribution">
-                <BarChart data={bookPageBucketData} color={ACCENT.books} orientation="vertical" />
+                <BarChart data={bookPageBucketData} color={CHART_HEX.books} orientation="vertical" />
               </ChartCard>
             )}
             {bookTopAuthors.length > 0 && (
               <ChartCard title="Top Authors">
-                <BarChart data={bookTopAuthors} color={ACCENT.books} orientation="horizontal" />
+                <BarChart data={bookTopAuthors} color={CHART_HEX.books} orientation="horizontal" />
               </ChartCard>
             )}
             {bookDecadeData.length > 0 && (
               <ChartCard title="Publication Decade">
-                <BarChart data={bookDecadeData} color={ACCENT.books} orientation="vertical" />
+                <BarChart data={bookDecadeData} color={CHART_HEX.books} orientation="vertical" />
               </ChartCard>
             )}
             {bookTopGenres.length > 0 && (
               <ChartCard title="Top Genres">
-                <BarChart data={bookTopGenres} color={ACCENT.books} orientation="horizontal" />
+                <BarChart data={bookTopGenres} color={CHART_HEX.books} orientation="horizontal" />
               </ChartCard>
             )}
           </div>
@@ -175,37 +176,38 @@ export default function Index() {
     },
     stats.movieStats.total > 0 && {
       id: 'movies',
-      activeTopBorderClass: '!border-t-red-500',
+      className: 'entity-movies',
+      activeTopBorderClass: '!border-t-entity',
       label: (
         <div>
           <div className="flex items-center gap-2">
-            <Clapperboard className="h-4 w-4 text-red-400" />
+            <Clapperboard className="h-4 w-4 text-entity" />
             <span className="font-semibold text-white">Movies & TV</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-red-400">{stats.movieStats.total.toLocaleString()}</div>
+          <div className="mt-2 text-2xl font-bold text-entity">{stats.movieStats.total.toLocaleString()}</div>
           <div className="text-xs text-zinc-400">{pct(stats.movieStats.total, totalItems)}% of collection</div>
         </div>
       ),
       panel: (
-        <div className="space-y-4 p-6">
+        <div className="entity-movies space-y-4 p-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard
               title="Movies"
               value={stats.movieStats.total - stats.movieStats.totalTvSeries}
               icon={Clapperboard}
-              colorClass="bg-red-500/10 text-red-400 border-red-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="TV Series"
               value={stats.movieStats.totalTvSeries}
               icon={Tv}
-              colorClass="bg-red-500/10 text-red-400 border-red-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Formats"
               value={stats.movieStats.totalFormats}
               icon={Disc}
-              colorClass="bg-red-500/10 text-red-400 border-red-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -221,17 +223,17 @@ export default function Index() {
             )}
             {movieTopStudios.length > 0 && (
               <ChartCard title="Top Studios">
-                <BarChart data={movieTopStudios} color={ACCENT.movies} orientation="horizontal" />
+                <BarChart data={movieTopStudios} color={CHART_HEX.movies} orientation="horizontal" />
               </ChartCard>
             )}
             {movieDecadeData.length > 0 && (
               <ChartCard title="Release Decade">
-                <BarChart data={movieDecadeData} color={ACCENT.movies} orientation="vertical" />
+                <BarChart data={movieDecadeData} color={CHART_HEX.movies} orientation="vertical" />
               </ChartCard>
             )}
             {movieGenreData.length > 0 && (
               <ChartCard title="Top Genres">
-                <BarChart data={movieGenreData} color={ACCENT.movies} orientation="horizontal" />
+                <BarChart data={movieGenreData} color={CHART_HEX.movies} orientation="horizontal" />
               </ChartCard>
             )}
           </div>
@@ -240,31 +242,32 @@ export default function Index() {
     },
     stats.gameStats.total > 0 && {
       id: 'games',
-      activeTopBorderClass: '!border-t-purple-500',
+      className: 'entity-games',
+      activeTopBorderClass: '!border-t-entity',
       label: (
         <div>
           <div className="flex items-center gap-2">
-            <Gamepad2 className="h-4 w-4 text-purple-400" />
+            <Gamepad2 className="h-4 w-4 text-entity" />
             <span className="font-semibold text-white">Games</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-purple-400">{stats.gameStats.total.toLocaleString()}</div>
+          <div className="mt-2 text-2xl font-bold text-entity">{stats.gameStats.total.toLocaleString()}</div>
           <div className="text-xs text-zinc-400">{pct(stats.gameStats.total, totalItems)}% of collection</div>
         </div>
       ),
       panel: (
-        <div className="space-y-4 p-6">
+        <div className="entity-games space-y-4 p-6">
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               title="Platforms"
               value={stats.gameStats.totalPlatforms}
               icon={Monitor}
-              colorClass="bg-purple-500/10 text-purple-400 border-purple-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Formats"
               value={stats.gameStats.totalFormats}
               icon={Disc}
-              colorClass="bg-purple-500/10 text-purple-400 border-purple-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -280,22 +283,22 @@ export default function Index() {
             )}
             {gameTopPublishers.length > 0 && (
               <ChartCard title="Top Publishers">
-                <BarChart data={gameTopPublishers} color={ACCENT.games} orientation="horizontal" />
+                <BarChart data={gameTopPublishers} color={CHART_HEX.games} orientation="horizontal" />
               </ChartCard>
             )}
             {gameTopDevelopers.length > 0 && (
               <ChartCard title="Top Developers">
-                <BarChart data={gameTopDevelopers} color={ACCENT.games} orientation="horizontal" />
+                <BarChart data={gameTopDevelopers} color={CHART_HEX.games} orientation="horizontal" />
               </ChartCard>
             )}
             {gameDecadeData.length > 0 && (
               <ChartCard title="Release Decade">
-                <BarChart data={gameDecadeData} color={ACCENT.games} orientation="vertical" />
+                <BarChart data={gameDecadeData} color={CHART_HEX.games} orientation="vertical" />
               </ChartCard>
             )}
             {gameGenreData.length > 0 && (
               <ChartCard title="Top Genres">
-                <BarChart data={gameGenreData} color={ACCENT.games} orientation="horizontal" />
+                <BarChart data={gameGenreData} color={CHART_HEX.games} orientation="horizontal" />
               </ChartCard>
             )}
           </div>
@@ -303,56 +306,57 @@ export default function Index() {
       ),
     },
     stats.musicStats.total > 0 && {
-      id: 'music',
-      activeTopBorderClass: '!border-t-pink-500',
+      id: 'musics',
+      className: 'entity-musics',
+      activeTopBorderClass: '!border-t-entity',
       label: (
         <div>
           <div className="flex items-center gap-2">
-            <Music className="h-4 w-4 text-pink-400" />
+            <Music className="h-4 w-4 text-entity" />
             <span className="font-semibold text-white">Music</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-pink-400">{stats.musicStats.total.toLocaleString()}</div>
+          <div className="mt-2 text-2xl font-bold text-entity">{stats.musicStats.total.toLocaleString()}</div>
           <div className="text-xs text-zinc-400">{pct(stats.musicStats.total, totalItems)}% of collection</div>
         </div>
       ),
       panel: (
-        <div className="space-y-4 p-6">
+        <div className="entity-musics space-y-4 p-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard
               title="Total Tracks"
               value={stats.musicStats.totalTracks.toLocaleString()}
               icon={Album}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Avg Tracks"
               value={stats.musicStats.avgTracks}
               icon={Hash}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Unique Artists"
               value={stats.musicStats.uniqueArtists}
               icon={Users}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Unique Labels"
               value={stats.musicStats.uniqueLabels}
               icon={Tag}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Total Discs"
               value={stats.musicStats.totalDiscs}
               icon={Layers}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
             <StatCard
               title="Formats"
               value={stats.musicStats.totalFormats}
               icon={Disc}
-              colorClass="bg-pink-500/10 text-pink-400 border-pink-500/20"
+              colorClass="bg-entity/10 text-entity border-entity/20"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -363,22 +367,22 @@ export default function Index() {
             )}
             {musicTopArtists.length > 0 && (
               <ChartCard title="Top Artists">
-                <BarChart data={musicTopArtists} color={ACCENT.music} orientation="horizontal" />
+                <BarChart data={musicTopArtists} color={CHART_HEX.musics} orientation="horizontal" />
               </ChartCard>
             )}
             {musicTopLabels.length > 0 && (
               <ChartCard title="Top Labels">
-                <BarChart data={musicTopLabels} color={ACCENT.music} orientation="horizontal" />
+                <BarChart data={musicTopLabels} color={CHART_HEX.musics} orientation="horizontal" />
               </ChartCard>
             )}
             {musicDecadeData.length > 0 && (
               <ChartCard title="Release Decade">
-                <BarChart data={musicDecadeData} color={ACCENT.music} orientation="vertical" />
+                <BarChart data={musicDecadeData} color={CHART_HEX.musics} orientation="vertical" />
               </ChartCard>
             )}
             {musicGenreData.length > 0 && (
               <ChartCard title="Top Genres">
-                <BarChart data={musicGenreData} color={ACCENT.music} orientation="horizontal" />
+                <BarChart data={musicGenreData} color={CHART_HEX.musics} orientation="horizontal" />
               </ChartCard>
             )}
           </div>

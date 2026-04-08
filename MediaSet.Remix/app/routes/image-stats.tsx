@@ -60,26 +60,26 @@ const ENTITY_TYPE_CONFIG: Record<string, EntityTypeConfig> = {
   books: {
     label: 'Books',
     icon: LibraryBig,
-    activeTopBorderClass: '!border-t-green-500',
-    iconColorClass: 'bg-green-500/10 text-green-400 border-green-500/20',
+    activeTopBorderClass: '!border-t-entity',
+    iconColorClass: 'bg-entity/10 text-entity border-entity/20',
   },
   movies: {
     label: 'Movies',
     icon: Clapperboard,
-    activeTopBorderClass: '!border-t-red-500',
-    iconColorClass: 'bg-red-500/10 text-red-400 border-red-500/20',
+    activeTopBorderClass: '!border-t-entity',
+    iconColorClass: 'bg-entity/10 text-entity border-entity/20',
   },
   games: {
     label: 'Games',
     icon: Gamepad2,
-    activeTopBorderClass: '!border-t-purple-500',
-    iconColorClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    activeTopBorderClass: '!border-t-entity',
+    iconColorClass: 'bg-entity/10 text-entity border-entity/20',
   },
   musics: {
     label: 'Music',
     icon: Music,
-    activeTopBorderClass: '!border-t-pink-500',
-    iconColorClass: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+    activeTopBorderClass: '!border-t-entity',
+    iconColorClass: 'bg-entity/10 text-entity border-entity/20',
   },
 };
 
@@ -160,6 +160,7 @@ export default function ImageStatsPage() {
 
     return {
       id: entityType,
+      className: `entity-${entityType}`,
       activeTopBorderClass: config?.activeTopBorderClass,
       label: (
         <div className="flex items-start justify-between">
