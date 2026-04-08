@@ -77,27 +77,51 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 3,
                 Formats: bookFormats,
                 UniqueAuthors: 75,
-                TotalPages: 45000
+                TotalPages: 45000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 100,
                 TotalFormats: 3,
                 Formats: movieFormats,
-                TotalTvSeries: 15
+                TotalTvSeries: 15,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             ),
             new MusicStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -137,13 +161,23 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueAuthors: 0,
-                TotalPages: 0
+                TotalPages: 0,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
-                TotalTvSeries: 0
+                TotalTvSeries: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             )
 ,
             new GameStats(
@@ -151,7 +185,13 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -159,7 +199,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -188,13 +236,23 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 2,
                 Formats: bookFormats,
                 UniqueAuthors: 30,
-                TotalPages: 15000
+                TotalPages: 15000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
-                TotalTvSeries: 0
+                TotalTvSeries: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             )
 ,
             new GameStats(
@@ -202,7 +260,13 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -210,7 +274,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -239,13 +311,23 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueAuthors: 0,
-                TotalPages: 0
+                TotalPages: 0,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 75,
                 TotalFormats: 2,
                 Formats: movieFormats,
-                TotalTvSeries: 10
+                TotalTvSeries: 10,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             )
 ,
             new GameStats(
@@ -253,7 +335,13 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -261,7 +349,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -293,20 +389,36 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 4,
                 Formats: bookFormats,
                 UniqueAuthors: 5000,
-                TotalPages: 3000000
+                TotalPages: 3000000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 5000,
                 TotalFormats: 4,
                 Formats: movieFormats,
-                TotalTvSeries: 500
+                TotalTvSeries: 500,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -314,7 +426,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -348,20 +468,36 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 5,
                 Formats: bookFormats,
                 UniqueAuthors: 100,
-                TotalPages: 60000
+                TotalPages: 60000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 150,
                 TotalFormats: 5,
                 Formats: movieFormats,
-                TotalTvSeries: 20
+                TotalTvSeries: 20,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -369,7 +505,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -406,20 +550,36 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 1,
                 Formats: bookFormats,
                 UniqueAuthors: 15,
-                TotalPages: 7500
+                TotalPages: 7500,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 30,
                 TotalFormats: 1,
                 Formats: movieFormats,
-                TotalTvSeries: 5
+                TotalTvSeries: 5,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -427,7 +587,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -458,20 +626,36 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 2,
                 Formats: new List<string> { "Hardcover", "Paperback" },
                 UniqueAuthors: 50,
-                TotalPages: 30000
+                TotalPages: 30000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 80,
                 TotalFormats: 2,
                 Formats: movieFormats,
-                TotalTvSeries: 0
+                TotalTvSeries: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -479,7 +663,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 
@@ -549,20 +741,36 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 1,
                 Formats: new List<string> { "Hardcover" },
                 UniqueAuthors: 25,
-                TotalPages: 15000
+                TotalPages: 15000,
+                AvgPages: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                PageCountBuckets: new Dictionary<string, int>(),
+                TopAuthors: new List<NameCount>(),
+                TopGenres: new List<NameCount>()
             ),
             new MovieStats(
                 Total: 40,
                 TotalFormats: 2,
                 Formats: movieFormats,
-                TotalTvSeries: 40
+                TotalTvSeries: 40,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopStudios: new List<NameCount>()
             ),
             new GameStats(
                 Total: 0,
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 TotalPlatforms: 0,
-                Platforms: new List<string>()
+                Platforms: new List<string>(),
+                FormatBreakdown: new Dictionary<string, int>(),
+                PlatformBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopPublishers: new List<NameCount>(),
+                TopDevelopers: new List<NameCount>()
             )
             ,
             new MusicStats(
@@ -570,7 +778,15 @@ public class StatsApiTests : IntegrationTestBase
                 TotalFormats: 0,
                 Formats: new List<string>(),
                 UniqueArtists: 0,
-                TotalTracks: 0
+                TotalTracks: 0,
+                AvgTracks: 0,
+                UniqueLabels: 0,
+                TotalDiscs: 0,
+                FormatBreakdown: new Dictionary<string, int>(),
+                DecadeBreakdown: new Dictionary<string, int>(),
+                GenreBreakdown: new Dictionary<string, int>(),
+                TopArtists: new List<NameCount>(),
+                TopLabels: new List<NameCount>()
             )
         );
 

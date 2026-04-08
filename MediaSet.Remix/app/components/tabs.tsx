@@ -35,7 +35,7 @@ export default function Tabs({ tabs, defaultTabId, tabGridClassName = 'sm:grid-c
   return (
     <div>
       {/* Tab buttons */}
-      <div className={`grid gap-4 ${tabGridClassName}`}>
+      <div className={`grid gap-4 mb-1 ${tabGridClassName}`}>
         {tabs.map((tab) => {
           const isActive = activeTabId === tab.id;
           return (
@@ -44,7 +44,7 @@ export default function Tabs({ tabs, defaultTabId, tabGridClassName = 'sm:grid-c
               onClick={() => setActiveTabId(tab.id)}
               className={`tertiary !p-6 w-full text-left ${
                 isActive
-                  ? `relative -mb-px z-10 !bg-zinc-800 !border-x-zinc-700 !border-b-zinc-900 !rounded-b-none ${tab.activeTopBorderClass ?? '!border-t-cyan-500'}`
+                  ? `relative -mb-[5px] z-10 !bg-zinc-800 !border-x-zinc-700 !border-b-zinc-900 !rounded-b-none ${tab.activeTopBorderClass ?? '!border-t-cyan-500'}`
                   : ''
               }`}
             >

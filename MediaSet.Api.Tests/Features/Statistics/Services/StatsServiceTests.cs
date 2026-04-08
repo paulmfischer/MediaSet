@@ -706,10 +706,10 @@ public class StatsServiceTests
     {
         // Arrange
         var cachedStats = new MediaSet.Api.Features.Statistics.Models.Stats(
-            new BookStats(10, 2, new[] { "Hardcover", "Paperback" }, 5, 2500),
-            new MovieStats(5, 2, new[] { "DVD", "Blu-ray" }, 1),
-            new GameStats(3, 1, new[] { "Digital" }, 2, new[] { "PC", "Xbox" }),
-            new MusicStats(8, 2, new[] { "CD", "Vinyl" }, 5, 120));
+            new BookStats(10, 2, new[] { "Hardcover", "Paperback" }, 5, 2500, 0, new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new List<NameCount>(), new List<NameCount>()),
+            new MovieStats(5, 2, new[] { "DVD", "Blu-ray" }, 1, new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new List<NameCount>()),
+            new GameStats(3, 1, new[] { "Digital" }, 2, new[] { "PC", "Xbox" }, new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new List<NameCount>(), new List<NameCount>()),
+            new MusicStats(8, 2, new[] { "CD", "Vinyl" }, 5, 120, 0, 0, 0, new Dictionary<string, int>(), new Dictionary<string, int>(), new Dictionary<string, int>(), new List<NameCount>(), new List<NameCount>()));
 
         _cacheServiceMock.Setup(c => c.GetAsync<MediaSet.Api.Features.Statistics.Models.Stats>("stats"))
             .ReturnsAsync(cachedStats);
