@@ -1,4 +1,4 @@
-import { json, type MetaFunction } from '@remix-run/node';
+import { type MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { getStats, type NameCount } from '~/api/stats-data';
 import { getIntegrations } from '~/api/integrations-data';
@@ -34,7 +34,7 @@ export const meta: MetaFunction = () => {
 
 export const loader = async () => {
   const [stats, integrations] = await Promise.all([getStats(), getIntegrations()]);
-  return json({ stats, integrations });
+  return { stats, integrations };
 };
 
 const ACCENT = {
