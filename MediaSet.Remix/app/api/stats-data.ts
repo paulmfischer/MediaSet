@@ -2,6 +2,8 @@ import { baseUrl } from '~/constants.server';
 import { serverLogger } from '~/utils/serverLogger';
 import { apiFetch } from '~/utils/apiFetch.server';
 
+export type NameCount = { name: string; count: number };
+
 type Stats = {
   bookStats: BookStats;
   movieStats: MovieStats;
@@ -15,7 +17,12 @@ type BookStats = {
   formats: string[];
   uniqueAuthors: number;
   totalPages: number;
+  avgPages: number;
   formatBreakdown: Record<string, number>;
+  decadeBreakdown: Record<string, number>;
+  pageCountBuckets: Record<string, number>;
+  topAuthors: NameCount[];
+  topGenres: NameCount[];
 };
 
 type MovieStats = {
@@ -24,6 +31,9 @@ type MovieStats = {
   formats: string[];
   totalTvSeries: number;
   formatBreakdown: Record<string, number>;
+  decadeBreakdown: Record<string, number>;
+  genreBreakdown: Record<string, number>;
+  topStudios: NameCount[];
 };
 
 type GameStats = {
@@ -34,6 +44,10 @@ type GameStats = {
   platforms: string[];
   formatBreakdown: Record<string, number>;
   platformBreakdown: Record<string, number>;
+  decadeBreakdown: Record<string, number>;
+  genreBreakdown: Record<string, number>;
+  topPublishers: NameCount[];
+  topDevelopers: NameCount[];
 };
 
 type MusicStats = {
@@ -42,7 +56,14 @@ type MusicStats = {
   formats: string[];
   uniqueArtists: number;
   totalTracks: number;
+  avgTracks: number;
+  uniqueLabels: number;
+  totalDiscs: number;
   formatBreakdown: Record<string, number>;
+  decadeBreakdown: Record<string, number>;
+  genreBreakdown: Record<string, number>;
+  topArtists: NameCount[];
+  topLabels: NameCount[];
 };
 
 export async function getStats() {

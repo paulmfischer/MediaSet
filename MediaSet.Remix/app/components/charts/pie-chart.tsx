@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+
 type PieSlice = {
   name: string;
   value: number;
@@ -9,7 +11,10 @@ type PieChartProps = {
   size?: number;
   onSliceClick?: (name: string) => void;
   activeSlice?: string;
+  compact?: boolean;
 };
+
+type TooltipState = { x: number; y: number; name: string; value: number; pct: string; color: string } | null;
 
 // Minimum visible/clickable slice — 8 degrees
 const MIN_ANGLE = (8 * Math.PI) / 180;
@@ -41,7 +46,31 @@ function computeAngles(data: PieSlice[], total: number): number[] {
   });
 }
 
-export default function PieChart({ data, colors, size = 220, onSliceClick, activeSlice }: PieChartProps) {
+function SliceTooltip({ name, value, pct, color }: { name: string; value: number; pct: string; color: string }) {
+  return (
+    <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 shadow-xl">
+      <p className="text-xs font-semibold text-zinc-200">{name}</p>
+      <div className="mt-1 flex items-center gap-1.5">
+        <span className="inline-block h-2 w-2 flex-shrink-0 rounded-sm" style={{ backgroundColor: color }} />
+        <span className="text-xs text-zinc-300">
+          {value.toLocaleString()} · {pct}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function PieChart({
+  data,
+  colors,
+  size = 220,
+  onSliceClick,
+  activeSlice,
+  compact = false,
+}: PieChartProps) {
+  const [tooltip, setTooltip] = useState<TooltipState>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) return null;
 
@@ -50,7 +79,13 @@ export default function PieChart({ data, colors, size = 220, onSliceClick, activ
   const r = size / 2 - 4;
 
   const angles = computeAngles(data, total);
-  const slices: { path: string; color: string; name: string; value: number; pct: string }[] = [];
+  const slices: {
+    path: string;
+    color: string;
+    name: string;
+    value: number;
+    pct: string;
+  }[] = [];
   let angle = -Math.PI / 2;
 
   for (let i = 0; i < data.length; i++) {
@@ -65,16 +100,99 @@ export default function PieChart({ data, colors, size = 220, onSliceClick, activ
     angle = endAngle;
   }
 
+  const handleMouseMove = (e: React.MouseEvent, slice: (typeof slices)[number]) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setTooltip({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      name: slice.name,
+      value: slice.value,
+      pct: slice.pct,
+      color: slice.color,
+    });
+  };
+
+  const handleMouseLeave = () => setTooltip(null);
+
+  const svgEl = (
+    <div className="relative min-h-0 flex-1">
+      <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" aria-label="Pie chart" role="img">
+        {slices.map((slice) => {
+          const isActive = activeSlice === undefined || activeSlice === slice.name;
+          return (
+            <path
+              key={slice.name}
+              d={slice.path}
+              fill={slice.color}
+              stroke="#18181b"
+              strokeWidth={2}
+              opacity={isActive ? 1 : 0.35}
+              className={
+                onSliceClick
+                  ? 'cursor-pointer transition-opacity duration-200 hover:opacity-90'
+                  : 'transition-opacity duration-200'
+              }
+              onClick={onSliceClick ? () => onSliceClick(slice.name) : undefined}
+              onMouseMove={(e) => handleMouseMove(e, slice)}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+
+  const tooltipEl = tooltip && (
+    <div
+      className="pointer-events-none absolute z-20 whitespace-nowrap"
+      style={{ left: tooltip.x + 14, top: Math.max(4, tooltip.y - 40) }}
+    >
+      <SliceTooltip name={tooltip.name} value={tooltip.value} pct={tooltip.pct} color={tooltip.color} />
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div ref={containerRef} className="relative flex h-full flex-col gap-3" onMouseLeave={handleMouseLeave}>
+        {tooltipEl}
+        {svgEl}
+        <ul className="flex flex-shrink-0 flex-wrap justify-center gap-x-4 gap-y-1">
+          {slices.map((slice) => {
+            const isActive = activeSlice === undefined || activeSlice === slice.name;
+            return (
+              <li
+                key={slice.name}
+                className={`flex items-center gap-1.5 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-40'}`}
+                onMouseMove={(e) => handleMouseMove(e, slice)}
+              >
+                <span
+                  className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: slice.color }}
+                />
+                <span className="text-xs text-zinc-200">{slice.name}</span>
+                <span className="text-xs text-zinc-400">
+                  {slice.value.toLocaleString()} · {slice.pct}%
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-4">
-      {/* Left: entity buttons */}
-      <ul className="flex flex-col gap-2">
+    <div ref={containerRef} className="relative flex h-full items-stretch gap-4" onMouseLeave={handleMouseLeave}>
+      {tooltipEl}
+      <ul className="flex flex-shrink-0 flex-col justify-center gap-2">
         {slices.map((slice) => {
           const isActive = activeSlice === undefined || activeSlice === slice.name;
           return (
             <li
               key={slice.name}
               className={`transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-40'}`}
+              onMouseMove={(e) => handleMouseMove(e, slice)}
             >
               {onSliceClick ? (
                 <button
@@ -111,40 +229,7 @@ export default function PieChart({ data, colors, size = 220, onSliceClick, activ
           );
         })}
       </ul>
-
-      {/* Right: pie chart SVG */}
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        width={size}
-        height={size}
-        className="flex-shrink-0"
-        aria-label="Pie chart"
-        role="img"
-      >
-        {slices.map((slice) => {
-          const isActive = activeSlice === undefined || activeSlice === slice.name;
-          return (
-            <path
-              key={slice.name}
-              d={slice.path}
-              fill={slice.color}
-              stroke="#18181b"
-              strokeWidth={2}
-              opacity={isActive ? 1 : 0.35}
-              className={
-                onSliceClick
-                  ? 'cursor-pointer transition-opacity duration-200 hover:opacity-90'
-                  : 'transition-opacity duration-200'
-              }
-              onClick={onSliceClick ? () => onSliceClick(slice.name) : undefined}
-            >
-              <title>
-                {slice.name}: {slice.value.toLocaleString()} ({slice.pct}%)
-              </title>
-            </path>
-          );
-        })}
-      </svg>
+      {svgEl}
     </div>
   );
 }

@@ -23,7 +23,12 @@ const mockStats = {
     formats: ['Hardcover', 'Paperback', 'eBook'],
     uniqueAuthors: 28,
     totalPages: 12504,
+    avgPages: 297,
     formatBreakdown: {},
+    decadeBreakdown: {},
+    pageCountBuckets: {},
+    topAuthors: [],
+    topGenres: [],
   },
   movieStats: {
     total: 156,
@@ -31,6 +36,9 @@ const mockStats = {
     formats: ['Blu-ray', 'DVD'],
     totalTvSeries: 12,
     formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topStudios: [],
   },
   gameStats: {
     total: 87,
@@ -40,6 +48,10 @@ const mockStats = {
     platforms: ['PS5', 'Xbox Series X', 'Switch', 'PC', 'PS4'],
     formatBreakdown: {},
     platformBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topPublishers: [],
+    topDevelopers: [],
   },
   musicStats: {
     total: 234,
@@ -47,13 +59,41 @@ const mockStats = {
     formats: ['CD', 'Vinyl'],
     uniqueArtists: 156,
     totalTracks: 2847,
+    avgTracks: 12,
+    uniqueLabels: 45,
+    totalDiscs: 241,
     formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topArtists: [],
+    topLabels: [],
   },
 };
 
 const emptyStats = {
-  bookStats: { total: 0, totalFormats: 0, formats: [], uniqueAuthors: 0, totalPages: 0, formatBreakdown: {} },
-  movieStats: { total: 0, totalFormats: 0, formats: [], totalTvSeries: 0, formatBreakdown: {} },
+  bookStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    uniqueAuthors: 0,
+    totalPages: 0,
+    avgPages: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    pageCountBuckets: {},
+    topAuthors: [],
+    topGenres: [],
+  },
+  movieStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    totalTvSeries: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topStudios: [],
+  },
   gameStats: {
     total: 0,
     totalFormats: 0,
@@ -62,8 +102,26 @@ const emptyStats = {
     platforms: [],
     formatBreakdown: {},
     platformBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topPublishers: [],
+    topDevelopers: [],
   },
-  musicStats: { total: 0, totalFormats: 0, formats: [], uniqueArtists: 0, totalTracks: 0, formatBreakdown: {} },
+  musicStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    uniqueArtists: 0,
+    totalTracks: 0,
+    avgTracks: 0,
+    uniqueLabels: 0,
+    totalDiscs: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topArtists: [],
+    topLabels: [],
+  },
 };
 
 describe('_index route', () => {
@@ -126,8 +184,7 @@ describe('_index route', () => {
           mockStats.movieStats.total +
           mockStats.gameStats.total +
           mockStats.musicStats.total;
-        expect(screen.getByText(expectedTotal.toString())).toBeInTheDocument();
-        expect(screen.getByText('Total Items')).toBeInTheDocument();
+        expect(screen.getByText(`${expectedTotal.toLocaleString()} items`)).toBeInTheDocument();
       });
     });
 
@@ -170,11 +227,10 @@ describe('_index route', () => {
         expect(screen.getAllByText('Formats').length).toBeGreaterThan(0);
       });
 
-      it('should display book formats as tags when no breakdown data', () => {
+      it('should display avg pages stat card', () => {
         render(<Index />);
-        for (const format of mockStats.bookStats.formats) {
-          expect(screen.getByText(format)).toBeInTheDocument();
-        }
+        expect(screen.getByText('Avg Pages')).toBeInTheDocument();
+        expect(screen.getByText(mockStats.bookStats.avgPages.toLocaleString())).toBeInTheDocument();
       });
 
       it('should show format pie chart when multiple breakdown entries exist', () => {
@@ -224,9 +280,23 @@ describe('_index route', () => {
             formats: ['Book'],
             uniqueAuthors: 3,
             totalPages: 500,
+            avgPages: 100,
             formatBreakdown: {},
+            decadeBreakdown: {},
+            pageCountBuckets: {},
+            topAuthors: [],
+            topGenres: [],
           },
-          movieStats: { total: 10, totalFormats: 1, formats: ['Movie'], totalTvSeries: 0, formatBreakdown: {} },
+          movieStats: {
+            total: 10,
+            totalFormats: 1,
+            formats: ['Movie'],
+            totalTvSeries: 0,
+            formatBreakdown: {},
+            decadeBreakdown: {},
+            genreBreakdown: {},
+            topStudios: [],
+          },
           gameStats: {
             total: 0,
             totalFormats: 0,
@@ -235,6 +305,10 @@ describe('_index route', () => {
             platforms: [],
             formatBreakdown: {},
             platformBreakdown: {},
+            decadeBreakdown: {},
+            genreBreakdown: {},
+            topPublishers: [],
+            topDevelopers: [],
           },
           musicStats: {
             total: 3,
@@ -242,12 +316,19 @@ describe('_index route', () => {
             formats: ['CD'],
             uniqueArtists: 2,
             totalTracks: 30,
+            avgTracks: 10,
+            uniqueLabels: 2,
+            totalDiscs: 3,
             formatBreakdown: {},
+            decadeBreakdown: {},
+            genreBreakdown: {},
+            topArtists: [],
+            topLabels: [],
           },
         };
         vi.mocked(remixReact.useLoaderData).mockReturnValue({ stats: mixedStats });
         render(<Index />);
-        expect(screen.getByText('18')).toBeInTheDocument();
+        expect(screen.getByText('18 items')).toBeInTheDocument();
       });
 
       it('should show books detail when books total is zero but other entities have data', () => {
@@ -258,7 +339,7 @@ describe('_index route', () => {
         vi.mocked(remixReact.useLoaderData).mockReturnValue({ stats: partialStats });
         render(<Index />);
         const expectedTotal = mockStats.movieStats.total + mockStats.gameStats.total + mockStats.musicStats.total;
-        expect(screen.getByText(expectedTotal.toString())).toBeInTheDocument();
+        expect(screen.getByText(`${expectedTotal.toLocaleString()} items`)).toBeInTheDocument();
       });
     });
 
