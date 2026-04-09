@@ -8,8 +8,12 @@ import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/mode
 vi.mock('~/api/entity-data');
 vi.mock('~/utils/helpers');
 
-const mockSearchEntities = vi.mocked(entityData.searchEntities);
+const mockPagedSearchEntities = vi.mocked(entityData.pagedSearchEntities);
 const mockGetEntityFromParams = vi.mocked(helpers.getEntityFromParams);
+
+function makePagedResult<T>(items: T[]) {
+  return { items, totalCount: items.length, page: 1, pageSize: 25, totalPages: 1 };
+}
 
 describe('$entity._index route', () => {
   describe('meta function', () => {
@@ -61,7 +65,7 @@ describe('$entity._index route', () => {
       ];
 
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue(mockBooks);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult(mockBooks));
 
       const mockRequest = new Request('http://localhost/books?searchText=test');
       const result = await loader({
@@ -69,9 +73,10 @@ describe('$entity._index route', () => {
         params: { entity: 'books' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test', 'title:asc', 1);
       expect(result).toEqual({
         entities: mockBooks,
+        pagination: { page: 1, totalPages: 1, totalCount: mockBooks.length },
         entityType: Entity.Books,
         searchText: 'test',
         orderBy: 'title:asc',
@@ -89,7 +94,7 @@ describe('$entity._index route', () => {
       ];
 
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-      mockSearchEntities.mockResolvedValue(mockMovies);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult(mockMovies));
 
       const mockRequest = new Request('http://localhost/movies');
       const result = await loader({
@@ -97,9 +102,10 @@ describe('$entity._index route', () => {
         params: { entity: 'movies' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Movies, null, 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Movies, null, 'title:asc', 1);
       expect(result).toEqual({
         entities: mockMovies,
+        pagination: { page: 1, totalPages: 1, totalCount: mockMovies.length },
         entityType: Entity.Movies,
         searchText: null,
         orderBy: 'title:asc',
@@ -118,7 +124,7 @@ describe('$entity._index route', () => {
       ];
 
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
-      mockSearchEntities.mockResolvedValue(mockGames);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult(mockGames));
 
       const mockRequest = new Request('http://localhost/games?searchText=action');
       const result = await loader({
@@ -126,9 +132,10 @@ describe('$entity._index route', () => {
         params: { entity: 'games' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Games, 'action', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Games, 'action', 'title:asc', 1);
       expect(result).toEqual({
         entities: mockGames,
+        pagination: { page: 1, totalPages: 1, totalCount: mockGames.length },
         entityType: Entity.Games,
         searchText: 'action',
         orderBy: 'title:asc',
@@ -147,7 +154,7 @@ describe('$entity._index route', () => {
       ];
 
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-      mockSearchEntities.mockResolvedValue(mockMusics);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult(mockMusics));
 
       const mockRequest = new Request('http://localhost/musics?searchText=rock');
       const result = await loader({
@@ -155,9 +162,10 @@ describe('$entity._index route', () => {
         params: { entity: 'musics' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Musics, 'rock', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Musics, 'rock', 'title:asc', 1);
       expect(result).toEqual({
         entities: mockMusics,
+        pagination: { page: 1, totalPages: 1, totalCount: mockMusics.length },
         entityType: Entity.Musics,
         searchText: 'rock',
         orderBy: 'title:asc',
@@ -167,7 +175,7 @@ describe('$entity._index route', () => {
 
     it('should handle empty search results', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/books?searchText=nonexistent');
       const result = await loader({
@@ -177,6 +185,7 @@ describe('$entity._index route', () => {
 
       expect(result).toEqual({
         entities: [],
+        pagination: { page: 1, totalPages: 1, totalCount: 0 },
         entityType: Entity.Books,
         searchText: 'nonexistent',
         orderBy: 'title:asc',
@@ -203,7 +212,7 @@ describe('$entity._index route', () => {
       ];
 
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue(mockBooks);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult(mockBooks));
 
       const mockRequest = new Request('http://localhost/books?searchText=book');
       const result = await loader({
@@ -217,7 +226,7 @@ describe('$entity._index route', () => {
 
     it('should pass correct entity type to searchEntities', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/games?searchText=zelda');
       await loader({
@@ -226,12 +235,12 @@ describe('$entity._index route', () => {
       } as unknown as Parameters<typeof loader>[0]);
 
       expect(mockGetEntityFromParams).toHaveBeenCalledWith({ entity: 'games' });
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Games, 'zelda', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Games, 'zelda', 'title:asc', 1);
     });
 
     it('should extract search text from URL query parameters', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/books?searchText=multiple%20words');
       await loader({
@@ -239,12 +248,12 @@ describe('$entity._index route', () => {
         params: { entity: 'books' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'multiple words', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Books, 'multiple words', 'title:asc', 1);
     });
 
     it('should handle null search text when not provided', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/movies');
       await loader({
@@ -252,12 +261,12 @@ describe('$entity._index route', () => {
         params: { entity: 'movies' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Movies, null, 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Movies, null, 'title:asc', 1);
     });
 
     it('should pass orderBy from URL to searchEntities', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/books?orderBy=format:desc');
       const result = await loader({
@@ -265,13 +274,13 @@ describe('$entity._index route', () => {
         params: { entity: 'books' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, null, 'format:desc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Books, null, 'format:desc', 1);
       expect(result).toMatchObject({ orderBy: 'format:desc' });
     });
 
     it('should default orderBy to title:asc when not provided', async () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      mockSearchEntities.mockResolvedValue([]);
+      mockPagedSearchEntities.mockResolvedValue(makePagedResult([]));
 
       const mockRequest = new Request('http://localhost/books?searchText=test');
       const result = await loader({
@@ -279,7 +288,7 @@ describe('$entity._index route', () => {
         params: { entity: 'books' },
       } as unknown as Parameters<typeof loader>[0]);
 
-      expect(mockSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test', 'title:asc');
+      expect(mockPagedSearchEntities).toHaveBeenCalledWith(Entity.Books, 'test', 'title:asc', 1);
       expect(result).toMatchObject({ orderBy: 'title:asc' });
     });
   });

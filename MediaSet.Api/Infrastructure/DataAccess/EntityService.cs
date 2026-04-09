@@ -68,6 +68,55 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         return await cursor.ToListAsync(cancellationToken);
     }
 
+    public async Task<PagedResult<TEntity>> PagedSearchAsync(string searchText, string orderBy, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        using var activity = Log.Logger.StartActivity("PagedSearch {EntityType}", new { EntityType = entityTypeName, searchText, orderBy, page, pageSize });
+
+        string orderByField = nameof(IEntity.Title);
+        bool orderByAscending = true;
+
+        if (!string.IsNullOrWhiteSpace(orderBy))
+        {
+            var orderByArgs = orderBy.Split(":");
+            var requestedField = orderByArgs[0];
+
+            if (!string.IsNullOrWhiteSpace(requestedField))
+            {
+                var property = typeof(TEntity).GetProperty(requestedField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                if (property == null)
+                {
+                    throw new ArgumentException($"Invalid order by field '{requestedField}' for entity type '{entityTypeName}'.");
+                }
+                orderByField = property.Name;
+            }
+
+            if (orderByArgs.Length >= 2 && !string.IsNullOrWhiteSpace(orderByArgs[1]))
+            {
+                orderByAscending = orderByArgs[1].ToLower() == "asc";
+            }
+        }
+
+        var searchPattern = Regex.Escape(searchText);
+        var filter = Builders<TEntity>.Filter.Regex(entity => entity.Title, new BsonRegularExpression(searchPattern, "i"));
+        var sort = orderByAscending
+            ? Builders<TEntity>.Sort.Ascending(orderByField)
+            : Builders<TEntity>.Sort.Descending(orderByField);
+
+        var totalCount = await entityCollection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+
+        var findOptions = new FindOptions<TEntity>
+        {
+            Sort = sort,
+            Skip = (page - 1) * pageSize,
+            Limit = pageSize
+        };
+
+        using var cursor = await entityCollection.FindAsync(filter, findOptions, cancellationToken);
+        var items = await cursor.ToListAsync(cancellationToken);
+
+        return new PagedResult<TEntity>(items, totalCount, page, pageSize);
+    }
+
     public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("GetList {EntityType}", new { EntityType = entityTypeName });

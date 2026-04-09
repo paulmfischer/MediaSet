@@ -6,6 +6,7 @@ namespace MediaSet.Api.Infrastructure.DataAccess;
 public interface IEntityService<TEntity> where TEntity : IEntity
 {
     Task<IEnumerable<TEntity>> SearchAsync(string searchText, string orderBy, CancellationToken cancellationToken = default);
+    Task<PagedResult<TEntity>> PagedSearchAsync(string searchText, string orderBy, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default);
     Task<TEntity?> GetAsync(string id, CancellationToken cancellationToken = default);
     Task CreateAsync(TEntity newEntity, CancellationToken cancellationToken = default);
