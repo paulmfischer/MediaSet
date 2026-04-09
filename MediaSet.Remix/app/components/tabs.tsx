@@ -8,10 +8,12 @@ export interface TabConfig {
   panel: ReactNode;
   /**
    * Tailwind class applied to the top border of the active tab button, used to give
-   * each tab its own accent color (e.g. '!border-t-green-500').
+   * each tab its own accent color (e.g. '!border-t-entity').
    * Defaults to '!border-t-cyan-500'.
    */
   activeTopBorderClass?: string;
+  /** Extra classes applied to the tab button element (e.g. an entity-* class to set --entity-color). */
+  className?: string;
 }
 
 interface TabsProps {
@@ -42,7 +44,7 @@ export default function Tabs({ tabs, defaultTabId, tabGridClassName = 'sm:grid-c
             <button
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
-              className={`tertiary !p-6 w-full text-left ${
+              className={`tertiary !p-6 w-full text-left ${tab.className ?? ''} ${
                 isActive
                   ? `relative -mb-[5px] z-10 !bg-zinc-800 !border-x-zinc-700 !border-b-zinc-900 !rounded-b-none ${tab.activeTopBorderClass ?? '!border-t-cyan-500'}`
                   : ''

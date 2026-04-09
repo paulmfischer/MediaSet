@@ -54,17 +54,17 @@ function Header() {
           <NavLink to="/" className="p-3 flex gap-2 items-center rounded-lg">
             <Home /> Home
           </NavLink>
-          <NavLink to="/books" className="p-3 flex gap-2 items-center rounded-lg">
-            <LibraryBig /> Books
+          <NavLink to="/books" className="entity-books p-3 flex gap-2 items-center rounded-lg">
+            <LibraryBig className="text-entity" /> Books
           </NavLink>
-          <NavLink to="/movies" className="p-3 flex gap-2 items-center rounded-lg">
-            <Clapperboard /> Movies
+          <NavLink to="/movies" className="entity-movies p-3 flex gap-2 items-center rounded-lg">
+            <Clapperboard className="text-entity" /> Movies
           </NavLink>
-          <NavLink to="/games" className="p-3 flex gap-2 items-center rounded-lg">
-            <Gamepad2 /> Games
+          <NavLink to="/games" className="entity-games p-3 flex gap-2 items-center rounded-lg">
+            <Gamepad2 className="text-entity" /> Games
           </NavLink>
-          <NavLink to="/musics" className="p-3 flex gap-2 items-center rounded-lg">
-            <Music /> Music
+          <NavLink to="/musics" className="entity-musics p-3 flex gap-2 items-center rounded-lg">
+            <Music className="text-entity" /> Music
           </NavLink>
 
           {/* Tools dropdown */}
@@ -108,17 +108,17 @@ function Header() {
             <NavLink to="/" className="p-3 rounded-lg flex gap-2 items-center">
               <Home /> Home
             </NavLink>
-            <NavLink to="/books" className="p-3 rounded-lg flex gap-2 items-center">
-              <LibraryBig /> Books
+            <NavLink to="/books" className="entity-books p-3 rounded-lg flex gap-2 items-center">
+              <LibraryBig className="text-entity" /> Books
             </NavLink>
-            <NavLink to="/movies" className="p-3 rounded-lg flex gap-2 items-center">
-              <Clapperboard /> Movies
+            <NavLink to="/movies" className="entity-movies p-3 rounded-lg flex gap-2 items-center">
+              <Clapperboard className="text-entity" /> Movies
             </NavLink>
-            <NavLink to="/games" className="p-3 rounded-lg flex gap-2 items-center">
-              <Gamepad2 /> Games
+            <NavLink to="/games" className="entity-games p-3 rounded-lg flex gap-2 items-center">
+              <Gamepad2 className="text-entity" /> Games
             </NavLink>
-            <NavLink to="/musics" className="p-3 rounded-lg flex gap-2 items-center">
-              <Music /> Music
+            <NavLink to="/musics" className="entity-musics p-3 rounded-lg flex gap-2 items-center">
+              <Music className="text-entity" /> Music
             </NavLink>
             <hr className="border-zinc-600 mx-3" />
             <NavLink to="/image-stats" className="p-3 rounded-lg flex gap-2 items-center">

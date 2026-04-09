@@ -41,10 +41,10 @@ export default function Index() {
   }, [searchText]);
 
   return (
-    <div className="flex flex-col px-2">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className={`entity-${entityType.toLowerCase()} flex flex-col px-2`}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-entity/10 border border-entity/20 rounded-lg p-3">
         <div className="flex flex-row items-center gap-2">
-          <h2 className="text-2xl mb-1 sm:mb-0">{entityType}</h2>
+          <h2 className="text-2xl mb-1 sm:mb-0 text-entity">{entityType}</h2>
           <Link to={`/${entityType.toLowerCase()}/add`} className="flex gap-1 items-center">
             <Plus size={18} /> Add
           </Link>

@@ -25,7 +25,7 @@ export function BookLookupSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg">
+    <div className="bg-entity/10 border border-entity/20 rounded-lg">
       <button
         type="button"
         className="image-button w-full flex items-center justify-between !p-3"
