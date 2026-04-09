@@ -1,5 +1,5 @@
 import { useNavigation } from '@remix-run/react';
-import Spinner from './spinner';
+import Spinner from '../common/spinner';
 
 export default function PendingNavigation() {
   const navigation = useNavigation();

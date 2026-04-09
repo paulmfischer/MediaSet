@@ -1,9 +1,9 @@
 import { Link } from '@remix-run/react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import DeleteDialog from '~/components/delete-dialog';
-import ImageDisplay from '~/components/image-display';
-import SortableColumnHeader from '~/components/sortable-column-header';
+import DeleteDialog from '~/components/dialogs/delete-dialog';
+import ImageDisplay from '~/components/images/image-display';
+import SortableColumnHeader from '~/components/inputs/sortable-column-header';
 import { BookEntity, Entity } from '~/models';
 
 type BooksProps = {

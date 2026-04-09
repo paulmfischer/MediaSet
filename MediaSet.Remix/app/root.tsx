@@ -13,9 +13,9 @@ import {
 } from '@remix-run/react';
 import { useEffect, useRef, useState } from 'react';
 import { Clapperboard, Gamepad2, HardDrive, Home, LibraryBig, Menu, Music, Settings, X } from 'lucide-react';
-import ErrorScreen from './components/error-screen';
-import PendingNavigation from './components/pending-navigation';
-import Footer from './components/footer';
+import ErrorScreen from './components/layout/error-screen';
+import PendingNavigation from './components/layout/pending-navigation';
+import Footer from './components/layout/footer';
 
 function Header() {
   const [open, setOpen] = useState(false);

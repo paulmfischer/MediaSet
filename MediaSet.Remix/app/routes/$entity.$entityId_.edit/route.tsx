@@ -17,11 +17,11 @@ import { formToDto, getEntityFromParams, singular } from '~/utils/helpers';
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
 import { getLookupCapabilities, isBarcodeLookupAvailable } from '~/api/lookup-capabilities-data';
 import { serverLogger } from '~/utils/serverLogger';
-import BookForm, { BookLookupSection } from '../../components/book-form';
-import MovieForm, { MovieLookupSection } from '~/components/movie-form';
-import GameForm, { GameLookupSection } from '~/components/game-form';
-import MusicForm, { MusicLookupSection } from '~/components/music-form';
-import TitleLookupResultsDialog from '~/components/title-lookup-results-dialog';
+import BookForm, { BookLookupSection } from '~/components/forms/book-form';
+import MovieForm, { MovieLookupSection } from '~/components/forms/movie-form';
+import GameForm, { GameLookupSection } from '~/components/forms/game-form';
+import MusicForm, { MusicLookupSection } from '~/components/forms/music-form';
+import TitleLookupResultsDialog from '~/components/dialogs/title-lookup-results-dialog';
 import invariant from 'tiny-invariant';
 
 export const meta: MetaFunction<typeof loader> = ({ params }) => {
