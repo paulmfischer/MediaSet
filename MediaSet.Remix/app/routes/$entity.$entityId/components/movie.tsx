@@ -1,9 +1,9 @@
 import { Link, useNavigation } from '@remix-run/react';
 import { Pencil, Trash2, Check } from 'lucide-react';
 import { useState } from 'react';
-import DeleteDialog from '~/components/delete-dialog';
-import ImageDisplay from '~/components/image-display';
-import ImageLookupInfo from '~/components/image-lookup-info';
+import DeleteDialog from '~/components/dialogs/delete-dialog';
+import ImageDisplay from '~/components/images/image-display';
+import ImageLookupInfo from '~/components/images/image-lookup-info';
 import { MovieEntity, Entity } from '~/models';
 
 type MovieProps = {

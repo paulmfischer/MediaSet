@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Form } from '@remix-run/react';
-import MultiselectInput from '~/components/multiselect-input';
-import SingleselectInput from '~/components/singleselect-input';
-import ImageUpload from '~/components/image-upload';
-import ImageUrlPreview from '~/components/image-url-preview';
-import ScanButton from '~/components/scan-button';
-import { FormProps, GameEntity } from '~/models';
+import MultiselectInput from '~/components/inputs/multiselect-input';
+import SingleselectInput from '~/components/inputs/singleselect-input';
+import ImageUpload from '~/components/images/image-upload';
+import ImageUrlPreview from '~/components/images/image-url-preview';
+import ScanButton from '~/components/scan/scan-button';
+import { BookEntity, FormProps } from '~/models';
 
 type Metadata = {
   label: string;
@@ -15,7 +15,7 @@ type Metadata = {
 const inputClasses =
   'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400';
 
-export function GameLookupSection({
+export function BookLookupSection({
   isSubmitting,
   defaultOpen = false,
 }: {
@@ -32,7 +32,7 @@ export function GameLookupSection({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
       >
-        <span className="text-sm font-semibold text-gray-300">Game Lookup</span>
+        <span className="text-sm font-semibold text-gray-300">Book Lookup</span>
         <svg
           className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -62,6 +62,19 @@ export function GameLookupSection({
                 disabled={isSubmitting}
               />
             </div>
+            <div>
+              <label htmlFor="lookup-author" className="block text-sm font-medium text-gray-200 mb-1">
+                Author
+              </label>
+              <input
+                id="lookup-author"
+                name="lookupParam.author"
+                type="text"
+                className={inputClasses}
+                placeholder="Author"
+                disabled={isSubmitting}
+              />
+            </div>
             <div className="flex justify-end">
               <button type="submit" disabled={isSubmitting}>
                 Search
@@ -77,25 +90,25 @@ export function GameLookupSection({
 
           <Form method="post" className="flex flex-col gap-3">
             <input type="hidden" name="intent" value="lookup" />
-            <input type="hidden" name="fieldName" value="barcode" />
+            <input type="hidden" name="fieldName" value="isbn" />
             <div>
-              <label htmlFor="lookup-barcode" className="block text-sm font-medium text-gray-200 mb-1">
-                Barcode
+              <label htmlFor="lookup-isbn" className="block text-sm font-medium text-gray-200 mb-1">
+                ISBN
               </label>
               <div className="flex gap-2">
                 <input
-                  id="lookup-barcode"
+                  id="lookup-isbn"
                   name="identifierValue"
                   type="text"
                   inputMode="numeric"
                   className={inputClasses}
-                  placeholder="Barcode"
+                  placeholder="ISBN"
                   disabled={isSubmitting}
                 />
                 <button type="submit" disabled={isSubmitting}>
                   Search
                 </button>
-                <ScanButton inputId="lookup-barcode" fieldName="barcode" disabled={isSubmitting} />
+                <ScanButton inputId="lookup-isbn" fieldName="isbn" disabled={isSubmitting} />
               </div>
             </div>
           </Form>
@@ -105,30 +118,21 @@ export function GameLookupSection({
   );
 }
 
-type GameFormProps = FormProps & {
-  game?: GameEntity;
-  developers: Metadata[];
-  publishers: Metadata[];
+type BookFormProps = FormProps & {
+  book?: BookEntity;
+  authors: Metadata[];
   genres: Metadata[];
+  publishers: Metadata[];
   formats: Metadata[];
-  platforms: Metadata[];
 };
 
-export default function GameForm({
-  game,
-  developers,
-  publishers,
-  genres,
-  formats,
-  platforms,
-  isSubmitting,
-}: GameFormProps) {
+export default function BookForm({ book, authors, genres, publishers, formats, isSubmitting }: BookFormProps) {
   const textareaClasses =
     'w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 resize-vertical min-h-[100px]';
 
   return (
     <fieldset disabled={isSubmitting} className="flex flex-col gap-4">
-      <input id="id" name="id" type="hidden" defaultValue={game?.id} />
+      <input id="id" name="id" type="hidden" defaultValue={book?.id} />
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
@@ -141,27 +145,27 @@ export default function GameForm({
           className={inputClasses}
           placeholder="Title"
           aria-label="Title"
-          defaultValue={game?.title}
+          defaultValue={book?.title}
         />
       </div>
 
       <div>
-        <label htmlFor="barcode" className="block text-sm font-medium text-gray-200 mb-1">
-          Barcode
+        <label htmlFor="isbn" className="block text-sm font-medium text-gray-200 mb-1">
+          ISBN
         </label>
         <input
-          id="barcode"
-          name="barcode"
+          id="isbn"
+          name="isbn"
           type="text"
           inputMode="numeric"
           className={inputClasses}
-          placeholder="Barcode"
-          defaultValue={game?.barcode}
-          aria-label="Barcode"
+          placeholder="ISBN"
+          defaultValue={book?.isbn}
+          aria-label="ISBN"
         />
       </div>
 
-      <ImageUpload name="coverImage" existingImage={game?.coverImage} isSubmitting={isSubmitting} />
+      <ImageUpload name="coverImage" existingImage={book?.coverImage} isSubmitting={isSubmitting} />
 
       <div>
         <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-200 mb-1">
@@ -179,22 +183,24 @@ export default function GameForm({
             className={`${inputClasses} flex-1`}
             placeholder="https://example.com/image.jpg"
             aria-label="Image URL"
-            defaultValue={game?.imageUrl}
+            defaultValue={book?.imageUrl}
           />
-          <ImageUrlPreview inputId="imageUrl" existingUrl={game?.imageUrl} />
+          <ImageUrlPreview inputId="imageUrl" existingUrl={book?.imageUrl} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="platform" className="block text-sm font-medium text-gray-200 mb-1">
-          Platform
+        <label htmlFor="subtitle" className="block text-sm font-medium text-gray-200 mb-1">
+          Subtitle
         </label>
-        <SingleselectInput
-          name="platform"
-          placeholder="Select Platform..."
-          addLabel="Add new Platform:"
-          options={platforms}
-          selectedValue={game?.platform}
+        <input
+          id="subtitle"
+          name="subtitle"
+          type="text"
+          className={inputClasses}
+          placeholder="Subtitle"
+          aria-label="Subtitle"
+          defaultValue={book?.subtitle}
         />
       </div>
 
@@ -207,63 +213,50 @@ export default function GameForm({
           placeholder="Select Format..."
           addLabel="Add new Format:"
           options={formats}
-          selectedValue={game?.format}
+          selectedValue={book?.format}
         />
       </div>
 
       <div>
-        <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-200 mb-1">
-          Release Date
+        <label htmlFor="pages" className="block text-sm font-medium text-gray-200 mb-1">
+          Pages
         </label>
         <input
-          id="releaseDate"
-          name="releaseDate"
-          type="text"
+          id="pages"
+          name="pages"
+          type="number"
           className={inputClasses}
-          placeholder="Release Date"
-          defaultValue={game?.releaseDate}
-          aria-label="Release Date"
+          placeholder="Pages"
+          aria-label="Pages"
+          defaultValue={book?.pages}
         />
       </div>
 
       <div>
-        <label htmlFor="rating" className="block text-sm font-medium text-gray-200 mb-1">
-          Age Rating
+        <label htmlFor="publicationDate" className="block text-sm font-medium text-gray-200 mb-1">
+          Publication Date
         </label>
         <input
-          id="rating"
-          name="rating"
+          id="publicationDate"
+          name="publicationDate"
           type="text"
           className={inputClasses}
-          placeholder="Age Rating (e.g., E, T, M)"
-          defaultValue={game?.rating}
-          aria-label="Age Rating"
+          placeholder="Publication Date"
+          defaultValue={book?.publicationDate}
+          aria-label="Publication Date"
         />
       </div>
 
       <div>
-        <label htmlFor="developers" className="block text-sm font-medium text-gray-200 mb-1">
-          Developers
+        <label htmlFor="authors" className="block text-sm font-medium text-gray-200 mb-1">
+          Authors
         </label>
         <MultiselectInput
-          name="developers"
-          selectText="Select Developers..."
-          addLabel="Add new Developer:"
-          options={developers}
-          selectedValues={game?.developers}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="publishers" className="block text-sm font-medium text-gray-200 mb-1">
-          Publishers
-        </label>
-        <MultiselectInput
-          name="publishers"
-          selectText="Select Publishers..."
-          addLabel="Add new Publisher:"
-          options={publishers}
-          selectedValues={game?.publishers}
+          name="authors"
+          selectText="Select Authors..."
+          addLabel="Add new Author:"
+          options={authors}
+          selectedValues={book?.authors}
         />
       </div>
 
@@ -276,21 +269,34 @@ export default function GameForm({
           selectText="Select Genres..."
           addLabel="Add new Genre"
           options={genres}
-          selectedValues={game?.genres}
+          selectedValues={book?.genres}
         />
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-200 mb-1">
-          Description
+        <label htmlFor="publisher" className="block text-sm font-medium text-gray-200 mb-1">
+          Publisher
+        </label>
+        <SingleselectInput
+          name="publisher"
+          placeholder="Select Publisher..."
+          addLabel="Add new Publisher:"
+          options={publishers}
+          selectedValue={book?.publisher}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="plot" className="block text-sm font-medium text-gray-200 mb-1">
+          Plot
         </label>
         <textarea
-          id="description"
-          name="description"
+          id="plot"
+          name="plot"
           className={textareaClasses}
-          placeholder="Description"
-          defaultValue={game?.description}
-          aria-label="Description"
+          placeholder="Plot"
+          defaultValue={book?.plot}
+          aria-label="Plot"
         />
       </div>
     </fieldset>

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Form } from '@remix-run/react';
-import MultiselectInput from '~/components/multiselect-input';
-import SingleselectInput from '~/components/singleselect-input';
-import ImageUpload from '~/components/image-upload';
-import ImageUrlPreview from '~/components/image-url-preview';
-import ScanButton from '~/components/scan-button';
+import MultiselectInput from '~/components/inputs/multiselect-input';
+import SingleselectInput from '~/components/inputs/singleselect-input';
+import ImageUpload from '~/components/images/image-upload';
+import ImageUrlPreview from '~/components/images/image-url-preview';
+import ScanButton from '~/components/scan/scan-button';
 import { FormProps, MusicEntity, Disc } from '~/models';
 import { millisecondsToMinutesSeconds } from '~/utils/helpers';
 

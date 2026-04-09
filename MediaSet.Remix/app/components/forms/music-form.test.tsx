@@ -6,7 +6,7 @@ import MusicForm, { MusicLookupSection } from './music-form';
 import { MusicEntity, Entity } from '~/models';
 
 // Mock the custom input components
-vi.mock('~/components/multiselect-input', () => ({
+vi.mock('~/components/inputs/multiselect-input', () => ({
   default: ({ name, selectedValues }: { name: string; selectedValues?: string[] }) => (
     <input
       data-testid={`${name}-multiselect`}
@@ -18,7 +18,7 @@ vi.mock('~/components/multiselect-input', () => ({
   ),
 }));
 
-vi.mock('~/components/singleselect-input', () => ({
+vi.mock('~/components/inputs/singleselect-input', () => ({
   default: ({ name, selectedValue }: { name: string; selectedValue?: string }) => (
     <input
       data-testid={`${name}-singleselect`}

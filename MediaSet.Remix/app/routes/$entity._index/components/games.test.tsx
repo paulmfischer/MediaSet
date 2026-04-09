@@ -5,7 +5,7 @@ import Games from './games';
 import { GameEntity, Entity } from '~/models';
 
 // Mock the delete dialog component
-vi.mock('~/components/delete-dialog', () => ({
+vi.mock('~/components/dialogs/delete-dialog', () => ({
   default: ({
     isOpen,
     onClose,

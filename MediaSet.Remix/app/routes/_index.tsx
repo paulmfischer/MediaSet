@@ -2,12 +2,12 @@ import { type MetaFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { getStats, type NameCount } from '~/api/stats-data';
 import { getIntegrations } from '~/api/integrations-data';
-import AttributionBadges from '~/components/attribution-badges';
-import Tabs, { type TabConfig } from '~/components/tabs';
+import AttributionBadges from '~/components/common/attribution-badges';
+import Tabs, { type TabConfig } from '~/components/common/tabs';
 import BarChart from '~/components/charts/bar-chart';
 import ChartCard from '~/components/charts/chart-card';
 import PieChart from '~/components/charts/pie-chart';
-import StatCard from '~/components/stat-card';
+import StatCard from '~/components/common/stat-card';
 import {
   LibraryBig,
   Clapperboard,

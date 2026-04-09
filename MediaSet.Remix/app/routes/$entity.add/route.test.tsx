@@ -39,23 +39,23 @@ vi.mock('~/utils/serverLogger', () => ({
 }));
 
 // Mock form components
-vi.mock('~/components/book-form', () => ({
+vi.mock('~/components/forms/book-form', () => ({
   default: () => <div data-testid="book-form">Book Form</div>,
 }));
 
-vi.mock('~/components/movie-form', () => ({
+vi.mock('~/components/forms/movie-form', () => ({
   default: () => <div data-testid="movie-form">Movie Form</div>,
 }));
 
-vi.mock('~/components/game-form', () => ({
+vi.mock('~/components/forms/game-form', () => ({
   default: () => <div data-testid="game-form">Game Form</div>,
 }));
 
-vi.mock('~/components/music-form', () => ({
+vi.mock('~/components/forms/music-form', () => ({
   default: () => <div data-testid="music-form">Music Form</div>,
 }));
 
-vi.mock('~/components/spinner', () => ({
+vi.mock('~/components/common/spinner', () => ({
   default: () => <div data-testid="spinner">Loading...</div>,
 }));
 

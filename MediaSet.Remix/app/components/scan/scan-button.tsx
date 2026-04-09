@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSubmit } from '@remix-run/react';
 
-const BarcodeScanner = React.lazy(() => import('~/components/barcode-scanner'));
+const BarcodeScanner = React.lazy(() => import('~/components/scan/barcode-scanner'));
 
 type Props = {
   inputId?: string;

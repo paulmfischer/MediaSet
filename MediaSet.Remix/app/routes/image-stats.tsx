@@ -1,6 +1,6 @@
 import { type ActionFunctionArgs, type MetaFunction } from '@remix-run/node';
 import { useLoaderData, Link, Form, useNavigation } from '@remix-run/react';
-import Tabs, { type TabConfig } from '~/components/tabs';
+import Tabs, { type TabConfig } from '~/components/common/tabs';
 import {
   getImageStats,
   type BrokenImageLink,
@@ -8,7 +8,7 @@ import {
   type OrphanedImageFile,
 } from '~/api/image-stats-data';
 import { deleteOrphanedImages, resetImageLookup } from '~/api/image-management-data';
-import StatCard from '~/components/stat-card';
+import StatCard from '~/components/common/stat-card';
 import {
   HardDrive,
   Files,

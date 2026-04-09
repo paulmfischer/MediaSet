@@ -12,7 +12,7 @@ vi.mock('@remix-run/react', async () => {
 });
 
 // Mock the Spinner component
-vi.mock('./spinner', () => ({
+vi.mock('../common/spinner', () => ({
   default: ({ size }: { size?: number }) => (
     <div data-testid="spinner" data-size={size}>
       Spinner

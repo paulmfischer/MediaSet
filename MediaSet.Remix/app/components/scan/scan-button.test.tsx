@@ -9,7 +9,7 @@ vi.mock('@remix-run/react', () => ({
 }));
 
 // Mock the BarcodeScanner component completely to avoid camera/barcode testing
-vi.mock('~/components/barcode-scanner', () => ({
+vi.mock('~/components/scan/barcode-scanner', () => ({
   default: () => null,
 }));
 
