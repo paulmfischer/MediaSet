@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.7.0](https://github.com/paulmfischer/MediaSet/compare/v3.6.1...v3.7.0) (2026-04-09)
+
+
+### Features
+
+* **dashboard:** redesign homepage with rich stats charts and tabbed layout ([#564](https://github.com/paulmfischer/MediaSet/issues/564)) ([a1ffaf4](https://github.com/paulmfischer/MediaSet/commit/a1ffaf48d61c805d82ecb874a838924568ce2cf5))
+* **search:** add paged search endpoint and paginated list view closes [#524](https://github.com/paulmfischer/MediaSet/issues/524) ([#568](https://github.com/paulmfischer/MediaSet/issues/568)) ([4d1aff1](https://github.com/paulmfischer/MediaSet/commit/4d1aff1249541f3e9bc60a35b5d2c08272fd07c4))
+* **ui:** centralize entity colors via CSS variables closes [#562](https://github.com/paulmfischer/MediaSet/issues/562) ([#566](https://github.com/paulmfischer/MediaSet/issues/566)) ([c2eaf67](https://github.com/paulmfischer/MediaSet/commit/c2eaf67e8955d1f855ac2eb004437b2a8a7d5815))
+
+
+### Refactoring
+
+* **ui:** organize components into subfolders closes [#563](https://github.com/paulmfischer/MediaSet/issues/563) ([#567](https://github.com/paulmfischer/MediaSet/issues/567)) ([357de0a](https://github.com/paulmfischer/MediaSet/commit/357de0a7c8be28e7d97e69a1f036ad60752e24e4))
+
 ## [3.6.1](https://github.com/paulmfischer/MediaSet/compare/v3.6.0...v3.6.1) (2026-04-01)
 
 
