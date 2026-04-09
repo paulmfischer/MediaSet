@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
 import { Form, Link, useLoaderData, useNavigate } from '@remix-run/react';
 import { useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
-import { searchEntities } from '~/api/entity-data';
+import { pagedSearchEntities } from '~/api/entity-data';
 import { BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';
 import { getEntityFromParams } from '~/utils/helpers';
 import { clientApiUrl } from '~/constants.server';
@@ -10,6 +10,7 @@ import Books from './components/books';
 import Movies from './components/movies';
 import Games from './components/games';
 import Musics from './components/musics';
+import Pagination from '~/components/inputs/pagination';
 import invariant from 'tiny-invariant';
 
 export const meta: MetaFunction = (loader) => {
@@ -22,15 +23,23 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchText = url.searchParams.get('searchText');
   const orderBy = url.searchParams.get('orderBy') ?? 'title:asc';
+  const page = parseInt(url.searchParams.get('page') ?? '1', 10);
   const entityType: Entity = getEntityFromParams(params);
 
-  const entities = await searchEntities(entityType, searchText, orderBy);
+  const pagedResult = await pagedSearchEntities(entityType, searchText, orderBy, page);
   const apiUrl = clientApiUrl;
-  return { entities, entityType, searchText, orderBy, apiUrl };
+  return {
+    entities: pagedResult.items,
+    pagination: { page: pagedResult.page, totalPages: pagedResult.totalPages, totalCount: pagedResult.totalCount },
+    entityType,
+    searchText,
+    orderBy,
+    apiUrl,
+  };
 };
 
 export default function Index() {
-  const { entities, entityType, searchText, orderBy, apiUrl } = useLoaderData<typeof loader>();
+  const { entities, pagination, entityType, searchText, orderBy, apiUrl } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,6 +117,14 @@ export default function Index() {
           </>
         )}
       </div>
+      <Pagination
+        page={pagination.page}
+        totalPages={pagination.totalPages}
+        totalCount={pagination.totalCount}
+        searchText={searchText}
+        orderBy={orderBy}
+        basePath={`/${entityType.toLowerCase()}`}
+      />
     </div>
   );
 }

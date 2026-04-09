@@ -42,6 +42,22 @@ internal static class EntityApi
             }
         });
 
+        group.MapGet("/pagedsearch", async Task<Results<Ok<PagedResult<TEntity>>, BadRequest<string>>> (IEntityService<TEntity> entityService, string searchText, string orderBy, int page = 1, int pageSize = 75, CancellationToken cancellationToken = default) =>
+        {
+            try
+            {
+                logger.LogInformation("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, page, pageSize);
+                var result = await entityService.PagedSearchAsync(searchText, orderBy, page, pageSize, cancellationToken);
+                logger.LogInformation("Paged search returned {count}/{total} {entityType}", result.Items.Count(), result.TotalCount, entityType);
+                return TypedResults.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning("Invalid orderBy field for {entityType}: {message}", entityType, ex.Message);
+                return TypedResults.BadRequest(ex.Message);
+            }
+        });
+
         group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Fetching {entityType} by id {id}", entityType, id);

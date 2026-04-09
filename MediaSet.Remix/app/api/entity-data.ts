@@ -4,6 +4,14 @@ import { BaseEntity, Entity } from '~/models';
 import { serverLogger } from '~/utils/serverLogger';
 import { apiFetch } from '~/utils/apiFetch.server';
 
+export type PagedResult<TEntity> = {
+  items: TEntity[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 function getEntityType<T extends BaseEntity>(entity: T): Entity {
   return entity.type;
 }
@@ -40,6 +48,54 @@ export async function searchEntities<TEntity extends BaseEntity>(
     return entities;
   } catch (error) {
     serverLogger.error('Error searching entities', { operation: 'searchEntities', entityType, error: String(error) });
+    throw error;
+  }
+}
+
+export async function pagedSearchEntities<TEntity extends BaseEntity>(
+  entityType: Entity,
+  searchText: string | null,
+  orderBy: string = '',
+  page: number = 1,
+  pageSize: number = 75
+): Promise<PagedResult<TEntity>> {
+  serverLogger.info(
+    `Paged searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}, page: ${page}`,
+    {
+      operation: 'pagedSearchEntities',
+      entityType,
+      searchText,
+      orderBy,
+      page,
+      pageSize,
+    }
+  );
+  try {
+    const response = await apiFetch(
+      `${baseUrl}/${entityType}/pagedsearch?searchText=${searchText ?? ''}&orderBy=${orderBy}&page=${page}&pageSize=${pageSize}`
+    );
+    if (!response.ok) {
+      serverLogger.error(`Failed to fetch ${entityType} paged search results`, {
+        operation: 'pagedSearchEntities',
+        entityType,
+        status: response.status,
+      });
+      throw new Response('Error fetching data', { status: 500 });
+    }
+    const result = (await response.json()) as PagedResult<TEntity>;
+    serverLogger.info(`Successfully fetched ${result.items.length}/${result.totalCount} ${entityType}`, {
+      operation: 'pagedSearchEntities',
+      entityType,
+      count: result.items.length,
+      totalCount: result.totalCount,
+    });
+    return result;
+  } catch (error) {
+    serverLogger.error('Error paged searching entities', {
+      operation: 'pagedSearchEntities',
+      entityType,
+      error: String(error),
+    });
     throw error;
   }
 }
