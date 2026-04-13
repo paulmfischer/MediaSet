@@ -45,7 +45,10 @@ services:
       # TZ: "America/New_York"
 
       # Database configuration
+      # Without authentication (default):
       MediaSetDatabaseSettings__ConnectionString: "${MONGODB_CONNECTION_STRING:-mongodb://mongo:27017}"
+      # With authentication (if MongoDB auth is enabled on the mongo service below):
+      # MediaSetDatabaseSettings__ConnectionString: "mongodb://username:password@mongo:27017/?authSource=admin"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"
 
       # Cache settings
@@ -159,6 +162,10 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: "MediaSet"
+      # Optional: enable MongoDB authentication (recommended for production)
+      # If enabled, update the API connection string above to include credentials
+      # MONGO_INITDB_ROOT_USERNAME: "[ReplaceThis]"
+      # MONGO_INITDB_ROOT_PASSWORD: "[ReplaceThis]"
     volumes:
       - mediaset-db:/data/db
     networks:
