@@ -7,6 +7,7 @@
 #
 # Required environment variables:
 #   - MONGODB_CONNECTION_STRING: MongoDB connection string (default: mongodb://mongo:27017)
+#   - AllowedHosts: Semicolon-separated list of hostnames/IPs the API is reachable at (e.g., sub.domain.com)
 #
 # Optional environment variables (for barcode/metadata lookup features):
 #   - OPENLIBRARY_CONTACT_EMAIL: Your email for OpenLibrary API (required for book lookup)
@@ -16,7 +17,7 @@
 #   - MUSICBRAINZ_USER_AGENT: MusicBrainz user agent (optional, e.g., "MyApp/1.0 (contact@example.com)")
 #   - UPCITEMDB_API_KEY: UpcItemDb API key (optional, but improves lookup accuracy)
 
-version: '3.8'
+version: "3.8"
 
 services:
   mediaset-api:
@@ -30,6 +31,13 @@ services:
       ASPNETCORE_URLS: "http://+:8080"
       ASPNETCORE_ENVIRONMENT: "Production"
 
+      # Restrict accepted Host headers to prevent host header injection attacks.
+      # Set this to the hostname(s) or IP(s) your instance is reachable at.
+      # Semicolon-separated. Use a leading dot for subdomain wildcards: .domain.com
+      # If accessed on a non-standard port, include it: 192.168.1.10:8080
+      # See Setup/CONTAINER_SETUP.md for full details.
+      AllowedHosts: "[ReplaceThis]"
+
       # Timezone configuration (defaults to UTC if not set)
       # Set this to your local timezone for accurate scheduling and logs
       # Examples: America/New_York, Europe/London, Asia/Tokyo
@@ -37,31 +45,34 @@ services:
       # TZ: "America/New_York"
 
       # Database configuration
+      # Without authentication (default):
       MediaSetDatabaseSettings__ConnectionString: "${MONGODB_CONNECTION_STRING:-mongodb://mongo:27017}"
+      # With authentication (if MongoDB auth is enabled on the mongo service below):
+      # MediaSetDatabaseSettings__ConnectionString: "mongodb://username:password@mongo:27017/?authSource=admin"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"
-      
+
       # Cache settings
       CacheSettings__EnableCaching: "true"
       CacheSettings__DefaultCacheDurationMinutes: "10"
       CacheSettings__MetadataCacheDurationMinutes: "10"
       CacheSettings__StatsCacheDurationMinutes: "10"
-      
+
       # Image storage configuration
       ImageConfiguration__StoragePath: "/app/data/images"
       ImageConfiguration__MaxFileSizeMb: "5"
       ImageConfiguration__AllowedImageExtensions: "jpg,jpeg,png"
       ImageConfiguration__HttpTimeoutSeconds: "30"
-      
+
       # OpenLibrary configuration (for book lookup)
       # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
       # OpenLibraryConfiguration__Timeout: "30"
       # OpenLibraryConfiguration__ContactEmail: "[ReplaceThis]"
-      
+
       # TMDB configuration (for movie lookup)
       # TmdbConfiguration__BaseUrl: "https://api.themoviedb.org/3/"
       # TmdbConfiguration__BearerToken: "[ReplaceThis]"
       # TmdbConfiguration__Timeout: "10"
-      
+
       # UpcItemDb configuration (for barcode lookup)
       # Free tier: 100 requests/day, 6 requests/minute burst
       # UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/"
@@ -70,21 +81,21 @@ services:
       # UpcItemDbConfiguration__MaxRequestsPerDay: "90"
       # UpcItemDbConfiguration__MinDelayBetweenRequestsMs: "1000"
       # UpcItemDbConfiguration__MaxRetryPauseSeconds: "65"
-      
+
       # IGDB configuration (for game lookup)
       # IgdbConfiguration__ClientId: "[ReplaceThis]"        # Twitch Client ID
       # IgdbConfiguration__ClientSecret: "[ReplaceThis]"    # Twitch Client Secret
-      
+
       # MusicBrainz configuration (for music lookup)
       # MusicBrainzConfiguration__BaseUrl: "https://musicbrainz.org/"
       # MusicBrainzConfiguration__Timeout: "10"
       # MusicBrainzConfiguration__UserAgent: "${MUSICBRAINZ_USER_AGENT:-MediaSet/1.0 (https://github.com/paulmfischer/MediaSet)}"
-      
+
       # Seq logging configuration (for centralized structured logging)
       # See Setup/SEQ_SETUP.md for detailed configuration guide
       # ExternalLogging__Enabled: "true"
       # ExternalLogging__SeqUrl: "[ReplaceThis]"
-      
+
       # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
       # HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
       # HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
@@ -105,20 +116,20 @@ services:
     volumes:
       # Persist uploaded images
       - mediaset-images:/app/data/images
-    
+
     depends_on:
       - mongo
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     networks:
       - mediaset
-  
+
   mediaset-ui:
     image: ghcr.io/paulmfischer/mediaset-ui:latest
     container_name: mediaset-ui
@@ -128,29 +139,33 @@ services:
     environment:
       # Server-side API URL - for Remix server to call API (uses Docker container name)
       apiUrl: "${API_URL:-http://mediaset-api:8080}"
-      
+
       # Client-side API URL - for browser to access API (must be externally accessible)
       # In production, this should be the public URL of your API
       clientApiUrl: "[ReplaceThis]"
-      
+
       # Node environment
       NODE_ENV: "production"
-      
+
       # Optional: Enable detailed error messages (not recommended for production)
       # SHOW_ERROR_DETAILS: "false"
-    
+
     depends_on:
       - mediaset-api
-    
+
     networks:
       - mediaset
-  
+
   mongo:
     image: mongo:7.0
     container_name: mediaset-mongo
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: "MediaSet"
+      # Optional: enable MongoDB authentication (recommended for production)
+      # If enabled, update the API connection string above to include credentials
+      # MONGO_INITDB_ROOT_USERNAME: "[ReplaceThis]"
+      # MONGO_INITDB_ROOT_PASSWORD: "[ReplaceThis]"
     volumes:
       - mediaset-db:/data/db
     networks:

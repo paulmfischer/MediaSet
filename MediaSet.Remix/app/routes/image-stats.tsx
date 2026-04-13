@@ -1,5 +1,5 @@
 import { type ActionFunctionArgs, type MetaFunction } from '@remix-run/node';
-import { useLoaderData, Link, Form, useNavigation } from '@remix-run/react';
+import { useLoaderData, useActionData, Link, Form, useNavigation } from '@remix-run/react';
 import Tabs, { type TabConfig } from '~/components/common/tabs';
 import {
   getImageStats,
@@ -43,7 +43,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   } else if (intent === 'reset-lookup') {
     const entityType = formData.get('entityType') as string;
     const entityIdsRaw = formData.get('entityIds') as string;
-    const entityIds = JSON.parse(entityIdsRaw) as string[];
+    let entityIds: string[];
+    try {
+      const parsed = JSON.parse(entityIdsRaw);
+      if (!Array.isArray(parsed) || !parsed.every((id) => typeof id === 'string')) {
+        throw new Error('Invalid format');
+      }
+      entityIds = parsed;
+    } catch {
+      return { error: 'Invalid entity IDs format.' };
+    }
     await resetImageLookup(entityIds, entityType);
   }
   return null;
@@ -113,6 +122,7 @@ function groupOrphanedByEntityType(files: OrphanedImageFile[]): Record<string, O
 
 export default function ImageStatsPage() {
   const { stats } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isDeleting = navigation.state === 'submitting' && navigation.formData?.get('intent') === 'delete-orphaned';
   const isResettingLookup = navigation.state === 'submitting' && navigation.formData?.get('intent') === 'reset-lookup';
@@ -343,6 +353,12 @@ export default function ImageStatsPage() {
       <p className="text-sm text-zinc-400" suppressHydrationWarning>
         Last updated: {new Date(stats.lastUpdated).toLocaleString()}
       </p>
+
+      {actionData?.error && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+          {actionData.error}
+        </div>
+      )}
 
       {/* Overview */}
       <div>

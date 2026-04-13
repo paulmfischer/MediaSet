@@ -225,7 +225,7 @@ internal static class EntityApi
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error creating {entityType}", entityType);
-                return TypedResults.BadRequest($"Error creating entity: {ex.Message}");
+                return TypedResults.BadRequest("An error occurred while creating the entity.");
             }
         }).DisableAntiforgery();
 
@@ -405,7 +405,7 @@ internal static class EntityApi
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
-                return TypedResults.BadRequest($"Error updating entity: {ex.Message}");
+                return TypedResults.BadRequest("An error occurred while updating the entity.");
             }
         }).DisableAntiforgery();
 

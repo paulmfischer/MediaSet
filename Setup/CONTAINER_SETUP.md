@@ -3,16 +3,33 @@
 This guide explains how to run the MediaSet application using Docker Compose and the provided `docker-compose.prod.yml`. It is written for someone who wants to run the application locally (tester / end-user), not for development work.
 
 Prerequisites
+
 - Docker Engine (20.10+) or Podman with Docker-compatibility
 - Docker Compose v2 (the `docker compose` CLI) or `podman compose`
 - Sufficient disk space for images and MongoDB data
 
 Overview
+
 - The production compose file `docker-compose.prod.yml` defines three services: `mediaset-api`, `mediaset-ui`, and `mongo`.
 
 Configuration approach
 
 - Edit `docker-compose.prod.yml` directly: open the file and update the `environment:` entries under each service (for example `mediaset-api` and `mediaset-ui`). This is the recommended approach for end users — the compose file is self-contained and explicit.
+
+AllowedHosts
+
+The `AllowedHosts` setting controls which `Host` header values the API will accept. It defaults to `localhost`. In production you should set it to the hostname(s) or IP address(es) your instance is reachable at to prevent host header injection attacks.
+
+- Multiple values are semicolon-separated: `localhost;mediaset.domain.com`
+- IP addresses are supported: `192.168.50.10;localhost`
+- Use a leading dot as a subdomain wildcard: `.domain.com` matches `mediaset.domain.com`, `www.domain.com`, etc.
+- If the API is accessed on a non-standard port, include the port in the value: `192.168.50.10:8080`
+
+Set it in `docker-compose.prod.yml` under the `mediaset-api` environment block — replace the `[ReplaceThis]` placeholder with your hostname(s):
+
+```yaml
+AllowedHosts: "mediaset.domain.com"
+```
 
 Integration placeholders and enabling
 
@@ -24,11 +41,12 @@ By default integration settings (OpenLibrary, TMDB, IGDB, etc.) are commented ou
 
 Placeholders you must replace (examples)
 
+- `AllowedHosts` — replace `[ReplaceThis]` with the hostname(s) your API is reachable at (e.g., `mediaset.domain.com`). See the AllowedHosts section above for syntax details.
+- `clientApiUrl` — replace `[ReplaceThis]` with the API URL browsers should use (e.g., `http://localhost:8080`).
 - `OpenLibraryConfiguration__ContactEmail` — replace `[ReplaceThis]` with your contact email for OpenLibrary.
 - `TmdbConfiguration__BearerToken` — replace `[ReplaceThis]` with your TMDB bearer token.
 - `IgdbConfiguration__ClientId` — replace `[ReplaceThis]` with your Twitch Client ID.
 - `IgdbConfiguration__ClientSecret` — replace `[ReplaceThis]` with your Twitch Client Secret.
-- `clientApiUrl` — replace `[ReplaceThis]` with the API URL browsers should use (e.g., `http://localhost:8080`).
 
 Starting the application
 
@@ -54,6 +72,7 @@ docker ps --filter "name=mediaset"
 ```
 
 Access the application
+
 - Frontend (UI): http://localhost:3000
 - API: http://localhost:8080
 
@@ -138,4 +157,3 @@ Where to get help
 - Check container logs (`docker compose -f docker-compose.prod.yml logs`) for errors.
 - Inspect service-specific logs with `docker logs <container-name>` (container names appear in `docker ps`).
 - Open an issue in the repository if a reproducible problem remains.
-
