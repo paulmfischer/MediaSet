@@ -3,7 +3,14 @@ import { mockApiResponse } from '~/test/mocks';
 
 // Now import after mocking
 import { lookup, getIdentifierTypeForField, isLookupError } from '~/api/lookup-data.server';
-import { Entity, BookLookupResponse, MovieLookupResponse, GameLookupResponse, MusicLookupResponse } from '~/models';
+import {
+  Entity,
+  IdentifierType,
+  BookLookupResponse,
+  MovieLookupResponse,
+  GameLookupResponse,
+  MusicLookupResponse,
+} from '~/models';
 
 describe('lookup-data.server.ts', () => {
   beforeEach(() => {
@@ -68,17 +75,26 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('returns a LookupError for unsupported entity type', async () => {
-        const mockResponse: BookLookupResponse[] = [];
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockResponse));
-
-        // Cast to force an unsupported entity type through
-        const result = await lookup('unsupported' as Entity, 'isbn', { isbn: '123' });
+      it('returns a LookupError for invalid identifier type', async () => {
+        // Cast to force an unsupported identifier type through
+        const result = await lookup(Entity.Books, '../../etc/passwd' as unknown as IdentifierType, { isbn: '123' });
 
         expect(isLookupError(result)).toBe(true);
         if (isLookupError(result)) {
           expect(result.statusCode).toBe(400);
         }
+      });
+
+      it('encodes path traversal sequences in identifierValue', async () => {
+        const fetchSpy = vi.fn().mockResolvedValueOnce(mockApiResponse([]));
+        global.fetch = fetchSpy;
+
+        await lookup(Entity.Books, 'isbn', { isbn: '../../admin/delete' });
+
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        const calledUrl = fetchSpy.mock.calls[0][0] as string;
+        expect(calledUrl).not.toContain('../');
+        expect(calledUrl).toContain(encodeURIComponent('../../admin/delete'));
       });
     });
 

@@ -21,8 +21,12 @@ export function toTitleCase(str: string | undefined) {
   return str.replace(/\w\S*/g, (text: string) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
 }
 
-export function getEntityFromParams(params: Params<string>) {
-  return Entity[toTitleCase(params.entity) as keyof typeof Entity];
+export function getEntityFromParams(params: Params<string>): Entity {
+  const entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];
+  if (!entity) {
+    throw new Response(`Unknown entity type: ${params.entity}`, { status: 404 });
+  }
+  return entity;
 }
 
 export function singular(entityType: Entity) {

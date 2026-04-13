@@ -1,8 +1,9 @@
 import { baseUrl } from '~/constants.server';
 import { serverLogger } from '~/utils/serverLogger';
 import { apiFetch } from '~/utils/apiFetch.server';
+import { Entity } from '~/models';
 
-export async function resetImageLookup(entityIds: string[], entityType: string): Promise<{ reset: number }> {
+export async function resetImageLookup(entityIds: string[], entityType: Entity): Promise<{ reset: number }> {
   try {
     const response = await apiFetch(`${baseUrl}/images/lookup/${entityType}`, {
       method: 'DELETE',
