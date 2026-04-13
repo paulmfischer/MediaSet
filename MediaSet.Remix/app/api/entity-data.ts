@@ -28,9 +28,10 @@ export async function searchEntities<TEntity extends BaseEntity>(
     orderBy,
   });
   try {
-    const response = await apiFetch(
-      `${baseUrl}/${entityType}/search?searchText=${searchText ?? ''}&orderBy=${orderBy}`
-    );
+    const searchParams = new URLSearchParams();
+    searchParams.set('searchText', searchText ?? '');
+    searchParams.set('orderBy', orderBy);
+    const response = await apiFetch(`${baseUrl}/${entityType}/search?${searchParams.toString()}`);
     if (!response.ok) {
       serverLogger.error(`Failed to fetch ${entityType} search results`, {
         operation: 'searchEntities',
@@ -71,9 +72,12 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
     }
   );
   try {
-    const response = await apiFetch(
-      `${baseUrl}/${entityType}/pagedsearch?searchText=${searchText ?? ''}&orderBy=${orderBy}&page=${page}&pageSize=${pageSize}`
-    );
+    const searchParams = new URLSearchParams();
+    searchParams.set('searchText', searchText ?? '');
+    searchParams.set('orderBy', orderBy);
+    searchParams.set('page', String(page));
+    searchParams.set('pageSize', String(pageSize));
+    const response = await apiFetch(`${baseUrl}/${entityType}/pagedsearch?${searchParams.toString()}`);
     if (!response.ok) {
       serverLogger.error(`Failed to fetch ${entityType} paged search results`, {
         operation: 'pagedSearchEntities',
