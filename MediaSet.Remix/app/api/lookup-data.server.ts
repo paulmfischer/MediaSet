@@ -46,18 +46,24 @@ export function getIdentifierTypeForField(entityType: Entity, fieldName: string)
   return 'isbn';
 }
 
+const VALID_IDENTIFIER_TYPES = new Set<string>(['isbn', 'lccn', 'oclc', 'olid', 'upc', 'ean', 'entity']);
+
 export async function lookup(
   entityType: Entity,
   identifierType: IdentifierType,
   searchParams: Record<string, string>
 ): Promise<Array<BookEntity | MovieEntity | GameEntity | MusicEntity> | LookupError> {
+  if (!VALID_IDENTIFIER_TYPES.has(identifierType)) {
+    return { message: `Invalid identifier type: ${identifierType}`, statusCode: 400 } as LookupError;
+  }
+
   let url: string;
   if (identifierType === 'entity') {
     const qs = new URLSearchParams(searchParams).toString();
     url = `${baseUrl}/lookup/${entityType}/entity?${qs}`;
   } else {
     const identifierValue = searchParams[identifierType] ?? Object.values(searchParams)[0] ?? '';
-    url = `${baseUrl}/lookup/${entityType}/${identifierType}/${identifierValue}`;
+    url = `${baseUrl}/lookup/${entityType}/${identifierType}/${encodeURIComponent(identifierValue)}`;
   }
 
   const response = await fetch(url);

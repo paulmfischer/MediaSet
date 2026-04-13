@@ -32,10 +32,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   invariant(params.entity, 'Missing entity param');
   invariant(params.entityId, 'Missing entityId param');
+  const entityType = getEntityFromParams(params);
   const formData = await request.formData();
   const intent = formData.get('intent');
   if (intent === 'clear-image-lookup') {
-    await resetImageLookup([params.entityId], params.entity);
+    await resetImageLookup([params.entityId], entityType);
   }
   return null;
 };
