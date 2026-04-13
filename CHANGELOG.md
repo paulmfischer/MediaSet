@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.7.1](https://github.com/paulmfischer/MediaSet/compare/v3.7.0...v3.7.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* **security:** encode query params in search endpoints closes [#572](https://github.com/paulmfischer/MediaSet/issues/572) ([#584](https://github.com/paulmfischer/MediaSet/issues/584)) ([bfe76b5](https://github.com/paulmfischer/MediaSet/commit/bfe76b5d7b0b98be9d682f9a6fd24cfb578c5a5a))
+* **security:** prevent SSRF in image download via IP validation and manual redirect handling closes [#570](https://github.com/paulmfischer/MediaSet/issues/570) ([#581](https://github.com/paulmfischer/MediaSet/issues/581)) ([ded2072](https://github.com/paulmfischer/MediaSet/commit/ded2072b26df2a0fee3aff7a7787e6e14cd8ebb2))
+* **security:** validate entity/identifier types and encode URL segments closes [#571](https://github.com/paulmfischer/MediaSet/issues/571) ([#583](https://github.com/paulmfischer/MediaSet/issues/583)) ([90bd54d](https://github.com/paulmfischer/MediaSet/commit/90bd54dfc75394472e6686355edb78c0f799bb2b))
+
 ## [3.7.0](https://github.com/paulmfischer/MediaSet/compare/v3.6.1...v3.7.0) (2026-04-09)
 
 
