@@ -278,6 +278,8 @@ else
 // Configure SerilogTracing to capture spans and write to Seq
 using var listener = LoggingExtensions.ConfigureSerilogTracing();
 
+var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger");
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
@@ -288,13 +290,12 @@ app.UseMiddleware<TraceIdHeaderMiddleware>();
 app.UseHttpLoggingFilterMiddleware();
 app.UseHttpLoggingMiddleware();
 
-// turn on swagger for all environments for now
 // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
-app.UseSwagger();
-app.UseSwaggerUI();
-// }
+if (app.Environment.IsDevelopment() || enableSwagger)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 // Configure static file serving for images folder
 if (imageConfig != null)
