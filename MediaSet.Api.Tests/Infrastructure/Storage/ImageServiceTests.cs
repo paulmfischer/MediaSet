@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -216,8 +217,8 @@ public class ImageServiceTests : IDisposable
     [Test]
     public async Task DownloadAndSaveImageAsync_WithValidUrl_DownloadsSavesSuccessfully()
     {
-        // Arrange
-        var imageUrl = "https://example.com/image.jpg";
+        // Arrange — use a public IP literal to avoid real DNS lookups in unit tests
+        var imageUrl = "http://1.2.3.4/image.jpg";
         var entityType = "movies";
         var entityId = "456";
         var imageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
@@ -298,7 +299,7 @@ public class ImageServiceTests : IDisposable
     public void DownloadAndSaveImageAsync_WithUnsupportedMimeType_ThrowsArgumentException()
     {
         // Arrange
-        var imageUrl = "https://example.com/file.pdf";
+        var imageUrl = "http://1.2.3.4/file.pdf";
         var entityType = "movies";
         var entityId = "456";
         var pdfData = new byte[] { 0x25, 0x50, 0x44, 0x46 };
@@ -336,7 +337,7 @@ public class ImageServiceTests : IDisposable
     public void DownloadAndSaveImageAsync_WithDownloadSizeExceedsLimit_ThrowsArgumentException()
     {
         // Arrange
-        var imageUrl = "https://example.com/large-image.jpg";
+        var imageUrl = "http://1.2.3.4/large-image.jpg";
         var entityType = "movies";
         var entityId = "456";
         var largeData = new byte[(10 * 1024 * 1024) + 1]; // Exceeds 10MB limit
@@ -369,6 +370,144 @@ public class ImageServiceTests : IDisposable
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
         }
+    }
+
+    #endregion
+
+    #region SSRF Protection Tests
+
+    [TestCase("http://127.0.0.1/image.jpg")]
+    [TestCase("http://192.168.1.1/image.jpg")]
+    [TestCase("http://10.0.0.1/image.jpg")]
+    [TestCase("http://172.16.0.1/image.jpg")]
+    [TestCase("http://169.254.169.254/latest/meta-data/")]
+    public void DownloadAndSaveImageAsync_WithPrivateIpUrl_ThrowsArgumentException(string imageUrl)
+    {
+        // Act & Assert — no HTTP mock needed; SSRF check fires before any network call
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _imageService!.DownloadAndSaveImageAsync(imageUrl, "movies", "456", CancellationToken.None));
+        Assert.That(ex?.Message, Does.Contain("private or reserved"));
+    }
+
+    [Test]
+    public async Task DownloadAndSaveImageAsync_WithRedirectToPublicIp_FollowsAndDownloads()
+    {
+        // Arrange — first request redirects; second returns the image
+        var initialUrl = "http://1.2.3.4/redirect";
+        var finalUrl = "http://5.6.7.8/image.jpg";
+        var entityType = "movies";
+        var entityId = "456";
+        var imageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+
+        var redirectResponse = new HttpResponseMessage(HttpStatusCode.Found);
+        redirectResponse.Headers.Location = new Uri(finalUrl);
+
+        var imageContent = new ByteArrayContent(imageData);
+        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        imageContent.Headers.ContentLength = imageData.Length;
+        var imageResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = imageContent };
+
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(redirectResponse)
+            .ReturnsAsync(imageResponse);
+
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(
+            _storageProviderMock!.Object,
+            Options.Create(_imageConfig!),
+            httpClient,
+            _loggerMock!.Object);
+
+        _storageProviderMock
+            .Setup(sp => sp.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await imageService.DownloadAndSaveImageAsync(initialUrl, entityType, entityId, CancellationToken.None);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
+        Assert.That(result.FileSize, Is.EqualTo(imageData.Length));
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Exactly(2),
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>());
+    }
+
+    [Test]
+    public void DownloadAndSaveImageAsync_WithRedirectToPrivateIp_ThrowsArgumentException()
+    {
+        // Arrange — first request returns a redirect to a private IP
+        var initialUrl = "http://1.2.3.4/redirect";
+        var privateUrl = "http://192.168.0.1/internal.jpg";
+
+        var redirectResponse = new HttpResponseMessage(HttpStatusCode.Found);
+        redirectResponse.Headers.Location = new Uri(privateUrl);
+
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(redirectResponse);
+
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(
+            _storageProviderMock!.Object,
+            Options.Create(_imageConfig!),
+            httpClient,
+            _loggerMock!.Object);
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
+        Assert.That(ex?.Message, Does.Contain("private or reserved"));
+    }
+
+    [Test]
+    public void DownloadAndSaveImageAsync_WithTooManyRedirects_ThrowsArgumentException()
+    {
+        // Arrange — every request redirects to the next URL
+        var initialUrl = "http://1.2.3.4/redirect-0";
+
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((req, _) =>
+            {
+                var redirectNum = req.RequestUri!.AbsolutePath.Split('-').Last();
+                var nextNum = int.Parse(redirectNum) + 1;
+                var nextUrl = $"http://1.2.3.4/redirect-{nextNum}";
+                var resp = new HttpResponseMessage(HttpStatusCode.Found);
+                resp.Headers.Location = new Uri(nextUrl);
+                return Task.FromResult(resp);
+            });
+
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(
+            _storageProviderMock!.Object,
+            Options.Create(_imageConfig!),
+            httpClient,
+            _loggerMock!.Object);
+
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
+        Assert.That(ex?.Message, Does.Contain("redirect limit"));
     }
 
     #endregion
