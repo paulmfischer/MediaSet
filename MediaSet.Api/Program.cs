@@ -89,6 +89,11 @@ if (imageConfig != null)
     {
         var config = serviceProvider.GetRequiredService<IOptions<ImageConfiguration>>().Value;
         client.Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds);
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        // Disable auto-redirect so ImageService can SSRF-validate each redirect hop manually
+        AllowAutoRedirect = false
     });
 }
 var openLibraryConfig = builder.Configuration.GetSection(nameof(OpenLibraryConfiguration));

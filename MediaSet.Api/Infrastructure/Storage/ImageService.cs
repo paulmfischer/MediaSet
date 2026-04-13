@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLaborsImage = SixLabors.ImageSharp.Image;
@@ -159,7 +160,10 @@ public class ImageService : IImageService
                 throw new ArgumentException("Image URL must be a valid HTTP or HTTPS URL");
             }
 
-            // Download image (follows redirects automatically; validates content type from response headers)
+            // Validate the initial URL does not target a private/reserved address (SSRF protection)
+            await SsrfGuard.ValidateUrlAsync(uri, cancellationToken);
+
+            // Download image, following redirects manually so each hop is SSRF-validated
             var (imageData, mimeType) = await DownloadImageDataAsync(imageUrl, cancellationToken);
 
             // Validate content type against configured allowed extensions
@@ -331,46 +335,88 @@ public class ImageService : IImageService
 
     /// <summary>
     /// Download image data from URL with size limit enforcement.
-    /// Follows redirects automatically and returns image bytes plus the Content-Type from the final response.
+    /// Follows redirects manually, SSRF-validating each redirect target before following it.
+    /// Returns image bytes plus the Content-Type from the final response.
     /// </summary>
     private async Task<(byte[] Data, string ContentType)> DownloadImageDataAsync(string imageUrl, CancellationToken cancellationToken)
     {
+        const int maxRedirects = 10;
+        var currentUrl = imageUrl;
+        var redirectCount = 0;
+
         try
         {
-            using var response = await _httpClient.GetAsync(imageUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var contentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
-
-            // Check Content-Length header if available
-            if (response.Content.Headers.ContentLength.HasValue)
+            while (true)
             {
-                var maxSizeBytes = _config.GetMaxFileSizeBytes();
-                if (response.Content.Headers.ContentLength > maxSizeBytes)
+                using var request = new HttpRequestMessage(HttpMethod.Get, currentUrl);
+                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                // Handle redirects manually so each hop is SSRF-validated
+                if (response.StatusCode is HttpStatusCode.MovedPermanently
+                    or HttpStatusCode.Found
+                    or HttpStatusCode.SeeOther
+                    or HttpStatusCode.TemporaryRedirect
+                    or HttpStatusCode.PermanentRedirect)
                 {
-                    _logger.LogWarning("Content-Length {ContentLength} exceeds maximum {MaxSize} for {ImageUrl}",
-                        response.Content.Headers.ContentLength, maxSizeBytes, imageUrl);
-                    throw new ArgumentException($"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
+                    if (redirectCount >= maxRedirects)
+                    {
+                        throw new ArgumentException($"Image URL exceeded the maximum redirect limit of {maxRedirects}.");
+                    }
+
+                    var location = response.Headers.Location;
+                    if (location == null)
+                    {
+                        throw new ArgumentException("Redirect response is missing a Location header.");
+                    }
+
+                    // Resolve relative redirect URIs against the current URL
+                    if (!location.IsAbsoluteUri)
+                    {
+                        location = new Uri(new Uri(currentUrl), location);
+                    }
+
+                    // Validate the redirect target is not a private/reserved address
+                    await SsrfGuard.ValidateUrlAsync(location, cancellationToken);
+
+                    currentUrl = location.ToString();
+                    redirectCount++;
+                    continue;
                 }
-            }
 
-            // Read response stream with size limit
-            var maxSizeBytes2 = _config.GetMaxFileSizeBytes();
-            await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            await using var limitedStream = new SizeLimitedStream(contentStream, maxSizeBytes2);
-            await using var memoryStream = new MemoryStream();
+                response.EnsureSuccessStatusCode();
 
-            try
-            {
-                await limitedStream.CopyToAsync(memoryStream, cancellationToken);
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
-            {
-                _logger.LogWarning("Downloaded image exceeded size limit for {ImageUrl}", imageUrl);
-                throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
-            }
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
 
-            return (memoryStream.ToArray(), contentType);
+                // Check Content-Length header if available
+                if (response.Content.Headers.ContentLength.HasValue)
+                {
+                    var maxSizeBytes = _config.GetMaxFileSizeBytes();
+                    if (response.Content.Headers.ContentLength > maxSizeBytes)
+                    {
+                        _logger.LogWarning("Content-Length {ContentLength} exceeds maximum {MaxSize} for {ImageUrl}",
+                            response.Content.Headers.ContentLength, maxSizeBytes, imageUrl);
+                        throw new ArgumentException($"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
+                    }
+                }
+
+                // Read response stream with size limit
+                var maxSizeBytes2 = _config.GetMaxFileSizeBytes();
+                await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var limitedStream = new SizeLimitedStream(contentStream, maxSizeBytes2);
+                await using var memoryStream = new MemoryStream();
+
+                try
+                {
+                    await limitedStream.CopyToAsync(memoryStream, cancellationToken);
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
+                {
+                    _logger.LogWarning("Downloaded image exceeded size limit for {ImageUrl}", imageUrl);
+                    throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
+                }
+
+                return (memoryStream.ToArray(), contentType);
+            }
         }
         catch (HttpRequestException ex)
         {
