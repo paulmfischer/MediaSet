@@ -30,6 +30,7 @@ using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;
+using System.Threading.RateLimiting;
 
 // Configure bootstrap logger for very early configuration
 LoggingExtensions.ConfigureBootstrapLogger();
@@ -275,6 +276,21 @@ else
     }
 }
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("client-logs", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // Configure SerilogTracing to capture spans and write to Seq
 using var listener = LoggingExtensions.ConfigureSerilogTracing();
 
@@ -283,6 +299,7 @@ var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger");
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 // Configure logging middleware
 // Set trace ID early, before any logging occurs (must be before Swagger and other middleware)

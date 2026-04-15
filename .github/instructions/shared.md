@@ -65,6 +65,29 @@ When working on tasks that require code changes:
    - Include relevant description summarizing changes and motivation
    - Reference related issues with `closes #N` or `refs #N`
 
+## Local Configuration (User Secrets)
+
+Sensitive settings (API keys, internal URLs, credentials) are never stored in committed config files. Use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) to override settings locally.
+
+```bash
+# Set a user secret (nested keys use ":" as separator)
+dotnet user-secrets set "SectionName:Key" "value" --project MediaSet.Api/
+
+# List all configured secrets
+dotnet user-secrets list --project MediaSet.Api/
+
+# Remove a secret
+dotnet user-secrets remove "SectionName:Key" --project MediaSet.Api/
+```
+
+**Example — enabling Seq logging locally:**
+```bash
+dotnet user-secrets set "ExternalLogging:Enabled" "true" --project MediaSet.Api/
+dotnet user-secrets set "ExternalLogging:SeqUrl" "http://<your-seq-host>:5341" --project MediaSet.Api/
+```
+
+User secrets override `appsettings.json` and `appsettings.Development.json` at runtime and are stored outside the repo at `~/.microsoft/usersecrets/<id>/secrets.json`. They are never committed.
+
 ## Development Commands
 
 ```bash

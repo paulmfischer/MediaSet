@@ -124,9 +124,7 @@ public static class LoggingExtensions
         {
             logging.LoggingFields =
                 HttpLoggingFields.RequestMethod |
-                HttpLoggingFields.RequestPath |
-                HttpLoggingFields.RequestBody |
-                HttpLoggingFields.ResponseBody;
+                HttpLoggingFields.RequestPath;
             logging.RequestHeaders.Add("User-Agent");
             logging.RequestHeaders.Add("traceparent");
             logging.ResponseHeaders.Add("traceparent");
