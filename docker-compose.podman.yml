@@ -38,6 +38,8 @@ services:
       UpcItemDbConfiguration__ApiKey: "${UPCITEMDB_API_KEY}"
       IgdbConfiguration__ClientId: "${IgdbConfiguration__ClientId}"
       IgdbConfiguration__ClientSecret: "${IgdbConfiguration__ClientSecret}"
+      ExternalLogging__Enabled: "${ExternalLogging__Enabled:-false}"
+      ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
     volumes:
       - ./MediaSet.Api:/app:Z
       - mediaset-api-bin:/app/bin:Z
