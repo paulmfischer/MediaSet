@@ -20,7 +20,8 @@ public static class LogsApi
             .WithName("LogClientEvent")
             .WithDescription("Accept a log event from the client and route to the configured logger")
             .Accepts<ClientLogEvent>("application/json")
-            .Produces(StatusCodes.Status202Accepted);
+            .Produces(StatusCodes.Status202Accepted)
+            .RequireRateLimiting("client-logs");
     }
 
     private static IResult HandleClientLog(
@@ -28,6 +29,11 @@ public static class LogsApi
         ILogger<Program> logger,
         IHostEnvironment environment)
     {
+        if (!Enum.TryParse<LogLevel>(logEvent.Level, ignoreCase: true, out var logLevel))
+        {
+            return Results.BadRequest($"Invalid log level: {logEvent.Level}");
+        }
+
         // Merge client properties with server-enriched metadata
         var scopeProperties = new Dictionary<string, object?>(logEvent.Properties ?? new Dictionary<string, object?>())
         {
@@ -37,11 +43,6 @@ public static class LogsApi
 
         using (logger.BeginScope(scopeProperties))
         {
-            // Parse the log level from the client
-            var logLevel = Enum.TryParse<LogLevel>(logEvent.Level, ignoreCase: true, out var level)
-                ? level
-                : LogLevel.Information;
-
             logger.Log(logLevel, "{Message}", logEvent.Message);
         }
 

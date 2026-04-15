@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MediaSet.Api.Features.Logs.Models;
 
 /// <summary>
@@ -5,6 +7,6 @@ namespace MediaSet.Api.Features.Logs.Models;
 /// </summary>
 public record ClientLogEvent(
     string Level,
-    string Message,
+    [MaxLength(1024)] string Message,
     DateTimeOffset Timestamp,
     Dictionary<string, object?>? Properties);
