@@ -104,60 +104,57 @@ clean_nuget_cache() {
 
 # Function to start development environment
 start_dev() {
-    local target="${1:-all}"
+    local target="${1}"
     local clean_build="${2}"
 
-    # If only --clean is provided (no explicit target), treat target as all
+    # If only --clean is provided (no explicit target), treat as default (api+ui)
     if [[ "$target" == "--clean" ]]; then
-        target="all"
+        target=""
         clean_build="--clean"
     fi
-    echo "🔧 Building and starting development containers (target: $target)..."
-    # Clean up any dangling images from previous builds before rebuilding
+
     prune_dev_images
-    # Clear NuGet cache to prevent package resolution issues
     clean_nuget_cache
 
-    # Check if --clean flag was passed for complete rebuild
     local build_flags="--build"
     if [ "$clean_build" = "--clean" ]; then
         build_flags="--build --no-cache"
         echo "🧹 Forcing clean rebuild (skipping Podman layer cache)..."
     fi
 
-    if [[ -z "$target" || "$target" == "all" ]]; then
+    if [[ "$target" == "all" ]]; then
+        echo "🔧 Building and starting all containers..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d
+        check_health "all"
+    elif [[ -z "$target" ]]; then
+        echo "🔧 Building and starting API and UI..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d api ui
+        check_health "ui"
     else
-        # Normalize common aliases
+        # Normalize aliases and start a single service
         case "$target" in
             backend) target="api" ;;
-            remix) target="ui" ;;
-            mongo) target="mongodb" ;;
-            api+ui|ui+api|app)
-                echo "🚀 Starting API and UI..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d api ui
-                check_health "ui"  # ensures api+ui+mongo
-                echo "✅ Started API and UI"
-                return
-                ;;
+            remix)   target="ui" ;;
+            mongo)   target="mongodb" ;;
         esac
+        echo "🔧 Building and starting $target..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d "$target"
+        check_health "$target"
     fi
-
-    check_health "$target"
 
     echo ""
     echo "🎉 Development environment is ready!"
     echo ""
     echo "📋 Available services:"
-    echo "   🌐 Frontend (Remix):     http://localhost:3000"
+    echo "   🌐 UI (Remix):           http://localhost:3000"
     echo "   🚀 API (.NET):           http://localhost:5000"
     echo "   🗄️  MongoDB:              mongodb://localhost:27017"
     echo ""
     echo "📝 Useful commands:"
     echo "   View logs:               ./dev.sh logs [service] [-f]"
-    echo "   Stop services:           ./dev.sh stop [api|ui|mongo]"
-    echo "   Restart services:        ./dev.sh restart [api|ui|mongo]"
+    echo "   Stop api+ui:             ./dev.sh stop"
+    echo "   Stop all:                ./dev.sh stop all"
+    echo "   Restart api+ui:          ./dev.sh restart"
     echo "   Clean (keep data):       ./dev.sh clean"
     echo "   Clean & purge data:      ./dev.sh clean --purge"
     echo ""
@@ -182,24 +179,20 @@ show_logs() {
 
 # Function to stop services
 stop_dev() {
-    local target="${1:-all}"
-    if [[ -z "$target" || "$target" == "all" ]]; then
+    local target="${1}"
+    if [[ "$target" == "all" ]]; then
         echo "🛑 Stopping all development containers..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE down
+    elif [[ -z "$target" ]]; then
+        echo "🛑 Stopping API and UI (MongoDB keeps running)..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE stop api ui
     else
         case "$target" in
             backend) target="api" ;;
-            remix) target="ui" ;;
-            mongo) target="mongodb" ;;
-            api+ui|ui+api|app)
-                echo "🛑 Stopping API and UI (leaving MongoDB running)..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE stop api ui
-                echo "✅ Stopped API and UI"
-                prune_dev_images
-                return
-                ;;
+            remix)   target="ui" ;;
+            mongo)   target="mongodb" ;;
         esac
-        echo "🛑 Stopping container: $target (leaving others running) ..."
+        echo "🛑 Stopping $target (leaving others running)..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE stop "$target"
     fi
     prune_dev_images
@@ -208,24 +201,22 @@ stop_dev() {
 
 # Function to restart services
 restart_dev() {
-    local target="${1:-all}"
-    if [[ -z "$target" || "$target" == "all" ]]; then
+    local target="${1}"
+    if [[ "$target" == "all" ]]; then
         echo "🔄 Restarting all services..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE restart
         check_health "all"
+    elif [[ -z "$target" ]]; then
+        echo "🔄 Restarting API and UI..."
+        $COMPOSE_COMMAND -f $COMPOSE_FILE restart api ui
+        check_health "ui"
     else
         case "$target" in
             backend) target="api" ;;
-            remix) target="ui" ;;
-            mongo) target="mongodb" ;;
-            api+ui|ui+api|app)
-                echo "🔄 Restarting API and UI..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE restart api ui
-                check_health "ui"  # ensures api+ui+mongo
-                return
-                ;;
+            remix)   target="ui" ;;
+            mongo)   target="mongodb" ;;
         esac
-        echo "🔄 Restarting service: $target ..."
+        echo "🔄 Restarting $target..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE restart "$target"
         check_health "$target"
     fi
@@ -325,10 +316,10 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart|logs|status|shell|clean|rebuild} [service]"
         echo ""
         echo "Commands:"
-        echo "  start [service]          - Start environment or a single service (use 'api+ui' or 'app' for both)"
+        echo "  start [service|all]      - Start api+ui by default, or a specific service, or 'all' (includes mongo)"
         echo "  start [service] --clean  - Start with clean rebuild (no Podman layer cache)"
-        echo "  stop [service]           - Stop environment or a single service (use 'api+ui' or 'app' for both)"
-        echo "  restart [service]        - Restart all or a single service (use 'api+ui' or 'app' to restart both)"
+        echo "  stop [service|all]       - Stop api+ui by default, or a specific service, or 'all' (includes mongo)"
+        echo "  restart [service|all]    - Restart api+ui by default, or a specific service, or 'all'"
         echo "  logs [service]           - Show recent logs (add -f to follow)"
         echo "  status                   - Show container status"
         echo "  shell                    - Enter container shell (api|ui|mongo)"
@@ -338,14 +329,15 @@ case "$1" in
         echo "  cache-clean              - Clear NuGet cache (useful if builds fail with package not found errors)"
         echo ""
         echo "Examples:"
-        echo "  $0 start                # Start everything"
-        echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
-        echo "  $0 start app            # Start API and UI (MongoDB if needed)"
-        echo "  $0 start --clean        # Clean rebuild (full rebuild without Podman layer cache)"
-        echo "  $0 stop ui              # Stop only the UI (keep API/Mongo running)"
-        echo "  $0 stop app             # Stop API and UI (keep MongoDB running)"
+        echo "  $0 start                # Start api+ui (mongo starts automatically if needed)"
+        echo "  $0 start all            # Start everything including mongo"
+        echo "  $0 start api            # Start just the API"
+        echo "  $0 start --clean        # Clean rebuild of api+ui (no Podman layer cache)"
+        echo "  $0 stop                 # Stop api+ui (mongo keeps running)"
+        echo "  $0 stop all             # Stop everything"
+        echo "  $0 stop ui              # Stop only the UI"
+        echo "  $0 restart              # Restart api+ui"
         echo "  $0 restart api          # Restart only the API"
-        echo "  $0 restart api+ui       # Restart API and UI (Mongo stays up)"
         echo "  $0 logs api             # Show recent API logs"
         echo "  $0 logs api -f          # Follow API logs (Ctrl+C to exit)"
         echo "  $0 shell ui"
