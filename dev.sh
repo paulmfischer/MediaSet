@@ -3,131 +3,26 @@
 # MediaSet Development Environment Setup Script
 set -e
 
-# Function to detect and setup container runtime
-setup_container_runtime() {
-    echo "🚀 Setting up MediaSet Development Environment"
+COMPOSE_COMMAND="podman-compose"
+COMPOSE_FILE="docker-compose.dev.yml"
 
-    # Detect container runtime (Docker or Podman)
-    CONTAINER_RUNTIME=""
-    COMPOSE_COMMAND=""
-
-    if command -v podman &> /dev/null; then
-        CONTAINER_RUNTIME="podman"
-        echo "✅ Found Podman"
-        
-        # Check for podman-compose or docker-compose
-        if command -v podman-compose &> /dev/null; then
-            COMPOSE_COMMAND="podman-compose"
-            echo "✅ Using podman-compose"
-        elif command -v docker-compose &> /dev/null; then
-            COMPOSE_COMMAND="docker-compose"
-            echo "✅ Using docker-compose with Podman"
-            # Set Docker socket to use Podman
-            export DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
-        else
-            echo "❌ Neither podman-compose nor docker-compose found. Please install one of them."
-            exit 1
-        fi
-    elif command -v docker &> /dev/null; then
-        CONTAINER_RUNTIME="docker"
-        echo "✅ Found Docker"
-        
-        if command -v docker-compose &> /dev/null; then
-            COMPOSE_COMMAND="docker-compose"
-            echo "✅ Using docker-compose"
-        elif docker compose version &> /dev/null 2>&1; then
-            COMPOSE_COMMAND="docker compose"
-            echo "✅ Using docker compose (plugin)"
-        else
-            echo "❌ Docker Compose is not installed. Please install Docker Compose."
-            exit 1
-        fi
-    else
-        echo "❌ Neither Docker nor Podman is installed."
-        echo "Please install one of the following:"
-        echo "  - Docker: https://docs.docker.com/get-docker/"
-        echo "  - Podman: https://podman.io/getting-started/installation"
+# Verify Podman and podman-compose are available
+check_requirements() {
+    if ! command -v podman &> /dev/null; then
+        echo "❌ Podman is not installed."
+        echo "Install Podman: https://podman.io/getting-started/installation"
         exit 1
     fi
 
-    echo "🔧 Using: $CONTAINER_RUNTIME with $COMPOSE_COMMAND"
-
-    # Choose the appropriate compose file
-    COMPOSE_FILE="docker-compose.dev.yml"
-    if [ "$CONTAINER_RUNTIME" = "podman" ]; then
-        COMPOSE_FILE="docker-compose.podman.yml"
-        echo "📄 Using Podman-optimized compose file"
-    else
-        echo "📄 Using Docker compose file"
+    if ! command -v podman-compose &> /dev/null; then
+        echo "❌ podman-compose is not installed."
+        echo "Install via: pip install podman-compose"
+        echo "Or via your package manager: dnf install podman-compose / apt install podman-compose"
+        exit 1
     fi
 
-    # Calculate and export application version from git tags
-    if [ -d ".git" ]; then
-        VITE_APP_VERSION=$(git describe --tags --abbrev=7 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "0.0.0-dev")
-        # Remove 'v' prefix if present for VITE_APP_VERSION
-        VITE_APP_VERSION="${VITE_APP_VERSION#v}"
-        # Append -local to indicate local development
-        VITE_APP_VERSION="${VITE_APP_VERSION}-local"
-        export VITE_APP_VERSION
-        echo "📦 Version: $VITE_APP_VERSION"
-        
-        # Update .env in MediaSet.Remix for Vite to pick up version in dev server
-        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" .env
-        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_APP_VERSION=$VITE_APP_VERSION" > MediaSet.Remix/.env.local
-    fi
-
-    # Determine local IP for VITE_API_URL for local development
-    # Try to get the local IP address (not 127.0.0.1, but the machine's IP on the network)
-    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
-    VITE_API_URL="http://${LOCAL_IP}:5000"
-    export VITE_API_URL
-    echo "🌐 API URL: $VITE_API_URL"
-    
-    # Update .env.local in MediaSet.Remix for Vite to pick up the API URL
-    echo "VITE_API_URL=$VITE_API_URL" >> MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_API_URL=$VITE_API_URL" > MediaSet.Remix/.env.local
-
-    # Create necessary directories if they don't exist
-    mkdir -p ~/.nuget/packages
-    mkdir -p ~/.dotnet/tools
-    # Create persistent data dir for MongoDB
-    mkdir -p ./data/mongodb
-        # Workaround: some Linux systems have a ~/.docker/config.json that references
-        # docker-credential-desktop (installed with Docker Desktop). On systems without
-        # that helper (typical Linux servers/WSL without Desktop) docker/compose can
-        # error with "docker-credential-desktop not installed or available in PATH".
-        # Create a temporary DOCKER_CONFIG that strips `credsStore`/`credHelpers` so
-        # docker/compose won't try to invoke the missing helper. This only affects
-        # commands run by this script and is cleaned up on exit.
-        if [ "$CONTAINER_RUNTIME" = "docker" ]; then
-            if [ -f "$HOME/.docker/config.json" ]; then
-                if (grep -q '"credsStore"' "$HOME/.docker/config.json" 2>/dev/null) || (grep -q '"credHelpers"' "$HOME/.docker/config.json" 2>/dev/null); then
-                    if ! command -v docker-credential-desktop >/dev/null 2>&1; then
-                        echo "⚠️  docker credential helper 'docker-credential-desktop' not found. Creating temporary DOCKER_CONFIG without credsStore to avoid errors."
-                        TMP_DOCKER_CONFIG=$(mktemp -d)
-                        # Try to cleanly remove the keys using python if available
-                        if command -v python3 >/dev/null 2>&1; then
-python3 - <<'PY' > "$TMP_DOCKER_CONFIG/config.json"
-import json,sys,os
-p=os.path.expanduser('~/.docker/config.json')
-try:
-    j=json.load(open(p))
-except Exception:
-    j={}
-j.pop('credsStore',None)
-j.pop('credHelpers',None)
-json.dump(j,sys.stdout)
-PY
-                        else
-                            # Fallback: create a minimal config so docker doesn't attempt helpers
-                            echo '{"auths":{}}' > "$TMP_DOCKER_CONFIG/config.json"
-                        fi
-                        export DOCKER_CONFIG="$TMP_DOCKER_CONFIG"
-                        # Clean up temp dir on script exit
-                        trap 'rm -rf "$TMP_DOCKER_CONFIG"' EXIT
-                    fi
-                fi
-            fi
-        fi
+    echo "✅ Podman: $(podman --version)"
+    echo "✅ podman-compose: $(podman-compose --version 2>&1 | head -1)"
 }
 
 # Quick TCP port wait helper (faster than repeated exec into containers)
@@ -202,13 +97,9 @@ check_health() {
 
 # Function to clean NuGet cache to prevent restore issues
 clean_nuget_cache() {
-    # Only clean if we're starting the API (which needs the restore)
-    if [ "$CONTAINER_RUNTIME" = "podman" ] || [ "$CONTAINER_RUNTIME" = "docker" ]; then
-        echo "🧼 Clearing NuGet cache to prevent restore issues..."
-        # Clear local HTTP cache
-        rm -rf ~/.nuget/http-cache 2>/dev/null || true
-        echo "✅ NuGet cache cleared"
-    fi
+    echo "🧼 Clearing NuGet cache to prevent restore issues..."
+    rm -rf ~/.nuget/http-cache 2>/dev/null || true
+    echo "✅ NuGet cache cleared"
 }
 
 # Function to start development environment
@@ -231,7 +122,7 @@ start_dev() {
     local build_flags="--build"
     if [ "$clean_build" = "--clean" ]; then
         build_flags="--build --no-cache"
-        echo "🧹 Forcing clean rebuild (skipping Docker/Podman layer cache)..."
+        echo "🧹 Forcing clean rebuild (skipping Podman layer cache)..."
     fi
 
     if [[ -z "$target" || "$target" == "all" ]]; then
@@ -340,19 +231,13 @@ restart_dev() {
     fi
 }
 
-# Function to prune dangling Podman images (Podman-specific)
+# Function to prune dangling Podman images
 prune_dev_images() {
     # Skip if PODMAN_AUTO_PRUNE is explicitly set to 0
     if [ "${PODMAN_AUTO_PRUNE}" = "0" ]; then
         return
     fi
 
-    # Only run for Podman
-    if [ "$CONTAINER_RUNTIME" != "podman" ]; then
-        return
-    fi
-
-    # Run prune to clean up dangling images from rebuilds
     podman image prune -f > /dev/null 2>&1 || true
 }
 
@@ -363,17 +248,12 @@ clean_dev() {
     if [ "$mode" = "--purge" ] || [ "$mode" = "purge" ] || [ "$mode" = "all" ]; then
         echo "⚠️  Purge mode: removing containers, networks, and volumes (this deletes MongoDB data)"
         $COMPOSE_COMMAND -f $COMPOSE_FILE down -v --remove-orphans
-        # Optionally remove local data directory too, to truly reset
         rm -rf ./data/mongodb || true
     else
         echo "🧼 Default clean: removing containers and networks (keeping volumes and ./data)"
         $COMPOSE_COMMAND -f $COMPOSE_FILE down --remove-orphans
     fi
-    if [ "$CONTAINER_RUNTIME" = "docker" ]; then
-        docker system prune -f
-    else
-        podman system prune -f
-    fi
+    podman system prune -f
     echo "✅ Environment cleaned"
 }
 
@@ -402,91 +282,122 @@ shell_dev() {
     esac
 }
 
+# Calculate and export application version from git tags
+setup_version() {
+    if [ -d ".git" ]; then
+        VITE_APP_VERSION=$(git describe --tags --abbrev=7 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || echo "0.0.0-dev")
+        # Remove 'v' prefix if present
+        VITE_APP_VERSION="${VITE_APP_VERSION#v}"
+        # Append -local to indicate local development
+        VITE_APP_VERSION="${VITE_APP_VERSION}-local"
+        export VITE_APP_VERSION
+        echo "📦 Version: $VITE_APP_VERSION"
+
+        # Update .env in MediaSet.Remix for Vite to pick up version in dev server
+        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" .env
+        sed -i "s/^VITE_APP_VERSION=.*/VITE_APP_VERSION=$VITE_APP_VERSION/" MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_APP_VERSION=$VITE_APP_VERSION" > MediaSet.Remix/.env.local
+    fi
+}
+
+# Determine local IP for VITE_API_URL
+setup_api_url() {
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+    VITE_API_URL="http://${LOCAL_IP}:5000"
+    export VITE_API_URL
+    echo "🌐 API URL: $VITE_API_URL"
+
+    echo "VITE_API_URL=$VITE_API_URL" >> MediaSet.Remix/.env.local 2>/dev/null || echo "VITE_API_URL=$VITE_API_URL" > MediaSet.Remix/.env.local
+}
+
+# Create necessary local directories
+setup_directories() {
+    mkdir -p ~/.nuget/packages
+    mkdir -p ~/.dotnet/tools
+    mkdir -p ./data/mongodb
+}
+
 # Main command handler
 case "$1" in
     help|--help|-h|"")
-        # Show help and exit before container detection
         echo "MediaSet Development Environment Manager"
-        echo "🐳 Supports both Docker and Podman (auto-detected)"
+        echo "🦭 Powered by Podman"
         echo ""
-    echo "Usage: $0 {start|stop|restart|logs|status|shell|clean|rebuild} [service]"
+        echo "Usage: $0 {start|stop|restart|logs|status|shell|clean|rebuild} [service]"
         echo ""
         echo "Commands:"
-    echo "  start [service]   - Start environment or a single service (use 'api+frontend' or 'app' for both)"
-    echo "  start [service] --clean - Start with clean rebuild (no Docker/Podman layer cache)"
-    echo "  stop [service]    - Stop environment or a single service (use 'api+frontend' or 'app' for both)"
-    echo "  restart [service] - Restart all or a single service (use 'api+frontend' or 'app' to restart both)"
-    echo "  logs [service]    - Show recent logs (add -f to follow)"
-        echo "  status    - Show container status"
-    echo "  shell     - Enter container shell (api|frontend|mongo)"
-    echo "  clean     - Stop and remove containers and networks (keeps data)"
-    echo "  clean --purge - Also remove volumes and local ./data (deletes data)"
-    echo "  rebuild   - Rebuild everything from scratch (removes old images, clears caches, fresh build)"
-    echo "  cache-clean     - Clear NuGet cache (useful if builds fail with package not found errors)"
+        echo "  start [service]          - Start environment or a single service (use 'api+frontend' or 'app' for both)"
+        echo "  start [service] --clean  - Start with clean rebuild (no Podman layer cache)"
+        echo "  stop [service]           - Stop environment or a single service (use 'api+frontend' or 'app' for both)"
+        echo "  restart [service]        - Restart all or a single service (use 'api+frontend' or 'app' to restart both)"
+        echo "  logs [service]           - Show recent logs (add -f to follow)"
+        echo "  status                   - Show container status"
+        echo "  shell                    - Enter container shell (api|frontend|mongo)"
+        echo "  clean                    - Stop and remove containers and networks (keeps data)"
+        echo "  clean --purge            - Also remove volumes and local ./data (deletes data)"
+        echo "  rebuild                  - Rebuild everything from scratch (removes old images, clears caches, fresh build)"
+        echo "  cache-clean              - Clear NuGet cache (useful if builds fail with package not found errors)"
         echo ""
         echo "Examples:"
-    echo "  $0 start                # Start everything"
-    echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
-    echo "  $0 start app            # Start API and Frontend (MongoDB if needed)"
-    echo "  $0 start --clean        # Clean rebuild (full rebuild without Docker/Podman layer cache)"
-    echo "  $0 stop frontend        # Stop only the frontend (keep API/Mongo running)"
-    echo "  $0 stop app             # Stop API and Frontend (keep MongoDB running)"
-    echo "  $0 restart api          # Restart only the API"
-    echo "  $0 restart api+frontend # Restart API and Frontend (Mongo stays up)"
-        echo "  $0 logs api          # Show recent API logs"
-        echo "  $0 logs api -f       # Follow API logs (Ctrl+C to exit)"
+        echo "  $0 start                # Start everything"
+        echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
+        echo "  $0 start app            # Start API and Frontend (MongoDB if needed)"
+        echo "  $0 start --clean        # Clean rebuild (full rebuild without Podman layer cache)"
+        echo "  $0 stop frontend        # Stop only the frontend (keep API/Mongo running)"
+        echo "  $0 stop app             # Stop API and Frontend (keep MongoDB running)"
+        echo "  $0 restart api          # Restart only the API"
+        echo "  $0 restart api+frontend # Restart API and Frontend (Mongo stays up)"
+        echo "  $0 logs api             # Show recent API logs"
+        echo "  $0 logs api -f          # Follow API logs (Ctrl+C to exit)"
         echo "  $0 shell frontend"
-        echo "  $0 clean             # Remove containers, keep data"
-        echo "  $0 clean --purge     # Remove everything including data"
-        echo "  $0 rebuild           # Full rebuild from scratch (recommended if persistent build failures)"
-        echo ""
-        echo "Container Runtime Support:"
-        echo "  🐳 Docker     - Uses docker-compose.dev.yml"
-        echo "  🦭 Podman     - Uses docker-compose.podman.yml"
+        echo "  $0 clean                # Remove containers, keep data"
+        echo "  $0 clean --purge        # Remove everything including data"
+        echo "  $0 rebuild              # Full rebuild from scratch (recommended if persistent build failures)"
         echo ""
         echo "Environment Variables:"
-        echo "  PODMAN_AUTO_PRUNE=0 - Disable auto-pruning of dangling Podman images (default: enabled)"
+        echo "  PODMAN_AUTO_PRUNE=0  - Disable auto-pruning of dangling Podman images (default: enabled)"
         echo ""
         echo "Note: Podman automatically prunes dangling images on 'start' and 'stop' to prevent"
         echo "accumulation from repeated rebuilds. Set PODMAN_AUTO_PRUNE=0 to disable this behavior."
         echo ""
-        echo "Need help installing? See CONTAINER_SETUP.md"
+        echo "Need help installing Podman? See Development/DEVELOPMENT.md"
         exit 0
         ;;
     start|up)
-        setup_container_runtime
+        check_requirements
+        setup_version
+        setup_api_url
+        setup_directories
         start_dev "$2" "$3"
         ;;
     stop|down)
-        setup_container_runtime
+        check_requirements
         stop_dev "$2"
         ;;
     restart)
-        setup_container_runtime
+        check_requirements
         restart_dev "$2"
         ;;
     logs)
-        setup_container_runtime
+        check_requirements
         show_logs "$@"
         ;;
     status|ps)
-        setup_container_runtime
+        check_requirements
         status_dev
         ;;
     shell|exec)
-        setup_container_runtime
+        check_requirements
         shell_dev "$@"
         ;;
     clean)
-        setup_container_runtime
+        check_requirements
         clean_dev "$2"
         ;;
     cache-clean)
-        setup_container_runtime
         clean_nuget_cache
         ;;
     rebuild)
-        setup_container_runtime
+        check_requirements
         echo "🔨 Performing full rebuild from scratch..."
         echo "  1️⃣  Cleaning environment and removing old images..."
         clean_dev "purge"
@@ -495,13 +406,16 @@ case "$1" in
         clean_nuget_cache
         echo ""
         echo "  3️⃣  Rebuilding from scratch..."
+        setup_version
+        setup_api_url
+        setup_directories
         start_dev "all" "--clean"
         ;;
     *)
         echo "❌ Unknown command: $1"
         echo ""
         echo "MediaSet Development Environment Manager"
-        echo "🐳 Supports both Docker and Podman (auto-detected)"
+        echo "🦭 Powered by Podman"
         echo ""
         echo "Usage: $0 {start|stop|restart|logs|status|shell|clean}"
         echo ""

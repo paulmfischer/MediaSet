@@ -113,7 +113,7 @@ Images are stored in a configurable location with Docker/Podman - either inside 
 
 ### Prerequisites
 
-- Docker or Podman installed
+- Docker or Podman installed (for running the published images)
 
 ### Running MediaSet with Docker/Podman
 
@@ -240,7 +240,7 @@ For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CO
 
 ### Prerequisites
 
-- Docker or Podman installed (for containerized development)
+- Podman + podman-compose installed (see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md) for installation steps)
 - Git
 
 ### Quick Start with Development Containers

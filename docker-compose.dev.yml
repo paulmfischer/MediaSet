@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # MongoDB for development
   mongodb:
-    image: mongo:7.0
+    image: docker.io/mongo:7.0
     container_name: mediaset-dev-mongo
     restart: unless-stopped
     ports:
@@ -11,7 +11,7 @@ services:
     environment:
       MONGO_INITDB_DATABASE: "MediaSet"
     volumes:
-      - ./data/mongodb:/data/db
+      - ./data/mongodb:/data/db:Z
     networks:
       - mediaset-dev
 
@@ -25,6 +25,7 @@ services:
     ports:
       - "5000:5000"   # HTTP
     environment:
+      TZ: "America/Chicago"
       ASPNETCORE_ENVIRONMENT: "Development"
       ASPNETCORE_URLS: "http://+:5000"
       ASPNETCORE_HTTP_PORTS: "5000"
@@ -40,10 +41,12 @@ services:
       ExternalLogging__Enabled: "${ExternalLogging__Enabled:-false}"
       ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
     volumes:
-      - ./MediaSet.Api:/app
-      - ./.git:/app/.git
-      - ./data/images:/app/data/images
-      - nuget_cache:/nuget
+      - ./MediaSet.Api:/app:Z
+      - mediaset-api-bin:/app/bin:Z
+      - mediaset-api-obj:/app/obj:Z
+      - ./.git:/app/.git:Z
+      - ./data/images:/app/data/images:Z
+      - nuget_cache:/nuget:Z
     depends_on:
       - mongodb
     networks:
@@ -64,21 +67,21 @@ services:
     environment:
       NODE_ENV: "development"
       REMIX_DEV_HTTP_ORIGIN: "http://localhost:3000"
-      VITE_APP_VERSION: "${VITE_APP_VERSION:-0.0.0-dev}"
-      # Server-side API URL (uses Docker container name)
-      # apiUrl: "http://api:5000"
-      # Client-side API URL (accessible from host browser)
-      # clientApiUrl: "http://localhost:5000"
+      apiUrl: "http://api:5000"
     volumes:
-      - ./MediaSet.Remix:/app
-      - /app/node_modules
+      - ./MediaSet.Remix:/app:Z
+      - node_modules_cache:/app/node_modules
     depends_on:
       - api
     networks:
       - mediaset-dev
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
 volumes:
   nuget_cache:
+  node_modules_cache:
+  mediaset-api-bin:
+  mediaset-api-obj:
 
 networks:
   mediaset-dev:
