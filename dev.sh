@@ -41,14 +41,14 @@ check_health() {
     local target="${1:-all}"
     local check_mongo=false
     local check_api=false
-    local check_frontend=false
+    local check_ui=false
 
     case "$target" in
         all|ALL|*)
             # Default to checking everything if target is empty or 'all'
             check_mongo=true
             check_api=true
-            check_frontend=true
+            check_ui=true
             ;;
     esac
 
@@ -56,17 +56,17 @@ check_health() {
     if [[ "$target" == "mongodb" || "$target" == "mongo" ]]; then
         check_mongo=true
         check_api=false
-        check_frontend=false
+        check_ui=false
     fi
     if [[ "$target" == "api" || "$target" == "backend" ]]; then
         check_mongo=true   # API depends on Mongo
         check_api=true
-        check_frontend=false
+        check_ui=false
     fi
-    if [[ "$target" == "frontend" || "$target" == "remix" ]]; then
-        check_mongo=true   # Frontend -> API -> Mongo
+    if [[ "$target" == "ui" || "$target" == "remix" ]]; then
+        check_mongo=true   # UI -> API -> Mongo
         check_api=true
-        check_frontend=true
+        check_ui=true
     fi
 
     echo "🔍 Checking container health (target: $target)..."
@@ -85,10 +85,10 @@ check_health() {
         }
     fi
 
-    if $check_frontend; then
-        echo "⏳ Waiting for Frontend to be ready..."
+    if $check_ui; then
+        echo "⏳ Waiting for UI to be ready..."
         timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null 2>&1; do sleep 2; done' || {
-            echo "❌ Frontend health check failed"; return 1;
+            echo "❌ UI health check failed"; return 1;
         }
     fi
 
@@ -131,13 +131,13 @@ start_dev() {
         # Normalize common aliases
         case "$target" in
             backend) target="api" ;;
-            remix) target="frontend" ;;
+            remix) target="ui" ;;
             mongo) target="mongodb" ;;
-            api+frontend|frontend+api|app)
-                echo "🚀 Starting API and Frontend..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d api frontend
-                check_health "frontend"  # ensures api+frontend+mongo
-                echo "✅ Started API and Frontend"
+            api+ui|ui+api|app)
+                echo "🚀 Starting API and UI..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE up $build_flags -d api ui
+                check_health "ui"  # ensures api+ui+mongo
+                echo "✅ Started API and UI"
                 return
                 ;;
         esac
@@ -156,8 +156,8 @@ start_dev() {
     echo ""
     echo "📝 Useful commands:"
     echo "   View logs:               ./dev.sh logs [service] [-f]"
-    echo "   Stop services:           ./dev.sh stop [api|frontend|mongo]"
-    echo "   Restart services:        ./dev.sh restart [api|frontend|mongo]"
+    echo "   Stop services:           ./dev.sh stop [api|ui|mongo]"
+    echo "   Restart services:        ./dev.sh restart [api|ui|mongo]"
     echo "   Clean (keep data):       ./dev.sh clean"
     echo "   Clean & purge data:      ./dev.sh clean --purge"
     echo ""
@@ -189,12 +189,12 @@ stop_dev() {
     else
         case "$target" in
             backend) target="api" ;;
-            remix) target="frontend" ;;
+            remix) target="ui" ;;
             mongo) target="mongodb" ;;
-            api+frontend|frontend+api|app)
-                echo "🛑 Stopping API and Frontend (leaving MongoDB running)..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE stop api frontend
-                echo "✅ Stopped API and Frontend"
+            api+ui|ui+api|app)
+                echo "🛑 Stopping API and UI (leaving MongoDB running)..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE stop api ui
+                echo "✅ Stopped API and UI"
                 prune_dev_images
                 return
                 ;;
@@ -216,12 +216,12 @@ restart_dev() {
     else
         case "$target" in
             backend) target="api" ;;
-            remix) target="frontend" ;;
+            remix) target="ui" ;;
             mongo) target="mongodb" ;;
-            api+frontend|frontend+api|app)
-                echo "🔄 Restarting API and Frontend..."
-                $COMPOSE_COMMAND -f $COMPOSE_FILE restart api frontend
-                check_health "frontend"  # ensures api+frontend+mongo
+            api+ui|ui+api|app)
+                echo "🔄 Restarting API and UI..."
+                $COMPOSE_COMMAND -f $COMPOSE_FILE restart api ui
+                check_health "ui"  # ensures api+ui+mongo
                 return
                 ;;
         esac
@@ -269,15 +269,15 @@ shell_dev() {
         api|backend)
             $COMPOSE_COMMAND -f $COMPOSE_FILE exec api bash
             ;;
-        frontend|remix)
-            $COMPOSE_COMMAND -f $COMPOSE_FILE exec frontend sh
+        ui|remix)
+            $COMPOSE_COMMAND -f $COMPOSE_FILE exec ui sh
             ;;
         mongo|mongodb)
             $COMPOSE_COMMAND -f $COMPOSE_FILE exec mongodb mongosh MediaSet
             ;;
         *)
-            echo "Available shells: api, frontend, mongo"
-            echo "Usage: ./dev.sh shell [api|frontend|mongo]"
+            echo "Available shells: api, ui, mongo"
+            echo "Usage: ./dev.sh shell [api|ui|mongo]"
             ;;
     esac
 }
@@ -325,13 +325,13 @@ case "$1" in
         echo "Usage: $0 {start|stop|restart|logs|status|shell|clean|rebuild} [service]"
         echo ""
         echo "Commands:"
-        echo "  start [service]          - Start environment or a single service (use 'api+frontend' or 'app' for both)"
+        echo "  start [service]          - Start environment or a single service (use 'api+ui' or 'app' for both)"
         echo "  start [service] --clean  - Start with clean rebuild (no Podman layer cache)"
-        echo "  stop [service]           - Stop environment or a single service (use 'api+frontend' or 'app' for both)"
-        echo "  restart [service]        - Restart all or a single service (use 'api+frontend' or 'app' to restart both)"
+        echo "  stop [service]           - Stop environment or a single service (use 'api+ui' or 'app' for both)"
+        echo "  restart [service]        - Restart all or a single service (use 'api+ui' or 'app' to restart both)"
         echo "  logs [service]           - Show recent logs (add -f to follow)"
         echo "  status                   - Show container status"
-        echo "  shell                    - Enter container shell (api|frontend|mongo)"
+        echo "  shell                    - Enter container shell (api|ui|mongo)"
         echo "  clean                    - Stop and remove containers and networks (keeps data)"
         echo "  clean --purge            - Also remove volumes and local ./data (deletes data)"
         echo "  rebuild                  - Rebuild everything from scratch (removes old images, clears caches, fresh build)"
@@ -340,15 +340,15 @@ case "$1" in
         echo "Examples:"
         echo "  $0 start                # Start everything"
         echo "  $0 start api            # Start just the API (MongoDB will start if needed)"
-        echo "  $0 start app            # Start API and Frontend (MongoDB if needed)"
+        echo "  $0 start app            # Start API and UI (MongoDB if needed)"
         echo "  $0 start --clean        # Clean rebuild (full rebuild without Podman layer cache)"
-        echo "  $0 stop frontend        # Stop only the frontend (keep API/Mongo running)"
-        echo "  $0 stop app             # Stop API and Frontend (keep MongoDB running)"
+        echo "  $0 stop ui              # Stop only the UI (keep API/Mongo running)"
+        echo "  $0 stop app             # Stop API and UI (keep MongoDB running)"
         echo "  $0 restart api          # Restart only the API"
-        echo "  $0 restart api+frontend # Restart API and Frontend (Mongo stays up)"
+        echo "  $0 restart api+ui       # Restart API and UI (Mongo stays up)"
         echo "  $0 logs api             # Show recent API logs"
         echo "  $0 logs api -f          # Follow API logs (Ctrl+C to exit)"
-        echo "  $0 shell frontend"
+        echo "  $0 shell ui"
         echo "  $0 clean                # Remove containers, keep data"
         echo "  $0 clean --purge        # Remove everything including data"
         echo "  $0 rebuild              # Full rebuild from scratch (recommended if persistent build failures)"

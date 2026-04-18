@@ -53,14 +53,14 @@ services:
       - mediaset-dev
     command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
 
-  # Remix frontend with hot reload
-  frontend:
+  # Remix UI with hot reload
+  ui:
     build:
       context: ./MediaSet.Remix
       dockerfile: Dockerfile.dev
       args:
         - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
-    container_name: mediaset-dev-frontend
+    container_name: mediaset-dev-ui
     restart: unless-stopped
     ports:
       - "3000:5173"
