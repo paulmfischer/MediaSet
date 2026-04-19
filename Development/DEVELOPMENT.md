@@ -1,33 +1,17 @@
 # MediaSet - Containerized Local Development Setup
 
-This guide helps new developers set up a complete development environment without needing to install .NET, MongoDB, or Node.js locally. Everything runs in Docker containers with full hot-reload support.
+This guide helps new developers set up a complete development environment without needing to install .NET, MongoDB, or Node.js locally. Everything runs in Podman containers with full hot-reload support.
 
 ## Prerequisites
 
-Choose **one** of the following container runtimes:
-
-### Option 1: Docker (Recommended for most users)
-- **Docker**: Install from [docker.com](https://docs.docker.com/get-docker/)
-- **Docker Compose**: Usually included with Docker Desktop
-
-### Option 2: Podman (Recommended for Linux users who prefer rootless containers)
 - **Podman**: Install from [podman.io](https://podman.io/getting-started/installation)
-- **Podman Compose**: Install via `pip install podman-compose` or your package manager
-- Alternatively, use `docker-compose` with Podman (the script will configure this automatically)
-
-### Additional Requirements
+  - Fedora/RHEL: `sudo dnf install podman podman-compose`
+  - Ubuntu/Debian: `sudo apt install podman` + `pip install podman-compose`
+  - macOS: `brew install podman podman-compose`
 - **Git**: For cloning the repository
 - **VS Code** (recommended): For the best development experience
 
 That's it! No need for .NET SDK, MongoDB, or Node.js on your host machine.
-
-**Need help installing?** See **[CONTAINER_SETUP.md](../Setup/CONTAINER_SETUP.md)** for detailed installation instructions.
-
-### Container Runtime Detection
-
-The development script automatically detects which container runtime you have installed:
-- 🐳 **Docker**: Uses `docker-compose.dev.yml` 
-- 🦭 **Podman**: Uses `docker-compose.podman.yml` (optimized for Podman with rootless containers)
 
 ## Quick Start
 
@@ -115,7 +99,7 @@ Both frontend and backend support hot reloading:
       "processId": "${command:pickRemoteProcess}",
       "pipeTransport": {
         "pipeCwd": "${workspaceRoot}",
-        "pipeProgram": "docker",
+        "pipeProgram": "podman",
         "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": false
@@ -125,14 +109,10 @@ Both frontend and backend support hot reloading:
 }
 ```
 
-### Container Runtime Debugging
-
-**Docker Users:**
-- Use the "Debug API in Container (Docker)" configuration in VS Code
-
-**Podman Users:**
-- Use the "Debug API in Container (Podman)" configuration in VS Code
-- Ensure Podman socket is running: `systemctl --user start podman.socket`
+Ensure the Podman socket is running before attaching the debugger:
+```bash
+systemctl --user start podman.socket
+```
 
 ### Browser Debugging
 
@@ -178,7 +158,7 @@ Access MongoDB directly:
 
 ### Port Conflicts
 If you get port conflicts, you can modify `docker-compose.dev.yml` to use different ports:
-- Change `"3000:3000"` to `"3001:3000"` for frontend
+- Change `"3000:5173"` to `"3001:5173"` for frontend
 - Change `"5000:5000"` to `"5001:5000"` for API
 
 ### Container Build Issues
@@ -208,9 +188,8 @@ sudo chown -R $USER:$USER .
 # Look for Vite/Remix reload messages
 ```
 
-### Podman-Specific Issues
+### Podman Socket Issues
 
-**Socket Permission Issues:**
 ```bash
 # Start Podman socket service
 systemctl --user start podman.socket
@@ -230,9 +209,6 @@ sudo setsebool -P container_manage_cgroup true
 ```bash
 # Check user namespace setup
 podman unshare cat /proc/self/uid_map
-
-# If issues persist, try running with sudo:
-sudo ./dev.sh start
 ```
 
 ## API Configuration
@@ -300,7 +276,7 @@ MediaSet uses external APIs for metadata lookup functionality. Configure these i
 
 > ⚠️ **IMPORTANT**: 
 > - Never commit your `.env` file to git! It's already in `.gitignore`.
-> - The `.env` file is automatically loaded by Docker/Podman compose files.
+> - The `.env` file is automatically loaded by `docker-compose.dev.yml`.
 > - For detailed setup instructions, see **[TMDB_SETUP.md](../Setup/TMDB_SETUP.md)**
 
 ### Testing Lookup Functionality
