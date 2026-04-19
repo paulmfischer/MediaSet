@@ -47,6 +47,7 @@ services:
       - ./.git:/app/.git:Z
       - ./data/images:/app/data/images:Z
       - nuget_cache:/nuget:Z
+    stop_grace_period: 2s
     depends_on:
       - mongodb
     networks:
