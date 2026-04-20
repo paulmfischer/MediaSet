@@ -241,6 +241,53 @@ public class IgdbClientTests
 
     #endregion
 
+    #region SanitizeTitle Tests
+
+    [Test]
+    public void SanitizeTitle_WithSemicolon_RemovesSemicolon()
+    {
+        var result = IgdbClient.SanitizeTitle("Halo; drop table games;");
+        Assert.That(result, Is.EqualTo("Halo drop table games"));
+    }
+
+    [Test]
+    public void SanitizeTitle_WithDoubleQuote_RemovesQuote()
+    {
+        var result = IgdbClient.SanitizeTitle("Game \"Edition\"");
+        Assert.That(result, Is.EqualTo("Game Edition"));
+    }
+
+    [Test]
+    public void SanitizeTitle_WithCarriageReturnAndNewline_RemovesThem()
+    {
+        var result = IgdbClient.SanitizeTitle("Game\r\nTitle");
+        Assert.That(result, Is.EqualTo("GameTitle"));
+    }
+
+    [Test]
+    public void SanitizeTitle_WithBackslash_RemovesBackslash()
+    {
+        var result = IgdbClient.SanitizeTitle("Game\\Title");
+        Assert.That(result, Is.EqualTo("GameTitle"));
+    }
+
+    [Test]
+    public void SanitizeTitle_ExceedingMaxLength_TruncatesTo200()
+    {
+        var title = new string('a', 250);
+        var result = IgdbClient.SanitizeTitle(title);
+        Assert.That(result.Length, Is.EqualTo(200));
+    }
+
+    [Test]
+    public void SanitizeTitle_WithCleanTitle_ReturnsUnchanged()
+    {
+        var result = IgdbClient.SanitizeTitle("Halo Infinite");
+        Assert.That(result, Is.EqualTo("Halo Infinite"));
+    }
+
+    #endregion
+
     #region FixCoverUrl Tests
 
     [Test]

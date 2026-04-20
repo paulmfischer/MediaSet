@@ -1,6 +1,7 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 
@@ -29,7 +30,7 @@ public class IgdbClient : IIgdbClient
         {
             _logger.LogInformation("Searching IGDB for game: {Title}", title);
 
-            var escapedTitle = title.Replace("\"", "\\\"");
+            var escapedTitle = SanitizeTitle(title);
             var body = $"fields id,name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url; search \"{escapedTitle}\"; limit 10;";
             var response = await SendRequestAsync("games", body, cancellationToken);
 
@@ -114,6 +115,16 @@ public class IgdbClient : IIgdbClient
         }
 
         return response;
+    }
+
+    internal static string SanitizeTitle(string title)
+    {
+        var sanitized = Regex.Replace(title, @"[;""\r\n\\]", "");
+        if (sanitized.Length > 200)
+        {
+            sanitized = sanitized[..200];
+        }
+        return sanitized;
     }
 
     internal static string? FixCoverUrl(string? url)
