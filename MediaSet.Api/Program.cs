@@ -32,6 +32,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;
 using System.Threading.RateLimiting;
 
+AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromSeconds(2));
+
 // Configure bootstrap logger for very early configuration
 LoggingExtensions.ConfigureBootstrapLogger();
 var bootstrapLogger = LoggingExtensions.GetBootstrapLogger();
