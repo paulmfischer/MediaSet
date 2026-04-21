@@ -144,7 +144,7 @@ export function headers() {
   if (process.env.NODE_ENV === 'production') {
     const apiUrl = process.env.clientApiUrl || 'http://localhost:7130';
     securityHeaders['Content-Security-Policy'] =
-      `default-src 'self'; img-src 'self' data: ${apiUrl}; style-src 'self' 'unsafe-inline'; script-src 'self'`;
+      `default-src 'self'; img-src 'self' data: ${apiUrl}; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'`;
   }
 
   return securityHeaders;
