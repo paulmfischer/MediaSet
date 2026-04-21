@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.7.2](https://github.com/paulmfischer/MediaSet/compare/v3.7.1...v3.7.2) (2026-04-21)
+
+
+### Bug Fixes
+
+* **dev:** reduce api container stop grace period to 2s ([#590](https://github.com/paulmfischer/MediaSet/issues/590)) ([2299db1](https://github.com/paulmfischer/MediaSet/commit/2299db188b04b219bedb706d1ea4f7c103ba7833))
+* **security:** HTTP headers, static file serving, and rate limiting ([#592](https://github.com/paulmfischer/MediaSet/issues/592)) ([5e586b4](https://github.com/paulmfischer/MediaSet/commit/5e586b499987e9ad20bc064d22374170f7a9714f)), closes [#577](https://github.com/paulmfischer/MediaSet/issues/577)
+* **security:** input validation and injection hardening ([#591](https://github.com/paulmfischer/MediaSet/issues/591)) ([2ef7a7d](https://github.com/paulmfischer/MediaSet/commit/2ef7a7dd6761db43cf443e153756ff949fc9fa06))
+* **security:** logging and information disclosure hardening ([#587](https://github.com/paulmfischer/MediaSet/issues/587)) ([0d315af](https://github.com/paulmfischer/MediaSet/commit/0d315afca93e34c818c523db22ec73b4efef1460))
+* **security:** production application hardening ([#585](https://github.com/paulmfischer/MediaSet/issues/585)) ([01969df](https://github.com/paulmfischer/MediaSet/commit/01969df0e36495bfdd30ca8f79ab38b4bee7e5b8))
+
+
+### Miscellaneous
+
+* **dev:** replace Docker with Podman for local development ([#589](https://github.com/paulmfischer/MediaSet/issues/589)) ([2892390](https://github.com/paulmfischer/MediaSet/commit/28923909196ab768228c72133acd76a7a2004a62))
+
 ## [3.7.1](https://github.com/paulmfischer/MediaSet/compare/v3.7.0...v3.7.1) (2026-04-13)
 
 
