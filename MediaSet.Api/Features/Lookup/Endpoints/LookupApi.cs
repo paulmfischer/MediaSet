@@ -14,6 +14,7 @@ internal static class LookupApi
         var group = routes.MapGroup("/lookup");
 
         group.WithTags("Lookup");
+        group.RequireRateLimiting("lookup");
 
         group.MapGet("/{entityType}/{identifierType}/{identifierValue?}", async Task<Results<Ok<IReadOnlyList<BookResponse>>, Ok<IReadOnlyList<MovieResponse>>, Ok<IReadOnlyList<GameResponse>>, Ok<IReadOnlyList<MusicResponse>>, BadRequest<string>>> (
             HttpContext httpContext,
