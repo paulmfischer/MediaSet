@@ -38,6 +38,7 @@ async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
 
     if (!response.ok) {
       console.warn(`[ServerLogger] API returned ${response.status} when logging`);
+      // console.warn(`[ServerLogger] API response:`, response.body ? await response.text() : 'No response body');
     }
   } catch (error) {
     // Silently fail on API errors to avoid infinite loops or disruptions

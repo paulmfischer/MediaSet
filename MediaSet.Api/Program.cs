@@ -285,7 +285,7 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = 20,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -331,12 +331,23 @@ if (imageConfig != null)
 
     if (Directory.Exists(storagePath))
     {
+        var contentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+        contentTypeProvider.Mappings.Clear();
+        foreach (var ext in imageConfig.GetAllowedImageExtensions())
+        {
+            var mime = imageConfig.GetMimeTypeForExtension(ext);
+            if (mime != null)
+            {
+                contentTypeProvider.Mappings[$".{ext}"] = mime;
+            }
+        }
+
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(storagePath),
             RequestPath = "/static/images",
-            DefaultContentType = "application/octet-stream",
-            ServeUnknownFileTypes = true,
+            ServeUnknownFileTypes = false,
+            ContentTypeProvider = contentTypeProvider,
             HttpsCompression = Microsoft.AspNetCore.Http.Features.HttpsCompressionMode.Compress,
             OnPrepareResponse = ctx =>
             {
