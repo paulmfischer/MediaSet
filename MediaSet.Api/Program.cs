@@ -303,6 +303,12 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    await next();
+});
+
 // Configure logging middleware
 // Set trace ID early, before any logging occurs (must be before Swagger and other middleware)
 app.UseMiddleware<TraceIdHeaderMiddleware>();

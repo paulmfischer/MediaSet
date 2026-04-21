@@ -133,6 +133,23 @@ function Header() {
 
 const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.0-local';
 
+export function headers() {
+  const securityHeaders: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=self, microphone=(), geolocation=(), payment=()',
+  };
+
+  if (process.env.NODE_ENV === 'production') {
+    const apiUrl = process.env.clientApiUrl || 'http://localhost:7130';
+    securityHeaders['Content-Security-Policy'] =
+      `default-src 'self'; img-src 'self' data: ${apiUrl}; style-src 'self' 'unsafe-inline'; script-src 'self'`;
+  }
+
+  return securityHeaders;
+}
+
 export default function App() {
   return (
     <html lang="en" className="dark">
