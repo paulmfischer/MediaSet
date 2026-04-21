@@ -52,15 +52,20 @@ public class ImageConfiguration
     public IEnumerable<string> GetAllowedMimeTypes()
     {
         return GetAllowedImageExtensions()
-            .Select(ext => ext switch
-            {
-                "jpg" or "jpeg" => "image/jpeg",
-                "png" => "image/png",
-                _ => null
-            })
+            .Select(GetMimeTypeForExtension)
             .Where(mime => mime != null)
             .Distinct()!;
     }
+
+    /// <summary>
+    /// Returns the MIME type for a given file extension, or null if not recognized.
+    /// </summary>
+    public string? GetMimeTypeForExtension(string ext) => ext switch
+    {
+        "jpg" or "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        _ => null
+    };
 
     /// <summary>
     /// Returns the first configured file extension that corresponds to the given MIME type.

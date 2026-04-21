@@ -541,7 +541,8 @@ internal static class EntityApi
            logger.LogInformation("Uploaded {count} new {entityType}", newEntities.Count(), entityType);
            return TypedResults.Ok(string.Format("Uploaded {0} new {1}", newEntities.Count(), entityType));
        })
-       .DisableAntiforgery();
+       .DisableAntiforgery()
+       .RequireRateLimiting("upload");
 
         return group;
     }
