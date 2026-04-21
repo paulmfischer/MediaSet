@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.3](https://github.com/paulmfischer/MediaSet/compare/v3.7.2...v3.7.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* **security:** allow unsafe-inline scripts in CSP for Remix hydration ([#593](https://github.com/paulmfischer/MediaSet/issues/593)) ([13239ee](https://github.com/paulmfischer/MediaSet/commit/13239ee5a7e604a7a80052c91c364d01a70bd6e3))
+
 ## [3.7.2](https://github.com/paulmfischer/MediaSet/compare/v3.7.1...v3.7.2) (2026-04-21)
 
 
