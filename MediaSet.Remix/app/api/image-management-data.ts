@@ -17,7 +17,7 @@ export async function resetImageLookup(entityIds: string[], entityType: Entity):
     return (await response.json()) as { reset: number };
   } catch (error) {
     if (error instanceof Response) throw error;
-    serverLogger.error('Error resetting image lookup', { error: String(error) });
+    serverLogger.error('Error resetting image lookup', error);
     throw error;
   }
 }
@@ -32,7 +32,7 @@ export async function deleteOrphanedImages(): Promise<{ deleted: number }> {
     return (await response.json()) as { deleted: number };
   } catch (error) {
     if (error instanceof Response) throw error;
-    serverLogger.error('Error deleting orphaned images', { error: String(error) });
+    serverLogger.error('Error deleting orphaned images', error);
     throw error;
   }
 }

@@ -49,7 +49,7 @@ export async function getImageStats(): Promise<ImageStats | null> {
     return stats;
   } catch (error) {
     if (error instanceof Response) throw error;
-    serverLogger.error('Error fetching image stats', { error: String(error) });
+    serverLogger.error('Error fetching image stats', error);
     throw error;
   }
 }

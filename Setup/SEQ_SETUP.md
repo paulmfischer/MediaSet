@@ -1,6 +1,6 @@
-# Seq Logging Configuration Guide for MediaSet.Api
+# Seq Logging Configuration Guide
 
-This guide explains how to configure MediaSet.Api to send logs to a Seq server for centralized structured logging.
+This guide explains how to configure MediaSet to send logs to a Seq server for centralized structured logging. Both `MediaSet.Api` (.NET) and `MediaSet.Remix` (Node.js) log directly to Seq and are distinguished in Seq by the `Application` property (`MediaSet.Api` vs `MediaSet.Remix`).
 
 ## Prerequisites
 
@@ -143,10 +143,9 @@ services:
       ExternalLogging__SeqUrl: "http://seq:80"
       
       # Exclude exact paths from Seq (high-frequency endpoints)
-      HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
-      HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
-      HttpLoggingFilterOptions__ExcludedPaths__2: "/health/ready"
-      HttpLoggingFilterOptions__ExcludedPaths__3: "/health/live"
+      HttpLoggingFilterOptions__ExcludedPaths__0: "/health"
+      HttpLoggingFilterOptions__ExcludedPaths__1: "/health/ready"
+      HttpLoggingFilterOptions__ExcludedPaths__2: "/health/live"
       
       # Exclude path hierarchies from Seq
       HttpLoggingFilterOptions__ExcludePathStartsWith__0: "/api/health"
@@ -164,7 +163,6 @@ If not specified, MediaSet.Api uses the following defaults from `appsettings.jso
   },
   "HttpLoggingFilterOptions": {
     "ExcludedPaths": [
-      "/api/logs",
       "/health",
       "/health/ready",
       "/health/live"
@@ -178,6 +176,16 @@ If not specified, MediaSet.Api uses the following defaults from `appsettings.jso
 ```
 
 These defaults provide sensible exclusions for common high-frequency endpoints. You can override them in your docker-compose configuration as needed.
+
+## Remix Logging Configuration
+
+`MediaSet.Remix` logs directly to Seq using the CLEF ingestion endpoint. It shares the same environment variables as the API, so configuring them once enables structured logging for both services:
+
+| Variable | Description |
+|----------|-------------|
+| `ExternalLogging__SeqUrl` | Seq server URL, e.g. `http://seq:5341`. If not set, Remix logs to console only. |
+
+Remix logs appear in Seq with `Application = "MediaSet.Remix"` and include a `TraceId` property that correlates with API logs from the same request.
 
 ## Troubleshooting
 

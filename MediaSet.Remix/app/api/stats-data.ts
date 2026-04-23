@@ -86,7 +86,7 @@ export async function getStats() {
     );
     return stats;
   } catch (error) {
-    serverLogger.error('Error fetching stats', { error: String(error) });
+    serverLogger.error('Error fetching stats', error);
     throw error;
   }
 }

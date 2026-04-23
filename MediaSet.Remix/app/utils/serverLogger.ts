@@ -1,119 +1,87 @@
-/**
- * Server-side logger utility for Remix loaders/actions.
- *
- * This module provides a logging interface that forwards logs to the API's
- * POST /api/logs endpoint, allowing server-side logs to be aggregated with
- * client-side logs and enriched with Application and Environment context.
- *
- * Uses apiFetch() to automatically include W3C traceparent header for
- * distributed tracing across the Remix server and API.
- */
+import { getRequestContext } from './apiFetch.server';
 
-import { apiFetch } from './apiFetch.server';
+const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
 
-interface ServerLogPayload {
-  level: 'Debug' | 'Information' | 'Warning' | 'Error';
-  message: string;
-  timestamp: string;
-  properties?: Record<string, unknown>;
-}
+type LogLevel = 'Debug' | 'Information' | 'Warning' | 'Error';
 
-const API_BASE_URL = process.env.apiUrl || 'http://localhost:7130';
+// Information is the CLEF default — omit @l for info-level events
+const CLEF_LEVEL: Partial<Record<LogLevel, string>> = {
+  Debug: 'Debug',
+  Warning: 'Warning',
+  Error: 'Error',
+};
 
-/**
- * Sends a log event to the API.
- * Non-blocking; errors are logged to console but don't throw.
- * Uses apiFetch() which automatically includes the W3C traceparent header
- * from the request context for distributed tracing.
- */
-async function sendLogToApi(payload: ServerLogPayload): Promise<void> {
+async function sendLogToSeq(level: LogLevel, message: string, properties?: Record<string, unknown>): Promise<void> {
+  if (!SEQ_URL) return;
+
+  const context = getRequestContext();
+
+  const event: Record<string, unknown> = {
+    '@t': new Date().toISOString(),
+    '@mt': '{Message}',
+    '@m': message,
+    ...(CLEF_LEVEL[level] !== undefined ? { '@l': CLEF_LEVEL[level] } : {}),
+    Application: 'MediaSet.Remix',
+    Environment: process.env.NODE_ENV ?? 'development',
+    Message: message,
+    ...properties,
+  };
+
+  if (context?.traceId) {
+    event['TraceId'] = context.traceId;
+  }
+
   try {
-    const response = await apiFetch(`${API_BASE_URL}/api/logs`, {
+    const response = await fetch(`${SEQ_URL}/api/events/raw`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/vnd.serilog.clef' },
+      body: JSON.stringify(event),
     });
 
     if (!response.ok) {
-      console.warn(`[ServerLogger] API returned ${response.status} when logging`);
-      // console.warn(`[ServerLogger] API response:`, response.body ? await response.text() : 'No response body');
+      console.warn(`[ServerLogger] Seq returned ${response.status} when logging`);
     }
   } catch (error) {
-    // Silently fail on API errors to avoid infinite loops or disruptions
-    console.warn('[ServerLogger] Failed to send log to API:', error);
+    console.warn('[ServerLogger] Failed to send log to Seq:', error);
   }
 }
 
-/**
- * Server logger API for Remix loaders/actions.
- */
 export const serverLogger = {
-  /**
-   * Log an informational message.
-   */
   info(message: string, properties?: Record<string, unknown>): void {
     console.log(`[INFO] ${message}`, properties || '');
-
-    const payload: ServerLogPayload = {
-      level: 'Information',
-      message,
-      timestamp: new Date().toISOString(),
-      properties,
-    };
-    sendLogToApi(payload);
+    sendLogToSeq('Information', message, properties);
   },
 
-  /**
-   * Log a warning message.
-   */
   warn(message: string, properties?: Record<string, unknown>): void {
     console.warn(`[WARN] ${message}`, properties || '');
-
-    const payload: ServerLogPayload = {
-      level: 'Warning',
-      message,
-      timestamp: new Date().toISOString(),
-      properties,
-    };
-    sendLogToApi(payload);
+    sendLogToSeq('Warning', message, properties);
   },
 
-  /**
-   * Log an error message.
-   */
   error(message: string, error?: Error | string | unknown, properties?: Record<string, unknown>): void {
     let fullMessage = message;
+    let mergedProperties = properties;
 
-    if (error) {
-      const errorStr = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-      fullMessage = `${message}: ${errorStr}`;
+    if (error !== undefined && error !== null) {
+      if (error instanceof Error) {
+        fullMessage = `${message}: ${error.name}: ${error.message}`;
+      } else if (error instanceof Response) {
+        fullMessage = `${message}: HTTP ${error.status} ${error.statusText}`.trimEnd();
+      } else if (typeof error === 'string') {
+        fullMessage = `${message}: ${error}`;
+      } else if (typeof error === 'object') {
+        // Plain object passed as second arg — treat as properties, not an error to stringify
+        mergedProperties = { ...(error as Record<string, unknown>), ...properties };
+      } else {
+        fullMessage = `${message}: ${String(error)}`;
+      }
     }
 
-    console.error(`[ERROR] ${fullMessage}`, properties || '');
-
-    const payload: ServerLogPayload = {
-      level: 'Error',
-      message: fullMessage,
-      timestamp: new Date().toISOString(),
-      properties,
-    };
-    sendLogToApi(payload);
+    console.error(`[ERROR] ${fullMessage}`, mergedProperties || '');
+    sendLogToSeq('Error', fullMessage, mergedProperties);
   },
 
-  /**
-   * Log a debug message.
-   */
   debug(message: string, properties?: Record<string, unknown>): void {
     console.debug(`[DEBUG] ${message}`, properties || '');
-
-    const payload: ServerLogPayload = {
-      level: 'Debug',
-      message,
-      timestamp: new Date().toISOString(),
-      properties,
-    };
-    sendLogToApi(payload);
+    sendLogToSeq('Debug', message, properties);
   },
 };

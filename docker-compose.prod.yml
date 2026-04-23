@@ -97,10 +97,9 @@ services:
       # ExternalLogging__SeqUrl: "[ReplaceThis]"
 
       # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
-      # HttpLoggingFilterOptions__ExcludedPaths__0: "/api/logs"
-      # HttpLoggingFilterOptions__ExcludedPaths__1: "/health"
-      # HttpLoggingFilterOptions__ExcludedPaths__2: "/health/ready"
-      # HttpLoggingFilterOptions__ExcludedPaths__3: "/health/live"
+      # HttpLoggingFilterOptions__ExcludedPaths__0: "/health"
+      # HttpLoggingFilterOptions__ExcludedPaths__1: "/health/ready"
+      # HttpLoggingFilterOptions__ExcludedPaths__2: "/health/live"
       # HttpLoggingFilterOptions__ExcludePathStartsWith__0: "/api/health"
       # HttpLoggingFilterOptions__ExcludePathStartsWith__1: "/swagger"
 
@@ -146,6 +145,10 @@ services:
 
       # Node environment
       NODE_ENV: "production"
+
+      # Seq logging configuration (for structured logging from Remix server)
+      # Uses the same variable as the API — set once to enable both services
+      # ExternalLogging__SeqUrl: "http://seq:5341"
 
       # Optional: Enable detailed error messages (not recommended for production)
       # SHOW_ERROR_DETAILS: "false"
