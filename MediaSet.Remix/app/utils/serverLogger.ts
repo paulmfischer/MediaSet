@@ -1,4 +1,4 @@
-import { getRequestContext } from './apiFetch.server';
+import { initializeRequestContext, getRequestContext } from './apiFetch.server';
 
 const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
 
@@ -28,7 +28,8 @@ async function sendLogToSeq(level: LogLevel, message: string, properties?: Recor
   };
 
   if (context?.traceId) {
-    event['TraceId'] = context.traceId;
+    // @tr is the CLEF standard field Seq uses for trace correlation (enables the Trace button)
+    event['@tr'] = context.traceId;
   }
 
   try {
@@ -48,16 +49,19 @@ async function sendLogToSeq(level: LogLevel, message: string, properties?: Recor
 
 export const serverLogger = {
   info(message: string, properties?: Record<string, unknown>): void {
+    initializeRequestContext();
     console.log(`[INFO] ${message}`, properties || '');
     sendLogToSeq('Information', message, properties);
   },
 
   warn(message: string, properties?: Record<string, unknown>): void {
+    initializeRequestContext();
     console.warn(`[WARN] ${message}`, properties || '');
     sendLogToSeq('Warning', message, properties);
   },
 
   error(message: string, error?: Error | string | unknown, properties?: Record<string, unknown>): void {
+    initializeRequestContext();
     let fullMessage = message;
     let mergedProperties = properties;
 
@@ -81,6 +85,7 @@ export const serverLogger = {
   },
 
   debug(message: string, properties?: Record<string, unknown>): void {
+    initializeRequestContext();
     console.debug(`[DEBUG] ${message}`, properties || '');
     sendLogToSeq('Debug', message, properties);
   },
