@@ -69,6 +69,7 @@ services:
       NODE_ENV: "development"
       REMIX_DEV_HTTP_ORIGIN: "http://localhost:3000"
       apiUrl: "http://api:5000"
+      ExternalLogging__Enabled: "${ExternalLogging__Enabled:-false}"
       ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
     volumes:
       - ./MediaSet.Remix:/app:Z

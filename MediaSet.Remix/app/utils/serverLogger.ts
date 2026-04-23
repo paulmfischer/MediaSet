@@ -1,5 +1,6 @@
 import { initializeRequestContext, getRequestContext } from './apiFetch.server';
 
+const SEQ_ENABLED = process.env['ExternalLogging__Enabled'] === 'true';
 const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
 
 type LogLevel = 'Debug' | 'Information' | 'Warning' | 'Error';
@@ -12,7 +13,7 @@ const CLEF_LEVEL: Partial<Record<LogLevel, string>> = {
 };
 
 async function sendLogToSeq(level: LogLevel, message: string, properties?: Record<string, unknown>): Promise<void> {
-  if (!SEQ_URL) return;
+  if (!SEQ_ENABLED || !SEQ_URL) return;
 
   const context = getRequestContext();
 
