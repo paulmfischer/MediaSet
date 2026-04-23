@@ -23,7 +23,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="MongoDB.Driver" Version="3.0.0" />
-        <PackageReference Include="OpenTelemetry.Api" Version="1.15.0" />
+        <PackageReference Include="OpenTelemetry.Api" Version="1.15.3" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.0" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
