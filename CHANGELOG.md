@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.4](https://github.com/paulmfischer/MediaSet/compare/v3.7.3...v3.7.4) (2026-04-25)
+
+
+### Refactoring
+
+* **logging:** log directly from Remix server to Seq via CLEF ([#596](https://github.com/paulmfischer/MediaSet/issues/596)) ([2850d8d](https://github.com/paulmfischer/MediaSet/commit/2850d8db3ac4346a819d131f1a34855242556230))
+
 ## [3.7.3](https://github.com/paulmfischer/MediaSet/compare/v3.7.2...v3.7.3) (2026-04-21)
 
 
