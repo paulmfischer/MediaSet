@@ -151,6 +151,7 @@ Access MongoDB directly:
 - `NODE_ENV=development`
 - `apiUrl=http://api:5000`
 - `REMIX_DEV_HTTP_ORIGIN=http://localhost:3000`
+- `ExternalLogging__SeqUrl` (optional) — same variable as the API; enables Remix structured logging to Seq when set
 
 
 

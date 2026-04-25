@@ -3,7 +3,6 @@ using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Images.Models;
 
 using System.Text.Json.Serialization;
-using MediaSet.Api.Features.Logs.Endpoints;
 using MediaSet.Api.Features.Entities.Endpoints;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Features.Lookup.Endpoints;
@@ -280,16 +279,6 @@ else
 
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddPolicy("client-logs", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 20,
-                Window = TimeSpan.FromMinutes(1),
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            }));
     options.AddPolicy("upload", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -381,9 +370,6 @@ if (imageConfig != null)
 
 // Health endpoint group
 app.MapHealth();
-
-// Logs endpoint group for client-side log ingestion
-app.MapLogs();
 
 app.MapEntity<Movie>();
 app.MapEntity<Book>();

@@ -26,11 +26,7 @@ async function getMetadata(entityType: Entity, property: string) {
     });
     return values.map((value) => ({ label: value, value: value }));
   } catch (error) {
-    serverLogger.error(`Error fetching ${property} metadata for ${entityType}`, {
-      entityType,
-      property,
-      error: String(error),
-    });
+    serverLogger.error(`Error fetching ${property} metadata for ${entityType}`, error, { entityType, property });
     throw error;
   }
 }

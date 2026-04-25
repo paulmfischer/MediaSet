@@ -48,7 +48,7 @@ export async function searchEntities<TEntity extends BaseEntity>(
     });
     return entities;
   } catch (error) {
-    serverLogger.error('Error searching entities', { operation: 'searchEntities', entityType, error: String(error) });
+    serverLogger.error('Error searching entities', error, { operation: 'searchEntities', entityType });
     throw error;
   }
 }
@@ -95,11 +95,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
     });
     return result;
   } catch (error) {
-    serverLogger.error('Error paged searching entities', {
-      operation: 'pagedSearchEntities',
-      entityType,
-      error: String(error),
-    });
+    serverLogger.error('Error paged searching entities', error, { operation: 'pagedSearchEntities', entityType });
     throw error;
   }
 }
@@ -134,7 +130,7 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
     });
     return entity;
   } catch (error) {
-    serverLogger.error('Error fetching entity', { operation: 'getEntity', entityType, id, error: String(error) });
+    serverLogger.error('Error fetching entity', error, { operation: 'getEntity', entityType, id });
     throw error;
   }
 }
@@ -183,7 +179,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
       id,
     });
   } catch (error) {
-    serverLogger.error('Error updating entity', { operation: 'updateEntity', entityType, id, error: String(error) });
+    serverLogger.error('Error updating entity', error, { operation: 'updateEntity', entityType, id });
     throw error;
   }
 }
@@ -228,7 +224,7 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, for
     });
     return newEntity;
   } catch (error) {
-    serverLogger.error('Error creating entity', { operation: 'addEntity', entityType, error: String(error) });
+    serverLogger.error('Error creating entity', error, { operation: 'addEntity', entityType });
     throw error;
   }
 }
@@ -257,11 +253,10 @@ export async function deleteEntity(entity: Entity, id: string): Promise<void> {
       id,
     });
   } catch (error) {
-    serverLogger.error(`Error deleting ${singular(entity)} with id ${id}`, {
+    serverLogger.error(`Error deleting ${singular(entity)} with id ${id}`, error, {
       operation: 'deleteEntity',
       entityType: entity,
       id,
-      error: String(error),
     });
     throw error;
   }
