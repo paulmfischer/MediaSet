@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.7.4](https://github.com/paulmfischer/MediaSet/compare/v3.7.3...v3.7.4) (2026-04-27)
+
+
+### Bug Fixes
+
+* **docker:** add MongoDB healthcheck and condition-based depends_on ([#600](https://github.com/paulmfischer/MediaSet/issues/600)) ([e504156](https://github.com/paulmfischer/MediaSet/commit/e504156157fa72ca082233624df1f58c2cc7aa54)), closes [#578](https://github.com/paulmfischer/MediaSet/issues/578)
+
+
+### Refactoring
+
+* **logging:** log directly from Remix server to Seq via CLEF ([#596](https://github.com/paulmfischer/MediaSet/issues/596)) ([2850d8d](https://github.com/paulmfischer/MediaSet/commit/2850d8db3ac4346a819d131f1a34855242556230))
+
 ## [3.7.3](https://github.com/paulmfischer/MediaSet/compare/v3.7.2...v3.7.3) (2026-04-21)
 
 
