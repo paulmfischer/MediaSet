@@ -12,6 +12,12 @@ services:
       MONGO_INITDB_DATABASE: "MediaSet"
     volumes:
       - ./data/mongodb:/data/db:Z
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - mediaset-dev
 
@@ -49,7 +55,8 @@ services:
       - nuget_cache:/nuget:Z
     stop_grace_period: 2s
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - mediaset-dev
     command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
