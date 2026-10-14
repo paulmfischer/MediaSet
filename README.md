@@ -136,7 +136,7 @@ services:
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ASPNETCORE_ENVIRONMENT: "Production"
-      MediaSetDatabaseSettings__ConnectionString: "mongodb://mongo:27017"
+      MediaSetDatabaseSettings__ConnectionString: "mongodb://mediaset:${MONGO_APP_PASSWORD}@mongo:27017/MediaSet?authSource=MediaSet"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"
       
       # Optional: Configure integrations (uncomment and add your API keys)
@@ -173,13 +173,19 @@ services:
       - mediaset
   
   mongo:
-    image: mongo:latest
+    image: mongo:8.0
     container_name: mediaset-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_ROOT_PASSWORD}"
+      APP_DB_NAME: "MediaSet"
+      APP_DB_USER: "mediaset"
+      APP_DB_PASSWORD: "${MONGO_APP_PASSWORD}"
     volumes:
       - mediaset-db:/data/db
+      # Creates the per-app user on first start; copy mongo-init/ from this repo
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
     networks:
       - mediaset
 
