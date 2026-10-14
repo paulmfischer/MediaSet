@@ -264,7 +264,7 @@ shell_dev() {
             $COMPOSE_COMMAND -f $COMPOSE_FILE exec ui sh
             ;;
         mongo|mongodb)
-            $COMPOSE_COMMAND -f $COMPOSE_FILE exec mongodb mongosh MediaSet
+            $COMPOSE_COMMAND -f $COMPOSE_FILE exec mongodb sh -c 'mongosh "mongodb://$APP_DB_USER:$APP_DB_PASSWORD@localhost:27017/$APP_DB_NAME?authSource=$APP_DB_NAME"'
             ;;
         *)
             echo "Available shells: api, ui, mongo"

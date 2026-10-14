@@ -6,7 +6,9 @@
 # - Set required environment variables in a .env file or pass them directly
 #
 # Required environment variables:
-#   - MONGODB_CONNECTION_STRING: MongoDB connection string (default: mongodb://mongo:27017)
+#   - MONGO_ROOT_PASSWORD: password for the MongoDB root user (used when the bundled mongo service first initializes)
+#   - MONGO_APP_PASSWORD: password for the "mediaset" MongoDB user the API connects as
+#   - MONGODB_CONNECTION_STRING: (optional) full connection string; overrides the built-in mongo service credentials
 #   - AllowedHosts: Semicolon-separated list of hostnames/IPs the API is reachable at (e.g., sub.domain.com)
 #
 # Optional environment variables (for barcode/metadata lookup features):
@@ -45,10 +47,9 @@ services:
       # TZ: "America/New_York"
 
       # Database configuration
-      # Without authentication (default):
-      MediaSetDatabaseSettings__ConnectionString: "${MONGODB_CONNECTION_STRING:-mongodb://mongo:27017}"
-      # With authentication (if MongoDB auth is enabled on the mongo service below):
-      # MediaSetDatabaseSettings__ConnectionString: "mongodb://username:password@mongo:27017/?authSource=admin"
+      # Authenticated as the per-app "mediaset" user (readWrite on the MediaSet database only).
+      # Set MONGODB_CONNECTION_STRING to point at a different server (e.g. a shared MongoDB).
+      MediaSetDatabaseSettings__ConnectionString: "${MONGODB_CONNECTION_STRING:-mongodb://mediaset:${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD}@mongo:27017/MediaSet?authSource=MediaSet}"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"
 
       # Cache settings
@@ -161,17 +162,21 @@ services:
       - mediaset
 
   mongo:
-    image: mongo:7.0
+    image: mongo:8.0
     container_name: mediaset-mongo
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: "MediaSet"
-      # Optional: enable MongoDB authentication (recommended for production)
-      # If enabled, update the API connection string above to include credentials
-      # MONGO_INITDB_ROOT_USERNAME: "[ReplaceThis]"
-      # MONGO_INITDB_ROOT_PASSWORD: "[ReplaceThis]"
+      # Authentication is on. The root user and the per-app user are only created on first
+      # start with an empty mediaset-db volume (see mongo-init/01-create-app-user.js).
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}"
+      APP_DB_NAME: "MediaSet"
+      APP_DB_USER: "mediaset"
+      APP_DB_PASSWORD: "${MONGO_APP_PASSWORD:?set MONGO_APP_PASSWORD}"
     volumes:
       - mediaset-db:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro,Z
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s

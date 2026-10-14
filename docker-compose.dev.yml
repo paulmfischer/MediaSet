@@ -3,15 +3,22 @@ version: '3.8'
 services:
   # MongoDB for development
   mongodb:
-    image: docker.io/mongo:7.0
+    image: docker.io/mongo:8.0
     container_name: mediaset-dev-mongo
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_DATABASE: "MediaSet"
+      # Auth is on. The init script only runs against an empty ./data/mongodb (see README).
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_ROOT_PASSWORD:-root-dev-password}"
+      APP_DB_NAME: "MediaSet"
+      APP_DB_USER: "mediaset"
+      APP_DB_PASSWORD: "${MONGO_APP_PASSWORD:-mediaset-dev-password}"
     volumes:
       - ./data/mongodb:/data/db:Z
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro,Z
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s
@@ -37,7 +44,7 @@ services:
       ASPNETCORE_HTTP_PORTS: "5000"
       ASPNETCORE_HTTPS_PORTS: ""
       NUGET_PACKAGES: "/nuget"
-      MediaSetDatabaseSettings__ConnectionString: "mongodb://mongodb:27017"
+      MediaSetDatabaseSettings__ConnectionString: "mongodb://mediaset:${MONGO_APP_PASSWORD:-mediaset-dev-password}@mongodb:27017/MediaSet?authSource=MediaSet"
       MediaSetDatabaseSettings__DatabaseName: "MediaSet"
       # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
       TmdbConfiguration__BearerToken: "${TMDB_BEARER_TOKEN}"

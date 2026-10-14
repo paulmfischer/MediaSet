@@ -11,6 +11,7 @@ Prerequisites
 Overview
 
 - The production compose file `docker-compose.prod.yml` defines three services: `mediaset-api`, `mediaset-ui`, and `mongo`.
+- MongoDB runs with authentication on. Set `MONGO_ROOT_PASSWORD` and `MONGO_APP_PASSWORD` in `.env` before first start; the API connects as the `mediaset` user (`readWrite` on `MediaSet` only). The users are created from `mongo-init/` only when the `mediaset-db` volume is empty, so an existing volume needs the user created manually (or `down -v` to start over, which deletes the data).
 
 Configuration approach
 
