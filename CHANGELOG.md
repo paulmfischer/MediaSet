@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/paulmfischer/MediaSet/compare/v3.7.4...v4.0.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **docker:** upgrade to MongoDB 8.0 and enable authentication ([#603](https://github.com/paulmfischer/MediaSet/issues/603))
+
+### Features
+
+* **docker:** upgrade to MongoDB 8.0 and enable authentication ([#603](https://github.com/paulmfischer/MediaSet/issues/603)) ([5bc5ce3](https://github.com/paulmfischer/MediaSet/commit/5bc5ce3528b9f3b11ada4a91018adcc2b3d6261d))
+
 ## [3.7.4](https://github.com/paulmfischer/MediaSet/compare/v3.7.3...v3.7.4) (2026-04-27)
 
 
