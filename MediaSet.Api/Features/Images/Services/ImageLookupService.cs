@@ -97,6 +97,13 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
         {
             attempts.Add((IdentifierType.Entity, ImageCandidateMatcher.SearchContext(entity)));
         }
+        if (mediaType == MediaTypes.Movies)
+        {
+            foreach (var attempt in attempts.Where(a => a.Type != IdentifierType.Entity))
+            {
+                attempt.Parameters["storedTitle"] = entity.Title;
+            }
+        }
 
         foreach (var (type, parameters) in attempts)
         {
@@ -147,6 +154,12 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                     failures.AttemptedProviders, strategy, ConfirmedMatch: confirmed));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (RetailBundleException ex)
+            {
+                logger.LogWarning("Image lookup requires manual artwork for {EntityId}: {MatchRationale}", entity.Id, ex.Message);
+                return new(false, null, null, ex.Message, true, ImageLookupOutcome.AmbiguousMatch,
+                    "Tmdb", strategy);
+            }
             catch (ProviderLookupException ex)
             {
                 Remember(new(false, null, null, ex.Message, !ImageRetryPolicy.IsRetryable(ex.Outcome),

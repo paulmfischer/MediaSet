@@ -46,6 +46,16 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 
         if (identifierType == IdentifierType.Entity)
         {
+            if (searchParams.GetValueOrDefault("confirmedProviderId") is { } collectionProvider
+                && collectionProvider.StartsWith("collection:", StringComparison.Ordinal)
+                && int.TryParse(collectionProvider[11..], out var collectionId))
+            {
+                var collection = await _tmdbClient.GetCollectionDetailsAsync(collectionId, cancellationToken);
+                var stored = searchParams.GetValueOrDefault("title") ?? string.Empty;
+                return collection != null && RetailVideoTitle.IsCollection(stored)
+                    && CollectionMatches(collection, stored)
+                    ? [MapCollection(collection, stored)] : [];
+            }
             if (searchParams.TryGetValue("confirmedProviderId", out var providerId) && int.TryParse(providerId, out var id))
             {
                 var details = await _tmdbClient.GetMovieDetailsAsync(id, cancellationToken);
@@ -61,15 +71,33 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                 searchParams.GetValueOrDefault("isTvSeries") == "true");
         }
 
-        var identifierValue = searchParams.Values.FirstOrDefault() ?? string.Empty;
-        var result = await LookupByUpcAsync(identifierValue, cancellationToken);
+        var identifierValue = searchParams.GetValueOrDefault(identifierType == IdentifierType.Ean ? "ean" : "upc")
+            ?? string.Empty;
+        var result = await LookupByUpcAsync(identifierValue, cancellationToken, searchParams.GetValueOrDefault("storedTitle"));
         return result != null ? [result] : [];
     }
 
     private async Task<IReadOnlyList<MovieResponse>> SearchByTitleAsync(
         string title, CancellationToken cancellationToken, bool isTvSeries = false)
     {
+        var rawTitle = title;
+        title = RetailVideoTitle.Clean(title);
+        _logger.LogInformation("Movie title candidate {RawTitle} -> {NormalizedQuery}; rationale {MatchRationale}",
+            rawTitle, title, "Known retail noise removed; exact normalized full title required");
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            _logger.LogWarning("Rejected manufacturer-only or empty title {RawTitle}; use stored title or manual artwork", rawTitle);
+            return [];
+        }
         var video = VideoTitle.Parse(title);
+        if (video.Season == null && !isTvSeries && RetailVideoTitle.IsCollection(title))
+        {
+            var collections = (await SearchCollectionAsync(title, cancellationToken)).ToList();
+            // "Complete Collection" can also identify a TV series. Verify both catalogs,
+            // but never downgrade a collection release to an individual film.
+            if (video.IsSeries) { collections.AddRange(await SearchTvAsync(video, cancellationToken)); }
+            return collections;
+        }
         var results = new List<MovieResponse>();
         if (!video.IsSeries && !isTvSeries)
         {
@@ -79,6 +107,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                 var details = await _tmdbClient.GetMovieDetailsAsync(match.Id, cancellationToken);
                 if (details != null && SameTitle(details.Title, title))
                 {
+                    _logger.LogInformation("Verified TMDB movie {ProviderId} for {NormalizedQuery}; rationale {MatchRationale}",
+                        details.Id, title, "Search and detail titles agree with the full normalized title");
                     results.Add(MapToMovieResponse(details));
                 }
             }
@@ -91,6 +121,46 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         }
         results.AddRange(await SearchTvAsync(video, cancellationToken));
         return results;
+    }
+
+    private async Task<IReadOnlyList<MovieResponse>> SearchCollectionAsync(
+        string title, CancellationToken cancellationToken)
+    {
+        var key = RetailVideoTitle.CollectionKey(title);
+        var query = System.Text.RegularExpressions.Regex.Replace(title,
+            @"\s*[:\-]?\s*(?:the\s+)?(?:complete\s+)?(?:trilogy|quadrilogy|collection)\s*$", "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+        _logger.LogInformation("Collection query {NormalizedQuery}; rationale {MatchRationale}", query,
+            "Collection identity must agree; individual film posters are excluded");
+        var matches = await _tmdbClient.SearchCollectionAsync(query, cancellationToken);
+        var results = new List<MovieResponse>();
+        foreach (var match in matches?.Results.Where(c => RetailVideoTitle.CollectionKey(c.Name) == key).Take(10) ?? [])
+        {
+            var details = await _tmdbClient.GetCollectionDetailsAsync(match.Id, cancellationToken);
+            if (details != null && CollectionMatches(details, title))
+            {
+                results.Add(MapCollection(details, title));
+            }
+        }
+        _logger.LogInformation("Collection title {Title}: {MatchCount} verified candidates; rationale {MatchRationale}",
+            title, results.Count, results.Count == 1 ? "Matched collection artwork; package contents unverified"
+                : "Unresolved or ambiguous bundle requires manual artwork; no individual film fallback");
+        return results;
+    }
+
+    private static MovieResponse MapCollection(TmdbCollectionResponse collection, string title) =>
+        new(title, [], [], string.Empty, string.Empty, null, collection.Overview ?? string.Empty, string.Empty,
+            string.IsNullOrWhiteSpace(collection.PosterPath) ? null : $"https://image.tmdb.org/t/p/w500{collection.PosterPath}",
+            new LookupProvenance("Tmdb", $"collection:{collection.Id}", title));
+
+    private static bool CollectionMatches(TmdbCollectionResponse collection, string title)
+    {
+        if (RetailVideoTitle.CollectionKey(collection.Name) != RetailVideoTitle.CollectionKey(title)) { return false; }
+        var expectedCount = System.Text.RegularExpressions.Regex.IsMatch(title, @"\btrilogy\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase) ? 3
+            : System.Text.RegularExpressions.Regex.IsMatch(title, @"\bquadrilogy\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase) ? 4 : (int?)null;
+        return !expectedCount.HasValue || collection.Parts?.Count == expectedCount;
     }
 
     private async Task<IReadOnlyList<MovieResponse>> SearchTvAsync(
@@ -175,7 +245,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                     .Select(d => d![..4]).Distinct().ToList()));
     }
 
-    private async Task<MovieResponse?> LookupByUpcAsync(string identifierValue, CancellationToken cancellationToken)
+    private async Task<MovieResponse?> LookupByUpcAsync(
+        string identifierValue, CancellationToken cancellationToken, string? storedTitle = null)
     {
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
 
@@ -193,7 +264,15 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             return null;
         }
 
-        var cleanedTitle = CleanMovieTitle(firstItem.Title, firstItem.Brand);
+        var cleanedTitle = RetailVideoTitle.Clean(firstItem.Title, firstItem.Brand);
+        if (VideoTitle.Parse(cleanedTitle).Season == null && RetailVideoTitle.IsCollection(cleanedTitle)
+            && !string.IsNullOrWhiteSpace(storedTitle)
+            && (!RetailVideoTitle.IsCollection(storedTitle)
+                || RetailVideoTitle.CollectionKey(storedTitle) != RetailVideoTitle.CollectionKey(cleanedTitle)))
+        {
+            throw new RetailBundleException(
+                "Retail bundle conflicts with stored title; manual artwork or corrected package metadata required");
+        }
         var format = ExtractMovieFormat(firstItem.Title);
         _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' with format '{Format}' for TMDB search",
             firstItem.Title, identifierValue, cleanedTitle, format);
@@ -228,80 +307,6 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             ImageUrl: imageUrl,
             Provenance: new LookupProvenance("Tmdb", tmdbMovie.Id.ToString(), tmdbMovie.Title)
         );
-    }
-
-    /// <summary>
-    /// Cleans movie title from UPCitemdb by removing brand prefixes, format suffixes,
-    /// edition details, and trailing junk text.
-    /// Examples:
-    /// - "1408 (Two-Disc Collector's Edition)" -> "1408"
-    /// - "Paramount - Beverly Hills Cop [DIGITAL VIDEO DISC]" (brand: Paramount) -> "Beverly Hills Cop"
-    /// - "Beverly Hills Ninja (DVD) Sony Pictures Comedy" -> "Beverly Hills Ninja"
-    /// - "300 (BD) [Blu-ray] Feature Action Science Fiction" -> "300"
-    /// </summary>
-    private static string CleanMovieTitle(string rawTitle, string? brand = null)
-    {
-        if (string.IsNullOrWhiteSpace(rawTitle))
-        {
-            return string.Empty;
-        }
-
-        var title = rawTitle.Trim();
-
-        // Remove brand as leading prefix (e.g., "Paramount - Beverly Hills Cop" or "Lions Gate : Title")
-        if (!string.IsNullOrWhiteSpace(brand))
-        {
-            title = System.Text.RegularExpressions.Regex.Replace(title, @"^" + System.Text.RegularExpressions.Regex.Escape(brand) + @"\s*[-:]\s*", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        }
-
-        // Remove common trailing words like NEW, USED, SEALED, etc.
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+(NEW|USED|SEALED|MINT|OPENED|UNOPENED|LIKE NEW)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Truncate at first ( or [ if there's content before it
-        var bracketIndex = title.IndexOfAny(['(', '[']);
-        if (bracketIndex > 0)
-        {
-            title = title[..bracketIndex];
-        }
-
-        // Truncate at comma followed by disc-count keywords (e.g., ", Two Disc Deluxe Edition, Hologram Cover")
-        title = System.Text.RegularExpressions.Regex.Replace(title, @",\s+(?:\d+|Two|Three|Four|Five|Six)\s+Discs?\b.*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Remove format combinations with + (e.g., "Blue-Ray + DVD", "Blu-ray + Digital")
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(Blu-?ray|Blue-?ray|DVD|4K|BD|UHD|Digital|HD)\s*\+\s*(Blu-?ray|Blue-?ray|DVD|4K|BD|UHD|Digital|HD).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Remove trailing brand text
-        if (!string.IsNullOrWhiteSpace(brand))
-        {
-            title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+" + System.Text.RegularExpressions.Regex.Escape(brand) + @"\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        }
-
-        // Remove common suffixes like " - DVD", " - Blu-ray", " - 4K", etc.
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*-\s*(DVD|Blu-?ray|4K|BD|UHD|Digital|HD|DIGITAL VIDEO DISC).*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Remove format keywords at end (e.g., 'DVD', 'Blu-ray', etc.)
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s*(DVD|Blu-?ray|Blue-?ray|4K|BD|UHD|Digital|HD)\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Remove trailing disc-count edition phrases (e.g., "Two-Disc Diamond Edition")
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+(?:\d+-?Discs?|Two-?Discs?|Three-?Discs?|Four-?Discs?|Five-?Discs?|Six-?Discs?)\b.*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Remove trailing "Complete Collection"
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+Complete\s+Collection\s*$", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-        // Clean up multiple spaces and trim
-        title = System.Text.RegularExpressions.Regex.Replace(title, @"\s+", " ").Trim();
-
-        // Move articles from end to beginning
-        // Examples: "Scanner Darkly A" -> "A Scanner Darkly", "Matrix The" -> "The Matrix"
-        var articleMatch = System.Text.RegularExpressions.Regex.Match(title, @"^(.+?)\s+(A|The)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        if (articleMatch.Success)
-        {
-            var mainTitle = articleMatch.Groups[1].Value.Trim();
-            var article = articleMatch.Groups[2].Value;
-            title = $"{article} {mainTitle}";
-        }
-
-        return title;
     }
 
     /// <summary>

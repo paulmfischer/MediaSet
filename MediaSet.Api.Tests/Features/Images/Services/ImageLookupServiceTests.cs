@@ -50,6 +50,44 @@ public class ImageLookupServiceTests
     #region Id validation
 
     [Test]
+    public async Task PoorRetailMetadata_FallsBackToTrustworthyStoredFilmTitle()
+    {
+        _movieStrategyMock.Setup(s => s.CanHandle(MediaTypes.Movies, It.IsAny<IdentifierType>())).Returns(true);
+        _movieStrategyMock.Setup(s => s.LookupAsync(IdentifierType.Upc,
+            It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _movieStrategyMock.Setup(s => s.LookupAsync(IdentifierType.Entity,
+                It.Is<IReadOnlyDictionary<string, string>>(p => p["title"] == "The Da Vinci Code"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new MovieResponse("The Da Vinci Code", [], [], "", "", null, "", "",
+                "https://example.test/poster.jpg", new LookupProvenance("Tmdb", "1", "The Da Vinci Code"))]);
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync("https://example.test/poster.jpg", "Movies", "1",
+            It.IsAny<CancellationToken>())).ReturnsAsync(_savedImage);
+        var result = await _service.LookupAndSaveImageAsync(
+            new Movie { Id = "1", Title = "The Da Vinci Code", Barcode = "123" }, MediaTypes.Movies, CancellationToken.None);
+        Assert.That(result.Success, Is.True);
+        _movieStrategyMock.Verify(s => s.LookupAsync(IdentifierType.Entity,
+            It.Is<IReadOnlyDictionary<string, string>>(p => p["title"] == "The Da Vinci Code"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task RetailBundleConflict_StopsBeforeStoredFirstFilmFallback()
+    {
+        _movieStrategyMock.Setup(s => s.CanHandle(MediaTypes.Movies, It.IsAny<IdentifierType>())).Returns(true);
+        _movieStrategyMock.Setup(s => s.LookupAsync(IdentifierType.Upc,
+                It.Is<IReadOnlyDictionary<string, string>>(p => p["storedTitle"] == "Darkman"),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new RetailBundleException("Retail bundle requires manual artwork"));
+        var result = await _service.LookupAndSaveImageAsync(new Movie { Id = "1", Title = "Darkman", Barcode = "123" },
+            MediaTypes.Movies, CancellationToken.None);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.AmbiguousMatch));
+        _movieStrategyMock.Verify(s => s.LookupAsync(IdentifierType.Entity,
+            It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Never);
+        _imageServiceMock.Verify(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
     public async Task ProviderQuota_DoesNotDiscardIndependentArtwork()
     {
         _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
