@@ -150,6 +150,11 @@ public class ImageLookupService : IImageLookupService
         }
         catch (ProviderLookupException ex)
         {
+            // A terminal fallback result cannot invalidate the known URL's retryable download failure.
+            if (!ImageRetryPolicy.IsRetryable(ex.Outcome) && ImageRetryPolicy.IsRetryable(existingFailure?.Outcome))
+            {
+                return existingFailure!;
+            }
             return new ImageLookupResult(false, null, null, ex.Message, Outcome: ex.Outcome,
                 PermanentFailure: !ImageRetryPolicy.IsRetryable(ex.Outcome),
                 Provider: ex.Outcome == ImageLookupOutcome.AmbiguousMatch ? provider : ex.Provider,

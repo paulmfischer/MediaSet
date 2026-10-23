@@ -150,6 +150,37 @@ public class ImageLookupServiceTests
     #region Identifier priority — Books
 
     [Test]
+    public async Task LookupAndSaveImageAsync_TransientKnownUrlAndAmbiguousFallback_PreservesDownloadRetry()
+    {
+        var book = new Book { Id = "1", Title = "Dune", ImageUrl = "https://example.com/known.jpg" };
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(book.ImageUrl, It.IsAny<string>(),
+            book.Id, It.IsAny<CancellationToken>())).ThrowsAsync(new System.Net.Http.HttpRequestException(
+                "temporary download outage", null, System.Net.HttpStatusCode.ServiceUnavailable));
+        _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
+        _bookStrategyMock.Setup(s => s.LookupAsync(IdentifierType.Entity,
+                It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new BookResponse("Dune", "", [], 0, [], "", []), new BookResponse("Dune Messiah", "", [], 0, [], "", [])]);
+
+        var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
+        var now = DateTime.UtcNow;
+        var state = ImageRetryPolicy.Complete(book, result, new(), now);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.DownloadFailure));
+            Assert.That(result.ImageUrl, Is.EqualTo(book.ImageUrl));
+            Assert.That(result.Provider, Is.EqualTo("ImageDownload"));
+            Assert.That(result.AttemptedStrategy, Is.EqualTo("DownloadUrl"));
+            Assert.That(result.PermanentFailure, Is.False);
+            Assert.That(state.LastOutcome, Is.EqualTo(ImageLookupOutcome.DownloadFailure));
+            Assert.That(state.PermanentFailure, Is.False);
+            Assert.That(state.NextEligibleAt, Is.GreaterThan(now));
+        });
+        _bookStrategyMock.Verify(s => s.LookupAsync(IdentifierType.Entity,
+            It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
     public async Task LookupAndSaveImageAsync_UsesIsbn_WhenBookHasIsbn()
     {
         // Arrange
