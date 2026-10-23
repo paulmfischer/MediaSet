@@ -355,6 +355,29 @@ public class MovieLookupStrategyTests
         _tmdbClientMock.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [TestCase("Trilogy of Terror", IdentifierType.Entity)]
+    [TestCase("Trilogy of Terror II", IdentifierType.Entity)]
+    [TestCase("Trilogy of Terror", IdentifierType.Upc)]
+    [TestCase("Trilogy of Terror II", IdentifierType.Upc)]
+    public async Task LookupAsync_CollectionWordWithinFilmTitle_UsesIndividualMovieSearch(
+        string title, IdentifierType identifierType)
+    {
+        _upcItemDbClientMock.Setup(c => c.GetItemByCodeAsync("123", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUpcItemResponse("123", title));
+        _tmdbClientMock.Setup(c => c.SearchMovieAsync(title, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateSearchResponse(1, title));
+        _tmdbClientMock.Setup(c => c.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateMovieDetails(1, title, "1975-03-04", 72));
+
+        var results = await _strategy.LookupAsync(identifierType,
+            new Dictionary<string, string> { ["title"] = title, ["upc"] = "123" }, CancellationToken.None);
+
+        Assert.That(results, Has.Count.EqualTo(1));
+        Assert.That(results[0].Title, Is.EqualTo(title));
+        _tmdbClientMock.Verify(c => c.SearchMovieAsync(title, It.IsAny<CancellationToken>()), Times.Once);
+        _tmdbClientMock.Verify(c => c.SearchCollectionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [TestCase("Darkman Trilogy")]
     [TestCase("Darkman / Army of Darkness Double Feature")]
     [TestCase("Darkman + Army of Darkness")]

@@ -46,7 +46,7 @@ public static class RetailVideoTitle
     public static bool IsCollection(string title) => !string.IsNullOrWhiteSpace(CollectionKey(title))
         && !Regex.IsMatch(title, @"\bBook\s+\d+\s+Collection\b", Options)
         && Regex.IsMatch(title,
-            @"\b(?:trilogy|quadrilogy|collection|box\s*set|bundle|double feature|\d+[ -](?:movie|film)\s*(?:set|pack))\b|\s[+/]\s", Options);
+            @"\s+(?:trilogy|quadrilogy|collection|box\s*set|bundle|double feature|\d+[ -](?:movie|film)\s*(?:set|pack))\s*$|\s[+/]\s", Options);
 
     public static string CollectionKey(string title) => VideoTitle.Normalize(Regex.Replace(title,
         @"\s*[:\-]?\s*(?:the\s+)?(?:complete\s+)?(?:trilogy|quadrilogy|collection)\s*$", "", Options));
