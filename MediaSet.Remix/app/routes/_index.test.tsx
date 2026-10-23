@@ -1,3 +1,4 @@
+import { createMetaArgs } from '~/test/meta-args';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '~/test/test-utils';
 import Index, { meta, loader } from './_index';
@@ -127,7 +128,7 @@ const emptyStats = {
 describe('_index route', () => {
   describe('meta function', () => {
     it('should return correct title and description', () => {
-      const result = meta({ params: {} } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({}));
       expect(result).toEqual([
         { title: 'Dashboard | MediaSet' },
         { name: 'description', content: 'Your personal media collection dashboard' },
@@ -135,7 +136,7 @@ describe('_index route', () => {
     });
 
     it('should have all required meta tags', () => {
-      const result = meta({ params: {} } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({}));
       expect(result).toHaveLength(2);
       const titles = result.filter((m: Record<string, unknown>) => m.title);
       const descriptions = result.filter((m: Record<string, unknown>) => m.name === 'description');

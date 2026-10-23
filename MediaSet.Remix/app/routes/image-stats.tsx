@@ -8,6 +8,7 @@ import {
   type OrphanedImageFile,
 } from '~/api/image-stats-data';
 import { deleteOrphanedImages, resetImageLookup } from '~/api/image-management-data';
+import { getEntityFromParams } from '~/utils/helpers';
 import StatCard from '~/components/common/stat-card';
 import {
   HardDrive,
@@ -41,7 +42,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (intent === 'delete-orphaned') {
     await deleteOrphanedImages();
   } else if (intent === 'reset-lookup') {
-    const entityType = formData.get('entityType') as string;
+    const entityType = getEntityFromParams({ entity: String(formData.get('entityType') ?? '') });
     const entityIdsRaw = formData.get('entityIds') as string;
     let entityIds: string[];
     try {

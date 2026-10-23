@@ -41,7 +41,7 @@ function formDataToType<T>(formData: FormData): T {
   return data as T;
 }
 
-function getValue(val: unknown): unknown | undefined {
+function getValue<T>(val: T): T | undefined {
   return val == '' ? undefined : val;
 }
 
@@ -139,19 +139,16 @@ function baseToGameEntity(data: BaseEntity): GameEntity {
 }
 
 function baseToMusicEntity(data: BaseEntity): MusicEntity {
-  const music = data as Music;
+  const music = data as Music &
+    Record<`discList[${number}].${'trackNumber' | 'title' | 'duration'}`, string | undefined>;
 
   // Parse disc list from form data
   const discList: Disc[] = [];
   let i = 0;
   while (true) {
-    const trackNumberKey = `discList[${i}].trackNumber` as keyof Music;
-    const titleKey = `discList[${i}].title` as keyof Music;
-    const durationKey = `discList[${i}].duration` as keyof Music;
-
-    const trackNumber = (music as Record<string, unknown>)[trackNumberKey as string];
-    const title = (music as Record<string, unknown>)[titleKey as string];
-    const duration = (music as Record<string, unknown>)[durationKey as string];
+    const trackNumber = music[`discList[${i}].trackNumber`];
+    const title = music[`discList[${i}].title`];
+    const duration = music[`discList[${i}].duration`];
 
     if (trackNumber === undefined && title === undefined && duration === undefined) {
       break;
@@ -159,9 +156,9 @@ function baseToMusicEntity(data: BaseEntity): MusicEntity {
 
     if (title || duration) {
       discList.push({
-        trackNumber: parseInt(trackNumber) || i + 1,
+        trackNumber: parseInt(trackNumber ?? '') || i + 1,
         title: title || '',
-        duration: durationToMilliseconds(duration),
+        duration: durationToMilliseconds(duration ?? ''),
       });
     }
     i++;

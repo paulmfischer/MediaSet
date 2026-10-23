@@ -1,3 +1,4 @@
+import { createMetaArgs } from '~/test/meta-args';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { meta, loader } from './route';
 import * as entityData from '~/api/entity-data';
@@ -19,32 +20,32 @@ describe('$entity._index route', () => {
   describe('meta function', () => {
     it('should return correct title and description for Books', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'books' }));
       expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
       expect(result).toContainEqual(expect.objectContaining({ name: 'description' }));
     });
 
     it('should return correct title and description for Movies', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-      const result = meta({ params: { entity: 'movies' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'movies' }));
       expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should return correct title and description for Games', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
-      const result = meta({ params: { entity: 'games' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'games' }));
       expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should return correct title and description for Musics', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-      const result = meta({ params: { entity: 'musics' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'musics' }));
       expect(result).toContainEqual(expect.objectContaining({ title: expect.stringContaining('List') }));
     });
 
     it('should have 2 meta tags', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
-      const result = meta({ params: { entity: 'books' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'books' }));
       expect(result).toHaveLength(2);
     });
   });

@@ -1,4 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import type { BrowserMultiFormatReader } from '@zxing/library';
+
+interface NativeBarcodeWindow extends Window {
+  BarcodeDetector: new (opts: { formats: string[] }) => {
+    detect: (img: ImageBitmap) => Promise<{ rawValue: string }[]>;
+  };
+}
+
+interface FrameImageCapture extends ImageCapture {
+  grabFrame: () => Promise<ImageBitmap>;
+}
 
 type Props = {
   open: boolean;
@@ -11,10 +22,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [scannerType, setScannerType] = useState<'native' | 'zxing' | null>(null);
-  const codeReaderRef = useRef<{
-    reset: () => void;
-    decodeFromVideoDevice: (...args: unknown[]) => Promise<unknown>;
-  } | null>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const detectionLoopRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,21 +90,11 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
         // Try native BarcodeDetector first (Chrome/Edge)
         if ('BarcodeDetector' in window && 'ImageCapture' in window) {
           try {
-            // @ts-expect-error BarcodeDetector is not in all TypeScript lib definitions
-            const detector = new (
-              window as {
-                BarcodeDetector: new (opts: { formats: string[] }) => {
-                  detect: (img: unknown) => Promise<{ rawValue: string }[]>;
-                };
-              }
-            ).BarcodeDetector({
+            const detector = new (window as NativeBarcodeWindow).BarcodeDetector({
               formats: ['ean_13', 'upc_a', 'code_128', 'code_39', 'ean_8', 'upc_e'],
             });
             const track = mediaStream.getVideoTracks()[0];
-            // @ts-expect-error ImageCapture is not in all TypeScript lib definitions
-            const imageCapture = new (
-              window as { ImageCapture: new (track: MediaStreamTrack) => { grabFrame: () => Promise<ImageBitmap> } }
-            ).ImageCapture(track);
+            const imageCapture = new window.ImageCapture(track) as FrameImageCapture;
 
             setScannerType('native');
             console.log('[BarcodeScanner] Using native BarcodeDetector');
@@ -263,14 +261,7 @@ export default function BarcodeScanner({ open, onClose, onDetected }: Props) {
       // Try native BarcodeDetector first
       if ('BarcodeDetector' in window) {
         try {
-          // @ts-expect-error BarcodeDetector is not in all TypeScript lib definitions
-          const detector = new (
-            window as {
-              BarcodeDetector: new (opts: { formats: string[] }) => {
-                detect: (img: unknown) => Promise<{ rawValue: string }[]>;
-              };
-            }
-          ).BarcodeDetector({
+          const detector = new (window as NativeBarcodeWindow).BarcodeDetector({
             formats: ['ean_13', 'upc_a', 'code_128', 'code_39', 'ean_8', 'upc_e'],
           });
 
