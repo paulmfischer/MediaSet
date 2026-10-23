@@ -4,6 +4,8 @@ namespace MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 
 public interface ITmdbClient
 {
+    Task<TmdbCollectionSearchResponse?> SearchCollectionAsync(string title, CancellationToken cancellationToken);
+    Task<TmdbCollectionResponse?> GetCollectionDetailsAsync(int collectionId, CancellationToken cancellationToken);
     Task<TmdbSearchResponse?> SearchMovieAsync(string title, CancellationToken cancellationToken);
     Task<TmdbMovieResponse?> GetMovieDetailsAsync(int movieId, CancellationToken cancellationToken);
     Task<TmdbTvSearchResponse?> SearchTvAsync(string title, CancellationToken cancellationToken);

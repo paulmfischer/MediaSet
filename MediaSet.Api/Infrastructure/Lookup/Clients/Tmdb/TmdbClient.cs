@@ -64,6 +64,13 @@ public class TmdbClient : ITmdbClient
         }
     }
 
+    public Task<TmdbCollectionSearchResponse?> SearchCollectionAsync(string title, CancellationToken cancellationToken) =>
+        GetTvResourceAsync<TmdbCollectionSearchResponse>(
+            $"search/collection?query={HttpUtility.UrlEncode(title)}", cancellationToken);
+
+    public Task<TmdbCollectionResponse?> GetCollectionDetailsAsync(int collectionId, CancellationToken cancellationToken) =>
+        GetTvResourceAsync<TmdbCollectionResponse>($"collection/{collectionId}", cancellationToken);
+
     public Task<TmdbTvSearchResponse?> SearchTvAsync(string title, CancellationToken cancellationToken) =>
         GetTvResourceAsync<TmdbTvSearchResponse>($"search/tv?query={HttpUtility.UrlEncode(title)}", cancellationToken);
 

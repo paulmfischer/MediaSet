@@ -26,6 +26,33 @@ public class TmdbTvClientTests
         new(http, Options.Create(new TmdbConfiguration()), NullLogger<TmdbClient>.Instance);
 
     [Test]
+    public async Task CollectionEndpoints_EncodeQueryAndReadCollectionArtworkAndParts()
+    {
+        using var handler = new Handler((request, _) =>
+        {
+            var search = request.RequestUri?.AbsolutePath == "/3/search/collection";
+            if (search)
+            {
+                Assert.That(System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["query"],
+                    Is.EqualTo("Back to the Future & Friends"));
+            }
+            else { Assert.That(request.RequestUri?.AbsolutePath, Is.EqualTo("/3/collection/100")); }
+            var collection = """
+                {"id":100,"name":"Back to the Future Collection","poster_path":"/collection.jpg",
+                 "parts":[{"id":1,"title":"Back to the Future"}]}
+                """;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                { Content = new StringContent(search ? "{\"results\":[" + collection + "]}" : collection) });
+        });
+        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
+        var search = await Client(http).SearchCollectionAsync("Back to the Future & Friends", CancellationToken.None);
+        var details = await Client(http).GetCollectionDetailsAsync(100, CancellationToken.None);
+        Assert.That(search?.Results[0].Name, Is.EqualTo("Back to the Future Collection"));
+        Assert.That(details?.PosterPath, Is.EqualTo("/collection.jpg"));
+        Assert.That(details?.Parts, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public async Task SearchTvAsync_EncodesQueryAndReadsTvNames()
     {
         using var handler = new Handler((request, _) =>
