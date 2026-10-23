@@ -3,6 +3,9 @@ namespace MediaSet.Api.Infrastructure.Lookup.Models;
 public class UpcItemDbConfiguration
 {
     public string BaseUrl { get; set; } = string.Empty;
+    // A key never implicitly opts into the paid endpoint.
+    public string Plan { get; set; } = "Trial";
+    public string? ApiKey { get; set; }
     public int Timeout { get; set; } = 10;
 
     /// <summary>
@@ -35,6 +38,12 @@ public class UpcItemDbConfiguration
     public bool IsValid(out string? errorMessage)
     {
         errorMessage = null;
+
+        if (Plan is not ("Trial" or "Paid") || (Plan == "Paid" && string.IsNullOrWhiteSpace(ApiKey)))
+        {
+            errorMessage = "Plan must be Trial or Paid; Paid requires ApiKey";
+            return false;
+        }
 
         if (MaxRequestsPerMinute <= 0)
         {

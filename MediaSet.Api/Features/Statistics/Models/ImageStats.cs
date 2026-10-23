@@ -27,7 +27,12 @@ public record ImageLookupFailure(
     string Title,
     DateTime LookupAttemptedAt,
     string? FailureReason,
-    bool PermanentFailure
+    bool PermanentFailure,
+    string? Provider = null,
+    string? Outcome = null,
+    string? AttemptedStrategy = null,
+    DateTime? NextEligibleAt = null,
+    int AttemptCount = 0
 );
 
 public record ImageStats(

@@ -21,11 +21,11 @@ public class OpenLibraryClient : IOpenLibraryClient
     {
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
+            var response = await _httpClient.GetProviderFromJsonAsync<Dictionary<string, BookResponse>>($"api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data", new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
             }, cancellationToken);
-            _logger.LogInformation("books lookup by isbn: {response}", JsonSerializer.Serialize(response));
+            _logger.LogInformation("Open Library ISBN lookup completed");
 
             var key = $"ISBN:{isbn}";
             return response?.ContainsKey(key) == true ? response[key] : null;
@@ -54,11 +54,11 @@ public class OpenLibraryClient : IOpenLibraryClient
     {
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
+            var response = await _httpClient.GetProviderFromJsonAsync<ReadApiResponse>($"api/volumes/brief/{identifierType}/{identifierValue}.json", new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
             }, cancellationToken);
-            _logger.LogInformation("readable book lookup by {identifierType}:{identifierValue}: {response}", identifierType, identifierValue, JsonSerializer.Serialize(response));
+            _logger.LogInformation("Open Library readable lookup completed for {IdentifierType}", identifierType);
 
             return MapReadApiResponseToBookResponse(response);
         }
@@ -138,7 +138,7 @@ public class OpenLibraryClient : IOpenLibraryClient
                 return [];
             }
 
-            var response = await _httpClient.GetFromJsonAsync<OpenLibrarySearchResponse>(url, cancellationToken);
+            var response = await _httpClient.GetProviderFromJsonAsync<OpenLibrarySearchResponse>(url, cancellationToken);
 
             if (response == null || response.Docs.Count == 0)
             {

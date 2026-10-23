@@ -31,7 +31,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             _logger.LogInformation("Looking up music release by barcode: {Barcode}", barcode);
 
-            var response = await _httpClient.GetAsync(
+            var response = await _httpClient.GetProviderAsync(
                 $"ws/2/release/?query=barcode:{barcode}&fmt=json",
                 cancellationToken);
 
@@ -99,7 +99,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             _logger.LogInformation("Looking up music release by ID: {ReleaseId}", releaseId);
 
-            var response = await _httpClient.GetAsync(
+            var response = await _httpClient.GetProviderAsync(
                 $"ws/2/release/{releaseId}?inc=artist-credits+labels+recordings+tags&fmt=json",
                 cancellationToken);
 
@@ -181,7 +181,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 return [];
             }
 
-            var response = await _httpClient.GetAsync(
+            var response = await _httpClient.GetProviderAsync(
                 $"ws/2/release/?query={query}&limit=10&fmt=json",
                 cancellationToken);
 

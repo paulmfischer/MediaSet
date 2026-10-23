@@ -27,6 +27,9 @@ public class UpcItemDbClient : IUpcItemDbClient
 
     // Burst limit cooldown
     private static DateTime? _burstLimitResetTime = null;
+    // Shared across transient typed clients; isolate accounts/endpoints.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> quotaResets = new();
+    private string QuotaKey => $"{_httpClient.BaseAddress}|{_configuration.Plan}|{_configuration.ApiKey}";
 
     public UpcItemDbClient(
         HttpClient httpClient,
@@ -41,9 +44,16 @@ public class UpcItemDbClient : IUpcItemDbClient
     public async Task<UpcItemResponse?> GetItemByCodeAsync(string code, CancellationToken cancellationToken)
     {
         await _rateLimiter.WaitAsync(cancellationToken);
+        LookupFailureScope.Attempt("UpcItemDb");
         try
         {
             using var activity = Log.Logger.StartActivity("UpcItemDb.GetItemByCode", new { code });
+            if (quotaResets.TryGetValue(QuotaKey, out var reset) && reset > DateTime.UtcNow)
+            {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(new ProviderLookupException(
+                    "UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited, "UPCitemdb quota deferred until reset", reset));
+                return null;
+            }
 
             // Check if we're in a burst limit cooldown period
             if (_burstLimitResetTime.HasValue && DateTime.UtcNow < _burstLimitResetTime.Value)
@@ -60,7 +70,7 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             _logger.LogInformation("Looking up UPC/EAN code: {Code}", code);
 
-            var response = await _httpClient.GetAsync($"prod/trial/lookup?upc={code}", cancellationToken);
+            using var response = await SendLookupAsync(code, cancellationToken);
 
             // Parse and log rate limit headers
             var rateLimitInfo = ParseRateLimitHeaders(response.Headers);
@@ -70,7 +80,7 @@ public class UpcItemDbClient : IUpcItemDbClient
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    return await HandleRateLimitErrorAsync(code, response.Headers, cancellationToken);
+                    return await HandleRateLimitErrorAsync(code, response, cancellationToken);
                 }
 
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
@@ -135,8 +145,10 @@ public class UpcItemDbClient : IUpcItemDbClient
         {
             _logger.LogError("Daily rate limit of {Limit} requests reached, cannot make more requests today",
                 _configuration.MaxRequestsPerDay);
-            throw new InvalidOperationException(
-                $"UpcItemDb daily rate limit of {_configuration.MaxRequestsPerDay} requests exceeded");
+            var reset = DateTime.UtcNow.Date.AddDays(1);
+            quotaResets[QuotaKey] = reset;
+            throw new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
+                $"UpcItemDb local daily rate limit of {_configuration.MaxRequestsPerDay} requests exceeded", reset);
         }
 
         // Pause if we're approaching the per-minute limit
@@ -199,20 +211,10 @@ public class UpcItemDbClient : IUpcItemDbClient
 
     private async Task<UpcItemResponse?> HandleRateLimitErrorAsync(
         string code,
-        HttpResponseHeaders headers,
+        HttpResponseMessage response,
         CancellationToken cancellationToken)
     {
-        var resetHeader = GetHeaderValue(headers, "X-RateLimit-Reset");
-
-        if (string.IsNullOrEmpty(resetHeader) || !long.TryParse(resetHeader, out var resetUnixTime))
-        {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(
-                new HttpRequestException("UPCitemdb rate limit exceeded", null, System.Net.HttpStatusCode.TooManyRequests));
-            _logger.LogWarning("UPCitemdb rate limit exceeded for code: {Code} but no valid reset time provided", code);
-            return null;
-        }
-
-        var resetTime = DateTimeOffset.FromUnixTimeSeconds(resetUnixTime).UtcDateTime;
+        var resetTime = LookupFailureScope.RetryAt(response) ?? DateTime.UtcNow.AddMinutes(5);
         var pauseDuration = resetTime - DateTime.UtcNow;
 
         // If pause duration is within acceptable range, this is a burst limit - pause and retry
@@ -234,10 +236,17 @@ public class UpcItemDbClient : IUpcItemDbClient
             _logger.LogInformation("Retrying request for {Code} after burst rate limit pause", code);
 
             // Retry the request once
-            var retryResponse = await _httpClient.GetAsync($"prod/trial/lookup?upc={code}", cancellationToken);
+            using var retryResponse = await SendLookupAsync(code, cancellationToken);
 
             if (!retryResponse.IsSuccessStatusCode)
             {
+                if (retryResponse.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    var retryAt = LookupFailureScope.RetryAt(retryResponse) ?? DateTime.UtcNow.AddMinutes(5);
+                    quotaResets[QuotaKey] = retryAt;
+                    LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
+                        "UPCitemdb quota exhausted after burst retry", retryAt));
+                }
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(retryResponse);
                 _logger.LogWarning(
                     "Retry after burst rate limit pause failed with status {StatusCode} for code: {Code}",
@@ -265,8 +274,9 @@ public class UpcItemDbClient : IUpcItemDbClient
         }
 
         // Daily limit exceeded - don't retry
-        MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(
-            new HttpRequestException("UPCitemdb rate limit exceeded", null, System.Net.HttpStatusCode.TooManyRequests));
+        quotaResets[QuotaKey] = resetTime;
+        LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
+            "UPCitemdb quota exhausted", resetTime));
         var hoursUntilReset = pauseDuration.TotalHours;
         _logger.LogError(
             "UpcItemDb daily rate limit exceeded for {Code}, cannot retry (reset in {Hours} hours)",
@@ -291,6 +301,19 @@ public class UpcItemDbClient : IUpcItemDbClient
         await Task.Delay(duration, cancellationToken);
 
         _logger.LogInformation("UpcItemDb rate limit pause complete");
+    }
+
+    private async Task<HttpResponseMessage> SendLookupAsync(string code, CancellationToken cancellationToken)
+    {
+        var paid = _configuration.Plan == "Paid";
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"prod/{(paid ? "v1" : "trial")}/lookup?upc={Uri.EscapeDataString(code)}");
+        if (paid)
+        {
+            request.Headers.Add("user_key", _configuration.ApiKey);
+            request.Headers.Add("key_type", "3scale");
+        }
+        return await _httpClient.SendAsync(request, cancellationToken);
     }
 
     private void TrackRequest()

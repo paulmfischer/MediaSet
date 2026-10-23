@@ -105,7 +105,12 @@ public class ImageStatsService : IImageStatsService
                         Title: entity.Title,
                         LookupAttemptedAt: entity.ImageLookup.LookupAttemptedAt,
                         FailureReason: entity.ImageLookup.FailureReason,
-                        PermanentFailure: entity.ImageLookup.PermanentFailure
+                        PermanentFailure: entity.ImageLookup.PermanentFailure,
+                        Provider: entity.ImageLookup.Provider,
+                        Outcome: entity.ImageLookup.LastOutcome?.ToString(),
+                        AttemptedStrategy: entity.ImageLookup.AttemptedStrategy,
+                        NextEligibleAt: entity.ImageLookup.NextEligibleAt,
+                        AttemptCount: entity.ImageLookup.AttemptCount
                     ));
                 }
 

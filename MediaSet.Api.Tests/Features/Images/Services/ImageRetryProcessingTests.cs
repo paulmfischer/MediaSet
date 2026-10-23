@@ -161,7 +161,8 @@ public class ImageRetryProcessingTests
             .ReturnsAsync(Cursor([fresh])).ReturnsAsync(Cursor([backlog]));
         var lookup = new Mock<IImageLookupService>();
         lookup.Setup(l => l.LookupAndSaveImageAsync(It.IsAny<IEntity>(), It.IsAny<MediaTypes>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ImageLookupResult(true, null, new Image(), null));
+            .ReturnsAsync(new ImageLookupResult(true, null, new Image(), null,
+                Provider: "OpenLibrary", AttemptedStrategy: "Books:Isbn"));
         using var provider = new ServiceCollection().AddSingleton(lookup.Object).AddSingleton(database.Object).BuildServiceProvider();
         using var scope = provider.CreateScope();
         var logger = new Mock<ILogger<BackgroundImageLookupService>>();
@@ -176,6 +177,8 @@ public class ImageRetryProcessingTests
         Assert.That(messages, Has.Some.Contains("New processed: 1, New succeeded: 1; Backlog processed: 1, Backlog recovered: 1"));
         Assert.That(messages, Has.Some.Contains("Cohort: NewItem"));
         Assert.That(messages, Has.Some.Contains("Cohort: BacklogRecovery"));
+        Assert.That(messages, Has.Some.Contains("Provider = OpenLibrary").And.Contains("Outcome = Success")
+            .And.Contains("AttemptedStrategy = Books:Isbn").And.Contains("RetryEligible = False").And.Contains("LastAttempt ="));
         Assert.That(filters.All(f => f["CoverImage"] == BsonNull.Value), Is.True);
         Assert.That(updates.Count, Is.EqualTo(2));
     }

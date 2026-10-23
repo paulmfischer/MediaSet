@@ -32,10 +32,12 @@ public static class ImageRetryPolicy
         {
             AttemptCount = attempts,
             LastOutcome = outcome,
-            NextEligibleAt = outcome == ImageLookupOutcome.TransientFailure ? now.AddMinutes(delay) : null,
+            NextEligibleAt = IsRetryable(outcome) ? result.RetryAt ?? now.AddMinutes(delay) : null,
+            Provider = result.Provider,
+            AttemptedStrategy = result.AttemptedStrategy,
             LookupAttemptedAt = now,
             FailureReason = result.Success ? null : result.ErrorMessage,
-            PermanentFailure = outcome != ImageLookupOutcome.TransientFailure && outcome != ImageLookupOutcome.Success,
+            PermanentFailure = !IsRetryable(outcome) && outcome != ImageLookupOutcome.Success,
             MetadataFingerprint = Fingerprint(entity),
             StrategyVersion = config.StrategyVersion,
             IsBacklogRecovery = previous != null,
@@ -47,10 +49,16 @@ public static class ImageRetryPolicy
     {
         var f = Builders<T>.Filter;
         return f.Eq(e => e.CoverImage, null) & f.Ne(e => e.ImageLookup, null)
-            & f.In("ImageLookup.LastOutcome", new[] { ImageLookupOutcome.TransientFailure, ImageLookupOutcome.Queued })
+            & f.In("ImageLookup.LastOutcome", new[] { ImageLookupOutcome.TransientFailure, ImageLookupOutcome.Queued,
+                ImageLookupOutcome.QuotaLimited, ImageLookupOutcome.Unauthorized, ImageLookupOutcome.ProviderUnavailable,
+                ImageLookupOutcome.DownloadFailure })
             & f.Ne("ImageLookup.NextEligibleAt", (DateTime?)null)
             & f.Lte("ImageLookup.NextEligibleAt", now);
     }
+
+    public static bool IsRetryable(ImageLookupOutcome? outcome) => outcome is ImageLookupOutcome.TransientFailure
+        or ImageLookupOutcome.QuotaLimited or ImageLookupOutcome.Unauthorized or ImageLookupOutcome.ProviderUnavailable
+        or ImageLookupOutcome.DownloadFailure;
 
     public static bool CanRequeue(IEntity entity, BackgroundImageLookupConfiguration config, bool includeTerminal)
     {

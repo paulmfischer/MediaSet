@@ -103,7 +103,7 @@ public class IgdbClient : IIgdbClient
         request.Headers.TryAddWithoutValidation("Client-ID", _configuration.ClientId);
         request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var response = await _httpClient.SendProviderAsync(request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

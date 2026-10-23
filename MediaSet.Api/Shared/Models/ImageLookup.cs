@@ -6,6 +6,8 @@ namespace MediaSet.Api.Shared.Models;
 public class ImageLookup
 {
     public int AttemptCount { get; set; }
+    public string? Provider { get; set; }
+    public string? AttemptedStrategy { get; set; }
     public ImageLookupOutcome? LastOutcome { get; set; }
     public DateTime? NextEligibleAt { get; set; }
     public string? MetadataFingerprint { get; set; }
@@ -39,5 +41,10 @@ public enum ImageLookupOutcome
     MissingMetadata,
     UnsupportedStrategy,
     InvalidArtwork,
-    Queued
+    Queued,
+    QuotaLimited,
+    Unauthorized,
+    ProviderUnavailable,
+    AmbiguousMatch,
+    DownloadFailure
 }

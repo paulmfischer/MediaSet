@@ -30,11 +30,17 @@ public interface IImageLookupService
 /// <param name="ErrorMessage">Error message if lookup failed.</param>
 /// <param name="PermanentFailure">Whether this failure should prevent future retry attempts.</param>
 /// <param name="Outcome">Explicit classification for retry scheduling and terminal failures.</param>
+/// <param name="Provider">Provider responsible for the outcome.</param>
+/// <param name="AttemptedStrategy">Strategy used for this attempt.</param>
+/// <param name="RetryAt">Provider-specified earliest retry time.</param>
 public record ImageLookupResult(
     bool Success,
     string? ImageUrl,
     Image? SavedImage,
     string? ErrorMessage,
     bool PermanentFailure = false,
-    ImageLookupOutcome? Outcome = null
+    ImageLookupOutcome? Outcome = null,
+    string? Provider = null,
+    string? AttemptedStrategy = null,
+    DateTime? RetryAt = null
 );

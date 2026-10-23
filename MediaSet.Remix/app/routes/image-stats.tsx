@@ -271,7 +271,25 @@ export default function ImageStatsPage() {
                         <td className="px-4 py-3 text-zinc-400" suppressHydrationWarning>
                           {new Date(failure.lookupAttemptedAt).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-zinc-400">{failure.failureReason ?? '—'}</td>
+                        <td className="px-4 py-3 text-zinc-400">
+                          <div>{failure.failureReason ?? '—'}</div>
+                          <div className="text-xs">
+                            Provider: {failure.provider ?? 'Unknown (legacy)'} · Outcome:{' '}
+                            {failure.outcome ?? 'Unknown (legacy)'}
+                          </div>
+                          <div className="text-xs">
+                            Strategy: {failure.attemptedStrategy ?? 'Unknown (legacy)'} · Attempts:{' '}
+                            {failure.attemptCount ?? 'Unknown'}
+                          </div>
+                          <div className="text-xs">
+                            Retry:{' '}
+                            {failure.nextEligibleAt
+                              ? new Date(failure.nextEligibleAt).toLocaleString()
+                              : failure.permanentFailure
+                                ? 'Terminal'
+                                : 'Unknown (legacy)'}
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           {failure.permanentFailure ? (
                             <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">Yes</span>

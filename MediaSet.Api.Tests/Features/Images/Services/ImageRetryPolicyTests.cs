@@ -49,7 +49,11 @@ public class ImageRetryPolicyTests
         Assert.That(filter["CoverImage"], Is.EqualTo(BsonNull.Value));
         Assert.That(filter["ImageLookup.LastOutcome"]["$in"].AsBsonArray,
             Is.EquivalentTo(new[] { new BsonInt32((int)ImageLookupOutcome.TransientFailure),
-                new BsonInt32((int)ImageLookupOutcome.Queued) }));
+                new BsonInt32((int)ImageLookupOutcome.Queued),
+                new BsonInt32((int)ImageLookupOutcome.QuotaLimited),
+                new BsonInt32((int)ImageLookupOutcome.Unauthorized),
+                new BsonInt32((int)ImageLookupOutcome.ProviderUnavailable),
+                new BsonInt32((int)ImageLookupOutcome.DownloadFailure) }));
         Assert.That(filter["ImageLookup.NextEligibleAt"]["$lte"].ToUniversalTime(),
             Is.EqualTo(new BsonDateTime(now).ToUniversalTime()));
     }
