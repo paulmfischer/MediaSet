@@ -31,6 +31,7 @@ public class TmdbClient : ITmdbClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     _logger.LogWarning("TMDB rate limit exceeded for movie search: {Title}", title);
@@ -51,11 +52,13 @@ public class TmdbClient : ITmdbClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while searching TMDB for movie: {Title}", title);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error searching TMDB for movie: {Title}", title);
             return null;
         }
@@ -71,6 +74,7 @@ public class TmdbClient : ITmdbClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     _logger.LogWarning("TMDB rate limit exceeded for movie details: {MovieId}", movieId);
@@ -90,11 +94,13 @@ public class TmdbClient : ITmdbClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while getting TMDB movie details for ID: {MovieId}", movieId);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error getting TMDB movie details for ID: {MovieId}", movieId);
             return null;
         }

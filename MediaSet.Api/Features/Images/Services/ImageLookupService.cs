@@ -33,6 +33,13 @@ public class ImageLookupService : IImageLookupService
         CancellationToken cancellationToken)
     {
         // Check if entity already has an Id (required for saving image)
+        cancellationToken.ThrowIfCancellationRequested();
+        if (entity.CoverImage != null || entity.ImageLookup?.LastOutcome == ImageLookupOutcome.Success)
+        {
+            return new ImageLookupResult(true, null, entity.CoverImage, null, Outcome: ImageLookupOutcome.Success);
+        }
+        ImageLookupResult? existingFailure = null;
+
         if (string.IsNullOrWhiteSpace(entity.Id))
         {
             return new ImageLookupResult(
@@ -61,6 +68,8 @@ public class ImageLookupService : IImageLookupService
                 return existingUrlResult;
             }
 
+            existingFailure = existingUrlResult;
+
             _logger.LogWarning(
                 "Failed to download from existing ImageUrl for entity {EntityId}: {Error}",
                 entity.Id, existingUrlResult.ErrorMessage);
@@ -70,6 +79,10 @@ public class ImageLookupService : IImageLookupService
         var lookupIdentifier = GetLookupIdentifier(entity);
         if (lookupIdentifier == null)
         {
+            if (existingFailure?.Outcome == ImageLookupOutcome.TransientFailure)
+            {
+                return existingFailure;
+            }
             _logger.LogWarning(
                 "Entity {EntityId} of type {MediaType} has no lookup identifier value",
                 entity.Id, mediaType);
@@ -91,10 +104,17 @@ public class ImageLookupService : IImageLookupService
 
         try
         {
-            var imageUrl = await LookupImageUrlAsync(mediaType, identifierType, identifierValue, cancellationToken);
+            using var failures = new MediaSet.Api.Infrastructure.Lookup.LookupFailureScope();
+            var (matched, imageUrl) = await LookupImageUrlAsync(mediaType, identifierType, identifierValue, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            failures.ThrowIfFailed();
 
             if (string.IsNullOrWhiteSpace(imageUrl))
             {
+                if (existingFailure?.Outcome == ImageLookupOutcome.TransientFailure)
+                {
+                    return existingFailure;
+                }
                 _logger.LogWarning(
                     "No image URL found for entity {EntityId} with {IdentifierType}: {IdentifierValue}",
                     entity.Id, identifierType, identifierValue);
@@ -103,14 +123,24 @@ public class ImageLookupService : IImageLookupService
                     Success: false,
                     ImageUrl: null,
                     SavedImage: null,
-                    ErrorMessage: "No image URL returned from lookup");
+                    ErrorMessage: matched ? "Matched entity has no artwork" : "No image URL: no matching entity",
+                    PermanentFailure: true,
+                    Outcome: matched ? ImageLookupOutcome.MissingArtwork : ImageLookupOutcome.NoMatch);
             }
 
             // Step 4: Download and save the image
             return await TryDownloadImageAsync(imageUrl, mediaType.ToString(), entity.Id, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (NotSupportedException ex)
         {
+            if (existingFailure?.Outcome == ImageLookupOutcome.TransientFailure)
+            {
+                return existingFailure;
+            }
             _logger.LogWarning(ex,
                 "No lookup strategy available for {MediaType} with {IdentifierType}",
                 mediaType, identifierType);
@@ -120,7 +150,7 @@ public class ImageLookupService : IImageLookupService
                 ImageUrl: null,
                 SavedImage: null,
                 ErrorMessage: $"No lookup strategy available: {ex.Message}",
-                PermanentFailure: true);
+                PermanentFailure: true, Outcome: ImageLookupOutcome.UnsupportedStrategy);
         }
         catch (Exception ex)
         {
@@ -162,7 +192,7 @@ public class ImageLookupService : IImageLookupService
         return null;
     }
 
-    private async Task<string?> LookupImageUrlAsync(
+    private async Task<(bool Matched, string? ImageUrl)> LookupImageUrlAsync(
         MediaTypes mediaType,
         IdentifierType identifierType,
         string identifierValue,
@@ -191,11 +221,11 @@ public class ImageLookupService : IImageLookupService
 
         return response switch
         {
-            IReadOnlyList<BookResponse> books => books.FirstOrDefault()?.ImageUrl,
-            IReadOnlyList<MovieResponse> movies => movies.FirstOrDefault()?.ImageUrl,
-            IReadOnlyList<GameResponse> games => games.FirstOrDefault()?.ImageUrl,
-            IReadOnlyList<MusicResponse> music => music.FirstOrDefault()?.ImageUrl,
-            _ => null
+            IReadOnlyList<BookResponse> books => (books.Count > 0, books.FirstOrDefault()?.ImageUrl),
+            IReadOnlyList<MovieResponse> movies => (movies.Count > 0, movies.FirstOrDefault()?.ImageUrl),
+            IReadOnlyList<GameResponse> games => (games.Count > 0, games.FirstOrDefault()?.ImageUrl),
+            IReadOnlyList<MusicResponse> music => (music.Count > 0, music.FirstOrDefault()?.ImageUrl),
+            _ => (false, null)
         };
     }
 
@@ -223,17 +253,31 @@ public class ImageLookupService : IImageLookupService
                 SavedImage: image,
                 ErrorMessage: null);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
                 "Failed to download image from {ImageUrl} for entity {EntityId}",
                 imageUrl, entityId);
 
+            var cause = ex;
+            while (cause.InnerException != null)
+            {
+                cause = cause.InnerException;
+            }
+            var missing = cause is HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound };
+            var invalid = ex is ArgumentException && cause is not HttpRequestException;
             return new ImageLookupResult(
                 Success: false,
                 ImageUrl: imageUrl,
                 SavedImage: null,
-                ErrorMessage: $"Download failed: {ex.Message}");
+                ErrorMessage: $"Download failed: {ex.Message}",
+                PermanentFailure: missing || invalid,
+                Outcome: missing ? ImageLookupOutcome.MissingArtwork : invalid ? ImageLookupOutcome.InvalidArtwork
+                    : ImageLookupOutcome.TransientFailure);
         }
     }
 }

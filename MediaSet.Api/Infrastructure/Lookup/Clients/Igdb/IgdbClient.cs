@@ -48,11 +48,13 @@ public class IgdbClient : IIgdbClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while searching IGDB for game: {Title}", title);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error searching IGDB for game: {Title}", title);
             return null;
         }
@@ -78,11 +80,13 @@ public class IgdbClient : IIgdbClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while getting IGDB game details for id: {Id}", igdbId);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error getting IGDB game details for id: {Id}", igdbId);
             return null;
         }
@@ -103,6 +107,7 @@ public class IgdbClient : IIgdbClient
 
         if (!response.IsSuccessStatusCode)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
             if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
                 _logger.LogWarning("IGDB rate limit exceeded for endpoint: {Endpoint}", endpoint);

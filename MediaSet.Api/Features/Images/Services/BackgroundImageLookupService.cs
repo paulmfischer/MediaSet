@@ -198,6 +198,10 @@ public class BackgroundImageLookupService : BackgroundService
         var processed = 0;
         var succeeded = 0;
         var failed = 0;
+        var newProcessed = 0;
+        var newSucceeded = 0;
+        var backlogProcessed = 0;
+        var backlogSucceeded = 0;
 
         try
         {
@@ -221,7 +225,21 @@ public class BackgroundImageLookupService : BackgroundService
                     break;
                 }
 
+                var backlog = entity.ImageLookup != null;
                 var success = await ProcessEntityAsync(scope, entity, mediaType, collection, cancellationToken);
+                if (backlog)
+                {
+                    backlogProcessed++;
+                    backlogSucceeded += success ? 1 : 0;
+                }
+                else
+                {
+                    newProcessed++;
+                    newSucceeded += success ? 1 : 0;
+                }
+                _logger.LogInformation(
+                    "Image lookup outcome: {MediaType} {EntityId}, Cohort: {Cohort}, Success: {Success}",
+                    mediaType, entity.Id, backlog ? "BacklogRecovery" : "NewItem", success);
                 processed++;
 
                 if (success)
@@ -237,11 +255,19 @@ public class BackgroundImageLookupService : BackgroundService
                 await ApplyRateLimitAsync(cancellationToken);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing {MediaType} entities", mediaType);
         }
 
+        _logger.LogInformation(
+            "Image lookup cohorts for {MediaType}: New processed: {NewProcessed}, New succeeded: {NewSucceeded}; " +
+            "Backlog processed: {BacklogProcessed}, Backlog recovered: {BacklogRecovered}",
+            mediaType, newProcessed, newSucceeded, backlogProcessed, backlogSucceeded);
         return (processed, succeeded, failed);
     }
 
@@ -270,16 +296,33 @@ public class BackgroundImageLookupService : BackgroundService
     {
         var collection = databaseService.GetCollection<TEntity>();
 
-        // Query for entities where CoverImage is null and ImageLookup is null
+        // Reserve at least half of the batch for never-attempted items, then fill unused slots with retries.
         var filter = Builders<TEntity>.Filter.And(
             Builders<TEntity>.Filter.Eq(e => e.CoverImage, null),
             Builders<TEntity>.Filter.Eq(e => e.ImageLookup, null)
         );
 
-        var entities = await collection
+        var fresh = await collection
             .Find(filter)
-            .Limit(limit)
+            .SortBy(e => e.Id)
+            .Limit(Math.Max(1, (limit + 1) / 2))
             .ToListAsync(cancellationToken);
+
+        var retries = limit > fresh.Count ? await collection
+            .Find(ImageRetryPolicy.DueFilter<TEntity>(DateTime.UtcNow))
+            .SortBy(e => e.ImageLookup!.NextEligibleAt).ThenBy(e => e.Id)
+            .Limit(limit - fresh.Count)
+            .ToListAsync(cancellationToken) : [];
+
+        var entities = fresh.Concat(retries).ToList();
+        if (entities.Count < limit)
+        {
+            var extra = await collection.Find(filter & Builders<TEntity>.Filter.Nin(e => e.Id, fresh.Select(e => e.Id)))
+                .SortBy(e => e.Id)
+                .Limit(limit - entities.Count)
+                .ToListAsync(cancellationToken);
+            entities.AddRange(extra);
+        }
 
         return (entities.Cast<IEntity>().ToList(), collection);
     }
@@ -313,6 +356,10 @@ public class BackgroundImageLookupService : BackgroundService
             }
 
             return result.Success;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -349,12 +396,8 @@ public class BackgroundImageLookupService : BackgroundService
         object collection,
         CancellationToken cancellationToken)
     {
-        var imageLookup = new ImageLookup
-        {
-            LookupAttemptedAt = DateTime.UtcNow,
-            FailureReason = result.Success ? null : result.ErrorMessage,
-            PermanentFailure = result.PermanentFailure
-        };
+        cancellationToken.ThrowIfCancellationRequested();
+        var imageLookup = ImageRetryPolicy.Complete(entity, result, _config.Value, DateTime.UtcNow);
 
         switch (mediaType)
         {
@@ -380,7 +423,9 @@ public class BackgroundImageLookupService : BackgroundService
         Image? coverImage,
         CancellationToken cancellationToken) where TEntity : IEntity
     {
-        var filter = Builders<TEntity>.Filter.Eq(e => e.Id, entityId);
+        var filter = Builders<TEntity>.Filter.Eq(e => e.Id, entityId)
+            & Builders<TEntity>.Filter.Eq(e => e.CoverImage, null)
+            & Builders<TEntity>.Filter.Ne("ImageLookup.LastOutcome", ImageLookupOutcome.Success);
         var updateBuilder = Builders<TEntity>.Update.Set(e => e.ImageLookup, imageLookup);
 
         // Also update CoverImage if it was successfully retrieved

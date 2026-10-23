@@ -5,6 +5,13 @@ namespace MediaSet.Api.Shared.Models;
 /// </summary>
 public class ImageLookup
 {
+    public int AttemptCount { get; set; }
+    public ImageLookupOutcome? LastOutcome { get; set; }
+    public DateTime? NextEligibleAt { get; set; }
+    public string? MetadataFingerprint { get; set; }
+    public int StrategyVersion { get; set; }
+    public bool IsBacklogRecovery { get; set; }
+    public string? RequeueOperationId { get; set; }
     /// <summary>
     /// The timestamp when the background lookup service attempted to retrieve an image.
     /// </summary>
@@ -17,8 +24,20 @@ public class ImageLookup
     public string? FailureReason { get; set; }
 
     /// <summary>
-    /// Indicates that lookup should never be retried for this entity.
-    /// Set to true when the entity lacks required identifiers (e.g., no ISBN, no Barcode).
+    /// Indicates a terminal result for the metadata and strategy used by this attempt.
+    /// A selective requeue may reassess it after metadata or strategy changes.
     /// </summary>
     public bool PermanentFailure { get; set; }
+}
+
+public enum ImageLookupOutcome
+{
+    Success,
+    TransientFailure,
+    NoMatch,
+    MissingArtwork,
+    MissingMetadata,
+    UnsupportedStrategy,
+    InvalidArtwork,
+    Queued
 }

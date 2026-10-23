@@ -29,10 +29,12 @@ public interface IImageLookupService
 /// <param name="SavedImage">The saved image object, if successful.</param>
 /// <param name="ErrorMessage">Error message if lookup failed.</param>
 /// <param name="PermanentFailure">Whether this failure should prevent future retry attempts.</param>
+/// <param name="Outcome">Explicit classification for retry scheduling and terminal failures.</param>
 public record ImageLookupResult(
     bool Success,
     string? ImageUrl,
     Image? SavedImage,
     string? ErrorMessage,
-    bool PermanentFailure = false
+    bool PermanentFailure = false,
+    ImageLookupOutcome? Outcome = null
 );

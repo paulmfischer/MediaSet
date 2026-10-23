@@ -7,6 +7,9 @@ namespace MediaSet.Api.Features.Images.Models;
 /// </summary>
 public class BackgroundImageLookupConfiguration
 {
+    public int RetryInitialDelayMinutes { get; set; } = 60;
+    public int RetryMaxDelayMinutes { get; set; } = 10080;
+    public int StrategyVersion { get; set; } = 1;
     /// <summary>
     /// Whether the background image lookup service is enabled.
     /// </summary>
@@ -42,6 +45,13 @@ public class BackgroundImageLookupConfiguration
     public bool IsValid(out string? errorMessage)
     {
         errorMessage = null;
+
+        if (RetryInitialDelayMinutes <= 0 || RetryMaxDelayMinutes < RetryInitialDelayMinutes || StrategyVersion < 1
+            || BatchSize < 1 || RequestsPerMinute < 1 || MaxRuntimeMinutes < 1)
+        {
+            errorMessage = "Retry delays, strategy version, batch size, request rate and runtime must be positive; maximum delay must be at least initial delay";
+            return false;
+        }
 
         if (string.IsNullOrWhiteSpace(Schedule))
         {
