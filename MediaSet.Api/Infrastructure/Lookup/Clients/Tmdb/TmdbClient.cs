@@ -64,6 +64,48 @@ public class TmdbClient : ITmdbClient
         }
     }
 
+    public Task<TmdbTvSearchResponse?> SearchTvAsync(string title, CancellationToken cancellationToken) =>
+        GetTvResourceAsync<TmdbTvSearchResponse>($"search/tv?query={HttpUtility.UrlEncode(title)}", cancellationToken);
+
+    public Task<TmdbTvResponse?> GetTvDetailsAsync(int seriesId, CancellationToken cancellationToken) =>
+        GetTvResourceAsync<TmdbTvResponse>($"tv/{seriesId}", cancellationToken);
+
+    public Task<TmdbSeasonResponse?> GetSeasonDetailsAsync(
+        int seriesId, int seasonNumber, CancellationToken cancellationToken) =>
+        GetTvResourceAsync<TmdbSeasonResponse>($"tv/{seriesId}/season/{seasonNumber}", cancellationToken);
+
+    private async Task<T?> GetTvResourceAsync<T>(string resource, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("Getting TMDB TV resource: {Resource}", resource);
+            using var response = await _httpClient.GetProviderAsync(resource, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                LookupFailureScope.RecordStatus(response);
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
+                }
+                return default;
+            }
+            return await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (HttpRequestException ex)
+        {
+            LookupFailureScope.Record(ex);
+            _logger.LogError(ex, "HTTP error getting TMDB TV resource: {Resource}", resource);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            LookupFailureScope.Record(ex);
+            _logger.LogError(ex, "Error getting TMDB TV resource: {Resource}", resource);
+            return default;
+        }
+    }
+
     public async Task<TmdbMovieResponse?> GetMovieDetailsAsync(int movieId, CancellationToken cancellationToken)
     {
         try

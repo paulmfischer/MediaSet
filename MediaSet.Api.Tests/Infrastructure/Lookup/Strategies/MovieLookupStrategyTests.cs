@@ -468,7 +468,12 @@ public class MovieLookupStrategyTests
         var upc = "043396471238";
         var rawTitle = "Berserk: Season 1 Complete Collection";
         var expectedCleanTitle = "Berserk: Season 1";
-        await TestTitleCleaning(upc, rawTitle, expectedCleanTitle);
+        _upcItemDbClientMock.Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUpcItemResponse(upc, rawTitle));
+        await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc },
+            CancellationToken.None);
+        _tmdbClientMock.Verify(x => x.SearchTvAsync("Berserk", It.IsAny<CancellationToken>()), Times.Once);
+        _tmdbClientMock.Verify(x => x.SearchMovieAsync(expectedCleanTitle, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private async Task TestTitleCleaning(string upc, string rawTitle, string expectedCleanTitle, string brand = "Studio")
@@ -602,8 +607,7 @@ public class MovieLookupStrategyTests
     {
         var upc = "043396471238";
         var upcResponse = CreateUpcItemResponse(upc, title);
-        var searchResponse = CreateSearchResponse(1, "Test Movie");
-        var movieDetails = CreateMovieDetails(1, "Test Movie", "2020-01-01", 120);
+        var searchedTitle = string.Empty;
 
         _upcItemDbClientMock
             .Setup(x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()))
@@ -611,11 +615,15 @@ public class MovieLookupStrategyTests
 
         _tmdbClientMock
             .Setup(x => x.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(searchResponse);
+            .ReturnsAsync((string query, CancellationToken _) =>
+            {
+                searchedTitle = query;
+                return CreateSearchResponse(1, query);
+            });
 
         _tmdbClientMock
             .Setup(x => x.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(movieDetails);
+            .ReturnsAsync(() => CreateMovieDetails(1, searchedTitle, "2020-01-01", 120));
 
         var result = await _strategy.LookupAsync(IdentifierType.Upc, new Dictionary<string, string> { ["upc"] = upc }, CancellationToken.None);
 

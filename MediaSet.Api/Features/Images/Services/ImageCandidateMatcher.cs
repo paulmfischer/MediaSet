@@ -41,6 +41,7 @@ public static class ImageCandidateMatcher
                 break;
             case Movie movie:
                 context["releasedate"] = movie.ReleaseDate;
+                if (movie.IsTvSeries) { context["isTvSeries"] = "true"; }
                 break;
             case Book book:
                 context["author"] = string.Join(" ", book.Authors);
@@ -63,7 +64,10 @@ public static class ImageCandidateMatcher
         var date = context.GetValueOrDefault("releasedate") ?? context.GetValueOrDefault("publicationdate") ?? "";
         var creators = entity switch { Book b => b.Authors, Music m => new List<string> { m.Artist }, _ => [] };
         var matching = candidates.Where(c => Normalize(c.Provenance?.Title ?? c.Title) == Normalize(entity.Title))
-            .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date))
+            .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date)
+                || c.Provenance?.MatchYears?.Contains(Year(date)) == true)
+            .Where(c => entity is not Movie { IsTvSeries: true }
+                || c.Provenance?.ProviderId.StartsWith("tv:", StringComparison.Ordinal) == true)
             .Where(c => creators.Count == 0 || creators.All(a => string.IsNullOrWhiteSpace(a)
                 || c.Creators?.Any(n => Normalize(n) == Normalize(a)) == true))
             .Where(c => entity is not Game g || string.IsNullOrWhiteSpace(g.Platform)
