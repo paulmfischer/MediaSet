@@ -51,6 +51,12 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
 
         async Task<ImageLookupResult?> Download(string? url, string provider, string strategy)
         {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var coverUri)
+                && coverUri.Host.Equals("covers.openlibrary.org", StringComparison.OrdinalIgnoreCase)
+                && coverUri.AbsolutePath.StartsWith("/b/", StringComparison.Ordinal))
+            {
+                url = new UriBuilder(coverUri) { Scheme = "https", Port = -1, Query = "default=false" }.Uri.AbsoluteUri;
+            }
             if (string.IsNullOrWhiteSpace(url) || !triedUrls.Add(url))
             {
                 return null;
@@ -84,7 +90,8 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
             .Where(_ => confirmed == null)
             .Select(p => (p.Type, Parameters: new Dictionary<string, string> { [p.Type.ToApiString()] = p.Value! }))
             .ToList();
-        if (confirmed != null)
+        if (confirmed != null && (mediaType != MediaTypes.Books
+            || confirmed.ProviderId.StartsWith("OL", StringComparison.Ordinal) && confirmed.ProviderId.EndsWith('M')))
         {
             attempts.Add((mediaType == MediaTypes.Books ? IdentifierType.Olid : IdentifierType.Entity,
                 new Dictionary<string, string>
@@ -139,7 +146,7 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                     {
                         confirmed = new(provenance.Provider, provenance.ProviderId, provenance.Title, candidate.ImageUrl,
                             fingerprint, "Full title and all available year, creator and platform constraints agree",
-                            entity is Game ? "Game artwork; region and package unverified" : "Provider artwork");
+                            provenance.ArtworkScope ?? (entity is Game ? "Game artwork; region and package unverified" : "Provider artwork"));
                     }
                     var download = await Download(candidate.ImageUrl,
                         candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString(), strategy);
@@ -149,6 +156,21 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                     }
                 }
                 failures.ThrowIfFailed();
+                // Identifier covers can exist even when the metadata endpoint has
+                // no record. Downloading with default=false verifies availability.
+                if (entity is Book && type is IdentifierType.Isbn or IdentifierType.Olid
+                    && parameters.TryGetValue(type.ToApiString(), out var identifier)
+                    && (type != IdentifierType.Olid || identifier.EndsWith('M')))
+                {
+                    var direct = await Download(
+                        Infrastructure.Lookup.Clients.OpenLibrary.OpenLibraryClient.CoverUrl(type.ToApiString(), identifier),
+                        "OpenLibrary", strategy);
+                    if (direct?.Success == true)
+                    {
+                        return direct with { ConfirmedMatch = new("OpenLibrary", identifier, entity.Title,
+                            direct.ImageUrl, fingerprint, "Cover resolved by stored edition identifier", "Exact-edition artwork") };
+                    }
+                }
                 Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",
                     true, matching.Count > 0 ? ImageLookupOutcome.MissingArtwork : ImageLookupOutcome.NoMatch,
                     failures.AttemptedProviders, strategy, ConfirmedMatch: confirmed));
@@ -186,9 +208,12 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
         return mediaType switch
         {
             MediaTypes.Books => (await strategyFactory.GetStrategy<BookResponse>(mediaType, type)
-                .LookupAsync(type, parameters, cancellationToken)).Select(b => new ImageCandidate(b.Title, b.ImageUrl,
+                .LookupAsync(type, parameters, cancellationToken)).SelectMany(b =>
+                    (b.Artwork is { Count: > 0 } ? b.Artwork : [new BookArtwork(b.ImageUrl ?? "", "Provider artwork")])
+                    .Select(artwork => new ImageCandidate(b.Title, artwork.Url,
                     b.PublishDate, b.Authors.Select(a => a.Name).ToList(), Provenance: b.Provenance,
-                    Format: b.Format ?? "", Subtitle: b.Subtitle, Publishers: b.Publishers.Select(p => p.Name).ToList())),
+                    Format: b.Format ?? "", Subtitle: b.Subtitle, Publishers: b.Publishers.Select(p => p.Name).ToList())
+                    with { Provenance = b.Provenance == null ? null : b.Provenance with { ArtworkScope = artwork.Scope } })),
             MediaTypes.Movies => (await strategyFactory.GetStrategy<MovieResponse>(mediaType, type)
                 .LookupAsync(type, parameters, cancellationToken)).Select(m => new ImageCandidate(m.Title, m.ImageUrl,
                     m.ReleaseDate, Provenance: m.Provenance)),
