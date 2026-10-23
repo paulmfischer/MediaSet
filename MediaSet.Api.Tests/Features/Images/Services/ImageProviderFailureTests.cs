@@ -63,6 +63,46 @@ public class ImageProviderFailureTests
     }
 
     [Test]
+    public async Task LookupAndSaveImageAsync_UpcBurstLimitRecovers_DownloadsArtworkSuccessfully()
+    {
+        var calls = 0;
+        using var http = new HttpClient(new Handler((_, _) =>
+        {
+            var response = new HttpResponseMessage(++calls == 1 ? HttpStatusCode.TooManyRequests : HttpStatusCode.OK);
+            if (calls == 1)
+            {
+                response.Headers.Add("X-RateLimit-Reset", DateTimeOffset.UtcNow.AddSeconds(2).ToUnixTimeSeconds().ToString());
+            }
+            else
+            {
+                response.Content = new StringContent("""{"code":"OK","items":[{"title":"Movie"}]}""");
+            }
+            return Task.FromResult(response);
+        })) { BaseAddress = new Uri("https://example.com/") };
+        var upc = new MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient(http,
+            Options.Create(new UpcItemDbConfiguration { MinDelayBetweenRequestsMs = 0,
+                MaxRequestsPerMinute = 10000, MaxRequestsPerDay = 10000, MaxRetryPauseSeconds = 5 }),
+            NullLogger<MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient>.Instance);
+        var tmdb = new Mock<ITmdbClient>();
+        tmdb.Setup(t => t.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbSearchResponse(1, [new TmdbMovieSearchResult(1, "Movie", null, null)], 1, 1));
+        tmdb.Setup(t => t.GetMovieDetailsAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbMovieResponse(1, "Movie", null, null, null, [], [], 0, "/cover.jpg"));
+        using var services = new ServiceCollection().AddSingleton<ILookupStrategy<MovieResponse>>(
+            new MovieLookupStrategy(upc, tmdb.Object, NullLogger<MovieLookupStrategy>.Instance)).BuildServiceProvider();
+        var images = new Mock<IImageService>();
+        images.Setup(i => i.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>())).ReturnsAsync(new Image { FilePath = "saved.jpg" });
+        var lookup = new ImageLookupService(new LookupStrategyFactory(services), images.Object,
+            NullLogger<ImageLookupService>.Instance);
+        var result = await lookup.LookupAndSaveImageAsync(new Movie { Id = "1", Title = "Movie", Barcode = "123" },
+            MediaTypes.Movies, CancellationToken.None);
+        Assert.That(calls, Is.EqualTo(2));
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.SavedImage?.FilePath, Is.EqualTo("saved.jpg"));
+    }
+
+    [Test]
     public async Task LookupFailureScope_ConcurrentLookups_DoNotLeakFailures()
     {
         var recorded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -68,12 +68,12 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             if (!response.IsSuccessStatusCode)
             {
-                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     return await HandleRateLimitErrorAsync(code, response.Headers, cancellationToken);
                 }
 
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 _logger.LogWarning("UPCitemdb returned status code {StatusCode} for code: {Code}",
                     response.StatusCode, code);
                 return null;
@@ -206,6 +206,8 @@ public class UpcItemDbClient : IUpcItemDbClient
 
         if (string.IsNullOrEmpty(resetHeader) || !long.TryParse(resetHeader, out var resetUnixTime))
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(
+                new HttpRequestException("UPCitemdb rate limit exceeded", null, System.Net.HttpStatusCode.TooManyRequests));
             _logger.LogWarning("UPCitemdb rate limit exceeded for code: {Code} but no valid reset time provided", code);
             return null;
         }
@@ -263,6 +265,8 @@ public class UpcItemDbClient : IUpcItemDbClient
         }
 
         // Daily limit exceeded - don't retry
+        MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(
+            new HttpRequestException("UPCitemdb rate limit exceeded", null, System.Net.HttpStatusCode.TooManyRequests));
         var hoursUntilReset = pauseDuration.TotalHours;
         _logger.LogError(
             "UpcItemDb daily rate limit exceeded for {Code}, cannot retry (reset in {Hours} hours)",
