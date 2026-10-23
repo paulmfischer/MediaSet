@@ -11,5 +11,6 @@ public record MusicResponse(
     int? Discs,
     List<DiscResponse> DiscList,
     string Format,
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    LookupProvenance? Provenance = null
 );

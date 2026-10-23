@@ -15,7 +15,9 @@ public static class ImageRetryPolicy
         var values = entity.GetType().GetProperties()
             .Where(p => p.GetCustomAttribute<LookupIdentifierAttribute>() != null || p.Name == nameof(IEntity.ImageUrl))
             .OrderBy(p => p.Name)
-            .Select(p => $"{p.Name}:{p.GetValue(entity)}");
+            .Select(p => $"{p.Name}:{p.GetValue(entity)}")
+            .Concat(ImageCandidateMatcher.SearchContext(entity).OrderBy(p => p.Key)
+                .Select(p => $"{p.Key}:{p.Value}"));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", values))));
     }
 
@@ -31,6 +33,7 @@ public static class ImageRetryPolicy
         return new ImageLookup
         {
             AttemptCount = attempts,
+            ConfirmedMatch = result.ConfirmedMatch,
             LastOutcome = outcome,
             NextEligibleAt = IsRetryable(outcome) ? result.RetryAt ?? now.AddMinutes(delay) : null,
             Provider = result.Provider,

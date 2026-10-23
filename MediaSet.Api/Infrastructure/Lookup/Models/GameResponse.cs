@@ -10,5 +10,6 @@ public record GameResponse(
     string Rating,
     string Description,
     string Format,
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    LookupProvenance? Provenance = null
 );
