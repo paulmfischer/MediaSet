@@ -51,8 +51,14 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                 var details = await _tmdbClient.GetMovieDetailsAsync(id, cancellationToken);
                 return details == null ? [] : [MapToMovieResponse(details)];
             }
+            if (searchParams.TryGetValue("confirmedProviderId", out providerId)
+                && providerId.StartsWith("tv:", StringComparison.Ordinal))
+            {
+                return await GetConfirmedTvAsync(providerId, searchParams.GetValueOrDefault("title"), cancellationToken);
+            }
             searchParams.TryGetValue("title", out var title);
-            return await SearchByTitleAsync(title ?? string.Empty, cancellationToken);
+            return await SearchByTitleAsync(title ?? string.Empty, cancellationToken,
+                searchParams.GetValueOrDefault("isTvSeries") == "true");
         }
 
         var identifierValue = searchParams.Values.FirstOrDefault() ?? string.Empty;
@@ -60,28 +66,113 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         return result != null ? [result] : [];
     }
 
-    private async Task<IReadOnlyList<MovieResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<MovieResponse>> SearchByTitleAsync(
+        string title, CancellationToken cancellationToken, bool isTvSeries = false)
     {
-        var searchResult = await _tmdbClient.SearchMovieAsync(title, cancellationToken);
-
-        if (searchResult == null || searchResult.Results.Count == 0)
+        var video = VideoTitle.Parse(title);
+        var results = new List<MovieResponse>();
+        if (!video.IsSeries && !isTvSeries)
         {
-            _logger.LogWarning("No TMDB results found for title: {Title}", title);
-            return [];
+            var movies = await _tmdbClient.SearchMovieAsync(title, cancellationToken);
+            foreach (var match in movies?.Results.Where(r => SameTitle(r.Title, title)).Take(10) ?? [])
+            {
+                var details = await _tmdbClient.GetMovieDetailsAsync(match.Id, cancellationToken);
+                if (details != null && SameTitle(details.Title, title))
+                {
+                    results.Add(MapToMovieResponse(details));
+                }
+            }
         }
+        // Punctuation may belong to a series name or separate a named special.
+        // Verify both interpretations instead of assuming that the prefix is the series.
+        if (video.Special != null)
+        {
+            results.AddRange(await SearchTvAsync(new VideoTitle(title, title), cancellationToken));
+        }
+        results.AddRange(await SearchTvAsync(video, cancellationToken));
+        return results;
+    }
 
-        _logger.LogInformation("TMDB search found {Count} results for title: {Title}", searchResult.Results.Count, title);
+    private async Task<IReadOnlyList<MovieResponse>> SearchTvAsync(
+        VideoTitle video, CancellationToken cancellationToken)
+    {
+        var results = new List<MovieResponse>();
+        var shows = await _tmdbClient.SearchTvAsync(video.SeriesTitle, cancellationToken);
+        foreach (var match in shows?.Results.Where(r => SameTitle(r.Name, video.SeriesTitle)).Take(10) ?? [])
+        {
+            var series = await _tmdbClient.GetTvDetailsAsync(match.Id, cancellationToken);
+            if (series == null || !SameTitle(series.Name, video.SeriesTitle)) { continue; }
+            var seasonNumber = video.Special != null ? 0 : video.Season;
+            var season = seasonNumber.HasValue
+                ? await _tmdbClient.GetSeasonDetailsAsync(series.Id, seasonNumber.Value, cancellationToken) : null;
+            // A missing season is not evidence that this is the requested release.
+            if (seasonNumber.HasValue && season?.SeasonNumber != seasonNumber.Value) { continue; }
+            if (video.Special != null)
+            {
+                foreach (var episode in season?.Episodes?.Where(e => SameTitle(e.Name, video.Special)) ?? [])
+                {
+                    results.Add(MapTvResponse(series, video.Title, season, episode));
+                }
+            }
+            else { results.Add(MapTvResponse(series, video.Title, season, null)); }
+        }
+        return results;
+    }
 
-        var detailTasks = searchResult.Results
-            .Take(10)
-            .Select(r => _tmdbClient.GetMovieDetailsAsync(r.Id, cancellationToken));
+    private static bool SameTitle(string first, string second) =>
+        VideoTitle.Normalize(first) == VideoTitle.Normalize(second);
 
-        var details = await Task.WhenAll(detailTasks);
+    private async Task<IReadOnlyList<MovieResponse>> GetConfirmedTvAsync(
+        string providerId, string? storedTitle, CancellationToken cancellationToken)
+    {
+        var parts = providerId.Split(':');
+        if (parts.Length is < 2 or > 4 || !int.TryParse(parts[1], out var seriesId)) { return []; }
+        var series = await _tmdbClient.GetTvDetailsAsync(seriesId, cancellationToken);
+        if (series == null) { return []; }
+        TmdbSeasonResponse? season = null;
+        TmdbEpisode? episode = null;
+        if (parts.Length >= 3)
+        {
+            if (!int.TryParse(parts[2], out var number)) { return []; }
+            season = await _tmdbClient.GetSeasonDetailsAsync(seriesId, number, cancellationToken);
+            if (season?.SeasonNumber != number) { return []; }
+        }
+        if (parts.Length == 4)
+        {
+            if (!int.TryParse(parts[3], out var number)) { return []; }
+            episode = season?.Episodes?.SingleOrDefault(e => e.EpisodeNumber == number);
+            if (episode == null) { return []; }
+        }
+        var title = episode != null ? $"{series.Name}: {episode.Name}"
+            : season != null ? $"{series.Name}: Season {season.SeasonNumber}" : series.Name;
+        if (!string.IsNullOrWhiteSpace(storedTitle))
+        {
+            var video = VideoTitle.Parse(storedTitle);
+            if (season == null && SameTitle(storedTitle, series.Name)) { title = storedTitle; }
+            else if (!SameTitle(video.SeriesTitle, series.Name)
+                || (episode != null ? !SameTitle(video.Special ?? string.Empty, episode.Name)
+                    : video.Season != season?.SeasonNumber)) { return []; }
+            title = storedTitle;
+        }
+        return [MapTvResponse(series, title, season, episode)];
+    }
 
-        return details
-            .Where(d => d != null)
-            .Select(d => MapToMovieResponse(d!))
-            .ToList();
+    private static MovieResponse MapTvResponse(
+        TmdbTvResponse series, string title, TmdbSeasonResponse? season, TmdbEpisode? episode)
+    {
+        // Season art wins; a verified season/special without art explicitly falls back to series art.
+        var poster = !string.IsNullOrWhiteSpace(season?.PosterPath) ? season.PosterPath : series.PosterPath;
+        var providerId = $"tv:{series.Id}" + (season != null ? $":{season.SeasonNumber}" : string.Empty)
+            + (episode != null ? $":{episode.EpisodeNumber}" : string.Empty);
+        return new(title, series.Genres?.Select(g => g.Name).ToList() ?? [],
+            series.ProductionCompanies?.Select(c => c.Name).ToList() ?? [],
+            episode?.AirDate ?? season?.AirDate ?? series.FirstAirDate ?? string.Empty,
+            string.Empty, null, series.Overview ?? string.Empty, string.Empty,
+            string.IsNullOrWhiteSpace(poster) ? null : $"https://image.tmdb.org/t/p/w500{poster}",
+            new LookupProvenance("Tmdb", providerId, title, MatchYears:
+                new[] { series.FirstAirDate, season?.AirDate, episode?.AirDate }
+                    .Where(d => !string.IsNullOrWhiteSpace(d) && d.Length >= 4)
+                    .Select(d => d![..4]).Distinct().ToList()));
     }
 
     private async Task<MovieResponse?> LookupByUpcAsync(string identifierValue, CancellationToken cancellationToken)
@@ -107,31 +198,13 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         _logger.LogInformation("Found title '{RawTitle}' from UPC/EAN {Code}, cleaned to '{CleanedTitle}' with format '{Format}' for TMDB search",
             firstItem.Title, identifierValue, cleanedTitle, format);
 
-        var searchResult = await _tmdbClient.SearchMovieAsync(cleanedTitle, cancellationToken);
-
-        if (searchResult == null || searchResult.Results.Count == 0)
+        var candidates = await SearchByTitleAsync(cleanedTitle, cancellationToken);
+        if (candidates.Count != 1)
         {
-            _logger.LogWarning("No TMDB results found for title: {Title}", cleanedTitle);
+            _logger.LogWarning("No unambiguous TMDB match found for title: {Title}", cleanedTitle);
             return null;
         }
-
-        // Find the best match by comparing titles, prioritizing exact matches
-        var bestMatch = searchResult.Results.FirstOrDefault(r =>
-            r.Title.Equals(cleanedTitle, StringComparison.OrdinalIgnoreCase))
-            ?? searchResult.Results[0];
-
-        _logger.LogInformation("Found TMDB movie ID {MovieId} for title: {Title}",
-            bestMatch.Id, cleanedTitle);
-
-        var movieDetails = await _tmdbClient.GetMovieDetailsAsync(bestMatch.Id, cancellationToken);
-
-        if (movieDetails == null)
-        {
-            _logger.LogWarning("Could not retrieve TMDB movie details for ID: {MovieId}", bestMatch.Id);
-            return null;
-        }
-
-        return MapToMovieResponse(movieDetails, format);
+        return candidates[0] with { Format = format };
     }
 
     private MovieResponse MapToMovieResponse(TmdbMovieResponse tmdbMovie, string format = "")

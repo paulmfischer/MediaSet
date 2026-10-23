@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
+using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Storage;
@@ -42,6 +43,43 @@ public class ImageProviderFailureTests
         {
             Assert.That(result.RetryAt, Is.GreaterThan(DateTime.UtcNow));
         }
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_TvSearchUnavailable_RejectsSurvivingMovieCandidate()
+    {
+        using var http = new HttpClient(new Handler((request, _) => Task.FromResult(
+            request.RequestUri!.AbsolutePath switch
+            {
+                "/search/movie" => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {"page":1,"results":[{"id":1,"title":"Constantine"}],"total_pages":1,"total_results":1}
+                        """)
+                },
+                "/movie/1" => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {"id":1,"title":"Constantine","genres":[],"production_companies":[],"poster_path":"/movie.jpg"}
+                        """)
+                },
+                _ => new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            }))) { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
+        var client = new TmdbClient(http, Options.Create(new TmdbConfiguration()), NullLogger<TmdbClient>.Instance);
+        using var services = new ServiceCollection().AddSingleton<ILookupStrategy<MovieResponse>>(
+            new MovieLookupStrategy(Mock.Of<IUpcItemDbClient>(), client,
+                NullLogger<MovieLookupStrategy>.Instance)).BuildServiceProvider();
+        var images = new Mock<IImageService>();
+        images.Setup(c => c.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(new Image { FilePath = "wrong.jpg" });
+        var lookup = new ImageLookupService(new LookupStrategyFactory(services), images.Object,
+            NullLogger<ImageLookupService>.Instance);
+        var result = await lookup.LookupAndSaveImageAsync(new Movie { Id = "1", Title = "Constantine" },
+            MediaTypes.Movies, CancellationToken.None);
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.ProviderUnavailable));
+        images.Verify(c => c.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]

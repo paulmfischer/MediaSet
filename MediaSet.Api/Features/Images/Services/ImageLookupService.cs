@@ -87,7 +87,11 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
         if (confirmed != null)
         {
             attempts.Add((mediaType == MediaTypes.Books ? IdentifierType.Olid : IdentifierType.Entity,
-                new Dictionary<string, string> { [mediaType == MediaTypes.Books ? "olid" : "confirmedProviderId"] = confirmed.ProviderId }));
+                new Dictionary<string, string>
+                {
+                    [mediaType == MediaTypes.Books ? "olid" : "confirmedProviderId"] = confirmed.ProviderId,
+                    ["title"] = entity.Title
+                }));
         }
         if (!string.IsNullOrWhiteSpace(entity.Title))
         {
@@ -118,6 +122,9 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                     throw;
                 }
                 cancellationToken.ThrowIfCancellationRequested();
+                // An unavailable resource can hide an equally matching film, series, or remake.
+                // Do not accept the surviving candidate from an incomplete provider search.
+                if (mediaType == MediaTypes.Movies) { failures.ThrowIfFailed(); }
                 var matching = ImageCandidateMatcher.Select(entity, candidates);
                 foreach (var candidate in matching)
                 {
