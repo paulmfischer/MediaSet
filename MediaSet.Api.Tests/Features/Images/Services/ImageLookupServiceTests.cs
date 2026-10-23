@@ -50,6 +50,39 @@ public class ImageLookupServiceTests
     #region Id validation
 
     [Test]
+    public async Task ProviderQuota_DoesNotDiscardIndependentArtwork()
+    {
+        _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
+        _bookStrategyMock.Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(),
+                It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(new MediaSet.Api.Infrastructure.Lookup.ProviderLookupException(
+                    "UpcItemDb", ImageLookupOutcome.QuotaLimited, "quota", DateTime.UtcNow.AddHours(11)));
+                return Task.FromResult<IReadOnlyList<BookResponse>>([new BookResponse("Dune", "", [], 0, [], "", [],
+                    ImageUrl: "https://example.com/independent.jpg")]);
+            });
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(_savedImage);
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Success, Is.True);
+    }
+
+    [Test]
+    public async Task MultipleMatches_AreDistinguishableFromNoArtwork()
+    {
+        _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
+        _bookStrategyMock.Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(),
+                It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new BookResponse("Dune", "", [], 0, [], "", []), new BookResponse("Dune Messiah", "", [], 0, [], "", [])]);
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.AmbiguousMatch));
+        Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.False);
+    }
+
+    [Test]
     public async Task LookupAndSaveImageAsync_ReturnsPermanentFailure_WhenEntityHasNoId()
     {
         var book = new Book { Id = null, Title = "Dune", ISBN = "9780441013593" };
@@ -110,7 +143,7 @@ public class ImageLookupServiceTests
             It.IsAny<string>(), It.IsAny<CancellationToken>())).ThrowsAsync(new System.Net.Http.HttpRequestException("network"));
         var result = await _service.LookupAndSaveImageAsync(
             new Book { Id = "1", Title = "", ImageUrl = "https://example.com/image.jpg" }, MediaTypes.Books, CancellationToken.None);
-        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.TransientFailure));
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.DownloadFailure));
         Assert.That(result.PermanentFailure, Is.False);
     }
 

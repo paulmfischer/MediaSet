@@ -118,6 +118,7 @@ public class BackgroundImageLookupService : BackgroundService
         var perTypeLimit = Math.Max(1, _config.Value.BatchSize / availableMediaTypes.Count);
         var remainder = _config.Value.BatchSize % availableMediaTypes.Count;
 
+        _runAttempts.Clear();
         foreach (var mediaType in availableMediaTypes)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -148,6 +149,7 @@ public class BackgroundImageLookupService : BackgroundService
         _logger.LogInformation(
             "Background image lookup run completed. Total processed: {Processed}, Succeeded: {Succeeded}, Failed: {Failed}, Duration: {Duration}",
             totalProcessed, totalSucceeded, totalFailed, DateTime.UtcNow - runStartTime);
+        _logger.LogInformation("Background image lookup run diagnostics: {@Attempts}", _runAttempts);
     }
 
     private List<MediaTypes> GetAvailableMediaTypes(LookupStrategyFactory strategyFactory)
@@ -341,6 +343,11 @@ public class BackgroundImageLookupService : BackgroundService
 
             // Update the entity with the result
             await UpdateEntityAsync(entity, mediaType, result, collection, cancellationToken);
+            var state = entity.ImageLookup!;
+            var attempt = new ImageRunAttempt(entity.Id!, mediaType.ToString(), state.Provider, state.LastOutcome.ToString(),
+                state.AttemptedStrategy, state.NextEligibleAt != null, state.NextEligibleAt, state.LookupAttemptedAt);
+            _runAttempts.Add(attempt);
+            _logger.LogInformation("Image run attempt: {@Attempt}", attempt);
 
             if (result.Success)
             {
@@ -414,7 +421,12 @@ public class BackgroundImageLookupService : BackgroundService
                 await UpdateEntityInCollectionAsync<Music>((IMongoCollection<Music>)collection, entity.Id!, imageLookup, result.SavedImage, cancellationToken);
                 break;
         }
+        entity.ImageLookup = imageLookup;
     }
+
+    private sealed record ImageRunAttempt(string EntityId, string MediaType, string? Provider, string? Outcome,
+        string? AttemptedStrategy, bool RetryEligible, DateTime? NextEligibleAt, DateTime LastAttempt);
+    private readonly List<ImageRunAttempt> _runAttempts = [];
 
     private static async Task UpdateEntityInCollectionAsync<TEntity>(
         IMongoCollection<TEntity> collection,

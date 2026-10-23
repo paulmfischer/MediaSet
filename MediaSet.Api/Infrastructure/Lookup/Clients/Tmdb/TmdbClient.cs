@@ -27,7 +27,7 @@ public class TmdbClient : ITmdbClient
             _logger.LogInformation("Searching TMDB for movie: {Title}", title);
 
             var encodedTitle = HttpUtility.UrlEncode(title);
-            var response = await _httpClient.GetAsync($"search/movie?query={encodedTitle}", cancellationToken);
+            var response = await _httpClient.GetProviderAsync($"search/movie?query={encodedTitle}", cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -70,7 +70,7 @@ public class TmdbClient : ITmdbClient
         {
             _logger.LogInformation("Getting TMDB movie details for ID: {MovieId}", movieId);
 
-            var response = await _httpClient.GetAsync($"movie/{movieId}", cancellationToken);
+            var response = await _httpClient.GetProviderAsync($"movie/{movieId}", cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

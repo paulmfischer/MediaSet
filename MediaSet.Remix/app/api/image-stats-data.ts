@@ -21,6 +21,11 @@ export type ImageLookupFailure = {
   lookupAttemptedAt: string;
   failureReason?: string;
   permanentFailure: boolean;
+  provider?: string;
+  outcome?: string;
+  attemptedStrategy?: string;
+  nextEligibleAt?: string;
+  attemptCount?: number;
 };
 
 export type ImageStats = {

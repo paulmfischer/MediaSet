@@ -75,6 +75,32 @@ public class ImageStatsServiceTests
     #region GetImageStatsAsync Tests
 
     [Test]
+    public async Task GetImageStatsAsync_ExposesProviderAttemptAndRetryDiagnostics()
+    {
+        var now = DateTime.UtcNow;
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync([
+            new Movie { Id = "movie", Title = "Example", ImageLookup = new ImageLookup
+            {
+                Provider = "UpcItemDb", LastOutcome = ImageLookupOutcome.QuotaLimited,
+                AttemptedStrategy = "Movies:Upc", LookupAttemptedAt = now, NextEligibleAt = now.AddHours(11),
+                AttemptCount = 2, FailureReason = "quota exhausted", PermanentFailure = false
+            } }
+        ]);
+        var stats = await _imageStatsService.GetImageStatsAsync();
+        var failure = stats!.ImageLookupFailures[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(failure.Provider, Is.EqualTo("UpcItemDb"));
+            Assert.That(failure.Outcome, Is.EqualTo("QuotaLimited"));
+            Assert.That(failure.AttemptedStrategy, Is.EqualTo("Movies:Upc"));
+            Assert.That(failure.LookupAttemptedAt, Is.EqualTo(now));
+            Assert.That(failure.NextEligibleAt, Is.EqualTo(now.AddHours(11)));
+            Assert.That(failure.AttemptCount, Is.EqualTo(2));
+            Assert.That(failure.PermanentFailure, Is.False);
+        });
+    }
+
+    [Test]
     public async Task GetImageStatsAsync_ShouldReturnCachedStats_WhenCacheHit()
     {
         // Arrange

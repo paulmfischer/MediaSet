@@ -29,7 +29,7 @@ public class UpcItemDbClientTests
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
         {
-            BaseAddress = new Uri("https://api.upcitemdb.com/")
+            BaseAddress = new Uri($"https://{Guid.NewGuid():N}.upcitemdb.test/")
         };
 
         _configuration = new UpcItemDbConfiguration
@@ -355,7 +355,7 @@ public class UpcItemDbClientTests
 
         // Assert
         Assert.That(result, Is.Null);
-        VerifyLogContains(LogLevel.Warning, "no valid reset time");
+        VerifyLogContains(LogLevel.Error, "daily rate limit exceeded");
     }
 
     [Test]
