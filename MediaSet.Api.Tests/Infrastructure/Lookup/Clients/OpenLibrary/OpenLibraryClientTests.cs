@@ -967,6 +967,20 @@ public class OpenLibraryClientTests
     }
 
     [Test]
+    public async Task Search_EnrichedEditionArtwork_DoesNotClaimUsersExactEdition()
+    {
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,
+            """{"docs":[{"title":"Book","key":"/works/OL1W","cover_edition_key":"OL1M"}]}""");
+        SetupHttpResponseForUrl("api/volumes", HttpStatusCode.OK,
+            """{"items":[],"records":{"one":{"isbns":["456"],"olids":["OL1M"],"data":{"title":"Book","authors":[],"covers":[42]}}}}""");
+        var books = await new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" });
+        Assert.That(books, Has.Count.EqualTo(1));
+        Assert.That(books[0].Artwork, Is.Not.Empty);
+        Assert.That(books[0].Artwork!.All(a => a.Scope == "Work or alternate-edition artwork; exact edition unverified"), Is.True);
+    }
+
+    [Test]
     public async Task Search_EnrichmentWithoutCover_PreservesSearchArtworkAndWorkScope()
     {
         SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,

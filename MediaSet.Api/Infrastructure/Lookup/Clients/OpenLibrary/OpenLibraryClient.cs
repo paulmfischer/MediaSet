@@ -189,7 +189,9 @@ public class OpenLibraryClient : IOpenLibraryClient
                     var search = MapSearchDocToBookResponse(doc);
                     // Search covers describe a work/another edition even when enrichment
                     // happens to provide metadata for a particular edition.
-                    var artwork = (enriched.Artwork ?? []).Concat(search.Artwork ?? []).DistinctBy(a => a.Url).ToList();
+                    var artwork = (enriched.Artwork ?? []).Concat(search.Artwork ?? [])
+                        .Select(a => a with { Scope = "Work or alternate-edition artwork; exact edition unverified" })
+                        .DistinctBy(a => a.Url).ToList();
                     return enriched with { ImageUrl = search.ImageUrl ?? enriched.ImageUrl, Artwork = artwork,
                         Provenance = search.Provenance ?? enriched.Provenance };
                 }
