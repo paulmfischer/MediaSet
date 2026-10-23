@@ -32,16 +32,19 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "HTTP error while looking up book by ISBN: {Isbn}", isbn);
             return null;
         }
         catch (JsonException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "JSON parsing error while looking up book by ISBN: {Isbn}", isbn);
             return null;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error looking up book by ISBN: {Isbn}", isbn);
             return null;
         }
@@ -61,16 +64,19 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
         }
         catch (JsonException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "JSON parsing error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
         }
@@ -148,16 +154,19 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
         catch (JsonException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogWarning(ex, "JSON parsing error while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
@@ -178,6 +187,7 @@ public class OpenLibraryClient : IOpenLibraryClient
             }
             catch (Exception ex)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
                 _logger.LogWarning(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
                     doc.Title, doc.CoverEditionKey);
             }

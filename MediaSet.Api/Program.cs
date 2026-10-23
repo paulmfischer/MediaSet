@@ -238,6 +238,7 @@ builder.Services.AddScoped<IImageManagementService, ImageManagementService>();
 // Configure background image lookup service
 builder.Services.Configure<BackgroundImageLookupConfiguration>(
     builder.Configuration.GetSection(nameof(BackgroundImageLookupConfiguration)));
+builder.Services.AddScoped<ImageRequeueService>();
 
 var backgroundImageLookupConfig = builder.Configuration
     .GetSection(nameof(BackgroundImageLookupConfiguration))

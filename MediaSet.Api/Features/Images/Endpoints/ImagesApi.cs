@@ -16,6 +16,19 @@ internal static class ImagesApi
 
         group.WithTags("Images");
 
+        group.MapPost("/lookup/{entityType}/requeue", async (string entityType, ImageRequeueRequest request,
+            ImageRequeueService service, CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                return Results.Ok(await service.RequeueAsync(entityType, request, cancellationToken));
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
         group.MapDelete("/orphaned", async (IImageManagementService imageManagementService, CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Deleting orphaned images");

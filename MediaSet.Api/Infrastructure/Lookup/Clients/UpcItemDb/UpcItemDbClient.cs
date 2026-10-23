@@ -68,6 +68,7 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     return await HandleRateLimitErrorAsync(code, response.Headers, cancellationToken);
@@ -94,11 +95,13 @@ public class UpcItemDbClient : IUpcItemDbClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while looking up UPC/EAN code: {Code}", code);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error looking up UPC/EAN code: {Code}", code);
             return null;
         }
@@ -233,6 +236,7 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             if (!retryResponse.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(retryResponse);
                 _logger.LogWarning(
                     "Retry after burst rate limit pause failed with status {StatusCode} for code: {Code}",
                     retryResponse.StatusCode, code);

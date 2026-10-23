@@ -39,6 +39,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     _logger.LogWarning("MusicBrainz rate limit exceeded for barcode: {Barcode}", barcode);
@@ -68,11 +69,13 @@ public class MusicBrainzClient : IMusicBrainzClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while looking up release for barcode: {Barcode}", barcode);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error looking up release for barcode: {Barcode}", barcode);
             return null;
         }
@@ -104,6 +107,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     _logger.LogWarning("MusicBrainz rate limit exceeded for release ID: {ReleaseId}", releaseId);
@@ -130,11 +134,13 @@ public class MusicBrainzClient : IMusicBrainzClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while looking up release for ID: {ReleaseId}", releaseId);
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error looking up release for ID: {ReleaseId}", releaseId);
             return null;
         }
@@ -183,6 +189,7 @@ public class MusicBrainzClient : IMusicBrainzClient
 
             if (!response.IsSuccessStatusCode)
             {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     _logger.LogWarning("MusicBrainz rate limit exceeded for entity search: title={Title}", title);
@@ -209,11 +216,13 @@ public class MusicBrainzClient : IMusicBrainzClient
         }
         catch (HttpRequestException ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "HTTP error while searching MusicBrainz by entity properties");
             throw;
         }
         catch (Exception ex)
         {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error searching MusicBrainz by entity properties");
             return [];
         }

@@ -62,6 +62,58 @@ public class ImageLookupServiceTests
 
     #endregion
 
+    [Test]
+    public async Task LookupAndSaveImageAsync_MatchedWithoutArtwork_IsTerminalMissingArtwork()
+    {
+        _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
+        _bookStrategyMock.Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(),
+                It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new BookResponse("Dune", "", [], 0, [], "", [])]);
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.MissingArtwork));
+        Assert.That(result.PermanentFailure, Is.True);
+    }
+
+    [Test]
+    public void LookupAndSaveImageAsync_CancelledDuringDownload_PropagatesCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(() =>
+            {
+                cancellation.Cancel();
+                return Task.FromCanceled<Image>(cancellation.Token);
+            });
+        Assert.ThrowsAsync<TaskCanceledException>(async () => await _service.LookupAndSaveImageAsync(
+            new Book { Id = "1", ImageUrl = "https://example.com/image.jpg" }, MediaTypes.Books, cancellation.Token));
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task LookupAndSaveImageAsync_SuccessOrManualImage_DoesNotDownload(bool manual)
+    {
+        var book = new Book { Id = "1", ImageUrl = "https://example.com/image.jpg",
+            CoverImage = manual ? new Image() : null,
+            ImageLookup = manual ? null : new ImageLookup { LastOutcome = ImageLookupOutcome.Success } };
+        var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Success, Is.True);
+        _imageServiceMock.Verify(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_TransientExistingUrlWithoutMetadata_RemainsRetryable()
+    {
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>())).ThrowsAsync(new System.Net.Http.HttpRequestException("network"));
+        var result = await _service.LookupAndSaveImageAsync(
+            new Book { Id = "1", Title = "", ImageUrl = "https://example.com/image.jpg" }, MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.TransientFailure));
+        Assert.That(result.PermanentFailure, Is.False);
+    }
+
     #region Identifier priority — Books
 
     [Test]
@@ -312,7 +364,8 @@ public class ImageLookupServiceTests
 
         // Assert
         Assert.That(result.Success, Is.False);
-        Assert.That(result.PermanentFailure, Is.False);
+        Assert.That(result.PermanentFailure, Is.True);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.NoMatch));
         Assert.That(result.ErrorMessage, Does.Contain("No image URL"));
     }
 
