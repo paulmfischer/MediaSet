@@ -37,7 +37,8 @@ public record OpenLibrarySearchDoc(
     [property: JsonPropertyName("subject")] List<string>? Subject,
     [property: JsonPropertyName("number_of_pages_median")] int? NumberOfPagesMedian,
     [property: JsonPropertyName("cover_i")] long? CoverId,
-    [property: JsonPropertyName("cover_edition_key")] string? CoverEditionKey
+    [property: JsonPropertyName("cover_edition_key")] string? CoverEditionKey,
+    [property: JsonPropertyName("key")] string? Key = null
 );
 
 public record ReadApiRecord(

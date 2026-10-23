@@ -1,6 +1,7 @@
 using MediaSet.Api.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -940,6 +941,59 @@ public class OpenLibraryClientTests
     }
 
     #endregion
+
+    [Test]
+    public async Task Artwork_EnumeratesAllCoverFieldsAndRecords_RejectsSentinelIds()
+    {
+        SetupHttpResponse(HttpStatusCode.OK, """
+        {"items":[{"ol_edition_id":"OL2M","cover":{"large":"https://covers.openlibrary.org/b/id/30-L.jpg"}}],
+         "records":{
+          "first":{"isbns":["123"],"olids":["OL1M"],"data":{"title":"Book","authors":[]},
+             "details":{"details":{"covers":[-1,0,10,11]}}},
+          "second":{"isbns":[],"olids":["OL2M"],"data":{"title":"Book","authors":[],
+             "cover":{"large":"https://covers.openlibrary.org/b/id/20-L.jpg"}}},
+          "wrong":{"isbns":[],"olids":["OL3M"],"data":{"title":"Different Book","authors":[],"covers":[99]}}
+        }}
+        """);
+        var book = await new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123");
+        Assert.That(book, Is.Not.Null);
+        Assert.That(book!.Artwork!.Select(a => a.Url), Has.Some.Contains("/10-L.jpg?default=false"));
+        Assert.That(book.Artwork!.Select(a => a.Url), Has.Some.Contains("/11-L.jpg?default=false"));
+        Assert.That(book.Artwork!.Select(a => a.Url), Has.Some.Contains("/20-L.jpg?default=false"));
+        Assert.That(book.Artwork!.Select(a => a.Url), Has.Some.Contains("/30-L.jpg?default=false"));
+        Assert.That(book.Artwork!.Select(a => a.Url), Has.None.Contains("/99-"));
+        Assert.That(book.Artwork!.All(a => a.Url.EndsWith("?default=false")), Is.True);
+        Assert.That(book.Artwork!.Single(a => a.Url.Contains("/20-")).Scope, Does.Contain("Related edition"));
+    }
+
+    [Test]
+    public async Task Search_EnrichedEditionArtwork_DoesNotClaimUsersExactEdition()
+    {
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,
+            """{"docs":[{"title":"Book","key":"/works/OL1W","cover_edition_key":"OL1M"}]}""");
+        SetupHttpResponseForUrl("api/volumes", HttpStatusCode.OK,
+            """{"items":[],"records":{"one":{"isbns":["456"],"olids":["OL1M"],"data":{"title":"Book","authors":[],"covers":[42]}}}}""");
+        var books = await new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" });
+        Assert.That(books, Has.Count.EqualTo(1));
+        Assert.That(books[0].Artwork, Is.Not.Empty);
+        Assert.That(books[0].Artwork!.All(a => a.Scope == "Work or alternate-edition artwork; exact edition unverified"), Is.True);
+    }
+
+    [Test]
+    public async Task Search_EnrichmentWithoutCover_PreservesSearchArtworkAndWorkScope()
+    {
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,
+            """{"docs":[{"title":"Book","author_name":["Author"],"key":"/works/OL1W","cover_i":42,"cover_edition_key":"OL1M"}]}""");
+        SetupHttpResponseForUrl("api/volumes", HttpStatusCode.OK,
+            """{"items":[],"records":{"one":{"isbns":[],"olids":["OL1M"],"data":{"title":"Book","authors":[]}}}}""");
+        var books = await new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" });
+        Assert.That(books, Has.Count.EqualTo(1));
+        Assert.That(books[0].ImageUrl, Does.Contain("/42-L.jpg?default=false"));
+        Assert.That(books[0].Artwork!.Select(a => a.Url), Has.Some.Contains("/42-L.jpg?default=false"));
+        Assert.That(books[0].Artwork!.Single(a => a.Url.Contains("/42-")).Scope, Does.Contain("Work or alternate"));
+    }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)
     {

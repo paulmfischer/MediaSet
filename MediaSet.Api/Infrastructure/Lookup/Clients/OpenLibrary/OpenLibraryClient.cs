@@ -60,7 +60,10 @@ public class OpenLibraryClient : IOpenLibraryClient
             }, cancellationToken);
             _logger.LogInformation("Open Library readable lookup completed for {IdentifierType}", identifierType);
 
-            return MapReadApiResponseToBookResponse(response);
+            var book = MapReadApiResponseToBookResponse(response);
+            if (book == null) { return null; }
+            var artwork = ExtractArtwork(response!, identifierType, identifierValue);
+            return book with { ImageUrl = artwork.FirstOrDefault()?.Url, Artwork = artwork };
         }
         catch (HttpRequestException ex)
         {
@@ -138,6 +141,7 @@ public class OpenLibraryClient : IOpenLibraryClient
                 return [];
             }
 
+            url += "&fields=key,title,author_name,first_publish_year,isbn,publisher,subject,number_of_pages_median,cover_i,cover_edition_key";
             var response = await _httpClient.GetProviderFromJsonAsync<OpenLibrarySearchResponse>(url, cancellationToken);
 
             if (response == null || response.Docs.Count == 0)
@@ -182,7 +186,14 @@ public class OpenLibraryClient : IOpenLibraryClient
                 if (enriched != null)
                 {
                     _logger.LogDebug("Enriched search result '{Title}' using OLID {Olid}", doc.Title, doc.CoverEditionKey);
-                    return enriched;
+                    var search = MapSearchDocToBookResponse(doc);
+                    // Search covers describe a work/another edition even when enrichment
+                    // happens to provide metadata for a particular edition.
+                    var artwork = (enriched.Artwork ?? []).Concat(search.Artwork ?? [])
+                        .Select(a => a with { Scope = "Work or alternate-edition artwork; exact edition unverified" })
+                        .DistinctBy(a => a.Url).ToList();
+                    return enriched with { ImageUrl = search.ImageUrl ?? enriched.ImageUrl, Artwork = artwork,
+                        Provenance = search.Provenance ?? enriched.Provenance };
                 }
             }
             catch (Exception ex)
@@ -202,7 +213,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         var publishers = doc.Publisher?.Take(3).Select(p => new Publisher(p)).ToList() ?? [];
         var subjects = doc.Subject?.Take(5).Select(s => new Subject(s, string.Empty)).ToList() ?? [];
         var publishDate = doc.FirstPublishYear.HasValue ? doc.FirstPublishYear.Value.ToString() : string.Empty;
-        var imageUrl = doc.CoverId.HasValue ? $"https://covers.openlibrary.org/b/id/{doc.CoverId.Value}-L.jpg" : null;
+        var imageUrl = doc.CoverId is > 0 ? CoverUrl("id", doc.CoverId.Value.ToString()) : null;
 
         return new BookResponse(
             Title: doc.Title ?? string.Empty,
@@ -214,8 +225,11 @@ public class OpenLibraryClient : IOpenLibraryClient
             Subjects: subjects,
             Format: null,
             ImageUrl: imageUrl,
-            Provenance: string.IsNullOrWhiteSpace(doc.CoverEditionKey) ? null
-                : new LookupProvenance("OpenLibrary", doc.CoverEditionKey, doc.Title ?? string.Empty)
+            Provenance: string.IsNullOrWhiteSpace(doc.Key ?? doc.CoverEditionKey) ? null
+                : new LookupProvenance("OpenLibrary", doc.Key ?? doc.CoverEditionKey!, doc.Title ?? string.Empty,
+                    ArtworkScope: "Work or alternate-edition artwork; exact edition unverified"),
+            Artwork: imageUrl == null ? [] : [new BookArtwork(imageUrl,
+                "Work or alternate-edition artwork; exact edition unverified", doc.CoverEditionKey)]
         );
     }
 
@@ -227,7 +241,8 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
 
         // Get the first record (usually there's only one)
-        var firstRecord = readApiResponse.Records.Values.First();
+        var firstRecord = readApiResponse.Records.Values.FirstOrDefault(r => r.Data != null);
+        if (firstRecord == null) { return null; }
         var data = firstRecord.Data;
 
         if (data == null)
@@ -276,13 +291,6 @@ public class OpenLibraryClient : IOpenLibraryClient
                 format = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(formatElement.GetString() ?? string.Empty);
             }
 
-            if (detailsElement.TryGetProperty("covers", out var coversElement) &&
-                coversElement.ValueKind == JsonValueKind.Array &&
-                coversElement.GetArrayLength() > 0)
-            {
-                var firstCoverId = coversElement[0].GetInt64();
-                imageUrl = $"https://covers.openlibrary.org/b/id/{firstCoverId}-L.jpg";
-            }
         }
 
         return new BookResponse(
@@ -295,9 +303,75 @@ public class OpenLibraryClient : IOpenLibraryClient
           subjects,
           format,
           imageUrl,
-          firstRecord.Olids.FirstOrDefault() is { } olid
+          firstRecord.Olids?.FirstOrDefault() is { } olid
             ? new LookupProvenance("OpenLibrary", olid, title) : null
         );
+    }
+
+    internal static string CoverUrl(string key, string value) =>
+        $"https://covers.openlibrary.org/b/{key}/{Uri.EscapeDataString(value)}-L.jpg?default=false";
+
+    private static List<BookArtwork> ExtractArtwork(ReadApiResponse response, string identifierType, string identifierValue)
+    {
+        var artwork = new List<BookArtwork>();
+        var primary = response.Records.Values.FirstOrDefault(r => r.Data != null);
+        foreach (var record in response.Records.Values)
+        {
+            // A read response can contain several records. Never borrow artwork
+            // across conflicting titles/authors merely because it was returned nearby.
+            if (record.Data == null || primary?.Data == null) { continue; }
+            if (!ReferenceEquals(record, primary)
+                && (NormalizeSubjectKey(new Subject(record.Data.ExtractStringFromData("title"), ""))
+                    != NormalizeSubjectKey(new Subject(primary.Data.ExtractStringFromData("title"), ""))
+                || !record.Data.ExtractAuthorsFromData().Select(a => a.Name).Order()
+                    .SequenceEqual(primary.Data.ExtractAuthorsFromData().Select(a => a.Name).Order()))) { continue; }
+            var exact = identifierType == "isbn" && (record.Isbns?.Contains(identifierValue) ?? false)
+                || identifierType == "olid" && (record.Olids?.Contains(identifierValue) ?? false);
+            var scope = exact ? "Exact-edition artwork" : "Related edition artwork; exact edition unverified";
+            var edition = record.Olids?.FirstOrDefault();
+            void Add(string? url)
+            {
+                if (Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                    && uri.Host.Equals("covers.openlibrary.org", StringComparison.OrdinalIgnoreCase))
+                {
+                    var builder = new UriBuilder(uri) { Scheme = "https", Port = -1,
+                        Query = "default=false" };
+                    artwork.Add(new(builder.Uri.AbsoluteUri, scope, edition));
+                }
+            }
+            void Inspect(JsonElement element)
+            {
+                if (element.ValueKind != JsonValueKind.Object) { return; }
+                if (element.TryGetProperty("cover", out var cover) && cover.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var size in new[] { "large", "medium", "small" })
+                    {
+                        if (cover.TryGetProperty(size, out var url) && url.ValueKind == JsonValueKind.String) { Add(url.GetString()); }
+                    }
+                }
+                if (element.TryGetProperty("covers", out var covers) && covers.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var id in covers.EnumerateArray())
+                    {
+                        if (id.ValueKind == JsonValueKind.Number && id.TryGetInt64(out var value) && value > 0) { Add(CoverUrl("id", value.ToString())); }
+                    }
+                }
+                if (element.TryGetProperty("details", out var details)) { Inspect(details); }
+            }
+            if (record.Data != null) { Inspect(JsonSerializer.SerializeToElement(record.Data)); }
+            if (record.Details != null) { Inspect(JsonSerializer.SerializeToElement(record.Details)); }
+            foreach (var item in (response.Items ?? []).Where(i => i.FromRecord == record.RecordUrl
+                || !string.IsNullOrEmpty(edition) && i.OlEditionId == edition))
+            {
+                Add(item.Cover?.Large); Add(item.Cover?.Medium); Add(item.Cover?.Small);
+            }
+            foreach (var olid in record.Olids ?? []) { Add(CoverUrl("olid", olid)); }
+        }
+        if (identifierType is "isbn" or "olid")
+        {
+            artwork.Add(new(CoverUrl(identifierType, identifierValue), "Exact-edition artwork", identifierType == "olid" ? identifierValue : null));
+        }
+        return artwork.DistinctBy(a => a.Url).ToList();
     }
 
     private static string NormalizeSubjectKey(Subject subject)

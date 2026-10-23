@@ -460,6 +460,9 @@ public class ImageLookupServiceTests
         _bookStrategyMock
             .Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<BookResponse>());
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new System.Net.Http.HttpRequestException("Missing cover", null, System.Net.HttpStatusCode.NotFound));
 
         // Act
         var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
@@ -469,6 +472,41 @@ public class ImageLookupServiceTests
         Assert.That(result.PermanentFailure, Is.True);
         Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.NoMatch));
         Assert.That(result.ErrorMessage, Does.Contain("No image URL"));
+    }
+
+    [Test]
+    public async Task StoredOpenLibraryCover_Requests404InsteadOfPlaceholder()
+    {
+        const string verifiedUrl = "https://covers.openlibrary.org/b/isbn/123-L.jpg?default=false";
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(verifiedUrl, "Books", "1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_savedImage);
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune",
+            ImageUrl = "https://covers.openlibrary.org/b/isbn/123-L.jpg" }, MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.ImageUrl, Is.EqualTo(verifiedUrl));
+    }
+
+    [Test]
+    public async Task BookArtwork_MissingExactCover_TriesVerifiedAlternativeAndPersistsScope()
+    {
+        const string missing = "https://covers.openlibrary.org/b/id/1-L.jpg?default=false";
+        const string recovered = "https://covers.openlibrary.org/b/id/2-L.jpg?default=false";
+        const string scope = "Work or alternate-edition artwork; exact edition unverified";
+        _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, It.IsAny<IdentifierType>())).Returns(true);
+        _bookStrategyMock.Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(),
+            It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new BookResponse("Dune", "", [], 0, [], "", [],
+                Provenance: new LookupProvenance("OpenLibrary", "OL1M", "Dune"),
+                Artwork: [new BookArtwork(missing, "Exact-edition artwork"), new BookArtwork(recovered, scope)])]);
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(missing, "Books", "1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new System.Net.Http.HttpRequestException("Missing cover", null, System.Net.HttpStatusCode.NotFound));
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(recovered, "Books", "1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_savedImage);
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune", ISBN = "123" },
+            MediaTypes.Books, CancellationToken.None);
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.ImageUrl, Is.EqualTo(recovered));
+        Assert.That(result.ConfirmedMatch!.ArtworkScope, Is.EqualTo(scope));
     }
 
     [Test]

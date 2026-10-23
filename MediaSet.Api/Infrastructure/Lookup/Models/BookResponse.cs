@@ -10,8 +10,11 @@ public record BookResponse(
   List<Subject> Subjects,
   string? Format = null,
   string? ImageUrl = null,
-  LookupProvenance? Provenance = null
+  LookupProvenance? Provenance = null,
+  IReadOnlyList<BookArtwork>? Artwork = null
 );
+
+public record BookArtwork(string Url, string Scope, string? EditionId = null);
 
 public record Author(
   string Name,
