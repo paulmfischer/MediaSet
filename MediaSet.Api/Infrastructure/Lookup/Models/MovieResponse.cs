@@ -9,5 +9,6 @@ public record MovieResponse(
     int? Runtime,
     string Plot,
     string Format,
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    LookupProvenance? Provenance = null
 );

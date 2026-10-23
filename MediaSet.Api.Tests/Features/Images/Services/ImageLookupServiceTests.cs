@@ -70,7 +70,7 @@ public class ImageLookupServiceTests
     }
 
     [Test]
-    public async Task MultipleMatches_AreDistinguishableFromNoArtwork()
+    public async Task NonmatchingSequel_DoesNotMakeExactCoverlessMatchAmbiguous()
     {
         _bookStrategyMock.Setup(s => s.CanHandle(MediaTypes.Books, IdentifierType.Entity)).Returns(true);
         _bookStrategyMock.Setup(s => s.LookupAsync(It.IsAny<IdentifierType>(),
@@ -78,7 +78,7 @@ public class ImageLookupServiceTests
             .ReturnsAsync([new BookResponse("Dune", "", [], 0, [], "", []), new BookResponse("Dune Messiah", "", [], 0, [], "", [])]);
         var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
             MediaTypes.Books, CancellationToken.None);
-        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.AmbiguousMatch));
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.MissingArtwork));
         Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.False);
     }
 

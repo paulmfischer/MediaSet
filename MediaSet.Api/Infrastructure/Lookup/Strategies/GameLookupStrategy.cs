@@ -47,6 +47,11 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
 
         if (identifierType == IdentifierType.Entity)
         {
+            if (searchParams.TryGetValue("confirmedProviderId", out var providerId) && int.TryParse(providerId, out var id))
+            {
+                var details = await _igdbClient.GetGameDetailsAsync(id, cancellationToken);
+                return details == null ? [] : [MapToGameResponse(details, string.Empty, string.Empty, string.Empty)];
+            }
             searchParams.TryGetValue("title", out var title);
             return await SearchByTitleAsync(title ?? string.Empty, cancellationToken);
         }
@@ -439,7 +444,9 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
             Rating: rating,
             Description: description,
             Format: format,
-            ImageUrl: imageUrl
+            ImageUrl: imageUrl,
+            Provenance: new LookupProvenance("Igdb", details.Id.ToString(), details.Name,
+                details.Platforms?.SelectMany(p => new[] { p.Name, p.Abbreviation ?? p.Name }).ToList())
         );
     }
 

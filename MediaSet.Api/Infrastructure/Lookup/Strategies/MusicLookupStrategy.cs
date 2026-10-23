@@ -42,6 +42,11 @@ public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
 
         if (identifierType == IdentifierType.Entity)
         {
+            if (searchParams.TryGetValue("confirmedProviderId", out var providerId))
+            {
+                var detailsById = await _musicBrainzClient.GetReleaseByIdAsync(providerId, cancellationToken);
+                return detailsById == null ? [] : [MapToMusicResponse(detailsById)];
+            }
             var entityResults = await _musicBrainzClient.SearchByEntityPropertiesAsync(searchParams, cancellationToken);
             var detailTasks = entityResults
                 .Take(10)
@@ -146,7 +151,8 @@ public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
             Discs: discs,
             DiscList: discList,
             Format: format,
-            ImageUrl: $"https://coverartarchive.org/release/{release.Id}/front"
+            ImageUrl: $"https://coverartarchive.org/release/{release.Id}/front",
+            Provenance: new LookupProvenance("MusicBrainz", release.Id, release.Title)
         );
     }
 

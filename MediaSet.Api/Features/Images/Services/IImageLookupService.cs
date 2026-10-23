@@ -33,6 +33,7 @@ public interface IImageLookupService
 /// <param name="Provider">Provider responsible for the outcome.</param>
 /// <param name="AttemptedStrategy">Strategy used for this attempt.</param>
 /// <param name="RetryAt">Provider-specified earliest retry time.</param>
+/// <param name="ConfirmedMatch">Confirmed provider identity, retained even when artwork download fails.</param>
 public record ImageLookupResult(
     bool Success,
     string? ImageUrl,
@@ -42,5 +43,6 @@ public record ImageLookupResult(
     ImageLookupOutcome? Outcome = null,
     string? Provider = null,
     string? AttemptedStrategy = null,
-    DateTime? RetryAt = null
+    DateTime? RetryAt = null,
+    ConfirmedImageMatch? ConfirmedMatch = null
 );

@@ -9,7 +9,8 @@ public record BookResponse(
   string PublishDate,
   List<Subject> Subjects,
   string? Format = null,
-  string? ImageUrl = null
+  string? ImageUrl = null,
+  LookupProvenance? Provenance = null
 );
 
 public record Author(

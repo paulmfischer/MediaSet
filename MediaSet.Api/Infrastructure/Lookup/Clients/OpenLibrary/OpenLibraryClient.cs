@@ -213,7 +213,9 @@ public class OpenLibraryClient : IOpenLibraryClient
             PublishDate: publishDate,
             Subjects: subjects,
             Format: null,
-            ImageUrl: imageUrl
+            ImageUrl: imageUrl,
+            Provenance: string.IsNullOrWhiteSpace(doc.CoverEditionKey) ? null
+                : new LookupProvenance("OpenLibrary", doc.CoverEditionKey, doc.Title ?? string.Empty)
         );
     }
 
@@ -292,7 +294,9 @@ public class OpenLibraryClient : IOpenLibraryClient
           publishDate,
           subjects,
           format,
-          imageUrl
+          imageUrl,
+          firstRecord.Olids.FirstOrDefault() is { } olid
+            ? new LookupProvenance("OpenLibrary", olid, title) : null
         );
     }
 

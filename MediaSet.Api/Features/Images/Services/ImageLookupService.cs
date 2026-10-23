@@ -1,296 +1,198 @@
 using System.Reflection;
 using MediaSet.Api.Infrastructure.Lookup;
-using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Shared.Attributes;
 using MediaSet.Api.Shared.Extensions;
+using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Features.Images.Services;
 
-/// <summary>
-/// Service that orchestrates image lookup for entities using lookup strategies.
-/// </summary>
-public class ImageLookupService : IImageLookupService
+public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageService imageService,
+    ILogger<ImageLookupService> logger) : IImageLookupService
 {
-    private readonly LookupStrategyFactory _strategyFactory;
-    private readonly IImageService _imageService;
-    private readonly ILogger<ImageLookupService> _logger;
-
-    public ImageLookupService(
-        LookupStrategyFactory strategyFactory,
-        IImageService imageService,
-        ILogger<ImageLookupService> logger)
-    {
-        _strategyFactory = strategyFactory;
-        _imageService = imageService;
-        _logger = logger;
-    }
-
-    public async Task<ImageLookupResult> LookupAndSaveImageAsync(
-        IEntity entity,
-        MediaTypes mediaType,
+    public async Task<ImageLookupResult> LookupAndSaveImageAsync(IEntity entity, MediaTypes mediaType,
         CancellationToken cancellationToken)
     {
-        // Check if entity already has an Id (required for saving image)
         cancellationToken.ThrowIfCancellationRequested();
         if (entity.CoverImage != null || entity.ImageLookup?.LastOutcome == ImageLookupOutcome.Success)
         {
-            return new ImageLookupResult(true, null, entity.CoverImage, null, Outcome: ImageLookupOutcome.Success);
+            return new(true, null, entity.CoverImage, null, Outcome: ImageLookupOutcome.Success);
         }
-        ImageLookupResult? existingFailure = null;
-
         if (string.IsNullOrWhiteSpace(entity.Id))
         {
-            return new ImageLookupResult(
-                Success: false,
-                ImageUrl: null,
-                SavedImage: null,
-                ErrorMessage: "Entity does not have an Id",
-                PermanentFailure: true);
+            return new(false, null, null, "Entity does not have an Id", true, ImageLookupOutcome.MissingMetadata);
         }
 
-        // Step 1: If entity has existing ImageUrl, try downloading from it first
-        if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
+        var fingerprint = ImageRetryPolicy.Fingerprint(entity);
+        var confirmed = entity.ImageLookup?.ConfirmedMatch is { } previous && previous.MetadataFingerprint == fingerprint
+            ? previous : null;
+        ImageLookupResult? failure = null;
+        var triedUrls = new HashSet<string>(StringComparer.Ordinal);
+
+        void Remember(ImageLookupResult result)
         {
-            _logger.LogInformation(
-                "Entity {EntityId} has existing ImageUrl, attempting download from {ImageUrl}",
-                entity.Id, entity.ImageUrl);
-
-            var existingUrlResult = await TryDownloadImageAsync(
-                entity.ImageUrl,
-                mediaType.ToString(),
-                entity.Id,
-                cancellationToken);
-
-            if (existingUrlResult.Success)
+            confirmed = result.ConfirmedMatch ?? confirmed;
+            if (ImageRetryPolicy.IsRetryable(result.Outcome)
+                && (result.RetryAt > failure?.RetryAt || result.Outcome == ImageLookupOutcome.QuotaLimited))
             {
-                return existingUrlResult;
+                failure = result;
+                return;
             }
-
-            existingFailure = existingUrlResult;
-
-            _logger.LogWarning(
-                "Failed to download from existing ImageUrl for entity {EntityId}: {Error}",
-                entity.Id, existingUrlResult.ErrorMessage);
-        }
-
-        // Step 2: Find the lookup identifier — tries properties in Order, uses first with a value
-        var lookupIdentifier = GetLookupIdentifier(entity);
-        if (lookupIdentifier == null)
-        {
-            if (ImageRetryPolicy.IsRetryable(existingFailure?.Outcome))
+            // Preserve retryable errors across later terminal misses and preserve unresolved ambiguity.
+            if ((failure == null || !ImageRetryPolicy.IsRetryable(failure.Outcome))
+                && (failure?.Outcome != ImageLookupOutcome.AmbiguousMatch || ImageRetryPolicy.IsRetryable(result.Outcome))
+                && (failure == null || result.Outcome != ImageLookupOutcome.UnsupportedStrategy))
             {
-                return existingFailure!;
+                failure = result;
             }
-            _logger.LogWarning(
-                "Entity {EntityId} of type {MediaType} has no lookup identifier value",
-                entity.Id, mediaType);
-
-            return new ImageLookupResult(
-                Success: false,
-                ImageUrl: null,
-                SavedImage: null,
-                ErrorMessage: "Entity lacks required lookup identifier",
-                PermanentFailure: true);
         }
 
-        var (identifierType, identifierValue) = lookupIdentifier.Value;
-        var strategy = $"{mediaType}:{identifierType}";
-        var provider = mediaType switch
+        async Task<ImageLookupResult?> Download(string? url, string provider, string strategy)
         {
-            MediaTypes.Books => "OpenLibrary",
-            MediaTypes.Movies => "Tmdb",
-            MediaTypes.Games => "Igdb",
-            MediaTypes.Musics => "MusicBrainz",
-            _ => "Unknown"
-        };
+            if (string.IsNullOrWhiteSpace(url) || !triedUrls.Add(url))
+            {
+                return null;
+            }
+            var result = await TryDownloadImageAsync(url, mediaType.ToString(), entity.Id, cancellationToken);
+            result = result with { Provider = provider, AttemptedStrategy = strategy, ConfirmedMatch = confirmed };
+            if (!result.Success)
+            {
+                Remember(result);
+            }
+            return result;
+        }
 
-        // Step 3: Perform external API lookup
-        _logger.LogInformation(
-            "Looking up image for entity {EntityId} with {IdentifierType}: {IdentifierValue}",
-            entity.Id, identifierType, identifierValue);
-
-        try
+        var existing = await Download(entity.ImageUrl, "ImageDownload", "DownloadUrl");
+        if (existing?.Success == true)
         {
-            using var failures = new MediaSet.Api.Infrastructure.Lookup.LookupFailureScope();
-            var (matched, imageUrl) = await LookupImageUrlAsync(mediaType, identifierType, identifierValue, cancellationToken);
-            provider = failures.AttemptedProviders ?? provider;
+            return existing;
+        }
+        var cached = await Download(confirmed?.ImageUrl, confirmed?.Provider ?? "Unknown", "ConfirmedMatch");
+        if (cached?.Success == true)
+        {
+            return cached;
+        }
+
+        var attempts = entity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(p => (Property: p, Attribute: p.GetCustomAttribute<LookupIdentifierAttribute>()))
+            .Where(p => p.Attribute != null && p.Attribute.IdentifierType != IdentifierType.Entity)
+            .OrderBy(p => p.Attribute!.Order)
+            .Select(p => (Type: p.Attribute!.IdentifierType, Value: p.Property.GetValue(entity)?.ToString()))
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+            .Where(_ => confirmed == null)
+            .Select(p => (p.Type, Parameters: new Dictionary<string, string> { [p.Type.ToApiString()] = p.Value! }))
+            .ToList();
+        if (confirmed != null)
+        {
+            attempts.Add((mediaType == MediaTypes.Books ? IdentifierType.Olid : IdentifierType.Entity,
+                new Dictionary<string, string> { [mediaType == MediaTypes.Books ? "olid" : "confirmedProviderId"] = confirmed.ProviderId }));
+        }
+        if (!string.IsNullOrWhiteSpace(entity.Title))
+        {
+            attempts.Add((IdentifierType.Entity, ImageCandidateMatcher.SearchContext(entity)));
+        }
+
+        foreach (var (type, parameters) in attempts)
+        {
             cancellationToken.ThrowIfCancellationRequested();
-
-            if (string.IsNullOrWhiteSpace(imageUrl))
+            var strategy = $"{mediaType}:{type}";
+            try
             {
-                failures.ThrowIfFailed();
-                if (ImageRetryPolicy.IsRetryable(existingFailure?.Outcome))
+                using var failures = new LookupFailureScope();
+                IEnumerable<ImageCandidate> candidates;
+                try
                 {
-                    return existingFailure!;
+                    candidates = await LookupCandidatesAsync(mediaType, type, parameters, cancellationToken);
                 }
-                _logger.LogWarning(
-                    "No image URL found for entity {EntityId} with {IdentifierType}: {IdentifierValue}",
-                    entity.Id, identifierType, identifierValue);
-
-                return new ImageLookupResult(
-                    Success: false,
-                    ImageUrl: null,
-                    SavedImage: null,
-                    ErrorMessage: matched ? "Matched entity has no artwork" : "No image URL: no matching entity",
-                    PermanentFailure: true,
-                    Outcome: matched ? ImageLookupOutcome.MissingArtwork : ImageLookupOutcome.NoMatch,
-                    Provider: provider, AttemptedStrategy: strategy);
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Legacy clients may both record a typed failure and throw a generic HTTP error.
+                    // Preserve the recorded quota classification and reset before disposing its scope.
+                    failures.ThrowIfFailed();
+                    throw;
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                var matching = ImageCandidateMatcher.Select(entity, candidates);
+                foreach (var candidate in matching)
+                {
+                    if (candidate.Provenance is { } provenance)
+                    {
+                        confirmed = new(provenance.Provider, provenance.ProviderId, provenance.Title, candidate.ImageUrl,
+                            fingerprint, "Full title and all available year, creator and platform constraints agree",
+                            entity is Game ? "Game artwork; region and package unverified" : "Provider artwork");
+                    }
+                    var download = await Download(candidate.ImageUrl,
+                        candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString(), strategy);
+                    if (download?.Success == true)
+                    {
+                        return download;
+                    }
+                }
+                failures.ThrowIfFailed();
+                Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",
+                    true, matching.Count > 0 ? ImageLookupOutcome.MissingArtwork : ImageLookupOutcome.NoMatch,
+                    failures.AttemptedProviders, strategy, ConfirmedMatch: confirmed));
             }
-
-            // Step 4: Download and save the image
-            var downloaded = await TryDownloadImageAsync(imageUrl, mediaType.ToString(), entity.Id, cancellationToken);
-            return downloaded with { Provider = provider, AttemptedStrategy = strategy };
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (ProviderLookupException ex)
-        {
-            // A terminal fallback result cannot invalidate the known URL's retryable download failure.
-            if (!ImageRetryPolicy.IsRetryable(ex.Outcome) && ImageRetryPolicy.IsRetryable(existingFailure?.Outcome))
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (ProviderLookupException ex)
             {
-                return existingFailure!;
+                Remember(new(false, null, null, ex.Message, !ImageRetryPolicy.IsRetryable(ex.Outcome),
+                    ex.Outcome, ex.Provider, strategy, ex.RetryAt, confirmed));
             }
-            return new ImageLookupResult(false, null, null, ex.Message, Outcome: ex.Outcome,
-                PermanentFailure: !ImageRetryPolicy.IsRetryable(ex.Outcome),
-                Provider: ex.Outcome == ImageLookupOutcome.AmbiguousMatch ? provider : ex.Provider,
-                AttemptedStrategy: strategy, RetryAt: ex.RetryAt);
-        }
-        catch (NotSupportedException ex)
-        {
-            if (ImageRetryPolicy.IsRetryable(existingFailure?.Outcome))
+            catch (NotSupportedException ex)
             {
-                return existingFailure!;
+                Remember(new(false, null, null, ex.Message, true, ImageLookupOutcome.UnsupportedStrategy));
             }
-            _logger.LogWarning(ex,
-                "No lookup strategy available for {MediaType} with {IdentifierType}",
-                mediaType, identifierType);
-
-            return new ImageLookupResult(
-                Success: false,
-                ImageUrl: null,
-                SavedImage: null,
-                ErrorMessage: $"No lookup strategy available: {ex.Message}",
-                PermanentFailure: true, Outcome: ImageLookupOutcome.UnsupportedStrategy);
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Image lookup attempt {Strategy} failed for {EntityId}", strategy, entity.Id);
+                Remember(new(false, null, null, ex.Message, Outcome: ImageLookupOutcome.ProviderUnavailable,
+                    AttemptedStrategy: strategy, ConfirmedMatch: confirmed));
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Error during image lookup for entity {EntityId}",
-                entity.Id);
-
-            return new ImageLookupResult(
-                Success: false,
-                ImageUrl: null,
-                SavedImage: null,
-                ErrorMessage: $"Lookup error: {ex.Message}", Outcome: ImageLookupOutcome.ProviderUnavailable,
-                Provider: provider, AttemptedStrategy: strategy);
-        }
+        return (failure ?? new ImageLookupResult(false, null, null, "Entity lacks required lookup identifier", true,
+            ImageLookupOutcome.MissingMetadata)) with { ConfirmedMatch = confirmed };
     }
 
-    /// <summary>
-    /// Finds all properties marked with <see cref="LookupIdentifierAttribute"/>, sorts them by
-    /// <see cref="LookupIdentifierAttribute.Order"/>, and returns the identifier type and value
-    /// from the first property that has a non-empty value. Returns null if no property has a value.
-    /// </summary>
-    private static (IdentifierType IdentifierType, string Value)? GetLookupIdentifier(IEntity entity)
+    private async Task<IEnumerable<ImageCandidate>> LookupCandidatesAsync(MediaTypes mediaType, IdentifierType type,
+        IReadOnlyDictionary<string, string> parameters, CancellationToken cancellationToken)
     {
-        var properties = entity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-        var candidates = properties
-            .Select(p => (Prop: p, Attr: p.GetCustomAttribute<LookupIdentifierAttribute>()))
-            .Where(x => x.Attr != null)
-            .OrderBy(x => x.Attr!.Order);
-
-        foreach (var (prop, attr) in candidates)
+        return mediaType switch
         {
-            var value = prop.GetValue(entity)?.ToString();
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return (attr!.IdentifierType, value);
-            }
-        }
-
-        return null;
-    }
-
-    private async Task<(bool Matched, string? ImageUrl)> LookupImageUrlAsync(
-        MediaTypes mediaType,
-        IdentifierType identifierType,
-        string identifierValue,
-        CancellationToken cancellationToken)
-    {
-        var searchParams = identifierType == IdentifierType.Entity
-            ? new Dictionary<string, string> { ["title"] = identifierValue }
-            : new Dictionary<string, string> { [identifierType.ToApiString()] = identifierValue };
-
-        object? response = mediaType switch
-        {
-            MediaTypes.Books => await _strategyFactory
-                .GetStrategy<BookResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, searchParams, cancellationToken),
-            MediaTypes.Movies => await _strategyFactory
-                .GetStrategy<MovieResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, searchParams, cancellationToken),
-            MediaTypes.Games => await _strategyFactory
-                .GetStrategy<GameResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, searchParams, cancellationToken),
-            MediaTypes.Musics => await _strategyFactory
-                .GetStrategy<MusicResponse>(mediaType, identifierType)
-                .LookupAsync(identifierType, searchParams, cancellationToken),
-            _ => null
-        };
-
-        return response switch
-        {
-            System.Collections.ICollection { Count: > 1 } => throw new ProviderLookupException(
-                mediaType.ToString(), ImageLookupOutcome.AmbiguousMatch, "Multiple artwork candidates require a confident match"),
-            IReadOnlyList<BookResponse> books => (books.Count > 0, books.FirstOrDefault()?.ImageUrl),
-            IReadOnlyList<MovieResponse> movies => (movies.Count > 0, movies.FirstOrDefault()?.ImageUrl),
-            IReadOnlyList<GameResponse> games => (games.Count > 0, games.FirstOrDefault()?.ImageUrl),
-            IReadOnlyList<MusicResponse> music => (music.Count > 0, music.FirstOrDefault()?.ImageUrl),
-            _ => (false, null)
+            MediaTypes.Books => (await strategyFactory.GetStrategy<BookResponse>(mediaType, type)
+                .LookupAsync(type, parameters, cancellationToken)).Select(b => new ImageCandidate(b.Title, b.ImageUrl,
+                    b.PublishDate, b.Authors.Select(a => a.Name).ToList(), Provenance: b.Provenance,
+                    Format: b.Format ?? "", Subtitle: b.Subtitle, Publishers: b.Publishers.Select(p => p.Name).ToList())),
+            MediaTypes.Movies => (await strategyFactory.GetStrategy<MovieResponse>(mediaType, type)
+                .LookupAsync(type, parameters, cancellationToken)).Select(m => new ImageCandidate(m.Title, m.ImageUrl,
+                    m.ReleaseDate, Provenance: m.Provenance)),
+            MediaTypes.Games => (await strategyFactory.GetStrategy<GameResponse>(mediaType, type)
+                .LookupAsync(type, parameters, cancellationToken)).Select(g => new ImageCandidate(g.Title, g.ImageUrl,
+                    g.ReleaseDate, Platforms: g.Provenance?.Platforms ?? [g.Platform], Provenance: g.Provenance)),
+            MediaTypes.Musics => (await strategyFactory.GetStrategy<MusicResponse>(mediaType, type)
+                .LookupAsync(type, parameters, cancellationToken)).Select(m => new ImageCandidate(m.Title, m.ImageUrl,
+                    m.ReleaseDate, [m.Artist], Provenance: m.Provenance, Format: m.Format)),
+            _ => []
         };
     }
 
-    private async Task<ImageLookupResult> TryDownloadImageAsync(
-        string imageUrl,
-        string entityType,
-        string entityId,
+    private async Task<ImageLookupResult> TryDownloadImageAsync(string imageUrl, string entityType, string entityId,
         CancellationToken cancellationToken)
     {
         try
         {
-            var image = await _imageService.DownloadAndSaveImageAsync(
-                imageUrl,
-                entityType,
-                entityId,
-                cancellationToken);
-
-            _logger.LogInformation(
-                "Successfully downloaded and saved image for entity {EntityId} from {ImageUrl}",
-                entityId, imageUrl);
-
-            return new ImageLookupResult(
-                Success: true,
-                ImageUrl: imageUrl,
-                SavedImage: image,
-                ErrorMessage: null, Provider: "ImageDownload", AttemptedStrategy: "DownloadUrl");
+            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, cancellationToken);
+            return new(true, imageUrl, image, null, Outcome: ImageLookupOutcome.Success);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex,
-                "Failed to download image from {ImageUrl} for entity {EntityId}",
-                imageUrl, entityId);
-
             var cause = ex;
             while (cause.InnerException != null)
             {
@@ -298,15 +200,9 @@ public class ImageLookupService : IImageLookupService
             }
             var missing = cause is HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound };
             var invalid = ex is ArgumentException && cause is not HttpRequestException;
-            return new ImageLookupResult(
-                Success: false,
-                ImageUrl: imageUrl,
-                SavedImage: null,
-                ErrorMessage: $"Download failed: {ex.Message}",
-                PermanentFailure: missing || invalid,
-                Outcome: missing ? ImageLookupOutcome.MissingArtwork : invalid ? ImageLookupOutcome.InvalidArtwork
-                    : ImageLookupOutcome.DownloadFailure,
-                Provider: "ImageDownload", AttemptedStrategy: "DownloadUrl");
+            return new(false, imageUrl, null, $"Download failed: {ex.Message}", missing || invalid,
+                missing ? ImageLookupOutcome.MissingArtwork : invalid ? ImageLookupOutcome.InvalidArtwork
+                    : ImageLookupOutcome.DownloadFailure);
         }
     }
 }

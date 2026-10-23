@@ -9,7 +9,7 @@ public class BackgroundImageLookupConfiguration
 {
     public int RetryInitialDelayMinutes { get; set; } = 60;
     public int RetryMaxDelayMinutes { get; set; } = 10080;
-    public int StrategyVersion { get; set; } = 1;
+    public int StrategyVersion { get; set; } = 2;
     /// <summary>
     /// Whether the background image lookup service is enabled.
     /// </summary>

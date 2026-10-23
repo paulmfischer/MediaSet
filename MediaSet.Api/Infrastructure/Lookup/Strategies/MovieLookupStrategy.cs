@@ -46,6 +46,11 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 
         if (identifierType == IdentifierType.Entity)
         {
+            if (searchParams.TryGetValue("confirmedProviderId", out var providerId) && int.TryParse(providerId, out var id))
+            {
+                var details = await _tmdbClient.GetMovieDetailsAsync(id, cancellationToken);
+                return details == null ? [] : [MapToMovieResponse(details)];
+            }
             searchParams.TryGetValue("title", out var title);
             return await SearchByTitleAsync(title ?? string.Empty, cancellationToken);
         }
@@ -147,7 +152,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             Runtime: tmdbMovie.Runtime,
             Plot: tmdbMovie.Overview ?? string.Empty,
             Format: format,
-            ImageUrl: imageUrl
+            ImageUrl: imageUrl,
+            Provenance: new LookupProvenance("Tmdb", tmdbMovie.Id.ToString(), tmdbMovie.Title)
         );
     }
 

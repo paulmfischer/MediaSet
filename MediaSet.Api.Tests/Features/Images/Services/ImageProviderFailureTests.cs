@@ -26,27 +26,34 @@ public class ImageProviderFailureTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => send(request, token);
     }
 
-    [TestCase(HttpStatusCode.TooManyRequests)]
-    [TestCase(HttpStatusCode.InternalServerError)]
-    [TestCase(HttpStatusCode.ServiceUnavailable)]
-    public async Task LookupAndSaveImageAsync_ProviderHttpFailure_IsRetryable(HttpStatusCode status)
+    [TestCase(HttpStatusCode.TooManyRequests, ImageLookupOutcome.QuotaLimited)]
+    [TestCase(HttpStatusCode.InternalServerError, ImageLookupOutcome.ProviderUnavailable)]
+    [TestCase(HttpStatusCode.ServiceUnavailable, ImageLookupOutcome.ProviderUnavailable)]
+    public async Task LookupAndSaveImageAsync_ProviderHttpFailure_IsRetryable(HttpStatusCode status, ImageLookupOutcome outcome)
     {
         using var http = new HttpClient(new Handler((_, _) => Task.FromResult(new HttpResponseMessage(status))))
-            { BaseAddress = new Uri("https://example.com/") };
+            { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var result = await LookupAsync(http);
         Assert.That(result.Success, Is.False);
         Assert.That(result.PermanentFailure, Is.False);
-        Assert.That(result.Outcome ?? ImageLookupOutcome.TransientFailure, Is.EqualTo(ImageLookupOutcome.TransientFailure));
+        Assert.That(result.Outcome, Is.EqualTo(outcome));
+        Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.True);
+        if (outcome == ImageLookupOutcome.QuotaLimited)
+        {
+            Assert.That(result.RetryAt, Is.GreaterThan(DateTime.UtcNow));
+        }
     }
 
     [Test]
     public async Task LookupAndSaveImageAsync_ProviderTimeout_IsRetryable()
     {
         using var http = new HttpClient(new Handler((_, _) => throw new TaskCanceledException("timeout")))
-            { BaseAddress = new Uri("https://example.com/") };
+            { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var result = await LookupAsync(http);
+        Assert.That(result.Success, Is.False);
         Assert.That(result.PermanentFailure, Is.False);
-        Assert.That(result.ErrorMessage, Does.Contain("timeout"));
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.ProviderUnavailable));
+        Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.True);
     }
 
     private static async Task<ImageLookupResult> LookupAsync(HttpClient http)
@@ -78,7 +85,7 @@ public class ImageProviderFailureTests
                 response.Content = new StringContent("""{"code":"OK","items":[{"title":"Movie"}]}""");
             }
             return Task.FromResult(response);
-        })) { BaseAddress = new Uri("https://example.com/") };
+        })) { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var upc = new MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient(http,
             Options.Create(new UpcItemDbConfiguration { MinDelayBetweenRequestsMs = 0,
                 MaxRequestsPerMinute = 10000, MaxRequestsPerDay = 10000, MaxRetryPauseSeconds = 5 }),
@@ -113,7 +120,9 @@ public class ImageProviderFailureTests
             LookupFailureScope.Record(new TimeoutException("failed task"));
             recorded.SetResult();
             await checkedClean.Task;
-            Assert.Throws<TimeoutException>(() => scope.ThrowIfFailed());
+            var error = Assert.Throws<ProviderLookupException>(() => scope.ThrowIfFailed())!;
+            Assert.That(error.Outcome, Is.EqualTo(ImageLookupOutcome.ProviderUnavailable));
+            Assert.That(error.Message, Is.EqualTo("failed task"));
         });
         var clean = Task.Run(async () =>
         {

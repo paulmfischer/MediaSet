@@ -5,6 +5,7 @@ namespace MediaSet.Api.Shared.Models;
 /// </summary>
 public class ImageLookup
 {
+    public ConfirmedImageMatch? ConfirmedMatch { get; set; }
     public int AttemptCount { get; set; }
     public string? Provider { get; set; }
     public string? AttemptedStrategy { get; set; }
