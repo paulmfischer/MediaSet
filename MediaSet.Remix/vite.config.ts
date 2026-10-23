@@ -6,6 +6,10 @@ import { remixDevTools } from 'remix-development-tools';
 // import mkcert from "vite-plugin-mkcert";
 
 export default defineConfig({
+  optimizeDeps: {
+    // Bundle injected devtools and route icons before the first hydration.
+    include: ['remix-development-tools/client', 'lucide-react'],
+  },
   plugins: [
     // Uncomment for HTTPS local testing (required for mobile camera access)
     // mkcert(),

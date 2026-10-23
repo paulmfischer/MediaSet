@@ -373,6 +373,28 @@ When contributing:
 
 ## Support
 
+### Development-only invalid-hook or hydration errors
+
+Vite can discover the injected development-tools client and route icon imports
+after the first page request. Rebundling those dependencies during hydration can
+leave the initial page blank with an invalid-hook error in `RemixBrowser`, even
+when `npm ls react react-dom` reports a single React version. A subsequent reload
+may work, so a warm-page check alone does not verify the first load.
+
+The frontend's `optimizeDeps.include` list prebundles these entries before the
+first request. Keep the development-tools client in that list when changing Vite
+plugins. For a frontend server run directly with `npm run dev`, stop that server
+and start it with `npm run dev -- --force` to regenerate its optimized dependency
+cache; retain the API environment settings used for that server.
+
+To check this regression, open `/image-stats` in a fresh browser session after a
+forced dependency optimization. Check that the page renders and the Tools menu
+opens, then reload and navigate Home → Tools → Image Statistics. There should be
+no invalid-hook errors, hydration warnings, or uncaught browser exceptions. Also
+verify the same route with `npm run build` and `npm run start`. Use the normal
+development API and database for the end-to-end check; an HTTP fixture can isolate
+frontend behavior but does not verify the development stack.
+
 If you encounter issues:
 
 1. Check the logs: `./dev.sh logs`
