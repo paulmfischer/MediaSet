@@ -1,3 +1,4 @@
+import { createMetaArgs } from '~/test/meta-args';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '~/test/test-utils';
 import Edit, { meta, loader, action } from './route';
@@ -116,7 +117,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Books);
       mockSingular.mockReturnValue('Book');
 
-      const result = meta({ params: { entity: 'books', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'books', entityId: '1' }));
 
       expect(result).toEqual(
         expect.arrayContaining([
@@ -133,7 +134,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Movies);
       mockSingular.mockReturnValue('Movie');
 
-      const result = meta({ params: { entity: 'movies', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'movies', entityId: '1' }));
 
       expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Movie' }));
     });
@@ -142,7 +143,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Games);
       mockSingular.mockReturnValue('Game');
 
-      const result = meta({ params: { entity: 'games', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'games', entityId: '1' }));
 
       expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Game' }));
     });
@@ -151,7 +152,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockGetEntityFromParams.mockReturnValue(Entity.Musics);
       mockSingular.mockReturnValue('Music');
 
-      const result = meta({ params: { entity: 'musics', entityId: '1' } } as unknown as Parameters<typeof loader>[0]);
+      const result = meta(createMetaArgs({ entity: 'musics', entityId: '1' }));
 
       expect(result).toContainEqual(expect.objectContaining({ title: 'Add a Music' }));
     });

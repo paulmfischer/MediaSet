@@ -422,6 +422,26 @@ describe('helpers.ts', () => {
         expect(result.duration).toBeUndefined();
       });
 
+      it('should retain title-only tracks without a duration or track number', () => {
+        const formData = new FormData();
+        formData.append('type', Entity.Musics);
+        formData.append('discList[0].title', 'Untimed track');
+
+        const result = formToDto(formData) as MusicEntity;
+
+        expect(result.discList).toEqual([{ trackNumber: 1, title: 'Untimed track', duration: null }]);
+      });
+
+      it('should retain duration-only tracks with an empty title', () => {
+        const formData = new FormData();
+        formData.append('type', Entity.Musics);
+        formData.append('discList[0].duration', '2:30');
+
+        const result = formToDto(formData) as MusicEntity;
+
+        expect(result.discList).toEqual([{ trackNumber: 1, title: '', duration: 150000 }]);
+      });
+
       it('should parse disc list with track number as index when not provided', () => {
         const formData = new FormData();
         formData.append('type', Entity.Musics);

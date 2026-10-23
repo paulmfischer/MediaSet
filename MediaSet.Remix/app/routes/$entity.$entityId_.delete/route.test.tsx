@@ -12,7 +12,7 @@ vi.mock('@remix-run/node', async () => {
   const actual = await vi.importActual('@remix-run/node');
   return {
     ...actual,
-    redirect: vi.fn(),
+    redirect: vi.fn((actual as typeof import('@remix-run/node')).redirect),
   };
 });
 
@@ -29,9 +29,6 @@ describe('$entity.$entityId.delete route', () => {
     describe('delete action', () => {
       it('should delete entity and redirect to entity list', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/books' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -44,9 +41,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should delete movie and redirect to movies list', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/movies' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -59,9 +53,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should delete game and redirect to games list', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Games);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/games' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -74,9 +65,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should delete music and redirect to musics list', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/musics' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -89,9 +77,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should redirect to lowercase entity path', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/books' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -132,9 +117,6 @@ describe('$entity.$entityId.delete route', () => {
     describe('edge cases', () => {
       it('should handle entity ID with special characters', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/books' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -146,9 +128,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should handle numeric entity ID', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Movies);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/movies' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -184,9 +163,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should handle multiple successive deletes', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Games);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/games' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValue(undefined);
 
         await action({
@@ -206,9 +182,6 @@ describe('$entity.$entityId.delete route', () => {
     describe('redirect behavior', () => {
       it('should always call redirect function', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/books' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -220,9 +193,6 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should use getEntityFromParams result in redirect path', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Musics);
-        mockRedirect.mockReturnValue(
-          new Response(null, { status: 302, headers: { Location: '/musics' } }) as unknown as Response
-        );
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         await action({
@@ -234,8 +204,9 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should return redirect response', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        const redirectResponse = new Response(null, { status: 302, headers: { Location: '/books' } });
-        mockRedirect.mockReturnValue(redirectResponse as unknown as Response);
+        const { redirect: actualRedirect } = await vi.importActual<typeof import('@remix-run/node')>('@remix-run/node');
+        const redirectResponse = actualRedirect('/books');
+        mockRedirect.mockReturnValue(redirectResponse);
         mockDeleteEntity.mockResolvedValueOnce(undefined);
 
         const result = await action({

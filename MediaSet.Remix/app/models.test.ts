@@ -425,7 +425,7 @@ describe('models.ts', () => {
     it('should allow null duration', () => {
       const music: MusicEntity = {
         type: Entity.Musics,
-        duration: null as unknown as string,
+        duration: null as unknown as number,
       };
       expect(music.duration).toBeNull();
     });
@@ -844,7 +844,7 @@ describe('models.ts', () => {
         type: Entity.Books,
         authors: 'Test',
         genres: 'Test',
-        publisher: 'Test Publisher' as unknown as string[],
+        publisher: 'Test Publisher',
       };
       expect(typeof book.authors).toBe('string');
       expect(typeof book.genres).toBe('string');
