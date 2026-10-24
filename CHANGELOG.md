@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.0.1](https://github.com/paulmfischer/MediaSet/compare/v4.0.0...v4.0.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **books:** expand Open Library artwork lookup ([#622](https://github.com/paulmfischer/MediaSet/issues/622)) ([8cf320b](https://github.com/paulmfischer/MediaSet/commit/8cf320bf1adf128e380021cedc68c66d1cd87ec1))
+* **dev:** repair SELinux labels for API build caches ([#627](https://github.com/paulmfischer/MediaSet/issues/627)) ([bef2dda](https://github.com/paulmfischer/MediaSet/commit/bef2ddaf1491d70e2d89af4617ecbcffa30bbe54)), closes [#625](https://github.com/paulmfischer/MediaSet/issues/625)
+* **docker:** use bundled API health probe refs [#606](https://github.com/paulmfischer/MediaSet/issues/606) ([#628](https://github.com/paulmfischer/MediaSet/issues/628)) ([b522066](https://github.com/paulmfischer/MediaSet/commit/b522066000ba71b9c341ed601c40d4d9e5623ac1))
+* **frontend:** prebundle dev runtime closes [#618](https://github.com/paulmfischer/MediaSet/issues/618) ([#624](https://github.com/paulmfischer/MediaSet/issues/624)) ([a6f38fd](https://github.com/paulmfischer/MediaSet/commit/a6f38fd9131818835cc3efa5d8f68721590993f4))
+* **frontend:** resolve baseline typecheck errors closes [#617](https://github.com/paulmfischer/MediaSet/issues/617) ([#623](https://github.com/paulmfischer/MediaSet/issues/623)) ([159b717](https://github.com/paulmfischer/MediaSet/commit/159b717df2aac05d1fb4bb483804def36ced01ef))
+* **images:** fall back through confident metadata matches ([#619](https://github.com/paulmfischer/MediaSet/issues/619)) ([58a7c99](https://github.com/paulmfischer/MediaSet/commit/58a7c99cb2a234238d566c9d168170336867cbf1))
+* **images:** preserve provider failures and quota eligibility ([#616](https://github.com/paulmfischer/MediaSet/issues/616)) ([6855d8e](https://github.com/paulmfischer/MediaSet/commit/6855d8eebb9941a935aea69c81993751cb7d919c))
+* **images:** resolve TV season artwork closes [#609](https://github.com/paulmfischer/MediaSet/issues/609) ([#620](https://github.com/paulmfischer/MediaSet/issues/620)) ([ff67ab4](https://github.com/paulmfischer/MediaSet/commit/ff67ab4f20dbfd58cdd76ba3ca182ec56563da3c))
+* **images:** retry recoverable image failures and requeue history ([#614](https://github.com/paulmfischer/MediaSet/issues/614)) ([0ed3b29](https://github.com/paulmfischer/MediaSet/commit/0ed3b2933a1218f1dd5d935f4b8dea6264374ed7))
+* **lookup:** normalize retail titles and match collection art ([#621](https://github.com/paulmfischer/MediaSet/issues/621)) ([93c77d9](https://github.com/paulmfischer/MediaSet/commit/93c77d91e0e8effb8970a059bf5070e1ef557927))
+
 ## [4.0.0](https://github.com/paulmfischer/MediaSet/compare/v3.7.4...v4.0.0) (2026-10-14)
 
 
