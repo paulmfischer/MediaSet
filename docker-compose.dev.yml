@@ -55,11 +55,14 @@ services:
       ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
     volumes:
       - ./MediaSet.Api:/app:Z
-      - mediaset-api-bin:/app/bin:Z
-      - mediaset-api-obj:/app/obj:Z
+      # dev.sh prepares shared SELinux labels for these named build caches.
+      - mediaset-api-bin:/app/bin
+      - mediaset-api-obj:/app/obj
       - ./.git:/app/.git:Z
       - ./data/images:/app/data/images:Z
-      - nuget_cache:/nuget:Z
+      # dev.sh prepares a shared SELinux label: podman-compose 1.6 drops :z/:Z
+      # on named volumes, leaving existing private cache labels unchanged.
+      - nuget_cache:/nuget
     stop_grace_period: 2s
     depends_on:
       mongodb:
@@ -96,9 +99,12 @@ services:
 
 volumes:
   nuget_cache:
+    name: ${NUGET_CACHE_VOLUME:-mediaset_nuget_cache}
   node_modules_cache:
   mediaset-api-bin:
+    name: ${API_BIN_VOLUME:-mediaset_mediaset-api-bin}
   mediaset-api-obj:
+    name: ${API_OBJ_VOLUME:-mediaset_mediaset-api-obj}
 
 networks:
   mediaset-dev:
