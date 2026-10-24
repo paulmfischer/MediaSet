@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.2](https://github.com/paulmfischer/MediaSet/compare/v4.0.1...v4.0.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **ui:** allow HTTPS cover previews closes [#602](https://github.com/paulmfischer/MediaSet/issues/602) ([#632](https://github.com/paulmfischer/MediaSet/issues/632)) ([c925b26](https://github.com/paulmfischer/MediaSet/commit/c925b26f9e3806d213796a1bc1b0e3f18cc80ca6))
+
+
+### Miscellaneous
+
+* **dev:** simplify local development with host applications ([#629](https://github.com/paulmfischer/MediaSet/issues/629)) ([e5fc787](https://github.com/paulmfischer/MediaSet/commit/e5fc7871082ca41c3730768d8311afbdfb3ce27d))
+
 ## [4.0.1](https://github.com/paulmfischer/MediaSet/compare/v4.0.0...v4.0.1) (2026-10-24)
 
 
