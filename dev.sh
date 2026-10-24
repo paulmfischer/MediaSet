@@ -5,6 +5,9 @@ set -e
 
 COMPOSE_COMMAND="podman-compose"
 COMPOSE_FILE="docker-compose.dev.yml"
+export NUGET_CACHE_VOLUME="${NUGET_CACHE_VOLUME:-mediaset_nuget_cache}"
+export API_BIN_VOLUME="${API_BIN_VOLUME:-mediaset_mediaset-api-bin}"
+export API_OBJ_VOLUME="${API_OBJ_VOLUME:-mediaset_mediaset-api-obj}"
 
 # Verify Podman and podman-compose are available
 check_requirements() {
@@ -102,6 +105,40 @@ clean_nuget_cache() {
     echo "✅ NuGet cache cleared"
 }
 
+# podman-compose 1.6 drops SELinux options on named-volume mounts. Repair only
+# these reusable build caches; shared labels survive API container recreation.
+prepare_api_caches() {
+    case "${1:-}" in
+        ""|all|api|backend|--clean) ;;
+        *) return ;;
+    esac
+
+    local selinux_enabled
+    if ! selinux_enabled=$(podman info --format '{{.Host.Security.SELinuxEnabled}}'); then
+        echo "❌ Could not determine Podman's SELinux status; API cache preparation failed." >&2
+        return 1
+    fi
+    case "$selinux_enabled" in
+        false) return ;;
+        true) ;;
+        *)
+            echo "❌ Unexpected Podman SELinux status: $selinux_enabled" >&2
+            return 1
+            ;;
+    esac
+
+    local cache_volume cache_path
+    for cache_volume in "$NUGET_CACHE_VOLUME" "$API_BIN_VOLUME" "$API_OBJ_VOLUME"; do
+        podman volume create --ignore "$cache_volume" > /dev/null
+        cache_path=$(podman volume inspect "$cache_volume" --format '{{.Mountpoint}}')
+        echo "🔒 Preparing SELinux label for API cache ($cache_volume)..."
+        if ! podman unshare chcon --recursive --type container_file_t --range s0 "$cache_path"; then
+            echo "❌ Could not label API cache ($cache_volume); startup stopped." >&2
+            return 1
+        fi
+    done
+}
+
 # Function to start development environment
 start_dev() {
     local target="${1}"
@@ -115,6 +152,7 @@ start_dev() {
 
     prune_dev_images
     clean_nuget_cache
+    prepare_api_caches "$target"
 
     local build_flags="--build"
     if [ "$clean_build" = "--clean" ]; then
@@ -202,6 +240,7 @@ stop_dev() {
 # Function to restart services
 restart_dev() {
     local target="${1}"
+    prepare_api_caches "$target"
     if [[ "$target" == "all" ]]; then
         echo "🔄 Restarting all services..."
         $COMPOSE_COMMAND -f $COMPOSE_FILE restart
@@ -347,6 +386,9 @@ case "$1" in
         echo ""
         echo "Environment Variables:"
         echo "  PODMAN_AUTO_PRUNE=0  - Disable auto-pruning of dangling Podman images (default: enabled)"
+        echo "  NUGET_CACHE_VOLUME   - NuGet cache volume name (default: mediaset_nuget_cache)"
+        echo "  API_BIN_VOLUME       - API bin cache volume name (default: mediaset_mediaset-api-bin)"
+        echo "  API_OBJ_VOLUME       - API obj cache volume name (default: mediaset_mediaset-api-obj)"
         echo ""
         echo "Note: Podman automatically prunes dangling images on 'start' and 'stop' to prevent"
         echo "accumulation from repeated rebuilds. Set PODMAN_AUTO_PRUNE=0 to disable this behavior."

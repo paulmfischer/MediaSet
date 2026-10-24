@@ -201,6 +201,56 @@ systemctl --user status podman.socket
 ```
 
 **SELinux Issues (RHEL/Fedora/CentOS):**
+
+If API restore or `dotnet watch` reports permission denied under `/nuget`,
+`/app/bin`, or `/app/obj`, check the build cache labels rather than changing Unix
+permissions or disabling SELinux.
+With podman-compose 1.6.0, named volumes are emitted as `--mount type=volume`,
+but `mount_desc_to_mount_args` only forwards SELinux options for bind mounts.
+Consequently, the old `nuget_cache:/nuget:Z` did not relabel an existing cache.
+Its private MCS categories could still belong to an earlier API container, while
+the current container has different categories. Host ownership and mode 755 do
+not override that SELinux denial.
+
+`dev.sh start` and `dev.sh restart` prepare the API's three named build caches whenever SELinux
+is enabled, including in permissive mode. The script uses `podman unshare chcon`
+to apply `container_file_t:s0` recursively to **only the NuGet, bin, and obj cache volumes**.
+This shared container label preserves packages and works across API recreation;
+it does not hardcode private categories, alter the database, or disable enforcement.
+`dev.sh rebuild` also runs preparation, but its existing purge behavior deletes
+development data, so do not use it to repair this problem.
+
+To recover an existing cache, run:
+
+```bash
+PODMAN_AUTO_PRUNE=0 ./dev.sh start
+```
+
+The caches have explicit names, `mediaset_nuget_cache`,
+`mediaset_mediaset-api-bin`, and `mediaset_mediaset-api-obj`, so preparation and
+Compose always refer to the same volumes. If a different Compose project previously
+created your caches, set their existing volume names to reuse them:
+
+```bash
+NUGET_CACHE_VOLUME=myproject_nuget_cache \
+API_BIN_VOLUME=myproject_mediaset-api-bin \
+API_OBJ_VOLUME=myproject_mediaset-api-obj \
+PODMAN_AUTO_PRUNE=0 ./dev.sh start
+```
+
+Use the same volume overrides on subsequent commands. Direct
+`podman-compose up` bypasses preparation; run the matching `dev.sh start` first
+when recovering stale labels. To inspect without exposing configuration secrets:
+
+```bash
+getenforce
+podman inspect mediaset-dev-api --format '{{.ProcessLabel}}'
+podman volume inspect "${NUGET_CACHE_VOLUME:-mediaset_nuget_cache}" --format '{{.Mountpoint}}'
+# Run ls -Zd on the reported mountpoint and package directories.
+# The cache should show container_file_t:s0 without private cNNN categories.
+```
+
+For unrelated cgroup permission errors:
 ```bash
 # If you see permission denied errors, try:
 sudo setsebool -P container_manage_cgroup true
