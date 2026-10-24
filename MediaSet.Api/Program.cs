@@ -31,6 +31,15 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.FileProviders;
 using System.Threading.RateLimiting;
 
+if (args.Length > 0 && args[0] == "--healthcheck")
+{
+    using var handler = new HttpClientHandler { UseProxy = false, AllowAutoRedirect = false };
+    using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+    var endpoint = new Uri(args.Length > 1 ? args[1] : "http://localhost:8080/health");
+    Environment.ExitCode = await HealthCheckProbe.RunAsync(client, endpoint);
+    return;
+}
+
 AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromSeconds(2));
 
 // Configure bootstrap logger for very early configuration

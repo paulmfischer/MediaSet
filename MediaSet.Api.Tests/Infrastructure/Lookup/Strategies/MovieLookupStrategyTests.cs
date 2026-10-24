@@ -323,6 +323,19 @@ public class MovieLookupStrategyTests
     public void Clean_MeaningfulTitle_PreservesPunctuationAndNumbers(string title) =>
         Assert.That(RetailVideoTitle.Clean(title, "Inaccurate"), Is.EqualTo(title));
 
+    [TestCase("Doctor Who - Matt Smith Specials [HD] - S02E002 - The Time of the Doctor [HD]")]
+    [TestCase("Doctor Who - Matt Smith Specials [HD] - S02E002 - The Time of the Doctor [HD] | DVD | Tested")]
+    public void Clean_InteriorHdLabel_PreservesSpecialIdentityAndRemovesTrailingNoise(string title)
+    {
+        var cleaned = RetailVideoTitle.Clean(title);
+
+        Assert.That(cleaned,
+            Is.EqualTo("Doctor Who - Matt Smith Specials - S02E002 - The Time of the Doctor"));
+        var parsed = VideoTitle.Parse(cleaned);
+        Assert.That(parsed.SeriesTitle, Is.EqualTo("Doctor Who"));
+        Assert.That(parsed.Special, Is.EqualTo("The Time of the Doctor"));
+    }
+
     [TestCase("")]
     [TestCase("Inaccurate")]
     public async Task LookupAsync_ManufacturerOnly_DoesNotSearchProvider(string brand)
