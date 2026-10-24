@@ -17,7 +17,7 @@ A modern, full-stack personal media library management system for organizing you
 - **🖼️ Cover Images**: Upload cover art, download images from lookup results, or provide URLs for automatic download
 - **📱 Responsive Design**: Mobile-friendly interface built with Tailwind CSS
 - **🚀 Modern Stack**: .NET 10.0 backend API with Remix.js frontend
-- **🐳 Containerized Development**: Full Docker/Podman support with hot-reload
+- **🛠️ Local Development**: Host API/UI with hot-reload and containerized MongoDB
 - **⚡ Performance Optimized**: In-memory caching for fast queries
 - **📊 Library Statistics**: Track collection size, authors, genres, and more
 
@@ -244,76 +244,46 @@ For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CO
 
 ## 👨‍💻 Developer Getting Started
 
-### Prerequisites
+Install .NET 10, Node.js 22/npm, Podman, and podman-compose. The API and UI run
+on the host; only MongoDB runs in a container.
 
-- Podman + podman-compose installed (see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md) for installation steps)
-- Git
-
-### Quick Start with Development Containers
-
-New developers don't need to install .NET, Node.js, or MongoDB locally! The development environment runs entirely in containers with full hot-reload support.
+Follow [first setup](Development/DEVELOPMENT.md#first-setup) to configure database
+credentials and install dependencies. Then run:
 
 ```bash
-# Clone the repository
-git clone https://github.com/paulmfischer/MediaSet.git
-cd MediaSet
+# Database
+podman-compose -f docker-compose.dev.yml up -d
 
-# Start the development environment
-./dev.sh start
+# API (separate terminal)
+dotnet watch --project MediaSet.Api run
 
-# Access the applications:
-# Frontend: http://localhost:3000
-# API: http://localhost:5000
-# API Documentation: http://localhost:5000/swagger
-# MongoDB: mongodb://localhost:27017
+# UI (separate terminal)
+cd MediaSet.Remix
+npm run dev
 ```
 
-### Development Commands
+Open http://localhost:3000. VS Code provides **Launch API**, **Launch UI**, and
+**Launch API + UI** in Run and Debug, plus corresponding watch tasks.
 
-The `./dev.sh` script provides convenient commands for managing the development environment:
-
-```bash
-# Start all services
-./dev.sh start
-
-# Start specific services
-./dev.sh start api        # Start backend API only
-./dev.sh start frontend   # Start frontend UI only
-
-# Restart services
-./dev.sh restart api      # Restart backend API
-./dev.sh restart frontend # Restart frontend UI
-
-# Stop services
-./dev.sh stop             # Stop all services
-./dev.sh stop api         # Stop backend API
-./dev.sh stop frontend    # Stop frontend UI
-
-# View logs
-./dev.sh logs            # View all service logs
-./dev.sh logs api        # View API logs only
-```
+See [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md) for VS Code setup,
+optional mobile HTTPS/barcode scanning, shutdown, migration from the old stack,
+and troubleshooting. Ordinary startup needs no certificates.
 
 ### Running Tests
 
 ```bash
-# Backend tests
 dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
-
-# Frontend tests
-cd MediaSet.Remix && npm test
-
-# Frontend build
-cd MediaSet.Remix && npm run build
+cd MediaSet.Remix
+npm test
+npm run typecheck
+npm run build
 ```
-
-**For complete development setup, debugging, and troubleshooting, see [Development/DEVELOPMENT.md](Development/DEVELOPMENT.md).**
 
 ### Documentation
 
-- **[Development/DEVELOPMENT.md](Development/DEVELOPMENT.md)** - Complete development environment setup and debugging
-- **[Development/TESTING.md](Development/TESTING.md)** - Testing guidelines and strategies
-- **[Development/CACHING.md](Development/CACHING.md)** - Performance optimization and caching strategy
+- [Development guide](Development/DEVELOPMENT.md)
+- [Testing guidelines](Development/TESTING.md)
+- [Caching strategy](Development/CACHING.md)
 
 ## 🔖 Versioning
 

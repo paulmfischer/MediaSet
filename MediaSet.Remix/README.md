@@ -15,30 +15,28 @@ The MediaSet frontend provides a modern, responsive interface for managing your 
 
 ## Getting Started
 
-### Prerequisites
+### Prerequisites and setup
 
-- Docker or Podman (for containerized development)
-- Git
+Install Node.js 22/npm. Complete [first setup](../Development/DEVELOPMENT.md#first-setup)
+for the host API and containerized MongoDB.
 
 ### Development
 
-**Start the frontend with hot-reload:**
+From MediaSet.Remix:
 
 ```bash
-# From the project root
-./dev.sh start frontend
-
-# View logs
-./dev.sh logs frontend
-
-# Restart after config changes
-./dev.sh restart frontend
-
-# Stop the frontend
-./dev.sh stop frontend
+npm ci
+npm run dev
 ```
 
-The frontend will be available at http://localhost:3000
+The frontend listens at http://localhost:3000 and supports LAN browsing.
+The API must be running for database-backed routes. Vite forwards browser
+API/image requests through its development-only /dev-api proxy.
+Stop with Ctrl+C. VS Code provides **Launch UI** and **Launch API + UI**.
+
+For optional HTTPS and camera barcode scanning, use `npm run dev:mobile` after
+the [certificate setup](../Development/DEVELOPMENT.md#mobile-https-and-barcode-scanning).
+No certificates are needed for ordinary development.
 
 ### Running Tests
 

@@ -2,92 +2,42 @@
   "version": "0.2.0",
   "configurations": [
     {
-      // Use IntelliSense to find out which attributes exist for C# debugging
-      // Use hover for the description of the existing attributes
-      // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
-      "name": "MediaSet.Api",
+      "name": "Launch API",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build-api",
-      // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/MediaSet.Api/bin/Debug/net9.0/MediaSet.Api.dll",
-      "args": [],
+      "preLaunchTask": "Prepare API",
+      "program": "${workspaceFolder}/MediaSet.Api/bin/Debug/net10.0/MediaSet.Api.dll",
       "cwd": "${workspaceFolder}/MediaSet.Api",
-      "stopAtEntry": false,
-      // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
-        "uriFormat": "%s/swagger"
-      },
-      "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "sourceFileMap": {
-        "/Views": "${workspaceFolder}/Views"
-      }
-    },
-    {
-      "name": "MediaSet.Remix",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/MediaSet.Remix",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal",
-      "serverReadyAction": {
-        "pattern": "Local:.+(https?://\\S+)",
-        "uriFormat": "%s",
-        "action": "openExternally"
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://127.0.0.1:5000"
       }
     },
     {
-      "name": "Debug API in Container (Docker)",
-      "type": "coreclr", 
-      "request": "attach",
-      "processId": "${command:pickRemoteProcess}",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceRoot}",
-        "pipeProgram": "docker",
-        "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
-      },
-      "sourceFileMap": {
-        "/app": "${workspaceFolder}/MediaSet.Api"
-      },
-      "justMyCode": false,
-      "requireExactSource": false
+      "name": "Launch UI",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev -- --open",
+      "cwd": "${workspaceFolder}/MediaSet.Remix"
     },
     {
-      "name": "Debug API in Container (Podman)",
-      "type": "coreclr", 
-      "request": "attach",
-      "processId": "${command:pickRemoteProcess}",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceRoot}",
-        "pipeProgram": "podman",
-        "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
-      },
-      "sourceFileMap": {
-        "/app": "${workspaceFolder}/MediaSet.Api"
-      },
-      "justMyCode": false,
-      "requireExactSource": false
+      "name": "Launch UI — Mobile HTTPS",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev:mobile -- --open",
+      "cwd": "${workspaceFolder}/MediaSet.Remix"
     }
   ],
   "compounds": [
     {
-      "name": "MediaSet: Full Stack",
-      "configurations": ["MediaSet.Api", "MediaSet.Remix"],
-      "preLaunchTask": "build-api",
-      "presentation": {
-        "group": "mediaset",
-        "order": 1
-      },
+      "name": "Launch API + UI",
+      "configurations": ["Launch API", "Launch UI"],
+      "stopAll": true
+    },
+    {
+      "name": "Launch API + UI — Mobile HTTPS",
+      "configurations": ["Launch API", "Launch UI — Mobile HTTPS"],
       "stopAll": true
     }
   ]

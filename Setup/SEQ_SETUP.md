@@ -179,7 +179,11 @@ These defaults provide sensible exclusions for common high-frequency endpoints. 
 
 ## Remix Logging Configuration
 
-`MediaSet.Remix` logs directly to Seq using the CLEF ingestion endpoint. It shares the same environment variables as the API, so configuring them once enables structured logging for both services:
+`MediaSet.Remix` logs directly to Seq using the CLEF ingestion endpoint. For native
+development, configure API logging through .NET User Secrets and frontend logging
+through `MediaSet.Remix/.env.local`; the two processes do not share configuration
+files. See the [development guide](../Development/DEVELOPMENT.md#configuration).
+Production containers use the same environment variable names for both services:
 
 | Variable | Description |
 |----------|-------------|

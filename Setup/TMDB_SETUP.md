@@ -2,6 +2,10 @@
 
 This document explains how to obtain a TMDB bearer token and enable TMDB-based movie lookups in MediaSet. It also explains the additional UPCitemdb requirement for barcode-based movie lookup.
 
+For native local development, set `TmdbConfiguration:BearerToken` with .NET User Secrets
+as described in the [development guide](../Development/DEVELOPMENT.md#configuration).
+The root `.env` configures only MongoDB; the Compose instructions below apply to production deployments.
+
 1) Obtain a TMDB bearer token
 
     - Create an account at https://www.themoviedb.org and sign in.

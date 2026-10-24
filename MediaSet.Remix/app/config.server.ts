@@ -4,6 +4,8 @@
  * Note: appVersion is build-time only and not included here
  */
 
+import { clientApiUrl } from './constants.server';
+
 export interface ClientConfig {
   apiUrl: string;
   showErrorDetails: boolean;
@@ -12,7 +14,7 @@ export interface ClientConfig {
 export function getClientConfig(): ClientConfig {
   return {
     // Client-side API URL must be accessible from the browser
-    apiUrl: process.env.clientApiUrl || 'http://localhost:7130',
+    apiUrl: clientApiUrl,
     showErrorDetails: (process.env.SHOW_ERROR_DETAILS ?? '').toString().toLowerCase() === 'true',
   };
 }

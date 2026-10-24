@@ -22,7 +22,7 @@ MediaSet is a full-stack application for managing personal media collections.
 - Strategy pattern for metadata lookup (books, movies, games, music)
 - In-memory caching with MemoryCache
 - File-based image storage
-- Container-based development and deployment
+- Host-run API/frontend development with containerized MongoDB; container-based production deployment
 
 ## Branch Protection (CRITICAL)
 
@@ -90,22 +90,25 @@ User secrets override `appsettings.json` and `appsettings.Development.json` at r
 
 ## Development Commands
 
+Complete first setup in [Development/DEVELOPMENT.md](../../Development/DEVELOPMENT.md)
+(database credentials via .env and .NET User Secrets; restore/npm ci).
+
 ```bash
-# Start entire development environment
-./dev.sh start
-
-# Start specific components
-./dev.sh start api           # Start backend API only
-./dev.sh start frontend      # Start frontend UI only
-
-# Restart components
-./dev.sh restart api         # Restart backend API
-./dev.sh restart frontend    # Restart frontend UI
-
-# Stop components
-./dev.sh stop api            # Stop backend API
-./dev.sh stop frontend       # Stop frontend UI
+# Database only; API and frontend run on the host
+podman-compose -f docker-compose.dev.yml up -d
+dotnet watch --project MediaSet.Api run
+# In another terminal, from MediaSet.Remix:
+npm run dev
+# Optional mobile HTTPS after certificate setup:
+npm run dev:mobile
+# Stop applications with Ctrl+C, then optionally stop MongoDB:
+podman-compose -f docker-compose.dev.yml stop mongodb
 ```
+
+VS Code Run and Debug provides Launch API, Launch UI, and Launch API + UI,
+plus mobile HTTPS launches. Run Task provides Watch API, Start UI, and
+Start API + UI. Do not reintroduce the retired dev.sh orchestration or application
+development containers. Never prune images or clear caches during startup.
 
 ## Testing Commands
 

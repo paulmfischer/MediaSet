@@ -13,32 +13,25 @@ The MediaSet API provides endpoints for managing your personal media library (bo
 
 ## Getting Started
 
-### Prerequisites
+### Prerequisites and setup
 
-- Docker or Podman (for containerized development)
-- Git
+Install .NET 10, Podman, and podman-compose. Complete the
+[first setup](../Development/DEVELOPMENT.md#first-setup) to configure MongoDB
+credentials and .NET User Secrets.
 
 ### Development
 
-**Start the API with hot-reload:**
+From the repository root:
 
 ```bash
-# From the project root
-./dev.sh start api
-
-# View logs
-./dev.sh logs api
-
-# Restart after config changes
-./dev.sh restart api
-
-# Stop the API
-./dev.sh stop api
+podman-compose -f docker-compose.dev.yml up -d
+dotnet watch --project MediaSet.Api run
 ```
 
-The API will be available at:
-- http://localhost:5000
-- Swagger Documentation: http://localhost:5000/swagger
+The API listens at http://127.0.0.1:5000; Swagger is at
+http://127.0.0.1:5000/swagger. Stop watch with Ctrl+C. VS Code provides
+**Launch API** for breakpoint debugging and **Launch API + UI** for both applications.
+See the [development guide](../Development/DEVELOPMENT.md) for tasks and troubleshooting.
 
 ### Building
 
@@ -52,42 +45,18 @@ dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
 
 ## Configuration
 
-Configuration is managed through `appsettings.json` files and environment variables (via `.env` file).
-
-### Local Development Configuration
-
-For local development, create or modify `MediaSet.Api/appsettings.Development.json`:
-
-```json
-{
-  "MediaSetDatabaseSettings": {
-    "ConnectionString": "mongodb://localhost:27017",
-    "DatabaseName": "MediaSet"
-  },
-  "TmdbConfiguration": {
-    "BearerToken": "your-tmdb-bearer-token"
-  },
-  "OpenLibraryConfiguration": {
-    "ContactEmail": "your-email@example.com"
-  }
-}
-```
-
-### Docker/Podman Configuration
-
-When running with Docker/Podman, configuration is provided through environment variables in `.env`. There is an example file (`.env.example`) in the root of the project that you can copy and remove `.example` from. This contains a set of configurations for running locally but will require some updates for integrations to fully work.
+Native development uses appsettings.Development.json plus .NET User Secrets.
+Do not commit passwords or API keys to appsettings files. The root .env configures
+MongoDB initialization only; the native API does not load it.
 
 ```bash
-# Database
-MediaSetDatabaseSettings__ConnectionString=mongodb://mongo:27017
-MediaSetDatabaseSettings__DatabaseName=MediaSet
-
-# API Keys
-TmdbConfiguration__BearerToken=your-tmdb-bearer-token
-IgdbConfiguration__ClientId=your-twitch-client-id
-IgdbConfiguration__ClientSecret=your-twitch-client-secret
-OpenLibraryConfiguration__ContactEmail=your-email@example.com
+dotnet user-secrets set "MediaSetDatabaseSettings:ConnectionString" 'mongodb://mediaset:YOUR_APP_PASSWORD@127.0.0.1:27017/MediaSet?authSource=MediaSet' --project MediaSet.Api
+dotnet user-secrets set "TmdbConfiguration:BearerToken" "YOUR_TOKEN" --project MediaSet.Api
 ```
+
+Use the same application password configured in the root .env.
+Production containers continue to receive configuration through environment
+variables; see [container setup](../Setup/CONTAINER_SETUP.md).
 
 See [Setup](../Setup/) documentation for detailed integration configuration:
 - [TMDB_SETUP.md](../Setup/TMDB_SETUP.md) - Movie metadata

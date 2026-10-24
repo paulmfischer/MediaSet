@@ -168,7 +168,9 @@ if (tmdbConfig.Exists())
 var igdbConfig = builder.Configuration.GetSection(nameof(IgdbConfiguration));
 var igdbClientId = igdbConfig.GetValue<string>("ClientId");
 var igdbClientSecret = igdbConfig.GetValue<string>("ClientSecret");
-if (igdbConfig.Exists() && !string.IsNullOrEmpty(igdbClientId) && !string.IsNullOrEmpty(igdbClientSecret))
+var igdbEnabled = igdbConfig.Exists()
+    && !string.IsNullOrEmpty(igdbClientId) && !string.IsNullOrEmpty(igdbClientSecret);
+if (igdbEnabled)
 {
     bootstrapLogger.Information("IGDB configuration exists. Setting up IGDB services.");
     builder.Services.Configure<IgdbConfiguration>(igdbConfig);
@@ -205,7 +207,7 @@ if (upcItemDbConfig.Exists() && tmdbConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<MovieResponse>, MovieLookupStrategy>();
 }
-if (upcItemDbConfig.Exists() && igdbConfig.Exists())
+if (upcItemDbConfig.Exists() && igdbEnabled)
 {
     builder.Services.AddScoped<ILookupStrategy<GameResponse>, GameLookupStrategy>();
 }
