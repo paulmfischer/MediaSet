@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ImageUpload from './image-upload';
@@ -9,6 +9,10 @@ describe('ImageUpload Component', () => {
 
   beforeEach(() => {
     mockOnImageSelected.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('Basic Rendering', () => {
@@ -170,6 +174,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should display existing image preview', () => {
+      vi.stubEnv('VITE_API_URL', '');
       const existingImage: ImageData = {
         fileName: 'existing.jpg',
         contentType: 'image/jpeg',
@@ -183,7 +188,29 @@ describe('ImageUpload Component', () => {
 
       expect(screen.getByText('existing.jpg')).toBeInTheDocument();
       const preview = screen.getByAltText('Preview');
-      expect(preview.getAttribute('src')).toContain('/static/images/books/123-uuid.jpg');
+      expect(preview).toHaveAttribute('src', '/dev-api/static/images/books/123-uuid.jpg');
+    });
+
+    it('should preserve an explicit API URL for existing image previews', () => {
+      vi.stubEnv('VITE_API_URL', 'https://api.example.test');
+      render(
+        <ImageUpload
+          name="coverImage"
+          existingImage={{
+            fileName: 'existing.jpg',
+            filePath: 'books/cover.jpg',
+            contentType: 'image/jpeg',
+            fileSize: 100,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          }}
+        />
+      );
+
+      expect(screen.getByAltText('Preview')).toHaveAttribute(
+        'src',
+        'https://api.example.test/static/images/books/cover.jpg'
+      );
     });
   });
 

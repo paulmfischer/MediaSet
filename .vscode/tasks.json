@@ -2,55 +2,76 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build-api",
-      "command": "dotnet",
+      "label": "Start MongoDB",
       "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/MediaSet.Api/MediaSet.Api.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile"
+      "command": "podman-compose",
+      "args": ["-f", "docker-compose.dev.yml", "up", "-d"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
     },
     {
-      "label": "publish-api",
-      "command": "dotnet",
+      "label": "Stop MongoDB",
       "type": "process",
-      "args": [
-        "publish",
-        "${workspaceFolder}/MediaSet.Api/MediaSet.Api.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile"
+      "command": "podman-compose",
+      "args": ["-f", "docker-compose.dev.yml", "stop", "mongodb"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
     },
     {
-      "label": "watch-api",
-      "command": "dotnet",
+      "label": "Build API",
       "type": "process",
-      "args": [
-        "watch",
-        "run",
-        "--project",
-        "${workspaceFolder}/MediaSet.Api/MediaSet.Api.csproj"
-      ],
-      "problemMatcher": "$msCompile"
+      "command": "dotnet",
+      "args": ["build", "MediaSet.Api/MediaSet.Api.csproj"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$msCompile",
+      "group": "build"
     },
     {
-      "label": "dev-remix",
-      "type": "shell",
+      "label": "Prepare API",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Start MongoDB", "Build API"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch API",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["watch", "--project", "MediaSet.Api", "run"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "dependsOn": "Start MongoDB",
+      "isBackground": true,
+      "problemMatcher": {
+        "base": "$msCompile",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Now listening on:"
+        }
+      },
+      "presentation": { "panel": "dedicated", "reveal": "always" }
+    },
+    {
+      "label": "Start UI",
+      "type": "process",
       "command": "npm",
       "args": ["run", "dev"],
-      "options": {
-        "cwd": "${workspaceFolder}/MediaSet.Remix"
-      },
-      "problemMatcher": [],
+      "options": { "cwd": "${workspaceFolder}/MediaSet.Remix" },
       "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
+      "problemMatcher": {
+        "pattern": { "regexp": "^(never-match-this-vite-output):(.*)$", "file": 1, "message": 2 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Local:.*http"
+        }
+      },
+      "presentation": { "panel": "dedicated", "reveal": "always" }
+    },
+    {
+      "label": "Start API + UI",
+      "dependsOrder": "parallel",
+      "dependsOn": ["Watch API", "Start UI"],
+      "problemMatcher": []
     }
   ]
 }

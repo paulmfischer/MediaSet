@@ -1,6 +1,6 @@
 /**
  * Client-side hook to access runtime configuration
- * Fetches config from /config.json endpoint
+ * Fetches config from the Remix /config/json resource route
  */
 
 import { useEffect, useState } from 'react';
@@ -21,8 +21,8 @@ async function fetchConfig(): Promise<ClientConfig> {
   }
 
   // Fetch config
-  console.log('Fetching runtime config from /config.json');
-  configPromise = fetch('/config.json')
+  console.log('Fetching runtime config from /config/json');
+  configPromise = fetch('/config/json')
     .then((res) => {
       console.log('Config fetch response', { status: res.status });
       if (!res.ok) {
@@ -38,7 +38,7 @@ async function fetchConfig(): Promise<ClientConfig> {
       console.error('Error fetching config:', error);
       // Return defaults on error
       return {
-        apiUrl: 'http://localhost:7130',
+        apiUrl: import.meta.env.DEV ? '/dev-api' : 'http://localhost:7130',
         showErrorDetails: false,
       };
     })

@@ -10,7 +10,7 @@ type ImageUploadProps = FormProps & {
 export default function ImageUpload(props: ImageUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     props.existingImage?.filePath
-      ? `${import.meta.env.VITE_API_URL}/static/images/${props.existingImage.filePath}`
+      ? `${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/dev-api' : '')}/static/images/${props.existingImage.filePath}`
       : null
   );
   const [fileName, setFileName] = useState<string>(props.existingImage?.fileName ?? '');

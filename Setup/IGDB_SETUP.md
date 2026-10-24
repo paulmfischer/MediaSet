@@ -4,6 +4,12 @@ This document explains how to obtain IGDB credentials and enable IGDB-based game
 
 Game data provided by [IGDB](https://www.igdb.com).
 
+For native local development, set `IgdbConfiguration:ClientId` and
+`IgdbConfiguration:ClientSecret` with .NET User Secrets as described in the
+[development guide](../Development/DEVELOPMENT.md#configuration). IGDB is optional;
+without both credentials, the API starts with game lookup disabled.
+The Compose instructions below apply to production deployments.
+
 1) Obtain IGDB credentials
 
     - IGDB access requires a Twitch Developer account. Create an application at https://dev.twitch.tv/console. Note: Twitch requires two-factor authentication (2FA) to be enabled on your account before you can register an application.

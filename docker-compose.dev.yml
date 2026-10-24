@@ -1,122 +1,30 @@
-version: '3.8'
-
+# Local development runs the API and UI on the host. Only MongoDB is containerized.
 services:
-  # MongoDB for development
   mongodb:
     image: docker.io/mongo:8.0
-    container_name: mediaset-dev-mongo
-    restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: "MediaSet"
-      # Auth is on. The init script only runs against an empty ./data/mongodb (see README).
-      MONGO_INITDB_ROOT_USERNAME: "root"
-      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_ROOT_PASSWORD:-root-dev-password}"
-      APP_DB_NAME: "MediaSet"
-      APP_DB_USER: "mediaset"
-      APP_DB_PASSWORD: "${MONGO_APP_PASSWORD:-mediaset-dev-password}"
+      MONGO_INITDB_DATABASE: MediaSet
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}"
+      APP_DB_NAME: MediaSet
+      APP_DB_USER: mediaset
+      APP_DB_PASSWORD: "${MONGO_APP_PASSWORD:?Set MONGO_APP_PASSWORD in .env}"
     volumes:
-      - ./data/mongodb:/data/db:Z
+      # Separate from the retired stack's data/mongodb; local dev data is disposable.
+      - ./data/dev-mongodb:/data/db:Z
       - ./mongo-init:/docker-entrypoint-initdb.d:ro,Z
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - mediaset-dev
-
-  # .NET API with hot reload support
-  api:
-    build:
-      context: .
-      dockerfile: MediaSet.Api/Dockerfile.dev
-    container_name: mediaset-dev-api
-    restart: unless-stopped
-    ports:
-      - "5000:5000"   # HTTP
-    environment:
-      TZ: "America/Chicago"
-      ASPNETCORE_ENVIRONMENT: "Development"
-      ASPNETCORE_URLS: "http://+:5000"
-      ASPNETCORE_HTTP_PORTS: "5000"
-      ASPNETCORE_HTTPS_PORTS: ""
-      NUGET_PACKAGES: "/nuget"
-      MediaSetDatabaseSettings__ConnectionString: "mongodb://mediaset:${MONGO_APP_PASSWORD:-mediaset-dev-password}@mongodb:27017/MediaSet?authSource=MediaSet"
-      MediaSetDatabaseSettings__DatabaseName: "MediaSet"
-      # OpenLibraryConfiguration__BaseUrl: "https://openlibrary.org/"
-      TmdbConfiguration__BearerToken: "${TMDB_BEARER_TOKEN}"
-      UpcItemDbConfiguration__ApiKey: "${UPCITEMDB_API_KEY}"
-      IgdbConfiguration__ClientId: "${IgdbConfiguration__ClientId}"
-      IgdbConfiguration__ClientSecret: "${IgdbConfiguration__ClientSecret}"
-      ExternalLogging__Enabled: "${ExternalLogging__Enabled:-false}"
-      ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
-    volumes:
-      - ./MediaSet.Api:/app:Z
-      # dev.sh prepares shared SELinux labels for these named build caches.
-      - mediaset-api-bin:/app/bin
-      - mediaset-api-obj:/app/obj
-      - ./.git:/app/.git:Z
-      - ./data/images:/app/data/images:Z
-      # dev.sh prepares a shared SELinux label: podman-compose 1.6 drops :z/:Z
-      # on named volumes, leaving existing private cache labels unchanged.
-      - nuget_cache:/nuget
-    stop_grace_period: 2s
-    healthcheck:
-      test: ["CMD", "dotnet", "bin/Debug/net10.0/MediaSet.Api.dll", "--healthcheck", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - mediaset-dev
-    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
-
-  # Remix UI with hot reload
-  ui:
-    build:
-      context: ./MediaSet.Remix
-      dockerfile: Dockerfile.dev
-      args:
-        - VITE_APP_VERSION=${VITE_APP_VERSION:-0.0.0-dev}
-    container_name: mediaset-dev-ui
-    restart: unless-stopped
-    ports:
-      - "3000:5173"
-    environment:
-      NODE_ENV: "development"
-      REMIX_DEV_HTTP_ORIGIN: "http://localhost:3000"
-      apiUrl: "http://api:5000"
-      ExternalLogging__Enabled: "${ExternalLogging__Enabled:-false}"
-      ExternalLogging__SeqUrl: "${ExternalLogging__SeqUrl:-}"
-    volumes:
-      - ./MediaSet.Remix:/app:Z
-      - node_modules_cache:/app/node_modules
-    depends_on:
-      - api
-    networks:
-      - mediaset-dev
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
-
-volumes:
-  nuget_cache:
-    name: ${NUGET_CACHE_VOLUME:-mediaset_nuget_cache}
-  node_modules_cache:
-  mediaset-api-bin:
-    name: ${API_BIN_VOLUME:-mediaset_mediaset-api-bin}
-  mediaset-api-obj:
-    name: ${API_OBJ_VOLUME:-mediaset_mediaset-api-obj}
-
-networks:
-  mediaset-dev:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/16
-          gateway: 172.28.0.1
+      # Authenticate as the application user and exercise its read permission.
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --host 127.0.0.1
+          --username "$$APP_DB_USER" --password "$$APP_DB_PASSWORD"
+          --authenticationDatabase "$$APP_DB_NAME" "$$APP_DB_NAME"
+          --eval 'db.getCollectionNames();'
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s

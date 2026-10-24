@@ -1,453 +1,263 @@
-# MediaSet - Containerized Local Development Setup
+# Local development
 
-This guide helps new developers set up a complete development environment without needing to install .NET, MongoDB, or Node.js locally. Everything runs in Podman containers with full hot-reload support.
+The API and frontend run on the host. Podman runs only MongoDB. Application
+dependencies use the normal host NuGet cache and frontend node_modules directory;
+startup does not rebuild images, repair labels, clear caches, or rewrite configuration.
 
 ## Prerequisites
 
-- **Podman**: Install from [podman.io](https://podman.io/getting-started/installation)
-  - Fedora/RHEL: `sudo dnf install podman podman-compose`
-  - Ubuntu/Debian: `sudo apt install podman` + `pip install podman-compose`
-  - macOS: `brew install podman podman-compose`
-- **Git**: For cloning the repository
-- **VS Code** (recommended): For the best development experience
+- .NET 10 SDK compatible with the repository's global.json.
+- Node.js 22 and npm (use your preferred installer/version manager).
+- Podman and podman-compose. On Fedora: `dnf install podman podman-compose`.
+- Git. For VS Code API debugging, install the recommended C# extension.
 
-That's it! No need for .NET SDK, MongoDB, or Node.js on your host machine.
+The commands below run from the repository root unless specified otherwise.
+Docker Compose can replace `podman-compose` in terminal commands; the checked-in
+VS Code database tasks use `podman-compose`.
 
-## Quick Start
+## First setup
 
-1. **Clone and enter the repository:**
+1. Copy `.env.example` to `.env`. Set distinct `MONGO_ROOT_PASSWORD` and
+   `MONGO_APP_PASSWORD` values. Generate URL-safe values with `openssl rand -hex 24`.
+   Do not commit credentials.
+2. Configure the API with the same application password:
+
    ```bash
-   git clone https://github.com/paulmfischer/MediaSet.git
-   cd MediaSet
+   dotnet user-secrets set "MediaSetDatabaseSettings:ConnectionString" 'mongodb://mediaset:YOUR_APP_PASSWORD@127.0.0.1:27017/MediaSet?authSource=MediaSet' --project MediaSet.Api
    ```
 
-2. **Start the development environment:**
+   Replace `YOUR_APP_PASSWORD` with `MONGO_APP_PASSWORD` from `.env`. If using
+   characters outside URL-safe hex, URL-encode the password in the connection string.
+   The API does not read the root `.env`; Compose reads it only for database setup.
+3. Install dependencies:
+
    ```bash
-   ./dev.sh start
+   dotnet restore MediaSet.Api/MediaSet.Api.csproj
+   npm ci --prefix MediaSet.Remix
    ```
 
-3. **Wait for all services to be ready** (the script will check automatically)
+4. Start MongoDB and check its authenticated health:
 
-4. **Access the applications:**
-   - 🌐 **Frontend**: http://localhost:3000
-   - 🚀 **API**: http://localhost:5000
-   - 📊 **MongoDB**: mongodb://localhost:27017
-
-## Development Workflow
-
-### Hot Reloading
-
-Both frontend and backend support hot reloading:
-
-- **Frontend (Remix)**: Changes to files in `MediaSet.Remix/app/` will automatically reload the browser
-- **Backend (.NET)**: Changes to `.cs` files in `MediaSet.Api/` will automatically restart the API server
-- **Database**: MongoDB data persists between container restarts and clean operations (data stored under `./data/mongodb`). Use `./dev.sh clean --purge` to remove it.
-
-### Making Code Changes
-
-1. **Edit files normally** in your IDE (VS Code recommended)
-2. **Save changes** - hot reload will handle the rest
-3. **View logs** if needed: `./dev.sh logs [service]`
-
-### Useful Commands
-
-```bash
-# Start development environment
-./dev.sh start
-
-# View logs from all services
-./dev.sh logs
-
-# View logs from specific service
-./dev.sh logs api
-./dev.sh logs frontend
-./dev.sh logs mongodb
-
-# Check container status
-./dev.sh status
-
-# Restart all services
-./dev.sh restart
-
-# Stop development environment
-./dev.sh stop
-
-# Get shell access to containers
-./dev.sh shell api      # .NET API container
-./dev.sh shell frontend # Remix frontend container
-./dev.sh shell mongo    # MongoDB container
-
-# Clean everything (removes all data)
-./dev.sh clean
-```
-
-## Debugging
-
-### VS Code Debugging Setup
-
-1. **Install the "Dev Containers" extension** in VS Code
-2. **Create `.vscode/launch.json`** for debugging the .NET API:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug API in Container",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:pickRemoteProcess}",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceRoot}",
-        "pipeProgram": "podman",
-        "pipeArgs": ["exec", "-i", "mediaset-dev-api"],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
-      }
-    }
-  ]
-}
-```
-
-Ensure the Podman socket is running before attaching the debugger:
-```bash
-systemctl --user start podman.socket
-```
-
-### Browser Debugging
-
-- **Frontend**: Use browser dev tools as normal at http://localhost:3000
-- **API**: Use tools like Postman or curl to test endpoints at http://localhost:5000
-
-### Database Access
-
-Access MongoDB directly:
-```bash
-# Open MongoDB shell
-./dev.sh shell mongo
-
-# Or connect with any MongoDB client to:
-# mongodb://localhost:27017
-# Database: MediaSet
-```
-
-## Project Structure in Containers
-
-```
-/app (in containers)
-├── MediaSet.Api/     # .NET API source (mounted from host)
-├── MediaSet.Remix/   # Remix frontend source (mounted from host)
-```
-
-## Environment Variables
-
-### API Container
-- `ASPNETCORE_ENVIRONMENT=Development`
-- `MediaSetDatabase__ConnectionString=mongodb://mongodb:27017`
-- `MediaSetDatabase__DatabaseName=MediaSet`
-- `OpenLibraryConfiguration__BaseUrl=https://openlibrary.org/`
-
-### Frontend Container
-- `NODE_ENV=development`
-- `apiUrl=http://api:5000`
-- `REMIX_DEV_HTTP_ORIGIN=http://localhost:3000`
-- `ExternalLogging__SeqUrl` (optional) — same variable as the API; enables Remix structured logging to Seq when set
-
-
-
-## Troubleshooting
-
-### Port Conflicts
-If you get port conflicts, you can modify `docker-compose.dev.yml` to use different ports:
-- Change `"3000:5173"` to `"3001:5173"` for frontend
-- Change `"5000:5000"` to `"5001:5000"` for API
-
-### Container Build Issues
-```bash
-# Clean and rebuild (preserve data)
-./dev.sh clean
-./dev.sh start
-
-# Purge everything including MongoDB data
-./dev.sh clean --purge
-./dev.sh start
-```
-
-### Permission Issues (Linux/macOS)
-```bash
-# Fix file permissions
-sudo chown -R $USER:$USER .
-```
-
-### Logs Not Showing Changes
-```bash
-# Check if file watching is working
-./dev.sh logs api
-# Look for "dotnet watch" messages
-
-./dev.sh logs frontend
-# Look for Vite/Remix reload messages
-```
-
-### Podman Socket Issues
-
-```bash
-# Start Podman socket service
-systemctl --user start podman.socket
-systemctl --user enable podman.socket
-
-# Verify socket is running
-systemctl --user status podman.socket
-```
-
-**SELinux Issues (RHEL/Fedora/CentOS):**
-
-If API restore or `dotnet watch` reports permission denied under `/nuget`,
-`/app/bin`, or `/app/obj`, check the build cache labels rather than changing Unix
-permissions or disabling SELinux.
-With podman-compose 1.6.0, named volumes are emitted as `--mount type=volume`,
-but `mount_desc_to_mount_args` only forwards SELinux options for bind mounts.
-Consequently, the old `nuget_cache:/nuget:Z` did not relabel an existing cache.
-Its private MCS categories could still belong to an earlier API container, while
-the current container has different categories. Host ownership and mode 755 do
-not override that SELinux denial.
-
-`dev.sh start` and `dev.sh restart` prepare the API's three named build caches whenever SELinux
-is enabled, including in permissive mode. The script uses `podman unshare chcon`
-to apply `container_file_t:s0` recursively to **only the NuGet, bin, and obj cache volumes**.
-This shared container label preserves packages and works across API recreation;
-it does not hardcode private categories, alter the database, or disable enforcement.
-`dev.sh rebuild` also runs preparation, but its existing purge behavior deletes
-development data, so do not use it to repair this problem.
-
-To recover an existing cache, run:
-
-```bash
-PODMAN_AUTO_PRUNE=0 ./dev.sh start
-```
-
-The caches have explicit names, `mediaset_nuget_cache`,
-`mediaset_mediaset-api-bin`, and `mediaset_mediaset-api-obj`, so preparation and
-Compose always refer to the same volumes. If a different Compose project previously
-created your caches, set their existing volume names to reuse them:
-
-```bash
-NUGET_CACHE_VOLUME=myproject_nuget_cache \
-API_BIN_VOLUME=myproject_mediaset-api-bin \
-API_OBJ_VOLUME=myproject_mediaset-api-obj \
-PODMAN_AUTO_PRUNE=0 ./dev.sh start
-```
-
-Use the same volume overrides on subsequent commands. Direct
-`podman-compose up` bypasses preparation; run the matching `dev.sh start` first
-when recovering stale labels. To inspect without exposing configuration secrets:
-
-```bash
-getenforce
-podman inspect mediaset-dev-api --format '{{.ProcessLabel}}'
-podman volume inspect "${NUGET_CACHE_VOLUME:-mediaset_nuget_cache}" --format '{{.Mountpoint}}'
-# Run ls -Zd on the reported mountpoint and package directories.
-# The cache should show container_file_t:s0 without private cNNN categories.
-```
-
-For unrelated cgroup permission errors:
-```bash
-# If you see permission denied errors, try:
-sudo setsebool -P container_manage_cgroup true
-```
-
-**Rootless Container Issues:**
-```bash
-# Check user namespace setup
-podman unshare cat /proc/self/uid_map
-```
-
-## API Configuration
-
-### External API Integration
-
-MediaSet uses external APIs for metadata lookup functionality. Configure these in `MediaSet.Api/appsettings.Development.json`:
-
-#### OpenLibrary (Books)
-```json
-"OpenLibraryConfiguration": {
-  "BaseUrl": "https://openlibrary.org/",
-  "Timeout": "30",
-  "ContactEmail": "your-email@example.com"
-}
-```
-- **No API key required**
-- Free and unlimited
-- Used for ISBN, LCCN, OCLC, OLID lookups
-
-#### UPCitemdb (Barcode Lookups)
-```json
-"UpcItemDbConfiguration": {
-  "BaseUrl": "https://api.upcitemdb.com/",
-  "Timeout": 10
-}
-```
-- **No API key required** for free tier
-- **100 requests/day limit** on free plan
-- Used to identify products from UPC/EAN barcodes
-- For unlimited requests, [upgrade to paid plan](https://www.upcitemdb.com/api/)
-
-#### TMDB - The Movie Database (Movies)
-```json
-"TmdbConfiguration": {
-  "BaseUrl": "https://api.themoviedb.org/3/",
-  "BearerToken": "",
-  "Timeout": 10
-}
-```
-- **API key required** (free)
-- **Sign up**: [https://www.themoviedb.org/signup](https://www.themoviedb.org/signup)
-- **Get API key**: Account → Settings → API → Request API Key → Developer
-- **Rate limits**: 40 requests per 10 seconds, 1M requests per month
-- Used for comprehensive movie metadata
-
-**To configure TMDB API credentials (keep secret!):**
-1. Create a free account at [themoviedb.org](https://www.themoviedb.org/signup)
-2. Navigate to Settings → API
-3. Request an API key (choose "Developer" option)
-4. Copy your **Bearer Token** (not the API Key)
-5. **Create a `.env` file** in the project root (see `.env.example` for template):
    ```bash
-   cp .env.example .env
-   ```
-6. **Add your tokens to `.env`**:
-   ```bash
-   TMDB_BEARER_TOKEN=your_tmdb_bearer_token_here
-   UPCITEMDB_API_KEY=your_api_key_here  # Optional
-   ```
-7. **Restart the development environment** to apply changes:
-   ```bash
-   ./dev.sh restart
+   podman-compose -f docker-compose.dev.yml up -d
+   podman-compose -f docker-compose.dev.yml ps
    ```
 
-> ⚠️ **IMPORTANT**: 
-> - Never commit your `.env` file to git! It's already in `.gitignore`.
-> - The `.env` file is automatically loaded by `docker-compose.dev.yml`.
-> - For detailed setup instructions, see **[TMDB_SETUP.md](../Setup/TMDB_SETUP.md)**
+   Wait for MongoDB to report healthy on its first initialization. The health
+   check authenticates as the application user and lists database collections.
+   Inspect initialization failures with
+   `podman-compose -f docker-compose.dev.yml logs mongodb`.
 
-### Testing Lookup Functionality
+MongoDB data lives in ignored `data/dev-mongodb`. API image storage resolves to
+`data/images` in the repository. MongoDB listens only on 127.0.0.1:27017.
+Keep SELinux enforcing; the two MongoDB bind mounts use private container labels.
 
-Once configured, test the lookup features:
+## Daily terminal workflow
 
-**Books (ISBN):**
-```bash
-curl http://localhost:5000/lookup/Books/isbn/9780385504201
-```
-
-**Movies (UPC):**
-```bash
-curl http://localhost:5000/lookup/Movies/upc/883929248842
-```
-
-The UI also provides inline lookup buttons in the add/edit forms for books and movies.
-
-## Image Storage Configuration
-
-MediaSet stores cover images locally on the filesystem, providing fast access and efficient storage management.
-
-### Image Storage Setup
-
-Images are automatically set up when you start the development environment:
+Start the database if needed:
 
 ```bash
-# The ./dev.sh script creates the image directory
-./dev.sh start
-
-# Images are stored locally in:
-./data/images/
+podman-compose -f docker-compose.dev.yml up -d
 ```
 
-### Image Configuration
-
-Image storage is configured in `appsettings.json` (already configured for local development):
-
-```json
-{
-  "ImageConfiguration": {
-    "StoragePath": "/app/data/images",
-    "MaxFileSizeMb": 5,
-    "AllowedImageExtensions": "jpg,jpeg,png",
-    "HttpTimeoutSeconds": 30,
-    "StripExifData": true
-  }
-}
-```
-
-**Configuration Options:**
-- **StoragePath**: Directory where images are stored (default: `/app/data/images` in containers)
-- **MaxFileSizeMb**: Maximum file size in megabytes (5MB by default)
-- **AllowedImageExtensions**: Comma-separated list of allowed file extensions (JPEG and PNG by default)
-- **HttpTimeoutSeconds**: Timeout for downloading images from URLs in seconds
-- **StripExifData**: Whether to remove EXIF metadata (enabled by default for privacy)
-
-### Image Directory Persistence
-
-- Images stored during development persist in `./data/images/`
-- Images remain available when containers are restarted
-- To clear all images: `./dev.sh clean --purge`
-
-### Testing Image Upload
-
-**Upload an image when creating a book:**
+In one terminal, start the API with watch/reload:
 
 ```bash
-# Create a test image (JPEG, PNG, etc.)
-# Then POST to the API with multipart form data
-
-curl -X POST http://localhost:5000/api/books \
-  -F "entity={\"title\":\"Test Book\",\"authors\":\"[\\\"Author Name\\\"]\"}" \
-  -F "coverImage=@/path/to/image.jpg"
+dotnet watch --project MediaSet.Api run
 ```
 
-**Download an image via URL:**
+In a second terminal, start the UI:
 
 ```bash
-curl -X POST http://localhost:5000/api/books \
-  -F "entity={\"title\":\"Test Book\",\"authors\":\"[\\\"Author Name\\\"]\"}" \
-  -F "imageUrl=https://example.com/cover.jpg"
+cd MediaSet.Remix
+npm run dev
 ```
 
-## Contributing
+- UI: http://localhost:3000 (also accessible at http://YOUR_LAN_IP:3000).
+- API and Swagger: http://127.0.0.1:5000 and http://127.0.0.1:5000/swagger.
+- API port and Development environment come from the API launch profile.
+- Vite uses port 3000 and fails if it is already occupied.
+- Ordinary development requires no certificates or frontend environment file.
 
-When contributing:
+Ctrl+C stops each application. MongoDB remains running until explicitly stopped:
 
-1. **Test locally** using this development setup
-2. **Ensure hot reload works** for your changes
-3. **Check both frontend and backend** work together
-4. **Verify database changes persist** through container restarts
+```bash
+podman-compose -f docker-compose.dev.yml stop mongodb
+```
 
-## Support
+Neither starting nor stopping the database removes its data.
 
-### Development-only invalid-hook or hydration errors
+## VS Code
 
-Vite can discover the injected development-tools client and route icon imports
-after the first page request. Rebundling those dependencies during hydration can
-leave the initial page blank with an invalid-hook error in `RemixBrowser`, even
-when `npm ls react react-dom` reports a single React version. A subsequent reload
-may work, so a warm-page check alone does not verify the first load.
+Complete first setup before using Run and Debug (F5):
 
-The frontend's `optimizeDeps.include` list prebundles these entries before the
-first request. Keep the development-tools client in that list when changing Vite
-plugins. For a frontend server run directly with `npm run dev`, stop that server
-and start it with `npm run dev -- --force` to regenerate its optimized dependency
-cache; retain the API environment settings used for that server.
+| Configuration | Behavior |
+| --- | --- |
+| Launch API | Starts MongoDB, builds the API, and attaches the .NET debugger on port 5000. |
+| Launch UI | Starts Vite in a JavaScript Debug Terminal on port 3000. |
+| Launch API + UI | Starts both applications; MongoDB startup runs only through the API prerequisite. |
+| Launch UI — Mobile HTTPS | Starts the HTTPS frontend after the optional certificate setup below. |
+| Launch API + UI — Mobile HTTPS | Starts the API debugger and HTTPS frontend together. |
 
-To check this regression, open `/image-stats` in a fresh browser session after a
-forced dependency optimization. Check that the page renders and the Tools menu
-opens, then reload and navigate Home → Tools → Image Statistics. There should be
-no invalid-hook errors, hydration warnings, or uncaught browser exceptions. Also
-verify the same route with `npm run build` and `npm run start`. Use the normal
-development API and database for the end-to-end check; an HTTP fixture can isolate
-frontend behavior but does not verify the development stack.
+Wait for both application listening messages before opening the UI. UI-only
+launches expect an already-running API for database-backed pages.
+Stopping a compound debug session stops both application sessions and leaves MongoDB running.
 
-If you encounter issues:
+Terminal → Run Task also offers **Start MongoDB**, **Stop MongoDB**, **Build API**,
+**Watch API**, **Start UI**, and **Start API + UI**. Use the watch tasks for the
+normal API hot-reload loop; use Launch API for breakpoint debugging. Stop watch
+tasks with Terminal → Terminate Task (terminate both application tasks for the
+combined task). Avoid running debug launches and watch tasks on the same ports
+at the same time.
 
-1. Check the logs: `./dev.sh logs`
-2. Verify all containers are running: `./dev.sh status`
-3. Try cleaning and restarting: `./dev.sh clean && ./dev.sh start`
+## Configuration
+
+The native API uses appsettings.Development.json plus .NET User Secrets.
+Optional metadata services and Seq settings use their normal configuration keys:
+
+```bash
+dotnet user-secrets set "TmdbConfiguration:BearerToken" "YOUR_TOKEN" --project MediaSet.Api
+dotnet user-secrets set "IgdbConfiguration:ClientId" "YOUR_CLIENT_ID" --project MediaSet.Api
+dotnet user-secrets set "IgdbConfiguration:ClientSecret" "YOUR_CLIENT_SECRET" --project MediaSet.Api
+dotnet user-secrets set "ExternalLogging:Enabled" "true" --project MediaSet.Api
+dotnet user-secrets set "ExternalLogging:SeqUrl" "http://YOUR_SEQ_HOST:5341" --project MediaSet.Api
+```
+
+See the integration guides in [Setup](../Setup/) for other providers.
+Do not copy container hostnames such as `mongodb` or `api` into host configuration.
+
+The frontend defaults to server-side API calls at http://127.0.0.1:5000.
+Browser API/image requests use the relative `/dev-api` prefix. Vite strips that
+prefix and forwards requests to the local API, so phones never call their own
+localhost or load HTTP images from an HTTPS page.
+
+Optional frontend overrides belong in `MediaSet.Remix/.env.local`; see
+`MediaSet.Remix/.env.example`. Restart Vite after changing environment variables.
+`apiUrl` controls the server-side API/proxy target; `clientApiUrl` and
+`VITE_API_URL` can override browser URLs when deliberately testing another API.
+Leave browser overrides unset for normal local and mobile testing.
+Production continues to use its existing explicit API URL configuration.
+
+## Mobile HTTPS and barcode scanning
+
+HTTP LAN access supports browsing/editing. Live camera scanning needs a trusted
+HTTPS origin. Mobile HTTPS is an optional runtime mode using the same UI port;
+stop the ordinary frontend before starting it.
+
+1. Install [mkcert](https://github.com/FiloSottile/mkcert) on the host and create
+   its local CA with `mkcert -install`. This is an explicit one-time trust setup,
+   not an application startup action.
+2. From the repository root, generate a certificate for localhost and the actual
+   LAN IP or hostname you will use on the phone:
+
+   ```bash
+   mkdir -p data/certs
+   mkcert -cert-file data/certs/dev.pem -key-file data/certs/dev-key.pem localhost 127.0.0.1 ::1 YOUR_LAN_IP
+   ```
+
+3. Add these entries to `MediaSet.Remix/.env.local`:
+
+   ```dotenv
+   DEV_HTTPS_CERT=../data/certs/dev.pem
+   DEV_HTTPS_KEY=../data/certs/dev-key.pem
+   ```
+
+4. Locate the public `rootCA.pem` using `mkcert -CAROOT` and install/trust that
+   certificate on your phone. Follow mkcert's mobile device instructions; on iOS,
+   enable full trust under Certificate Trust Settings after installing the profile.
+   Never transfer `rootCA-key.pem` to the phone or repository.
+5. Start the API normally, then run `npm run dev:mobile` from MediaSet.Remix
+   (or use the mobile VS Code launch). Visit `https://YOUR_LAN_IP:3000`, allow
+   camera access, and open Scan Barcode on an add/edit form.
+
+Only UI port 3000 needs LAN reachability; the API and MongoDB remain local.
+If the host firewall blocks it, allow port 3000 on your intended LAN interface.
+Certificate trust and firewall changes are manual host/device setup steps.
+
+If the LAN IP changes or the certificate expires, rerun certificate generation
+with the new address and restart mobile mode. Reinstall the public CA only if
+you create a new CA. Missing certificate settings produce an explicit startup
+error; ordinary `npm run dev` ignores them and stays on HTTP.
+
+## Moving from the old container stack
+
+Stop only this checkout's old development containers before starting native
+applications, so ports 3000, 5000, and 27017 are free:
+
+```bash
+podman stop mediaset-dev-ui mediaset-dev-api mediaset-dev-mongo
+```
+
+Run that once only if those old containers exist. Their data is not needed by
+the new setup. The new database uses `data/dev-mongodb`, leaving the old
+`data/mongodb` directory untouched; no database migration is required.
+
+- Complete first setup with matching database credentials.
+- Inspect old root `.env` integration settings and move any needed API keys to
+  User Secrets; old Compose-only names such as TMDB_BEARER_TOKEN are not loaded
+  by the native API.
+- Remove obsolete `apiUrl`, `clientApiUrl`, `VITE_API_URL`, and
+  `REMIX_DEV_HTTP_ORIGIN` entries from frontend local env files to use native
+  defaults. The old helper appended duplicate VITE_API_URL entries.
+- Preserve `data/images`. If old container-created files cannot be written,
+  inspect ownership and repair only that project's image files, not home-directory
+  permissions or global container storage.
+- Retired application cache volumes are no longer used. Leaving them in place is
+  harmless; do not run broad container/image/volume pruning.
+
+## Verification and troubleshooting
+
+Check actual database connectivity, not just a listening port:
+
+```bash
+curl --fail --silent http://127.0.0.1:5000/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "healthy" and h["database"]["status"] == "up", h; print("API and database healthy")'
+curl --fail http://localhost:3000/
+```
+
+The API's health endpoint can return HTTP 200 with degraded database status.
+After startup, load the dashboard, create/edit/reload an entity, and upload/view
+its image. Restart applications and recreate only the MongoDB container to
+verify newly created data survives:
+
+```bash
+podman-compose -f docker-compose.dev.yml up -d --force-recreate mongodb
+```
+
+- **Authentication failed:** compare the app password in .env and User Secrets.
+  Initialization only runs on empty database storage; changing .env does not
+  change existing users. For disposable data, stop MongoDB and rename
+  `data/dev-mongodb` to an unused sibling path before starting it again.
+  Use `podman unshare mv` if rootless MongoDB ownership prevents the rename.
+  Keep `data/images` intact.
+- **Connection refused:** check MongoDB health and API listening messages; retry
+  after first initialization. Verify no stale environment variable overrides
+  your launch profile or User Secrets.
+- **Port occupied:** stop the old local stack or the other watch/debug session.
+  Vite deliberately does not select a different port.
+- **Dependency errors:** rerun `dotnet restore` or `npm ci --prefix MediaSet.Remix`.
+  Run dependency installation after lockfile changes. Do not clear all caches
+  as a normal startup step.
+- **Frontend hydration/devtools errors:** retain the existing Vite prebundling
+  configuration; stop Vite and run `npm run dev -- --force` if its optimized
+  dependency cache needs regeneration.
+- **Mobile camera unavailable:** confirm trusted HTTPS, certificate address,
+  browser camera permission, and LAN reachability. Certificate-warning bypasses
+  are not a replacement for installing the CA.
+- **SELinux:** only MongoDB/init-script mounts need container labels now.
+  Investigate their labels and scoped permissions; do not disable enforcement.
+
+## Checks
+
+```bash
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
+cd MediaSet.Remix
+npm test
+npm run typecheck
+npm run lint
+npm run lint:format
+npm run build
+```
+
+Manually verify frontend HMR and API watch reload. For mobile, check actual-phone
+camera permission, barcode detection, images, and HMR without mixed-content errors.
 

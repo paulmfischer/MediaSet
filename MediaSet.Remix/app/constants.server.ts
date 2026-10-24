@@ -1,11 +1,13 @@
 /**
- * Server-side API URL - used for server-to-server communication within Docker
- * This uses Docker container names (e.g., http://mediaset-api:8080)
+ * Server-side API URL. Native development calls the API on the host;
+ * production deployments supply their container-to-container URL.
  */
-export const baseUrl = process.env.apiUrl || 'http://localhost:7130';
+export const baseUrl =
+  process.env.apiUrl || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5000' : 'http://localhost:7130');
 
 /**
- * Client-side API URL - used for browser requests from the host machine
- * This must be accessible from the user's browser (e.g., http://localhost:8080)
+ * Browser API URL. Vite proxies development requests on the UI's origin,
+ * including HTTPS mobile requests. Production supplies an external API URL.
  */
-export const clientApiUrl = process.env.clientApiUrl || 'http://localhost:7130';
+export const clientApiUrl =
+  process.env.clientApiUrl || (process.env.NODE_ENV === 'development' ? '/dev-api' : 'http://localhost:7130');
