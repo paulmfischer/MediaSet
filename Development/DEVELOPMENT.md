@@ -99,7 +99,8 @@ Complete first setup before using Run and Debug (F5):
 | Launch UI — Mobile HTTPS | Starts the HTTPS frontend after the optional certificate setup below. |
 | Launch API + UI — Mobile HTTPS | Starts the API debugger and HTTPS frontend together. |
 
-Wait for both application listening messages before opening the UI. UI-only
+UI debug launches open the default browser when Vite starts, including combined
+and mobile HTTPS launches. UI-only
 launches expect an already-running API for database-backed pages.
 Stopping a compound debug session stops both application sessions and leaves MongoDB running.
 

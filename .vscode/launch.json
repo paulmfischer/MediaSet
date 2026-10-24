@@ -18,14 +18,14 @@
       "name": "Launch UI",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev",
+      "command": "npm run dev -- --open",
       "cwd": "${workspaceFolder}/MediaSet.Remix"
     },
     {
       "name": "Launch UI — Mobile HTTPS",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev:mobile",
+      "command": "npm run dev:mobile -- --open",
       "cwd": "${workspaceFolder}/MediaSet.Remix"
     }
   ],
