@@ -29,8 +29,10 @@ The `AllowedHosts` setting controls which `Host` header values the API will acce
 Set it in `docker-compose.prod.yml` under the `mediaset-api` environment block — replace the `[ReplaceThis]` placeholder with your hostname(s):
 
 ```yaml
-AllowedHosts: "mediaset.domain.com"
+AllowedHosts: "localhost;mediaset.domain.com"
 ```
+
+Keep `localhost` in this list so the container's HTTP healthcheck is accepted.
 
 Integration placeholders and enabling
 
@@ -91,6 +93,19 @@ Health endpoint (API):
 ```bash
 curl -sS http://localhost:8080/health
 ```
+
+The container healthcheck uses `dotnet MediaSet.Api.dll --healthcheck` to GET
+`http://localhost:8080/health`; it does not need curl or wget in the image. The probe exits
+with code 0 for a successful HTTP response and code 1 for an HTTP error, connection failure,
+or a request exceeding five seconds. It checks the endpoint's HTTP status; `/health` still
+returns HTTP 200 when MongoDB is degraded, so this does not change database health semantics.
+Compose runs the probe every 30 seconds with a 40-second startup grace period and marks
+the container unhealthy after three consecutive failures. After updating to an API image
+that includes the probe, apply the updated compose configuration and confirm `mediaset-api`
+shows `healthy` in `docker compose -f docker-compose.prod.yml ps`.
+
+Development compose uses the same probe against port 5000 and the Debug assembly generated
+by `dotnet watch`. Checks can fail until the first build finishes or during a rebuild.
 
 Updating to newer images
 

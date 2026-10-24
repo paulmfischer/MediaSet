@@ -19,6 +19,8 @@ public static class RetailVideoTitle
             title = Regex.Replace(title, @"\s+" + Regex.Escape(brand.Trim()) + "$", "", Options);
         }
         title = Regex.Replace(title, @"\s*\|\s*(?:" + Format + @")\b.*$", "", Options);
+        // An HD label before an episode marker is interior metadata, not the end of the title.
+        title = Regex.Replace(title, @"\s*\[HD\](?=\s+-\s+S\d+E\d+\s+-\s+)", "", Options);
         // A recognized retail annotation can delimit trailing catalog junk; meaningful brackets survive.
         title = Regex.Replace(title,
             @"\s*[\[(](?:" + Format + @"|WS|Widescreen|Full\s*screen|(?:\d+|Two|Three|Four|Five|Six)[ -]?Discs?|Collector'?s? Edition|Special Edition)\b[^\])]*[\])].*$",

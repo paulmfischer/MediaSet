@@ -64,6 +64,12 @@ services:
       # on named volumes, leaving existing private cache labels unchanged.
       - nuget_cache:/nuget
     stop_grace_period: 2s
+    healthcheck:
+      test: ["CMD", "dotnet", "bin/Debug/net10.0/MediaSet.Api.dll", "--healthcheck", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       mongodb:
         condition: service_healthy
