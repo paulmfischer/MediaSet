@@ -185,6 +185,8 @@ def split_commands(command):
     for token in lexer:
         if token in {"|", "&", "(", ")", "<<", ";;"}:
             raise Unresolved()
+        if re.fullmatch(r"[;&|()<>]+", token) and token not in {";", "&&", "||", "<", ">", ">>"}:
+            raise Unresolved()
         if token in {";", "&&", "||", "\n"}:
             if part:
                 parts.append(part)
@@ -212,6 +214,13 @@ def evaluate(command, cwd):
             i = 0
             while i < len(words):
                 if words[i] in {"<", ">", ">>", "2>"}:
+                    # shlex loses whether a preceding number was attached to a
+                    # redirection (2>log) or a Git operand (2 >log). Reject that
+                    # ambiguity rather than invent a remote/ref positional.
+                    if args and args[-1].isdigit():
+                        raise Unresolved()
+                    if i + 1 >= len(words):
+                        raise Unresolved()
                     i += 2
                     continue
                 args.append(words[i])
@@ -291,9 +300,10 @@ def evaluate(command, cwd):
                 branch = branch_state.get(repo, git(target, [*options, "symbolic-ref", "--short", "HEAD"], env))
             except Unresolved:
                 branch = "HEAD"
-            def config(key, effective=False):
+            def config(key, effective=False, boolean=False):
                 transient = [item for pair in overrides for item in pair] if effective else []
-                return git(target, ["--git-dir", repo, *transient, "config", "--get", key],
+                conversion = ["--bool"] if boolean else []
+                return git(target, ["--git-dir", repo, *transient, "config", *conversion, "--get", key],
                            env if effective else os.environ, missing_ok=True)
             def sync_source():
                 """Only a single configured upstream of remote main is sync."""
@@ -323,7 +333,7 @@ def evaluate(command, cwd):
                         return False
                     return True
                 return positionals in [[], [remote], [remote, "main"], [remote, "refs/heads/main"]]
-            signing = config("commit.gpgsign").lower() in {"true", "yes", "on", "1"} or bool(config("user.signingkey"))
+            signing = config("commit.gpgsign", boolean=True) == "true" or bool(config("user.signingkey"))
             policy_rest = []
             skip = False
             for a in rest:
@@ -367,6 +377,15 @@ def evaluate(command, cwd):
                 continue
             if any(any(c in a for c in "$`*?") for a in policy_rest):
                 raise Unresolved()
+            if op == "rebase":
+                update_refs = config("rebase.updateRefs", effective=True, boolean=True) == "true"
+                for a in rest:
+                    if a in {"--update-refs", "--no-update-refs"}:
+                        update_refs = a == "--update-refs"
+                    elif a.startswith(("--update-refs=", "--no-update-refs=")):
+                        raise Unresolved()
+                if update_refs:
+                    return "Rebase can update main as a secondary ref; use --no-update-refs for a feature-only rebase."
             if op in WRITES and branch in {"main", "UNKNOWN"}:
                 if op == "merge" and "--ff-only" in rest and not any(a.startswith(("--no-", "--squash")) or a == "--ff" for a in rest) and sync_source():
                     continue
@@ -374,7 +393,8 @@ def evaluate(command, cwd):
             if op == "rebase" and any(main_ref(a) for a in rest):
                 # main as upstream is normal, as a second positional branch isn't.
                 positional = positionals
-                if len(positional) > 1 and main_ref(positional[-1]):
+                if ("--root" in rest and positional and main_ref(positional[-1]) or
+                        len(positional) > 1 and main_ref(positional[-1])):
                     return "Do not rebase main."
             if op == "pull" and branch in {"main", "UNKNOWN"} and ("--ff-only" not in rest or any(a.startswith(("--rebase", "--no-ff")) or a in {"--ff", "-r"} for a in rest)):
                 return "Synchronize main using git pull --ff-only."

@@ -341,6 +341,55 @@ class GitGuardTests(unittest.TestCase):
                 self.check_command("git fetch origin", False)
                 self.check_command("git push origin HEAD:feature/test", False)
 
+    def test_descriptor_redirections_cannot_hide_default_push_targets(self):
+        self.git("config", "push.default", "upstream")
+        self.git("config", "branch.feature/test.merge", "refs/heads/main")
+        for suffix in ["2>log", "2>>log", "2> log", "2>&1", "02>log", ">log 2>&1", "3<>log"]:
+            self.check_command("git push origin " + suffix, True)
+        self.check_command("git push origin >log", True)
+        self.check_command("git push origin HEAD:feature/test >log", False)
+        # Deliberately unsupported even when harmless: descriptor adjacency was
+        # discarded by shlex and must not be guessed from numeric operands.
+        self.check_command("git push origin HEAD:feature/test 2>log", True)
+
+    def test_root_rebase_resolves_its_single_branch_operand(self):
+        for command in ["git rebase --onto feature/test --root main",
+                        "git rebase --root --onto=feature/test refs/heads/main",
+                        "git rebase --root -- main"]:
+            self.check_command(command, True)
+        self.check_command("git rebase --root --onto=main feature/test", False)
+        self.check_command("git rebase --onto=feature/test main", False)
+
+    def test_secondary_rebase_refs_require_explicit_opt_out(self):
+        for command in ["git rebase --update-refs --onto target HEAD~2",
+                        "git -c rebase.updateRefs=true rebase --onto target HEAD~2",
+                        "git rebase --no-update-refs --update-refs main"]:
+            self.check_command(command, True)
+        self.git("config", "rebase.updateRefs", "true")
+        self.check_command("git rebase main", True)
+        self.check_command("git rebase --no-update-refs main", False)
+        self.check_command("git rebase --update-refs --no-update-refs main", False)
+        self.check_command("git -c rebase.updateRefs=false rebase main", False)
+        self.git("config", "rebase.updateRefs", "invalid")
+        self.check_command("git rebase main", True)
+
+    def test_git_boolean_semantics_preserve_bare_signing(self):
+        self.git("config", "--unset", "commit.gpgsign")
+        config_path = self.repo / ".git/config"
+        config_path.write_text(config_path.read_text() + "\n[commit]\n\tgpgsign\n")
+        self.assertEqual(self.git("config", "--bool", "--get", "commit.gpgsign"), "true")
+        self.check_command("git commit --no-gpg-sign --allow-empty -m unsigned", True)
+        for value in ["true", "yes", "on", "1"]:
+            self.git("config", "commit.gpgsign", value)
+            self.check_command("git commit --no-gpg-sign -m unsigned", True)
+        for value in ["false", "no", "off", "0", ""]:
+            self.git("config", "commit.gpgsign", value)
+            self.check_command("git commit --no-gpg-sign -m unsigned", False)
+        self.git("config", "commit.gpgsign", "invalid")
+        self.check_command("git commit --no-gpg-sign -m unsigned", True)
+        self.git("config", "--unset", "commit.gpgsign")
+        self.check_command("git commit --no-gpg-sign -m unsigned", False)
+
 
 if __name__ == "__main__":
     unittest.main()

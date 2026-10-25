@@ -7,7 +7,8 @@ without executing the proposed command, configuring signing, or changing identit
 
 The guard blocks direct main commits, merges/rebases/resets and related writes,
 main ref updates and pushes, and overrides of configured signing. Existing
-`commit.gpgsign=true` or a signing key activates signing preservation. Feature
+Git's typed boolean value for `commit.gpgsign` (including a bare true key) or a
+signing key activates signing preservation; invalid boolean values fail closed. Feature
 commits and pushes, including force pushes, receive no approval decision. Workflow
 policy still requires explicit authorization before rewriting published feature
 history and requires `--force-with-lease`; the hook cannot infer conversation
@@ -89,6 +90,12 @@ quoted heredoc instead. A branch switch followed by a write in the same tool cal
 is conservatively blocked because the switch has not executed and could fail.
 Run the switch separately, then let the next call inspect its actual result.
 Some ambiguous but harmless forms may require a simpler equivalent command.
+File-descriptor/compound redirections such as `2>log` and `2>&1` are rejected
+because descriptor adjacency cannot be safely recovered by the bounded lexer.
+Ordinary literal redirections without descriptors remain supported. Root rebase
+resolves its single explicit branch operand. Rebase with effective
+`rebase.updateRefs=true` or `--update-refs` is blocked because secondary refs can
+include main; use `--no-update-refs` for a feature-only rebase.
 Protected Git verbs accept a bounded list of full long-option spellings.
 Abbreviations accepted by Git (such as `--no-gpg-s` or `--remove-sect`) and unknown
 options are rejected instead of guessing which option Git will select. Use the
