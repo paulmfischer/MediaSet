@@ -390,6 +390,25 @@ class GitGuardTests(unittest.TestCase):
         self.git("config", "--unset", "commit.gpgsign")
         self.check_command("git commit --no-gpg-sign -m unsigned", False)
 
+    def test_pull_cannot_update_secondary_refs_with_or_without_signing(self):
+        for signed in (True, False):
+            with self.subTest(signing=signed):
+                self.git("config", "commit.gpgsign", "true" if signed else "false")
+                self.git("config", "rebase.updateRefs", "true")
+                self.check_command("git pull --rebase origin main", True)
+                self.check_command("git pull -r origin main", True)
+                self.check_command("git pull --no-rebase origin main", True)
+                self.git("config", "pull.rebase", "true")
+                self.check_command("git pull origin main", True)
+                self.git("config", "branch.feature/test.rebase", "merges")
+                self.check_command("git pull origin main", True)
+                self.check_command("git -c rebase.updateRefs=false pull --rebase origin main", False)
+                self.check_command("git -c rebase.updateRefs=false pull origin main", False)
+                self.git("config", "rebase.updateRefs", "false")
+                self.check_command("git pull --rebase origin main", False)
+                self.check_command("git pull origin main", False)
+                self.check_command("git -c rebase.updateRefs=true pull --rebase origin main", True)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -96,6 +96,11 @@ Ordinary literal redirections without descriptors remain supported. Root rebase
 resolves its single explicit branch operand. Rebase with effective
 `rebase.updateRefs=true` or `--update-refs` is blocked because secondary refs can
 include main; use `--no-update-refs` for a feature-only rebase.
+Pull is also blocked whenever effective `rebase.updateRefs` is true, including
+when rebase would be selected implicitly by pull/branch config. For a feature-only
+pull use the scoped `git -c rebase.updateRefs=false pull ...`; pull does not accept
+the direct rebase `--no-update-refs` flag. This conservative rule also applies to
+an explicitly non-rebasing pull while update-refs remains enabled.
 Protected Git verbs accept a bounded list of full long-option spellings.
 Abbreviations accepted by Git (such as `--no-gpg-s` or `--remove-sect`) and unknown
 options are rejected instead of guessing which option Git will select. Use the

@@ -377,7 +377,7 @@ def evaluate(command, cwd):
                 continue
             if any(any(c in a for c in "$`*?") for a in policy_rest):
                 raise Unresolved()
-            if op == "rebase":
+            if op in {"rebase", "pull"}:
                 update_refs = config("rebase.updateRefs", effective=True, boolean=True) == "true"
                 for a in rest:
                     if a in {"--update-refs", "--no-update-refs"}:
@@ -385,7 +385,9 @@ def evaluate(command, cwd):
                     elif a.startswith(("--update-refs=", "--no-update-refs=")):
                         raise Unresolved()
                 if update_refs:
-                    return "Rebase can update main as a secondary ref; use --no-update-refs for a feature-only rebase."
+                    return ("Rebase can update main as a secondary ref; " +
+                            ("use git -c rebase.updateRefs=false pull for a feature-only pull."
+                             if op == "pull" else "use --no-update-refs for a feature-only rebase."))
             if op in WRITES and branch in {"main", "UNKNOWN"}:
                 if op == "merge" and "--ff-only" in rest and not any(a.startswith(("--no-", "--squash")) or a == "--ff" for a in rest) and sync_source():
                     continue
