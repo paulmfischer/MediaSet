@@ -1,0 +1,8 @@
+# Git protection only. Existing local hooks.json is intentionally preserved.
+[[hooks.PreToolUse]]
+matcher = "Bash"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/scripts/agents/codex_git_guard.py"'
+timeout = 10

@@ -122,7 +122,11 @@ def hooks():
               ("disabled in this file; " if disabled else "") + "active/trusted unverified")
     if any(count > 1 for count in seen.values()):
         print("WARNING: duplicate event/matcher/command registrations detected; inspect /hooks.")
-    print("Hook coverage: legacy definitions only; guards/replacements pending #636-#641.")
+    print("Hook coverage: shared Git guard #636; other legacy replacements pending #637-#641.")
+    for runtime in ("Claude", "Codex"):
+        commands = [entry[-1] for entry in seen if entry[0] == runtime]
+        if any("block-main-commits" in c for c in commands) and any("git_guard.py" in c for c in commands):
+            print("WARNING: " + runtime + " old/new Git guards compete; remove only the obsolete Git registration after review; see " + GUIDE)
     print("Hook activation: unverified. Inspect native /hooks; plugins/managed/session layers")
     print("and semantically equivalent duplicates cannot be determined by this diagnostic.")
     if (ROOT / ".codex/hooks.json").exists():

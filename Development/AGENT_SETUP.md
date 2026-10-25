@@ -87,9 +87,10 @@ again. Missing `jq` only affects legacy hooks; inspect the inventory below.
 Evidence recorded 2026-10-25: installed `codex-cli 0.163.0`, Claude Code `2.1.309`.
 Version probes and direct script fixtures do not demonstrate live activation.
 No live guard/edit smoke test was run for this slice: **unverified** in both agents.
-No new hook registration or automatic setup/startup hook is added here. Existing
-definitions remain pending the later tickets; do not newly activate them as the
-completed #630 safeguards. See [hook inventory](AGENT_HOOK_INVENTORY.md).
+The Git guard is now registered for both runtimes by #636; see
+[Git guard activation, migration, limits and smoke procedure](AGENT_GIT_GUARD.md).
+Other legacy definitions remain pending later tickets; these are not the completed
+#630 safeguards. See [hook inventory](AGENT_HOOK_INVENTORY.md).
 
 Claude reads project `.claude/settings.json`; personal and local settings can add
 hooks. Review definitions/scripts and workspace trust before use, then inspect
@@ -127,14 +128,15 @@ never overwrite personal configuration to resolve duplicates.
 
 ## Migration boundaries
 
-The tracked Claude definitions are preserved. The current local untracked Codex
+The tracked Claude Git registration is replaced; other definitions are preserved.
+Codex has a tracked Git-only inline `.codex/config.toml` registration. The local untracked Codex
 candidate is inspected and preserved, **not** installed, staged, trusted, or
 converted into public configuration. Fresh clones do not contain it. Diagnostics
 warn when that candidate is present but untracked. Personal settings are read only
 at known locations, never merged or edited. Backup/review any personal definitions
 yourself before changing them. Keep any backup outside discoverable hook paths.
 
-The next slices implement main/signing guards (#636), environment guards (#637),
+The shared main/signing guard is implemented in #636. The next slices implement environment guards (#637),
 explicit formatting (#638), completion verification/logs (#639), CI (#640), and
 final migration/live smoke tests (#641). Until those land, legacy per-edit fixes,
 test rewriting, and stop-time tests may still run when trusted. Their removal is
