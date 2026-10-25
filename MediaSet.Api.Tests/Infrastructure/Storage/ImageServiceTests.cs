@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
 using System;
+using SkiaSharp;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -70,7 +71,7 @@ public class ImageServiceTests : IDisposable
     {
         // Arrange
         var imagePath = "books/123-abc123.jpg";
-        var imageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var imageData = CreateImage(SKEncodedImageFormat.Jpeg);
         var expectedStream = new MemoryStream(imageData);
 
         _storageProviderMock!
@@ -132,7 +133,7 @@ public class ImageServiceTests : IDisposable
         var entityType = "books";
         var entityId = "123";
         var fileName = "cover.jpg";
-        var fileContent = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var fileContent = CreateImage(SKEncodedImageFormat.Jpeg);
         var formFile = CreateFormFile(fileName, fileContent, "image/jpeg");
 
         _storageProviderMock!
@@ -202,7 +203,7 @@ public class ImageServiceTests : IDisposable
     public void SaveImageAsync_WithNullEntityType_ThrowsArgumentException()
     {
         // Arrange
-        var fileContent = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var fileContent = CreateImage(SKEncodedImageFormat.Jpeg);
         var formFile = CreateFormFile("cover.jpg", fileContent, "image/jpeg");
 
         // Act & Assert
@@ -221,7 +222,7 @@ public class ImageServiceTests : IDisposable
         var imageUrl = "http://1.2.3.4/image.jpg";
         var entityType = "movies";
         var entityId = "456";
-        var imageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var imageData = CreateImage(SKEncodedImageFormat.Jpeg);
 
         var content = new ByteArrayContent(imageData);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
@@ -329,7 +330,7 @@ public class ImageServiceTests : IDisposable
             // Act & Assert
             var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
-            Assert.That(ex?.Message, Does.Contain("unsupported content type"));
+            Assert.That(ex?.Message, Does.Contain("Unsupported file type"));
         }
     }
 
@@ -397,7 +398,7 @@ public class ImageServiceTests : IDisposable
         var finalUrl = "http://5.6.7.8/image.jpg";
         var entityType = "movies";
         var entityId = "456";
-        var imageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 };
+        var imageData = CreateImage(SKEncodedImageFormat.Jpeg);
 
         var redirectResponse = new HttpResponseMessage(HttpStatusCode.Found);
         redirectResponse.Headers.Location = new Uri(finalUrl);
@@ -516,6 +517,15 @@ public class ImageServiceTests : IDisposable
     /// Helper method to create a FormFile from raw data for testing.
     /// Note: The returned FormFile manages the MemoryStream lifetime and will dispose it.
     /// </summary>
+    private static byte[] CreateImage(SKEncodedImageFormat format)
+    {
+        using var bitmap = new SKBitmap(3, 2);
+        bitmap.Erase(SKColors.CornflowerBlue);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(format, 75);
+        return data.ToArray();
+    }
+
     private static IFormFile CreateFormFile(string fileName, byte[] fileContent, string contentType)
     {
         var stream = new MemoryStream(fileContent);

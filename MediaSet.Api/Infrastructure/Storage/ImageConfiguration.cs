@@ -16,6 +16,11 @@ public class ImageConfiguration
     public int MaxFileSizeMb { get; set; } = 5;
 
     /// <summary>
+    /// Maximum decoded width times height, checked before allocating pixels. Default: 25 megapixels.
+    /// </summary>
+    public long MaxPixelCount { get; set; } = 25_000_000;
+
+    /// <summary>
     /// Comma-separated list of allowed image file extensions. Default: "jpg,jpeg,png".
     /// </summary>
     public string AllowedImageExtensions { get; set; } = "jpg,jpeg,png";
