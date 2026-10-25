@@ -10,7 +10,8 @@
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-main-commits.sh"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/agents/claude_git_guard.py\"",
+            "timeout": 10
           }
         ]
       },

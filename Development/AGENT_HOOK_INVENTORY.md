@@ -1,5 +1,10 @@
 # Existing agent hook inventory
 
+Update for #636: the tracked Claude `block-main-commits.sh` registration/script
+below is replaced by the [shared Git guard](AGENT_GIT_GUARD.md). Codex adds only
+that guard in tracked inline `.codex/config.toml`; its legacy untracked candidate
+is preserved. The tables below retain the #635 legacy inventory for migration.
+
 Inspected 2026-10-25 for [#635](https://github.com/paulmfischer/MediaSet/issues/635).
 This records source behavior and harmless direct-input fixtures; it is **not**
 evidence of live native execution. See [activation and migration](AGENT_SETUP.md).
