@@ -3,6 +3,8 @@
 The API and frontend run on the host. Podman runs only MongoDB. Application
 dependencies use the normal host NuGet cache and frontend node_modules directory;
 startup does not rebuild images, repair labels, clear caches, or rewrite configuration.
+For passive agent diagnosis and an explicit bootstrap with checkout-local package
+caches (including independent worktrees), see [Linux agent onboarding](AGENT_SETUP.md).
 
 ## Prerequisites
 
