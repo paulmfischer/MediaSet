@@ -675,7 +675,10 @@ Make these sub-tasks that get added to the parent issue.
 ### External Libraries/Packages
 
 **Backend (.NET 9.0)**
-- `SixLabors.ImageSharp` - for EXIF data stripping on image uploads (required)
+- `SkiaSharp` and `SkiaSharp.NativeAssets.Linux.NoDependencies` - JPEG/PNG detection, bounded decoding,
+  and metadata-free encoding for uploads and URL downloads (required). `MaxPixelCount` defaults to
+  25,000,000 and applies even when `StripExifData` is false. Detected bytes determine MIME type and extension;
+  declared MIME types and filenames do not restrict valid JPEG/PNG input.
 - Could add in future: `SkiaSharp` for image resizing
 - Could add in future: advanced image processing libraries
 

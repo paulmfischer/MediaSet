@@ -74,7 +74,10 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 // Configure image storage settings and services
-builder.Services.Configure<ImageConfiguration>(builder.Configuration.GetSection(nameof(ImageConfiguration)));
+builder.Services.AddOptions<ImageConfiguration>()
+    .Bind(builder.Configuration.GetSection(nameof(ImageConfiguration)))
+    .Validate(config => config.MaxPixelCount > 0, "MaxPixelCount must be positive")
+    .ValidateOnStart();
 var imageConfig = builder.Configuration.GetSection(nameof(ImageConfiguration)).Get<ImageConfiguration>();
 if (imageConfig != null)
 {

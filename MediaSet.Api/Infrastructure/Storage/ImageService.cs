@@ -1,7 +1,7 @@
 using System.Net;
+using System.Buffers.Binary;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp;
-using SixLaborsImage = SixLabors.ImageSharp.Image;
+using SkiaSharp;
 using CoverImage = MediaSet.Api.Shared.Models.Image;
 
 namespace MediaSet.Api.Infrastructure.Storage;
@@ -32,6 +32,10 @@ public class ImageService : IImageService
     {
         _storageProvider = storageProvider ?? throw new ArgumentNullException(nameof(storageProvider));
         _config = configOptions?.Value ?? throw new ArgumentNullException(nameof(configOptions));
+        if (_config.MaxPixelCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(configOptions), "MaxPixelCount must be positive");
+        }
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -63,62 +67,8 @@ public class ImageService : IImageService
                 throw new ArgumentException($"File size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
             }
 
-            // Validate MIME type by checking if we can derive an extension from allowed extensions
-            var allowedExtensions = _config.GetAllowedImageExtensions().ToList();
-
-            // Map MIME type to extension to validate
-            var extensionFromMimeType = file.ContentType switch
-            {
-                "image/jpeg" => new[] { "jpg", "jpeg" },
-                "image/png" => new[] { "png" },
-                _ => Array.Empty<string>()
-            };
-
-            if (extensionFromMimeType.Length == 0 || !extensionFromMimeType.Any(allowedExtensions.Contains))
-            {
-                _logger.LogWarning("Unsupported MIME type {MimeType} for {EntityType}/{EntityId}", file.ContentType, entityType, entityId);
-                throw new ArgumentException($"Unsupported file type. Allowed types: {string.Join(", ", allowedExtensions.Select(e => $".{e}"))}");
-            }
-
-            // Read and process file data
-            await using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream, cancellationToken);
-            var imageData = _config.StripExifData
-                ? await StripExifDataAsync(memoryStream.ToArray(), file.ContentType, cancellationToken)
-                : memoryStream.ToArray();
-
-            // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
-            var extension = Path.GetExtension(file.FileName).TrimStart('.');
-            if (string.IsNullOrEmpty(extension))
-            {
-                extension = file.ContentType switch
-                {
-                    "image/jpeg" => "jpg",
-                    "image/png" => "png",
-                    _ => "img"
-                };
-            }
-
-            var imageId = Guid.NewGuid().ToString();
-            var uniqueFileName = $"{entityId}-{imageId}.{extension}";
-            var relativePath = Path.Combine(entityType, uniqueFileName);
-
-            // Save to storage
-            await _storageProvider.SaveImageAsync(imageData, relativePath, cancellationToken);
-
-            _logger.LogInformation("Image saved successfully: {RelativePath} ({SizeBytes} bytes)", relativePath, imageData.Length);
-
-            // Return image metadata
-            return new CoverImage
-            {
-                Id = imageId,
-                FileName = uniqueFileName,
-                FilePath = relativePath,
-                ContentType = file.ContentType,
-                FileSize = imageData.Length,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            await using var inputStream = file.OpenReadStream();
+            return await ProcessAndSaveImageAsync(inputStream, entityType, entityId, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -164,67 +114,9 @@ public class ImageService : IImageService
             await SsrfGuard.ValidateUrlAsync(uri, cancellationToken);
 
             // Download image, following redirects manually so each hop is SSRF-validated
-            var (imageData, mimeType) = await DownloadImageDataAsync(imageUrl, cancellationToken);
-
-            // Validate content type against configured allowed extensions
-            var allowedMimeTypes = _config.GetAllowedMimeTypes().ToHashSet();
-            if (!allowedMimeTypes.Contains(mimeType))
-            {
-                _logger.LogWarning("Unsupported content type {ContentType} from URL {ImageUrl} for {EntityType}/{EntityId}",
-                    mimeType, imageUrl, entityType, entityId);
-                throw new ArgumentException($"Downloaded image has unsupported content type '{mimeType}'. Allowed types: {string.Join(", ", allowedMimeTypes)}.");
-            }
-
-            string fileExtension;
-            try
-            {
-                await using var formatStream = new MemoryStream(imageData);
-                var imageFormat = await SixLaborsImage.DetectFormatAsync(formatStream, cancellationToken);
-                fileExtension = imageFormat?.FileExtensions.FirstOrDefault()
-                    ?? _config.GetExtensionForMimeType(mimeType);
-            }
-            catch (UnknownImageFormatException)
-            {
-                fileExtension = _config.GetExtensionForMimeType(mimeType);
-            }
-
-            // Validate file size
-            var maxSizeBytes = _config.GetMaxFileSizeBytes();
-            if (imageData.Length > maxSizeBytes)
-            {
-                _logger.LogWarning("Downloaded image size {FileSize} exceeds maximum {MaxSize} for {ImageUrl}",
-                    imageData.Length, maxSizeBytes, imageUrl);
-                throw new ArgumentException($"Downloaded image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
-            }
-
-            // Strip EXIF data
-            if (_config.StripExifData)
-            {
-                imageData = await StripExifDataAsync(imageData, mimeType, cancellationToken);
-            }
-
-            // Generate relative path: {entityType}/{entityId}-{guid}.{ext}
-            var imageId = Guid.NewGuid().ToString();
-            var uniqueFileName = $"{entityId}-{imageId}.{fileExtension}";
-            var relativePath = Path.Combine(entityType, uniqueFileName);
-
-            // Save to storage
-            await _storageProvider.SaveImageAsync(imageData, relativePath, cancellationToken);
-
-            _logger.LogInformation("Image downloaded and saved successfully from {ImageUrl} to {RelativePath} ({SizeBytes} bytes)",
-                imageUrl, relativePath, imageData.Length);
-
-            // Return image metadata
-            return new CoverImage
-            {
-                Id = imageId,
-                FileName = uniqueFileName,
-                FilePath = relativePath,
-                ContentType = mimeType,
-                FileSize = imageData.Length,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var imageData = await DownloadImageDataAsync(imageUrl, cancellationToken);
+            await using var inputStream = new MemoryStream(imageData);
+            return await ProcessAndSaveImageAsync(inputStream, entityType, entityId, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -291,54 +183,124 @@ public class ImageService : IImageService
         }
     }
 
-    /// <summary>
-    /// Strip EXIF data and metadata from image bytes.
-    /// Returns image data with all EXIF and metadata information removed for privacy protection.
-    /// Saves in the same format as the original image.
-    /// </summary>
-    private async Task<byte[]> StripExifDataAsync(byte[] imageData, string mimeType, CancellationToken cancellationToken)
+    private async Task<CoverImage> ProcessAndSaveImageAsync(
+        Stream input, string entityType, string entityId, CancellationToken cancellationToken)
     {
+        await using var limitedStream = new SizeLimitedStream(input, _config.GetMaxFileSizeBytes());
+        await using var buffer = new MemoryStream();
         try
         {
-            await using var inputStream = new MemoryStream(imageData);
-            using var image = await SixLaborsImage.LoadAsync(inputStream, cancellationToken);
-
-            // Clear all metadata properties to remove EXIF data
-            image.Metadata.ExifProfile = null;
-            image.Metadata.IptcProfile = null;
-            image.Metadata.XmpProfile = null;
-
-            // Re-encode the image without metadata to remove all embedded data
-            // Save in the same format as the original
-            await using var outputStream = new MemoryStream();
-            switch (mimeType)
-            {
-                case "image/png":
-                    await image.SaveAsPngAsync(outputStream, cancellationToken);
-                    break;
-                case "image/jpeg":
-                    await image.SaveAsJpegAsync(outputStream, cancellationToken);
-                    break;
-                default:
-                    // Default to JPEG for unknown formats
-                    await image.SaveAsJpegAsync(outputStream, cancellationToken);
-                    break;
-            }
-            return outputStream.ToArray();
+            await limitedStream.CopyToAsync(buffer, cancellationToken);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
         {
-            _logger.LogError(ex, "Error stripping EXIF data from image");
-            throw new ArgumentException("Failed to process image and strip EXIF data", ex);
+            throw new ArgumentException(
+                $"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
         }
+
+        var imageData = buffer.ToArray();
+        cancellationToken.ThrowIfCancellationRequested();
+        using var encodedData = SKData.CreateCopy(imageData);
+        using var codec = SKCodec.Create(encodedData);
+        if (codec == null)
+        {
+            throw new ArgumentException("Unsupported file type or invalid image data. Only JPEG and PNG are supported.");
+        }
+
+        var mimeType = codec.EncodedFormat switch
+        {
+            SKEncodedImageFormat.Jpeg => "image/jpeg",
+            SKEncodedImageFormat.Png => "image/png",
+            _ => throw new ArgumentException("Unsupported file type. Only JPEG and PNG are supported.")
+        };
+        if (!_config.GetAllowedMimeTypes().Contains(mimeType))
+        {
+            throw new ArgumentException($"Unsupported file type. Allowed types: {string.Join(", ", _config.GetAllowedMimeTypes())}");
+        }
+
+        // Codecs may return successfully after decoding all scanlines even when the container is truncated.
+        if (!HasCompleteContainer(imageData, codec.EncodedFormat))
+        {
+            throw new ArgumentException("Image data is corrupt or incomplete");
+        }
+
+        var info = codec.Info;
+        if (info.Width <= 0 || info.Height <= 0 || (long)info.Width * info.Height > _config.MaxPixelCount)
+        {
+            throw new ArgumentException($"Image dimensions exceed maximum allowed pixel count of {_config.MaxPixelCount}");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        // Decode even when retaining metadata: successful header detection does not validate the pixel payload.
+        var bitmapInfo = new SKImageInfo(info.Width, info.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var bitmap = new SKBitmap(bitmapInfo);
+        if (bitmap.GetPixels() == IntPtr.Zero ||
+            codec.GetPixels(bitmapInfo, bitmap.GetPixels()) != SKCodecResult.Success)
+        {
+            throw new ArgumentException("Image data is corrupt or incomplete");
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (_config.StripExifData)
+        {
+            using var image = SKImage.FromBitmap(bitmap);
+            using var output = image.Encode(codec.EncodedFormat, 75);
+            if (output == null)
+            {
+                throw new ArgumentException("Failed to encode image");
+            }
+            imageData = output.ToArray();
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        var imageId = Guid.NewGuid().ToString();
+        var extension = _config.GetExtensionForMimeType(mimeType);
+        var fileName = $"{entityId}-{imageId}.{extension}";
+        var relativePath = Path.Combine(entityType, fileName);
+        await _storageProvider.SaveImageAsync(imageData, relativePath, cancellationToken);
+        _logger.LogInformation("Image saved successfully: {RelativePath} ({SizeBytes} bytes)", relativePath, imageData.Length);
+        return new CoverImage
+        {
+            Id = imageId,
+            FileName = fileName,
+            FilePath = relativePath,
+            ContentType = mimeType,
+            FileSize = imageData.Length,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+    }
+
+    private static bool HasCompleteContainer(ReadOnlySpan<byte> data, SKEncodedImageFormat format)
+    {
+        if (format == SKEncodedImageFormat.Jpeg)
+        {
+            return data.Length >= 2 && data[^2] == 0xff && data[^1] == 0xd9;
+        }
+
+        var offset = 8; // PNG signature, already identified by SKCodec.
+        while (data.Length - offset >= 12)
+        {
+            var length = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset, 4));
+            if (length > data.Length - offset - 12)
+            {
+                return false;
+            }
+            if (data.Slice(offset + 4, 4).SequenceEqual("IEND"u8))
+            {
+                return length == 0 && data.Slice(offset + 8, 4).SequenceEqual(new byte[] { 0xae, 0x42, 0x60, 0x82 });
+            }
+            offset += (int)length + 12;
+        }
+        return false;
     }
 
     /// <summary>
     /// Download image data from URL with size limit enforcement.
     /// Follows redirects manually, SSRF-validating each redirect target before following it.
-    /// Returns image bytes plus the Content-Type from the final response.
+    /// Returns image bytes; the processing pipeline determines their actual format.
     /// </summary>
-    private async Task<(byte[] Data, string ContentType)> DownloadImageDataAsync(string imageUrl, CancellationToken cancellationToken)
+    private async Task<byte[]> DownloadImageDataAsync(string imageUrl, CancellationToken cancellationToken)
     {
         const int maxRedirects = 10;
         var currentUrl = imageUrl;
@@ -385,8 +347,6 @@ public class ImageService : IImageService
 
                 response.EnsureSuccessStatusCode();
 
-                var contentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
-
                 // Check Content-Length header if available
                 if (response.Content.Headers.ContentLength.HasValue)
                 {
@@ -415,7 +375,7 @@ public class ImageService : IImageService
                     throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
                 }
 
-                return (memoryStream.ToArray(), contentType);
+                return memoryStream.ToArray();
             }
         }
         catch (HttpRequestException ex)
@@ -459,13 +419,16 @@ internal class SizeLimitedStream : Stream
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        if (_bytesRead >= _maxSize)
+        var toRead = (int)Math.Min(count, _maxSize - _bytesRead);
+        if (toRead == 0 && count > 0)
+        {
+            toRead = 1; // At the limit, distinguish EOF from one additional byte.
+        }
+        var bytesRead = _innerStream.Read(buffer, offset, toRead);
+        if (bytesRead > _maxSize - _bytesRead)
         {
             throw new InvalidOperationException("Maximum download size limit exceeded");
         }
-
-        var toRead = Math.Min(count, (int)(_maxSize - _bytesRead));
-        var bytesRead = _innerStream.Read(buffer, offset, toRead);
         _bytesRead += bytesRead;
 
         return bytesRead;
@@ -473,13 +436,16 @@ internal class SizeLimitedStream : Stream
 
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
-        if (_bytesRead >= _maxSize)
+        var toRead = (int)Math.Min(count, _maxSize - _bytesRead);
+        if (toRead == 0 && count > 0)
+        {
+            toRead = 1;
+        }
+        var bytesRead = await _innerStream.ReadAsync(buffer, offset, toRead, cancellationToken);
+        if (bytesRead > _maxSize - _bytesRead)
         {
             throw new InvalidOperationException("Maximum download size limit exceeded");
         }
-
-        var toRead = Math.Min(count, (int)(_maxSize - _bytesRead));
-        var bytesRead = await _innerStream.ReadAsync(buffer, offset, toRead, cancellationToken);
         _bytesRead += bytesRead;
 
         return bytesRead;
