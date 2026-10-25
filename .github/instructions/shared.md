@@ -17,7 +17,7 @@ MediaSet is a full-stack application for managing personal media collections.
 
 **Architecture:**
 - Vertical slice architecture with minimal API route groups (organized by feature in `/Features`)
-- Route groups: `/entities`, `/health`, `/stats`, `/metadata`, `/lookup`
+- Entity groups: `/Books`, `/Movies`, `/Games`, `/Musics`; additional groups include `/health`, `/stats`, `/metadata`, `/lookup`, `/config`, and `/images`
 - MongoDB for data persistence
 - Strategy pattern for metadata lookup (books, movies, games, music)
 - In-memory caching with MemoryCache
@@ -28,9 +28,12 @@ MediaSet is a full-stack application for managing personal media collections.
 
 **⚠️ NEVER commit directly to `main` ⚠️**
 
-- Always create a feature branch: `git checkout -b feature/description` or `fix/description`
+- Branch from latest `main`, preserving unrelated changes. Use a change-type prefix
+  such as `feat/`, `fix/`, `docs/`, `chore/`, or `refactor/`; never `codex/`.
 - All changes must go through feature branches
 - Pull requests are required for merging to `main`
+- Do not rewrite published history without explicit authorization; use
+  `--force-with-lease` for an authorized rewrite.
 
 ## Commit Conventions
 
@@ -44,26 +47,55 @@ MediaSet is a full-stack application for managing personal media collections.
 - Reference issues: use `closes #N` for final commits, `refs #N` for intermediate commits
 - Add additional context in the body if needed
 - Add `[AI-assisted]` trailer
+- Do not include a `Codex-Session:` trailer in commits or PR descriptions.
 
 ## Commit Signing
 
 - **NEVER bypass GPG/SSH signing if signing is configured**
 - If GPG signing fails, resolve the signing issue rather than using `--no-gpg-sign` or `--no-verify`
 - Commits must be properly signed to maintain repository integrity and security
+- Preserve the user's configured Git name, email, and signing key for both author
+  and committer. API/bot identities do not replace the user's commit identity.
 
 ## AI Agent Workflow
 
 When working on tasks that require code changes:
 
-1. **Sync with main**: Switch to `main` branch and pull the latest changes
-2. **Propose changes first**: Show the user the planned changes before implementation
-3. **Wait for approval**: Confirm the user approves the approach
-4. **Create and commit**: Only create commits once the user confirms the changes are correct, waiting for passphrase input if needed
-5. **Push to feature branch**: Ask user before pushing to the feature branch
-6. **Create pull request**: After pushing, offer to create a PR using `gh pr create` command
-   - Use conventional commit format for PR title: `type(scope): description`
-   - Include relevant description summarizing changes and motivation
-   - Reference related issues with `closes #N` or `refs #N`
+An explicitly assigned implementation task authorizes inspection, branching,
+editing, formatting, and testing without another design-approval prompt. Ask
+about genuinely unresolved scope, and preserve unrelated user changes.
+
+By default, present the verified changes for approval before committing and
+pushing. Wait for signing/passphrase input when needed. Explicit authorization
+for a broader workflow (including an end-to-end ticket workflow) takes precedence;
+do not ask again for authorization already given. Conversational approval is a
+workflow rule, not a mechanical hook gate on ordinary feature-branch operations.
+
+PR titles use `type(scope): description`; describe the resulting behavior and
+validation and reference issues with `closes #N` or `refs #N` as appropriate.
+
+## Agent onboarding and production safety
+
+Read [Linux agent onboarding](../../Development/AGENT_SETUP.md) for passive diagnosis,
+explicit dependency bootstrap, native hook activation, and current migration
+limits. Personal integrations, context-mode, and personal skills are optional.
+Project startup must not install dependencies, format, test, or start services.
+
+Use only infrastructure within the app's authorized scope. Shared production
+containers, volumes, images, compose files, proxies, and host configuration need
+explicit authorization before changes. Do not restart/update existing services,
+perform broad cleanup, expose new public interfaces, or escalate host privileges
+without explicit authorization. Keep private hosts, SSH identities, credentials,
+personal services, and account-specific details in personal instructions, outside
+public configuration. Development runtime provisioning follows the existing
+development guide; agent setup does not provision it.
+
+## Project reference
+
+Read [project architecture](../../Development/ARCHITECTURE.md) for the directory
+map, route/data patterns, optional integrations, and image storage. Before editing
+C# read [backend instructions](backend.instructions.md); before editing TypeScript
+or TSX read [frontend instructions](frontend.instructions.md).
 
 ## Local Configuration (User Secrets)
 

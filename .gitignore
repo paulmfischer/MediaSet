@@ -342,3 +342,6 @@ ASALocalRun/
 
 # Local development data (MongoDB bind mount)
 data/
+
+# Checkout-local agent dependencies, caches, and future verification logs
+.agent-local/
