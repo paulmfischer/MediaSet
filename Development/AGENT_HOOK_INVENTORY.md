@@ -1,5 +1,13 @@
 # Existing agent hook inventory
 
+Update for #638: tracked Claude per-edit ESLint/Prettier registrations and scripts
+are removed; use the [explicit formatting command](AGENT_FORMATTING.md). Tracked
+Codex configuration has no formatting hooks. Only the formatting registrations
+are removed from this checkout's untracked Codex candidate; its other settings
+and all scripts stay local and untracked. Personal definitions are unchanged.
+The remaining inventory below records historical #635 behavior; references to
+untouched candidate settings describe that earlier inspection.
+
 Update for #636: the tracked Claude `block-main-commits.sh` registration/script
 below is replaced by the [shared Git guard](AGENT_GIT_GUARD.md). Update for #637:
 the tracked Claude `protect-files.sh` registration/script is replaced by the

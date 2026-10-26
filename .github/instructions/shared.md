@@ -122,6 +122,12 @@ User secrets override `appsettings.json` and `appsettings.Development.json` at r
 
 ## Development Commands
 
+For deliberate scoped frontend ESLint/Prettier fixes, run
+`python3 -B scripts/agents/format.py`; see
+[formatting modes and migration](../../Development/AGENT_FORMATTING.md).
+Review the resulting diff and preserve unrelated user edits before staging.
+Use explicit file selection when the default change set includes unrelated work.
+
 Complete first setup in [Development/DEVELOPMENT.md](../../Development/DEVELOPMENT.md)
 (database credentials via .env and .NET User Secrets; restore/npm ci).
 

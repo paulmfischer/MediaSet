@@ -16,6 +16,8 @@ bash scripts/agents/setup.sh diagnose
 bash scripts/agents/setup.sh bootstrap
 # Behavioral checks for onboarding (no application runtimes/services required):
 python3 -B -m unittest discover -s scripts/agents/tests -v
+# Deliberate frontend fixes (review the resulting diff):
+python3 -B scripts/agents/format.py
 ```
 
 From any subdirectory, use an absolute script path or:
@@ -130,17 +132,20 @@ never overwrite personal configuration to resolve duplicates.
 
 ## Migration boundaries
 
-The tracked Claude Git and environment registrations are replaced; other definitions are preserved.
+The tracked Claude Git and environment registrations are replaced; per-edit
+formatting registrations/scripts are removed by #638. Other definitions are preserved.
 Codex has tracked Git and environment guards in inline `.codex/config.toml` registrations. The local untracked Codex
-candidate is inspected and preserved, **not** installed, staged, trusted, or
+candidate has only its two formatting registrations removed locally by #638;
+other settings and its scripts are preserved. It is **not** installed, staged, trusted, or
 converted into public configuration. Fresh clones do not contain it. Diagnostics
 warn when that candidate is present but untracked. Personal settings are read only
 at known locations, never merged or edited. Backup/review any personal definitions
 yourself before changing them. Keep any backup outside discoverable hook paths.
 
 The shared main/signing guard is implemented in #636 and environment guard in #637.
-The next slices implement explicit formatting (#638), completion verification/logs (#639), CI (#640), and
-final migration/live smoke tests (#641). Until those land, legacy per-edit fixes,
-test rewriting, and stop-time tests may still run when trusted. Their removal is
-planned, not claimed here. Startup itself remains passive: no SessionStart or
+Explicit scoped formatting is implemented in #638; see
+[usage, scope, and per-edit hook migration](AGENT_FORMATTING.md). The next slices
+implement completion verification/logs (#639), CI (#640), and final migration/live
+smoke tests (#641). Legacy test rewriting and stop-time tests may still run when
+trusted until #639. Startup itself remains passive: no SessionStart or
 automatic bootstrap registrations are installed. There are no Git hooks.
