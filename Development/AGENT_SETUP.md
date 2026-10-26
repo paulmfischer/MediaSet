@@ -87,8 +87,10 @@ again. Missing `jq` only affects legacy hooks; inspect the inventory below.
 Evidence recorded 2026-10-25: installed `codex-cli 0.163.0`, Claude Code `2.1.309`.
 Version probes and direct script fixtures do not demonstrate live activation.
 No live guard/edit smoke test was run for this slice: **unverified** in both agents.
-The Git guard is now registered for both runtimes by #636; see
+The Git guard is registered for both runtimes by #636; see
 [Git guard activation, migration, limits and smoke procedure](AGENT_GIT_GUARD.md).
+The environment edit guard is registered by #637; see
+[classification, explicit exceptions and native smoke procedure](AGENT_ENV_GUARD.md).
 Other legacy definitions remain pending later tickets; these are not the completed
 #630 safeguards. See [hook inventory](AGENT_HOOK_INVENTORY.md).
 
@@ -128,16 +130,16 @@ never overwrite personal configuration to resolve duplicates.
 
 ## Migration boundaries
 
-The tracked Claude Git registration is replaced; other definitions are preserved.
-Codex has a tracked Git-only inline `.codex/config.toml` registration. The local untracked Codex
+The tracked Claude Git and environment registrations are replaced; other definitions are preserved.
+Codex has tracked Git and environment guards in inline `.codex/config.toml` registrations. The local untracked Codex
 candidate is inspected and preserved, **not** installed, staged, trusted, or
 converted into public configuration. Fresh clones do not contain it. Diagnostics
 warn when that candidate is present but untracked. Personal settings are read only
 at known locations, never merged or edited. Backup/review any personal definitions
 yourself before changing them. Keep any backup outside discoverable hook paths.
 
-The shared main/signing guard is implemented in #636. The next slices implement environment guards (#637),
-explicit formatting (#638), completion verification/logs (#639), CI (#640), and
+The shared main/signing guard is implemented in #636 and environment guard in #637.
+The next slices implement explicit formatting (#638), completion verification/logs (#639), CI (#640), and
 final migration/live smoke tests (#641). Until those land, legacy per-edit fixes,
 test rewriting, and stop-time tests may still run when trusted. Their removal is
 planned, not claimed here. Startup itself remains passive: no SessionStart or

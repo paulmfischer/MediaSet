@@ -197,6 +197,20 @@ class SetupBehaviorTests(unittest.TestCase):
         self.assertIn("active/trusted unverified", result.stdout)
         self.assertNotIn("DO_NOT_PRINT", result.stdout + result.stderr)
 
+    def test_legacy_and_shared_environment_guards_warn_without_changing_settings(self):
+        for runtime, directory in (("Claude", ".claude"), ("Codex", ".codex")):
+            path = self.root / directory / ("settings.json" if runtime == "Claude" else "hooks.json")
+            data = {"hooks": {"PreToolUse": [{"matcher": "Write|Edit", "hooks": [
+                {"type": "command", "command": "protect-files.sh DO_NOT_PRINT"},
+                {"type": "command", "command": "python3 env_guard.py DO_NOT_PRINT"}]}]}}
+            self.settings(path, data)
+            before = path.read_bytes()
+            result = self.run_setup("diagnose")
+            self.assertIn(runtime + " old/new environment guards compete", result.stdout)
+            self.assertIn("active/trusted unverified", result.stdout)
+            self.assertNotIn("DO_NOT_PRINT", result.stdout + result.stderr)
+            self.assertEqual(before, path.read_bytes())
+
     def test_invalid_settings_never_echo_contents(self):
         path = self.root / ".claude/settings.local.json"
         path.parent.mkdir()
