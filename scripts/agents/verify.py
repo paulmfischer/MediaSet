@@ -3,6 +3,7 @@
 
 import argparse
 from datetime import datetime, timezone
+from functools import partial
 import json
 import os
 from pathlib import Path
@@ -126,7 +127,7 @@ def frontend_prerequisites(tool):
         raise RuntimeError(f"Refusing project tool linked outside this checkout's node_modules: {tool}")
 
 
-def run_check(run, name, commands, cwd, enabled, prerequisite=None):
+def run_check(run, name, commands, cwd, enabled, prerequisite=None, show_output=False):
     log = run / f"check-{name}.log"
     code = 0
     status = "skipped" if not enabled else "passed"
@@ -151,6 +152,10 @@ def run_check(run, name, commands, cwd, enabled, prerequisite=None):
             if code:
                 status = "failed"
     print(f"{status.upper()}: {name}" + (f" (exit {code})" if code else "") + f" — {log}", flush=True)
+    if show_output and enabled:
+        with log.open() as stream:
+            shutil.copyfileobj(stream, sys.stdout)
+        sys.stdout.flush()
     return {"check": name, "status": status, "exit_code": code, "log": str(log)}
 
 
@@ -166,6 +171,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", help="local comparison ref (default origin/main, then main; never fetches)")
     parser.add_argument("--full", action="store_true", help="run all completion checks")
+    parser.add_argument("--show-output", action="store_true", help="also print complete per-check logs (for CI diagnostics)")
     args = parser.parse_args()
     try:
         # Resolve this script's checkout, not the caller's checkout or common Git dir.
@@ -189,13 +195,14 @@ def main():
         whitespace = [["git", "diff", "--check", "--cached"], ["git", "diff", "--check"]]
         if ancestor:
             whitespace.insert(0, ["git", "diff", "--check", ancestor, "HEAD", "--"])
-        results = [run_check(run, "whitespace", whitespace, ROOT, True, untracked_documentation_check)]
-        results.append(run_check(run, "agent-contracts", [[sys.executable, "-B", "-m", "unittest", "discover", "-s", "scripts/agents/tests", "-v"]], ROOT, "agents" in selected))
-        results.append(run_check(run, "backend-build", [["dotnet", "build", "MediaSet.sln", "--no-restore"]], ROOT, "backend" in selected, require_dotnet))
-        results.append(run_check(run, "backend-tests", [["dotnet", "test", "MediaSet.Api.Tests/MediaSet.Api.Tests.csproj", "--no-restore"]], ROOT, "backend" in selected, require_dotnet))
+        check = partial(run_check, run, show_output=args.show_output)
+        results = [check("whitespace", whitespace, ROOT, True, untracked_documentation_check)]
+        results.append(check("agent-contracts", [[sys.executable, "-B", "-m", "unittest", "discover", "-s", "scripts/agents/tests", "-v"]], ROOT, "agents" in selected))
+        results.append(check("backend-build", [["dotnet", "build", "MediaSet.sln", "--no-restore"]], ROOT, "backend" in selected, require_dotnet))
+        results.append(check("backend-tests", [["dotnet", "test", "MediaSet.Api.Tests/MediaSet.Api.Tests.csproj", "--no-restore"]], ROOT, "backend" in selected, require_dotnet))
         for name, script, tool in (("lint", "lint", "eslint"), ("format", "lint:format", "prettier"),
                                    ("types", "typecheck", "tsc"), ("build", "build", "remix"), ("tests", "test", "vitest")):
-            results.append(run_check(run, "frontend-" + name, [["npm", "run", script]], ROOT / "MediaSet.Remix",
+            results.append(check("frontend-" + name, [["npm", "run", script]], ROOT / "MediaSet.Remix",
                                      "frontend" in selected, lambda tool=tool: frontend_prerequisites(tool)))
         code = next((result["exit_code"] for result in results if result["exit_code"]), 0)
         (run / "summary.json").write_text(json.dumps({"base": ancestor, "full": full, "checks": results, "exit_code": code}, indent=2) + "\n")

@@ -16,6 +16,42 @@ reporting implementation complete. Discussion-only turns require no verification
 This command is never registered as a startup, tool-rewrite, or stop hook.
 Ordinary `dotnet test` and `npm test` commands remain available and unchanged.
 
+## CI and local equivalence
+
+The `PR Checks / Full Verification` job runs on every pull request covered by
+the workflow's existing target branches. It replaces the separate path-filtered
+API and UI jobs, so documentation and shared tooling changes receive the same
+full gate. Other workflows are unchanged.
+
+The runner installs Python 3.11, the .NET SDK selected by `global.json`, and
+Node 20 using setup actions, then runs these shared commands from the root:
+
+```bash
+bash scripts/agents/setup.sh bootstrap
+python3 -B scripts/agents/verify.py --full --show-output
+```
+
+Bootstrap explicitly restores checkout-local NuGet/npm dependencies and caches;
+CI caches only `.agent-local/nuget` and `.agent-local/npm-cache`, keyed by runtime
+and dependency manifests, rather than verification logs or build outputs.
+diagnosis and verification never install global tools. No local secrets,
+database, application services, branch upstream or fetched comparison ref is
+required. Full mode selects all groups even in a shallow detached PR checkout.
+The same command works locally after explicit dependency preparation.
+
+Both environments run whitespace and agent contract checks, backend build and
+tests, and frontend lint, formatting, explicit `npm run typecheck`, build and
+tests. `--show-output` additionally prints complete enabled-check logs to the
+console, including successful output and failures, while preserving per-check
+statuses and the first nonzero exit code. Local verification keeps its concise
+default output. CI does not upload `.agent-local` logs or summaries as artifacts.
+Review diagnostics before using this opt-in output in a shared local transcript.
+
+Contract fixtures validate the workflow command in a shallow detached checkout
+with deterministic tools, including a failing command and subsequent checks.
+They do not prove hosted runner integration: record a successful actual PR check
+run and its URL before treating CI integration as verified.
+
 ## Selection and commands
 
 Default selection uses the merge base of `HEAD` and the local `origin/main` ref

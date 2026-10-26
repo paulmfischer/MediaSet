@@ -149,7 +149,7 @@ The shared main/signing guard is implemented in #636 and environment guard in #6
 Explicit scoped formatting is implemented in #638; see
 [usage, scope, and per-edit hook migration](AGENT_FORMATTING.md).
 [Explicit completion verification and local logs](AGENT_VERIFICATION.md) replace
-test rewriting and stop-time testing in #639. CI alignment (#640) and final
-migration/live smoke tests (#641) remain. Inspect effective personal sources for
+test rewriting and stop-time testing in #639. The [full shared CI gate](AGENT_VERIFICATION.md#ci-and-local-equivalence)
+implements #640; final migration/live smoke tests (#641) remain. Inspect effective personal sources for
 obsolete registrations. Startup itself remains passive: no SessionStart or
 automatic bootstrap registrations are installed. There are no Git hooks.
