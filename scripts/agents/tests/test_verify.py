@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -169,6 +170,37 @@ class VerificationTests(unittest.TestCase):
         self.write("Directory.Build.props", "<Project />\n")
         self.assertEqual(0, self.verify().returncode)
         self.assertEqual(9, len(self.passed()))
+
+    def test_ci_command_runs_full_suite_in_shallow_detached_checkout(self):
+        # Execute the workflow's real command rather than a separately copied CLI.
+        workflow = (SOURCE.parents[2] / ".github/workflows/pr-checks.yml").read_text()
+        commands = [line.strip().removeprefix("run: ") for line in workflow.splitlines()
+                    if line.strip().startswith("run: ")]
+        self.assertEqual(["bash scripts/agents/setup.sh bootstrap",
+                          "python3 -B scripts/agents/verify.py --full --show-output"], commands)
+        clone = Path(self.temp.name) / "shallow clone"
+        self.git("clone", "--depth=1", "--no-local", "--branch", "feature", self.root.as_uri(), str(clone))
+        subprocess.check_call(["git", "-C", str(clone), "checkout", "--detach"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.tools(clone)
+        self.assertEqual(b"true\n", subprocess.check_output(["git", "-C", str(clone), "rev-parse", "--is-shallow-repository"]))
+        command = shlex.split(commands[1])
+        result = subprocess.run([sys.executable, *command[1:]], cwd=clone,
+                                env=dict(self.env, VERIFY_FAIL_TOOL="dotnet", VERIFY_TEST_EXIT="7"),
+                                capture_output=True, text=True)
+        self.assertEqual(7, result.returncode, result.stdout + result.stderr)
+        summary = self.summary(clone)
+        self.assertIsNone(summary["base"])
+        self.assertTrue(summary["full"])
+        self.assertEqual(9, len(summary["checks"]))
+        self.assertFalse(any(check["status"] == "skipped" for check in summary["checks"]))
+        self.assertEqual([["run", script] for script in ("lint", "lint:format", "typecheck", "build", "test")],
+                         [call[1] for call in self.calls() if call[0] == "npm"])
+        self.assertIn("PASSED: frontend-tests", result.stdout)
+        self.assertIn("FAILED: backend-build (exit 7)", result.stdout)
+        self.assertIn("full diagnostic on stderr", result.stdout)
+        for check in summary["checks"]:
+            self.assertIn(Path(check["log"]).read_text(), result.stdout)
 
     def test_docs_no_changes_and_ignored_files_are_lightweight(self):
         for name in (None, "Development/new.md", "ignored/private.cs"):
