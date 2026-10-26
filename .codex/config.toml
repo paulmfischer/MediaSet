@@ -1,4 +1,4 @@
-# Shared guards. Existing local hooks.json is intentionally preserved.
+# Shared guards. Review all effective sources in /hooks after native activation.
 [[hooks.PreToolUse]]
 matcher = "Bash"
 

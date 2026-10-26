@@ -28,22 +28,14 @@ push/fetch target checks cannot inspect a different configuration from Git.
 
 ## Registration and migration
 
-Tracked `.claude/settings.json` replaces only the old Git registration. Other
-legacy hooks remain for #637–#639. The obsolete tracked Claude Git script is
-removed. Claude's quoted command uses `CLAUDE_PROJECT_DIR` to locate the adapter;
-the adapter uses event `cwd` to resolve the command's repository, including a
-worktree entered after session startup.
-
-Tracked `.codex/config.toml` registers **only** the Git guard inline. A fresh clone
-needs no copied candidate hooks or personal settings. The existing local untracked
-`.codex/hooks.json` and scripts are preserved byte for byte and must not be staged.
-Codex merges inline hooks with hooks.json. If that local candidate is active, its
-obsolete `block-main-commits.sh` registration still rejects feature force pushes.
-Before activating the new definition, review `/hooks`, back up personal/candidate
-definitions outside discoverable hook paths, and manually remove **only** the
-candidate's obsolete Git registration. Keep unrelated hooks/settings. Diagnosis
-warns about recognizable competing old/new Git registrations; it cannot determine
-effective trust or all semantic duplicates. No migration or trust is automatic.
+Tracked `.claude/settings.json` and `.codex/config.toml` each register the shared
+Git and native environment guards. Legacy project guards, per-edit rewrites and
+Stop tests have been removed. A fresh clone needs no copied candidate or personal
+settings. Codex merges inline hooks with hooks.json; multiple sources accumulate.
+See [migration boundaries](AGENT_SETUP.md#migration-boundaries) for deliberate
+archival of the local candidate and preservation of unrelated personal entries.
+Diagnosis warns about recognizable obsolete/competing registrations; it cannot
+determine effective trust or all semantic duplicates. Trust is never automatic.
 
 Review the new scripts/registration in the intended checkout, trust that project
 layer, inspect `/hooks`, and reopen the session to check the effective definition.
