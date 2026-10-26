@@ -133,6 +133,33 @@ def main_ref(ref):
     return ref in {"main", "refs/heads/main"}
 
 
+def config_read_only(arguments, positionals):
+    # options_for attaches option operands with '='. Inspect only options before
+    # '--', so a value named get/list/--get cannot disguise a signing mutation.
+    if positionals and positionals[0] in {"set", "unset", "rename-section", "remove-section", "edit"}:
+        return False
+    options = set()
+    for argument in arguments:
+        if argument == "--":
+            break
+        if argument.startswith("--"):
+            options.add(argument.partition("=")[0])
+    modifiers = {"--show-origin", "--show-scope", "--null", "--name-only",
+                 "--type", "--bool", "--int", "--bool-or-int", "--path",
+                 "--expiry-date", "--default", "--global", "--system",
+                 "--local", "--worktree", "--file", "--blob", "--includes",
+                 "--no-includes", "--fixed-value"}
+    actions = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--list"}
+    if not options <= modifiers | actions | {"--all", "--value"}:
+        return False
+    if options & actions or positionals and positionals[0] in {"get", "list"}:
+        return True
+    # Legacy `git config [modifiers] <key>` reads only when no value or
+    # explicit action is supplied. Modern set/unset and section verbs have
+    # additional positional operands and cannot reach this case.
+    return len(positionals) == 1 and options <= modifiers
+
+
 def split_commands(command):
     # Literal, quoted heredocs are data, not additional commands. Their body may
     # contain text such as `git reset main`. Unquoted heredocs expand shell code.
@@ -362,8 +389,8 @@ def evaluate(command, cwd):
                 if op == "config":
                     # Config section operations and include files can indirectly
                     # remove/replace signing without naming a signing key.
-                    read_only = any(a in {"--get", "--get-all", "--get-regexp", "--list", "--get-urlmatch", "get", "list"} for a in rest)
-                    indirect = any(a.split("=", 1)[0] in {"--remove-section", "--rename-section", "remove-section", "rename-section"} or
+                    read_only = config_read_only(rest, positionals)
+                    indirect = positionals[:1] == ["edit"] or any(a.split("=", 1)[0] in {"--remove-section", "--rename-section", "remove-section", "rename-section"} or
                                    a.lower().startswith(("include.", "includeif.")) for a in rest)
                     if not read_only and (indirect or any(a.lower().split("=", 1)[0] in SIGNING for a in rest)):
                         return "Do not remove or indirectly override configured signing; preserve signing sections and includes."

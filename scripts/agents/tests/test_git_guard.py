@@ -104,6 +104,58 @@ class GitGuardTests(unittest.TestCase):
                         "git commit -m 'quoted \"message\"' && git status"]:
             self.check_command(command, False)
 
+    def test_read_only_signing_config_queries(self):
+        for command in ["git config commit.gpgsign", "git config user.signingkey",
+                        "git config gpg.format", "git config gpg.program",
+                        "git config gpg.openpgp.program", "git config gpg.ssh.program",
+                        "git config gpg.x509.program", "git config --local commit.gpgsign",
+                        "git config --global user.signingkey", "git config --system user.signingkey",
+                        "git config --worktree user.signingkey", "git config --bool commit.gpgsign",
+                        "git config --type bool commit.gpgsign", "git config --type=bool commit.gpgsign",
+                        "git config --default get user.signingkey",
+                        "git config --default list user.signingkey",
+                        "git config --file .git/config user.signingkey",
+                        "git config --file=.git/config user.signingkey",
+                        "git config -f .git/config user.signingkey",
+                        "git config -f.git/config user.signingkey",
+                        "git config --blob HEAD:.gitconfig user.signingkey",
+                        "git config --show-origin --show-scope user.signingkey",
+                        "git config --no-includes --null user.signingkey",
+                        "git config -- user.signingkey", "git config include.path",
+                        "git config --get user.signingkey", "git config --get-all user.signingkey",
+                        "git config --get-regexp user.signingkey", "git config --list",
+                        "git config get user.signingkey", "git config get --all user.signingkey",
+                        "git config list", "git config -l"]:
+            self.check_command(command, False)
+
+    def test_signing_config_mutations_cannot_look_like_queries(self):
+        for command in ["git config commit.gpgsign false", "git config user.signingkey other",
+                        "git config user.signingkey ''", "git config user.signingkey get",
+                        "git config user.signingkey list", "git config user.signingkey -- --get",
+                        "git config --default get user.signingkey other",
+                        "git config --file get user.signingkey other",
+                        "git config --type path user.signingkey other",
+                        "git config --unset commit.gpgsign", "git config --unset-all user.signingkey",
+                        "git config --unset user.signingkey get",
+                        "git config --replace-all user.signingkey get",
+                        "git config --add user.signingkey list",
+                        "git config --remove-section commit", "git config --rename-section user get",
+                        "git config set user.signingkey get", "git config set --append user.signingkey list",
+                        "git config unset user.signingkey", "git config unset --all user.signingkey get",
+                        "git config rename-section user list", "git config remove-section user",
+                        "git config --edit", "git config -e", "git config edit",
+                        "git config --unset --get user.signingkey",
+                        "git config get --unset user.signingkey",
+                        "git config --replace-all --get user.signingkey other",
+                        "git config --get-all --add user.signingkey other",
+                        "git config --rename-section --list user other",
+                        "git config --unset user.signingkey -- --get",
+                        "git config --append user.signingkey", "git config --unknown user.signingkey",
+                        "git config --type", "git config --file",
+                        "git config --unse user.signingkey",
+                        "git config include.path get", "git config --rename-section commit list"]:
+            self.check_command(command, True)
+
     def test_compound_multiline_and_directory_resolution(self):
         self.git("switch", "main")
         for command in ["git status\ngit commit -m x", "git status; git commit -m x",
