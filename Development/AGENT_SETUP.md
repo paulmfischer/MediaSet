@@ -90,16 +90,39 @@ again. Missing `jq` only affects legacy hooks; inspect the inventory below.
 
 Evidence recorded 2026-10-25: installed `codex-cli 0.163.0`, Claude Code `2.1.309`.
 Version probes and direct script fixtures do not demonstrate live activation.
-No live guard/edit smoke test was run for this slice: **unverified** in both agents.
+Native tests on 2026-10-26 observed both agents enforcing main/signing and
+environment guards. See the [detailed evidence and limits](AGENT_ACTIVATION_VALIDATION.md);
+version probes alone still do not establish activation.
 The Git guard is registered for both runtimes by #636; see
 [Git guard activation, migration, limits and smoke procedure](AGENT_GIT_GUARD.md).
 The environment edit guard is registered by #637; see
 [classification, explicit exceptions and native smoke procedure](AGENT_ENV_GUARD.md).
-Other legacy definitions remain pending later tickets; these are not the completed
-#630 safeguards. See [hook inventory](AGENT_HOOK_INVENTORY.md).
+Tracked project definitions now contain only the two shared guards. The local
+legacy candidate has been archived outside discovery paths; see
+[hook inventory](AGENT_HOOK_INVENTORY.md) and the
+[validation record and native discovery limits](AGENT_ACTIVATION_VALIDATION.md).
+The ledger records observed native activation for the tested sessions. File-based
+diagnosis continues to label current effective activation unverified because it
+cannot inspect native trust or prove enforcement in a new session.
 
-Claude reads project `.claude/settings.json`; personal and local settings can add
-hooks. Review definitions/scripts and workspace trust before use, then inspect
+Claude reads shared `.claude/settings.json` from its primary working directory,
+which must be the checkout root. For explicit launch from any subdirectory or
+other working directory, use the script belonging to the intended checkout:
+
+```bash
+bash "$(git rev-parse --show-toplevel)/scripts/agents/claude.sh"
+# From another checkout, use the intended checkout's absolute launcher path.
+```
+
+The launcher changes only the new process's working directory to its own checkout
+root and forwards CLI arguments unchanged. It never edits settings, installs
+anything, changes native permissions or accepts trust. The caller's shell directory
+is unchanged. Review workspace trust and `/hooks` normally. Direct `claude` launch
+from a subdirectory was observed to omit the shared project guards in 2.1.310;
+use the launcher or start at the root. Native Bash `cd` after root launch retains
+the loaded hooks and the adapters use event `cwd`; native `/cd` changes project
+settings discovery, so re-inspect `/hooks` after using it. Personal/local settings
+can add hooks. Source: [official settings discovery](https://code.claude.com/docs/en/settings#where-claude-code-keeps-the-local-file-in-a-git-repository). Review definitions/scripts and workspace trust before use, then inspect
 `/hooks` in the intended checkout. Review changes there after updates; reopen the
 session when checking effective configuration. For one-run opt-out, launch
 `claude --settings '{"disableAllHooks":true}'`; remove that override to reactivate.
@@ -119,37 +142,55 @@ override to reactivate, then check `/hooks`. Managed settings may restrict this.
 No bypass-trust flag is part of setup. JSON stdin uses `tool_name`, `cwd`, and
 `tool_input`; Bash and native `apply_patch` use `tool_input.command`. Native patches
 also match Edit/Write aliases. Denial uses supported PreToolUse JSON or exit 2.
-Multiple matching sources accumulate. The local candidate uses these payloads but
-is not live-tested. Source: [official OpenAI hooks documentation](https://learn.chatgpt.com/docs/hooks).
+Multiple matching sources accumulate. In the tested Codex 0.164.0 linked
+worktree, native `/hooks` reported the primary checkout's `.codex/config.toml`
+as its project source, even though the worktree has its own tracked file. Inspect
+the effective source in every worktree; a change to that shared source can require
+renewed native review in worktree sessions too. This native discovery behavior
+does not share the scripts' dependency, grant or verification-log directories. Legacy candidate migration does not prove native execution. Source: [official OpenAI hooks documentation](https://learn.chatgpt.com/docs/hooks).
 
 Diagnosis labels file registrations **configured**, an explicit file-level off
 switch **disabled in this file**, and effective activation/trust **unverified**.
 It does not parse undocumented trust databases or infer trust from file presence.
 Native `/hooks` and a live smoke test are the evidence for active/trusted status.
-Only exact duplicate runtime/event/matcher/command tuples in inspected JSON/TOML
-files are detected. Semantic duplicates, plugins, managed policy, session hooks,
+Exact duplicate runtime/event/matcher/command tuples and recognizable obsolete
+project-style script registrations in inspected JSON/TOML files are detected.
+Obsolete-registration warnings also appear when no replacement is configured;
+review ownership before editing a personal source. Semantic duplicates, plugins, managed policy, session hooks,
 and other configuration roots require native inspection. Configured sources may
 be inactive due to trust, precedence, or policy. Inspect all effective sources;
 never overwrite personal configuration to resolve duplicates.
 
 ## Migration boundaries
 
-The tracked Claude Git and environment registrations are replaced; per-edit
-formatting registrations/scripts are removed by #638. Other definitions are preserved.
-Codex has tracked Git and environment guards in inline `.codex/config.toml` registrations. The local untracked Codex
-candidate has its two formatting registrations removed locally by #638 and its
-test-output rewrite and stop-time verification registrations removed by #639;
-other settings and its scripts are preserved. It is **not** installed, staged, trusted, or
-converted into public configuration. Fresh clones do not contain it. Diagnostics
-warn when that candidate is present but untracked. Personal settings are read only
-at known locations, never merged or edited. Backup/review any personal definitions
-yourself before changing them. Keep any backup outside discoverable hook paths.
+The tracked Claude and Codex project definitions each contain two PreToolUse
+guards: Git and native environment edits. Per-edit formatting, command rewriting
+and Stop tests are removed. Nothing installs SessionStart/bootstrap or Git hooks.
+The inventory records the originals and their replacements. On this checkout,
+#641 archived the remaining eight inspected untracked candidate files under
+ignored `.agent-local/migration/641-legacy-codex/`, verified SHA-256 checksums,
+then removed only those obsolete candidate files from discoverable `.codex/`
+paths. The archive includes a manifest and is never loaded by either runtime.
+Personal settings were not edited. Fresh clones need no candidate migration.
+
+For an older checkout, run diagnosis and inspect native `/hooks` first. Back up
+the candidate and personal definitions outside all discoverable hook paths.
+Compare every entry with [the inventory](AGENT_HOOK_INVENTORY.md); remove only
+obsolete project registrations after confirming the tracked replacements.
+Preserve unrelated fields and personal hooks; if a candidate contains only the
+obsolete registrations, archive its whole file. Archive old project scripts only
+after no retained registration references them. Never blindly delete `.codex/`,
+a personal settings file, or a directory containing custom scripts. Review
+updated definitions and re-open the native session, then diagnose and inspect
+`/hooks` again for old/new or cross-layer duplicates. A file-level diagnostic
+cannot establish that removed definitions stopped running in an existing session.
 
 The shared main/signing guard is implemented in #636 and environment guard in #637.
 Explicit scoped formatting is implemented in #638; see
 [usage, scope, and per-edit hook migration](AGENT_FORMATTING.md).
 [Explicit completion verification and local logs](AGENT_VERIFICATION.md) replace
 test rewriting and stop-time testing in #639. The [full shared CI gate](AGENT_VERIFICATION.md#ci-and-local-equivalence)
-implements #640; final migration/live smoke tests (#641) remain. Inspect effective personal sources for
+implements #640; [#641 validation](AGENT_ACTIVATION_VALIDATION.md) records
+local migration and outstanding native smoke tests. Inspect effective personal sources for
 obsolete registrations. Startup itself remains passive: no SessionStart or
 automatic bootstrap registrations are installed. There are no Git hooks.

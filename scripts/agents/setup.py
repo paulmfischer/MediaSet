@@ -122,13 +122,18 @@ def hooks():
               ("disabled in this file; " if disabled else "") + "active/trusted unverified")
     if any(count > 1 for count in seen.values()):
         print("WARNING: duplicate event/matcher/command registrations detected; inspect /hooks.")
-    print("Hook coverage: shared Git guard #636 and environment guard #637; other legacy replacements pending #638-#641.")
+    print("Hook coverage: shared Git/environment guards; formatting and verification are explicit commands.")
     for runtime in ("Claude", "Codex"):
         commands = [entry[-1] for entry in seen if entry[0] == runtime]
         if any("block-main-commits" in c for c in commands) and any("git_guard.py" in c for c in commands):
             print("WARNING: " + runtime + " old/new Git guards compete; remove only the obsolete Git registration after review; see " + GUIDE)
         if any("protect-files" in c for c in commands) and any("env_guard.py" in c for c in commands):
             print("WARNING: " + runtime + " old/new environment guards compete; remove only the obsolete environment registration after review; see Development/AGENT_ENV_GUARD.md")
+        retired = ("block-main-commits.sh", "protect-files.sh", "eslint-fix.sh",
+                   "prettier-format.sh", "filter-test-output.sh", "verify-tests.sh")
+        if any(name in command for command in commands for name in retired):
+            print("WARNING: " + runtime + " obsolete project-style hook registrations detected; "
+                  "review their source and archive only obsolete project entries; see " + GUIDE)
     print("Hook activation: unverified. Inspect native /hooks; plugins/managed/session layers")
     print("and semantically equivalent duplicates cannot be determined by this diagnostic.")
     if (ROOT / ".codex/hooks.json").exists():

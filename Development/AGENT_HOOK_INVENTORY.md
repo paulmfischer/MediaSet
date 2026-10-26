@@ -1,5 +1,23 @@
 # Existing agent hook inventory
 
+Update for #641 (2026-10-26): final tracked Claude and Codex definitions each
+register only the shared Git and environment PreToolUse guards. There are no
+project PostToolUse formatting, test-command rewriting, Stop or SessionStart
+registrations. The remaining local candidate had only the obsolete Git and
+environment registrations; its settings contained no unrelated fields. After
+inspection, all eight candidate files (JSON plus seven scripts listed below)
+were archived with a SHA-256 manifest under ignored
+`.agent-local/migration/641-legacy-codex/`, then hash-verified and removed from
+discoverable paths. No personal settings were changed. The archive stays local
+and untracked, and is never activated. Fresh clones have only tracked definitions.
+See [migration instructions](AGENT_SETUP.md#migration-boundaries) and
+[validation evidence](AGENT_ACTIVATION_VALIDATION.md); effective runtime state
+remains unverified until native activation and smoke tests.
+
+The following entries are a **historical inventory**: statements about untouched
+candidate files or pending replacements describe the dated slices, not the final
+configuration. Each original responsibility is accounted for below.
+
 Update for #639: tracked Claude test-output rewriting and Stop verification
 registrations/scripts are removed; use [explicit verification](AGENT_VERIFICATION.md).
 Tracked Codex inline configuration has no test hooks. The local untracked Codex

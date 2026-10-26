@@ -115,8 +115,8 @@ own disclosure rules; use harmless placeholders in smoke tests.
 Review the tracked adapters, shared implementation and registrations first:
 `.claude/settings.json` replaces the old Write/Edit `protect-files.sh` entry and
 the obsolete tracked script is removed. `.codex/config.toml` adds the native
-`apply_patch` entry alongside the existing Git guard. Other legacy hooks are left
-for #638/#639. No permission allow-list is added or widened.
+`apply_patch` entry alongside the existing Git guard. Per-edit and Stop hooks are removed by #638/#639. No permission allow-list is
+added or widened.
 
 Follow [native activation and opt-out](AGENT_SETUP.md#native-activation-and-opt-out)
 in each intended checkout. Inspect `/hooks`, review/trust the project definitions
@@ -125,15 +125,14 @@ Codex definitions require renewed review. Do not edit global trust databases or
 automatically accept trust. Disable/reactivate the project guard through native
 `/hooks` controls or the documented whole-feature opt-out, then repeat a smoke test.
 
-Existing local `.codex/hooks.json` and `.codex/hooks/` are preserved untracked,
-not installed or staged. If the candidate is active, its old `protect-files.sh`
-can still reject templates or authorized edits. After reviewing effective sources,
-the user should remove/disable **only** that obsolete environment registration
-from the candidate/personal layer; preserve personal entries and later-ticket
-format/test hooks. Keep backups outside discoverable hook paths. Run
-`python3 scripts/agents/setup.py diagnose` and inspect `/hooks` for duplicates;
-diagnosis checks known files but cannot prove effective activation. Never leave
-both old and new environment guards active and assume exceptions override a deny.
+The inspected obsolete local candidate is archived outside discoverable hook
+paths by #641. See [migration boundaries](AGENT_SETUP.md#migration-boundaries)
+for older checkouts: preserve unrelated personal entries and remove only obsolete
+project registrations after inspection. Run `python3 scripts/agents/setup.py diagnose`
+and inspect `/hooks` for duplicates; diagnosis cannot prove effective activation.
+Never leave both old and new environment guards active and assume exceptions
+override a deny. [Validation evidence](AGENT_ACTIVATION_VALIDATION.md) distinguishes
+script fixtures from live native smoke tests.
 
 ## Automated checks and live smoke procedure
 

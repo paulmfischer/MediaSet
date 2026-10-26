@@ -219,6 +219,65 @@ class SetupBehaviorTests(unittest.TestCase):
         self.assertIn("unreadable/invalid settings", result.stdout)
         self.assertNotIn("DO_NOT_PRINT", result.stdout + result.stderr)
 
+    def test_retired_hooks_warn_even_without_shared_guard_and_preserve_personal_settings(self):
+        for name in ("block-main-commits.sh", "protect-files.sh", "eslint-fix.sh",
+                     "prettier-format.sh", "filter-test-output.sh", "verify-tests.sh"):
+            with self.subTest(name=name):
+                path = self.home / ".codex/hooks.json"
+                self.settings(path, {"private": "DO_NOT_PRINT", "hooks": {
+                    "Stop" if name == "verify-tests.sh" else "PreToolUse": [
+                        {"matcher": "Bash", "hooks": [{"type": "command",
+                          "command": "bash " + name + " DO_NOT_PRINT"}]}]}})
+                before = path.read_bytes()
+                result = self.run_setup("diagnose")
+                self.assertIn("Codex obsolete project-style hook registrations detected", result.stdout)
+                self.assertNotIn("DO_NOT_PRINT", result.stdout + result.stderr)
+                self.assertEqual(before, path.read_bytes())
+
+    def test_migrated_tracked_definitions_have_only_two_pretool_guards(self):
+        import tomllib
+        definitions = [json.loads((SOURCE / ".claude/settings.json").read_text()),
+                       tomllib.loads((SOURCE / ".codex/config.toml").read_text())]
+        for data in definitions:
+            self.assertEqual({"PreToolUse"}, set(data["hooks"]))
+            groups = data["hooks"]["PreToolUse"]
+            self.assertEqual(2, len(groups))
+            commands = [hook["command"] for group in groups for hook in group["hooks"]]
+            self.assertEqual(2, len(commands))
+            self.assertEqual(1, sum("git_guard.py" in c for c in commands))
+            self.assertEqual(1, sum("env_guard.py" in c for c in commands))
+            for retired in ("eslint-fix", "prettier-format", "filter-test-output", "verify-tests",
+                            "block-main-commits", "protect-files"):
+                self.assertFalse(any(retired in command for command in commands))
+
+    def test_claude_launcher_uses_own_checkout_and_preserves_arguments_and_settings(self):
+        runtime = self.bin / "claude"
+        runtime.write_text("#!" + sys.executable + "\nimport json,os,sys\n"
+                           "print(json.dumps({'cwd':os.getcwd(),'args':sys.argv[1:]}))\n")
+        runtime.chmod(0o755)
+        personal = self.home / ".claude/settings.json"
+        self.settings(personal, {"private": "DO_NOT_PRINT"})
+        before = personal.read_bytes()
+        worktree = self.base / "launcher independent worktree"
+        self.git("worktree", "add", "-b", "launcher", str(worktree))
+        args = ["prompt with spaces; $literal", "--settings", '{"disableAllHooks":true}']
+        for checkout, caller in ((self.root, worktree / "MediaSet.Api"),
+                                  (worktree, self.root / "MediaSet.Api")):
+            result = subprocess.run([BASH, str(checkout / "scripts/agents/claude.sh"), *args],
+                                    cwd=caller, env=self.env, capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual({"cwd": str(checkout), "args": args}, json.loads(result.stdout))
+        self.assertEqual(before, personal.read_bytes())
+        self.assertEqual([], self.installed_calls())
+
+    def test_claude_launcher_missing_optional_runtime_is_actionable(self):
+        result = subprocess.run([BASH, str(self.root / "scripts/agents/claude.sh")],
+                                cwd=self.root / "MediaSet.Api", env=self.env,
+                                capture_output=True, text=True)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("optional Claude Code runtime not found", result.stderr)
+        self.assertEqual([], self.installed_calls())
+
 
 if __name__ == "__main__":
     unittest.main()
