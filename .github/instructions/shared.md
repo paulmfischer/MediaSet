@@ -150,6 +150,15 @@ development containers. Never prune images or clear caches during startup.
 
 ## Testing Commands
 
+Use focused tests while iterating. Before reporting implementation complete, run
+`python3 -B scripts/agents/verify.py` for the full branch and local change set;
+see [completion checks, logs and result reuse](../../Development/AGENT_VERIFICATION.md).
+Focused tests do not replace required selected completion checks. Report each
+executed, reused or skipped check and any unresolved/pre-existing failures with
+evidence and log paths. Reuse success only after establishing relevant files and
+configuration are unchanged; rerun affected checks after relevant edits.
+Discussion-only turns do not trigger tests. Ordinary test commands are unchanged.
+
 **Backend (NUnit):**
 ```bash
 # Run all tests

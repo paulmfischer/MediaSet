@@ -68,7 +68,8 @@ inspect `/hooks` in each runtime and remove old per-edit formatting registration
 there deliberately if present. Reopen/review effective definitions as required
 by native trust handling. This slice does not claim live activation tests.
 
-Legacy test rewriting and stop-time verification remain for #639; final migration
+Test rewriting and stop-time hooks are removed by #639; use
+[explicit completion verification](AGENT_VERIFICATION.md). Final migration
 and live smoke tests remain #641. See [hook inventory](AGENT_HOOK_INVENTORY.md).
 
 Behavior tests use disposable Git repositories and recording tool fixtures:

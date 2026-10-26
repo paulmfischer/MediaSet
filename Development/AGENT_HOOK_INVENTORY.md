@@ -1,5 +1,12 @@
 # Existing agent hook inventory
 
+Update for #639: tracked Claude test-output rewriting and Stop verification
+registrations/scripts are removed; use [explicit verification](AGENT_VERIFICATION.md).
+Tracked Codex inline configuration has no test hooks. The local untracked Codex
+candidate has just those two test registrations removed locally, preserving its
+remaining definitions and all untracked scripts. Personal definitions are unchanged.
+The inventory below records the original #635 inspection, not current activation.
+
 Update for #638: tracked Claude per-edit ESLint/Prettier registrations and scripts
 are removed; use the [explicit formatting command](AGENT_FORMATTING.md). Tracked
 Codex configuration has no formatting hooks. Only the formatting registrations

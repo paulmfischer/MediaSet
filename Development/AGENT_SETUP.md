@@ -18,6 +18,8 @@ bash scripts/agents/setup.sh bootstrap
 python3 -B -m unittest discover -s scripts/agents/tests -v
 # Deliberate frontend fixes (review the resulting diff):
 python3 -B scripts/agents/format.py
+# Explicit completion checks for the branch and local changes:
+python3 -B scripts/agents/verify.py
 ```
 
 From any subdirectory, use an absolute script path or:
@@ -135,7 +137,8 @@ never overwrite personal configuration to resolve duplicates.
 The tracked Claude Git and environment registrations are replaced; per-edit
 formatting registrations/scripts are removed by #638. Other definitions are preserved.
 Codex has tracked Git and environment guards in inline `.codex/config.toml` registrations. The local untracked Codex
-candidate has only its two formatting registrations removed locally by #638;
+candidate has its two formatting registrations removed locally by #638 and its
+test-output rewrite and stop-time verification registrations removed by #639;
 other settings and its scripts are preserved. It is **not** installed, staged, trusted, or
 converted into public configuration. Fresh clones do not contain it. Diagnostics
 warn when that candidate is present but untracked. Personal settings are read only
@@ -144,8 +147,9 @@ yourself before changing them. Keep any backup outside discoverable hook paths.
 
 The shared main/signing guard is implemented in #636 and environment guard in #637.
 Explicit scoped formatting is implemented in #638; see
-[usage, scope, and per-edit hook migration](AGENT_FORMATTING.md). The next slices
-implement completion verification/logs (#639), CI (#640), and final migration/live
-smoke tests (#641). Legacy test rewriting and stop-time tests may still run when
-trusted until #639. Startup itself remains passive: no SessionStart or
+[usage, scope, and per-edit hook migration](AGENT_FORMATTING.md).
+[Explicit completion verification and local logs](AGENT_VERIFICATION.md) replace
+test rewriting and stop-time testing in #639. CI alignment (#640) and final
+migration/live smoke tests (#641) remain. Inspect effective personal sources for
+obsolete registrations. Startup itself remains passive: no SessionStart or
 automatic bootstrap registrations are installed. There are no Git hooks.
