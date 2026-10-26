@@ -1,5 +1,32 @@
 # Changelog
 
+## [4.1.0](https://github.com/paulmfischer/MediaSet/compare/v4.0.1...v4.1.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **agents:** allow read-only signing queries closes [#647](https://github.com/paulmfischer/MediaSet/issues/647) ([#650](https://github.com/paulmfischer/MediaSet/issues/650)) ([39ebfc7](https://github.com/paulmfischer/MediaSet/commit/39ebfc7ff76a4aabfeb5cb5ec90ae415e7120a96))
+* **deps:** update MongoDB driver to resolve advisory ([#651](https://github.com/paulmfischer/MediaSet/issues/651)) ([427fb4a](https://github.com/paulmfischer/MediaSet/commit/427fb4a2121c1f94040c27af1d68de99289552c8))
+* **images:** replace ImageSharp and harden ingestion ([#634](https://github.com/paulmfischer/MediaSet/issues/634)) ([ad711b3](https://github.com/paulmfischer/MediaSet/commit/ad711b33d659038f625d3c4676c222c7b695fa5c))
+* **ui:** allow HTTPS cover previews closes [#602](https://github.com/paulmfischer/MediaSet/issues/602) ([#632](https://github.com/paulmfischer/MediaSet/issues/632)) ([c925b26](https://github.com/paulmfischer/MediaSet/commit/c925b26f9e3806d213796a1bc1b0e3f18cc80ca6))
+
+
+### Miscellaneous
+
+* **agents:** add explicit verification closes [#639](https://github.com/paulmfischer/MediaSet/issues/639) ([#646](https://github.com/paulmfischer/MediaSet/issues/646)) ([d0c2bb4](https://github.com/paulmfischer/MediaSet/commit/d0c2bb4ac0b0d78e97478de0596a21f4de9b8d99))
+* **agents:** establish shared policy and Linux onboarding ([#642](https://github.com/paulmfischer/MediaSet/issues/642)) ([0e9e395](https://github.com/paulmfischer/MediaSet/commit/0e9e395d6cd119ea563c735696045ebc842ff43a))
+* **agents:** make project formatting explicit closes [#638](https://github.com/paulmfischer/MediaSet/issues/638) ([#645](https://github.com/paulmfischer/MediaSet/issues/645)) ([5fcc49a](https://github.com/paulmfischer/MediaSet/commit/5fcc49af6dc94cb5740ffa444c17aa381025f505))
+* **agents:** protect environment files with exceptions ([#644](https://github.com/paulmfischer/MediaSet/issues/644)) ([100ccef](https://github.com/paulmfischer/MediaSet/commit/100ccef05a1d6d87137d5c69c0b66a2dbccac51e))
+* **agents:** protect main and configured signing ([#643](https://github.com/paulmfischer/MediaSet/issues/643)) ([95dc4eb](https://github.com/paulmfischer/MediaSet/commit/95dc4eb9af301ed892f3f9e1a8fe3587973f0661))
+* **agents:** validate activation closes [#641](https://github.com/paulmfischer/MediaSet/issues/641) ([#649](https://github.com/paulmfischer/MediaSet/issues/649)) ([f4a79d6](https://github.com/paulmfischer/MediaSet/commit/f4a79d6cec250d4c65bff88403826b743c12bc01))
+* **dev:** simplify local development with host applications ([#629](https://github.com/paulmfischer/MediaSet/issues/629)) ([e5fc787](https://github.com/paulmfischer/MediaSet/commit/e5fc7871082ca41c3730768d8311afbdfb3ce27d))
+* release 4.1.0 ([#669](https://github.com/paulmfischer/MediaSet/issues/669)) ([a42e55a](https://github.com/paulmfischer/MediaSet/commit/a42e55a4e9cf5d8eee6f2660cc3427f6bec67850))
+
+
+### CI/CD
+
+* **agents:** run shared full verification closes [#640](https://github.com/paulmfischer/MediaSet/issues/640) ([#648](https://github.com/paulmfischer/MediaSet/issues/648)) ([b05f1bc](https://github.com/paulmfischer/MediaSet/commit/b05f1bc384bf572cafa51195401ca043b037a467))
+
 ## [4.0.1](https://github.com/paulmfischer/MediaSet/compare/v4.0.0...v4.0.1) (2026-10-24)
 
 
