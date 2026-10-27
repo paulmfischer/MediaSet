@@ -12,41 +12,82 @@ permissions:
   contents: read
 
 jobs:
-  verification:
-    name: Full Verification
+  api:
+    name: API
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('global.json', '**/*.csproj', '**/Directory.*.props', '**/Directory.*.targets', '**/NuGet.Config', '**/nuget.config') }}
+
+      - name: Restore API dependencies
+        id: restore
+        run: dotnet restore MediaSet.sln
+
+      - name: Check PR whitespace
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$PR_BASE_SHA...$PR_HEAD_SHA" --
+
+      - name: Build API
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        run: dotnet build MediaSet.sln --no-restore
+
+      - name: Test API
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        run: dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
+
+  ui:
+    name: UI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MediaSet.Remix
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: MediaSet.Remix/package-lock.json
 
-      - name: Cache project dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            .agent-local/nuget
-            .agent-local/npm-cache
-          key: ${{ runner.os }}-agent-dependencies-${{ hashFiles('.nvmrc', 'global.json', '**/*.csproj', 'MediaSet.Remix/package-lock.json') }}
+      - name: Install UI dependencies
+        id: install
+        run: npm ci
 
-      # Explicit preparation; diagnosis and verification never install tools.
-      - name: Restore project dependencies
-        run: bash scripts/agents/setup.sh bootstrap
+      - name: Lint UI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
 
-      # Full mode works with the shallow detached checkout, without branch refs.
-      # Diagnostics go to the job console; local verification logs are not uploaded.
-      - name: Run full shared verification
-        run: python3 -B scripts/agents/verify.py --full --show-output
+      - name: Check UI formatting
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint:format
+
+      - name: Check UI types
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+
+      - name: Build UI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run build
+
+      - name: Test UI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
