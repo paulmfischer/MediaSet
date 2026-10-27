@@ -1,0 +1,22 @@
+{
+  "name": "mediaset-remix3-assessment",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.22.1 <25"
+  },
+  "scripts": {
+    "start": "node --import remix/node-tsx server.tsx",
+    "style": "../../../MediaSet.Remix/node_modules/.bin/tailwindcss -i ../../../MediaSet.Remix/app/tailwind.css -o public/style.css --content './app/**/*.tsx,./server.tsx' --minify",
+    "test": "node --experimental-strip-types --test probe.test.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@zxing/library": "0.23.0",
+    "remix": "3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  }
+}

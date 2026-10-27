@@ -1,0 +1,64 @@
+[
+  { "goto": "http://127.0.0.1:31654/books" },
+  {
+    "eval": "(() => { if(document.documentElement.dataset.hydrated !== 'true') throw Error('Runtime not ready'); return {hydrated:true, navigation:!!window.navigation, userAgent:navigator.userAgent}; })()"
+  },
+  { "click": "#hydration-probe" },
+  { "waitFor": { "text": "Hydration probe: 1", "exact": true } },
+  { "click": { "role": "link", "name": "Add book", "exact": true } },
+  {
+    "fill": {
+      "target": { "label": "Title", "exact": true },
+      "value": "Browser assessment 654"
+    }
+  },
+  {
+    "fill": {
+      "target": { "label": "Authors", "exact": true },
+      "value": "Disposable Author"
+    }
+  },
+  { "click": { "role": "button", "name": "Save", "exact": true } },
+  {
+    "waitFor": {
+      "role": "heading",
+      "name": "Browser assessment 654",
+      "exact": true
+    }
+  },
+  { "click": { "role": "link", "name": "Edit", "exact": true } },
+  {
+    "fill": {
+      "target": { "label": "Title", "exact": true },
+      "value": "Browser assessment 654 edited"
+    }
+  },
+  { "click": { "role": "button", "name": "Save", "exact": true } },
+  {
+    "waitFor": {
+      "role": "heading",
+      "name": "Browser assessment 654 edited",
+      "exact": true
+    }
+  },
+  { "screenshot": "detail-desktop" },
+  { "viewport": [390, 844] },
+  { "screenshot": "detail-mobile" },
+  {
+    "eval": "fetch('http://127.0.0.1:31654/books/' + location.pathname.split('/').at(-1), {method:'GET'}).then(r => ({detailStatus:r.status, overflow:document.documentElement.scrollWidth > innerWidth}))"
+  },
+  {
+    "eval": "(() => { const id=location.pathname.split('/').at(-1); return fetch('/books?searchText=Browser%20assessment%20654').then(r=>r.text()).then(html=>{if(!html.includes('Browser assessment 654 edited'))throw Error('Search failed');return {id,search:true};}); })()"
+  },
+  { "goto": "http://127.0.0.1:31654/scan-probe" },
+  {
+    "waitFor": {
+      "text": "ZXing 0.23.0 loaded; EAN/UPC hints and reset succeeded.",
+      "exact": false
+    }
+  },
+  {
+    "eval": "(() => { if(document.documentElement.dataset.decoder !== 'loaded-and-reset')throw Error('Decoder not ready'); return {decoder:document.documentElement.dataset.decoder,secureContext:isSecureContext,mediaDevices:!!navigator.mediaDevices,barcodeDetector:'BarcodeDetector' in window}; })()"
+  },
+  { "screenshot": "scan-probe" }
+]
