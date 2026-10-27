@@ -3,9 +3,10 @@
 Issue #674 is the application-shell checkpoint under #673. This is an independent
 application and lockfile; `MediaSet.Remix`, its commands, containers and ports are
 unchanged. Work integrates into `feat/react-router-7`, never directly into main.
-Collection links retain their current URLs; their screens arrive in #675–#678.
-At this checkpoint `/` shows server-loaded API health and all other URLs render
-the existing 404 shell. This is not the complete frontend or a deployable cutover.
+Collection lists/details now use API-backed loaders at the existing lowercase
+Books/Movies/Games/Music URLs. `/` shows server-loaded API health. Editing,
+metadata and administration arrive in #676–#678. This is not the complete frontend
+or a deployable cutover. See [collection contracts and evidence](../Development/evidence/react-router-675/README.md).
 
 ## Run with disposable services
 

@@ -152,6 +152,14 @@ export function headers() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    if (previousPath.current !== pathname) {
+      document.getElementById('main-content')?.focus();
+      previousPath.current = pathname;
+    }
+  }, [pathname]);
   return (
     <html lang="en" className="dark">
       <head>
@@ -165,7 +173,7 @@ export default function App() {
           {/** Responsive header with mobile menu toggle */}
           <Header />
           <PendingNavigation />
-          <main id="main-content" className="flex-1 dark:bg-zinc-900 p-2 lg:py-4 lg:px-8">
+          <main id="main-content" tabIndex={-1} className="flex-1 dark:bg-zinc-900 p-2 lg:py-4 lg:px-8">
             <Outlet />
           </main>
           <Footer version={appVersion} />
