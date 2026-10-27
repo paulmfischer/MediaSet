@@ -3,8 +3,8 @@
 The API and frontend run on the host. Podman runs only MongoDB. Application
 dependencies use the normal host NuGet cache and frontend node_modules directory;
 startup does not rebuild images, repair labels, clear caches, or rewrite configuration.
-For passive agent diagnosis and an explicit bootstrap with checkout-local package
-caches (including independent worktrees), see [Linux agent onboarding](AGENT_SETUP.md).
+Developers and agents use the same commands below; no agent bootstrap or Python
+installation is required. Opening a project or agent session performs no setup.
 
 ## Prerequisites
 
@@ -14,8 +14,9 @@ caches (including independent worktrees), see [Linux agent onboarding](AGENT_SET
   checkout root; otherwise use the official Node installer for that exact version.
   Verify `node --version` and `npm --version` before `npm ci`. The application
   supports serviced Node 24 patches >=24.22.1; CI and both Docker stages pin
-  24.22.1. See [selection and validation](NODE_24_VALIDATION.md).
-- Podman and podman-compose. On Fedora: `dnf install podman podman-compose`.
+  24.22.1.
+- Podman and podman-compose to run MongoDB locally; they are not needed for the
+  build, lint, type, and unit-test checks. On Fedora: `dnf install podman podman-compose`.
 - Git. For VS Code API debugging, install the recommended C# extension.
 
 The commands below run from the repository root unless specified otherwise.
@@ -39,7 +40,7 @@ VS Code database tasks use `podman-compose`.
 3. Install dependencies:
 
    ```bash
-   dotnet restore MediaSet.Api/MediaSet.Api.csproj
+   dotnet restore MediaSet.sln
    npm ci --prefix MediaSet.Remix
    ```
 
@@ -58,6 +59,13 @@ VS Code database tasks use `podman-compose`.
 MongoDB data lives in ignored `data/dev-mongodb`. API image storage resolves to
 `data/images` in the repository. MongoDB listens only on 127.0.0.1:27017.
 Keep SELinux enforcing; the two MongoDB bind mounts use private container labels.
+
+For checks alone, install dependencies as above and skip database/secret setup.
+NuGet uses its normal user cache (`~/.nuget/packages` on Linux); npm uses its
+normal cache (`npm config get cache`). Each checkout/worktree owns its own
+`node_modules`, `bin`, and `obj` directories; do not link those between worktrees.
+Rerun restore/install after dependency or lockfile changes. Setup does not need
+global npm tools or personal agent integrations.
 
 ## Daily terminal workflow
 
@@ -187,38 +195,12 @@ with the new address and restart mobile mode. Reinstall the public CA only if
 you create a new CA. Missing certificate settings produce an explicit startup
 error; ordinary `npm run dev` ignores them and stays on HTTP.
 
-## Moving from the old container stack
-
-Stop only this checkout's old development containers before starting native
-applications, so ports 3000, 5000, and 27017 are free:
-
-```bash
-podman stop mediaset-dev-ui mediaset-dev-api mediaset-dev-mongo
-```
-
-Run that once only if those old containers exist. Their data is not needed by
-the new setup. The new database uses `data/dev-mongodb`, leaving the old
-`data/mongodb` directory untouched; no database migration is required.
-
-- Complete first setup with matching database credentials.
-- Inspect old root `.env` integration settings and move any needed API keys to
-  User Secrets; old Compose-only names such as TMDB_BEARER_TOKEN are not loaded
-  by the native API.
-- Remove obsolete `apiUrl`, `clientApiUrl`, `VITE_API_URL`, and
-  `REMIX_DEV_HTTP_ORIGIN` entries from frontend local env files to use native
-  defaults. The old helper appended duplicate VITE_API_URL entries.
-- Preserve `data/images`. If old container-created files cannot be written,
-  inspect ownership and repair only that project's image files, not home-directory
-  permissions or global container storage.
-- Retired application cache volumes are no longer used. Leaving them in place is
-  harmless; do not run broad container/image/volume pruning.
-
 ## Verification and troubleshooting
 
 Check actual database connectivity, not just a listening port:
 
 ```bash
-curl --fail --silent http://127.0.0.1:5000/health | python3 -c 'import json,sys; h=json.load(sys.stdin); assert h["status"] == "healthy" and h["database"]["status"] == "up", h; print("API and database healthy")'
+node --input-type=module -e 'const r = await fetch("http://127.0.0.1:5000/health"); const h = await r.json(); if (!r.ok || h.status !== "healthy" || h.database?.status !== "up") throw new Error("API or database unhealthy"); console.log("API and database healthy");'
 curl --fail http://localhost:3000/
 ```
 
@@ -256,15 +238,89 @@ podman-compose -f docker-compose.dev.yml up -d --force-recreate mongodb
 
 ## Checks
 
+These are the same commands used by the PR workflow. They need no secrets,
+database, running API/UI, or agent tools. Restore dependencies explicitly first.
+
+From the repository root, check the API:
+
 ```bash
-dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj
+dotnet restore MediaSet.sln
+dotnet build MediaSet.sln --no-restore
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
+```
+
+From `MediaSet.Remix`, check the UI:
+
+```bash
 cd MediaSet.Remix
-npm test
-npm run typecheck
+npm ci
 npm run lint
 npm run lint:format
+npm run typecheck
 npm run build
+npm test
 ```
+
+Check whitespace from the repository root:
+
+```bash
+git diff --check
+git diff --cached --check
+# Check all committed branch changes after fetching origin/main:
+git diff --check origin/main...HEAD --
+```
+
+The PR workflow runs independent **API** and **UI** jobs for every eligible PR,
+including documentation-only changes. Both may run concurrently. CI compares the
+PR base/head commits for whitespace with full Git history, then uses the same
+application commands above. Each check has its own step and failures fail the
+job; other checks still run after dependency installation succeeds. No check
+formats source in place. Both job results must be reviewed before approving a PR.
+
+For focused tests during development:
+
+```bash
+# Repository root: NUnit class or method (append .MethodName to narrow further)
+dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --filter "FullyQualifiedName~TestClassName"
+# From MediaSet.Remix: a single Vitest file or interactive watch mode
+npm test -- app/path/to/test-file.test.ts
+npm run test:watch
+```
+
+Use focused tests while iterating, then the full checks for the affected area
+before completion. Shared configuration changes require both API and UI checks.
+Report commands and results, including anything not run or any pre-existing
+failure. Inspect new files as well as staged/unstaged diffs before committing.
+
+## Formatting
+
+Formatting commands modify files. Run them only on intended changes and review
+the diff afterward; avoid unrelated repository-wide formatting.
+
+For changed frontend TypeScript/TSX files, after `npm ci`, from `MediaSet.Remix`:
+
+```bash
+npm exec -- eslint --fix app/path/to/changed-file.tsx
+npm exec -- prettier --write app/path/to/changed-file.tsx
+```
+
+Replace example paths with the actual files. For application JSON, use Prettier
+alone. The existing `npm run lint:fix` and `npm run lint:format:fix` commands apply
+broader fixes when that scope is intentional. Check mode is `npm run lint` and
+`npm run lint:format`.
+
+For changed C# files, from the repository root after restore:
+
+```bash
+dotnet format MediaSet.sln --no-restore --include MediaSet.Api/path/to/changed-file.cs
+```
+
+Replace the example path; this invokes .NET formatting/analyzers and is not a new
+CI formatting gate. It follows `.editorconfig`, including C# line endings, so
+review the selected file's diff. Do not suppress diagnostics or disable signing
+to get checks or commits to pass.
+
+## Manual application checks
 
 Manually verify frontend HMR and API watch reload. For mobile, check actual-phone
 camera permission, barcode detection, images, and HMR without mixed-content errors.

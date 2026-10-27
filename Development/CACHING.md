@@ -41,7 +41,7 @@ Cache behavior is configured in `appsettings.json` and `appsettings.Development.
 - **EnableCaching**: Global switch to enable/disable caching (default: `true`)
 - **DefaultCacheDurationMinutes**: Default TTL for cache entries without specific duration (default: `10`)
 - **MetadataCacheDurationMinutes**: TTL for metadata query results (default: `10`)
-- **StatsCacheDurationMinutes**: TTL for statistics calculations (default: `5`)
+- **StatsCacheDurationMinutes**: TTL for statistics calculations (default: `10`)
 
 **Development Environment**: Shorter TTLs (5 minutes) for faster cache refresh during development.
 
@@ -132,22 +132,6 @@ The caching implementation includes comprehensive logging:
 [Information] Removed 3 cache entries matching pattern: metadata:Books:*
 ```
 
-## Performance Benefits
-
-### Before Caching
-- Metadata queries: Full database scan + in-memory processing for each request
-- Stats queries: Fetch all books, movies, and games for each request
-
-### After Caching
-- First request: Same as before (cache miss)
-- Subsequent requests: Instant response from memory (cache hit)
-- Cache automatically refreshes after TTL or on data changes
-
-### Expected Improvements
-- **Response time**: 90-99% reduction for cache hits (typical: 200ms → 5ms)
-- **Database load**: Significantly reduced for metadata and stats endpoints
-- **Scalability**: Can handle more concurrent requests with same resources
-
 ## Monitoring Cache Effectiveness
 
 To monitor cache performance, filter logs by cache-related messages:
@@ -187,19 +171,6 @@ When disabled:
 - All requests go directly to database
 - No overhead from cache management
 
-## Future Enhancements
-
-### Short Term
-- Add cache hit rate metrics to health endpoint
-- Implement cache warming on application startup
-- Add cache size limits and eviction policies
-
-### Long Term
-- Redis integration for distributed caching (multi-instance deployments)
-- Per-user cache segmentation for personalized data
-- Cache-aside pattern with background refresh
-- Intelligent cache warming based on access patterns
-
 ## Troubleshooting
 
 ### Cache Not Working
@@ -238,12 +209,12 @@ If cache consumes excessive memory:
 
 ## Related Files
 
-- `MediaSet.Api/Services/ICacheService.cs` - Cache service interface
-- `MediaSet.Api/Services/MemoryCacheService.cs` - In-memory cache implementation
-- `MediaSet.Api/Services/MetadataService.cs` - Metadata caching integration
-- `MediaSet.Api/Services/StatsService.cs` - Statistics caching integration
-- `MediaSet.Api/Services/EntityService.cs` - Cache invalidation logic
-- `MediaSet.Api/Models/CacheSettings.cs` - Configuration model
+- `MediaSet.Api/Infrastructure/Caching/ICacheService.cs` - Cache service interface
+- `MediaSet.Api/Infrastructure/Caching/MemoryCacheService.cs` - In-memory cache implementation
+- `MediaSet.Api/Features/Metadata/Services/MetadataService.cs` - Metadata caching integration
+- `MediaSet.Api/Features/Statistics/Services/StatsService.cs` - Statistics caching integration
+- `MediaSet.Api/Infrastructure/DataAccess/EntityService.cs` - Cache invalidation logic
+- `MediaSet.Api/Infrastructure/Caching/CacheSettings.cs` - Configuration model
 - `MediaSet.Api/appsettings.json` - Production cache configuration
 - `MediaSet.Api/appsettings.Development.json` - Development cache configuration
 
