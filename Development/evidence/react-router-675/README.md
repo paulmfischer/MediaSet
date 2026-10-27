@@ -66,7 +66,8 @@ test-only missing HydrateFallback warning; actual server-hydrated routes have no
 hydration warning. Existing framework future-flag/Browserslist warnings remain
 within the already tracked modernization work.
 
-The disposable runtime used container `mediaset-675-mongo`, no volume, loopback
+The disposable runtime used container `mediaset-675-mongo` with no user-supplied
+volume mounts (the Mongo image creates task-owned anonymous data volumes), loopback
 27028/database `MediaSet675`, API loopback 5100 and `/tmp/mediaset-675-images`.
 The API ran in Production environment without loading development User Secrets,
 with background image lookup/external logging disabled. The inert OpenLibrary
