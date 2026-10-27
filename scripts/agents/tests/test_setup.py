@@ -18,7 +18,7 @@ STUB = '''import json, os, pathlib, sys
 name = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
 if args == ["--version"]:
-    print({"node": os.environ.get("TEST_NODE_VERSION", "v22.0.0"),
+    print({"node": os.environ.get("TEST_NODE_VERSION", "v24.22.1"),
            "npm": "10.0.0", "dotnet": "10.0.112"}[name])
     sys.exit(0)
 with open(os.environ["TEST_CALLS"], "a") as stream:
@@ -136,6 +136,20 @@ class SetupBehaviorTests(unittest.TestCase):
         self.assertIn("FAILED: node", result.stdout)
         self.assertIn("#prerequisites", result.stdout)
         self.assertEqual([], self.installed_calls())
+
+    def test_node_lts_patch_floor_and_major_prevent_dependency_commands(self):
+        for version in ("v22.23.4", "v24.3.0", "v24.22.0", "v25.0.0", "v26.0.0"):
+            with self.subTest(version=version):
+                self.env["TEST_NODE_VERSION"] = version
+                result = self.run_setup("bootstrap")
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn("FAILED: node", result.stdout)
+                self.assertEqual([], self.installed_calls())
+
+    def test_newer_node_24_patch_is_accepted(self):
+        self.env["TEST_NODE_VERSION"] = "v24.22.2"
+        result = self.run_setup("bootstrap")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
     def test_launcher_explains_missing_python(self):
         (self.bin / "python3").unlink()

@@ -244,7 +244,7 @@ For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CO
 
 ## 👨‍💻 Developer Getting Started
 
-Install .NET 10, Node.js 22/npm, Podman, and podman-compose. The API and UI run
+Install .NET 10, Node.js 24.22.1 LTS/npm (see [`.nvmrc`](.nvmrc)), Podman, and podman-compose. The API and UI run
 on the host; only MongoDB runs in a container.
 
 Follow [first setup](Development/DEVELOPMENT.md#first-setup) to configure database

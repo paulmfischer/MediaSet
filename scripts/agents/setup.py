@@ -37,13 +37,15 @@ def prerequisites():
         ready = False
     checks = [
         ("git", ["git", "--version"], r"git version (\d+)\.(\d+)", (2, 0)),
-        ("node", ["node", "--version"], r"v(\d+)\.(\d+)", (20, 0)),
+        ("node", ["node", "--version"], r"v(\d+)\.(\d+)\.(\d+)", (24, 22, 1)),
         ("npm", ["npm", "--version"], r"(\d+)\.(\d+)", (1, 0)),
     ]
     for name, command, pattern, minimum in checks:
         status, output = probe(command)
         match = re.search(pattern, output)
         passed = status == 0 and match and tuple(map(int, match.groups())) >= minimum
+        if name == "node" and match:
+            passed = passed and int(match.group(1)) == 24
         print(("PASSED: " if passed else "FAILED: ") + name +
               (" available" if passed else "; see " + GUIDE + "#prerequisites"))
         ready = bool(passed) and ready

@@ -9,7 +9,12 @@ caches (including independent worktrees), see [Linux agent onboarding](AGENT_SET
 ## Prerequisites
 
 - .NET 10 SDK compatible with the repository's global.json.
-- Node.js 22 and npm (use your preferred installer/version manager).
+- Node.js 24.22.1 LTS and its bundled npm (exact version in [`.nvmrc`](../.nvmrc)).
+  With nvm already installed, run `nvm install` followed by `nvm use` from the
+  checkout root; otherwise use the official Node installer for that exact version.
+  Verify `node --version` and `npm --version` before `npm ci`. The application
+  supports serviced Node 24 patches >=24.22.1; CI and both Docker stages pin
+  24.22.1. See [selection and validation](NODE_24_VALIDATION.md).
 - Podman and podman-compose. On Fedora: `dnf install podman podman-compose`.
 - Git. For VS Code API debugging, install the recommended C# extension.
 
