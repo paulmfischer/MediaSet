@@ -24,7 +24,7 @@ API and UI jobs, so documentation and shared tooling changes receive the same
 full gate. Other workflows are unchanged.
 
 The runner installs Python 3.11, the .NET SDK selected by `global.json`, and
-Node 20 using setup actions, then runs these shared commands from the root:
+Node 24.22.1 LTS from `.nvmrc` using setup actions, then runs these shared commands from the root:
 
 ```bash
 bash scripts/agents/setup.sh bootstrap

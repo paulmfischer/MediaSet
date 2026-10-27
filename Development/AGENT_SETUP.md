@@ -60,7 +60,7 @@ development alternatives, database setup, and application startup.
 
 ## Prerequisites
 
-Linux, Bash, Git >=2, Python >=3.11 (standard library only), Node >=20 with npm,
+Linux, Bash, Git >=2, Python >=3.11 (standard library only), Node 24.22.1 LTS with npm,
 and the .NET SDK selected by [global.json](../global.json) are required. The launcher
 reports missing/old Python before importing the diagnostic. Existing legacy hooks
 add `jq` and shell/core utilities; they are not prerequisites for the shared setup.
@@ -78,7 +78,11 @@ On other distributions use the distribution's package manager for those names;
 if its Python is older, install Python >=3.11 following that distribution's guide.
 These commands are documentation, never executed by setup. For Node/npm use the
 [Node download/install instructions](https://nodejs.org/en/download) for Linux,
-choose a supported version >=20, then verify `node --version` and `npm --version`.
+choose the exact version in [`.nvmrc`](../.nvmrc), then verify `node --version`
+and `npm --version`. With an existing nvm installation, run `nvm install` and
+`nvm use` from the checkout root before bootstrap. Diagnosis accepts serviced
+Node 24 patches >=24.22.1 and rejects other majors; the reproducible CI/container
+target remains pinned. See [runtime selection and validation](NODE_24_VALIDATION.md).
 For .NET use the [.NET 10 Linux installation guide](https://learn.microsoft.com/en-us/dotnet/core/install/linux),
 select the distribution's SDK instructions (not just the runtime), then run
 `dotnet --version` **from this checkout** to verify `global.json` resolves. The

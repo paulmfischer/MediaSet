@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS build
+FROM node:24.22.1-alpine AS build
 WORKDIR /app
 
 # Copy package files
@@ -20,7 +20,7 @@ ENV VITE_APP_VERSION=${VITE_APP_VERSION}
 RUN npm run build
 
 # Runtime stage
-FROM node:20-alpine AS runtime
+FROM node:24.22.1-alpine AS runtime
 WORKDIR /app
 
 # Create non-root user for security
@@ -28,7 +28,7 @@ RUN addgroup -S mediaset && adduser -S mediaset -G mediaset
 
 # Copy package files and install only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production && \
+RUN npm ci --omit=dev && \
     npm cache clean --force
 
 # Copy built application from build stage
