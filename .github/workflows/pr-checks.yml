@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/react-router-7
       - "feature/*"
       - "fix/*"
       - "chore/*"
@@ -89,5 +90,39 @@ jobs:
         run: npm run build
 
       - name: Test UI
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+
+  router:
+    name: Router replacement
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MediaSet.Router
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: MediaSet.Router/package-lock.json
+      - name: Install replacement dependencies
+        id: install
+        run: npm ci
+      - name: Lint replacement
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+      - name: Check replacement formatting
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint:format
+      - name: Check replacement types
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run typecheck
+      - name: Build replacement
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run build
+      - name: Test replacement
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm test
