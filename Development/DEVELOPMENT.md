@@ -277,6 +277,11 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
+`npm run test:e2e` rebuilds `public/app.css` first, then runs every
+`*.test.browser.tsx` and `*.test.e2e.ts` file. Rerun the install step after a
+Playwright version change in the lockfile. On Linux, add `--with-deps` once if
+Chromium fails to start because of missing system libraries.
+
 Check whitespace from the repository root:
 
 ```bash
@@ -286,12 +291,16 @@ git diff --cached --check
 git diff --check origin/main...HEAD --
 ```
 
-The PR workflow runs independent **API** and **UI** jobs for every eligible PR,
-including documentation-only changes. Both may run concurrently. CI compares the
+The PR workflow runs independent **API**, **UI** and **UI Browser** jobs for
+every eligible PR (base branch `main`, `feat/*`, `feature/*`, `fix/*` or `chore/*`),
+including documentation-only changes. All three run concurrently. The UI job runs
+the UI checks above and never installs a browser. The UI Browser
+job installs the Chromium headless shell for the locked Playwright version,
+cached by that version, and runs `npm run test:e2e`. CI compares the
 PR base/head commits for whitespace with full Git history, then uses the same
 application commands above. Each check has its own step and failures fail the
 job; other checks still run after dependency installation succeeds. No check
-formats source in place. Both job results must be reviewed before approving a PR.
+formats source in place. All job results must be reviewed before approving a PR.
 
 For focused tests during development:
 
