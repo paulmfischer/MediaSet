@@ -5,6 +5,11 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import { isActivePath } from './ui/nav.ts';
+import { createRouter } from 'remix/router';
+import { render } from 'remix/middleware/render';
+import { assets } from './assets.ts';
+import { Document } from './ui/document.tsx';
 import { router } from './router.ts';
 import { routes } from './routes.ts';
 import { createRequestHandler, readHttpsOptions, readPort } from './server-config.ts';
@@ -22,6 +27,47 @@ describe('router', () => {
     assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
     assert.match(html, /<link rel="stylesheet" href="\/app.css"/);
     assert.match(html, /<script type="module" src="\/assets\/app\/actions\/public\/entry\.ts[^"]*"/);
+  });
+
+  it('renders the header nav links with per-media-type accents and marks only the current path active', async () => {
+    const html = await (await get(routes.home.href())).text();
+
+    const link = (href: string) => html.match(new RegExp(`<a href="${href}" [^>]*class="[^>]*>`))?.[0] ?? '';
+    assert.match(link('/'), /aria-current="page"/);
+    assert.match(link('/'), /class="[^"]*\bactive\b/);
+    for (const [href, accent] of [
+      ['/books', 'books'],
+      ['/movies', 'movies'],
+      ['/games', 'games'],
+      ['/musics', 'musics'],
+    ]) {
+      assert.match(link(href), new RegExp(`class="entity-${accent} `));
+      assert.doesNotMatch(link(href), /aria-current|\bactive\b/);
+    }
+    assert.match(html, /<span class="text-3xl">MediaSet<\/span>/);
+    assert.match(html, /aria-label="Toggle menu"/);
+    assert.match(html, /aria-label="Tools"/);
+  });
+
+  it('renders the footer with the runtime APP_VERSION, falling back to a local default', async (t) => {
+    const previous = { APP_VERSION: process.env.APP_VERSION, VITE_APP_VERSION: process.env.VITE_APP_VERSION };
+    t.after(() => {
+      for (const [name, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    });
+    delete process.env.VITE_APP_VERSION;
+
+    delete process.env.APP_VERSION;
+    assert.match(await (await get(routes.home.href())).text(), /<footer[^>]*>.*v0\.0\.0-local<\/span><\/footer>/);
+
+    // Read per request, not at startup.
+    process.env.APP_VERSION = '1.2.3';
+    assert.match(
+      await (await get(routes.home.href())).text(),
+      /<footer[^>]*>.*Copyright \d{4} Paul Fischer.*v1\.2\.3<\/span><\/footer>/
+    );
   });
 
   it('GET /config.json returns the runtime client config, cached for an hour', async (t) => {
@@ -51,6 +97,39 @@ describe('router', () => {
     const response = await get('/no-such-page/at-all');
 
     assert.equal(response.status, 404);
+  });
+});
+
+describe('header on other pages', () => {
+  // The only real page is Home today, so render the layout at a path owned by a later ticket.
+  const other = createRouter({ middleware: [render({ assets })] });
+  other.get('/image-stats', (context) =>
+    context.render(
+      <Document path={context.url.pathname} title="Stats">
+        <p>stats</p>
+      </Document>
+    )
+  );
+
+  it('marks the Image Statistics link and the Tools trigger active on /image-stats, and Home inactive', async () => {
+    const html = await (await other.fetch(new URL('/image-stats', 'http://localhost'))).text();
+
+    assert.match(html, /<button[^>]*aria-label="Tools"[^>]*class="[^"]*\bactive\b/);
+    assert.doesNotMatch(html, /<a href="\/" aria-current/);
+    assert.match(html, /Skip to main content/);
+  });
+});
+
+describe('isActivePath', () => {
+  it('matches Home only on the root and other links on their path and below', () => {
+    assert.equal(isActivePath('/', '/'), true);
+    assert.equal(isActivePath('/books', '/'), false);
+    assert.equal(isActivePath('/books', '/books'), true);
+    assert.equal(isActivePath('/books/42', '/books'), true);
+    assert.equal(isActivePath('/books/42/edit', '/books'), true);
+    assert.equal(isActivePath('/bookshelf', '/books'), false);
+    assert.equal(isActivePath('/movies', '/books'), false);
+    assert.equal(isActivePath('/image-stats', '/image-stats'), true);
   });
 });
 
