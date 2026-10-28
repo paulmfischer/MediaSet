@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - "feat/*"
       - "feature/*"
       - "fix/*"
       - "chore/*"
@@ -91,3 +92,58 @@ jobs:
       - name: Test UI
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm test
+
+  ui-browser:
+    name: UI Browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: MediaSet.Remix
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: MediaSet.Remix/package-lock.json
+
+      - name: Install UI dependencies
+        run: npm ci
+
+      - name: Read Playwright version
+        id: playwright
+        run: |
+          version="$(node -p "require('playwright/package.json').version")"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Playwright Chromium
+        id: playwright-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-headless-shell-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright Chromium
+        id: playwright-install
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --only-shell chromium
+
+      # Saved right after install, so a failing test run still keeps the browser.
+      - name: Save Playwright Chromium
+        if: steps.playwright-install.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+
+      - name: Install Playwright Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Test UI in browser
+        run: npm run test:e2e
