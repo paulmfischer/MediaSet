@@ -96,6 +96,7 @@ jobs:
   ui-browser:
     name: UI Browser
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: MediaSet.Remix
@@ -115,18 +116,30 @@ jobs:
 
       - name: Read Playwright version
         id: playwright
-        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          version="$(node -p "require('playwright/package.json').version")"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Playwright Chromium
+      - name: Restore Playwright Chromium
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-${{ steps.playwright.outputs.version }}
+          key: ${{ runner.os }}-playwright-chromium-headless-shell-${{ steps.playwright.outputs.version }}
 
       - name: Install Playwright Chromium
+        id: playwright-install
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps --only-shell chromium
+
+      # Saved right after install, so a failing test run still keeps the browser.
+      - name: Save Playwright Chromium
+        if: steps.playwright-install.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
 
       - name: Install Playwright Chromium system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'

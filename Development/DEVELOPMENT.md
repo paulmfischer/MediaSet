@@ -292,11 +292,11 @@ git diff --check origin/main...HEAD --
 ```
 
 The PR workflow runs independent **API**, **UI** and **UI Browser** jobs for
-every eligible PR (base branch `main`, `feat/*`, `feature/*`, `fix/*` or `chore/*`),
-including documentation-only changes. All three run concurrently. The UI job runs
-the UI checks above and never installs a browser. The UI Browser
-job installs the Chromium headless shell for the locked Playwright version,
-cached by that version, and runs `npm run test:e2e`. CI compares the
+every eligible PR (base branch `main`, `feat/*`, `feature/*`, `fix/*` or
+`chore/*`), including documentation-only changes. All three run concurrently.
+The UI job runs the UI checks above and never installs a browser. The UI
+Browser job installs the Chromium headless shell for the locked Playwright
+version, cached by that version, and runs `npm run test:e2e`. CI compares the
 PR base/head commits for whitespace with full Git history, then uses the same
 application commands above. Each check has its own step and failures fail the
 job; other checks still run after dependency installation succeeds. No check
