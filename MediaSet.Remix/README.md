@@ -114,10 +114,42 @@ React Router uses the existing file-based routing conventions for automatic rout
 **Key routes:**
 
 - `/` - Home dashboard with statistics
-- `/{entityType}` - Entity list view (books, movies, games, music)
-- `/{entityType}/$id` - Entity detail view
-- `/{entityType}/$id/edit` - Edit entity
+- `/{entityType}` - Entity list view (`books`, `movies`, `games`, `musics`)
+- `/{entityType}/:entityId` - Entity detail view
+- `/{entityType}/:entityId/edit` - Edit entity
 - `/{entityType}/add` - Add new entity
+
+### Collection contracts
+
+`app/routes.ts` uses `flatRoutes` from `@react-router/fs-routes`, excluding test
+files. The existing `$entity` layout shares the list/detail route modules across
+all four collections; `$entityId` is the existing API identifier. Entity enums
+remain `Books`, `Movies`, `Games`, and `Musics`, including the plural `/musics` URL
+for the Music navigation label.
+
+List loaders accept `searchText`, `orderBy` (default `title:asc`), and `page`
+(default `1`). `pagedSearchEntities` calls `/{Entity}/pagedsearch` with these
+values and `pageSize=75`, returning `{ items, page, totalPages, totalCount }`.
+The UI loader exposes `{ entities, pagination, entityType, searchText, orderBy,
+apiUrl }`. Pagination preserves search and ordering; changing ordering resets
+the page, and submitting the search form resets ordering/page to their defaults.
+Repeated search submissions revalidate the loader. Direct URLs and browser
+history restore this query state.
+
+Detail loaders return `{ entity, apiUrl }` and select the existing Book, Movie,
+Game, or Music component by `entity.type`. Browser cover URLs remain
+`${apiUrl}/static/images/${coverImage.filePath}`. Server requests use private
+`apiUrl`; browser/image configuration uses `clientApiUrl` (`/dev-api` through Vite
+in development). These variable names and the API DTOs remain unchanged.
+
+Editing uses `/{entityType}/add` and `/{entityType}/:entityId/edit`; both submit
+multipart forms through their existing actions and redirect to the detail URL.
+The delete action remains `POST /{entityType}/:entityId/delete`. The shared
+pending overlay follows Router navigation loading/submission state. Empty lists
+retain their existing message; invalid collections and missing records return
+404 with recovery UI. Malformed IDs and failed upstream API calls retain the
+existing 500 error boundary and retry/home controls. This migration preserves
+these behaviors; it does not redefine API error status policy.
 
 **Route features:**
 
