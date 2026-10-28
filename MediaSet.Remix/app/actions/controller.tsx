@@ -19,7 +19,7 @@ export default createController(routes, {
       });
     },
     home(context) {
-      return context.render(<HomePage />);
+      return context.render(<HomePage path={context.url.pathname} />);
     },
   },
 });
