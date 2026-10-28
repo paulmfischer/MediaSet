@@ -1,0 +1,6 @@
+node_modules/
+public/app.css
+tmp/
+**/*.test.ts
+**/*.test.tsx
+Dockerfile*

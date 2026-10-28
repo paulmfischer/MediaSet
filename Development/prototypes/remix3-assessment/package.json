@@ -1,0 +1,28 @@
+{
+  "name": "remix3-assessment",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development node --import remix/node-tsx server.ts",
+    "start": "NODE_ENV=production node --import remix/node-tsx server.ts",
+    "test": "NODE_ENV=test remix test",
+    "typecheck": "tsc --noEmit",
+    "css": "tailwindcss -c tailwind.config.ts -i app/tailwind.css -o public/app.css",
+    "css:watch": "npm run css -- --watch"
+  },
+  "dependencies": {
+    "@zxing/library": "^0.18.6",
+    "remix": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "autoprefixer": "^10.4.19",
+    "playwright": "^1.64.1",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.7"
+  },
+  "engines": {
+    "node": ">=24.22.1 <25"
+  }
+}
