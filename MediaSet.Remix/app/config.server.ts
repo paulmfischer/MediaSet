@@ -4,7 +4,7 @@
  * Note: appVersion is build-time only and not included here
  */
 
-import { clientApiUrl } from './constants.server';
+import { clientApiUrl } from './constants.server.ts';
 
 export interface ClientConfig {
   apiUrl: string;

@@ -1,4 +1,4 @@
-import { initializeRequestContext, getRequestContext } from './apiFetch.server';
+import { initializeRequestContext, getRequestContext } from './apiFetch.server.ts';
 
 const SEQ_ENABLED = process.env['ExternalLogging__Enabled'] === 'true';
 const SEQ_URL = process.env['ExternalLogging__SeqUrl'];

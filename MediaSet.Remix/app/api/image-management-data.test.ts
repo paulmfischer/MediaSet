@@ -4,11 +4,11 @@ const { mockApiFetch } = vi.hoisted(() => ({
   mockApiFetch: vi.fn(),
 }));
 
-vi.mock('~/utils/apiFetch.server', () => ({
+vi.mock('../utils/apiFetch.server.ts', () => ({
   apiFetch: mockApiFetch,
 }));
 
-vi.mock('~/utils/serverLogger', () => ({
+vi.mock('../utils/serverLogger.ts', () => ({
   serverLogger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('~/utils/serverLogger', () => ({
   },
 }));
 
-import { deleteOrphanedImages } from '~/api/image-management-data';
+import { deleteOrphanedImages } from './image-management-data.ts';
 
 describe('image-management-data.ts', () => {
   beforeEach(() => {

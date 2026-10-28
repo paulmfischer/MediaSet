@@ -1,17 +1,16 @@
-import { Params } from '@remix-run/react';
 import {
-  BaseEntity,
-  Book,
-  BookEntity,
+  type BaseEntity,
+  type Book,
+  type BookEntity,
   Entity,
-  Game,
-  GameEntity,
-  Movie,
-  MovieEntity,
-  Music,
-  MusicEntity,
-  Disc,
-} from '~/models';
+  type Game,
+  type GameEntity,
+  type Movie,
+  type MovieEntity,
+  type Music,
+  type MusicEntity,
+  type Disc,
+} from '../models.ts';
 
 export function toTitleCase(str: string | undefined) {
   if (str == undefined) {
@@ -21,7 +20,9 @@ export function toTitleCase(str: string | undefined) {
   return str.replace(/\w\S*/g, (text: string) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
 }
 
-export function getEntityFromParams(params: Params<string>): Entity {
+type Params = Record<string, string | undefined>;
+
+export function getEntityFromParams(params: Params): Entity {
   const entity = Entity[toTitleCase(params.entity) as keyof typeof Entity];
   if (!entity) {
     throw new Response(`Unknown entity type: ${params.entity}`, { status: 404 });

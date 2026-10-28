@@ -1,18 +1,18 @@
-import { baseUrl } from '~/constants.server';
-import { singular } from '~/utils/helpers';
+import { baseUrl } from '../constants.server.ts';
+import { singular } from '../utils/helpers.ts';
 import {
-  BookEntity,
-  MovieEntity,
-  GameEntity,
-  MusicEntity,
+  type BookEntity,
+  type MovieEntity,
+  type GameEntity,
+  type MusicEntity,
   Entity,
-  IdentifierType,
-  BookLookupResponse,
-  MovieLookupResponse,
-  GameLookupResponse,
-  MusicLookupResponse,
-  LookupError,
-} from '~/models';
+  type IdentifierType,
+  type BookLookupResponse,
+  type MovieLookupResponse,
+  type GameLookupResponse,
+  type MusicLookupResponse,
+  type LookupError,
+} from '../models.ts';
 
 type Link = {
   name: string;

@@ -1,5 +1,3 @@
-import '@testing-library/jest-dom';
-import 'vitest-dom/extend-expect';
 import { vi } from 'vitest';
 
 // Mock global fetch to prevent any unmocked API calls from reaching the network

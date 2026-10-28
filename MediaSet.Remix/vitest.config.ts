@@ -1,20 +1,17 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+
+import remixConfig from './remix.json' with { type: 'json' };
+
+// Unit tests of the retained server-only modules (API access, config, models,
+// helpers) still run on Vitest until they move to `remix test`. They are the
+// `*.test.ts` globs that remix.json excludes from `remix test`, so each test
+// file runs under exactly one runner.
+const legacyUnitTests = remixConfig.test.exclude.filter((glob) => glob.endsWith('.test.ts'));
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '~': path.resolve(__dirname, './app'),
-    },
-  },
   test: {
-    globals: true,
-    environment: 'happy-dom',
+    environment: 'node',
+    include: legacyUnitTests,
     setupFiles: ['./app/test/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'app/**/*.test.{ts,tsx}', '**/*.d.ts', 'build/'],
-    },
   },
 });

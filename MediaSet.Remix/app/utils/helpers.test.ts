@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { toTitleCase, getEntityFromParams, singular, millisecondsToMinutesSeconds, formToDto } from '~/utils/helpers';
-import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
+import { toTitleCase, getEntityFromParams, singular, millisecondsToMinutesSeconds, formToDto } from './helpers.ts';
+import { Entity, type BookEntity, type MovieEntity, type GameEntity, type MusicEntity } from '../models.ts';
 
 describe('helpers.ts', () => {
   describe('toTitleCase', () => {

@@ -1,8 +1,8 @@
-import { baseUrl } from '~/constants.server';
-import { singular } from '~/utils/helpers';
-import { BaseEntity, Entity } from '~/models';
-import { serverLogger } from '~/utils/serverLogger';
-import { apiFetch } from '~/utils/apiFetch.server';
+import { baseUrl } from '../constants.server.ts';
+import { singular } from '../utils/helpers.ts';
+import { type BaseEntity, type Entity } from '../models.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type PagedResult<TEntity> = {
   items: TEntity[];
