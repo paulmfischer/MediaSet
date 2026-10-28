@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.1.1](https://github.com/paulmfischer/MediaSet/compare/v4.1.0...v4.1.1) (2026-10-28)
+
+
+### Miscellaneous
+
+* **docs:** remove dead docs ([#684](https://github.com/paulmfischer/MediaSet/issues/684)) ([a22b5a0](https://github.com/paulmfischer/MediaSet/commit/a22b5a0fd9df9f9a9cf67d5520cc5aeb0ed74b3d))
+* **runtime:** align Node 24 LTS closes [#653](https://github.com/paulmfischer/MediaSet/issues/653) ([#671](https://github.com/paulmfischer/MediaSet/issues/671)) ([ba3d3d1](https://github.com/paulmfischer/MediaSet/commit/ba3d3d1722352611b83c1eb180721fe1bb4738dd))
+* simplify agent guidance and PR checks ([#680](https://github.com/paulmfischer/MediaSet/issues/680)) ([dd3dc31](https://github.com/paulmfischer/MediaSet/commit/dd3dc31e00462c3bd9ad1d6606a54c2e064c15b9))
+
 ## [4.1.0](https://github.com/paulmfischer/MediaSet/compare/v4.0.1...v4.1.0) (2026-10-26)
 
 
