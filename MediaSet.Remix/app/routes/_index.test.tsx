@@ -3,14 +3,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '~/test/test-utils';
 import Index, { meta, loader } from './_index';
 import * as statsData from '~/api/stats-data';
-import * as remixReact from '@remix-run/react';
+import * as remixReact from 'react-router';
 
 vi.mock('~/api/stats-data');
 
 const mockGetStats = vi.mocked(statsData.getStats);
 
-vi.mock('@remix-run/react', async () => {
-  const actual = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useLoaderData: vi.fn(),
@@ -138,8 +138,8 @@ describe('_index route', () => {
     it('should have all required meta tags', () => {
       const result = meta(createMetaArgs({}));
       expect(result).toHaveLength(2);
-      const titles = result.filter((m: Record<string, unknown>) => m.title);
-      const descriptions = result.filter((m: Record<string, unknown>) => m.name === 'description');
+      const titles = result?.filter((m: Record<string, unknown>) => m.title);
+      const descriptions = result?.filter((m: Record<string, unknown>) => m.name === 'description');
       expect(titles).toHaveLength(1);
       expect(descriptions).toHaveLength(1);
     });

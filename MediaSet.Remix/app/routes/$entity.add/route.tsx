@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
-import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from '@remix-run/react';
+import type { MetaFunction, ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { Form, redirect, useActionData, useLoaderData, useNavigate, useNavigation } from 'react-router';
 import invariant from 'tiny-invariant';
 import { addEntity } from '~/api/entity-data';
 import {

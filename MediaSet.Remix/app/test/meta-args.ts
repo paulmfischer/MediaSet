@@ -1,4 +1,4 @@
-import type { Params } from '@remix-run/react';
+import type { Params } from 'react-router';
 
 export function createMetaArgs(params: Params<string>) {
   return {
@@ -6,6 +6,7 @@ export function createMetaArgs(params: Params<string>) {
     location: { pathname: '/', search: '', hash: '', state: null, key: 'test' },
     matches: [],
     data: undefined,
+    loaderData: undefined,
     error: undefined,
   };
 }

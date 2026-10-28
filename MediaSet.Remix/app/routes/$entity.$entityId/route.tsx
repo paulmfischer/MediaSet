@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
+import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from 'react-router';
 import invariant from 'tiny-invariant';
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData } from 'react-router';
 import { getEntity } from '~/api/entity-data';
 import { resetImageLookup } from '~/api/image-management-data';
 import { BaseEntity, BookEntity, Entity, GameEntity, MovieEntity, MusicEntity } from '~/models';

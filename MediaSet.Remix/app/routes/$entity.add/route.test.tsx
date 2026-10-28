@@ -6,8 +6,8 @@ import * as entityData from '~/api/entity-data';
 import * as metadataData from '~/api/metadata-data';
 import * as helpers from '~/utils/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
-import * as remixReact from '@remix-run/react';
-import type { useNavigation } from '@remix-run/react';
+import * as remixReact from 'react-router';
+import type { useNavigation } from 'react-router';
 import React from 'react';
 
 // Mock modules
@@ -61,8 +61,8 @@ vi.mock('~/components/common/spinner', () => ({
 }));
 
 // Mock Remix hooks and Form component to avoid router context requirement
-vi.mock('@remix-run/react', async () => {
-  const actualRemix = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actualRemix = await vi.importActual('react-router');
   return {
     ...(actualRemix as Record<string, unknown>),
     Form: ({
@@ -165,8 +165,8 @@ describe('$entity_.add route', () => {
 
       const result = meta(createMetaArgs({ entity: 'books' }));
 
-      const titleTags = result.filter((tag: Record<string, unknown>) => tag.title !== undefined);
-      const descriptionTags = result.filter((tag: Record<string, unknown>) => tag.name === 'description');
+      const titleTags = result?.filter((tag: Record<string, unknown>) => tag.title !== undefined);
+      const descriptionTags = result?.filter((tag: Record<string, unknown>) => tag.name === 'description');
 
       expect(titleTags).toHaveLength(1);
       expect(descriptionTags).toHaveLength(1);

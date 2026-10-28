@@ -1,5 +1,5 @@
-import { type ActionFunctionArgs, type MetaFunction } from '@remix-run/node';
-import { useLoaderData, useActionData, Link, Form, useNavigation } from '@remix-run/react';
+import { type ActionFunctionArgs, type MetaFunction } from 'react-router';
+import { useLoaderData, useActionData, Link, Form, useNavigation } from 'react-router';
 import Tabs, { type TabConfig } from '~/components/common/tabs';
 import {
   getImageStats,

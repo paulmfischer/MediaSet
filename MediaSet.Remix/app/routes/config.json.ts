@@ -3,7 +3,7 @@
  * This allows the client to access server-side environment configuration
  */
 
-import type { LoaderFunction } from '@remix-run/node';
+import type { LoaderFunction } from 'react-router';
 import { getClientConfig } from '~/config.server';
 import { serverLogger } from '~/utils/serverLogger';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSubmit } from '@remix-run/react';
+import { useSubmit } from 'react-router';
 
 const BarcodeScanner = React.lazy(() => import('~/components/scan/barcode-scanner'));
 

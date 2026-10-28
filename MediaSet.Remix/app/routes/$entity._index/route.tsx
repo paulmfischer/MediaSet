@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node';
-import { Form, Link, useLoaderData, useNavigate } from '@remix-run/react';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Form, Link, useLoaderData, useNavigate } from 'react-router';
 import { useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
 import { pagedSearchEntities } from '~/api/entity-data';

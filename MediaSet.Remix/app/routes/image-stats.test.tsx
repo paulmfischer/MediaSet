@@ -8,7 +8,7 @@ vi.mock('~/api/image-stats-data');
 
 function submit(formData: FormData) {
   const request = new Request('http://localhost/image-stats', { method: 'POST', body: formData });
-  return action({ request, params: {}, context: {} });
+  return action({ request, url: new URL(request.url), pattern: '/image-stats', params: {}, context: {} });
 }
 
 function resetForm(entityType: string, entityIds = '["entity-1"]'): FormData {

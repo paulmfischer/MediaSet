@@ -1,4 +1,4 @@
-import { Link } from '@remix-run/react';
+import { Link } from 'react-router';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteDialog from '~/components/dialogs/delete-dialog';

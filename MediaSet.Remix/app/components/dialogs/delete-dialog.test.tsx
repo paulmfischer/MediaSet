@@ -7,8 +7,8 @@ import DeleteDialog from './delete-dialog';
 // Mock the Remix Form component and navigation to avoid router context requirement
 const mockNavigationState: { state: string; formAction?: string } = { state: 'idle', formAction: undefined };
 
-vi.mock('@remix-run/react', async () => {
-  const actual = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useNavigation: () => mockNavigationState,

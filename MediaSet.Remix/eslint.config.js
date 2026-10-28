@@ -10,7 +10,7 @@ import globals from 'globals';
 export default [
   // Global ignores (replaces --ignore-path .gitignore)
   {
-    ignores: ['.cache/', 'build/', 'coverage/'],
+    ignores: ['.cache/', 'build/', 'coverage/', '.react-router/'],
   },
 
   // Base config

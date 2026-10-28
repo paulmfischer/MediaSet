@@ -27,8 +27,8 @@ vi.mock('~/components/dialogs/delete-dialog', () => ({
 }));
 
 // Mock Remix hooks to avoid router context requirement
-vi.mock('@remix-run/react', async () => {
-  const actual = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     Link: ({ to, children, ...props }: { to: string; children?: React.ReactNode; [key: string]: unknown }) => (

@@ -3,8 +3,8 @@ import { render, screen, waitFor } from '~/test/test-utils';
 import PendingNavigation from './pending-navigation';
 
 // Mock the Remix useNavigation hook
-vi.mock('@remix-run/react', async () => {
-  const actual = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useNavigation: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('../common/spinner', () => ({
   ),
 }));
 
-import { useNavigation } from '@remix-run/react';
+import { useNavigation } from 'react-router';
 
 describe('PendingNavigation', () => {
   beforeEach(() => {

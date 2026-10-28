@@ -10,7 +10,7 @@ import {
   useRouteError,
   isRouteErrorResponse,
   useLocation,
-} from '@remix-run/react';
+} from 'react-router';
 import { useEffect, useRef, useState } from 'react';
 import { Clapperboard, Gamepad2, HardDrive, Home, LibraryBig, Menu, Music, Settings, X } from 'lucide-react';
 import ErrorScreen from './components/layout/error-screen';

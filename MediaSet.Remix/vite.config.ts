@@ -1,11 +1,10 @@
-import { vitePlugin as remix } from '@remix-run/dev';
+import { reactRouter } from '@react-router/dev/vite';
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { remixDevTools } from 'remix-development-tools';
 
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env };
   const mobile = command === 'serve' && mode === 'mobile';
   if (mobile && (!env.DEV_HTTPS_CERT || !env.DEV_HTTPS_KEY)) {
     throw new Error(
@@ -19,29 +18,18 @@ export default defineConfig(({ command, mode }) => {
         ? { 'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || '/dev-api') }
         : undefined,
     optimizeDeps: {
-      // Bundle injected devtools and route icons before the first hydration.
-      include: ['remix-development-tools/client', 'lucide-react'],
+      // Bundle route icons before the first hydration.
+      include: ['lucide-react'],
     },
-    plugins: [
-      remixDevTools(),
-      remix({
-        future: {
-          v3_fetcherPersist: true,
-          v3_relativeSplatPath: true,
-          v3_throwAbortReason: true,
-        },
-        ignoredRouteFiles: ['**/*.test.{ts,tsx}'],
-      }),
-      tsconfigPaths(),
-    ],
+    plugins: [reactRouter(), tsconfigPaths()],
     server: {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
       https: mobile
         ? {
-            cert: readFileSync(env.DEV_HTTPS_CERT),
-            key: readFileSync(env.DEV_HTTPS_KEY),
+            cert: readFileSync(env.DEV_HTTPS_CERT!),
+            key: readFileSync(env.DEV_HTTPS_KEY!),
           }
         : undefined,
       proxy: {

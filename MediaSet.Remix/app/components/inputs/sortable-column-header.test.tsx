@@ -4,8 +4,8 @@ import SortableColumnHeader from './sortable-column-header';
 
 const mockNavigate = vi.fn();
 
-vi.mock('@remix-run/react', async () => {
-  const actual = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
     useNavigate: () => mockNavigate,

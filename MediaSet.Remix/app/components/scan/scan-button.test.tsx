@@ -4,7 +4,7 @@ import ScanButton from './scan-button';
 
 // Mock the Remix submit hook
 const mockSubmit = vi.fn();
-vi.mock('@remix-run/react', () => ({
+vi.mock('react-router', () => ({
   useSubmit: () => mockSubmit,
 }));
 

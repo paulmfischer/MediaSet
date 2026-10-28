@@ -6,8 +6,8 @@ import * as entityData from '~/api/entity-data';
 import * as metadataData from '~/api/metadata-data';
 import * as helpers from '~/utils/helpers';
 import { Entity, BookEntity, MovieEntity, GameEntity, MusicEntity } from '~/models';
-import * as remixReact from '@remix-run/react';
-import type { useNavigation } from '@remix-run/react';
+import * as remixReact from 'react-router';
+import type { useNavigation } from 'react-router';
 
 // Mock modules
 vi.mock('~/api/entity-data');
@@ -60,8 +60,8 @@ vi.mock('~/components/common/spinner', () => ({
 }));
 
 // Mock Remix hooks and Form component
-vi.mock('@remix-run/react', async () => {
-  const actualRemix = await vi.importActual('@remix-run/react');
+vi.mock('react-router', async () => {
+  const actualRemix = await vi.importActual('react-router');
   return {
     ...(actualRemix as Record<string, unknown>),
     Form: ({
@@ -554,7 +554,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
       mockSingular.mockReturnValue('Book');
     });
@@ -675,7 +675,7 @@ describe('$entity_.$entityId_.edit route', () => {
 
     it('should enable buttons when not submitting', () => {
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
 
       render(<Edit />);
@@ -724,7 +724,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
       mockSingular.mockReturnValue('Book');
     });
@@ -828,7 +828,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
       mockSingular.mockReturnValue('Book');
     });
@@ -890,7 +890,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseLoaderData.mockReturnValue(mockLoaderData);
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
       mockSingular.mockReturnValue('Book');
     });
@@ -943,7 +943,7 @@ describe('$entity_.$entityId_.edit route', () => {
       mockUseActionData.mockReturnValue(undefined);
       mockUseNavigate.mockReturnValue(vi.fn());
       mockUseNavigation.mockReturnValue({ state: 'idle' } as unknown as ReturnType<
-        typeof import('@remix-run/react').useNavigation
+        typeof import('react-router').useNavigation
       >);
       mockSingular.mockReturnValue('Book');
     });

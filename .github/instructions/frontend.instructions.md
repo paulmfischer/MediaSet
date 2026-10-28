@@ -1,13 +1,13 @@
 ---
-description: Code style and conventions for Remix.js/TypeScript frontend UI
+description: Code style and conventions for React Router 7/TypeScript frontend UI
 applyTo: "**/*.ts,**/*.tsx"
 ---
 
-# Frontend UI Code Style Guide (Remix.js/TypeScript)
+# Frontend UI Code Style Guide (React Router 7/TypeScript)
 
 ## File Organization
 
-- Follow Remix.js routing conventions
+- Follow React Router 7 routing conventions
 - Place route components in `app/routes/`
 - Place reusable components in `app/components/`
 - Place data functions in `app/*-data.ts` files
@@ -39,14 +39,14 @@ applyTo: "**/*.ts,**/*.tsx"
 - Use proper prop typing with TypeScript interfaces
 - Memoize expensive components with `React.memo()` when needed
 
-## Remix.js Conventions
+## React Router 7 Conventions
 
 - Use `loader` functions for data fetching (GET requests)
 - Use `action` functions for mutations (POST, PUT, DELETE)
-- Follow Remix's nested routing patterns
-- Use Remix `Form` component for forms that trigger actions
+- Follow React Router's nested routing patterns
+- Use React Router `Form` component for forms that trigger actions
 - Use `useLoaderData()` and `useActionData()` hooks appropriately
-- Add `CatchBoundary` and `ErrorBoundary` for error handling
+- Use `ErrorBoundary` and `isRouteErrorResponse` for error handling
 
 ## Styling
 
@@ -71,7 +71,7 @@ applyTo: "**/*.ts,**/*.tsx"
 - Use error boundaries for component-level error handling
 - Validate form inputs on both client and server
 - Provide loading states for async operations
-- Use Remix error boundaries for route-level errors
+- Use React Router error boundaries for route-level errors
 
 ## Logging
 

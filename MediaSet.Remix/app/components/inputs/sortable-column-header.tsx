@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from '@remix-run/react';
+import { useLocation, useNavigate } from 'react-router';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 type Props = {

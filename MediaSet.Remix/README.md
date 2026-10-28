@@ -1,14 +1,31 @@
 # MediaSet.Remix
 
-Frontend UI for MediaSet, built with Remix.js and TypeScript.
+Frontend UI for MediaSet, built with React Router 7 and TypeScript.
+
+The existing application is migrated in place; `MediaSet.Remix` remains its directory
+to preserve development, Docker, and deployment paths. The `feat/react-router-7`
+branch provides isolation until cutover. There is no parallel frontend.
+The migration follows the [official Remix v2 upgrade guide](https://reactrouter.com/7.18.4/upgrading/remix).
+`app/routes.ts` retains the existing file conventions through `@react-router/fs-routes`;
+loaders, actions, components, and tests remain in their original locations.
+Router packages are aligned at 7.18.4 and React remains on 18.
+
+The only additional major dependency change is the test-only `happy-dom` 21.0.4
+security fix for [GHSA-834v-8h66-3h79](https://github.com/advisories/GHSA-834v-8h66-3h79).
+Other package modernization remains separate work.
+
+The existing upload preview still reads build-time `VITE_API_URL`; setting only
+runtime `clientApiUrl` does not configure that preview in production. Image
+configuration parity remains part of #677. Existing runtime variable names and
+deployment paths are retained throughout this framework migration.
 
 ## Overview
 
-The MediaSet frontend provides a modern, responsive interface for managing your personal media library. Built with Remix.js, it offers server-side rendering, optimistic UI updates, and seamless integration with the MediaSet API.
+The MediaSet frontend provides a modern, responsive interface for managing your personal media library. Built with React Router 7, it offers server-side rendering, optimistic UI updates, and seamless integration with the MediaSet API.
 
 **Technologies:**
 
-- **Remix.js**: Full-stack React framework with server-side rendering
+- **React Router 7**: Full-stack React framework with server-side rendering
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first CSS framework
 - **Vite**: Fast build tool and dev server
@@ -17,7 +34,7 @@ The MediaSet frontend provides a modern, responsive interface for managing your 
 
 ### Prerequisites and setup
 
-Install Node.js 22/npm. Complete [first setup](../Development/DEVELOPMENT.md#first-setup)
+Install Node.js 24.22.1 and its bundled npm. Complete [first setup](../Development/DEVELOPMENT.md#first-setup)
 for the host API and containerized MongoDB.
 
 ### Development
@@ -63,7 +80,7 @@ MediaSet.Remix/
 ├── app/
 │   ├── components/       # Reusable UI components
 │   ├── hooks/            # Shared React hooks
-│   ├── routes/           # Remix route modules
+│   ├── routes/           # React Router route modules
 │   │   ├── _index.tsx           # Home dashboard
 │   │   ├── _index.test.tsx      # Home route tests
 │   │   ├── config.json.ts       # Runtime UI configuration
@@ -92,7 +109,7 @@ MediaSet.Remix/
 
 ## Routing
 
-Remix uses file-based routing for automatic route generation:
+React Router uses the existing file-based routing conventions for automatic route generation:
 
 **Key routes:**
 
@@ -113,18 +130,18 @@ Remix uses file-based routing for automatic route generation:
 
 ### Data Loading
 
-Server-side data fetching with Remix loaders:
+Server-side data fetching with React Router loaders:
 
 ```typescript
 export async function loader({ params }: LoaderFunctionArgs) {
   const books = await getBooks();
-  return json({ books });
+  return { books };
 }
 ```
 
 ### Form Handling
 
-Form submissions with Remix actions:
+Form submissions with React Router actions:
 
 ```typescript
 export async function action({ request }: ActionFunctionArgs) {
@@ -162,6 +179,6 @@ export interface Book {
 
 - **[Development/DEVELOPMENT.md](../Development/DEVELOPMENT.md)** - Complete development setup and debugging
 - **[Development/TESTING.md](../Development/TESTING.md)** - Testing guidelines and patterns
-- [Remix Documentation](https://remix.run/docs)
+- [React Router Documentation](https://reactrouter.com/7.18.4)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Vite Documentation](https://vitejs.dev/guide/)

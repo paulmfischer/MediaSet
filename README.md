@@ -4,11 +4,11 @@
 ![License](https://img.shields.io/github/license/paulmfischer/MediaSet)
 
 ![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
-![Remix](https://img.shields.io/badge/remix-%23000.svg?style=for-the-badge&logo=remix&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-7-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
 
-A modern, full-stack personal media library management system for organizing your books, movies, and games collection. Built with .NET 10.0 and Remix.js, MediaSet provides an intuitive interface for cataloging, searching, and tracking your media items with automatic metadata lookup capabilities.
+A modern, full-stack personal media library management system for organizing your books, movies, and games collection. Built with .NET 10.0 and React Router 7, MediaSet provides an intuitive interface for cataloging, searching, and tracking your media items with automatic metadata lookup capabilities.
 
 ## ✨ Key Features
 
@@ -16,7 +16,7 @@ A modern, full-stack personal media library management system for organizing you
 - **🔍 Smart Metadata Lookup**: Automatic metadata retrieval using ISBN, UPC/EAN barcodes
 - **🖼️ Cover Images**: Upload cover art, download images from lookup results, or provide URLs for automatic download
 - **📱 Responsive Design**: Mobile-friendly interface built with Tailwind CSS
-- **🚀 Modern Stack**: .NET 10.0 backend API with Remix.js frontend
+- **🚀 Modern Stack**: .NET 10.0 backend API with React Router 7 frontend
 - **🛠️ Local Development**: Host API/UI with hot-reload and containerized MongoDB
 - **⚡ Performance Optimized**: In-memory caching for fast queries
 - **📊 Library Statistics**: Track collection size, authors, genres, and more
@@ -161,7 +161,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Server-side API URL - for Remix server to call API (uses container name)
+      # Server-side API URL - for React Router server to call API (uses container name)
       apiUrl: "http://mediaset-api:8080"
       
       # Client-side API URL - for browser to access API (must be externally accessible)
@@ -350,7 +350,7 @@ feat(api)!: change health endpoint response format
 - RESTful API design
 
 **Frontend:**
-- Remix.js (React framework)
+- React Router 7 (React framework)
 - TypeScript
 - Tailwind CSS
 

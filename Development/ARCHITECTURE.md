@@ -8,8 +8,8 @@
   - `Program.cs` — Dependency injection and application startup
 - `MediaSet.Api.Analyzers/` — Custom backend analyzers
 - `MediaSet.Api.Tests/` — Backend unit tests (NUnit)
-- `MediaSet.Remix/` — Remix.js frontend UI
-  - `app/routes/` — Remix route components
+- `MediaSet.Remix/` — React Router 7 frontend UI
+  - `app/routes/` — React Router route components
   - `app/components/` — Reusable React components
   - `app/api/` — Server-side entity, stats, metadata, lookup, and image data access functions
 - `Development/` — Development documentation
@@ -45,10 +45,10 @@
 - MongoDB storage with `[BsonId]` attributes
 - Custom JSON converters for specific types (runtime, boolean)
 
-### Frontend (Remix.js)
+### Frontend (React Router 7)
 
 **Routing:**
-- Remix file-based routing in `app/routes/`
+- React Router file-based routing in `app/routes/`
 - Key routes: `_index.tsx` (dashboard), `$entity._index/` (list), `$entity.$entityId/` (detail), `$entity.$entityId_.edit/` (edit)
 
 **Data Access Pattern:**
@@ -59,16 +59,16 @@
 - Browser API/image requests use `clientApiUrl` (`/dev-api` through Vite in native development)
 
 **State Management:**
-- Remix loaders/actions for server state
+- React Router loaders/actions for server state
 - React hooks for client state
-- No global state library (uses Remix paradigms)
+- No global state library (uses React Router paradigms)
 
 ## Code Style & Conventions
 
 Before making changes, read and follow these instruction files:
 - `.github/instructions/shared.md` — project-wide rules (commits, workflow, commands)
 - `.github/instructions/backend.instructions.md` — .NET code style (applies to `*.cs` files)
-- `.github/instructions/frontend.instructions.md` — Remix/TypeScript code style (applies to `*.ts`, `*.tsx` files)
+- `.github/instructions/frontend.instructions.md` — React Router/TypeScript code style (applies to `*.ts`, `*.tsx` files)
 
 ## External API Integrations
 

@@ -12,7 +12,7 @@ MediaSet is a full-stack application for managing personal media collections.
 
 **Tech Stack:**
 - **Backend:** .NET 10 minimal API with MongoDB
-- **Frontend:** Remix.js with TypeScript and Tailwind CSS
+- **Frontend:** React Router 7 with TypeScript and Tailwind CSS
 - **Testing:** NUnit (backend), Vitest + React Testing Library (frontend)
 
 **Architecture:**

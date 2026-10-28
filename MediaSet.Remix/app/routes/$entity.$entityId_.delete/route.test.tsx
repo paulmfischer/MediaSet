@@ -3,16 +3,16 @@ import { action } from './route';
 import * as entityData from '~/api/entity-data';
 import * as helpers from '~/utils/helpers';
 import { Entity } from '~/models';
-import { redirect } from '@remix-run/node';
+import { redirect } from 'react-router';
 
 // Mock modules
 vi.mock('~/api/entity-data');
 vi.mock('~/utils/helpers');
-vi.mock('@remix-run/node', async () => {
-  const actual = await vi.importActual('@remix-run/node');
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
-    redirect: vi.fn((actual as typeof import('@remix-run/node')).redirect),
+    redirect: vi.fn((actual as typeof import('react-router')).redirect),
   };
 });
 
@@ -204,7 +204,7 @@ describe('$entity.$entityId.delete route', () => {
 
       it('should return redirect response', async () => {
         mockGetEntityFromParams.mockReturnValue(Entity.Books);
-        const { redirect: actualRedirect } = await vi.importActual<typeof import('@remix-run/node')>('@remix-run/node');
+        const { redirect: actualRedirect } = await vi.importActual<typeof import('react-router')>('react-router');
         const redirectResponse = actualRedirect('/books');
         mockRedirect.mockReturnValue(redirectResponse);
         mockDeleteEntity.mockResolvedValueOnce(undefined);

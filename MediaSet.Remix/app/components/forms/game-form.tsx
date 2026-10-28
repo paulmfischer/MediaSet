@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form } from '@remix-run/react';
+import { Form } from 'react-router';
 import MultiselectInput from '~/components/inputs/multiselect-input';
 import SingleselectInput from '~/components/inputs/singleselect-input';
 import ImageUpload from '~/components/images/image-upload';

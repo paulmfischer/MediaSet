@@ -1,4 +1,4 @@
-import { Form } from '@remix-run/react';
+import { Form } from 'react-router';
 import { ImageOff } from 'lucide-react';
 import type { ImageLookupData } from '~/models';
 

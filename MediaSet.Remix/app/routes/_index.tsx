@@ -1,5 +1,5 @@
-import { type MetaFunction } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { type MetaFunction } from 'react-router';
+import { useLoaderData } from 'react-router';
 import { getStats, type NameCount } from '~/api/stats-data';
 import { getIntegrations } from '~/api/integrations-data';
 import AttributionBadges from '~/components/common/attribution-badges';
