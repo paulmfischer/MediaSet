@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/remix/schema/remix.json",
+  "test": {
+    // Vitest still runs these retained module tests (see vitest.config.ts).
+    "exclude": [
+      "node_modules/**",
+      "app/api/**/*.test.ts",
+      "app/utils/**/*.test.ts",
+      "app/models.test.ts",
+      "app/config.server.test.ts"
+    ],
+    "playwright": {
+      "configFile": "./playwright.config.ts",
+      "projects": ["chromium"]
+    }
+  }
+}

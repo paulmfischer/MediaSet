@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mockApiResponse } from '~/test/mocks';
+import { mockApiResponse } from '../test/mocks.ts';
 
 // Now import after mocking
-import { lookup, getIdentifierTypeForField, isLookupError } from '~/api/lookup-data.server';
+import { lookup, getIdentifierTypeForField, isLookupError } from './lookup-data.server.ts';
 import {
   Entity,
-  IdentifierType,
-  BookLookupResponse,
-  MovieLookupResponse,
-  GameLookupResponse,
-  MusicLookupResponse,
-} from '~/models';
+  type IdentifierType,
+  type BookLookupResponse,
+  type MovieLookupResponse,
+  type GameLookupResponse,
+  type MusicLookupResponse,
+} from '../models.ts';
 
 describe('lookup-data.server.ts', () => {
   beforeEach(() => {

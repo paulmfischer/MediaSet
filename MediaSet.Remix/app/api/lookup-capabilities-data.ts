@@ -1,6 +1,6 @@
-import { baseUrl } from '~/constants.server';
-import { apiFetch } from '~/utils/apiFetch.server';
-import { Entity } from '~/models';
+import { baseUrl } from '../constants.server.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
+import { Entity } from '../models.ts';
 
 export type LookupCapabilities = {
   supportsBookLookup: boolean;

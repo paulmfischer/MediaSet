@@ -1,7 +1,7 @@
-import { baseUrl } from '~/constants.server';
-import { serverLogger } from '~/utils/serverLogger';
-import { apiFetch } from '~/utils/apiFetch.server';
-import { Entity } from '~/models';
+import { baseUrl } from '../constants.server.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
+import { type Entity } from '../models.ts';
 
 export async function resetImageLookup(entityIds: string[], entityType: Entity): Promise<{ reset: number }> {
   try {

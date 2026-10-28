@@ -20,7 +20,7 @@ import {
   type LookupError,
   type LookupResult,
   type IdentifierType,
-} from './models';
+} from './models.ts';
 
 describe('models.ts', () => {
   describe('Entity enum', () => {

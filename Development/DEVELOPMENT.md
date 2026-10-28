@@ -91,7 +91,11 @@ npm run dev
 - UI: http://localhost:3000 (also accessible at http://YOUR_LAN_IP:3000).
 - API and Swagger: http://127.0.0.1:5000 and http://127.0.0.1:5000/swagger.
 - API port and Development environment come from the API launch profile.
-- Vite uses port 3000 and fails if it is already occupied.
+- `npm run dev` runs the Remix 3 server (`server.ts`) with `node --watch`,
+  plus the Tailwind CLI in watch mode writing `public/app.css`. Port 3000 is
+  fixed; the server fails if it is already occupied.
+- Server source changes restart the server; reload the browser to see them.
+  See [Hot reload decision](#hot-reload-decision).
 - Ordinary development requires no certificates or frontend environment file.
 
 Ctrl+C stops each application. MongoDB remains running until explicitly stopped:
@@ -109,12 +113,12 @@ Complete first setup before using Run and Debug (F5):
 | Configuration | Behavior |
 | --- | --- |
 | Launch API | Starts MongoDB, builds the API, and attaches the .NET debugger on port 5000. |
-| Launch UI | Starts Vite in a JavaScript Debug Terminal on port 3000. |
+| Launch UI | Starts the UI dev server in a JavaScript Debug Terminal on port 3000. |
 | Launch API + UI | Starts both applications; MongoDB startup runs only through the API prerequisite. |
 | Launch UI — Mobile HTTPS | Starts the HTTPS frontend after the optional certificate setup below. |
 | Launch API + UI — Mobile HTTPS | Starts the API debugger and HTTPS frontend together. |
 
-UI debug launches open the default browser when Vite starts, including combined
+UI debug launches open the default browser when the UI server starts, including combined
 and mobile HTTPS launches. UI-only
 launches expect an already-running API for database-backed pages.
 Stopping a compound debug session stops both application sessions and leaves MongoDB running.
@@ -143,14 +147,15 @@ See the integration guides in [Setup](../Setup/) for other providers.
 Do not copy container hostnames such as `mongodb` or `api` into host configuration.
 
 The frontend defaults to server-side API calls at http://127.0.0.1:5000.
-Browser API/image requests use the relative `/dev-api` prefix. Vite strips that
-prefix and forwards requests to the local API, so phones never call their own
+Browser API/image requests use the relative `/dev-api` prefix. The development
+server (never production) strips that prefix and forwards requests to the local API, so phones never call their own
 localhost or load HTTP images from an HTTPS page.
 
 Optional frontend overrides belong in `MediaSet.Remix/.env.local`; see
-`MediaSet.Remix/.env.example`. Restart Vite after changing environment variables.
-`apiUrl` controls the server-side API/proxy target; `clientApiUrl` and
-`VITE_API_URL` can override browser URLs when deliberately testing another API.
+`MediaSet.Remix/.env.example`; `npm run dev` and `npm run dev:mobile` load it.
+Restart the UI dev server after changing environment variables.
+`apiUrl` controls the server-side API/proxy target; `clientApiUrl` can override
+the browser URL (served by `/config.json`) when deliberately testing another API.
 Leave browser overrides unset for normal local and mobile testing.
 Production continues to use its existing explicit API URL configuration.
 
@@ -223,13 +228,12 @@ podman-compose -f docker-compose.dev.yml up -d --force-recreate mongodb
   after first initialization. Verify no stale environment variable overrides
   your launch profile or User Secrets.
 - **Port occupied:** stop the old local stack or the other watch/debug session.
-  Vite deliberately does not select a different port.
+  The UI dev server deliberately does not select a different port.
 - **Dependency errors:** rerun `dotnet restore` or `npm ci --prefix MediaSet.Remix`.
   Run dependency installation after lockfile changes. Do not clear all caches
   as a normal startup step.
-- **Frontend hydration/devtools errors:** retain the existing Vite prebundling
-  configuration; stop Vite and run `npm run dev -- --force` if its optimized
-  dependency cache needs regeneration.
+- **Unstyled pages:** `public/app.css` is generated, not committed. `npm run dev`
+  rebuilds it on start; otherwise run `npm run css` (or `npm run build`).
 - **Mobile camera unavailable:** confirm trusted HTTPS, certificate address,
   browser camera permission, and LAN reachability. Certificate-warning bypasses
   are not a replacement for installing the CA.
@@ -261,6 +265,18 @@ npm run build
 npm test
 ```
 
+`npm run build` compiles the Tailwind stylesheet to `public/app.css`; there is no
+other build output because Node runs the TypeScript sources directly.
+`npm test` runs the retained module unit tests (Vitest) and the router (server)
+tests (`remix test --type server`). Browser and end-to-end tests run separately
+in Playwright Chromium; install the browser build matching the locked Playwright
+version once, then run them:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
 Check whitespace from the repository root:
 
 ```bash
@@ -282,10 +298,15 @@ For focused tests during development:
 ```bash
 # Repository root: NUnit class or method (append .MethodName to narrow further)
 dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --filter "FullyQualifiedName~TestClassName"
-# From MediaSet.Remix: a single Vitest file or interactive watch mode
-npm test -- app/path/to/test-file.test.ts
-npm run test:watch
+# From MediaSet.Remix: one retained module test file (Vitest)
+npm run test:unit -- app/path/to/test-file.test.ts
+# From MediaSet.Remix: remix test files by partial name, e.g. app/router.test.ts
+NODE_ENV=test npx remix test router
 ```
+
+Router tests use `*.test.ts`, browser tests `*.test.browser.tsx`, and end-to-end
+tests `*.test.e2e.ts` (see `remix.json`). The retained module tests listed in
+`vitest.config.ts` are excluded from `remix test`.
 
 Use focused tests while iterating, then the full checks for the affected area
 before completion. Shared configuration changes require both API and UI checks.
@@ -320,8 +341,30 @@ CI formatting gate. It follows `.editorconfig`, including C# line endings, so
 review the selected file's diff. Do not suppress diagnostics or disable signing
 to get checks or commits to pass.
 
+## Hot reload decision
+
+Decision: the UI dev loop uses `node --watch` server restarts plus the Tailwind
+CLI watch, with a manual browser reload. Remix hot module replacement is not used.
+
+Evaluated on `remix@3.1.0`: `remix/node-hmr` with `remix/component-hmr` (the
+`remix new` starter's `hmr.ts`). On a desktop browser at localhost it swapped
+server-rendered markup in about 0.1 s while keeping the document. It was rejected
+for now because:
+
+- The browser event stream URL is hard-coded to `http://127.0.0.1:<port>`, so a
+  phone on the LAN cannot reach it, and an HTTPS page (mobile mode) blocks it as
+  mixed content. It would only work on the development machine.
+- The Tailwind stylesheet is a static file outside the asset server, so new
+  utility classes still need a full reload, which covers most UI edits.
+- It needs a supervising proxy process and two extra ports in front of the server
+  that already owns the `/dev-api` proxy and HTTPS.
+
+Revisit when node-hmr supports a configurable public event URL or HTTPS, or if
+the styling follow-up moves CSS into the asset pipeline.
+
 ## Manual application checks
 
-Manually verify frontend HMR and API watch reload. For mobile, check actual-phone
-camera permission, barcode detection, images, and HMR without mixed-content errors.
+Manually verify the UI server restart and API watch reload. For mobile, check
+actual-phone camera permission, barcode detection, images, and that pages load
+without mixed-content errors.
 

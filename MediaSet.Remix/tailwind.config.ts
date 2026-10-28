@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss';
-import plugin from 'tailwindcss/plugin';
-import colors from 'tailwindcss/colors';
+import plugin from 'tailwindcss/plugin.js';
+import colors from 'tailwindcss/colors.js';
 
 function hexToRgbChannels(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16);

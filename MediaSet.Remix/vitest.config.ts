@@ -1,20 +1,12 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
 
+// Unit tests of the retained server-only modules (API access, config, models,
+// helpers) still run on Vitest until they move to `remix test`. Keep this list in
+// sync with `test.exclude` in remix.json, which runs router, browser and e2e tests.
 export default defineConfig({
-  resolve: {
-    alias: {
-      '~': path.resolve(__dirname, './app'),
-    },
-  },
   test: {
-    globals: true,
-    environment: 'happy-dom',
+    environment: 'node',
+    include: ['app/api/**/*.test.ts', 'app/utils/**/*.test.ts', 'app/models.test.ts', 'app/config.server.test.ts'],
     setupFiles: ['./app/test/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'app/**/*.test.{ts,tsx}', '**/*.d.ts', 'build/'],
-    },
   },
 });
