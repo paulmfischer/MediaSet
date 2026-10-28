@@ -1,7 +1,6 @@
 {
   "$schema": "./node_modules/remix/schema/remix.json",
   "test": {
-    // Vitest still runs these retained module tests (see vitest.config.ts).
     "exclude": [
       "node_modules/**",
       "app/api/**/*.test.ts",
