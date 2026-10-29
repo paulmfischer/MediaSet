@@ -104,4 +104,41 @@ describe('add book (e2e)', () => {
     assert.equal(await pending.isDisabled(), true);
     await page.waitForURL('**/books');
   });
+
+  it('reopens a select on click, never re-offers a selected value as new, and lets Enter submit when idle', async (t) => {
+    const saved = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+
+    // Pick a format, then click the still-focused input: the list opens again.
+    const format = page.getByRole('combobox', { name: 'Format' });
+    await format.click();
+    await page.getByRole('option', { name: 'Hardcover' }).click();
+    assert.equal(await page.getByRole('listbox').count(), 0);
+    await format.click();
+    await page.getByRole('listbox').waitFor();
+    await format.press('Escape');
+    assert.equal(await page.getByRole('listbox').count(), 0);
+    await format.click();
+    await page.getByRole('listbox').waitFor();
+
+    // A value that is already a chip is not offered as "add new" again.
+    const authors = page.getByRole('combobox', { name: 'Authors' });
+    await authors.fill('Brian Herbert');
+    await authors.press('ArrowDown');
+    await authors.press('Enter');
+    await authors.fill('brian herbert');
+    assert.equal(await page.getByRole('option', { name: /Add new Author/ }).count(), 0);
+    await authors.press('Escape');
+    await page.getByRole('button', { name: 'Remove Brian Herbert' }).waitFor();
+
+    // With nothing typed or navigated to, Enter submits the form instead of picking an option.
+    await page.locator('#title').fill('Dune');
+    await authors.click();
+    await authors.press('Enter');
+    await page.waitForURL('**/books');
+    assert.equal(saved.length, 1);
+    assert.deepEqual(saved[0]?.authors, ['Brian Herbert']);
+  });
 });

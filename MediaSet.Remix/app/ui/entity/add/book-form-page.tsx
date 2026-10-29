@@ -2,7 +2,7 @@ import type { Handle } from 'remix/component';
 
 import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
-import { errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
@@ -23,11 +23,13 @@ interface BookFormPageProps {
   /** A failure not tied to a field, such as the API rejecting the save. */
   formError?: string | undefined;
   options: BookFormOptions;
+  /** The existing authors, genres, publishers or formats could not be loaded. */
+  optionsUnavailable?: boolean;
 }
 
 export function BookFormPage(handle: Handle<BookFormPageProps>) {
   return () => {
-    const { action, cancelHref, values, errors, formError, options } = handle.props;
+    const { action, cancelHref, values, errors, formError, options, optionsUnavailable } = handle.props;
     const hasErrors = Object.keys(errors).length > 0 || Boolean(formError);
 
     return (
@@ -36,6 +38,12 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
         {hasErrors ? (
           <p role="alert" class="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-red-300">
             {formError ?? 'Please correct the highlighted fields.'}
+          </p>
+        ) : null}
+        {optionsUnavailable ? (
+          <p role="status" class="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 text-yellow-200">
+            Existing authors, genres, publishers and formats could not be loaded. Check before adding a value so you
+            don't create a duplicate.
           </p>
         ) : null}
         <form method="post" action={action} class="flex flex-col gap-4">
@@ -78,6 +86,8 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               addLabel="Add new Format:"
               options={options.formats}
               selectedValue={values.format}
+              invalid={Boolean(errors.format)}
+              describedBy={errors.format ? errorId('format') : undefined}
             />
           </Field>
           <Field name="pages" label="Pages" error={errors.pages}>
@@ -110,6 +120,8 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               addLabel="Add new Author:"
               options={options.authors}
               selectedValues={values.authors}
+              invalid={Boolean(errors.authors)}
+              describedBy={errors.authors ? errorId('authors') : undefined}
             />
           </Field>
           <Field name="genres" label="Genres" error={errors.genres}>
@@ -119,6 +131,8 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               addLabel="Add new Genre:"
               options={options.genres}
               selectedValues={values.genres}
+              invalid={Boolean(errors.genres)}
+              describedBy={errors.genres ? errorId('genres') : undefined}
             />
           </Field>
           <Field name="publisher" label="Publisher" error={errors.publisher}>
@@ -128,6 +142,8 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               addLabel="Add new Publisher:"
               options={options.publishers}
               selectedValue={values.publisher}
+              invalid={Boolean(errors.publisher)}
+              describedBy={errors.publisher ? errorId('publisher') : undefined}
             />
           </Field>
           <Field name="plot" label="Plot" error={errors.plot}>

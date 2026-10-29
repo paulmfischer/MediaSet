@@ -9,11 +9,14 @@ export const text = (): Schema<unknown, string> => s.defaulted(s.string(), '').t
 export const requiredText = (message: string): Schema<unknown, string> =>
   text().refine((value) => value.length > 0, message);
 
-/** A blank optional numeric input means "no value" (`undefined`), not `0` or `NaN`. */
-export const optionalWholeNumber = (message: string): Schema<unknown, number | undefined> =>
+/**
+ * A blank optional numeric input means "no value" (`undefined`), not `0` or `NaN`. Only plain
+ * digits are accepted (no `1e3`, `0x1F` or `1.0`), up to `maxDigits`, so the value fits the API's int.
+ */
+export const optionalWholeNumber = (message: string, maxDigits = 6): Schema<unknown, number | undefined> =>
   text()
-    .transform((value) => (value === '' ? undefined : Number(value)))
-    .refine((value) => value === undefined || (Number.isInteger(value) && value >= 0), message);
+    .refine((value) => value === '' || new RegExp(`^\\d{1,${maxDigits}}$`).test(value), message)
+    .transform((value) => (value === '' ? undefined : Number(value)));
 
 /** Repeated fields (multi-selects): trims each value and drops blanks and duplicates. */
 export const textList = (name: string) =>

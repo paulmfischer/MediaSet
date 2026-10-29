@@ -9,7 +9,7 @@ export const bookForm = f.object({
   isbn: f.field(text()),
   subtitle: f.field(text()),
   format: f.field(text()),
-  pages: f.field(optionalWholeNumber('Pages must be a whole number, 0 or more')),
+  pages: f.field(optionalWholeNumber('Pages must be a whole number from 0 to 999999')),
   publicationDate: f.field(text()),
   authors: textList('authors'),
   genres: textList('genres'),

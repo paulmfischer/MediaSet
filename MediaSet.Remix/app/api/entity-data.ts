@@ -214,7 +214,12 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, for
         entityType,
         status: response.status,
       });
-      throw new Response(`Error creating a new ${singular(entityType)}`, { status: 500 });
+      // A 4xx is the API rejecting the entity; keep its status and message so callers can show them.
+      const rejected = response.status >= 400 && response.status < 500;
+      const message = rejected ? (await response.text()).trim() : '';
+      throw new Response(message || `Error creating a new ${singular(entityType)}`, {
+        status: rejected ? response.status : 500,
+      });
     }
     const newEntity = (await response.json()) as TEntity;
     serverLogger.info(`Successfully created new ${singular(entityType)} with id ${(newEntity as { id?: string }).id}`, {

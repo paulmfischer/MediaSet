@@ -14,7 +14,10 @@ const metadata: Record<string, string[]> = {
 };
 
 // Stubs the API: metadata lookups return fixed values, POST /Books is recorded (or fails).
-function stubApi(t: { after: (fn: () => void) => void }, options: { failSave?: boolean } = {}) {
+function stubApi(
+  t: { after: (fn: () => void) => void },
+  options: { failSave?: boolean; rejectSave?: string; failMetadata?: boolean } = {}
+) {
   const original = globalThis.fetch;
   const saved: unknown[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -22,9 +25,11 @@ function stubApi(t: { after: (fn: () => void) => void }, options: { failSave?: b
     const url = new URL(request.url);
     if (request.method === 'POST' && url.pathname.endsWith('/Books')) {
       if (options.failSave) return new Response('boom', { status: 500 });
+      if (options.rejectSave) return new Response(options.rejectSave, { status: 400 });
       saved.push(await request.json());
       return Response.json({ id: 'new-id' }, { status: 201 });
     }
+    if (options.failMetadata) return new Response('down', { status: 503 });
     const property = url.pathname.split('/').pop() ?? '';
     return Response.json(metadata[property] ?? []);
   }) as typeof fetch;
@@ -78,7 +83,7 @@ describe('add book form', () => {
     const html = await response.text();
     assert.match(html, /role="alert"/);
     assert.match(html, /<p id="title-error"[^>]*>Title is required<\/p>/);
-    assert.match(html, /<p id="pages-error"[^>]*>Pages must be a whole number, 0 or more<\/p>/);
+    assert.match(html, /<p id="pages-error"[^>]*>Pages must be a whole number from 0 to 999999<\/p>/);
     assert.match(html, /name="title"[^>]*aria-invalid[^>]*aria-describedby="title-error"/);
     // Submitted values come back, including repeated fields and an option that is not in the API list.
     assert.match(html, /name="subtitle"[^>]*value="Book One"/);
@@ -141,6 +146,27 @@ describe('add book form', () => {
     assert.match(html, /name="title"[^>]*value="Dune"/);
     assert.match(html, /<input type="hidden" name="authors" value="Frank Herbert"/);
   });
+
+  it('shows the API rejection message with a 400 when the API refuses the book', async (t) => {
+    stubApi(t, { rejectSave: 'An entity with that ISBN already exists' });
+    const response = await post([
+      ['title', 'Dune'],
+      ['isbn', '123'],
+    ]);
+
+    assert.equal(response.status, 400);
+    const html = await response.text();
+    assert.match(html, /role="alert"[^>]*>An entity with that ISBN already exists</);
+    assert.match(html, /name="isbn"[^>]*value="123"/);
+  });
+
+  it('warns that existing values are missing when the option lists fail to load', async (t) => {
+    stubApi(t, { failMetadata: true });
+    const html = await (await get()).text();
+
+    assert.match(html, /role="status"[^>]*>Existing authors, genres, publishers and formats could not be loaded/);
+    assert.match(html, /role="combobox"/);
+  });
 });
 
 describe('form schema helpers', () => {
@@ -152,7 +178,8 @@ describe('form schema helpers', () => {
     assert.deepEqual(s.parseSafe(pages, undefined), { success: true, value: undefined });
     assert.deepEqual(s.parseSafe(pages, '0'), { success: true, value: 0 });
     assert.deepEqual(s.parseSafe(pages, '12'), { success: true, value: 12 });
-    for (const bad of ['1.5', '-3', 'abc']) assert.equal(s.parseSafe(pages, bad).success, false);
+    for (const bad of ['1.5', '-3', 'abc', '1e3', '0x1F', '1.0', '1000000'])
+      assert.equal(s.parseSafe(pages, bad).success, false);
   });
 
   it('reads the first issue per field and the submitted strings back', () => {
