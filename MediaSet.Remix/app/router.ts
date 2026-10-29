@@ -6,6 +6,7 @@ import { createRouter, type RouterContext } from 'remix/router';
 
 import controller from './actions/controller.tsx';
 import entityAddController from './actions/entity/add/controller.tsx';
+import entityDetailController from './actions/entity/detail-controller.tsx';
 import entityListsController from './actions/entity/controller.tsx';
 import { assets } from './assets.ts';
 import { routes } from './routes.ts';
@@ -24,4 +25,5 @@ declare module 'remix' {
 
 router.map(routes, controller);
 router.map(routes.entityLists, entityListsController);
+router.map(routes.entityDetail, entityDetailController);
 router.map(routes.entityAdd.books, entityAddController);

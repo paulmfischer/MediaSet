@@ -54,7 +54,7 @@ Node runs the TypeScript sources directly, and `tsc` only type checks.
 **Routing:**
 - `app/routes.ts` declares routes; each page area has a nested route map (for example `routes.entityLists`)
 - A controller in `app/actions/<area>/controller.tsx` handles the area's routes and is registered in `app/router.ts`
-- Key routes today: `/` (dashboard), `/books`, `/movies`, `/games`, `/musics` (collection lists), `/books/add` (add form)
+- Key routes today: `/` (dashboard), `/books`, `/movies`, `/games`, `/musics` (collection lists), `/{type}/:id` (item details), `/books/add` (add form)
 
 **Rendering:**
 - Actions fetch data, then render a page component from `app/ui/` inside the shared `Document` layout with `context.render()`

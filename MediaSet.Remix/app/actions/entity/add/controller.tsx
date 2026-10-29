@@ -69,8 +69,9 @@ export default createController(routes.entityAdd.books, {
       }
 
       const book: BookEntity = toBookEntity(parsed.value);
+      let saved: BookEntity;
       try {
-        await addEntity(book);
+        saved = await addEntity(book);
       } catch (error) {
         serverLogger.error('Failed to add book', error, { operation: 'addBook' });
         const values = submittedValues(context.formData, BOOK_FIELDS);
@@ -85,8 +86,7 @@ export default createController(routes.entityAdd.books, {
         });
       }
 
-      // TODO(#693): redirect to the new book's details page once item details pages exist.
-      return redirect(routes.entityLists.books.href(), 303);
+      return redirect(routes.entityDetail.books.href({ id: saved.id ?? '' }), 303);
     },
   },
 });

@@ -23,6 +23,9 @@ function stubApi(t: { after: (fn: () => void) => void }, saveDelayMs = 0) {
       saved.push((await request.json()) as Record<string, unknown>);
       return Response.json({ id: 'new-id' }, { status: 201 });
     }
+    if (url.pathname.endsWith('/Books/new-id')) {
+      return Response.json({ id: 'new-id', type: 'Books', title: 'Dune' });
+    }
     if (url.pathname.endsWith('/pagedsearch')) {
       return Response.json({ items: [], totalCount: 0, page: 1, pageSize: 75, totalPages: 0 });
     }
@@ -75,7 +78,7 @@ describe('add book (e2e)', () => {
     await page.locator('#title').fill('Dune');
     await page.getByRole('button', { name: 'Remove Frank Herbert' }).click();
     await page.getByRole('button', { name: 'Save' }).click();
-    await page.waitForURL('**/books');
+    await page.waitForURL('**/books/new-id');
 
     assert.equal(await sameDocument(), true);
     assert.deepEqual(saved, [
@@ -102,7 +105,7 @@ describe('add book (e2e)', () => {
     const pending = page.getByRole('button', { name: 'Saving…' });
     await pending.waitFor();
     assert.equal(await pending.isDisabled(), true);
-    await page.waitForURL('**/books');
+    await page.waitForURL('**/books/new-id');
   });
 
   it('reopens a select on click, never re-offers a selected value as new, and lets Enter submit when idle', async (t) => {
@@ -137,7 +140,7 @@ describe('add book (e2e)', () => {
     await page.locator('#title').fill('Dune');
     await authors.click();
     await authors.press('Enter');
-    await page.waitForURL('**/books');
+    await page.waitForURL('**/books/new-id');
     assert.equal(saved.length, 1);
     assert.deepEqual(saved[0]?.authors, ['Brian Herbert']);
   });

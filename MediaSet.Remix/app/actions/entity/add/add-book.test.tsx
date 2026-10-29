@@ -95,7 +95,7 @@ describe('add book form', () => {
     assert.equal(saved.length, 0);
   });
 
-  it('saves repeated fields as lists, maps blank numerics to no value and redirects 303 to the list', async (t) => {
+  it('saves repeated fields as lists, maps blank numerics to no value and redirects 303 to the new book', async (t) => {
     const saved = stubApi(t);
     const response = await post([
       ['title', '  Dune '],
@@ -110,7 +110,7 @@ describe('add book form', () => {
     ]);
 
     assert.equal(response.status, 303);
-    assert.equal(response.headers.get('Location'), '/books');
+    assert.equal(response.headers.get('Location'), '/books/new-id');
     assert.deepEqual(saved, [
       {
         type: 'Books',
