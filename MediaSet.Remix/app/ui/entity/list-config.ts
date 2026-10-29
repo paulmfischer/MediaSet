@@ -34,7 +34,7 @@ export const booksList: ListConfig<BookEntity> = {
   titleOf: (book) => `${book.title ?? ''}${book.subtitle ? `: ${book.subtitle}` : ''}`,
   summary: (book) => dotted([join(book.authors), book.format]),
   columns: [
-    { label: 'Authors', field: 'authors', class: 'hidden xs:table-cell', cell: (book) => join(book.authors, ',') },
+    { label: 'Authors', field: 'authors', class: 'hidden sm:table-cell', cell: (book) => join(book.authors, ',') },
     { label: 'Format', field: 'format', class: 'hidden md:table-cell', cell: (book) => book.format },
     { label: 'Pages', field: 'pages', class: 'hidden lg:table-cell', cell: (book) => book.pages },
   ],
