@@ -14,6 +14,22 @@ applyTo: "**/*.ts,**/*.tsx"
 - Place type definitions in `app/models.ts` or co-locate with components
 - Use `.tsx` for files with JSX, `.ts` for pure TypeScript
 
+## Remix 3 page structure (`feat/remix-3`)
+
+These conventions apply to the Remix 3 app in `MediaSet.Remix/app`; the sections below describe
+the Remix 2 app until the cutover docs (#703) replace them.
+
+- `app/routes.ts` holds the route map. Give each page area its own nested route map
+  (for example `routes.entityLists`) and use `routes.*.href()` for links.
+- `app/actions/` and `app/ui/` mirror each other. The first folder is the page area's root path
+  (`actions/entity` and `ui/entity` are the root for the entity pages). Sub-pages go in
+  sub-folders under it in both trees (for example `entity/detail`, `entity/add`, `entity/edit`).
+- Each page area's actions live in a `controller.tsx` in its `actions/` folder, together with
+  its helpers and server tests. Register it in `app/router.ts` with
+  `router.map(routes.<area>, <area>Controller)`; the root controller only owns root-level routes.
+- `app/ui/` holds the area's page components. Layout shared by every page (`document`, `header`,
+  `footer`, `icon`, `nav`) stays at the `ui/` root.
+
 ## Naming Conventions
 
 - **Components**: PascalCase class in `kebab-case.tsx` file | `MovieCard` class in `movie-card.tsx`
