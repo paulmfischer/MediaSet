@@ -6,6 +6,7 @@ import type { BaseEntity } from '../../models.ts';
 import { Icon } from '../icon.tsx';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
+import { PageSelect } from './public/page-select.tsx';
 
 interface ListPageProps<T extends BaseEntity> {
   config: ListConfig<T>;
@@ -38,7 +39,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
       ) : null;
 
     const sortableHeader = (label: string, field: string, className = '') => {
-      const active = sortField?.toLowerCase() === field.toLowerCase();
+      const active = sortField?.toLowerCase() === field.toLowerCase() && (sortDirection === 'asc' || sortDirection === 'desc');
       const next = active && sortDirection === 'asc' ? 'desc' : 'asc';
       return (
         <th
@@ -122,12 +123,16 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
         </div>
 
         <div class="h-full mt-4">
-          {items.length === 0 ? (
+          {totalCount === 0 ? (
             <div class="flex justify-center text-center">
-              <p>
-                You don&apos;t appear to have any {name}!<br />
-                Add to your collection by clicking the &apos;Add&apos; link up above!
-              </p>
+              {searchText ? (
+                <p>No {name} match &quot;{searchText}&quot;.</p>
+              ) : (
+                <p>
+                  You don&apos;t appear to have any {name}!<br />
+                  Add to your collection by clicking the &apos;Add&apos; link up above!
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -188,9 +193,13 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
           >
             <span class="text-sm text-gray-400">{totalCount} items</span>
             {pageLink(page - 1, 'Prev', ChevronLeft, true)}
-            <span class="text-sm">
-              Page {page} of {totalPages}
-            </span>
+            <PageSelect
+              page={page}
+              totalPages={totalPages}
+              hrefs={Array.from({ length: totalPages }, (_, index) =>
+                listHref(basePath, { searchText, orderBy, page: index + 1 })
+              )}
+            />
             {pageLink(page + 1, 'Next', ChevronRight, false)}
           </nav>
         ) : null}

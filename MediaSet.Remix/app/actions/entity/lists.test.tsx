@@ -101,7 +101,7 @@ describe('collection lists', () => {
   });
 
   it('shows the empty state without a table or pagination', async (t) => {
-    stubApi(t, paged([]));
+    stubApi(t, paged([], { totalCount: 0, totalPages: 0 }));
 
     const html = await (await get('/movies')).text();
 
@@ -110,35 +110,118 @@ describe('collection lists', () => {
     assert.doesNotMatch(html, /aria-label="Pagination"/);
   });
 
-  it('shows a clear link only while searching, and keeps search in sort and page links', async (t) => {
+  it('says nothing matched, not that the collection is empty, when a search has no results', async (t) => {
+    stubApi(t, paged([], { totalCount: 0, totalPages: 0 }));
+
+    const html = await (await get('/movies?searchText=zzz')).text();
+
+    assert.match(html, /No Movies match "zzz"\./);
+    assert.doesNotMatch(html, /have any Movies!/);
+  });
+
+  it('redirects a page past the last page to the last page, keeping search and sort', async (t) => {
+    stubApi(t, paged([], { page: 9, totalPages: 3, totalCount: 150 }));
+
+    const response = await get('/books?searchText=dune&orderBy=pages:desc&page=9');
+
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('Location'), '/books?searchText=dune&orderBy=pages%3Adesc&page=3');
+  });
+
+  it('shows pagination with links to the neighbouring pages, keeping search and sort', async (t) => {
     stubApi(t, paged([book], { page: 2, totalPages: 3, totalCount: 150 }));
 
     const html = await (await get('/books?searchText=dune&page=2')).text();
 
     assert.match(html, /aria-label="Clear search"/);
     assert.match(html, /href="\/books\?searchText=dune&amp;orderBy=authors%3Aasc"/);
-    assert.match(html, /href="\/books\?searchText=dune&amp;orderBy=title%3Aasc&amp;page=3"/);
+    assert.match(html, /<a href="\/books\?searchText=dune&amp;orderBy=title%3Aasc&amp;page=3"[^>]*>Next/);
     // Prev from page 2 drops the page parameter.
-    assert.match(html, /href="\/books\?searchText=dune&amp;orderBy=title%3Aasc" class="flex items-center gap-1"/);
-    assert.match(html, /Page 2 of 3/);
+    assert.match(html, /<a href="\/books\?searchText=dune&amp;orderBy=title%3Aasc"[^>]*>(?:(?!<\/a>)[\s\S])*Prev<\/a>/);
+    assert.match(html, /aria-label="Select page"/);
     assert.match(html, /150 items/);
   });
 
-  for (const [path, apiPath, headers] of [
-    ['/movies', '/Movies/pagedsearch', ['Format', 'Runtime', 'TV Show']],
-    ['/games', '/Games/pagedsearch', ['Platform', 'Format', 'Developers']],
-    ['/musics', '/Musics/pagedsearch', ['Artist', 'Format', 'Tracks']],
+  it('disables Prev on the first page and Next on the last', async (t) => {
+    stubApi(t, paged([book], { page: 1, totalPages: 2, totalCount: 100 }));
+    const first = await (await get('/books')).text();
+    assert.doesNotMatch(first, /<a [^>]*>(?:(?!<\/a>)[\s\S])*Prev<\/a>/);
+    assert.match(first, /<a [^>]*page=2"[^>]*>Next/);
+
+    stubApi(t, paged([book], { page: 2, totalPages: 2, totalCount: 100 }));
+    const last = await (await get('/books?page=2')).text();
+    assert.doesNotMatch(last, /<a [^>]*>Next/);
+  });
+
+  it('only reports a sort direction for a well-formed orderBy', async (t) => {
+    stubApi(t, paged([book]));
+
+    const html = await (await get('/books?orderBy=title')).text();
+
+    assert.doesNotMatch(html, /aria-sort="(ascending|descending)"/);
+  });
+
+  it('escapes the search text and titles', async (t) => {
+    stubApi(t, paged([{ ...book, title: '<script>alert(1)</script>' }]));
+
+    const html = await (await get('/books?searchText=%22%3E%3Cscript%3Ex%3C%2Fscript%3E')).text();
+
+    assert.doesNotMatch(html, /<script>alert/);
+    assert.doesNotMatch(html, /"><script>x/);
+    assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  });
+
+  for (const [path, apiPath, item, headers, cells] of [
+    [
+      '/movies',
+      '/Movies/pagedsearch',
+      { id: 'x1', title: 'Thing', format: 'DVD', runtime: 100, isTvSeries: true },
+      ['Format', 'Runtime', 'TV Show'],
+      ['DVD', '100'],
+    ],
+    [
+      '/games',
+      '/Games/pagedsearch',
+      { id: 'x1', title: 'Thing', platform: 'Switch', format: 'Cart', developers: ['Dev One ', 'Dev Two'] },
+      ['Platform', 'Format', 'Developers'],
+      ['Switch', 'Cart', 'Dev One, Dev Two'],
+    ],
+    [
+      '/musics',
+      '/Musics/pagedsearch',
+      { id: 'x1', title: 'Thing', artist: 'Band', format: 'CD', tracks: 9 },
+      ['Artist', 'Format', 'Tracks'],
+      ['Band', 'CD', '9'],
+    ],
   ] as const) {
-    it(`${path} calls ${apiPath} and renders its columns`, async (t) => {
-      const urls = stubApi(t, paged([{ id: 'x1', title: 'Thing' }]));
+    it(`${path} calls ${apiPath} and renders its header and cells`, async (t) => {
+      const urls = stubApi(t, paged([item]));
 
       const html = await (await get(path)).text();
 
       assert.equal(urls[0].pathname, apiPath);
-      for (const header of headers) assert.match(html, new RegExp(`${header}`));
+      for (const header of headers) assert.match(html, new RegExp(`<th [^>]*>\\s*<a [^>]*>${header}`));
+      for (const value of cells) assert.match(html, new RegExp(`<td [^>]*>${value}</td>`));
       assert.match(html, new RegExp(`<a href="${path}/x1"[^>]*>Thing</a>`));
     });
   }
+
+  it('shows a check mark for a TV series and none for a movie, and 0 for a missing runtime', async (t) => {
+    stubApi(
+      t,
+      paged([
+        { id: 'a', title: 'Show', isTvSeries: true },
+        { id: 'b', title: 'Film' },
+      ])
+    );
+
+    const html = await (await get('/movies')).text();
+    const row = (id: string) => html.split('<tr ').find((chunk) => chunk.includes(`<a href="/movies/${id}">`)) ?? '';
+
+    assert.match(row('a'), /<div class="flex justify-center"><svg/);
+    assert.match(row('b'), /<div class="flex justify-center"><\/div>/);
+    assert.match(row('b'), />0<\/td>/);
+  });
 
   it('marks the matching header nav link active', async (t) => {
     stubApi(t, paged([book]));
