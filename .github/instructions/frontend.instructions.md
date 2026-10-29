@@ -65,13 +65,18 @@ before inventing a pattern.
 - Install the `formData()` middleware from `remix/middleware/form-data` in `app/router.ts`; the
   parsed body is then `context.formData`.
 - Validate `context.formData` in the action with a schema from `remix/data-schema`
-  (`s.parseSafe`). Use `parsed.value` for the save, never the raw form data.
+  (`s.parseSafe`). Use `parsed.value` for the save, never the raw form data. Reuse the helpers in
+  `app/actions/forms/form-schema.ts` (`requiredText`, `optionalWholeNumber` for blank optional
+  numbers, `textList` for repeated fields, `fieldErrors`, `submittedValues`) and see
+  `Development/ARCHITECTURE.md` for the full form conventions.
 - On a validation failure, render the page again from the same action with status `400`, passing
   the submitted `values` and the `issues` so the form keeps the user's input and shows each
   field's error (linked to its input with `aria-describedby`). Do not redirect back to the GET
   page; that loses the input and errors.
 - On success, return `redirect(routes.<area>.<page>.href(...), 303)` so a refresh repeats the GET
   instead of resubmitting.
+- Use the `Field` / `errorProps` helpers (`app/ui/forms/field.tsx`) for labels and errors, and the
+  `MultiSelectInput` / `SingleSelectInput` islands (`app/ui/forms/public/`) for select fields.
 - Show pending state by hydrating only the submit button as a client entry in a `public/` folder
   that listens to `handle.frame` `reloadStart` and `reloadComplete` events; do not hydrate the
   whole form.

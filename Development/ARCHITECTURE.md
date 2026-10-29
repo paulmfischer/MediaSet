@@ -54,7 +54,7 @@ Node runs the TypeScript sources directly, and `tsc` only type checks.
 **Routing:**
 - `app/routes.ts` declares routes; each page area has a nested route map (for example `routes.entityLists`)
 - A controller in `app/actions/<area>/controller.tsx` handles the area's routes and is registered in `app/router.ts`
-- Key routes today: `/` (dashboard), `/books`, `/movies`, `/games`, `/musics` (collection lists)
+- Key routes today: `/` (dashboard), `/books`, `/movies`, `/games`, `/musics` (collection lists), `/books/add` (add form)
 
 **Rendering:**
 - Actions fetch data, then render a page component from `app/ui/` inside the shared `Document` layout with `context.render()`
@@ -63,9 +63,19 @@ Node runs the TypeScript sources directly, and `tsc` only type checks.
 
 **Data Access Pattern:**
 - Server-side data functions in `app/api/*-data.ts` files, called from actions
-- Mutations are plain HTML forms handled by POST actions that redirect
+- Mutations are plain HTML forms handled by POST actions that redirect (see Forms below)
 - Server-side API calls use `apiUrl` (localhost in native development; internal API URL in production)
 - Browser API/image requests use `clientApiUrl` (`/dev-api` through the dev server proxy in native development)
+
+**Forms** (the Add Book form, `app/actions/entity/add/`, is the template for the other forms):
+- The route is `form('/books/add')`: the controller's `index` action renders the page and its `action` handles the POST at the same URL. `formData()` is installed once in `app/router.ts`, so every action reads `context.formData`
+- Form-data parsing happens at the controller level, in the action, with a per-entity schema (`book-form.ts`) built on `remix/data-schema` and `remix/data-schema/form-data`. Parse with `s.parseSafe` and save only `parsed.value`
+- Shared schema helpers live in `app/actions/forms/form-schema.ts`: `text()` / `requiredText(message)` trim input, `optionalWholeNumber(message)` maps a blank numeric input to no value (`undefined`) instead of `0` or `NaN`, `textList(name)` reads a repeated field (multi-select) trimmed and de-duplicated, `fieldErrors(issues)` keys the first message by field name, and `submittedValues(formData, fields)` echoes the submitted strings back for re-rendering
+- On a validation failure the action renders the same page again with status `400`, the submitted values and the field errors, so input is preserved. Do not redirect to the GET page. An API failure re-renders with `500` and a form-level message
+- On success the action redirects with `303` so a refresh repeats the GET, not the POST
+- Show each error next to its field with the `Field` and `errorProps` helpers in `app/ui/forms/field.tsx`; they link the error to the control with `aria-describedby` and `aria-invalid`
+- Hydrated islands live in `app/ui/forms/public/`: `MultiSelectInput` (submits one hidden input per value, so the schema reads it with `textList`), `SingleSelectInput` (one hidden input) and `SaveButton` (pending state from the top frame's `reloadStart` / `reloadComplete`). The rest of the form is server-rendered
+- Tests: router tests (`add-book.test.tsx`) cover validation, repeated fields, blank numerics, the 400 re-render and the 303; `app/e2e/add-book.test.e2e.ts` covers error then success without a full reload
 
 **State Management:**
 - Server state is fetched per request in actions
