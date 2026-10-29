@@ -5,7 +5,7 @@ import {
   type GameEntity,
   type MovieEntity,
   type MusicEntity,
-} from '../models.ts';
+} from '../../models.ts';
 
 export interface Column<T> {
   label: string;

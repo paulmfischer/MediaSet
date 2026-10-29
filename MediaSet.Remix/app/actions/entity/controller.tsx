@@ -6,8 +6,8 @@ import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
-import { booksList, gamesList, moviesList, musicsList, type ListConfig } from '../../ui/list-config.ts';
-import { ListPage } from '../../ui/list-page.tsx';
+import { booksList, gamesList, moviesList, musicsList, type ListConfig } from '../../ui/entity/list-config.ts';
+import { ListPage } from '../../ui/entity/list-page.tsx';
 import { parseListParams } from './list-params.ts';
 
 async function renderList<T extends BaseEntity>(context: AppContext, config: ListConfig<T>) {

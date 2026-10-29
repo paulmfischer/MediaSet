@@ -1,10 +1,10 @@
 import type { Handle } from 'remix/component';
 
-import { DEFAULT_ORDER_BY, listHref } from '../actions/entity/list-params.ts';
-import type { PagedResult } from '../api/entity-data.ts';
-import type { BaseEntity } from '../models.ts';
-import { Icon } from './icon.tsx';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, X } from './icons.ts';
+import { DEFAULT_ORDER_BY, listHref } from '../../actions/entity/list-params.ts';
+import type { PagedResult } from '../../api/entity-data.ts';
+import type { BaseEntity } from '../../models.ts';
+import { Icon } from '../icon.tsx';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
 
 interface ListPageProps<T extends BaseEntity> {
