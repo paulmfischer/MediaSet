@@ -1,24 +1,24 @@
 # MediaSet.Remix
 
-Frontend UI for MediaSet, built with Remix.js and TypeScript.
+Frontend UI for MediaSet, built with Remix 3 and TypeScript.
 
 ## Overview
 
-The MediaSet frontend provides a modern, responsive interface for managing your personal media library. Built with Remix.js, it offers server-side rendering, optimistic UI updates, and seamless integration with the MediaSet API.
+The MediaSet frontend provides a responsive interface for managing your personal media library. It is a Remix 3 server that renders pages to HTML and talks to the MediaSet API.
 
 **Technologies:**
 
-- **Remix.js**: Full-stack React framework with server-side rendering
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first CSS framework
-- **Vite**: Fast build tool and dev server
+- **Remix 3** (the `remix` package): router, server-rendered components, asset server and test runner. It is not React.
+- **TypeScript**: Type-safe development; Node runs the sources directly and `tsc` only type checks
+- **Tailwind CSS**: Utility-first CSS, compiled to `public/app.css`
+- **Playwright**: Browser and end-to-end tests through `remix test`
 
 ## Getting Started
 
 ### Prerequisites and setup
 
-Install Node.js 22/npm. Complete [first setup](../Development/DEVELOPMENT.md#first-setup)
-for the host API and containerized MongoDB.
+Install Node.js 24.22.1 LTS and its bundled npm (see [`.nvmrc`](../.nvmrc)). Complete
+[first setup](../Development/DEVELOPMENT.md#first-setup) for the host API and containerized MongoDB.
 
 ### Development
 
@@ -30,138 +30,106 @@ npm run dev
 ```
 
 The frontend listens at http://localhost:3000 and supports LAN browsing.
-The API must be running for database-backed routes. Vite forwards browser
-API/image requests through its development-only /dev-api proxy.
+The API must be running for database-backed routes. The dev server forwards browser
+API/image requests through its development-only `/dev-api` proxy.
 Stop with Ctrl+C. VS Code provides **Launch UI** and **Launch API + UI**.
 
 For optional HTTPS and camera barcode scanning, use `npm run dev:mobile` after
 the [certificate setup](../Development/DEVELOPMENT.md#mobile-https-and-barcode-scanning).
 No certificates are needed for ordinary development.
 
+Optional overrides go in `.env.local`; see [`.env.example`](.env.example).
+
 ### Running Tests
 
 ```bash
-# From MediaSet.Remix directory
 cd MediaSet.Remix
 
-# Run tests once
+# Unit (retained Vitest suites) and router tests
 npm test
 
-# Run tests in watch mode
-npm test -- --watch
-
-# Run with coverage
-npm test -- --coverage
+# Browser and end-to-end tests (needs `npx playwright install chromium` once)
+npm run test:e2e
 ```
 
-For comprehensive testing documentation, see [Development/TESTING.md](../Development/TESTING.md).
+See [Local development](../Development/DEVELOPMENT.md#checks) for the full list of checks.
 
 ## Project Structure
 
 ```
 MediaSet.Remix/
 ├── app/
-│   ├── components/       # Reusable UI components
-│   ├── hooks/            # Shared React hooks
-│   ├── routes/           # Remix route modules
-│   │   ├── _index.tsx           # Home dashboard
-│   │   ├── _index.test.tsx      # Home route tests
-│   │   ├── config.json.ts       # Runtime UI configuration
-│   │   ├── $entity/             # Entity list routes
-│   │   ├── $entity._index/      # Entity list route module
-│   │   ├── $entity.add/         # Add entity route module
-│   │   ├── $entity.$entityId/   # Entity detail route module
-│   │   ├── $entity.$entityId_.edit/   # Edit entity route module
-│   │   └── $entity.$entityId_.delete/ # Delete entity route module
-│   ├── test/             # Testing utilities and fixtures
+│   ├── actions/          # Controllers per page area, with helpers and router tests
+│   │   ├── controller.tsx       # Root routes (home, config)
+│   │   ├── entity/              # Collection list controller
+│   │   └── public/entry.ts      # Browser entry that starts the Remix runtime
+│   ├── ui/               # Page components, mirroring actions/
+│   │   ├── document.tsx         # Shared HTML document
+│   │   ├── entity/              # Collection list page
+│   │   └── public/              # Client entries (menus, navigation)
+│   ├── api/              # Server-side MediaSet API access
+│   ├── e2e/              # End-to-end tests
 │   ├── utils/            # Shared utilities
-│   ├── config.server.ts  # Server-side configuration
-│   ├── constants.server.ts # Server-side constants
-│   ├── entity-data.ts    # Entity API data access
-│   ├── helpers.ts        # Shared helper functions
-│   ├── integrations-data.ts # Integrations data access
-│   ├── lookup-data.server.ts # Lookup helpers (server)
-│   ├── metadata-data.ts  # Metadata API data access
+│   ├── assets.ts         # Asset server: what the browser may load
 │   ├── models.ts         # TypeScript interfaces
-│   ├── root.tsx          # Root layout component
-│   ├── stats-data.ts     # Stats API data access
+│   ├── router.ts         # Router and controller registration
+│   ├── routes.ts         # Route map
 │   └── tailwind.css      # Tailwind base styles
-├── public/               # Static assets
-└── build/                # Build output (generated)
+├── public/               # Static assets; app.css is generated
+├── dev.ts                # Development launcher (Tailwind watch + server)
+├── remix.json            # remix test configuration
+└── server.ts             # Node HTTP entry point
 ```
 
 ## Routing
 
-Remix uses file-based routing for automatic route generation:
+Routes are declared in `app/routes.ts` and handled by controllers in `app/actions/`.
 
 **Key routes:**
 
-- `/` - Home dashboard with statistics
-- `/{entityType}` - Entity list view (books, movies, games, music)
-- `/{entityType}/$id` - Entity detail view
-- `/{entityType}/$id/edit` - Edit entity
-- `/{entityType}/add` - Add new entity
+- `/` - Home dashboard
+- `/books`, `/movies`, `/games`, `/musics` - Collection lists
 
-**Route features:**
+Further pages are being added on this branch.
 
-- Server-side data loading with loaders
-- Form handling with actions
-- Optimistic UI updates
-- Progressive enhancement
-
-## Key Features
-
-### Data Loading
-
-Server-side data fetching with Remix loaders:
-
-```typescript
-export async function loader({ params }: LoaderFunctionArgs) {
-  const books = await getBooks();
-  return json({ books });
-}
+```ts
+// app/routes.ts
+export const routes = route({
+  home: get('/'),
+  entityLists: route({
+    books: get('/books'),
+  }),
+});
 ```
-
-### Form Handling
-
-Form submissions with Remix actions:
-
-```typescript
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const book = await createBook(formData);
-  return redirect(`/books/${book.id}`);
-}
-```
-
-### Styling with Tailwind CSS
-
-Utility-first CSS approach:
 
 ```tsx
-<div className="container mx-auto px-4 py-8">
-  <h1 className="text-3xl font-bold text-gray-900">Books</h1>
-</div>
+// app/actions/entity/controller.tsx
+export default createController(routes.entityLists, {
+  actions: {
+    books: (context) => renderList(context, booksList),
+  },
+});
 ```
 
-### TypeScript Type Safety
+An action fetches data, then renders a component with `context.render()`.
+Mutations are plain HTML forms handled by POST actions that redirect.
 
-All data models are typed for safety and IntelliSense:
+## Components
 
-```typescript
-export interface Book {
-  id: string;
-  title: string;
-  authors: string[];
-  isbn?: string;
-  coverImage?: CoverImage;
+Components come from `remix/component` and receive a `Handle`:
+
+```tsx
+export function ListPage(handle: Handle<ListPageProps>) {
+  return () => <h1 class="text-2xl">{handle.props.config.entity}</h1>;
 }
 ```
+
+Interactive pieces are client entries (`clientEntry(...)`) in `public/` folders; only
+`app/**/public/**` and the shared files listed in `app/assets.ts` are served to the browser.
 
 ## Development Resources
 
 - **[Development/DEVELOPMENT.md](../Development/DEVELOPMENT.md)** - Complete development setup and debugging
-- **[Development/TESTING.md](../Development/TESTING.md)** - Testing guidelines and patterns
-- [Remix Documentation](https://remix.run/docs)
+- **[Frontend instructions](../.github/instructions/frontend.instructions.md)** - Remix 3 conventions
+- [Remix 3 guides](node_modules/remix/guides/) - Shipped with the installed `remix` package
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Vite Documentation](https://vitejs.dev/guide/)

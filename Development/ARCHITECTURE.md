@@ -8,10 +8,12 @@
   - `Program.cs` — Dependency injection and application startup
 - `MediaSet.Api.Analyzers/` — Custom backend analyzers
 - `MediaSet.Api.Tests/` — Backend unit tests (NUnit)
-- `MediaSet.Remix/` — Remix.js frontend UI
-  - `app/routes/` — Remix route components
-  - `app/components/` — Reusable React components
+- `MediaSet.Remix/` — Remix 3 frontend UI
+  - `app/routes.ts` — Route map; `app/router.ts` registers one controller per page area
+  - `app/actions/` — Controllers (request handling and data fetching), with their helpers and router tests
+  - `app/ui/` — Page components, mirroring `app/actions/`; `public/` folders hold browser code
   - `app/api/` — Server-side entity, stats, metadata, lookup, and image data access functions
+  - `server.ts` — Node HTTP entry point
 - `Development/` — Development documentation
 - `docker-compose.dev.yml` — MongoDB-only local development service
 - `Setup/` — Production setup and deployment files
@@ -45,30 +47,37 @@
 - MongoDB storage with `[BsonId]` attributes
 - Custom JSON converters for specific types (runtime, boolean)
 
-### Frontend (Remix.js)
+### Frontend (Remix 3)
+
+Remix 3 is not React. Node runs the TypeScript sources directly; there is no bundler.
 
 **Routing:**
-- Remix file-based routing in `app/routes/`
-- Key routes: `_index.tsx` (dashboard), `$entity._index/` (list), `$entity.$entityId/` (detail), `$entity.$entityId_.edit/` (edit)
+- `app/routes.ts` declares routes; each page area has a nested route map (for example `routes.entityLists`)
+- A controller in `app/actions/<area>/controller.tsx` handles the area's routes and is registered in `app/router.ts`
+- Key routes today: `/` (dashboard), `/books`, `/movies`, `/games`, `/musics` (collection lists)
+
+**Rendering:**
+- Actions fetch data, then render a page component from `app/ui/` inside the shared `Document` layout with `context.render()`
+- Components come from `remix/component` and render to HTML on the server
+- Interactive pieces are client entries under `public/` folders; only `app/**/public/**` and a few shared files are served to the browser (see `app/assets.ts`)
 
 **Data Access Pattern:**
-- Server-side data functions in `app/api/*-data.ts` files
-- `loader` functions for GET requests
-- `action` functions for POST/PUT/DELETE mutations
+- Server-side data functions in `app/api/*-data.ts` files, called from actions
+- Mutations are plain HTML forms handled by POST actions that redirect
 - Server-side API calls use `apiUrl` (localhost in native development; internal API URL in production)
-- Browser API/image requests use `clientApiUrl` (`/dev-api` through Vite in native development)
+- Browser API/image requests use `clientApiUrl` (`/dev-api` through the dev server proxy in native development)
 
 **State Management:**
-- Remix loaders/actions for server state
-- React hooks for client state
-- No global state library (uses Remix paradigms)
+- Server state is fetched per request in actions
+- Client state is local to client-entry components
+- No global state library
 
 ## Code Style & Conventions
 
 Before making changes, read and follow these instruction files:
 - `.github/instructions/shared.md` — project-wide rules (commits, workflow, commands)
 - `.github/instructions/backend.instructions.md` — .NET code style (applies to `*.cs` files)
-- `.github/instructions/frontend.instructions.md` — Remix/TypeScript code style (applies to `*.ts`, `*.tsx` files)
+- `.github/instructions/frontend.instructions.md` — Remix 3/TypeScript code style (applies to `*.ts`, `*.tsx` files)
 
 ## External API Integrations
 

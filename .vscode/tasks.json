@@ -58,7 +58,7 @@
       "options": { "cwd": "${workspaceFolder}/MediaSet.Remix" },
       "isBackground": true,
       "problemMatcher": {
-        "pattern": { "regexp": "^(never-match-this-vite-output):(.*)$", "file": 1, "message": 2 },
+        "pattern": { "regexp": "^(never-match-this-ui-output):(.*)$", "file": 1, "message": 2 },
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".",
