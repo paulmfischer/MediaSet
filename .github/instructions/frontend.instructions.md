@@ -1,23 +1,16 @@
 ---
-description: Code style and conventions for Remix.js/TypeScript frontend UI
+description: Code style and conventions for the Remix 3/TypeScript frontend UI
 applyTo: "**/*.ts,**/*.tsx"
 ---
 
-# Frontend UI Code Style Guide (Remix.js/TypeScript)
+# Frontend UI Code Style Guide (Remix 3/TypeScript)
+
+The frontend in `MediaSet.Remix/` is Remix 3 (the `remix` package). Node runs the TypeScript
+sources directly (`node --import remix/node-tsx server.ts`) and `tsc` only type checks. The
+`remix` package ships its own guides in `MediaSet.Remix/node_modules/remix/guides/`; read them
+before inventing a pattern.
 
 ## File Organization
-
-- Follow Remix.js routing conventions
-- Place route components in `app/routes/`
-- Place reusable components in `app/components/`
-- Place data functions in `app/*-data.ts` files
-- Place type definitions in `app/models.ts` or co-locate with components
-- Use `.tsx` for files with JSX, `.ts` for pure TypeScript
-
-## Remix 3 page structure (`feat/remix-3`)
-
-These conventions apply to the Remix 3 app in `MediaSet.Remix/app`; the sections below describe
-the Remix 2 app until the cutover docs (#703) replace them.
 
 - `app/routes.ts` holds the route map. Give each page area its own nested route map
   (for example `routes.entityLists`) and use `routes.*.href()` for links.
@@ -29,14 +22,18 @@ the Remix 2 app until the cutover docs (#703) replace them.
   `router.map(routes.<area>, <area>Controller)`; the root controller only owns root-level routes.
 - `app/ui/` holds the area's page components. Layout shared by every page (`document`, `header`,
   `footer`, `icon`, `nav`) stays at the `ui/` root.
+- `app/api/` holds the data functions that call the MediaSet API; `app/models.ts` holds shared
+  types; `app/utils/` holds shared helpers.
+- Use `.tsx` for files with JSX, `.ts` for pure TypeScript. Import with the explicit `.ts`/`.tsx`
+  extension; the TypeScript config requires it.
 
 ## Naming Conventions
 
-- **Components**: PascalCase class in `kebab-case.tsx` file | `MovieCard` class in `movie-card.tsx`
+- **Components**: PascalCase function in `kebab-case.tsx` file | `ListPage` in `list-page.tsx`
 - **Functions/variables**: camelCase | `fetchBooks`, `formatTitle`
-- **Interfaces**: PascalCase (optionally `IPascalCase` prefix) | `IBook`, `MovieCardProps`
+- **Interfaces**: PascalCase (optionally `IPascalCase` prefix) | `IBook`, `ListPageProps`
 - **Constants**: SCREAMING_SNAKE_CASE | `MAX_ITEMS`, `DEFAULT_SORT`
-- **Files**: `kebab-case.ts` or `kebab-case.tsx` | `movie-card.tsx`, `data-functions.ts`
+- **Files**: `kebab-case.ts` or `kebab-case.tsx` | `list-page.tsx`, `list-params.ts`
 
 ## TypeScript
 
@@ -46,23 +43,70 @@ the Remix 2 app until the cutover docs (#703) replace them.
 - Avoid `any` type; prefer `unknown` if type is truly unknown
 - Use union types and type guards where appropriate
 
+## Routing and Controllers
+
+- A route is declared once in `app/routes.ts` (`get`, `post`, `route`, ...) and handled by a
+  controller action created with `createController(routes.<area>, { actions: { ... } })`.
+- An action receives the request `context` (`context.url`, `context.request`, ...) and returns a
+  `Response`. Render pages with `context.render(<Document ...>...</Document>)` and redirect with
+  `redirect()` from `remix/response/redirect`.
+- Read and validate URL and form input inside the action or a helper next to it (for example
+  `parseListParams`); pass plain, already-parsed values to the page component.
+- Fetch data in the action, before rendering. Components do not fetch.
+- Handle errors in the action and return a user-friendly response with the right status code.
+
+### Forms
+
+- Declare an editable page with `form(pattern)` in `app/routes.ts`. It maps a GET page and a POST
+  action at the same URL; the controller's `index` action renders the form and its `action` handles
+  the submission.
+- Write a native `<form method="post" action={routes.<area>.<page>.action.href(...)}>` with named
+  inputs and a submit button. It must work without JavaScript.
+- Install the `formData()` middleware from `remix/middleware/form-data` in `app/router.ts`; the
+  parsed body is then `context.formData`.
+- Validate `context.formData` in the action with a schema from `remix/data-schema`
+  (`s.parseSafe`). Use `parsed.value` for the save, never the raw form data.
+- On a validation failure, render the page again from the same action with status `400`, passing
+  the submitted `values` and the `issues` so the form keeps the user's input and shows each
+  field's error (linked to its input with `aria-describedby`). Do not redirect back to the GET
+  page; that loses the input and errors.
+- On success, return `redirect(routes.<area>.<page>.href(...), 303)` so a refresh repeats the GET
+  instead of resubmitting.
+- Show pending state by hydrating only the submit button as a client entry in a `public/` folder
+  that listens to `handle.frame` `reloadStart` and `reloadComplete` events; do not hydrate the
+  whole form.
+- Browsers only submit GET and POST. For PUT, PATCH or DELETE routes, add a hidden `_method`
+  field and install `methodOverride()` from `remix/middleware/method-override` right after
+  `formData()`.
+
 ## Component Design
 
-- Prefer function components over class components
-- Use React hooks for state and side effects
-- Keep components focused and single-purpose
-- Extract complex logic into custom hooks
-- Use proper prop typing with TypeScript interfaces
-- Memoize expensive components with `React.memo()` when needed
+- Components come from `remix/component`. A component is a function that receives a
+  `Handle` and returns a render function: `function Name(handle: Handle<Props>) { return () => ... }`.
+  Read props from `handle.props` inside the render function.
+- Use `class` (not `className`) and the standard HTML attribute names.
+- Server components render once to HTML and have no state or effects. Keep most UI this way.
+- Interactivity lives only in client entries under a `public/` folder, declared with
+  `clientEntry(import.meta.url, function Name(handle) { ... })`. State is a plain variable in the
+  component closure; call `handle.update()` to re-render. Use `handle.queueTask()` for
+  browser-only work after commit and `handle.signal` for cleanup. Use `mix={ref(...)}` and
+  `on(...)` for element behavior.
+- Keep components focused and single-purpose; extract repeated markup into components and
+  behavior into plain functions (for example `dismiss.ts`).
+- Type props with an interface and `Handle<Props>`.
 
-## Remix.js Conventions
+## Browser Code Boundary
 
-- Use `loader` functions for data fetching (GET requests)
-- Use `action` functions for mutations (POST, PUT, DELETE)
-- Follow Remix's nested routing patterns
-- Use Remix `Form` component for forms that trigger actions
-- Use `useLoaderData()` and `useActionData()` hooks appropriately
-- Add `CatchBoundary` and `ErrorBoundary` for error handling
+- Code reaches the browser only through the asset server in `app/assets.ts`, which serves
+  `app/**/public/**` plus the few shared files listed in `allowFiles`. Anything else is
+  server-only by construction.
+- Put every client entry and every module it imports in a `public/` folder, or add the shared
+  file to `allowFiles` deliberately (as `ui/icon.tsx` and `ui/icons.ts` are).
+- Never import server code (API data functions, config reading, environment access) from a
+  `public/` module. Pass the values a client entry needs as props.
+- The browser entry is `app/actions/public/entry.ts`, which starts the Remix runtime once.
+- Browser API and image requests use `clientApiUrl` (`/dev-api` in development); server-side
+  calls use `apiUrl`.
 
 ## Styling
 
@@ -71,7 +115,10 @@ the Remix 2 app until the cutover docs (#703) replace them.
 - Use consistent spacing and sizing tokens
 - Extract repeated patterns into reusable components
 - Follow mobile-first responsive design approach
-- Utilize global styles in `app/tailwind.css` for common styles
+- Utilize global styles in `app/tailwind.css` for common styles; buttons use the global styles
+  rather than per-button color or size classes
+- The stylesheet is compiled to `public/app.css` (`npm run css`); new class names appear after
+  the CSS build runs (`npm run dev` watches it)
 
 ## Accessibility
 
@@ -84,10 +131,9 @@ the Remix 2 app until the cutover docs (#703) replace them.
 ## Error Handling
 
 - Handle errors gracefully with user-friendly messages
-- Use error boundaries for component-level error handling
-- Validate form inputs on both client and server
-- Provide loading states for async operations
-- Use Remix error boundaries for route-level errors
+- Validate form inputs on the server
+- Provide pending states for navigation and async operations
+- Return the correct HTTP status for not-found and failed requests
 
 ## Logging
 
@@ -97,10 +143,21 @@ the Remix 2 app until the cutover docs (#703) replace them.
 
 ## Testing
 
-- Use Vitest for unit tests
-- Use React Testing Library for component tests
+Run tests with the commands in [local development](../../Development/DEVELOPMENT.md#checks).
+
+- **Router (server) tests** use `remix/test` and `remix/assert`: `describe`/`it` plus
+  `router.fetch(new URL(path, 'http://localhost'))`, asserting on status, headers, and HTML.
+  Files are `*.test.ts` or `*.test.tsx`, next to the code or the controller they cover
+  (`remix test --type server`).
+- **Browser tests** are `*.test.browser.tsx` and **end-to-end tests** are `*.test.e2e.ts`, run in
+  Playwright Chromium through `remix test` (`npm run test:e2e`). Use `t.serve(...)` with
+  `createTestServer(router.fetch)` for e2e.
+- **Vitest runs a few suites for now.** Nine module suites (`app/api/**`, `app/utils/**`, `app/models.test.ts`,
+  `app/config.server.test.ts`) still run under Vitest (`npm run test:unit`) and are excluded from
+  `remix test` in `remix.json`. They will be ported and Vitest removed (#686). Do not add new
+  Vitest suites; write new tests with `remix test`.
 - Test naming: `should [expected behavior] when [condition]`
-- Test user interactions over implementation details
+- Test user-visible behavior over implementation details
 - Mock external dependencies appropriately
 
 ## Code Quality Checks
@@ -111,5 +168,6 @@ After making changes to the frontend, always verify compliance before committing
 - **ESLint (auto-fix)**: `npm run lint:fix` — automatically fixes ESLint violations where possible
 - **Prettier**: `npm run lint:format` — checks that all files conform to the project's formatting rules
 - **Prettier (auto-fix)**: `npm run lint:format:fix` — automatically reformats files to conform to Prettier rules
+- **Typecheck**: `npm run typecheck` — runs `tsc`
 
-Both check commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
+All check commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
