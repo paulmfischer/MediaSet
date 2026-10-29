@@ -39,7 +39,8 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
       ) : null;
 
     const sortableHeader = (label: string, field: string, className = '') => {
-      const active = sortField?.toLowerCase() === field.toLowerCase() && (sortDirection === 'asc' || sortDirection === 'desc');
+      const active =
+        sortField?.toLowerCase() === field.toLowerCase() && (sortDirection === 'asc' || sortDirection === 'desc');
       const next = active && sortDirection === 'asc' ? 'desc' : 'asc';
       return (
         <th
@@ -126,7 +127,9 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
           {totalCount === 0 ? (
             <div class="flex justify-center text-center">
               {searchText ? (
-                <p>No {name} match &quot;{searchText}&quot;.</p>
+                <p>
+                  No {name} match &quot;{searchText}&quot;.
+                </p>
               ) : (
                 <p>
                   You don&apos;t appear to have any {name}!<br />
