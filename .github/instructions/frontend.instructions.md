@@ -5,11 +5,10 @@ applyTo: "**/*.ts,**/*.tsx"
 
 # Frontend UI Code Style Guide (Remix 3/TypeScript)
 
-The frontend in `MediaSet.Remix/` is Remix 3 (the `remix` package). It is not React, and
-there is no Vite or bundler: Node runs the TypeScript sources directly
-(`node --import remix/node-tsx server.ts`) and `tsc` only type checks. Do not add React,
-React DOM, Vite, or React-era libraries. The `remix` package ships its own guides in
-`MediaSet.Remix/node_modules/remix/guides/`; read them before inventing a pattern.
+The frontend in `MediaSet.Remix/` is Remix 3 (the `remix` package). Node runs the TypeScript
+sources directly (`node --import remix/node-tsx server.ts`) and `tsc` only type checks. The
+`remix` package ships its own guides in `MediaSet.Remix/node_modules/remix/guides/`; read them
+before inventing a pattern.
 
 ## File Organization
 
@@ -82,7 +81,7 @@ React DOM, Vite, or React-era libraries. The `remix` package ships its own guide
 
 ## Component Design
 
-- Components come from `remix/component`, not React. A component is a function that receives a
+- Components come from `remix/component`. A component is a function that receives a
   `Handle` and returns a render function: `function Name(handle: Handle<Props>) { return () => ... }`.
   Read props from `handle.props` inside the render function.
 - Use `class` (not `className`) and the standard HTML attribute names.
@@ -91,7 +90,7 @@ React DOM, Vite, or React-era libraries. The `remix` package ships its own guide
   `clientEntry(import.meta.url, function Name(handle) { ... })`. State is a plain variable in the
   component closure; call `handle.update()` to re-render. Use `handle.queueTask()` for
   browser-only work after commit and `handle.signal` for cleanup. Use `mix={ref(...)}` and
-  `on(...)` for element behavior instead of effects.
+  `on(...)` for element behavior.
 - Keep components focused and single-purpose; extract repeated markup into components and
   behavior into plain functions (for example `dismiss.ts`).
 - Type props with an interface and `Handle<Props>`.
@@ -153,7 +152,7 @@ Run tests with the commands in [local development](../../Development/DEVELOPMENT
 - **Browser tests** are `*.test.browser.tsx` and **end-to-end tests** are `*.test.e2e.ts`, run in
   Playwright Chromium through `remix test` (`npm run test:e2e`). Use `t.serve(...)` with
   `createTestServer(router.fetch)` for e2e.
-- **Vitest is temporary.** Nine module suites (`app/api/**`, `app/utils/**`, `app/models.test.ts`,
+- **Vitest runs a few suites for now.** Nine module suites (`app/api/**`, `app/utils/**`, `app/models.test.ts`,
   `app/config.server.test.ts`) still run under Vitest (`npm run test:unit`) and are excluded from
   `remix test` in `remix.json`. They will be ported and Vitest removed (#686). Do not add new
   Vitest suites; write new tests with `remix test`.

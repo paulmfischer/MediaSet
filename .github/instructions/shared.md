@@ -12,8 +12,8 @@ MediaSet is a full-stack application for managing personal media collections.
 
 **Tech Stack:**
 - **Backend:** .NET 10 minimal API with MongoDB
-- **Frontend:** Remix 3 with TypeScript and Tailwind CSS (not React, no Vite)
-- **Testing:** NUnit (backend), `remix test` router/browser/e2e tests (frontend; a few legacy suites still run under Vitest until #686)
+- **Frontend:** Remix 3 with TypeScript and Tailwind CSS
+- **Testing:** NUnit (backend), `remix test` router/browser/e2e tests (frontend; a few module suites still run under Vitest until #686)
 
 **Architecture:**
 - Vertical slice architecture with minimal API route groups (organized by feature in `/Features`)
@@ -196,7 +196,7 @@ dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --filter "FullyQualifie
 dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --filter "FullyQualifiedName~TestClassName.TestMethodName"
 ```
 
-**Frontend (`remix test`, plus retained Vitest suites):**
+**Frontend (`remix test`, plus Vitest module suites):**
 ```bash
 # Run all unit and router tests
 cd MediaSet.Remix && npm test
@@ -204,7 +204,7 @@ cd MediaSet.Remix && npm test
 # Router (server) tests only, filtered by partial file name
 cd MediaSet.Remix && NODE_ENV=test npx remix test router
 
-# One retained Vitest file
+# One Vitest module file
 cd MediaSet.Remix && npm run test:unit -- app/path/to/test-file.test.ts
 
 # Browser and end-to-end tests (Playwright Chromium)

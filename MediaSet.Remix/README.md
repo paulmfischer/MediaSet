@@ -8,7 +8,7 @@ The MediaSet frontend provides a responsive interface for managing your personal
 
 **Technologies:**
 
-- **Remix 3** (the `remix` package): router, server-rendered components, asset server and test runner. It is not React.
+- **Remix 3** (the `remix` package): router, server-rendered components, asset server and test runner.
 - **TypeScript**: Type-safe development; Node runs the sources directly and `tsc` only type checks
 - **Tailwind CSS**: Utility-first CSS, compiled to `public/app.css`
 - **Playwright**: Browser and end-to-end tests through `remix test`
@@ -45,7 +45,7 @@ Optional overrides go in `.env.local`; see [`.env.example`](.env.example).
 ```bash
 cd MediaSet.Remix
 
-# Unit (retained Vitest suites) and router tests
+# Vitest module suites and router tests
 npm test
 
 # Browser and end-to-end tests (needs `npx playwright install chromium` once)

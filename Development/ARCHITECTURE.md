@@ -49,7 +49,7 @@
 
 ### Frontend (Remix 3)
 
-Remix 3 is not React. Node runs the TypeScript sources directly; there is no bundler.
+Node runs the TypeScript sources directly, and `tsc` only type checks.
 
 **Routing:**
 - `app/routes.ts` declares routes; each page area has a nested route map (for example `routes.entityLists`)
