@@ -16,7 +16,7 @@ const metadata: Record<string, string[]> = {
 // Stubs the API: metadata lookups return fixed values, POST /Books is recorded (or fails).
 function stubApi(
   t: { after: (fn: () => void) => void },
-  options: { failSave?: boolean; rejectSave?: string; failMetadata?: boolean } = {}
+  options: { failSave?: boolean; noId?: boolean; rejectSave?: string; failMetadata?: boolean } = {}
 ) {
   const original = globalThis.fetch;
   const saved: unknown[] = [];
@@ -27,7 +27,7 @@ function stubApi(
       if (options.failSave) return new Response('boom', { status: 500 });
       if (options.rejectSave) return new Response(options.rejectSave, { status: 400 });
       saved.push(await request.json());
-      return Response.json({ id: 'new-id' }, { status: 201 });
+      return Response.json(options.noId ? {} : { id: 'new-id' }, { status: 201 });
     }
     if (options.failMetadata) return new Response('down', { status: 503 });
     const property = url.pathname.split('/').pop() ?? '';
@@ -158,6 +158,17 @@ describe('add book form', () => {
     const html = await response.text();
     assert.match(html, /role="alert"[^>]*>An entity with that ISBN already exists</);
     assert.match(html, /name="isbn"[^>]*value="123"/);
+  });
+
+  it('shows an error with the input kept, not a redirect, when the saved book has no id', async (t) => {
+    stubApi(t, { noId: true });
+    const response = await post([['title', 'Dune']]);
+
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get('Location'), null);
+    const html = await response.text();
+    assert.match(html, /role="alert"[^>]*>The book was saved, but it could not be opened/);
+    assert.match(html, /name="title"[^>]*value="Dune"/);
   });
 
   it('warns that existing values are missing when the option lists fail to load', async (t) => {

@@ -86,7 +86,16 @@ export default createController(routes.entityAdd.books, {
         });
       }
 
-      return redirect(routes.entityDetail.books.href({ id: saved.id ?? '' }), 303);
+      // The API always returns the new id; without it the book can't be opened, so say so rather than redirect blind.
+      if (!saved.id) {
+        serverLogger.error('Saved book has no id', undefined, { operation: 'addBook' });
+        return renderBookForm(context, {
+          values: submittedValues(context.formData, BOOK_FIELDS),
+          formError: 'The book was saved, but it could not be opened. Check your Books list before trying again.',
+          status: 500,
+        });
+      }
+      return redirect(routes.entityDetail.books.href({ id: saved.id }), 303);
     },
   },
 });
