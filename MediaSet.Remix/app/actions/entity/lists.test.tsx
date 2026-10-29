@@ -1,7 +1,7 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { router } from '../router.ts';
+import { router } from '../../router.ts';
 import { listHref, parseListParams } from './list-params.ts';
 
 const book = {

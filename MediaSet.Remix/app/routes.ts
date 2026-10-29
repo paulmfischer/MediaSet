@@ -4,8 +4,11 @@ export const routes = route({
   assets: get('/assets/*path'),
   config: get('/config.json'),
   home: get('/'),
-  books: get('/books'),
-  movies: get('/movies'),
-  games: get('/games'),
-  musics: get('/musics'),
+  // Collection list pages for each media type.
+  entityLists: route({
+    books: get('/books'),
+    movies: get('/movies'),
+    games: get('/games'),
+    musics: get('/musics'),
+  }),
 });

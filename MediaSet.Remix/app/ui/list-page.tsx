@@ -1,6 +1,6 @@
 import type { Handle } from 'remix/component';
 
-import { DEFAULT_ORDER_BY, listHref } from '../actions/list-params.ts';
+import { DEFAULT_ORDER_BY, listHref } from '../actions/entity/list-params.ts';
 import type { PagedResult } from '../api/entity-data.ts';
 import type { BaseEntity } from '../models.ts';
 import { Icon } from './icon.tsx';

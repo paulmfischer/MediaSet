@@ -16,10 +16,10 @@ export interface NavItem {
 // /image-stats stays a plain path until its route is added (#702).
 export const mainNav: NavItem[] = [
   { href: routes.home.href(), label: 'Home', icon: Home },
-  { href: routes.books.href(), label: 'Books', icon: LibraryBig, accent: 'books' },
-  { href: routes.movies.href(), label: 'Movies', icon: Clapperboard, accent: 'movies' },
-  { href: routes.games.href(), label: 'Games', icon: Gamepad2, accent: 'games' },
-  { href: routes.musics.href(), label: 'Music', icon: Music, accent: 'musics' },
+  { href: routes.entityLists.books.href(), label: 'Books', icon: LibraryBig, accent: 'books' },
+  { href: routes.entityLists.movies.href(), label: 'Movies', icon: Clapperboard, accent: 'movies' },
+  { href: routes.entityLists.games.href(), label: 'Games', icon: Gamepad2, accent: 'games' },
+  { href: routes.entityLists.musics.href(), label: 'Music', icon: Music, accent: 'musics' },
 ];
 
 export const toolsNav: NavItem[] = [{ href: '/image-stats', label: 'Image Statistics', icon: HardDrive }];

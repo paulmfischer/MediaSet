@@ -4,6 +4,7 @@ import { staticFiles } from 'remix/middleware/static';
 import { createRouter, type RouterContext } from 'remix/router';
 
 import controller from './actions/controller.tsx';
+import entityListsController from './actions/entity/controller.tsx';
 import { assets } from './assets.ts';
 import { routes } from './routes.ts';
 
@@ -20,3 +21,4 @@ declare module 'remix' {
 }
 
 router.map(routes, controller);
+router.map(routes.entityLists, entityListsController);
