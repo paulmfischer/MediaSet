@@ -54,10 +54,31 @@ React DOM, Vite, or React-era libraries. The `remix` package ships its own guide
 - Read and validate URL and form input inside the action or a helper next to it (for example
   `parseListParams`); pass plain, already-parsed values to the page component.
 - Fetch data in the action, before rendering. Components do not fetch.
-- There are no `loader`/`action` exports, route modules, `useLoaderData`, `useActionData`, or
-  `Form`. Use plain HTML `<form method="post">` handled by an action, and `redirect()` after a
-  mutation.
 - Handle errors in the action and return a user-friendly response with the right status code.
+
+### Forms
+
+- Declare an editable page with `form(pattern)` in `app/routes.ts`. It maps a GET page and a POST
+  action at the same URL; the controller's `index` action renders the form and its `action` handles
+  the submission.
+- Write a native `<form method="post" action={routes.<area>.<page>.action.href(...)}>` with named
+  inputs and a submit button. It must work without JavaScript.
+- Install the `formData()` middleware from `remix/middleware/form-data` in `app/router.ts`; the
+  parsed body is then `context.formData`.
+- Validate `context.formData` in the action with a schema from `remix/data-schema`
+  (`s.parseSafe`). Use `parsed.value` for the save, never the raw form data.
+- On a validation failure, render the page again from the same action with status `400`, passing
+  the submitted `values` and the `issues` so the form keeps the user's input and shows each
+  field's error (linked to its input with `aria-describedby`). Do not redirect back to the GET
+  page; that loses the input and errors.
+- On success, return `redirect(routes.<area>.<page>.href(...), 303)` so a refresh repeats the GET
+  instead of resubmitting.
+- Show pending state by hydrating only the submit button as a client entry in a `public/` folder
+  that listens to `handle.frame` `reloadStart` and `reloadComplete` events; do not hydrate the
+  whole form.
+- Browsers only submit GET and POST. For PUT, PATCH or DELETE routes, add a hidden `_method`
+  field and install `methodOverride()` from `remix/middleware/method-override` right after
+  `formData()`.
 
 ## Component Design
 
