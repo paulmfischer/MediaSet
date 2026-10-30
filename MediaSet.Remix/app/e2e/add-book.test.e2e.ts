@@ -145,3 +145,92 @@ describe('add book (e2e)', () => {
     assert.deepEqual(saved[0]?.authors, ['Brian Herbert']);
   });
 });
+
+describe('add book metadata lookup (e2e)', () => {
+  it('looks a title up, shows the results in a modal dialog and applies the chosen one to the form', async (t) => {
+    const original = globalThis.fetch;
+    const saved: Array<Record<string, unknown>> = [];
+    const match = (title: string, publisher: string) => ({
+      title,
+      subtitle: 'Book One',
+      authors: [{ name: 'Frank Herbert', url: '' }],
+      numberOfPages: 412,
+      publishers: [{ name: publisher }],
+      publishDate: '1990',
+      subjects: [{ name: 'Science Fiction', url: '' }],
+      format: 'Paperback',
+    });
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      if (request.method === 'POST') {
+        saved.push((await request.json()) as Record<string, unknown>);
+        return Response.json({ id: 'new-id' }, { status: 201 });
+      }
+      if (url.pathname.endsWith('/config/lookup-capabilities')) return Response.json({ supportsBookLookup: true });
+      if (url.pathname.includes('/lookup/Books/'))
+        return Response.json([match('Dune', 'Ace'), match('Dune Messiah', 'Berkley')]);
+      if (url.pathname.endsWith('/Books/new-id')) return Response.json({ id: 'new-id', type: 'Books', title: 'Dune' });
+      return Response.json(metadata[url.pathname.split('/').pop() ?? ''] ?? []);
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('#title').fill('Dune');
+    await page.getByLabel('Pages').fill('1');
+    // A cover over the upload limit must not get in the way of a lookup, which doesn't send it.
+    await page
+      .getByLabel(/Upload an image/)
+      .setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(6 * 1024 * 1024) });
+    await page.getByRole('button', { name: 'Look up by title' }).click();
+
+    // The results open in a modal dialog; the form behind it keeps what was typed.
+    const dialog = page.getByRole('dialog', { name: 'Look up book' });
+    await dialog.waitFor();
+    assert.equal(await page.evaluate(() => document.querySelector('dialog')?.matches(':modal')), true);
+    assert.equal(await dialog.getByRole('listitem').count(), 2);
+    assert.match(await dialog.innerText(), /Dune Messiah/);
+
+    // Closing the dialog leaves the form as it was.
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
+    assert.equal(await page.getByLabel('Pages').inputValue(), '1');
+    await page.getByRole('button', { name: 'Look up by title' }).click();
+    await dialog.waitFor();
+
+    // Applying the second match fills the form, including the select islands.
+    await dialog.getByRole('button', { name: 'Use this result' }).nth(1).click();
+    await dialog.waitFor({ state: 'detached' });
+    await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
+    assert.equal(await page.locator('#title').inputValue(), 'Dune Messiah');
+    assert.equal(await page.getByLabel('Subtitle').inputValue(), 'Book One');
+    assert.equal(await page.getByLabel('Pages').inputValue(), '412');
+    assert.equal(await page.getByLabel('Publication Date').inputValue(), '1990');
+    await page.getByRole('button', { name: 'Remove Frank Herbert' }).waitFor();
+    await page.getByRole('button', { name: 'Clear Berkley' }).waitFor();
+    await page.getByRole('button', { name: 'Clear Paperback' }).waitFor();
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForURL('**/books/new-id');
+    assert.deepEqual(saved, [
+      {
+        type: 'Books',
+        title: 'Dune Messiah',
+        subtitle: 'Book One',
+        format: 'Paperback',
+        pages: 412,
+        publicationDate: '1990',
+        publisher: 'Berkley',
+        authors: ['Frank Herbert'],
+        genres: ['Science Fiction'],
+      },
+    ]);
+  });
+});
