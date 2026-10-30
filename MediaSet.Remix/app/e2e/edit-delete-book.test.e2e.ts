@@ -14,6 +14,7 @@ function stubApi(t: { after: (fn: () => void) => void }) {
     if (url.pathname.endsWith('/Books/b1')) {
       if (request.method !== 'GET') {
         requests.push(request.method);
+        if (request.method === 'DELETE') await new Promise((resolve) => setTimeout(resolve, 800));
         return new Response(null, { status: 204 });
       }
       return Response.json({ id: 'b1', type: 'Books', title: 'Dune' });
@@ -47,6 +48,9 @@ describe('edit and delete book (e2e)', () => {
 
     await page.getByRole('link', { name: 'Delete' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+    const pending = page.getByRole('button', { name: 'Deleting…' });
+    await pending.waitFor();
+    assert.equal(await pending.isDisabled(), true);
     await page.waitForURL('**/books');
     assert.deepEqual(requests, ['DELETE']);
   });

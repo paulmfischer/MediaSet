@@ -14,6 +14,19 @@ interface ConfirmDeleteProps {
 // delete page's confirmation form; once hydrated, the click opens a confirmation dialog instead.
 export const ConfirmDelete = clientEntry(import.meta.url, function ConfirmDelete(handle: Handle<ConfirmDeleteProps>) {
   let dialog: HTMLDialogElement | undefined;
+  let pending = false;
+
+  const setPending = (value: boolean) => {
+    pending = value;
+    handle.update();
+  };
+
+  // The dialog's form submits as a top-frame reload; block a second submit while it is in flight.
+  handle.queueTask(() => {
+    const top = handle.frames.top;
+    top.addEventListener('reloadStart', () => setPending(true), { signal: handle.signal });
+    top.addEventListener('reloadComplete', () => setPending(false), { signal: handle.signal });
+  });
 
   return () => {
     const { title, href } = handle.props;
@@ -47,7 +60,9 @@ export const ConfirmDelete = clientEntry(import.meta.url, function ConfirmDelete
               <button type="button" mix={on('click', () => dialog?.close())}>
                 Cancel
               </button>
-              <button type="submit">Delete</button>
+              <button type="submit" disabled={pending} aria-disabled={pending ? 'true' : undefined}>
+                {pending ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
           </form>
         </dialog>
