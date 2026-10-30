@@ -4,6 +4,7 @@ import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
+import { ImageInput } from '../../forms/public/image-input.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
@@ -26,11 +27,14 @@ interface BookFormPageProps {
   options: BookFormOptions;
   /** The existing authors, genres, publishers or formats could not be loaded. */
   optionsUnavailable?: boolean;
+  /** Browser URL of the book's saved cover image, when editing a book that has one. */
+  existingImageSrc?: string | undefined;
 }
 
 export function BookFormPage(handle: Handle<BookFormPageProps>) {
   return () => {
-    const { heading, action, cancelHref, values, errors, formError, options, optionsUnavailable } = handle.props;
+    const { heading, action, cancelHref, values, errors, formError, options, optionsUnavailable, existingImageSrc } =
+      handle.props;
     const hasErrors = Object.keys(errors).length > 0 || Boolean(formError);
 
     return (
@@ -47,7 +51,7 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             don't create a duplicate.
           </p>
         ) : null}
-        <form method="post" action={action} class="flex flex-col gap-4">
+        <form method="post" action={action} enctype="multipart/form-data" class="flex flex-col gap-4">
           <Field name="title" label="Title" required error={errors.title}>
             <input
               id="title"
@@ -156,6 +160,12 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               value={values.plot}
             />
           </Field>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <div class="flex gap-2 justify-end">
             <a href={cancelHref} class="px-3 py-1">
               Cancel

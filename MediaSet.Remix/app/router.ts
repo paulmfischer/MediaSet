@@ -1,10 +1,10 @@
 import { compression } from 'remix/middleware/compression';
-import { formData } from 'remix/middleware/form-data';
 import { render } from 'remix/middleware/render';
 import { staticFiles } from 'remix/middleware/static';
 import { createRouter, type RouterContext } from 'remix/router';
 
 import controller from './actions/controller.tsx';
+import { boundedFormData } from './actions/forms/form-data.tsx';
 import entityAddController from './actions/entity/add/controller.tsx';
 import entityDeleteController from './actions/entity/delete/controller.tsx';
 import entityDetailController from './actions/entity/detail-controller.tsx';
@@ -14,7 +14,7 @@ import { assets } from './assets.ts';
 import { routes } from './routes.ts';
 
 export const router = createRouter({
-  middleware: [compression(), staticFiles('./public', { index: false }), formData(), render({ assets })],
+  middleware: [compression(), staticFiles('./public', { index: false }), render({ assets }), boundedFormData()],
 });
 
 export type AppContext = RouterContext<typeof router>;

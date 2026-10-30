@@ -80,6 +80,12 @@ before inventing a pattern.
 - Show pending state by hydrating only the submit button as a client entry in a `public/` folder
   that listens to `handle.frame` `reloadStart` and `reloadComplete` events; do not hydrate the
   whole form.
+- Forms with a file input use `enctype="multipart/form-data"`. `boundedFormData()`
+  (`app/actions/forms/form-data.tsx`) parses the body once with explicit file, part and size limits and
+  answers 413 over them. Validate the file in the action (`readCoverImage` in
+  `app/actions/forms/cover-image.ts`) and send the API an `entity` JSON part plus the file
+  (`entityWithImage`). The `ImageInput` island (`app/ui/forms/public/image-input.tsx`) adds the
+  file and URL inputs with a preview to any media type's form.
 - Browsers only submit GET and POST. For PUT, PATCH or DELETE routes, add a hidden `_method`
   field and install `methodOverride()` from `remix/middleware/method-override` right after
   `formData()`.

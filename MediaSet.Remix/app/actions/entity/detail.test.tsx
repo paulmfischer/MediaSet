@@ -5,13 +5,13 @@ import { router } from '../../router.ts';
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
 
-// Stubs the API and records the URLs the page asked for. A function body can return any Response.
+// Stubs the API and records the item URLs the page asked for (not the credits lookup). A function body can return any Response.
 function stubApi(t: { after: (fn: () => void) => void }, respond: (url: URL) => Response) {
   const original = globalThis.fetch;
   const urls: URL[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
-    urls.push(url);
+    if (!url.pathname.endsWith('/config/integrations')) urls.push(url);
     return respond(url);
   }) as typeof fetch;
   t.after(() => {

@@ -2,7 +2,7 @@ import type { InferOutput } from 'remix/data-schema';
 import * as f from 'remix/data-schema/form-data';
 
 import { Entity, type BookEntity } from '../../../models.ts';
-import { optionalWholeNumber, requiredText, text, textList } from '../../forms/form-schema.ts';
+import { optionalHttpUrl, optionalWholeNumber, requiredText, text, textList } from '../../forms/form-schema.ts';
 
 export const bookForm = f.object({
   title: f.field(requiredText('Title is required')),
@@ -15,10 +15,11 @@ export const bookForm = f.object({
   genres: textList('genres'),
   publisher: f.field(text()),
   plot: f.field(text()),
+  imageUrl: f.field(optionalHttpUrl('Enter a valid http or https image URL')),
 });
 
 export const BOOK_FIELDS = {
-  single: ['title', 'isbn', 'subtitle', 'format', 'pages', 'publicationDate', 'publisher', 'plot'],
+  single: ['title', 'isbn', 'subtitle', 'format', 'pages', 'publicationDate', 'publisher', 'plot', 'imageUrl'],
   repeated: ['authors', 'genres'],
 } as const;
 
@@ -31,6 +32,7 @@ export type BookFormValues = {
   publicationDate: string;
   publisher: string;
   plot: string;
+  imageUrl: string;
   authors: string[];
   genres: string[];
 };
@@ -44,6 +46,7 @@ export const emptyBookValues: BookFormValues = {
   publicationDate: '',
   publisher: '',
   plot: '',
+  imageUrl: '',
   authors: [],
   genres: [],
 };
@@ -66,13 +69,21 @@ export function toBookValues(book: BookEntity): BookFormValues {
     publicationDate: book.publicationDate ?? '',
     publisher: book.publisher ?? '',
     plot: book.plot ?? '',
+    imageUrl: book.imageUrl ?? '',
     authors: book.authors ?? [],
     genres: book.genres ?? [],
   };
 }
 
-/** The API payload for an edit: the existing book with the form's fields applied; cleared fields are dropped. */
-export function toBookUpdate(existing: BookEntity, parsed: InferOutput<typeof bookForm>): BookEntity {
+/**
+ * The API payload for an edit: the existing book with the form's fields applied; cleared fields are
+ * dropped, and `removeImage` drops the saved cover image.
+ */
+export function toBookUpdate(
+  existing: BookEntity,
+  parsed: InferOutput<typeof bookForm>,
+  removeImage = false
+): BookEntity {
   const { pages, authors, genres, ...strings } = parsed;
   const updated: Record<string, unknown> = { ...existing, authors, genres };
   for (const [name, value] of Object.entries(strings)) {
@@ -81,5 +92,10 @@ export function toBookUpdate(existing: BookEntity, parsed: InferOutput<typeof bo
   }
   if (pages === undefined) delete updated.pages;
   else updated.pages = pages;
+  if (removeImage) {
+    // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
+    delete updated.coverImage;
+    if (updated.imageUrl === existing.imageUrl) delete updated.imageUrl;
+  }
   return updated as unknown as BookEntity;
 }

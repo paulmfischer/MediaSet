@@ -7,7 +7,14 @@ const isDevelopment = (process.env.NODE_ENV ?? 'development') === 'development';
 export const assets = createAssetServer({
   basePath: '/assets',
   rootDir: process.cwd(),
-  allowFiles: ['app/routes.ts', 'app/ui/icon.tsx', 'app/ui/icons.ts', 'app/ui/spinner.tsx', 'app/**/public/**'],
+  allowFiles: [
+    'app/routes.ts',
+    'app/ui/icon.tsx',
+    'app/ui/icons.ts',
+    'app/ui/spinner.tsx',
+    'app/ui/forms/field.tsx',
+    'app/**/public/**',
+  ],
   allowPackages: ['remix', 'lucide'],
   denyFiles: ['app/**/*.test.*'],
   sourceMaps: isDevelopment ? 'external' : undefined,

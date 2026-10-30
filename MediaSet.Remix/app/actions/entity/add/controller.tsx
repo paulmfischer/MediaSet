@@ -9,6 +9,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { loadBookOptions } from '../book-options.ts';
 import { BOOK_FIELDS, bookForm, emptyBookValues, toBookEntity, type BookFormValues } from './book-form.ts';
@@ -41,11 +42,15 @@ export default createController(routes.entityAdd.books, {
     index: (context) => renderBookForm(context),
     async action(context) {
       const parsed = s.parseSafe(bookForm, context.formData);
-      if (!parsed.success) {
+      const image = readCoverImage(context.formData);
+      if (!parsed.success || image.error) {
         // Render here rather than redirecting to the GET page, which would lose the input and errors.
         return renderBookForm(context, {
           values: submittedValues(context.formData, BOOK_FIELDS),
-          errors: fieldErrors(parsed.issues),
+          errors: {
+            ...(image.error ? { coverImage: image.error } : {}),
+            ...(parsed.success ? {} : fieldErrors(parsed.issues)),
+          },
           status: 400,
         });
       }
@@ -53,7 +58,13 @@ export default createController(routes.entityAdd.books, {
       const book: BookEntity = toBookEntity(parsed.value);
       let saved: BookEntity;
       try {
-        saved = await addEntity(book);
+        // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
+        if (image.file) {
+          delete book.imageUrl;
+          saved = await addEntity(book, entityWithImage(book, image.file));
+        } else {
+          saved = await addEntity(book);
+        }
       } catch (error) {
         serverLogger.error('Failed to add book', error, { operation: 'addBook' });
         const values = submittedValues(context.formData, BOOK_FIELDS);
