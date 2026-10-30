@@ -24,7 +24,9 @@ export const ConfirmDelete = clientEntry(import.meta.url, function ConfirmDelete
           aria-label="Delete"
           title="Delete"
           mix={on('click', (event) => {
-            if (!dialog) return;
+            // Leave new-tab and other modified clicks to the browser; they open the delete page.
+            if (!dialog || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+              return;
             event.preventDefault();
             dialog.showModal();
           })}
