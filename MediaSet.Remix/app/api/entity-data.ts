@@ -103,7 +103,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
   serverLogger.info(`Fetching ${singular(entityType)} with id ${id}`, { operation: 'getEntity', entityType, id });
   try {
-    const response = await apiFetch(`${baseUrl}/${entityType}/${id}`);
+    const response = await apiFetch(`${baseUrl}/${entityType}/${encodeURIComponent(id)}`);
     if (response.status === 404) {
       serverLogger.warn(`${singular(entityType)} with id ${id} not found`, {
         operation: 'getEntity',

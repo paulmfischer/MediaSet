@@ -21,6 +21,7 @@ const label = 'basis-2/12 dark:text-slate-400';
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
     const { config, entity, basePath, apiUrl } = handle.props;
+    const itemId = encodeURIComponent(entity.id ?? '');
     const title = config.titleOf(entity);
     const subtitle = config.subtitleOf?.(entity);
     const discs = config.discList?.(entity);
@@ -35,10 +36,10 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
             {subtitle ? <h2 class="text-sm">{subtitle}</h2> : null}
           </div>
           <div class="flex flex-row gap-3">
-            <a href={`${basePath}/${entity.id}/edit`} aria-label="Edit" title="Edit">
+            <a href={`${basePath}/${itemId}/edit`} aria-label="Edit" title="Edit">
               <Icon icon={Pencil} size={22} />
             </a>
-            <a href={`${basePath}/${entity.id}/delete`} aria-label="Delete" title="Delete">
+            <a href={`${basePath}/${itemId}/delete`} aria-label="Delete" title="Delete">
               <Icon icon={Trash2} size={22} />
             </a>
           </div>
@@ -51,6 +52,7 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   src={`${apiUrl}/static/images/${entity.coverImage.filePath}`}
                   alt={title || config.coverAlt}
                   class="max-h-96 rounded-lg object-contain"
+                  loading="lazy"
                 />
               ) : (
                 <div

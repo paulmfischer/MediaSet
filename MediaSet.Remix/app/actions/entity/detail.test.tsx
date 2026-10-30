@@ -85,9 +85,30 @@ describe('item detail pages', () => {
   it('does not treat /books/add as an item', async (t) => {
     const urls = stubApi(t, () => Response.json([]));
 
-    await get('/books/add');
+    const response = await get('/books/add');
 
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /<title>Add Book \| MediaSet<\/title>/);
     assert.ok(!urls.some((url) => url.pathname === '/Books/add'));
+  });
+
+  it('encodes the id so it cannot change the API path or query', async (t) => {
+    const urls = stubApi(t, () => new Response('gone', { status: 404 }));
+
+    const response = await get('/books/a%3Fb%3Dc%23d');
+
+    assert.equal(response.status, 404);
+    assert.equal(urls[0].search, '');
+    assert.equal(urls[0].pathname, '/Books/a%3Fb%3Dc%23d');
+  });
+
+  it('encodes the id in the edit and delete links', async (t) => {
+    stubApi(t, () => Response.json({ ...book, id: 'a b' }));
+
+    const html = await (await get('/books/a%20b')).text();
+
+    assert.match(html, /href="\/books\/a%20b\/edit"/);
+    assert.match(html, /href="\/books\/a%20b\/delete"/);
   });
 
   it('renders a movie, with a check mark for a TV series', async (t) => {
@@ -154,6 +175,7 @@ describe('item detail pages', () => {
     assert.equal(field(html, 'Genres'), 'Adventure, Action');
     assert.equal(field(html, 'Barcode'), '456');
     assert.equal(field(html, 'Description'), 'Open air');
+    assert.match(html, /href="\/games\/g1\/edit"/);
     assert.match(html, /href="\/games\/g1\/delete"/);
   });
 
@@ -192,6 +214,7 @@ describe('item detail pages', () => {
     assert.match(html, /<td class="py-1 px-2">First<\/td><td class="py-1 px-2">1:05<\/td>/);
     assert.match(html, /<td class="py-1 px-2">Second<\/td><td class="py-1 px-2"><\/td>/);
     assert.match(html, /href="\/musics\/x1\/edit"/);
+    assert.match(html, /href="\/musics\/x1\/delete"/);
   });
 
   it('shows image lookup failures read-only, and nothing for a clean lookup', async (t) => {
@@ -245,7 +268,7 @@ describe('item detail pages', () => {
     const html = await response.text();
 
     assert.equal(response.status, 500);
-    assert.match(html, /Couldn&#39;t load this book|Couldn't load this book/);
+    assert.match(html, /<h1 class="text-2xl">Couldn't load this book<\/h1>/);
     assert.match(html, /Please try again/);
     assert.match(html, /<a href="\/books">Back to Books<\/a>/);
   });

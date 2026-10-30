@@ -13,7 +13,7 @@ export function UnavailablePage(handle: Handle<UnavailablePageProps>) {
   return () => {
     const { heading, message, backHref, backLabel } = handle.props;
     return (
-      <div class="flex flex-col items-center gap-3 text-center py-8" role="alert">
+      <div class="flex flex-col items-center gap-3 text-center py-8">
         <h1 class="text-2xl">{heading}</h1>
         <p>{message}</p>
         <a href={backHref}>{backLabel}</a>
