@@ -184,6 +184,10 @@ describe('add book metadata lookup (e2e)', () => {
 
     await page.locator('#title').fill('Dune');
     await page.getByLabel('Pages').fill('1');
+    // A cover over the upload limit must not get in the way of a lookup, which doesn't send it.
+    await page
+      .getByLabel(/Upload an image/)
+      .setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(6 * 1024 * 1024) });
     await page.getByRole('button', { name: 'Look up by title' }).click();
 
     // The results open in a modal dialog; the form behind it keeps what was typed.
@@ -196,6 +200,7 @@ describe('add book metadata lookup (e2e)', () => {
     // Closing the dialog leaves the form as it was.
     await dialog.getByRole('button', { name: 'Close' }).click();
     await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
     assert.equal(await page.getByLabel('Pages').inputValue(), '1');
     await page.getByRole('button', { name: 'Look up by title' }).click();
     await dialog.waitFor();
@@ -203,6 +208,7 @@ describe('add book metadata lookup (e2e)', () => {
     // Applying the second match fills the form, including the select islands.
     await dialog.getByRole('button', { name: 'Use this result' }).nth(1).click();
     await dialog.waitFor({ state: 'detached' });
+    await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
     assert.equal(await page.locator('#title').inputValue(), 'Dune Messiah');
     assert.equal(await page.getByLabel('Subtitle').inputValue(), 'Book One');
     assert.equal(await page.getByLabel('Pages').inputValue(), '412');

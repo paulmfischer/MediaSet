@@ -300,6 +300,34 @@ describe('add book metadata lookup', () => {
     assert.doesNotMatch(failed, /stack trace/);
   });
 
+  it('shows a could-not-be-reached message when the lookup request throws', async (t) => {
+    stubLookupApi(t, {
+      lookup: () => {
+        throw new TypeError('fetch failed');
+      },
+    });
+    const response = await post([
+      ['intent', 'lookup:title'],
+      ['title', 'Dune'],
+    ]);
+
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /role="alert"[^>]*>The lookup could not be reached\. Please try again\./);
+  });
+
+  it('accepts a lookup submitted as multipart, ignoring the cover file', async (t) => {
+    const lookups = stubLookupApi(t);
+    const body = new FormData();
+    body.set('intent', 'lookup:title');
+    body.set('title', 'Dune');
+    body.set('coverImage', new File(['x'], 'cover.png', { type: 'image/png' }));
+    const response = await router.fetch(new Request(new URL(addUrl, 'http://localhost'), { method: 'POST', body }));
+
+    assert.equal(response.status, 200);
+    assert.equal(lookups.length, 1);
+    assert.match(await response.text(), /<dialog open/);
+  });
+
   it('says lookup is unavailable, without calling the lookup API, when the provider is off', async (t) => {
     const lookups = stubLookupApi(t, { supported: false });
     const html = await (

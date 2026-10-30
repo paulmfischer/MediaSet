@@ -88,7 +88,7 @@ before inventing a pattern.
   file and URL inputs with a preview to any media type's form.
 - A form's extra actions (metadata lookup, applying a result, closing its dialog) are submit buttons
   with `name="intent"`; the action handles an intent other than save by re-rendering the form with
-  status `200` and never saves. Use `runLookup` and the `LookupDialog` island for metadata lookup, and
+  status `200` (`400` when a lookup has no search term) and never saves. Use `runLookup` and the `LookupDialog` island for metadata lookup, and
   set a new `formKey` on the render that should replace what the user typed, because the client keeps
   typed input over re-rendered values.
 - Browsers only submit GET and POST. For PUT, PATCH or DELETE routes, add a hidden `_method`

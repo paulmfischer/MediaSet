@@ -40,8 +40,17 @@ interface BookFormPageProps {
   formKey?: string | undefined;
 }
 
+// A lookup sends the text fields only (urlencoded), so a chosen cover file is neither uploaded nor
+// able to trip the upload size limit before the book is saved.
 const lookupButtonProps = (field: 'title' | 'isbn') =>
-  ({ type: 'submit', name: 'intent', value: `lookup:${field}`, class: 'secondary', formnovalidate: true }) as const;
+  ({
+    type: 'submit',
+    name: 'intent',
+    value: `lookup:${field}`,
+    class: 'secondary',
+    formnovalidate: true,
+    formenctype: 'application/x-www-form-urlencoded',
+  }) as const;
 
 export function BookFormPage(handle: Handle<BookFormPageProps>) {
   return () => {

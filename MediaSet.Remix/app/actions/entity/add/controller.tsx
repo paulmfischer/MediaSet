@@ -72,6 +72,7 @@ async function renderBookForm(
                 results: resultValues.map(toBookResultSummary),
                 resultsField: LOOKUP_RESULTS_FIELD,
                 resultsValue: JSON.stringify(resultValues),
+                returnFocusId: 'title',
               }
             : undefined,
         }}

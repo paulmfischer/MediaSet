@@ -18,6 +18,8 @@ export interface LookupDialogProps {
   resultsField: string;
   /** The results serialized for that hidden field. */
   resultsValue: string;
+  /** `id` of the form field that takes focus when the dialog goes away. */
+  returnFocusId: string;
 }
 
 const MESSAGES = {
@@ -30,6 +32,11 @@ const MESSAGES = {
 // open panel (`apply:<index>` and `dismiss` are the intents the add action reads); hydration makes it modal and lets Close dismiss it without a round trip.
 export const LookupDialog = clientEntry(import.meta.url, function LookupDialog(handle: Handle<LookupDialogProps>) {
   let dialog: HTMLDialogElement | undefined;
+
+  // The button that opened the dialog is gone after the round trip, so focus would fall to the page.
+  const returnFocus = () => document.getElementById(handle.props.returnFocusId)?.focus();
+  // Applying a result removes the dialog with the page's next render rather than closing it; wait for the new form.
+  handle.signal.addEventListener('abort', () => setTimeout(returnFocus));
 
   return () => {
     const { itemLabel, status, message, results, resultsField, resultsValue } = handle.props;
@@ -45,9 +52,12 @@ export const LookupDialog = clientEntry(import.meta.url, function LookupDialog(h
         open
         aria-labelledby="lookup-dialog-title"
         class="w-full max-w-2xl rounded-md border border-gray-600 bg-gray-900 p-4 text-white backdrop:bg-black/60"
-        mix={ref((node) => {
-          dialog = node as HTMLDialogElement;
-        })}
+        mix={[
+          ref((node) => {
+            dialog = node as HTMLDialogElement;
+          }),
+          on('close', returnFocus),
+        ]}
       >
         <div class="flex flex-col gap-3">
           <h2 id="lookup-dialog-title" class="text-xl">
@@ -77,7 +87,13 @@ export const LookupDialog = clientEntry(import.meta.url, function LookupDialog(h
                       <p class="text-sm text-gray-400">{result.details.join(' · ')}</p>
                     ) : null}
                   </div>
-                  <button type="submit" name="intent" value={`apply:${index}`} class="self-start">
+                  <button
+                    type="submit"
+                    name="intent"
+                    value={`apply:${index}`}
+                    formenctype="application/x-www-form-urlencoded"
+                    class="self-start"
+                  >
                     Use this result
                   </button>
                 </li>
@@ -89,6 +105,7 @@ export const LookupDialog = clientEntry(import.meta.url, function LookupDialog(h
               type="submit"
               name="intent"
               value="dismiss"
+              formenctype="application/x-www-form-urlencoded"
               class="secondary"
               mix={on('click', (event) => {
                 event.preventDefault();
