@@ -54,3 +54,32 @@ export function toBookEntity(parsed: InferOutput<typeof bookForm>): BookEntity {
   const present = Object.fromEntries(Object.entries(strings).filter(([, value]) => value !== ''));
   return { type: Entity.Books, ...present, ...(pages === undefined ? {} : { pages }), authors, genres } as BookEntity;
 }
+
+/** Form values for an existing book, as the edit form shows them. */
+export function toBookValues(book: BookEntity): BookFormValues {
+  return {
+    title: book.title ?? '',
+    isbn: book.isbn ?? '',
+    subtitle: book.subtitle ?? '',
+    format: book.format ?? '',
+    pages: book.pages === undefined ? '' : String(book.pages),
+    publicationDate: book.publicationDate ?? '',
+    publisher: book.publisher ?? '',
+    plot: book.plot ?? '',
+    authors: book.authors ?? [],
+    genres: book.genres ?? [],
+  };
+}
+
+/** The API payload for an edit: the existing book with the form's fields applied; cleared fields are dropped. */
+export function toBookUpdate(existing: BookEntity, parsed: InferOutput<typeof bookForm>): BookEntity {
+  const { pages, authors, genres, ...strings } = parsed;
+  const updated: Record<string, unknown> = { ...existing, authors, genres };
+  for (const [name, value] of Object.entries(strings)) {
+    if (value === '') delete updated[name];
+    else updated[name] = value;
+  }
+  if (pages === undefined) delete updated.pages;
+  else updated.pages = pages;
+  return updated as unknown as BookEntity;
+}

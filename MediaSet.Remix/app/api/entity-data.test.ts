@@ -465,6 +465,16 @@ describe('entity-data.ts', () => {
       expect(parsedBody.authors).toEqual(['Author']);
     });
 
+    it('should keep the status and message when the API rejects the update', async () => {
+      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 400, text: async () => ' ISBN already exists ' });
+
+      const error = await updateEntity<BookEntity>('123', { type: Entity.Books }).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(Response);
+      expect((error as Response).status).toBe(400);
+      expect(await (error as Response).text()).toBe('ISBN already exists');
+    });
+
     it('should throw error when update fails', async () => {
       const book: BookEntity = {
         type: Entity.Books,
@@ -786,6 +796,16 @@ describe('entity-data.ts', () => {
       });
 
       await expect(deleteEntity(Entity.Books, '123')).rejects.toThrow();
+    });
+
+    it('should report a missing entity as 404 and other failures as 500', async () => {
+      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+      const missing = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
+      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 503 });
+      const failed = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
+
+      expect((missing as Response).status).toBe(404);
+      expect((failed as Response).status).toBe(500);
     });
 
     it('should throw error with correct entity type and id in message', async () => {

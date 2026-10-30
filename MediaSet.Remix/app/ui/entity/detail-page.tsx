@@ -2,9 +2,10 @@ import type { Handle } from 'remix/component';
 
 import type { BaseEntity } from '../../models.ts';
 import { Icon } from '../icon.tsx';
-import { Check, ImageOff, Pencil, Trash2 } from '../icons.ts';
+import { Check, ImageOff, Pencil } from '../icons.ts';
 import { millisecondsToMinutesSeconds } from '../../utils/helpers.ts';
 import type { DetailConfig } from './detail-config.ts';
+import { ConfirmDelete } from './public/confirm-delete.tsx';
 
 interface DetailPageProps<T extends BaseEntity> {
   config: DetailConfig<T>;
@@ -39,9 +40,7 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
             <a href={`${basePath}/${itemId}/edit`} aria-label="Edit" title="Edit">
               <Icon icon={Pencil} size={22} />
             </a>
-            <a href={`${basePath}/${itemId}/delete`} aria-label="Delete" title="Delete">
-              <Icon icon={Trash2} size={22} />
-            </a>
+            <ConfirmDelete title={title || config.singular} href={`${basePath}/${itemId}/delete`} />
           </div>
         </div>
         <div class="h-full mt-4">
