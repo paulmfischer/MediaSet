@@ -3,6 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity, updateEntity } from '../../../api/entity-data.ts';
+import { clientApiUrl } from '../../../constants.server.ts';
 import { Entity, type BookEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
@@ -10,6 +11,7 @@ import { Document } from '../../../ui/document.tsx';
 import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
 import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { BOOK_FIELDS, bookForm, toBookUpdate, toBookValues, type BookFormValues } from '../add/book-form.ts';
 import { loadBookOptions } from '../book-options.ts';
@@ -54,6 +56,7 @@ async function renderEditForm(
         formError={formError}
         options={options}
         optionsUnavailable={unavailable}
+        existingImageSrc={book.coverImage ? `${clientApiUrl}/static/images/${book.coverImage.filePath}` : undefined}
       />
     </Document>,
     { status }
@@ -90,16 +93,27 @@ export default createController(routes.entityEdit.books, {
       if (book instanceof Response) return book;
 
       const parsed = s.parseSafe(bookForm, context.formData);
-      if (!parsed.success) {
+      const image = readCoverImage(context.formData);
+      if (!parsed.success || image.error) {
         return renderEditForm(context, id, book, {
           values: submittedValues(context.formData, BOOK_FIELDS),
-          errors: fieldErrors(parsed.issues),
+          errors: {
+            ...(image.error ? { coverImage: image.error } : {}),
+            ...(parsed.success ? {} : fieldErrors(parsed.issues)),
+          },
           status: 400,
         });
       }
 
       try {
-        await updateEntity(id, toBookUpdate(book, parsed.value));
+        const update = toBookUpdate(book, parsed.value, context.formData.get('removeImage') !== null);
+        // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
+        if (image.file) {
+          delete update.imageUrl;
+          await updateEntity(id, update, entityWithImage(update, image.file));
+        } else {
+          await updateEntity(id, update);
+        }
       } catch (error) {
         serverLogger.error('Failed to update book', error, { operation: 'editBook', id });
         if (isStatus(error, (status) => status === 404)) {

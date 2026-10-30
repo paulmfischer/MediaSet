@@ -18,6 +18,17 @@ export const optionalWholeNumber = (message: string, maxDigits = 6): Schema<unkn
     .refine((value) => value === '' || new RegExp(`^\\d{1,${maxDigits}}$`).test(value), message)
     .transform((value) => (value === '' ? undefined : Number(value)));
 
+/** A blank optional field, or an `http`/`https` URL; anything else is an issue with `message`. */
+export const optionalHttpUrl = (message: string): Schema<unknown, string> =>
+  text().refine((value) => {
+    if (value === '') return true;
+    try {
+      return ['http:', 'https:'].includes(new URL(value).protocol);
+    } catch {
+      return false;
+    }
+  }, message);
+
 /** Repeated fields (multi-selects): trims each value and drops blanks and duplicates. */
 export const textList = (name: string) =>
   f.fields(

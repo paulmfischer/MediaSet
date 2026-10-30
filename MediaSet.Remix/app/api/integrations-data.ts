@@ -15,7 +15,7 @@ export async function getIntegrations(): Promise<Integration[]> {
     const response = await apiFetch(`${baseUrl}/config/integrations`);
     if (!response.ok) return [];
     const data = (await response.json()) as Integration[];
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }

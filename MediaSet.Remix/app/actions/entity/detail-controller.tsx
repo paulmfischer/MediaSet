@@ -1,6 +1,7 @@
 import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
+import { getIntegrations } from '../../api/integrations-data.ts';
 import { clientApiUrl } from '../../constants.server.ts';
 import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
@@ -50,13 +51,20 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
   }
 
   const title = config.titleOf(entity) || config.singular;
+  const integrations = await getIntegrations();
   return context.render(
     <Document
       path={context.url.pathname}
       title={`${title} | MediaSet`}
       description={`${config.singular} Detail: ${title}`}
     >
-      <DetailPage config={config} entity={entity} basePath={basePath} apiUrl={clientApiUrl} />
+      <DetailPage
+        config={config}
+        entity={entity}
+        basePath={basePath}
+        apiUrl={clientApiUrl}
+        integrations={integrations}
+      />
     </Document>
   );
 }
