@@ -48,7 +48,8 @@ export function boundedFormData() {
             backLabel="Back to the form"
           />
         </Document>,
-        { status: 413 }
+        // The rest of the oversized body is never read, so close the connection rather than leave it half-open.
+        { status: 413, headers: { Connection: 'close' } }
       );
     }
   };

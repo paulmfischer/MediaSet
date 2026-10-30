@@ -1,4 +1,4 @@
-import { clientEntry, on, type Handle } from 'remix/component';
+import { clientEntry, on, ref, type Handle } from 'remix/component';
 
 import { errorId, errorProps, inputClasses } from '../field.tsx';
 
@@ -13,21 +13,30 @@ interface ImageInputProps {
   errors: { coverImage?: string | undefined; imageUrl?: string | undefined };
 }
 
+/** How long typing in the URL field pauses before the preview loads it. */
+const PREVIEW_DELAY_MS = 400;
+
 const isWebUrl = (value: string) => /^https?:\/\//i.test(value);
 
 // Cover image inputs for any media type's form: choose a file or give a URL, with a preview and where
 // the image comes from. Both inputs are native and submit without JavaScript; hydration adds the preview.
 export const ImageInput = clientEntry(import.meta.url, function ImageInput(handle: Handle<ImageInputProps>) {
   let url = handle.props.imageUrl;
+  // The URL the preview loads: it follows `url` after typing pauses, so partial URLs aren't requested.
+  let previewUrl = url;
+  let previewTimer: ReturnType<typeof setTimeout> | undefined;
   let fileName = '';
   let objectUrl = '';
   let failed = false;
 
-  handle.signal.addEventListener('abort', () => objectUrl && URL.revokeObjectURL(objectUrl));
+  handle.signal.addEventListener('abort', () => {
+    clearTimeout(previewTimer);
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  });
 
   const source = () => {
     if (objectUrl) return { src: objectUrl, origin: `Uploaded file: ${fileName}` };
-    if (isWebUrl(url.trim())) return { src: url.trim(), origin: 'From URL' };
+    if (isWebUrl(previewUrl.trim())) return { src: previewUrl.trim(), origin: 'From URL' };
     const { existingSrc } = handle.props;
     return existingSrc ? { src: existingSrc, origin: 'Current cover image' } : undefined;
   };
@@ -47,10 +56,25 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
     handle.update();
   };
 
-  const typeUrl = (input: HTMLInputElement) => {
-    url = input.value;
+  const showUrl = () => {
+    clearTimeout(previewTimer);
+    if (previewUrl === url) return;
+    previewUrl = url;
     failed = false;
     handle.update();
+  };
+
+  const typeUrl = (input: HTMLInputElement) => {
+    url = input.value;
+    // The input is controlled: re-render so the typed value stays, while the preview waits for a pause.
+    handle.update();
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(showUrl, PREVIEW_DELAY_MS);
+  };
+
+  // An image that failed before hydration never fired an error event the island could hear.
+  const checkLoaded = (image: HTMLImageElement) => {
+    if (image.complete && image.naturalWidth === 0) handle.queueTask(() => setFailed(true));
   };
 
   return () => {
@@ -70,7 +94,11 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
               src={current.src}
               alt="Cover preview"
               class={failed ? 'hidden' : 'h-40 w-auto rounded-md object-contain'}
-              mix={[on('error', () => setFailed(true)), on('load', () => setFailed(false))]}
+              mix={[
+                ref((node) => checkLoaded(node as HTMLImageElement)),
+                on('error', () => setFailed(true)),
+                on('load', () => setFailed(false)),
+              ]}
             />
             <figcaption class="text-xs text-gray-400">{current.origin}</figcaption>
           </figure>
@@ -105,7 +133,7 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
               placeholder="https://example.com/cover.jpg"
               value={url}
               {...errorProps('imageUrl', errors.imageUrl)}
-              mix={on('input', (event) => typeUrl(event.currentTarget))}
+              mix={[on('input', (event) => typeUrl(event.currentTarget)), on('change', showUrl)]}
             />
           </label>
           {errors.imageUrl ? (

@@ -56,7 +56,11 @@ async function renderEditForm(
         formError={formError}
         options={options}
         optionsUnavailable={unavailable}
-        existingImageSrc={book.coverImage ? `${clientApiUrl}/static/images/${book.coverImage.filePath}` : undefined}
+        existingImageSrc={
+          book.coverImage
+            ? `${clientApiUrl}/static/images/${book.coverImage.filePath.split('/').map(encodeURIComponent).join('/')}`
+            : undefined
+        }
       />
     </Document>,
     { status }

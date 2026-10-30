@@ -27,6 +27,8 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
       { status }
     );
 
+  // Credits are best-effort (it never throws), so load them alongside the item.
+  const integrationsRequest = getIntegrations();
   let entity: T;
   try {
     entity = await getEntity<T>(config.entity, id);
@@ -51,7 +53,7 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
   }
 
   const title = config.titleOf(entity) || config.singular;
-  const integrations = await getIntegrations();
+  const integrations = await integrationsRequest;
   return context.render(
     <Document
       path={context.url.pathname}

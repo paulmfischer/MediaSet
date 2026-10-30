@@ -144,6 +144,7 @@ describe('book cover image on add', () => {
     const response = await submit('/books/add', { title: 'Dune', coverImage: png(5 * 1024 * 1024 + 1) });
 
     assert.equal(response.status, 413);
+    assert.equal(response.headers.get('connection'), 'close');
     assert.match(await response.text(), /That upload is too large/);
     assert.equal(saved.length, 0);
   });
