@@ -171,7 +171,12 @@ export async function updateEntity<TEntity extends BaseEntity>(
         id,
         status: response.status,
       });
-      throw new Response(`Error updating a ${singular(entityType)}`, { status: 500 });
+      // A 4xx is the API rejecting the entity (or a missing one); keep its status and message so callers can show them.
+      const rejected = response.status >= 400 && response.status < 500;
+      const message = rejected ? (await response.text()).trim() : '';
+      throw new Response(message || `Error updating a ${singular(entityType)}`, {
+        status: rejected ? response.status : 500,
+      });
     }
     serverLogger.info(`Successfully updated ${singular(entityType)} with id ${id}`, {
       operation: 'updateEntity',
@@ -250,7 +255,9 @@ export async function deleteEntity(entity: Entity, id: string): Promise<void> {
         id,
         status: response.status,
       });
-      throw new Response(`Error deleting ${singular(entity)} with id: ${id}`, { status: 500 });
+      throw new Response(`Error deleting ${singular(entity)} with id: ${id}`, {
+        status: response.status === 404 ? 404 : 500,
+      });
     }
     serverLogger.info(`Successfully deleted ${singular(entity)} with id ${id}`, {
       operation: 'deleteEntity',

@@ -22,4 +22,12 @@ export const routes = route({
   entityAdd: route({
     books: form('/books/add'),
   }),
+  // Edit forms: a GET page prefilled from the item and a POST action at one URL.
+  entityEdit: route({
+    books: form('/books/:id/edit'),
+  }),
+  // Delete confirmation pages: the no-JavaScript fallback for the detail page's confirm dialog.
+  entityDelete: route({
+    books: form('/books/:id/delete'),
+  }),
 });

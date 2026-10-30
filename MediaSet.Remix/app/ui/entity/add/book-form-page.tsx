@@ -15,6 +15,7 @@ export interface BookFormOptions {
 }
 
 interface BookFormPageProps {
+  heading: string;
   action: string;
   cancelHref: string;
   values: BookFormValues;
@@ -29,12 +30,12 @@ interface BookFormPageProps {
 
 export function BookFormPage(handle: Handle<BookFormPageProps>) {
   return () => {
-    const { action, cancelHref, values, errors, formError, options, optionsUnavailable } = handle.props;
+    const { heading, action, cancelHref, values, errors, formError, options, optionsUnavailable } = handle.props;
     const hasErrors = Object.keys(errors).length > 0 || Boolean(formError);
 
     return (
       <div class="entity-books flex flex-col gap-4 px-2 max-w-3xl mx-auto">
-        <h1 class="text-2xl text-entity">Add Book</h1>
+        <h1 class="text-2xl text-entity">{heading}</h1>
         {hasErrors ? (
           <p role="alert" class="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-red-300">
             {formError ?? 'Please correct the highlighted fields.'}

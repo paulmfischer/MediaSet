@@ -3,34 +3,15 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { addEntity } from '../../../api/entity-data.ts';
-import { getAuthors, getFormats, getGenres, getPublishers } from '../../../api/metadata-data.ts';
-import { Entity, type BookEntity, type Option } from '../../../models.ts';
+import type { BookEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
-import { BookFormPage, type BookFormOptions } from '../../../ui/entity/add/book-form-page.tsx';
+import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
+import { loadBookOptions } from '../book-options.ts';
 import { BOOK_FIELDS, bookForm, emptyBookValues, toBookEntity, type BookFormValues } from './book-form.ts';
-
-// A failed lookup leaves a select empty rather than blocking the form: new values can still be typed.
-// The page tells the user the lists are missing so they don't re-enter existing values as new ones.
-async function loadBookOptions(): Promise<{ options: BookFormOptions; unavailable: boolean }> {
-  let unavailable = false;
-  const orEmpty = (property: string, lookup: Promise<Option[]>): Promise<Option[]> =>
-    lookup.catch((error) => {
-      unavailable = true;
-      serverLogger.error(`Failed to load book ${property} options`, error, { operation: 'loadBookOptions', property });
-      return [];
-    });
-  const [authors, genres, publishers, formats] = await Promise.all([
-    orEmpty('authors', getAuthors()),
-    orEmpty('genres', getGenres(Entity.Books)),
-    orEmpty('publishers', getPublishers()),
-    orEmpty('formats', getFormats(Entity.Books)),
-  ]);
-  return { options: { authors, genres, publishers, formats }, unavailable };
-}
 
 async function renderBookForm(
   context: AppContext,
@@ -41,6 +22,7 @@ async function renderBookForm(
   return context.render(
     <Document path={context.url.pathname} title="Add Book | MediaSet" description="Add a book to your collection">
       <BookFormPage
+        heading="Add Book"
         action={routes.entityAdd.books.action.href()}
         cancelHref={routes.entityLists.books.href()}
         values={values}
