@@ -3,6 +3,7 @@ import type { Handle } from 'remix/component';
 import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
@@ -29,12 +30,34 @@ interface BookFormPageProps {
   optionsUnavailable?: boolean;
   /** Browser URL of the book's saved cover image, when editing a book that has one. */
   existingImageSrc?: string | undefined;
+  /** Metadata lookup: the form offers it when `available`, and shows `dialog` while results are open. */
+  lookup?: { available: boolean; dialog?: LookupDialogProps | undefined } | undefined;
+  /**
+   * Changes when the values should replace what is in the browser's inputs. The client keeps the
+   * text a user has typed when a page re-renders, so values that come from the server (an applied
+   * lookup result) need a new key to make the form render fresh.
+   */
+  formKey?: string | undefined;
 }
+
+const lookupButtonProps = (field: 'title' | 'isbn') =>
+  ({ type: 'submit', name: 'intent', value: `lookup:${field}`, class: 'secondary', formnovalidate: true }) as const;
 
 export function BookFormPage(handle: Handle<BookFormPageProps>) {
   return () => {
-    const { heading, action, cancelHref, values, errors, formError, options, optionsUnavailable, existingImageSrc } =
-      handle.props;
+    const {
+      heading,
+      action,
+      cancelHref,
+      values,
+      errors,
+      formError,
+      options,
+      optionsUnavailable,
+      existingImageSrc,
+      lookup,
+      formKey,
+    } = handle.props;
     const hasErrors = Object.keys(errors).length > 0 || Boolean(formError);
 
     return (
@@ -51,17 +74,34 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             don't create a duplicate.
           </p>
         ) : null}
-        <form method="post" action={action} enctype="multipart/form-data" class="flex flex-col gap-4">
+        <form
+          method="post"
+          action={action}
+          enctype="multipart/form-data"
+          class="flex flex-col gap-4"
+          data-rmx-key={formKey}
+        >
+          {/* First submit button in the form, so Enter in a field saves rather than starting a lookup. */}
+          <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
+            Save
+          </button>
           <Field name="title" label="Title" required error={errors.title}>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              class={inputClasses}
-              placeholder="Title"
-              value={values.title}
-              {...errorProps('title', errors.title)}
-            />
+            <div class="flex gap-2">
+              <input
+                id="title"
+                name="title"
+                type="text"
+                class={inputClasses}
+                placeholder="Title"
+                value={values.title}
+                {...errorProps('title', errors.title)}
+              />
+              {lookup?.available ? (
+                <button {...lookupButtonProps('title')} aria-label="Look up by title">
+                  Look up
+                </button>
+              ) : null}
+            </div>
           </Field>
           <Field name="subtitle" label="Subtitle" error={errors.subtitle}>
             <input
@@ -74,15 +114,22 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             />
           </Field>
           <Field name="isbn" label="ISBN" error={errors.isbn}>
-            <input
-              id="isbn"
-              name="isbn"
-              type="text"
-              inputMode="numeric"
-              class={inputClasses}
-              placeholder="ISBN"
-              value={values.isbn}
-            />
+            <div class="flex gap-2">
+              <input
+                id="isbn"
+                name="isbn"
+                type="text"
+                inputMode="numeric"
+                class={inputClasses}
+                placeholder="ISBN"
+                value={values.isbn}
+              />
+              {lookup?.available ? (
+                <button {...lookupButtonProps('isbn')} aria-label="Look up by ISBN">
+                  Look up
+                </button>
+              ) : null}
+            </div>
           </Field>
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
@@ -172,6 +219,7 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             </a>
             <SaveButton label="Save" pendingLabel="Saving…" />
           </div>
+          {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
         </form>
       </div>
     );
