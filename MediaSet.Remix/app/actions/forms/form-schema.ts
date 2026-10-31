@@ -29,6 +29,9 @@ export const optionalHttpUrl = (message: string): Schema<unknown, string> =>
     }
   }, message);
 
+/** A checkbox: checked submits a value (`true`, or the browser's default `on`); unchecked submits nothing. */
+export const checkbox = (): Schema<unknown, boolean> => text().transform((value) => value === 'true' || value === 'on');
+
 /** Repeated fields (multi-selects): trims each value and drops blanks and duplicates. */
 export const textList = (name: string) =>
   f.fields(
