@@ -3,7 +3,7 @@ import { describe, it } from 'remix/test';
 
 import { router } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
-import { optionalWholeNumber, fieldErrors, submittedValues } from '../../forms/form-schema.ts';
+import { checkbox, optionalWholeNumber, fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import * as s from 'remix/data-schema';
 
 const metadata: Record<string, string[]> = {
@@ -437,6 +437,14 @@ describe('form schema helpers', () => {
     assert.deepEqual(s.parseSafe(pages, '12'), { success: true, value: 12 });
     for (const bad of ['1.5', '-3', 'abc', '1e3', '0x1F', '1.0', '1000000'])
       assert.equal(s.parseSafe(pages, bad).success, false);
+  });
+
+  it('reads a checkbox as true when checked and false when absent', () => {
+    const box = checkbox();
+    assert.deepEqual(s.parseSafe(box, 'true'), { success: true, value: true });
+    assert.deepEqual(s.parseSafe(box, 'on'), { success: true, value: true });
+    assert.deepEqual(s.parseSafe(box, undefined), { success: true, value: false });
+    assert.deepEqual(s.parseSafe(box, ''), { success: true, value: false });
   });
 
   it('reads the first issue per field and the submitted strings back', () => {
