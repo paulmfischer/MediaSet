@@ -62,7 +62,7 @@ public static class ImageCandidateMatcher
     {
         var context = SearchContext(entity);
         var date = context.GetValueOrDefault("releasedate") ?? context.GetValueOrDefault("publicationdate") ?? "";
-        var creators = entity switch { Book b => b.Authors, Music m => new List<string> { m.Artist }, _ => [] };
+        var creators = entity switch { Book b => b.Authors, Music m => [m.Artist], _ => [] };
         var matching = candidates.Where(c => Normalize(c.Provenance?.Title ?? c.Title) == Normalize(entity.Title))
             .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date)
                 || c.Provenance?.MatchYears?.Contains(Year(date)) == true)

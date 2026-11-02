@@ -396,8 +396,8 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         }
 
         // Word overlap scoring
-        var resultWords = result.Split(new[] { ' ', '-', ':', '.' }, StringSplitOptions.RemoveEmptyEntries);
-        var searchWords = search.Split(new[] { ' ', '-', ':', '.' }, StringSplitOptions.RemoveEmptyEntries);
+        var resultWords = result.Split([' ', '-', ':', '.'], StringSplitOptions.RemoveEmptyEntries);
+        var searchWords = search.Split([' ', '-', ':', '.'], StringSplitOptions.RemoveEmptyEntries);
 
         var matchingWords = searchWords.Count(sw => resultWords.Any(rw => rw.Contains(sw) || sw.Contains(rw)));
         var wordScore = searchWords.Length > 0 ? (double)matchingWords / searchWords.Length : 0.0;
@@ -407,17 +407,17 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
 
     private static GameResponse MapToGameResponse(IgdbGame details, string format, string platform, string edition)
     {
-        var genres = details.Genres?.Select(g => g.Name).ToList() ?? new List<string>();
+        var genres = details.Genres?.Select(g => g.Name).ToList() ?? [];
         var developers = details.InvolvedCompanies?
             .Where(c => c.Developer)
             .Select(c => c.Company?.Name ?? string.Empty)
             .Where(n => !string.IsNullOrEmpty(n))
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
         var publishers = details.InvolvedCompanies?
             .Where(c => c.Publisher)
             .Select(c => c.Company?.Name ?? string.Empty)
             .Where(n => !string.IsNullOrEmpty(n))
-            .ToList() ?? new List<string>();
+            .ToList() ?? [];
 
         var rating = DecodeAgeRating(details.AgeRatings);
 

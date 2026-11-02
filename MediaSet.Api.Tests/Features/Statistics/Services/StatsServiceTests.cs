@@ -71,25 +71,25 @@ public class StatsServiceTests
           .RuleFor(b => b.Title, f => f.Lorem.Sentence())
           .RuleFor(b => b.Format, f => f.PickRandom("Hardcover", "Paperback", "eBook", "Audiobook"))
           .RuleFor(b => b.Pages, f => f.Random.Int(100, 1000))
-          .RuleFor(b => b.Authors, f => new List<string> { f.Person.FullName, f.Person.FullName })
-          .RuleFor(b => b.Genres, f => new List<string> { f.PickRandom("Fiction", "Non-Fiction", "Mystery", "Sci-Fi") });
+          .RuleFor(b => b.Authors, f => [f.Person.FullName, f.Person.FullName])
+          .RuleFor(b => b.Genres, f => [f.PickRandom("Fiction", "Non-Fiction", "Mystery", "Sci-Fi")]);
 
         _movieFaker = new Faker<Movie>()
           .RuleFor(m => m.Id, f => f.Random.AlphaNumeric(24))
           .RuleFor(m => m.Title, f => f.Lorem.Sentence())
           .RuleFor(m => m.Format, f => f.PickRandom("DVD", "Blu-ray", "4K UHD", "Digital"))
           .RuleFor(m => m.IsTvSeries, f => f.Random.Bool())
-          .RuleFor(m => m.Studios, f => new List<string> { f.Company.CompanyName() })
-          .RuleFor(m => m.Genres, f => new List<string> { f.PickRandom("Action", "Comedy", "Drama", "Horror") });
+          .RuleFor(m => m.Studios, f => [f.Company.CompanyName()])
+          .RuleFor(m => m.Genres, f => [f.PickRandom("Action", "Comedy", "Drama", "Horror")]);
 
         _gameFaker = new Faker<Game>()
           .RuleFor(g => g.Id, f => f.Random.AlphaNumeric(24))
           .RuleFor(g => g.Title, f => f.Lorem.Sentence())
           .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
           .RuleFor(g => g.Platform, f => f.PickRandom("PC", "PlayStation", "Xbox", "Switch"))
-          .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
-          .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
-          .RuleFor(g => g.Genres, f => new List<string> { f.PickRandom("Action", "RPG", "Strategy", "Sports") });
+          .RuleFor(g => g.Developers, f => [f.Company.CompanyName()])
+          .RuleFor(g => g.Publishers, f => [f.Company.CompanyName()])
+          .RuleFor(g => g.Genres, f => [f.PickRandom("Action", "RPG", "Strategy", "Sports")]);
 
         _musicFaker = new Faker<Music>()
           .RuleFor(m => m.Id, f => f.Random.AlphaNumeric(24))
@@ -97,11 +97,11 @@ public class StatsServiceTests
           .RuleFor(m => m.Format, f => f.PickRandom("CD", "Vinyl", "Digital", "Cassette"))
           .RuleFor(m => m.Artist, f => f.Name.FullName())
           .RuleFor(m => m.Tracks, f => f.Random.Int(8, 15))
-          .RuleFor(m => m.DiscList, f => new List<Disc> 
-          { 
+          .RuleFor(m => m.DiscList, f =>
+          [
             new() { TrackNumber = 1, Title = f.Lorem.Word() }, 
             new() { TrackNumber = 2, Title = f.Lorem.Word() } 
-          });
+          ]);
     }
 
     #region GetMediaStatsAsync Tests
@@ -341,9 +341,9 @@ public class StatsServiceTests
         // Arrange
         var books = new List<Book>
     {
-      _bookFaker.Clone().RuleFor(b => b.Pages, 100).RuleFor(b => b.Authors, new List<string>()).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Pages, 250).RuleFor(b => b.Authors, new List<string>()).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Pages, 150).RuleFor(b => b.Authors, new List<string>()).Generate()
+      _bookFaker.Clone().RuleFor(b => b.Pages, 100).RuleFor(b => b.Authors, []).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Pages, 250).RuleFor(b => b.Authors, []).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Pages, 150).RuleFor(b => b.Authors, []).Generate()
     };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
@@ -368,9 +368,9 @@ public class StatsServiceTests
         // Arrange
         var books = new List<Book>
     {
-      _bookFaker.Clone().RuleFor(b => b.Pages, 100).RuleFor(b => b.Authors, new List<string>()).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Pages, (int?)null).RuleFor(b => b.Authors, new List<string>()).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Pages, 200).RuleFor(b => b.Authors, new List<string>()).Generate()
+      _bookFaker.Clone().RuleFor(b => b.Pages, 100).RuleFor(b => b.Authors, []).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Pages, (int?)null).RuleFor(b => b.Authors, []).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Pages, 200).RuleFor(b => b.Authors, []).Generate()
     };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
@@ -395,9 +395,9 @@ public class StatsServiceTests
         // Arrange
         var books = new List<Book>
     {
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Stephen King", "J.K. Rowling" }).RuleFor(b => b.Pages, (int?)null).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Stephen King", "George R.R. Martin" }).RuleFor(b => b.Pages, (int?)null).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Brandon Sanderson" }).RuleFor(b => b.Pages, (int?)null).Generate()
+      _bookFaker.Clone().RuleFor(b => b.Authors, ["Stephen King", "J.K. Rowling"]).RuleFor(b => b.Pages, (int?)null).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Authors, ["Stephen King", "George R.R. Martin"]).RuleFor(b => b.Pages, (int?)null).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Authors, ["Brandon Sanderson"]).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
@@ -422,7 +422,7 @@ public class StatsServiceTests
         // Arrange
         var books = new List<Book>
     {
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "  Stephen King  ", "Stephen King" }).RuleFor(b => b.Pages, (int?)null).Generate()
+      _bookFaker.Clone().RuleFor(b => b.Authors, ["  Stephen King  ", "Stephen King"]).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>()))
@@ -447,8 +447,8 @@ public class StatsServiceTests
         // Arrange
         var books = new List<Book>
     {
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string> { "Stephen King" }).RuleFor(b => b.Pages, (int?)null).Generate(),
-      _bookFaker.Clone().RuleFor(b => b.Authors, new List<string>()).RuleFor(b => b.Pages, (int?)null).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Authors, ["Stephen King"]).RuleFor(b => b.Pages, (int?)null).Generate(),
+      _bookFaker.Clone().RuleFor(b => b.Authors, []).RuleFor(b => b.Pages, (int?)null).Generate(),
       _bookFaker.Clone().RuleFor(b => b.Authors, (List<string>?)null).RuleFor(b => b.Pages, (int?)null).Generate()
     };
 
@@ -583,17 +583,17 @@ public class StatsServiceTests
       _bookFaker.Clone()
         .RuleFor(b => b.Format, "Hardcover")
         .RuleFor(b => b.Pages, 300)
-        .RuleFor(b => b.Authors, new List<string> { "Author A", "Author B" })
+        .RuleFor(b => b.Authors, ["Author A", "Author B"])
         .Generate(),
       _bookFaker.Clone()
         .RuleFor(b => b.Format, "Paperback")
         .RuleFor(b => b.Pages, 250)
-        .RuleFor(b => b.Authors, new List<string> { "Author B", "Author C" })
+        .RuleFor(b => b.Authors, ["Author B", "Author C"])
         .Generate(),
       _bookFaker.Clone()
         .RuleFor(b => b.Format, "Hardcover")
         .RuleFor(b => b.Pages, (int?)null)
-        .RuleFor(b => b.Authors, new List<string>())
+        .RuleFor(b => b.Authors, [])
         .Generate()
     };
 

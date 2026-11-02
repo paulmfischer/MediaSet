@@ -371,7 +371,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         {
             artwork.Add(new(CoverUrl(identifierType, identifierValue), "Exact-edition artwork", identifierType == "olid" ? identifierValue : null));
         }
-        return artwork.DistinctBy(a => a.Url).ToList();
+        return [.. artwork.DistinctBy(a => a.Url)];
     }
 
     private static string NormalizeSubjectKey(Subject subject)

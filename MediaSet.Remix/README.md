@@ -52,7 +52,7 @@ npm test
 npm run test:e2e
 ```
 
-See [Local development](../Development/DEVELOPMENT.md#checks) for the full list of checks.
+See [AGENT_CHECKS.md](../AGENT_CHECKS.md) for the full list of checks.
 
 ## Project Structure
 
