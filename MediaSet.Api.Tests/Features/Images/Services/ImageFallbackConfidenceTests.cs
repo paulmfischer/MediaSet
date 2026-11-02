@@ -25,7 +25,7 @@ public class ImageFallbackConfidenceTests
 {
     private static IgdbGame GameResult(int id, string title, int year, params string[] platforms) => new(
         id, title, null, new DateTimeOffset(year, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds(), null, null,
-        platforms.Select((p, index) => new IgdbPlatform(index, p, null)).ToList(), null,
+        [.. platforms.Select((p, index) => new IgdbPlatform(index, p, null))], null,
         new IgdbCover(id, $"//images.igdb.com/igdb/image/upload/t_thumb/{id}.jpg"));
 
     private static (ServiceProvider Services, ImageLookupService Service, Mock<IUpcItemDbClient> Upc,

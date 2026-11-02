@@ -104,7 +104,7 @@ public class ImageStatsServiceTests
     public async Task GetImageStatsAsync_ShouldReturnCachedStats_WhenCacheHit()
     {
         // Arrange
-        var cachedStats = new ImageStats(5, 1024, new Dictionary<string, int>(), new Dictionary<string, long>(),
+        var cachedStats = new ImageStats(5, 1024, [], [],
             new List<BrokenImageLink>(), new List<OrphanedImageFile>(), new List<ImageLookupFailure>(), DateTime.UtcNow);
         _cacheServiceMock.Setup(c => c.GetAsync<ImageStats>(It.IsAny<string>()))
             .ReturnsAsync(cachedStats);

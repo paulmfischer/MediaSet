@@ -80,18 +80,18 @@ public class GameLookupStrategyTests
                 Name: "Halo Infinite",
                 Summary: "Master Chief returns.",
                 FirstReleaseDate: 1638921600L,
-                Genres: new List<IgdbNamedObject> { new(5, "Shooter"), new(14, "Action") },
-                InvolvedCompanies: new List<IgdbInvolvedCompany>
-                {
+                Genres: [new(5, "Shooter"), new(14, "Action")],
+                InvolvedCompanies:
+                [
                     new(new IgdbNamedObject(1, "343 Industries"), Developer: true, Publisher: false),
                     new(new IgdbNamedObject(2, "Xbox Game Studios"), Developer: false, Publisher: true)
-                },
-                Platforms: new List<IgdbPlatform>
-                {
+                ],
+                Platforms:
+                [
                     new(169, "Xbox Series X|S", "XBSX"),
                     new(49, "Xbox One", "XONE")
-                },
-                AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 10) },
+                ],
+                AgeRatings: [new(Category: 1, Rating: 10)],
                 Cover: new IgdbCover(999, "//images.igdb.com/igdb/image/upload/t_thumb/co1234.jpg"))
         };
 
@@ -143,14 +143,14 @@ public class GameLookupStrategyTests
             new(12345, "Super Mario Odyssey",
                 Summary: "Mario goes on a globe-trotting adventure",
                 FirstReleaseDate: 1509062400L,
-                Genres: new List<IgdbNamedObject> { new(8, "Platform"), new(31, "Adventure") },
-                InvolvedCompanies: new List<IgdbInvolvedCompany>
-                {
+                Genres: [new(8, "Platform"), new(31, "Adventure")],
+                InvolvedCompanies:
+                [
                     new(new IgdbNamedObject(70, "Nintendo EPD"), Developer: true, Publisher: false),
                     new(new IgdbNamedObject(70, "Nintendo"), Developer: false, Publisher: true)
-                },
-                Platforms: new List<IgdbPlatform> { new(130, "Nintendo Switch", "NSW") },
-                AgeRatings: new List<IgdbAgeRating> { new(Category: 1, Rating: 9) },
+                ],
+                Platforms: [new(130, "Nintendo Switch", "NSW")],
+                AgeRatings: [new(Category: 1, Rating: 9)],
                 Cover: null),
             new(888, "Super Mario 64", null, 872352000L, null, null, null, null, null)
         };
@@ -416,7 +416,7 @@ public class GameLookupStrategyTests
     [Test]
     public void DecodeAgeRating_WithEmptyList_ReturnsEmpty()
     {
-        var result = GameLookupStrategy.DecodeAgeRating(new List<IgdbAgeRating>());
+        var result = GameLookupStrategy.DecodeAgeRating([]);
         Assert.That(result, Is.EqualTo(string.Empty));
     }
 

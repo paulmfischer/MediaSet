@@ -35,7 +35,7 @@ public class ParameterSchemaFilter : ISchemaFilter
             {
                 // The properties are only mutable on the concrete type
                 openApiSchema.Type = JsonSchemaType.String;
-                openApiSchema.Enum = names.Select(x => (JsonNode)x).ToList();
+                openApiSchema.Enum = [.. names.Select(x => (JsonNode)x)];
             }
         }
     }

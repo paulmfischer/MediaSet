@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -84,9 +83,9 @@ public class EntityApiControllerImageTests : IntegrationTestBase
             .RuleFor(g => g.Title, f => f.Lorem.Sentence())
             .RuleFor(g => g.Format, f => f.PickRandom("Disc", "Cartridge", "Digital"))
             .RuleFor(g => g.Platform, f => f.PickRandom("PC", "Xbox", "PlayStation", "Switch"))
-            .RuleFor(g => g.Developers, f => new List<string> { f.Company.CompanyName() })
-            .RuleFor(g => g.Publishers, f => new List<string> { f.Company.CompanyName() })
-            .RuleFor(g => g.Genres, f => new List<string> { f.Lorem.Word() })
+            .RuleFor(g => g.Developers, f => [f.Company.CompanyName()])
+            .RuleFor(g => g.Publishers, f => [f.Company.CompanyName()])
+            .RuleFor(g => g.Genres, f => [f.Lorem.Word()])
             .RuleFor(g => g.ReleaseDate, f => f.Date.Past().ToString("yyyy-MM-dd"))
             .RuleFor(g => g.Rating, f => f.PickRandom("E", "T", "M"))
             .RuleFor(g => g.Description, f => f.Lorem.Paragraph());
@@ -549,7 +548,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     {
         if (fileContent == null)
         {
-            fileContent = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 }; // JPEG header
+            fileContent = [0xFF, 0xD8, 0xFF, 0xE0]; // JPEG header
         }
 
         var stream = new MemoryStream(fileContent);

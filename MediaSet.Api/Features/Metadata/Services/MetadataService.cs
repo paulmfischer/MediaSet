@@ -58,7 +58,7 @@ public class MetadataService : IMetadataService
             throw new InvalidOperationException($"GetListAsync method not found on {serviceType.Name}");
         }
 
-        var task = (Task)getListMethod.Invoke(service, new object[] { cancellationToken })!;
+        var task = (Task)getListMethod.Invoke(service, [cancellationToken])!;
         await task.ConfigureAwait(false);
 
         var resultProperty = task.GetType().GetProperty("Result");

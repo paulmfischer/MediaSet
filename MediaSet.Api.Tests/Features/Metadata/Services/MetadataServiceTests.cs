@@ -83,10 +83,10 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover" },
-            new Book { Format = "Paperback" },
-            new Book { Format = "Hardcover" }, // Duplicate
-            new Book { Format = "eBook" }
+            new() { Format = "Hardcover" },
+            new() { Format = "Paperback" },
+            new() { Format = "Hardcover" }, // Duplicate
+            new() { Format = "eBook" }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -108,9 +108,9 @@ public class MetadataServiceNewTests
         // Arrange
         var movies = new List<Movie>
         {
-            new Movie { Format = "DVD" },
-            new Movie { Format = "Blu-ray" },
-            new Movie { Format = "DVD" }
+            new() { Format = "DVD" },
+            new() { Format = "Blu-ray" },
+            new() { Format = "DVD" }
         };
 
         _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
@@ -130,9 +130,9 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Genres = ["Fiction", "Mystery"] },
-            new Book { Genres = ["Mystery", "Thriller"] },
-            new Book { Genres = ["Sci-Fi"] }
+            new() { Genres = ["Fiction", "Mystery"] },
+            new() { Genres = ["Mystery", "Thriller"] },
+            new() { Genres = ["Sci-Fi"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -154,8 +154,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
-            new Book { Authors = ["Stephen King"] }
+            new() { Authors = ["J.K. Rowling", "Stephen King"] },
+            new() { Authors = ["Stephen King"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -175,8 +175,8 @@ public class MetadataServiceNewTests
         // Arrange
         var movies = new List<Movie>
         {
-            new Movie { Studios = ["Warner Bros", "Universal"] },
-            new Movie { Studios = ["Disney"] }
+            new() { Studios = ["Warner Bros", "Universal"] },
+            new() { Studios = ["Disney"] }
         };
 
         _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
@@ -197,9 +197,9 @@ public class MetadataServiceNewTests
         // Arrange
         var musics = new List<Music>
         {
-            new Music { Artist = "The Beatles" },
-            new Music { Artist = "Queen" },
-            new Music { Artist = "The Beatles" }
+            new() { Artist = "The Beatles" },
+            new() { Artist = "Queen" },
+            new() { Artist = "The Beatles" }
         };
 
         _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(musics);
@@ -219,8 +219,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "  Hardcover  " },
-            new Book { Format = "Paperback  " }
+            new() { Format = "  Hardcover  " },
+            new() { Format = "Paperback  " }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -240,10 +240,10 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover" },
-            new Book { Format = "" },
-            new Book { Format = "   " },
-            new Book { Format = "Paperback" }
+            new() { Format = "Hardcover" },
+            new() { Format = "" },
+            new() { Format = "   " },
+            new() { Format = "Paperback" }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -295,8 +295,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
-            new Book { Authors = ["Stephen King"] }
+            new() { Authors = ["J.K. Rowling", "Stephen King"] },
+            new() { Authors = ["Stephen King"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -316,8 +316,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
-            new Book { Authors = ["Stephen King"] }
+            new() { Authors = ["J.K. Rowling", "Stephen King"] },
+            new() { Authors = ["Stephen King"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -337,8 +337,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Authors = ["J.K. Rowling", "Stephen King"] },
-            new Book { Authors = ["Stephen King"] }
+            new() { Authors = ["J.K. Rowling", "Stephen King"] },
+            new() { Authors = ["Stephen King"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -358,8 +358,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover" },
-            new Book { Format = "Paperback" }
+            new() { Format = "Hardcover" },
+            new() { Format = "Paperback" }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -379,8 +379,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Genres = ["Fiction", "Mystery"] },
-            new Book { Genres = ["Thriller"] }
+            new() { Genres = ["Fiction", "Mystery"] },
+            new() { Genres = ["Thriller"] }
         };
 
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
@@ -401,8 +401,8 @@ public class MetadataServiceNewTests
         // Arrange
         var movies = new List<Movie>
         {
-            new Movie { Studios = ["Warner Bros", "Universal"] },
-            new Movie { Studios = ["Disney"] }
+            new() { Studios = ["Warner Bros", "Universal"] },
+            new() { Studios = ["Disney"] }
         };
 
         _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
@@ -423,8 +423,8 @@ public class MetadataServiceNewTests
         // Arrange
         var musics = new List<Music>
         {
-            new Music { Artist = "The Beatles" },
-            new Music { Artist = "Queen" }
+            new() { Artist = "The Beatles" },
+            new() { Artist = "Queen" }
         };
 
         _musicServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(musics);
@@ -463,8 +463,8 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover" },
-            new Book { Format = "Paperback" }
+            new() { Format = "Hardcover" },
+            new() { Format = "Paperback" }
         };
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
@@ -489,9 +489,9 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover" },
-            new Book { Format = "Paperback" },
-            new Book { Format = "Hardcover" }
+            new() { Format = "Hardcover" },
+            new() { Format = "Paperback" },
+            new() { Format = "Hardcover" }
         };
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
@@ -512,8 +512,8 @@ public class MetadataServiceNewTests
     public async Task GetMetadata_ShouldUseDifferentCacheKeys_ForDifferentMediaTypes()
     {
         // Arrange
-        var books = new List<Book> { new Book { Format = "Hardcover" } };
-        var movies = new List<Movie> { new Movie { Format = "DVD" } };
+        var books = new List<Book> { new() { Format = "Hardcover" } };
+        var movies = new List<Movie> { new() { Format = "DVD" } };
 
     _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
     _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
@@ -533,7 +533,7 @@ public class MetadataServiceNewTests
         // Arrange
         var books = new List<Book>
         {
-            new Book { Format = "Hardcover", Genres = ["Fiction"] }
+            new() { Format = "Hardcover", Genres = ["Fiction"] }
         };
 
     _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
