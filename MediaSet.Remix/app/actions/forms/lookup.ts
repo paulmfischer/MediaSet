@@ -3,6 +3,21 @@ import { isLookupError, lookup } from '../../api/lookup-data.server.ts';
 import type { BookEntity, Entity, GameEntity, IdentifierType, MovieEntity, MusicEntity } from '../../models.ts';
 import { serverLogger } from '../../utils/serverLogger.ts';
 
+/*
+ * Metadata lookup is a form `intent`, not a separate page. The submit buttons `lookup:<field>`,
+ * `apply:<index>` and `dismiss` re-render the form with status 200 instead of saving; the plain
+ * Save button sends no intent. Things that are easy to get wrong:
+ * - A hidden first Save button keeps Enter saving rather than triggering a lookup button.
+ * - The results travel back in the hidden `lookupResults` field, so applying one needs no second
+ *   lookup.
+ * - The browser keeps typed input over a re-rendered value, so an apply render sets a new `formKey`
+ *   (`data-rmx-key` on the form) to make the server's values win.
+ * - The lookup buttons submit urlencoded, so a chosen cover file is not sent and is dropped by the
+ *   re-render; the user picks the cover after looking up.
+ * Another media type adds its own search-parameter and apply helpers (see `book-lookup.ts`) and
+ * reuses `runLookup` and the `LookupDialog` island.
+ */
+
 type LookupEntity = BookEntity | MovieEntity | GameEntity | MusicEntity;
 
 /** What a metadata lookup came back with; the results dialog shows one of these. */
