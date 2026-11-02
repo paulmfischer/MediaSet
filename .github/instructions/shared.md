@@ -28,18 +28,37 @@ C# style is enforced by `.editorconfig`.
 
 ## Workflow
 
-1. Read the instructions above and inspect repository state before editing.
-2. Branch, then make the change within the authorized scope, following existing feature,
-   service and route patterns. Update tests for behavior changes; skip tests that only
-   mirror low-impact documentation or configuration edits.
-3. Run the relevant full checks in [AGENT_CHECKS.md](../../AGENT_CHECKS.md) and inspect
-   the final diff.
-4. Commit, push the branch and open a PR. An implementation request authorizes
-   branching, editing, formatting, testing, commits, pushes and the PR; do not ask
-   again. Ask only about genuinely unresolved scope. Planning-only requests authorize
-   no implementation.
-5. Report what changed, the commands run and their results, checks not run, and any
-   failures.
+For work on a tracked issue, the main session is the coordinator: it does not implement or
+review itself. Subagents never spawn subagents and follow Git and Commits. Small untracked
+changes (a doc fix, a typo) are done directly, still on a branch with a PR.
+
+1. **Read** the issue in full: body, acceptance criteria (AC), comments, linked items. Ask
+   only about genuinely unresolved scope. For a feature or a change across several areas,
+   show the user a short plan and wait for approval before step 2.
+2. **Implementer subagent** (fresh and self-contained: repo path, issue, base branch, these
+   guidelines). It branches, implements within scope, updates tests, runs the full checks for
+   the affected area ([AGENT_CHECKS.md](../../AGENT_CHECKS.md)) and inspects its diff. It
+   verifies each AC with evidence (a test, a run, a screenshot for UI), then commits, pushes
+   and opens the PR (`closes #N`, or `refs #N` if any AC can only be verified after release).
+   Once the PR is open it ticks the verified AC in the issue and comments on any left
+   unticked. It waits for CI, fixes failures its change caused, and stops and reports
+   unrelated ones. It reports the PR link, AC status, CI status and a `Follow-ups` list (or
+   `none`).
+3. **Reviewer subagent** (fresh and blind, given only the PR link). It reviews from the diff
+   and posts a comment review starting "🤖 Automated review (Claude):", marking each finding
+   blocking or nit and ending with `NO BLOCKING FINDINGS` or `BLOCKING FINDINGS` for the head
+   commit it reviewed. It reports only; it never edits, commits or pushes.
+4. **Fix round.** Resume the implementer to fix every blocking finding and every nit it can,
+   in as few commits as possible, and reply on the review. If blocking findings were fixed,
+   review again with a fresh reviewer pointed at the previous review and the new commits;
+   repeat up to two rounds in total. Nit-only fixes need no re-review.
+5. **Hand back.** Report the PR link, AC status, CI status, the reviewed head commit, what was
+   fixed, and every unfixed nit and follow-up, each with a recommendation (fix, file an issue,
+   or reject). Ask the user what to do with each. Nothing is left only in chat. The user
+   merges.
+
+An implementation request authorizes branching, editing, testing, commits, pushes and the PR;
+do not ask again. Planning-only requests authorize no implementation.
 
 PR titles use `type(scope): description`. The body describes the resulting behavior and
 how it was validated, and carries `closes #N` or `refs #N`.
