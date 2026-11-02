@@ -439,6 +439,13 @@ describe('form schema helpers', () => {
       assert.equal(s.parseSafe(pages, bad).success, false);
   });
 
+  it('caps a whole number at the given maximum and digit count', () => {
+    const seconds = optionalWholeNumber('bad', 2, 59);
+    assert.deepEqual(s.parseSafe(seconds, '59'), { success: true, value: 59 });
+    assert.deepEqual(s.parseSafe(seconds, ''), { success: true, value: undefined });
+    for (const bad of ['60', '100', '-1']) assert.equal(s.parseSafe(seconds, bad).success, false);
+  });
+
   it('reads a checkbox as true when checked and false when absent', () => {
     const box = checkbox();
     assert.deepEqual(s.parseSafe(box, 'true'), { success: true, value: true });
