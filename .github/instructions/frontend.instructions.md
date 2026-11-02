@@ -3,9 +3,6 @@
 Node runs the TypeScript sources directly; `tsc` only type checks. Import with the explicit
 `.ts` / `.tsx` extension.
 
-The `remix` package ships its own guides in `MediaSet.Remix/node_modules/remix/guides/`; read
-them before inventing a pattern.
-
 ## Structure
 
 - `app/routes.ts` is the route map. Each page area has its own nested map
