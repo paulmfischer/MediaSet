@@ -1,9 +1,8 @@
 # MediaSet agent instructions
 
 Read and follow [.github/instructions/shared.md](.github/instructions/shared.md)
-before working. It owns project policy, workflow, commit/signing requirements,
-language-specific instructions, and development/testing references.
+before working. It owns project policy, workflow and commit/signing requirements.
 
-See [local development](Development/DEVELOPMENT.md) for prerequisites, setup,
-formatting, and the same .NET/npm checks used by CI. No agent setup is required.
-Personal tools and integrations are optional.
+Run the checks and formatting commands in [AGENT_CHECKS.md](AGENT_CHECKS.md).
+[Local development](Development/DEVELOPMENT.md) covers setup and running the app,
+only when a task needs it. No agent setup is required.

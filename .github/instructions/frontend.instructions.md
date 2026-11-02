@@ -1,189 +1,93 @@
----
-description: Code style and conventions for the Remix 3/TypeScript frontend UI
-applyTo: "**/*.ts,**/*.tsx"
----
+# Frontend conventions (Remix 3 / TypeScript)
 
-# Frontend UI Code Style Guide (Remix 3/TypeScript)
+Node runs the TypeScript sources directly; `tsc` only type checks. Import with the explicit
+`.ts` / `.tsx` extension.
 
-The frontend in `MediaSet.Remix/` is Remix 3 (the `remix` package). Node runs the TypeScript
-sources directly (`node --import remix/node-tsx server.ts`) and `tsc` only type checks. The
-`remix` package ships its own guides in `MediaSet.Remix/node_modules/remix/guides/`; read them
-before inventing a pattern.
+## Structure
 
-## File Organization
+- `app/routes.ts` is the route map. Each page area has its own nested map
+  (`routes.entityLists`); link with `routes.*.href()`.
+- `app/actions/<area>/controller.tsx` holds the area's actions, helpers and server tests.
+  `app/ui/<area>/` holds its page components. The two trees mirror each other, with
+  sub-pages in matching sub-folders (`detail`, `add`, `edit`). Register a controller in
+  `app/router.ts` with `router.map(routes.<area>, <area>Controller)`.
+- Layout shared by every page stays at the `app/ui/` root. `app/api/` holds data functions
+  that call the API, `app/models.ts` shared types, `app/utils/` shared helpers.
 
-- `app/routes.ts` holds the route map. Give each page area its own nested route map
-  (for example `routes.entityLists`) and use `routes.*.href()` for links.
-- `app/actions/` and `app/ui/` mirror each other. The first folder is the page area's root path
-  (`actions/entity` and `ui/entity` are the root for the entity pages). Sub-pages go in
-  sub-folders under it in both trees (for example `entity/detail`, `entity/add`, `entity/edit`).
-- Each page area's actions live in a `controller.tsx` in its `actions/` folder, together with
-  its helpers and server tests. Register it in `app/router.ts` with
-  `router.map(routes.<area>, <area>Controller)`; the root controller only owns root-level routes.
-- `app/ui/` holds the area's page components. Layout shared by every page (`document`, `header`,
-  `footer`, `icon`, `nav`) stays at the `ui/` root.
-- `app/api/` holds the data functions that call the MediaSet API; `app/models.ts` holds shared
-  types; `app/utils/` holds shared helpers.
-- Use `.tsx` for files with JSX, `.ts` for pure TypeScript. Import with the explicit `.ts`/`.tsx`
-  extension; the TypeScript config requires it.
+## Naming and types
 
-## Naming Conventions
+- Components: PascalCase function in a `kebab-case.tsx` file. Files are `kebab-case`.
+  Functions and variables are camelCase, constants SCREAMING_SNAKE_CASE, interfaces
+  PascalCase.
+- Annotate parameters and return types. No `any`; use `unknown` and type guards.
 
-- **Components**: PascalCase function in `kebab-case.tsx` file | `ListPage` in `list-page.tsx`
-- **Functions/variables**: camelCase | `fetchBooks`, `formatTitle`
-- **Interfaces**: PascalCase (optionally `IPascalCase` prefix) | `IBook`, `ListPageProps`
-- **Constants**: SCREAMING_SNAKE_CASE | `MAX_ITEMS`, `DEFAULT_SORT`
-- **Files**: `kebab-case.ts` or `kebab-case.tsx` | `list-page.tsx`, `list-params.ts`
+## Actions
 
-## TypeScript
+- Declare a route once in `routes.ts`; handle it with
+  `createController(routes.<area>, { actions: { ... } })`.
+- An action reads and validates URL and form input (a helper such as `parseListParams` next
+  to it is fine), fetches data, then renders with `context.render(<Document>...</Document>)`
+  or returns `redirect()`. Components never fetch and receive plain, parsed values.
+- Return a user-friendly page with the right status for not-found and failed requests.
 
-- Always use TypeScript for type safety
-- Define interfaces for all data structures
-- Use type annotations for function parameters and return types
-- Avoid `any` type; prefer `unknown` if type is truly unknown
-- Use union types and type guards where appropriate
+## Forms
 
-## Routing and Controllers
+- Declare an editable page with `form(pattern)`: the controller's `index` renders the form
+  and `action` handles the submit. Use a native `<form method="post">` with named inputs
+  that works without JavaScript.
+- `formData()` middleware (in `router.ts`) provides `context.formData`. Validate it with a
+  `remix/data-schema` schema (`s.parseSafe`) using the helpers in
+  `app/actions/forms/form-schema.ts`, and save `parsed.value`, never the raw form data.
+- On a validation failure, re-render from the same action with status `400`, passing the
+  submitted `values` and `issues` so input is kept and each error is linked to its field
+  with `aria-describedby`. Do not redirect back to the GET page.
+- On success return `redirect(..., 303)`.
+- Use `Field` / `errorProps` (`app/ui/forms/field.tsx`) for labels and errors, and the
+  select and image islands in `app/ui/forms/public/`.
+- Hydrate only what needs it, such as the submit button's pending state, never the whole
+  form.
+- File inputs use `enctype="multipart/form-data"` and `boundedFormData()` for size limits;
+  validate the file in the action.
+- Extra form actions (metadata lookup, applying a result, closing a dialog) are submit
+  buttons with `name="intent"`; the action re-renders with status `200` and never saves.
+  Set a new `formKey` on the render that should replace what the user typed.
+- Browsers only send GET and POST. For PUT, PATCH or DELETE use a hidden `_method` field
+  with `methodOverride()` installed right after `formData()`.
 
-- A route is declared once in `app/routes.ts` (`get`, `post`, `route`, ...) and handled by a
-  controller action created with `createController(routes.<area>, { actions: { ... } })`.
-- An action receives the request `context` (`context.url`, `context.request`, ...) and returns a
-  `Response`. Render pages with `context.render(<Document ...>...</Document>)` and redirect with
-  `redirect()` from `remix/response/redirect`.
-- Read and validate URL and form input inside the action or a helper next to it (for example
-  `parseListParams`); pass plain, already-parsed values to the page component.
-- Fetch data in the action, before rendering. Components do not fetch.
-- Handle errors in the action and return a user-friendly response with the right status code.
+## Components
 
-### Forms
-
-- Declare an editable page with `form(pattern)` in `app/routes.ts`. It maps a GET page and a POST
-  action at the same URL; the controller's `index` action renders the form and its `action` handles
-  the submission.
-- Write a native `<form method="post" action={routes.<area>.<page>.action.href(...)}>` with named
-  inputs and a submit button. It must work without JavaScript.
-- Install the `formData()` middleware from `remix/middleware/form-data` in `app/router.ts`; the
-  parsed body is then `context.formData`.
-- Validate `context.formData` in the action with a schema from `remix/data-schema`
-  (`s.parseSafe`). Use `parsed.value` for the save, never the raw form data. Reuse the helpers in
-  `app/actions/forms/form-schema.ts` (`requiredText`, `optionalWholeNumber` for blank optional
-  numbers, `textList` for repeated fields, `fieldErrors`, `submittedValues`) and see
-  `Development/ARCHITECTURE.md` for the full form conventions.
-- On a validation failure, render the page again from the same action with status `400`, passing
-  the submitted `values` and the `issues` so the form keeps the user's input and shows each
-  field's error (linked to its input with `aria-describedby`). Do not redirect back to the GET
-  page; that loses the input and errors.
-- On success, return `redirect(routes.<area>.<page>.href(...), 303)` so a refresh repeats the GET
-  instead of resubmitting.
-- Use the `Field` / `errorProps` helpers (`app/ui/forms/field.tsx`) for labels and errors, and the
-  `MultiSelectInput` / `SingleSelectInput` islands (`app/ui/forms/public/`) for select fields.
-- Show pending state by hydrating only the submit button as a client entry in a `public/` folder
-  that listens to `handle.frame` `reloadStart` and `reloadComplete` events; do not hydrate the
-  whole form.
-- Forms with a file input use `enctype="multipart/form-data"`. `boundedFormData()`
-  (`app/actions/forms/form-data.tsx`) parses the body once with explicit file, part and size limits and
-  answers 413 over them. Validate the file in the action (`readCoverImage` in
-  `app/actions/forms/cover-image.ts`) and send the API an `entity` JSON part plus the file
-  (`entityWithImage`). The `ImageInput` island (`app/ui/forms/public/image-input.tsx`) adds the
-  file and URL inputs with a preview to any media type's form.
-- A form's extra actions (metadata lookup, applying a result, closing its dialog) are submit buttons
-  with `name="intent"`; the action handles an intent other than save by re-rendering the form with
-  status `200` (`400` when a lookup has no search term) and never saves. Use `runLookup` and the `LookupDialog` island for metadata lookup, and
-  set a new `formKey` on the render that should replace what the user typed, because the client keeps
-  typed input over re-rendered values.
-- Browsers only submit GET and POST. For PUT, PATCH or DELETE routes, add a hidden `_method`
-  field and install `methodOverride()` from `remix/middleware/method-override` right after
-  `formData()`.
-
-## Component Design
-
-- Components come from `remix/component`. A component is a function that receives a
-  `Handle` and returns a render function: `function Name(handle: Handle<Props>) { return () => ... }`.
-  Read props from `handle.props` inside the render function.
-- Use `class` (not `className`) and the standard HTML attribute names.
-- Server components render once to HTML and have no state or effects. Keep most UI this way.
+- Components come from `remix/component`:
+  `function Name(handle: Handle<Props>) { return () => ... }`, with props read from
+  `handle.props`. Use `class`, not `className`.
+- Server components render once to HTML with no state or effects; keep most UI this way.
 - Interactivity lives only in client entries under a `public/` folder, declared with
-  `clientEntry(import.meta.url, function Name(handle) { ... })`. State is a plain variable in the
-  component closure; call `handle.update()` to re-render. Use `handle.queueTask()` for
-  browser-only work after commit and `handle.signal` for cleanup. Use `mix={ref(...)}` and
-  `on(...)` for element behavior.
-- Keep components focused and single-purpose; extract repeated markup into components and
-  behavior into plain functions (for example `dismiss.ts`).
-- Type props with an interface and `Handle<Props>`.
+  `clientEntry(import.meta.url, function Name(handle) { ... })`. State is a closure
+  variable; call `handle.update()` to re-render, `handle.queueTask()` for browser-only
+  work and `handle.signal` for cleanup.
+- Keep components small and single-purpose; put behavior in plain functions.
 
-## Browser Code Boundary
+## Browser boundary
 
 - Code reaches the browser only through the asset server in `app/assets.ts`, which serves
-  `app/**/public/**` plus the few shared files listed in `allowFiles`. Anything else is
-  server-only by construction.
-- Put every client entry and every module it imports in a `public/` folder, or add the shared
-  file to `allowFiles` deliberately (as `ui/icon.tsx` and `ui/icons.ts` are).
-- Never import server code (API data functions, config reading, environment access) from a
-  `public/` module. Pass the values a client entry needs as props.
-- The browser entry is `app/actions/public/entry.ts`, which starts the Remix runtime once.
-- Browser API and image requests use `clientApiUrl` (`/dev-api` in development); server-side
-  calls use `apiUrl`.
+  `app/**/public/**` plus the files in `allowFiles`. Put every client entry and everything
+  it imports in a `public/` folder.
+- Never import server code (API data functions, config, environment) from a `public/`
+  module; pass what it needs as props.
+- Browser requests use `clientApiUrl`; server-side calls use `apiUrl`.
 
 ## Styling
 
-- Use Tailwind CSS exclusively for styling
-- Prefer utility classes over custom CSS
-- Use consistent spacing and sizing tokens
-- Extract repeated patterns into reusable components
-- Follow mobile-first responsive design approach
-- Utilize global styles in `app/tailwind.css` for common styles; buttons use the global styles
-  rather than per-button color or size classes
-- The stylesheet is compiled to `public/app.css` (`npm run css`); new class names appear after
-  the CSS build runs (`npm run dev` watches it)
+- Tailwind only, mobile-first, with utility classes and shared tokens. Common styles live
+  in `app/tailwind.css`; buttons use the global button styles, not per-button color or
+  size classes.
+- Use semantic HTML, labels and keyboard-reachable controls.
 
-## Accessibility
+## Tests
 
-- Use semantic HTML elements
-- Provide proper ARIA labels where needed
-- Ensure keyboard navigation works correctly
-- Maintain sufficient color contrast
-- Test with screen readers when possible
-
-## Error Handling
-
-- Handle errors gracefully with user-friendly messages
-- Validate form inputs on the server
-- Provide pending states for navigation and async operations
-- Return the correct HTTP status for not-found and failed requests
-
-## Logging
-
-- Log errors with sufficient context for debugging
-- Use console methods appropriately (console.error for errors, console.info for important info)
-- Avoid verbose logging in production
-
-## Testing
-
-Run tests with the commands in [local development](../../Development/DEVELOPMENT.md#checks).
-
-- **Router (server) tests** use `remix/test` and `remix/assert`: `describe`/`it` plus
-  `router.fetch(new URL(path, 'http://localhost'))`, asserting on status, headers, and HTML.
-  Files are `*.test.ts` or `*.test.tsx`, next to the code or the controller they cover
-  (`remix test --type server`).
-- **Browser tests** are `*.test.browser.tsx` and **end-to-end tests** are `*.test.e2e.ts`, run in
-  Playwright Chromium through `remix test` (`npm run test:e2e`). Use `t.serve(...)` with
-  `createTestServer(router.fetch)` for e2e.
-- **Vitest runs a few suites for now.** Nine module suites (`app/api/**`, `app/utils/**`, `app/models.test.ts`,
-  `app/config.server.test.ts`) still run under Vitest (`npm run test:unit`) and are excluded from
-  `remix test` in `remix.json`. They will be ported and Vitest removed (#686). Do not add new
-  Vitest suites; write new tests with `remix test`.
-- Test naming: `should [expected behavior] when [condition]`
-- Test user-visible behavior over implementation details
-- Mock external dependencies appropriately
-
-## Code Quality Checks
-
-After making changes to the frontend, always verify compliance before committing:
-
-- **ESLint**: `npm run lint` — checks for code quality issues and enforces code style rules
-- **ESLint (auto-fix)**: `npm run lint:fix` — automatically fixes ESLint violations where possible
-- **Prettier**: `npm run lint:format` — checks that all files conform to the project's formatting rules
-- **Prettier (auto-fix)**: `npm run lint:format:fix` — automatically reformats files to conform to Prettier rules
-- **Typecheck**: `npm run typecheck` — runs `tsc`
-
-All check commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
+- Router (server) tests use `remix/test` and `remix/assert`: `describe` / `it` with
+  `router.fetch(new URL(path, 'http://localhost'))`, asserting on status, headers and HTML.
+  They are `*.test.ts(x)` next to the code or controller they cover.
+- Browser tests are `*.test.browser.tsx`; end-to-end tests are `*.test.e2e.ts`
+  (`t.serve(...)` with `createTestServer(router.fetch)`).
+- Write new tests with `remix test`, not Vitest. Name them
+  `should [expected behavior] when [condition]` and test user-visible behavior.

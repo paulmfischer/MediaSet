@@ -85,10 +85,7 @@ Node runs the TypeScript sources directly, and `tsc` only type checks.
 
 ## Code Style & Conventions
 
-Before making changes, read and follow these instruction files:
-- `.github/instructions/shared.md` — project-wide rules (commits, workflow, commands)
-- `.github/instructions/backend.instructions.md` — .NET code style (applies to `*.cs` files)
-- `.github/instructions/frontend.instructions.md` — Remix 3/TypeScript code style (applies to `*.ts`, `*.tsx` files)
+Before making changes, read `.github/instructions/shared.md` (project rules, commits, workflow) and, for TypeScript, `.github/instructions/frontend.instructions.md`. C# style is enforced by `.editorconfig`; checks are in `AGENT_CHECKS.md`.
 
 ## External API Integrations
 
