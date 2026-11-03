@@ -1,6 +1,26 @@
-import type { BrokenImageLink, ImageLookupFailure, OrphanedImageFile } from '../../api/image-stats-data.ts';
+import type { OrphanedImageFile } from '../../api/image-stats-data.ts';
+import { Entity } from '../../models.ts';
+import { routes } from '../../routes.ts';
 
 export const ENTITY_TYPE_ORDER = ['books', 'movies', 'games', 'musics'] as const;
+export type EntityType = (typeof ENTITY_TYPE_ORDER)[number];
+
+export function isEntityType(value: unknown): value is EntityType {
+  return ENTITY_TYPE_ORDER.some((type) => type === value);
+}
+
+/** The API's entity name for each type. */
+export const ENTITY_ENUMS: Record<EntityType, Entity> = {
+  books: Entity.Books,
+  movies: Entity.Movies,
+  games: Entity.Games,
+  musics: Entity.Musics,
+};
+
+/** The detail page of an item, or null for a type the app has no page for. */
+export function detailHref(entityType: string, id: string): string | null {
+  return isEntityType(entityType) ? routes.entityDetail[entityType].href({ id }) : null;
+}
 
 export const ENTITY_LABELS: Record<string, string> = {
   books: 'Books',
@@ -31,5 +51,3 @@ export function groupOrphanedByEntityType(files: OrphanedImageFile[]): Record<st
     return acc;
   }, {});
 }
-
-export type { BrokenImageLink, ImageLookupFailure };

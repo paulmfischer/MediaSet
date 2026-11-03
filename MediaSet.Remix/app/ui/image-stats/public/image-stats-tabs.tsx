@@ -10,13 +10,16 @@ export interface ImageStatsTab {
 
 interface ImageStatsTabsProps {
   tabs: ImageStatsTab[];
+  /** The tab to show first; defaults to the first tab. */
+  initialTab?: string;
 }
 
 // Per-entity tabs. The server renders every panel; the island only picks which one is visible.
 export const ImageStatsTabs = clientEntry(
   import.meta.url,
   function ImageStatsTabs(handle: Handle<ImageStatsTabsProps>) {
-    let activeId = handle.props.tabs[0]?.id ?? '';
+    const { tabs: initialTabs, initialTab } = handle.props;
+    let activeId = initialTabs.find((tab) => tab.id === initialTab)?.id ?? initialTabs[0]?.id ?? '';
 
     return () => {
       const { tabs } = handle.props;

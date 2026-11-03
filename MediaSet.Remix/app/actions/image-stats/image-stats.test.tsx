@@ -118,6 +118,31 @@ describe('image statistics actions', () => {
     );
   });
 
+  it('keeps the selected tab in the redirect', async (t) => {
+    stubApi(t, () => Response.json({ deleted: 1 }));
+    const response = await post({ intent: 'delete-orphaned', tab: 'movies' });
+
+    assert.equal(response.headers.get('Location'), '/image-stats?tab=movies');
+  });
+
+  it('rejects a missing or unknown intent with a 400 and calls nothing', async (t) => {
+    const calls = stubApi(t, () => Response.json(stats));
+    for (const fields of [{} as Record<string, string>, { intent: 'nope' }]) {
+      const response = await post(fields);
+      assert.equal(response.status, 400);
+      assert.match(await response.text(), /Unknown action\./);
+    }
+    assert.equal(calls.filter((call) => call.method === 'DELETE').length, 0);
+  });
+
+  it('shows the requested tab first', async (t) => {
+    stubApi(t, () => Response.json(stats));
+    const html = await (await router.fetch(new URL('/image-stats?tab=movies', 'http://localhost'))).text();
+
+    assert.match(html, /id="image-stats-tab-movies"[^>]*aria-pressed="true"/);
+    assert.match(html, /<time datetime="2026-01-01T00:00:00Z"/);
+  });
+
   it('resets the lookup for the submitted ids and redirects back', async (t) => {
     const calls = stubApi(t, () => Response.json({ reset: 2 }));
     const response = await post({ intent: 'reset-lookup', entityType: 'movies', entityIds: '["m1","m2"]' });

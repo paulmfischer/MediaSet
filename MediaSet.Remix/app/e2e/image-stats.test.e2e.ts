@@ -45,4 +45,17 @@ describe('image statistics (e2e)', () => {
     assert.equal(await books.isVisible(), true);
     assert.equal(await movies.isVisible(), false);
   });
+
+  it('opens on the tab named in the query string', async (t) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => Response.json(stats)) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/image-stats?tab=movies');
+
+    assert.equal(await page.locator('#image-stats-panel-movies').isVisible(), true);
+    assert.equal(await page.locator('#image-stats-panel-books').isVisible(), false);
+  });
 });

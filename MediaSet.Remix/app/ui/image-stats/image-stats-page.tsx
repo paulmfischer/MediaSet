@@ -18,11 +18,13 @@ import {
 } from '../icons.ts';
 import {
   ENTITY_LABELS,
+  detailHref,
   ENTITY_TYPE_ORDER,
   formatBytes,
   groupByEntityType,
   groupOrphanedByEntityType,
 } from './format.ts';
+import { LocalDateTime } from './public/local-date-time.tsx';
 import { ImageStatsTabs, type ImageStatsTab } from './public/image-stats-tabs.tsx';
 
 const DEFAULT_COLOR = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
@@ -34,6 +36,19 @@ interface ImageStatsPageProps {
   stats: ImageStats | null;
   /** A form error from the last action, shown above the overview. */
   error?: string;
+  /** The entity tab to show first. */
+  tab?: string;
+}
+
+function renderTitleLink(entityType: string, id: string, title: string) {
+  const href = detailHref(entityType, id);
+  return href ? (
+    <a href={href} class="text-cyan-400 hover:underline">
+      {title}
+    </a>
+  ) : (
+    <span>{title}</span>
+  );
 }
 
 function renderHeading() {
@@ -54,6 +69,7 @@ function renderResetForm(props: { entityType: string; ids: string[]; label: stri
     <form method="post" action={routes.imageStats.action.href()}>
       <input type="hidden" name="intent" value="reset-lookup" />
       <input type="hidden" name="entityType" value={props.entityType} />
+      <input type="hidden" name="tab" value={props.entityType} />
       <input type="hidden" name="entityIds" value={JSON.stringify(props.ids)} />
       <button type="submit" class={props.withIcon ? 'flex items-center gap-2' : undefined}>
         {props.withIcon ? <Icon icon={ImageOff} size={16} /> : null}
@@ -89,11 +105,7 @@ function renderEntityPanel(props: { entityType: string; stats: ImageStats }) {
               <tbody class="divide-y divide-zinc-700">
                 {brokenLinks.map((link) => (
                   <tr key={`${link.entityType}-${link.entityId}`} class={ROW}>
-                    <td class="px-4 py-3">
-                      <a href={`/${link.entityType}/${link.entityId}`} class="text-cyan-400 hover:underline">
-                        {link.title}
-                      </a>
-                    </td>
+                    <td class="px-4 py-3">{renderTitleLink(link.entityType, link.entityId, link.title)}</td>
                     <td class="px-4 py-3 font-mono text-xs text-zinc-500">{link.missingFilePath}</td>
                   </tr>
                 ))}
@@ -132,12 +144,10 @@ function renderEntityPanel(props: { entityType: string; stats: ImageStats }) {
               <tbody class="divide-y divide-zinc-700">
                 {lookupFailures.map((failure) => (
                   <tr key={`${failure.entityType}-${failure.entityId}`} class={ROW}>
-                    <td class="px-4 py-3">
-                      <a href={`/${failure.entityType}/${failure.entityId}`} class="text-cyan-400 hover:underline">
-                        {failure.title}
-                      </a>
+                    <td class="px-4 py-3">{renderTitleLink(failure.entityType, failure.entityId, failure.title)}</td>
+                    <td class="px-4 py-3 text-zinc-400">
+                      <LocalDateTime value={failure.lookupAttemptedAt} />
                     </td>
-                    <td class="px-4 py-3 text-zinc-400">{new Date(failure.lookupAttemptedAt).toLocaleString()}</td>
                     <td class="px-4 py-3 text-zinc-400">
                       <div>{failure.failureReason ?? '—'}</div>
                       <div class="text-xs">
@@ -150,11 +160,13 @@ function renderEntityPanel(props: { entityType: string; stats: ImageStats }) {
                       </div>
                       <div class="text-xs">
                         Retry:{' '}
-                        {failure.nextEligibleAt
-                          ? new Date(failure.nextEligibleAt).toLocaleString()
-                          : failure.permanentFailure
-                            ? 'Terminal'
-                            : 'Unknown (legacy)'}
+                        {failure.nextEligibleAt ? (
+                          <LocalDateTime value={failure.nextEligibleAt} />
+                        ) : failure.permanentFailure ? (
+                          'Terminal'
+                        ) : (
+                          'Unknown (legacy)'
+                        )}
                       </div>
                     </td>
                     <td class="px-4 py-3">
@@ -185,6 +197,7 @@ function renderEntityPanel(props: { entityType: string; stats: ImageStats }) {
             </h3>
             <form method="post" action={routes.imageStats.action.href()}>
               <input type="hidden" name="intent" value="delete-orphaned" />
+              <input type="hidden" name="tab" value={entityType} />
               <button type="submit" class="flex items-center gap-2">
                 <Icon icon={Trash2} size={16} />
                 Clean Up All
@@ -258,7 +271,7 @@ function entityTabs(stats: ImageStats): ImageStatsTab[] {
 
 export function ImageStatsPage(handle: Handle<ImageStatsPageProps>) {
   return () => {
-    const { stats, error } = handle.props;
+    const { stats, error, tab } = handle.props;
 
     if (!stats) {
       return (
@@ -299,7 +312,9 @@ export function ImageStatsPage(handle: Handle<ImageStatsPageProps>) {
     return (
       <div class="space-y-8">
         {renderHeading()}
-        <p class="text-sm text-zinc-400">Last updated: {new Date(stats.lastUpdated).toLocaleString()}</p>
+        <p class="text-sm text-zinc-400">
+          Last updated: <LocalDateTime value={stats.lastUpdated} />
+        </p>
 
         {error ? (
           <div role="alert" class="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
@@ -329,7 +344,7 @@ export function ImageStatsPage(handle: Handle<ImageStatsPageProps>) {
         {tabs.length > 0 ? (
           <div>
             <h2 class="mb-4 text-xl font-semibold text-white">By Entity Type</h2>
-            <ImageStatsTabs tabs={tabs} />
+            <ImageStatsTabs tabs={tabs} initialTab={tab} />
           </div>
         ) : null}
       </div>
