@@ -4,6 +4,7 @@ export const routes = route({
   assets: get('/assets/*path'),
   config: get('/config.json'),
   home: get('/'),
+  imageStats: form('/image-stats'),
   // Collection list pages for each media type.
   entityLists: route({
     books: get('/books'),
