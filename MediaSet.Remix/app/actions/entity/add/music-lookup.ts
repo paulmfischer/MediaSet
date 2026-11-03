@@ -53,7 +53,8 @@ const isText = (value: unknown): value is string => typeof value === 'string';
  * as text, because the result comes back from the browser.
  */
 export function applyMusicResult(current: MusicFormValues, result: Record<string, unknown>): MusicFormValues {
-  const applied: MusicFormValues = { ...current };
+  // The track list belongs to one release, so a result without one clears a list applied earlier.
+  const applied: MusicFormValues = { ...current, discList: '' };
   for (const name of MUSIC_FIELDS.single) {
     const value = result[name];
     if (isText(value) && value.trim() !== '') applied[name] = value.trim();

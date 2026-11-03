@@ -307,4 +307,39 @@ describe('add music metadata lookup', () => {
     assert.match(html, /<input type="hidden" name="genres" value="Rock"/);
     assert.match(html, /<input type="hidden" name="discList" value="[^"]*Speak to Me/);
   });
+
+  it('clears a track list from an earlier result when the new result has none', async (t) => {
+    stubApi(t, { lookup: () => Response.json([{ ...album, discList: undefined }]) });
+    const search = await (
+      await post([
+        ['intent', 'lookup:title'],
+        ['title', 'Dark Side'],
+        ['artist', 'Pink Floyd'],
+      ])
+    ).text();
+    const results = /name="lookupResults" value="([^"]*)"/.exec(search)?.[1]?.replaceAll('&quot;', '"') ?? '[]';
+
+    const html = await (
+      await post([
+        ['intent', 'apply:0'],
+        ['lookupResults', results],
+        ['title', 'Dark Side'],
+        ['discList', JSON.stringify(discList)],
+      ])
+    ).text();
+
+    assert.doesNotMatch(html, /name="discList"/);
+  });
+
+  it('links the barcode lookup error to the barcode input', async (t) => {
+    stubApi(t);
+    const html = await (
+      await post([
+        ['intent', 'lookup:barcode'],
+        ['barcode', ' '],
+      ])
+    ).text();
+
+    assert.match(html, /name="barcode"[^>]*aria-invalid[^>]*aria-describedby="barcode-error"/);
+  });
 });

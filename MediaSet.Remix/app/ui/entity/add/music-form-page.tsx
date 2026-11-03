@@ -28,7 +28,7 @@ interface MusicFormPageProps {
   options: MusicFormOptions;
   /** The existing artists, labels, genres or formats could not be loaded. */
   optionsUnavailable?: boolean;
-  /** Browser URL of the game's saved cover, when editing an album that has one. */
+  /** Browser URL of the album's saved cover, when editing an album that has one. */
   existingImageSrc?: string | undefined;
   /** Metadata lookup: the form offers it when `available`, and shows `dialog` while results are open. */
   lookup?: { available: boolean; dialog?: LookupDialogProps | undefined } | undefined;
@@ -133,6 +133,7 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
                 class={inputClasses}
                 placeholder="Barcode"
                 value={values.barcode}
+                {...errorProps('barcode', errors.barcode)}
               />
               {lookup?.available ? (
                 <button {...lookupButtonProps('barcode')} aria-label="Look up by barcode">
