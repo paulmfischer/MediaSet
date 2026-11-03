@@ -1,8 +1,11 @@
 import { createController } from 'remix/router';
 
+import { getIntegrations } from '../api/integrations-data.ts';
+import { getStats } from '../api/stats-data.ts';
 import { assets } from '../assets.ts';
 import { getClientConfig } from '../config.server.ts';
 import { routes } from '../routes.ts';
+import type { DashboardStats } from '../ui/dashboard/stats.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
 import { HomePage } from './home-page.tsx';
 
@@ -18,8 +21,19 @@ export default createController(routes, {
         headers: { 'Cache-Control': 'public, max-age=3600' },
       });
     },
-    home(context) {
-      return context.render(<HomePage path={context.url.pathname} />);
+    async home(context) {
+      // Credits never throw, so a stats failure still renders the shell and attribution.
+      const integrationsRequest = getIntegrations();
+      let stats: DashboardStats | null = null;
+      try {
+        stats = await getStats();
+      } catch (error) {
+        serverLogger.error('Failed to load the dashboard', error, { operation: 'home' });
+      }
+      const integrations = await integrationsRequest;
+      return context.render(<HomePage path={context.url.pathname} stats={stats} integrations={integrations} />, {
+        status: stats ? 200 : 500,
+      });
     },
   },
 });
