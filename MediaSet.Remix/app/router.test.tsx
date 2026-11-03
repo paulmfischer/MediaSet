@@ -159,9 +159,10 @@ describe('router', () => {
         else process.env[name] = value;
       }
     });
-    delete process.env.VITE_APP_VERSION;
     stubDashboardApi(t, emptyStats);
 
+    // The legacy build-time name is no longer read.
+    process.env.VITE_APP_VERSION = '9.9.9';
     delete process.env.APP_VERSION;
     assert.match(await (await get(routes.home.href())).text(), /<footer[^>]*>.*v0\.0\.0-local<\/span><\/footer>/);
 

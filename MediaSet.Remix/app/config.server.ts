@@ -24,9 +24,9 @@ export function getShowErrorDetails(): boolean {
 }
 
 /**
- * Version shown in the footer. Read from the environment per request, so a container can set it at
- * run time. VITE_APP_VERSION is the legacy name the current image build still sets.
+ * Version shown in the footer. Read from the environment per request; the container image sets it
+ * from the APP_VERSION build argument and a deployment can override it at run time.
  */
 export function getAppVersion(): string {
-  return process.env.APP_VERSION || process.env.VITE_APP_VERSION || '0.0.0-local';
+  return process.env.APP_VERSION || '0.0.0-local';
 }
