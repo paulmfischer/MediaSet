@@ -80,24 +80,20 @@ describe('securityHeaders middleware', () => {
     const router = createRouter({ middleware: [securityHeaders({ production: true })] });
     router.get('/moved', () => new Response(null, { status: 303, headers: { Location: '/elsewhere' } }));
     router.get('/same', () => new Response(null, { status: 304, headers: { ETag: '"x"' } }));
-    router.get('/frozen', () => fetch('http://api.test/frozen'));
-    const original = globalThis.fetch;
-    globalThis.fetch = (async () => new Response('body', { status: 200 })) as typeof fetch;
-    try {
-      const moved = await get(router, '/moved');
-      assert.equal(moved.status, 303);
-      assert.equal(moved.headers.get('location'), '/elsewhere');
-      assertSecurityHeaders(moved);
-      const same = await get(router, '/same');
-      assert.equal(same.status, 304);
-      assert.equal(same.headers.get('etag'), '"x"');
-      assertSecurityHeaders(same);
-      const frozen = await get(router, '/frozen');
-      assert.equal(await frozen.text(), 'body');
-      assertSecurityHeaders(frozen);
-    } finally {
-      globalThis.fetch = original;
-    }
+    // Response.redirect() has immutable headers, so this takes the copy-the-response fallback.
+    router.get('/frozen', () => Response.redirect('http://localhost/target', 302));
+    const moved = await get(router, '/moved');
+    assert.equal(moved.status, 303);
+    assert.equal(moved.headers.get('location'), '/elsewhere');
+    assertSecurityHeaders(moved);
+    const same = await get(router, '/same');
+    assert.equal(same.status, 304);
+    assert.equal(same.headers.get('etag'), '"x"');
+    assertSecurityHeaders(same);
+    const frozen = await get(router, '/frozen');
+    assert.equal(frozen.status, 302);
+    assert.equal(frozen.headers.get('location'), 'http://localhost/target');
+    assertSecurityHeaders(frozen);
   });
 });
 
