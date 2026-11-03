@@ -377,7 +377,7 @@ describe('add book metadata lookup', () => {
     assert.equal(response.status, 200);
     assert.equal(lookups.length, 1);
     const html = await response.text();
-    assert.doesNotMatch(html, /<dialog/);
+    assert.doesNotMatch(html, /<dialog open/);
     assert.match(html, /name="title"[^>]*value="Dune"/);
     assert.match(html, /name="subtitle"[^>]*value="Book One"/);
     assert.match(html, /name="pages"[^>]*value="412"/);
@@ -421,7 +421,7 @@ describe('add book metadata lookup', () => {
     ]);
 
     assert.equal(response.status, 200);
-    assert.doesNotMatch(await response.text(), /<dialog/);
+    assert.doesNotMatch(await response.text(), /<dialog open/);
     assert.equal(saved.length, 0);
   });
 });

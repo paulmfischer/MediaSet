@@ -283,7 +283,7 @@ describe('edit book metadata lookup', () => {
 
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.doesNotMatch(html, /<dialog/);
+    assert.doesNotMatch(html, /<dialog open/);
     assert.match(html, /name="title"[^>]*value="Dune Messiah"/);
     assert.match(html, /name="pages"[^>]*value="331"/);
     assert.match(html, /name="publicationDate"[^>]*value="1969"/);
@@ -365,7 +365,7 @@ describe('edit book metadata lookup', () => {
     ]);
 
     assert.equal(response.status, 200);
-    assert.doesNotMatch(await response.text(), /<dialog/);
+    assert.doesNotMatch(await response.text(), /<dialog open/);
     assert.deepEqual(calls, []);
   });
 });

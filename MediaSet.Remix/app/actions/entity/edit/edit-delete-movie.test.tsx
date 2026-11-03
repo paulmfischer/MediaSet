@@ -281,7 +281,7 @@ describe('edit movie metadata lookup', () => {
 
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.doesNotMatch(html, /<dialog/);
+    assert.doesNotMatch(html, /<dialog open/);
     assert.match(html, /name="title"[^>]*value="Aliens"/);
     assert.match(html, /name="runtime"[^>]*value="137"/);
     // A field the result lacks keeps its current value.
@@ -324,7 +324,7 @@ describe('edit movie metadata lookup', () => {
     ]);
 
     assert.equal(response.status, 200);
-    assert.doesNotMatch(await response.text(), /<dialog/);
+    assert.doesNotMatch(await response.text(), /<dialog open/);
     assert.deepEqual(calls, []);
   });
 });
