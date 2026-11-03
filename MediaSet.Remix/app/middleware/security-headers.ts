@@ -24,8 +24,10 @@ export function originOf(url: string | undefined): string | null {
 // Cover images are loaded by the browser straight from the API (`<img src="${clientApiUrl}/static/...">`),
 // so that origin must be in img-src; it is often plain http, which `https:` does not cover.
 // blob: in img-src is for previewing a chosen image file. Hydration inlines scripts and styles, hence
-// 'unsafe-inline'. script-src blob: and 'wasm-unsafe-eval' and worker-src blob: are required by the
-// issue (#687) for the planned barcode scanner, which is not in the app yet; 'unsafe-eval' stays off.
+// 'unsafe-inline'. script-src blob: and 'wasm-unsafe-eval' and worker-src blob: are allowed (#687) for the
+// barcode scanner's decoders (#698); 'unsafe-eval' stays off. The scanner itself needs no more than that:
+// @zxing/library is a same-origin module loaded by dynamic import (covered by 'self') and the camera
+// preview is a MediaStream, not a URL. app/e2e/barcode-scanner.test.e2e.ts runs it under this policy.
 export function buildContentSecurityPolicy(clientApiUrl?: string): string {
   const apiOrigin = originOf(clientApiUrl);
   return [

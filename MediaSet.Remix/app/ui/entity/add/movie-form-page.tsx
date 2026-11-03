@@ -6,6 +6,8 @@ import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx'
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
+import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
+import { ScanButton } from '../../forms/public/scan-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
@@ -131,6 +133,7 @@ export function MovieFormPage(handle: Handle<MovieFormPageProps>) {
                   Look up
                 </button>
               ) : null}
+              {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
             </div>
           </Field>
           <Field name="format" label="Format" error={errors.format}>
@@ -223,6 +226,7 @@ export function MovieFormPage(handle: Handle<MovieFormPageProps>) {
             <SaveButton label="Save" pendingLabel="Saving…" />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
+          {lookup?.available ? <BarcodeScannerDialog field="barcode" identifierLabel="barcode" /> : null}
         </form>
       </div>
     );

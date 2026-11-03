@@ -15,7 +15,7 @@ export const assets = createAssetServer({
     'app/ui/forms/field.tsx',
     'app/**/public/**',
   ],
-  allowPackages: ['remix', 'lucide'],
+  allowPackages: ['remix', 'lucide', '@zxing/library'],
   denyFiles: ['app/**/*.test.*'],
   sourceMaps: isDevelopment ? 'external' : undefined,
   minify: !isDevelopment,

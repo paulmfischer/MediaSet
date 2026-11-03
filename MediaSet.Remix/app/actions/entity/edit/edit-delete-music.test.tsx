@@ -333,7 +333,7 @@ describe('edit album metadata lookup', () => {
 
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.doesNotMatch(html, /<dialog/);
+    assert.doesNotMatch(html, /<dialog open/);
     assert.match(html, /name="title"[^>]*value="Let It Be"/);
     assert.match(html, /name="tracks"[^>]*value="12"/);
     // A field the result lacks keeps its current value.
@@ -377,7 +377,7 @@ describe('edit album metadata lookup', () => {
     ]);
 
     assert.equal(response.status, 200);
-    assert.doesNotMatch(await response.text(), /<dialog/);
+    assert.doesNotMatch(await response.text(), /<dialog open/);
     assert.deepEqual(calls, []);
   });
 });
