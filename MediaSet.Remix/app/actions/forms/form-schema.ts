@@ -12,10 +12,18 @@ export const requiredText = (message: string): Schema<unknown, string> =>
 /**
  * A blank optional numeric input means "no value" (`undefined`), not `0` or `NaN`. Only plain
  * digits are accepted (no `1e3`, `0x1F` or `1.0`), up to `maxDigits`, so the value fits the API's int.
+ * `max` further caps the value (for example 59 for seconds).
  */
-export const optionalWholeNumber = (message: string, maxDigits = 6): Schema<unknown, number | undefined> =>
+export const optionalWholeNumber = (
+  message: string,
+  maxDigits = 6,
+  max = Number.POSITIVE_INFINITY
+): Schema<unknown, number | undefined> =>
   text()
-    .refine((value) => value === '' || new RegExp(`^\\d{1,${maxDigits}}$`).test(value), message)
+    .refine(
+      (value) => value === '' || (new RegExp(`^\\d{1,${maxDigits}}$`).test(value) && Number(value) <= max),
+      message
+    )
     .transform((value) => (value === '' ? undefined : Number(value)));
 
 /** A blank optional field, or an `http`/`https` URL; anything else is an issue with `message`. */
