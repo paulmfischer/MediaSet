@@ -121,6 +121,7 @@ export function MovieFormPage(handle: Handle<MovieFormPageProps>) {
                 class={inputClasses}
                 placeholder="Barcode"
                 value={values.barcode}
+                {...errorProps('barcode', errors.barcode)}
               />
               {lookup?.available ? (
                 <button {...lookupButtonProps('barcode')} aria-label="Look up by barcode">
