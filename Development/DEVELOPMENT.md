@@ -189,7 +189,34 @@ stop the ordinary frontend before starting it.
    Never transfer `rootCA-key.pem` to the phone or repository.
 5. Start the API normally, then run `npm run dev:mobile` from MediaSet.Remix
    (or use the mobile VS Code launch). Visit `https://YOUR_LAN_IP:3000`, allow
-   camera access, and open Scan Barcode on an add/edit form.
+   camera access, and open Scan on an add/edit form.
+
+### Manual real-device check
+
+Automated tests stub the camera, so scanning must also be checked once on a real
+phone over the mobile HTTPS setup above (`npm run dev:mobile`, API running with a
+lookup provider configured so the Scan button is offered):
+
+- [ ] Open an add form (book, movie, game, music) on the phone over HTTPS. The Scan
+      button appears next to the ISBN (books) or Barcode field; it is absent over
+      plain HTTP.
+- [ ] Tap Scan. The browser asks for camera permission and, once allowed, a live
+      rear-camera preview shows in a modal dialog.
+- [ ] Hold a product barcode in view. The code fills the ISBN/Barcode input, the
+      dialog closes and the lookup results dialog opens.
+- [ ] Repeat on an edit form.
+- [ ] Tap Scan then Cancel (and press Back or Escape on a keyboard device). The
+      camera indicator in the browser or status bar turns off.
+- [ ] Deny the permission prompt. The dialog shows the access-denied message; after
+      allowing the camera in site settings, Scan works again.
+- [ ] Check on Android Chrome (native `BarcodeDetector`) and on iOS Safari (decoder
+      library).
+
+Limitation: iOS Safari has no `BarcodeDetector`, so it always uses the
+`@zxing/library` decoder (downloaded on first scan), which is slower and less
+tolerant of blur and glare. There is no photo-capture (`<input capture>`) fallback:
+a device or browser without camera access gets no Scan button, or an error message
+in the dialog, and the code is typed by hand.
 
 Only UI port 3000 needs LAN reachability; the API and MongoDB remain local.
 If the host firewall blocks it, allow port 3000 on your intended LAN interface.

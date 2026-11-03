@@ -1,6 +1,6 @@
 # Barcode Scanning (Mobile + Browser) Implementation
 
-Status: Draft
+Status: Implemented in the Remix 3 frontend (#698), with deliberate differences from this draft: no torch toggle and no `<input capture>` file fallback for iOS Safari (iOS uses the `@zxing/library` path, with no photo-capture fallback), and the scanner opens from a `ScanButton` / `BarcodeScannerDialog` island pair (`app/ui/forms/public/`) that fills the identifier and submits the form through its existing lookup button. The real-device check is in `Development/DEVELOPMENT.md`. The rest of this document is the original design draft.
 
 Purpose
 -------
