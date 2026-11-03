@@ -176,3 +176,9 @@ export function buildLookupProps<Values>(options: {
     },
   };
 }
+
+/** The submit button's `intent` (`save` when none was sent) and whether "remove the current image" is ticked. */
+export function readEditSubmission(formData: FormData): { intent: string; removeImage: boolean } {
+  const intent = formData.get('intent');
+  return { intent: typeof intent === 'string' ? intent : 'save', removeImage: formData.get('removeImage') !== null };
+}

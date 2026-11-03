@@ -14,7 +14,7 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
+import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { MOVIE_FIELDS, movieForm, toMovieUpdate, toMovieValues, type MovieFormValues } from '../add/movie-form.ts';
 import { resolveMovieLookupIntent, toMovieResultSummary } from '../add/movie-lookup.ts';
 import { loadMovieOptions } from '../movie-options.ts';
@@ -120,9 +120,7 @@ export default createController(routes.entityEdit.movies, {
       if (movie instanceof Response) return movie;
 
       // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
-      const rawIntent = context.formData.get('intent');
-      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
-      const removeImage = context.formData.get('removeImage') !== null;
+      const { intent, removeImage } = readEditSubmission(context.formData);
       if (intent !== 'save') {
         const state = await resolveMovieLookupIntent(context.formData, intent);
         return renderEditForm(context, id, movie, { ...state, removeImage });

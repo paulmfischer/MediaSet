@@ -14,7 +14,7 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
+import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { BOOK_FIELDS, bookForm, toBookUpdate, toBookValues, type BookFormValues } from '../add/book-form.ts';
 import { resolveBookLookupIntent, toBookResultSummary } from '../add/book-lookup.ts';
 import { loadBookOptions } from '../book-options.ts';
@@ -120,9 +120,7 @@ export default createController(routes.entityEdit.books, {
       if (book instanceof Response) return book;
 
       // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
-      const rawIntent = context.formData.get('intent');
-      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
-      const removeImage = context.formData.get('removeImage') !== null;
+      const { intent, removeImage } = readEditSubmission(context.formData);
       if (intent !== 'save') {
         const state = await resolveBookLookupIntent(context.formData, intent);
         return renderEditForm(context, id, book, { ...state, removeImage });

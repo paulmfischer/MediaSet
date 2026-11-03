@@ -319,6 +319,44 @@ describe('edit book metadata lookup', () => {
     assert.deepEqual(calls, []);
   });
 
+  it('sends an applied image URL on Save, replacing the saved image unless remove is ticked', async (t) => {
+    const calls = stubApi(t);
+    const found = await (
+      await post(editUrl, [
+        ['intent', 'lookup:title'],
+        ['title', 'Dune'],
+      ])
+    ).text();
+    const applied = await (
+      await post(editUrl, [
+        ['intent', 'apply:0'],
+        ['lookupResults', resultsOf(found)],
+        ['title', 'Dune'],
+      ])
+    ).text();
+    assert.match(applied, /name="imageUrl"[^>]*value="https:\/\/example.com\/messiah.jpg"/);
+    assert.equal(calls.length, 0);
+
+    // Saving with the applied URL sends it with the saved image still referenced, so the API replaces it.
+    await post(editUrl, [
+      ['title', 'Dune Messiah'],
+      ['imageUrl', 'https://example.com/messiah.jpg'],
+    ]);
+    const body = calls[0]?.body as Record<string, unknown>;
+    assert.equal(body.imageUrl, 'https://example.com/messiah.jpg');
+    assert.deepEqual(body.coverImage, { filePath: 'books/b1.jpg' });
+
+    // With remove ticked the saved image is dropped and the URL still downloads.
+    await post(editUrl, [
+      ['title', 'Dune Messiah'],
+      ['imageUrl', 'https://example.com/messiah.jpg'],
+      ['removeImage', 'on'],
+    ]);
+    const removed = calls[1]?.body as Record<string, unknown>;
+    assert.equal(removed.imageUrl, 'https://example.com/messiah.jpg');
+    assert.equal(removed.coverImage, undefined);
+  });
+
   it('closes the dialog without saving', async (t) => {
     const calls = stubApi(t);
     const response = await post(editUrl, [

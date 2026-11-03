@@ -14,7 +14,7 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
+import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { MUSIC_FIELDS, musicForm, toMusicUpdate, toMusicValues, type MusicFormValues } from '../add/music-form.ts';
 import { resolveMusicLookupIntent, toMusicResultSummary } from '../add/music-lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
@@ -120,9 +120,7 @@ export default createController(routes.entityEdit.musics, {
       if (album instanceof Response) return album;
 
       // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
-      const rawIntent = context.formData.get('intent');
-      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
-      const removeImage = context.formData.get('removeImage') !== null;
+      const { intent, removeImage } = readEditSubmission(context.formData);
       if (intent !== 'save') {
         const state = await resolveMusicLookupIntent(context.formData, intent);
         return renderEditForm(context, id, album, { ...state, removeImage });

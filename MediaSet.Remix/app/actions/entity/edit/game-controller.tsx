@@ -14,7 +14,7 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
+import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { GAME_FIELDS, gameForm, toGameUpdate, toGameValues, type GameFormValues } from '../add/game-form.ts';
 import { resolveGameLookupIntent, toGameResultSummary } from '../add/game-lookup.ts';
 import { loadGameOptions } from '../game-options.ts';
@@ -120,9 +120,7 @@ export default createController(routes.entityEdit.games, {
       if (game instanceof Response) return game;
 
       // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
-      const rawIntent = context.formData.get('intent');
-      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
-      const removeImage = context.formData.get('removeImage') !== null;
+      const { intent, removeImage } = readEditSubmission(context.formData);
       if (intent !== 'save') {
         const state = await resolveGameLookupIntent(context.formData, intent);
         return renderEditForm(context, id, game, { ...state, removeImage });
