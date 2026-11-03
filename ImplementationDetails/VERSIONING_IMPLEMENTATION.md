@@ -74,7 +74,7 @@ Behavior:
 - None required.
 
 #### New/Modified Components
-- Add or enhance Footer component to display app version from `VITE_APP_VERSION` environment variable.
+- Add or enhance Footer component to display app version from the runtime `APP_VERSION` environment variable (read per request).
 - Footer should be displayed on all pages.
 - Version should display in all environments (development and production).
 
@@ -100,7 +100,7 @@ Behavior:
 
 #### Build-time Metadata
 - .NET: Use MinVer NuGet package to automatically set `AssemblyInformationalVersion` based on Git tags and commits.
-- UI: Set `VITE_APP_VERSION` env var during build from Git tag or MinVer output.
+- UI: Pass the `APP_VERSION` Docker build arg from the Git tag; the image bakes it in via `ENV APP_VERSION` and a container can override it at run time.
 
 #### .NET Version Stamping
 - Use MinVer to infer version from Git tags, starting at v0.1.0.
@@ -116,7 +116,7 @@ Behavior:
 - Integration test for `/health` to include `version` field.
 
 ### Frontend Tests (MediaSet.Remix)
-- Footer component renders version when `VITE_APP_VERSION` is set.
+- Footer component renders version when `APP_VERSION` is set (falls back to `0.0.0-local`).
 - Footer component handles missing version gracefully.
 
 ### Integration Tests
@@ -135,7 +135,7 @@ Behavior:
    - Extend `/health` endpoint to include version information.
 4. Add UI version display
    - Create or enhance Footer component to display version.
-   - Wire `VITE_APP_VERSION` environment variable into build process.
+   - Wire the `APP_VERSION` build arg into the image (`ENV APP_VERSION`), overridable at run time.
 5. Tests
    - Add backend tests for version provider and health endpoint.
    - Add UI tests for footer component version display.
@@ -149,7 +149,7 @@ Behavior:
 - [ ] Merges to main open/refresh a release PR proposing the next version and changelog.
 - [ ] Tagging a release (v0.1.0+) creates a GitHub Release with changelog.
 - [ ] API `/health` response includes `version` field sourced from MinVer assembly metadata.
-- [ ] UI Footer component displays `VITE_APP_VERSION` in production builds.
+- [ ] UI Footer component displays the runtime `APP_VERSION`.
 - [ ] `README.md` is updated with versioning policy and latest version information.
 - [ ] `.github/copilot-instructions.md` is updated to require Conventional Commits.
 - [ ] CI remains green (build, tests) and workflows are documented.

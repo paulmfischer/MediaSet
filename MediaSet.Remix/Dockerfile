@@ -16,17 +16,17 @@ WORKDIR /app
 # Create non-root user for security
 RUN addgroup -S mediaset && adduser -S mediaset -G mediaset
 
-COPY package*.json ./
+# Own /app so the install and copies below need no recursive chown layer
+RUN chown mediaset:mediaset /app
+USER mediaset
+
+COPY --chown=mediaset:mediaset package*.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 
-COPY --from=build /app/server.ts /app/tsconfig.json ./
-COPY --from=build /app/app ./app
-COPY --from=build /app/public ./public
-
-RUN chown -R mediaset:mediaset /app
-
-USER mediaset
+COPY --from=build --chown=mediaset:mediaset /app/server.ts /app/tsconfig.json ./
+COPY --from=build --chown=mediaset:mediaset /app/app ./app
+COPY --from=build --chown=mediaset:mediaset /app/public ./public
 
 EXPOSE 3000
 
