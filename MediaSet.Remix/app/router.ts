@@ -19,6 +19,7 @@ import entityEditGameController from './actions/entity/edit/game-controller.tsx'
 import entityEditMovieController from './actions/entity/edit/movie-controller.tsx';
 import entityEditMusicController from './actions/entity/edit/music-controller.tsx';
 import entityListsController from './actions/entity/controller.tsx';
+import imageStatsController from './actions/image-stats/controller.tsx';
 import { assets } from './assets.ts';
 import { routes } from './routes.ts';
 
@@ -49,3 +50,4 @@ router.map(routes.entityDelete.games, entityDeleteGameController);
 router.map(routes.entityAdd.musics, entityAddMusicController);
 router.map(routes.entityEdit.musics, entityEditMusicController);
 router.map(routes.entityDelete.musics, entityDeleteMusicController);
+router.map(routes.imageStats, imageStatsController);

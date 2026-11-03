@@ -13,7 +13,6 @@ export interface NavItem {
   accent?: Accent;
 }
 
-// /image-stats stays a plain path until its route is added (#702).
 export const mainNav: NavItem[] = [
   { href: routes.home.href(), label: 'Home', icon: Home },
   { href: routes.entityLists.books.href(), label: 'Books', icon: LibraryBig, accent: 'books' },
@@ -22,7 +21,9 @@ export const mainNav: NavItem[] = [
   { href: routes.entityLists.musics.href(), label: 'Music', icon: Music, accent: 'musics' },
 ];
 
-export const toolsNav: NavItem[] = [{ href: '/image-stats', label: 'Image Statistics', icon: HardDrive }];
+export const toolsNav: NavItem[] = [
+  { href: routes.imageStats.index.href(), label: 'Image Statistics', icon: HardDrive },
+];
 
 /** A link is active on its own path and below it; Home only matches the root. */
 export function isActivePath(path: string, href: string): boolean {
