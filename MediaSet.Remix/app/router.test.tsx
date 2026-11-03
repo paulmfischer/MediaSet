@@ -16,8 +16,107 @@ import { createRequestHandler, readHttpsOptions, readPort } from './server-confi
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
 
+const emptyStats = {
+  bookStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    uniqueAuthors: 0,
+    totalPages: 0,
+    avgPages: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    pageCountBuckets: {},
+    topAuthors: [],
+    topGenres: [],
+  },
+  movieStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    totalTvSeries: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topStudios: [],
+  },
+  gameStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    totalPlatforms: 0,
+    platforms: [],
+    formatBreakdown: {},
+    platformBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topPublishers: [],
+    topDevelopers: [],
+  },
+  musicStats: {
+    total: 0,
+    totalFormats: 0,
+    formats: [],
+    uniqueArtists: 0,
+    totalTracks: 0,
+    avgTracks: 0,
+    uniqueLabels: 0,
+    totalDiscs: 0,
+    formatBreakdown: {},
+    decadeBreakdown: {},
+    genreBreakdown: {},
+    topArtists: [],
+    topLabels: [],
+  },
+};
+
+const fullStats = {
+  bookStats: {
+    ...emptyStats.bookStats,
+    total: 6,
+    totalFormats: 2,
+    uniqueAuthors: 4,
+    totalPages: 2400,
+    avgPages: 400,
+    formatBreakdown: { Hardcover: 5, Paperback: 1 },
+    decadeBreakdown: { '1960s': 2, '1990s': 4 },
+    pageCountBuckets: { '0-200': 1, '201-400': 5 },
+    topAuthors: [{ name: 'Frank Herbert', count: 3 }],
+    topGenres: [{ name: 'Science Fiction', count: 4 }],
+  },
+  movieStats: {
+    ...emptyStats.movieStats,
+    total: 3,
+    totalFormats: 1,
+    totalTvSeries: 1,
+    formatBreakdown: { Bluray: 3 },
+    topStudios: [{ name: 'Pixar', count: 2 }],
+  },
+  gameStats: { ...emptyStats.gameStats, total: 1 },
+  musicStats: { ...emptyStats.musicStats, total: 0 },
+};
+
+// Stubs the API: /stats and /config/integrations answer from the arguments.
+function stubDashboardApi(
+  t: { after: (fn: () => void) => void },
+  stats: Response | unknown,
+  integrations: unknown = []
+) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.pathname === '/stats') return stats instanceof Response ? stats : Response.json(stats);
+    if (url.pathname === '/config/integrations') return Response.json(integrations);
+    return new Response('not found', { status: 404 });
+  }) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+}
+
 describe('router', () => {
-  it('GET / renders the home page document with the prebuilt stylesheet and browser entry', async () => {
+  it('GET / renders the home page document with the prebuilt stylesheet and browser entry', async (t) => {
+    stubDashboardApi(t, emptyStats);
     const response = await get(routes.home.href());
 
     assert.equal(response.status, 200);
@@ -29,7 +128,8 @@ describe('router', () => {
     assert.match(html, /<script type="module" src="\/assets\/app\/actions\/public\/entry\.ts[^"]*"/);
   });
 
-  it('renders the header nav links with per-media-type accents and marks only the current path active', async () => {
+  it('renders the header nav links with per-media-type accents and marks only the current path active', async (t) => {
+    stubDashboardApi(t, emptyStats);
     const html = await (await get(routes.home.href())).text();
 
     const link = (href: string) => html.match(new RegExp(`<a href="${href}" [^>]*class="[^>]*>`))?.[0] ?? '';
@@ -58,6 +158,7 @@ describe('router', () => {
       }
     });
     delete process.env.VITE_APP_VERSION;
+    stubDashboardApi(t, emptyStats);
 
     delete process.env.APP_VERSION;
     assert.match(await (await get(routes.home.href())).text(), /<footer[^>]*>.*v0\.0\.0-local<\/span><\/footer>/);
@@ -97,6 +198,183 @@ describe('router', () => {
     const response = await get('/no-such-page/at-all');
 
     assert.equal(response.status, 404);
+  });
+});
+
+describe('home dashboard', () => {
+  const panel = (html: string, id: string) =>
+    html.match(new RegExp(`<div id="dashboard-panel-${id}"[\\s\\S]*?(?=<div id="dashboard-panel-|$)`))?.[0] ?? '';
+
+  it('should render the overview heading, tabs with counts and percentages, and every panel when the collection has items', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const response = await get('/');
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(html, /Collection Overview\s*<span[^>]*>10 items<\/span>/);
+    assert.match(html, /<label for="dashboard-tab-books"[^>]*>[\s\S]*?Books[\s\S]*?>6<[\s\S]*?60\.0% of collection/);
+    assert.match(
+      html,
+      /<label for="dashboard-tab-movies"[^>]*>[\s\S]*?Movies &amp; TV[\s\S]*?>3<[\s\S]*?30\.0% of collection/
+    );
+    assert.match(html, /<label for="dashboard-tab-games"[^>]*>[\s\S]*?Games[\s\S]*?10\.0% of collection/);
+    assert.doesNotMatch(html, /dashboard-tab-musics/);
+    assert.match(html, /id="dashboard-panel-books"/);
+    assert.match(html, /id="dashboard-panel-movies"/);
+    assert.match(html, /id="dashboard-panel-games"/);
+    assert.doesNotMatch(html, /id="dashboard-panel-musics"/);
+  });
+
+  it('should select the Books tab by default', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const html = await (await get('/')).text();
+
+    assert.match(html, /<input[^>]*id="dashboard-tab-books"[^>]*checked/);
+    assert.doesNotMatch(html, /<input[^>]*id="dashboard-tab-movies"[^>]*checked/);
+  });
+
+  it('should select the first type with items when there are no books', async (t) => {
+    stubDashboardApi(t, { ...fullStats, bookStats: emptyStats.bookStats });
+
+    const html = await (await get('/')).text();
+
+    assert.doesNotMatch(html, /dashboard-tab-books/);
+    assert.match(html, /<input[^>]*id="dashboard-tab-movies"[^>]*checked/);
+  });
+
+  it('should render the books stat cards and charts', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const books = panel(await (await get('/')).text(), 'books');
+
+    for (const [title, value] of [
+      ['Total Pages', '2,400'],
+      ['Avg Pages', '400'],
+      ['Unique Authors', '4'],
+      ['Formats', '2'],
+    ]) {
+      assert.match(books, new RegExp(`${title}</p><p class="[^"]*">${value}</p>`));
+    }
+    for (const title of [
+      'Format Breakdown',
+      'Page Count Distribution',
+      'Top Authors',
+      'Publication Decade',
+      'Top Genres',
+    ]) {
+      assert.match(books, new RegExp(`>${title}</p>`));
+    }
+    // Pie slices carry hover detail and the legend shows counts and percentages.
+    assert.match(books, /<title>Hardcover: 5 · 83\.3%<\/title>/);
+    assert.match(books, /Paperback<\/span><span[^>]*>1 · 16\.7%/);
+    assert.match(books, /<svg[^>]*aria-label="Pie chart"/);
+    assert.match(books, /Frank Herbert/);
+  });
+
+  it('should show pie charts only when they have more than one slice', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const movies = panel(await (await get('/')).text(), 'movies');
+
+    // One format and a movie plus a TV series: only the type pie shows.
+    assert.match(movies, />Movies vs TV Series</);
+    assert.match(movies, /Movies: 2 · 66\.7%/);
+    assert.doesNotMatch(movies, />Format Breakdown</);
+    assert.match(movies, />Top Studios</);
+    assert.doesNotMatch(movies, />Release Decade</);
+  });
+
+  it('should keep tiny pie slices visible', async (t) => {
+    const bookStats = { ...fullStats.bookStats, total: 1001, formatBreakdown: { Hardcover: 1000, Paperback: 1 } };
+    stubDashboardApi(t, { ...fullStats, bookStats });
+
+    const books = panel(await (await get('/')).text(), 'books');
+    const paths = [...books.matchAll(/<path d="M 70 70 L (\S+) (\S+) A \S+ \S+ 0 \d 1 (\S+) (\S+) Z"/g)];
+
+    assert.equal(paths.length, 2);
+    // The small slice spans 8 degrees: its endpoints are about 2 * r * sin(4 degrees) apart.
+    const [sx, sy, ex, ey] = paths[1].slice(1).map(Number);
+    const chord = Math.hypot(ex - sx, ey - sy);
+    assert.ok(chord > 9 && chord < 10, `chord was ${chord}`);
+  });
+
+  it('should show the empty state when the collection has no items', async (t) => {
+    stubDashboardApi(t, emptyStats);
+
+    const response = await get('/');
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(html, /No media items yet/);
+    assert.doesNotMatch(html, /Collection Overview/);
+    assert.doesNotMatch(html, /dashboard-tab-/);
+  });
+
+  it('should show an error state with a 500 and keep the shell and attribution when the API fails', async (t) => {
+    stubDashboardApi(t, new Response('boom', { status: 503 }), [
+      {
+        key: 'tmdb',
+        displayName: 'TMDB',
+        enabled: true,
+        attributionUrl: 'https://www.themoviedb.org',
+        attributionText: 'Powered by TMDB',
+        logoPath: '/tmdb.svg',
+      },
+    ]);
+
+    const response = await get('/');
+    const html = await response.text();
+
+    assert.equal(response.status, 500);
+    assert.match(html, /<h1 class="text-2xl">Couldn't load the dashboard<\/h1>/);
+    assert.match(html, /Please try again/);
+    assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
+    assert.match(html, /<footer/);
+    assert.match(html, /Powered by TMDB/);
+  });
+
+  it('should show the same error state when the API is unreachable', async (t) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      throw new TypeError('fetch failed');
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+
+    const response = await get('/');
+
+    assert.equal(response.status, 500);
+    assert.match(await response.text(), /Couldn't load the dashboard/);
+  });
+
+  it('should render attribution badges for enabled integrations only', async (t) => {
+    stubDashboardApi(t, fullStats, [
+      {
+        key: 'tmdb',
+        displayName: 'TMDB',
+        enabled: true,
+        attributionUrl: 'https://www.themoviedb.org',
+        attributionText: 'Powered by TMDB',
+        logoPath: '/tmdb.svg',
+      },
+      { key: 'igdb', displayName: 'IGDB', enabled: false, logoPath: '/igdb.svg' },
+    ]);
+
+    const html = await (await get('/')).text();
+
+    assert.match(html, /<h2 id="attribution-heading"[^>]*>\s*Attribution/);
+    assert.match(html, /aria-label="TMDB"/);
+    assert.match(html, /Powered by TMDB/);
+    assert.doesNotMatch(html, /IGDB/);
+  });
+
+  it('should omit the attribution section when no integration is enabled', async (t) => {
+    stubDashboardApi(t, fullStats, []);
+
+    assert.doesNotMatch(await (await get('/')).text(), /attribution-heading/);
   });
 });
 
