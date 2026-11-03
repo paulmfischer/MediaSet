@@ -6,26 +6,21 @@ import { clientApiUrl } from '../../constants.server.ts';
 import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
+import { renderError } from '../render-error.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
 import { Document } from '../../ui/document.tsx';
 import { bookDetail, gameDetail, movieDetail, musicDetail, type DetailConfig } from '../../ui/entity/detail-config.ts';
 import { DetailPage } from '../../ui/entity/detail-page.tsx';
-import { UnavailablePage } from '../../ui/entity/unavailable-page.tsx';
 
 async function renderDetail<T extends BaseEntity>(context: AppContext, config: DetailConfig<T>, id: string) {
   const basePath = `/${config.entity.toLowerCase()}`;
-  const unavailable = (status: number, heading: string, message: string) =>
-    context.render(
-      <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-        <UnavailablePage
-          heading={heading}
-          message={message}
-          backHref={basePath}
-          backLabel={`Back to ${config.entity}`}
-        />
-      </Document>,
-      { status }
-    );
+  const unavailable = (status: number, heading: string, message: string, error?: unknown) =>
+    renderError(context, status, error, {
+      heading,
+      message,
+      backHref: basePath,
+      backLabel: `Back to ${config.entity}`,
+    });
 
   // Credits are best-effort (it never throws), so load them alongside the item.
   const integrationsRequest = getIntegrations();
@@ -48,7 +43,8 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
     return unavailable(
       500,
       `Couldn't load this ${config.singular.toLowerCase()}`,
-      'Something went wrong while loading it. Please try again.'
+      'Something went wrong while loading it. Please try again.',
+      error
     );
   }
 

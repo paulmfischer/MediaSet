@@ -12,6 +12,7 @@ import { assets } from './assets.ts';
 import { Document } from './ui/document.tsx';
 import { router } from './router.ts';
 import { routes } from './routes.ts';
+import { serverLogger } from './utils/serverLogger.ts';
 import { createRequestHandler, readHttpsOptions, readPort } from './server-config.ts';
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
@@ -410,7 +411,7 @@ describe('home dashboard', () => {
     const html = await response.text();
 
     assert.equal(response.status, 500);
-    assert.match(html, /<h1 class="text-xl">Couldn't load the dashboard<\/h1>/);
+    assert.match(html, /<h1 class="text-2xl">Couldn't load the dashboard<\/h1>/);
     assert.match(html, /Please try again/);
     assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
     assert.match(html, /<footer/);
@@ -457,6 +458,132 @@ describe('home dashboard', () => {
     stubDashboardApi(t, fullStats, []);
 
     assert.doesNotMatch(await (await get('/')).text(), /attribution-heading/);
+  });
+});
+
+describe('error pages', () => {
+  function failApi(t: { after: (fn: () => void) => void }, error: unknown) {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      throw error;
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+  }
+
+  function setDetails(t: { after: (fn: () => void) => void }, value: string | undefined) {
+    const previous = process.env.SHOW_ERROR_DETAILS;
+    if (value === undefined) delete process.env.SHOW_ERROR_DETAILS;
+    else process.env.SHOW_ERROR_DETAILS = value;
+    t.after(() => {
+      if (previous === undefined) delete process.env.SHOW_ERROR_DETAILS;
+      else process.env.SHOW_ERROR_DETAILS = previous;
+    });
+  }
+
+  function captureErrors(t: { after: (fn: () => void) => void }) {
+    const original = serverLogger.error;
+    const logged: unknown[][] = [];
+    serverLogger.error = ((...args: unknown[]) => {
+      logged.push(args);
+    }) as typeof serverLogger.error;
+    t.after(() => {
+      serverLogger.error = original;
+    });
+    return logged;
+  }
+
+  it('renders a friendly 404 in the shared layout for an unknown path', async () => {
+    const response = await get('/no-such-page/at-all');
+    const html = await response.text();
+
+    assert.equal(response.status, 404);
+    assert.match(html, /<title>Page not found \| MediaSet<\/title>/);
+    assert.match(html, /<h1 class="text-2xl">Page not found<\/h1>/);
+    assert.match(html, /<a href="\/">Back to Home<\/a>/);
+    assert.match(html, /<footer/);
+    assert.match(html, /Skip to main content/);
+    assert.doesNotMatch(html, /data-testid="error-details"/);
+  });
+
+  it('renders the same 404 page for an unknown collection', async () => {
+    const response = await get('/widgets');
+
+    assert.equal(response.status, 404);
+    assert.match(await response.text(), /Page not found/);
+  });
+
+  it('renders the 500 page without details when a list page cannot reach the API', async (t) => {
+    setDetails(t, undefined);
+    const logged = captureErrors(t);
+    failApi(t, new TypeError('secret-connection-detail'));
+
+    const response = await get('/books');
+    const html = await response.text();
+
+    assert.equal(response.status, 500);
+    assert.match(html, /<h1 class="text-2xl">Something went wrong<\/h1>/);
+    assert.match(html, /<footer/);
+    assert.doesNotMatch(html, /secret-connection-detail/);
+    assert.doesNotMatch(html, /data-testid="error-details"/);
+    const routerLogs = logged.filter((args) => (args.at(-1) as { operation?: string })?.operation === 'router');
+    assert.equal(routerLogs.length, 1);
+    assert.equal(routerLogs[0][0], 'Unhandled error while handling a request');
+    assert.ok(routerLogs[0][1] instanceof Error);
+  });
+
+  it('shows the message and stack when SHOW_ERROR_DETAILS is on', async (t) => {
+    setDetails(t, 'true');
+    captureErrors(t);
+    failApi(t, new TypeError('secret-connection-detail'));
+
+    const response = await get('/books');
+    const html = await response.text();
+
+    assert.equal(response.status, 500);
+    assert.match(html, /data-testid="error-details"/);
+    assert.match(html, /secret-connection-detail/);
+  });
+
+  it('hides the details again when SHOW_ERROR_DETAILS is off', async (t) => {
+    setDetails(t, 'false');
+    captureErrors(t);
+    failApi(t, new TypeError('secret-connection-detail'));
+
+    const html = await (await get('/books')).text();
+
+    assert.doesNotMatch(html, /secret-connection-detail/);
+  });
+
+  it('renders the 404 page when an action throws a 404 response', async () => {
+    router.get('/__test/throws-404', () => {
+      throw new Response('missing', { status: 404 });
+    });
+
+    const response = await get('/__test/throws-404');
+    const html = await response.text();
+
+    assert.equal(response.status, 404);
+    assert.match(html, /Page not found/);
+    assert.match(html, /<footer/);
+  });
+
+  it('renders the 500 page with the logged error for any other thrown value', async (t) => {
+    setDetails(t, undefined);
+    const logged = captureErrors(t);
+    router.get('/__test/throws-error', () => {
+      throw new Error('secret-boom');
+    });
+
+    const response = await get('/__test/throws-error');
+    const html = await response.text();
+
+    assert.equal(response.status, 500);
+    assert.match(html, /Something went wrong/);
+    assert.doesNotMatch(html, /secret-boom/);
+    assert.equal(logged.length, 1);
+    assert.equal((logged[0][1] as Error).message, 'secret-boom');
   });
 });
 

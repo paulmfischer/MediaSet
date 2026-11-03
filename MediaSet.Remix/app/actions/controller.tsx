@@ -7,6 +7,7 @@ import { getClientConfig } from '../config.server.ts';
 import { routes } from '../routes.ts';
 import type { DashboardStats } from '../ui/dashboard/stats.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
+import { errorDetails } from '../ui/error-page.tsx';
 import { HomePage } from './home-page.tsx';
 
 export default createController(routes, {
@@ -25,15 +26,25 @@ export default createController(routes, {
       // Credits never throw, so a stats failure still renders the shell and attribution.
       const integrationsRequest = getIntegrations();
       let stats: DashboardStats | null = null;
+      let failure: unknown;
       try {
         stats = await getStats();
       } catch (error) {
+        failure = error;
         serverLogger.error('Failed to load the dashboard', error, { operation: 'home' });
       }
       const integrations = await integrationsRequest;
-      return context.render(<HomePage path={context.url.pathname} stats={stats} integrations={integrations} />, {
-        status: stats ? 200 : 500,
-      });
+      return context.render(
+        <HomePage
+          path={context.url.pathname}
+          stats={stats}
+          integrations={integrations}
+          errorDetails={errorDetails(failure)}
+        />,
+        {
+          status: stats ? 200 : 500,
+        }
+      );
     },
   },
 });

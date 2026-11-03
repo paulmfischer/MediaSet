@@ -1,7 +1,7 @@
 import { compression } from 'remix/middleware/compression';
 import { render } from 'remix/middleware/render';
 import { staticFiles } from 'remix/middleware/static';
-import { createRouter, type RouterContext } from 'remix/router';
+import { createRouter, type Middleware, type RouterContext } from 'remix/router';
 
 import controller from './actions/controller.tsx';
 import { boundedFormData } from './actions/forms/form-data.tsx';
@@ -21,10 +21,37 @@ import entityEditMusicController from './actions/entity/edit/music-controller.ts
 import entityListsController from './actions/entity/controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
 import { assets } from './assets.ts';
+import { renderError, type ErrorContext } from './actions/render-error.tsx';
 import { routes } from './routes.ts';
+import { serverLogger } from './utils/serverLogger.ts';
+
+// Turns anything an action throws into a rendered error page: a thrown 404 Response is the shared
+// 404 page, everything else is logged and answered with the generic 500 page.
+const errorPages: Middleware = async (context, next) => {
+  try {
+    return await next();
+  } catch (error) {
+    const app = context as unknown as ErrorContext;
+    if (error instanceof Response && error.status === 404) return renderError(app, 404, error);
+    serverLogger.error('Unhandled error while handling a request', error, {
+      operation: 'router',
+      method: context.request.method,
+      path: context.url.pathname,
+    });
+    return renderError(app, 500, error);
+  }
+};
 
 export const router = createRouter({
-  middleware: [compression(), staticFiles('./public', { index: false }), render({ assets }), boundedFormData()],
+  middleware: [
+    compression(),
+    staticFiles('./public', { index: false }),
+    render({ assets }),
+    errorPages,
+    boundedFormData(),
+  ],
+  // Paths no route matches, including unknown collections, get the shared 404 page.
+  defaultHandler: (context) => renderError(context, 404),
 });
 
 export type AppContext = RouterContext<typeof router>;

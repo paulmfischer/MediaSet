@@ -14,8 +14,13 @@ export function getClientConfig(): ClientConfig {
   return {
     // Client-side API URL must be accessible from the browser
     apiUrl: clientApiUrl,
-    showErrorDetails: (process.env.SHOW_ERROR_DETAILS ?? '').toString().toLowerCase() === 'true',
+    showErrorDetails: getShowErrorDetails(),
   };
+}
+
+/** Whether error pages may show the message and stack. Read per request so a container can set it at run time. */
+export function getShowErrorDetails(): boolean {
+  return (process.env.SHOW_ERROR_DETAILS ?? '').toString().toLowerCase() === 'true';
 }
 
 /**

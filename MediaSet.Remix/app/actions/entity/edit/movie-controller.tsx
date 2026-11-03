@@ -10,7 +10,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MovieFormPage } from '../../../ui/entity/add/movie-form-page.tsx';
-import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
+import { renderError } from '../../render-error.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
@@ -22,18 +22,13 @@ import { loadMovieOptions } from '../movie-options.ts';
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string) {
-  return context.render(
-    <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-      <UnavailablePage
-        heading={heading}
-        message={message}
-        backHref={routes.entityLists.movies.href()}
-        backLabel="Back to Movies"
-      />
-    </Document>,
-    { status }
-  );
+function renderUnavailable(context: AppContext, status: number, heading: string, message: string, error?: unknown) {
+  return renderError(context, status, error, {
+    heading,
+    message,
+    backHref: routes.entityLists.movies.href(),
+    backLabel: 'Back to Movies',
+  });
 }
 
 async function renderEditForm(
@@ -103,7 +98,8 @@ async function loadMovie(context: AppContext, id: string): Promise<MovieEntity |
       context,
       500,
       "Couldn't load this movie",
-      'Something went wrong while loading it. Please try again.'
+      'Something went wrong while loading it. Please try again.',
+      error
     );
   }
 }
