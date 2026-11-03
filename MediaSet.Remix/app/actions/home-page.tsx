@@ -19,11 +19,12 @@ export function HomePage(handle: Handle<HomePageProps>) {
     return (
       <Document path={path} title="Dashboard | MediaSet" description="Your personal media collection dashboard">
         <div class="space-y-8">
+          {stats ? <h1 class="sr-only">Dashboard</h1> : null}
           {stats ? (
             <Dashboard stats={stats} />
           ) : (
             <div class="flex flex-col items-center gap-3 py-8 text-center">
-              <h1 class="text-2xl">Couldn't load the dashboard</h1>
+              <h1 class="text-xl">Couldn't load the dashboard</h1>
               <p>Something went wrong while loading your collection. Please try again.</p>
             </div>
           )}

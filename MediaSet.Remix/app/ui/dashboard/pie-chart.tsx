@@ -8,6 +8,8 @@ export interface PieSlice {
 interface PieChartProps {
   data: PieSlice[];
   colors: string[];
+  /** Names the chart for assistive technology; the card title. */
+  title: string;
   size?: number;
 }
 
@@ -44,7 +46,7 @@ const count = (value: number): string => value.toLocaleString('en-US');
 // A server-rendered pie with a legend. Hover detail is each slice's SVG <title>.
 export function PieChart(handle: Handle<PieChartProps>) {
   return () => {
-    const { data, colors, size = 220 } = handle.props;
+    const { data, colors, title, size = 220 } = handle.props;
     const total = data.reduce((sum, d) => sum + d.value, 0);
     if (total === 0) return null;
 
@@ -69,7 +71,7 @@ export function PieChart(handle: Handle<PieChartProps>) {
     return (
       <div class="relative flex h-full flex-col gap-3">
         <div class="relative min-h-0 flex-1">
-          <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" aria-label="Pie chart" role="img">
+          <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" aria-label={`${title} pie chart`} role="img">
             {slices.map((slice) => (
               <path d={slice.path} fill={slice.color} stroke="#18181b" stroke-width="2">
                 <title>{`${slice.name}: ${count(slice.value)} · ${slice.pct}%`}</title>

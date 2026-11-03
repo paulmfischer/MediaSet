@@ -1,6 +1,6 @@
 import type { IconNode } from 'lucide';
 
-import { BookOpen, Clapperboard, Gamepad2, LibraryBig, Music } from '../icons.ts';
+import { Clapperboard, Gamepad2, LibraryBig, Music } from '../icons.ts';
 
 export type DashboardTabId = 'books' | 'movies' | 'games' | 'musics';
 
@@ -46,7 +46,7 @@ export const DASHBOARD_TABS: DashboardTabConfig[] = [
     id: 'books',
     entityClass: 'entity-books',
     label: 'Books',
-    icon: BookOpen,
+    icon: LibraryBig,
     inputId: 'dashboard-tab-books',
     activeLabelClass:
       'group-has-[#dashboard-tab-books:checked]/tabs:relative group-has-[#dashboard-tab-books:checked]/tabs:z-10 group-has-[#dashboard-tab-books:checked]/tabs:-mb-[5px] group-has-[#dashboard-tab-books:checked]/tabs:rounded-b-none group-has-[#dashboard-tab-books:checked]/tabs:border-x-zinc-700 group-has-[#dashboard-tab-books:checked]/tabs:border-b-zinc-900 group-has-[#dashboard-tab-books:checked]/tabs:border-t-entity group-has-[#dashboard-tab-books:checked]/tabs:bg-zinc-800',

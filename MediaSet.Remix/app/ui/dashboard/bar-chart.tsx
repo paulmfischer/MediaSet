@@ -43,6 +43,7 @@ export function BarChart(handle: Handle<BarChartProps>) {
             {items.map((item) => (
               <span class="flex-1 truncate px-1.5 text-center text-xs text-zinc-400" title={item.name}>
                 {item.name}
+                <span class="sr-only">: {count(item.value)}</span>
               </span>
             ))}
           </div>

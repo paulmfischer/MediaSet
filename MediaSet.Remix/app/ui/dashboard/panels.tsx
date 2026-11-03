@@ -42,7 +42,7 @@ export function BooksPanel(handle: Handle<PanelProps>) {
         <div class="grid grid-cols-2 gap-4">
           {formats.length > 1 && (
             <ChartCard title="Format Breakdown">
-              <PieChart data={formats} colors={FORMAT_PALETTES.books} size={140} />
+              <PieChart title="Format Breakdown" data={formats} colors={FORMAT_PALETTES.books} size={140} />
             </ChartCard>
           )}
           {pages.length > 0 && (
@@ -93,12 +93,12 @@ export function MoviesPanel(handle: Handle<PanelProps>) {
         <div class="grid grid-cols-2 gap-4">
           {types.length > 1 && (
             <ChartCard title="Movies vs TV Series">
-              <PieChart data={types} colors={MOVIE_TYPE_COLORS} size={140} />
+              <PieChart title="Movies vs TV Series" data={types} colors={MOVIE_TYPE_COLORS} size={140} />
             </ChartCard>
           )}
           {formats.length > 1 && (
             <ChartCard title="Format Breakdown">
-              <PieChart data={formats} colors={FORMAT_PALETTES.movies} size={140} />
+              <PieChart title="Format Breakdown" data={formats} colors={FORMAT_PALETTES.movies} size={140} />
             </ChartCard>
           )}
           {studios.length > 0 && (
@@ -140,12 +140,12 @@ export function GamesPanel(handle: Handle<PanelProps>) {
         <div class="grid grid-cols-2 gap-4">
           {platforms.length > 1 && (
             <ChartCard title="Platform Breakdown">
-              <PieChart data={platforms} colors={FORMAT_PALETTES.games} size={140} />
+              <PieChart title="Platform Breakdown" data={platforms} colors={FORMAT_PALETTES.games} size={140} />
             </ChartCard>
           )}
           {formats.length > 1 && (
             <ChartCard title="Format Breakdown">
-              <PieChart data={formats} colors={FORMAT_PALETTES.games} size={140} />
+              <PieChart title="Format Breakdown" data={formats} colors={FORMAT_PALETTES.games} size={140} />
             </ChartCard>
           )}
           {publishers.length > 0 && (
@@ -195,7 +195,7 @@ export function MusicsPanel(handle: Handle<PanelProps>) {
         <div class="grid grid-cols-2 gap-4">
           {formats.length > 1 && (
             <ChartCard title="Format Breakdown">
-              <PieChart data={formats} colors={FORMAT_PALETTES.musics} size={140} />
+              <PieChart title="Format Breakdown" data={formats} colors={FORMAT_PALETTES.musics} size={140} />
             </ChartCard>
           )}
           {artists.length > 0 && (

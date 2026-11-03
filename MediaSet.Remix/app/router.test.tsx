@@ -269,7 +269,7 @@ describe('home dashboard', () => {
     // Pie slices carry hover detail and the legend shows counts and percentages.
     assert.match(books, /<title>Hardcover: 5 · 83\.3%<\/title>/);
     assert.match(books, /Paperback<\/span><span[^>]*>1 · 16\.7%/);
-    assert.match(books, /<svg[^>]*aria-label="Pie chart"/);
+    assert.match(books, /<svg[^>]*aria-label="Format Breakdown pie chart"/);
     assert.match(books, /Frank Herbert/);
   });
 
@@ -300,6 +300,88 @@ describe('home dashboard', () => {
     assert.ok(chord > 9 && chord < 10, `chord was ${chord}`);
   });
 
+  it('should render the games stat cards and platform pie', async (t) => {
+    const gameStats = {
+      ...emptyStats.gameStats,
+      total: 5,
+      totalPlatforms: 2,
+      totalFormats: 1,
+      platformBreakdown: { Switch: 3, PS5: 2 },
+      formatBreakdown: { Disc: 5 },
+    };
+    stubDashboardApi(t, { ...fullStats, gameStats });
+
+    const games = panel(await (await get('/')).text(), 'games');
+
+    for (const [title, value] of [
+      ['Platforms', '2'],
+      ['Formats', '1'],
+    ]) {
+      assert.match(games, new RegExp(`${title}</p><p class="[^"]*">${value}</p>`));
+    }
+    assert.match(games, /aria-label="Platform Breakdown pie chart"/);
+    assert.match(games, /<title>Switch: 3 · 60\.0%<\/title>/);
+    assert.doesNotMatch(games, />Format Breakdown</);
+  });
+
+  it('should render the music panel with its stat cards and palette', async (t) => {
+    const musicStats = {
+      ...emptyStats.musicStats,
+      total: 4,
+      totalFormats: 2,
+      uniqueArtists: 3,
+      totalTracks: 1250,
+      avgTracks: 12,
+      uniqueLabels: 2,
+      totalDiscs: 5,
+      formatBreakdown: { CD: 3, Vinyl: 1 },
+      decadeBreakdown: { '1990s': 4 },
+      topArtists: [{ name: 'Radiohead', count: 2 }],
+    };
+    stubDashboardApi(t, { ...fullStats, musicStats });
+
+    const html = await (await get('/')).text();
+    const music = panel(html, 'musics');
+
+    assert.match(html, /<label for="dashboard-tab-musics"[^>]*>[\s\S]*?Music[\s\S]*?>4<[\s\S]*?28\.6% of collection/);
+    for (const [title, value] of [
+      ['Total Tracks', '1,250'],
+      ['Avg Tracks', '12'],
+      ['Unique Artists', '3'],
+      ['Unique Labels', '2'],
+      ['Total Discs', '5'],
+      ['Formats', '2'],
+    ]) {
+      assert.match(music, new RegExp(`${title}</p><p class="[^"]*">${value}</p>`));
+    }
+    // The music palette (pink) colours the format pie and the bars.
+    assert.match(music, /fill="#db2777"/);
+    assert.match(music, /fill="#ec4899"/);
+    assert.match(music, /background-color: #ec4899/);
+    assert.match(music, />Top Artists</);
+    assert.match(music, /Radiohead/);
+  });
+
+  it('should expose a named tab group, linked panels and a page heading', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const html = await (await get('/')).text();
+
+    assert.match(html, /<h1 class="sr-only">Dashboard<\/h1>/);
+    assert.match(html, /<legend class="sr-only">Media type<\/legend>/);
+    assert.match(html, /<input[^>]*id="dashboard-tab-books"[^>]*aria-controls="dashboard-panel-books"/);
+    assert.match(html, /<div id="dashboard-panel-books" role="region" aria-labelledby="dashboard-label-books"/);
+    assert.match(html, /<label for="dashboard-tab-books" id="dashboard-label-books"/);
+  });
+
+  it('should make vertical bar values available to screen readers', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const books = panel(await (await get('/')).text(), 'books');
+
+    assert.match(books, /0-200<span class="sr-only">: 1<\/span>/);
+  });
+
   it('should show the empty state when the collection has no items', async (t) => {
     stubDashboardApi(t, emptyStats);
 
@@ -328,7 +410,7 @@ describe('home dashboard', () => {
     const html = await response.text();
 
     assert.equal(response.status, 500);
-    assert.match(html, /<h1 class="text-2xl">Couldn't load the dashboard<\/h1>/);
+    assert.match(html, /<h1 class="text-xl">Couldn't load the dashboard<\/h1>/);
     assert.match(html, /Please try again/);
     assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
     assert.match(html, /<footer/);
