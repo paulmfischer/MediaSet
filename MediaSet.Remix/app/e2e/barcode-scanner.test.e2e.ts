@@ -6,17 +6,22 @@ import { createAppRouter } from '../router.ts';
 
 const ISBN = '9780441172719';
 
-type CameraMode = 'ok' | 'denied' | 'none' | 'unsupported';
+// `pending` leaves the permission prompt unanswered until the test calls `releasePending()`.
+type CameraMode = 'ok' | 'denied' | 'none' | 'unsupported' | 'pending';
+// The stubbed BarcodeDetector: absent, finds the code at once, finds it only on the 4th frame, or throws every time.
+type NativeMode = 'absent' | 'instant' | 'slow' | 'broken';
 
 interface CameraStub {
   streams: MediaStream[];
   requests: unknown[];
+  detectCalls: number;
+  releasePending?: () => void;
 }
 
 // Replaces the camera before the page loads. `ok` hands out a real MediaStream captured from a canvas that shows
 // an EAN-13 barcode, so the video preview and both decoders (a stubbed native BarcodeDetector, or the real zxing
 // library) see genuine frames; its tracks are real, so `readyState` shows whether they were stopped.
-function installCamera([mode, native, code]: readonly [CameraMode, boolean, string]): void {
+function installCamera([mode, native, code]: readonly [CameraMode, NativeMode, string]): void {
   const L = [
     '0001101',
     '0011001',
@@ -62,7 +67,7 @@ function installCamera([mode, native, code]: readonly [CameraMode, boolean, stri
   for (let i = 0; i < 6; i += 1) bits += R[digits[i + 7]!]!;
   bits += '101';
 
-  const stub: CameraStub = { streams: [], requests: [] };
+  const stub: CameraStub = { streams: [], requests: [], detectCalls: 0 };
   (window as unknown as { __camera: CameraStub }).__camera = stub;
 
   if (mode === 'unsupported') {
@@ -73,6 +78,7 @@ function installCamera([mode, native, code]: readonly [CameraMode, boolean, stri
     stub.requests.push(constraints);
     if (mode === 'denied') throw new DOMException('Permission denied', 'NotAllowedError');
     if (mode === 'none') throw new DOMException('Requested device not found', 'NotFoundError');
+    if (mode === 'pending') await new Promise<void>((resolve) => (stub.releasePending = resolve));
     const canvas = document.createElement('canvas');
     canvas.width = 640;
     canvas.height = 480;
@@ -98,13 +104,15 @@ function installCamera([mode, native, code]: readonly [CameraMode, boolean, stri
     return stream;
   };
 
-  if (native) {
+  if (native !== 'absent') {
     (window as unknown as { BarcodeDetector: unknown }).BarcodeDetector = class {
       static async getSupportedFormats() {
         return ['ean_13', 'upc_a', 'upc_e', 'ean_8', 'code_128'];
       }
       async detect() {
-        return [{ rawValue: code }];
+        stub.detectCalls += 1;
+        if (native === 'broken') throw new Error('detector is not supported');
+        return native === 'slow' && stub.detectCalls < 4 ? [] : [{ rawValue: code }];
       }
     };
   } else {
@@ -134,7 +142,7 @@ function stubApi(t: { after: (fn: () => void) => void }) {
 }
 
 // Opens a page on the production-CSP app with the camera stubbed; collects CSP violations and page errors.
-async function openForm(t: TestContext, path: string, mode: CameraMode, options: { native?: boolean } = {}) {
+async function openForm(t: TestContext, path: string, mode: CameraMode, options: { native?: NativeMode } = {}) {
   const lookups = stubApi(t);
   const page = await t.serve(await createTestServer(createAppRouter({ production: true }).fetch));
   const problems: string[] = [];
@@ -144,7 +152,7 @@ async function openForm(t: TestContext, path: string, mode: CameraMode, options:
     if (message.text().includes('Content Security Policy')) problems.push(message.text());
   });
   page.on('request', (request) => requests.push(new URL(request.url()).pathname));
-  await page.addInitScript(installCamera, [mode, options.native ?? true, ISBN] as const);
+  await page.addInitScript(installCamera, [mode, options.native ?? 'instant', ISBN] as const);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(path);
   await page.waitForLoadState('networkidle');
@@ -191,7 +199,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
   });
 
   it('should load the zxing decoder only when scanning and decode a real frame when there is no native detector', async (t) => {
-    const { page, lookups, problems, requests, camera } = await openForm(t, '/books/add', 'ok', { native: false });
+    const { page, lookups, problems, requests, camera } = await openForm(t, '/books/add', 'ok', { native: 'absent' });
     assert.equal(
       requests.some((path) => path.includes('zxing')),
       false
@@ -212,7 +220,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
 
   it('should release the camera on Cancel and on Escape', async (t) => {
     // A detector that finds nothing keeps the scanner open.
-    const { page, lookups, camera } = await openForm(t, '/books/add', 'ok', { native: false });
+    const { page, lookups, camera } = await openForm(t, '/books/add', 'ok', { native: 'absent' });
     await page.evaluate(() => {
       (window as unknown as { BarcodeDetector: unknown }).BarcodeDetector = class {
         async detect() {
@@ -250,6 +258,112 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     assert.deepEqual(await camera.tracksEnded(), [true, true]);
     assert.equal(lookups.length, 0);
     assert.equal(await page.locator('#isbn').inputValue(), '');
+  });
+
+  it('should keep scanning frames until the native detector finds the code', async (t) => {
+    const { page, lookups } = await openForm(t, '/books/add', 'ok', { native: 'slow' });
+
+    await page.getByRole('button', { name: 'Scan ISBN' }).click();
+    await page.getByRole('dialog', { name: 'Look up book' }).waitFor();
+
+    assert.equal(await page.locator('#isbn').inputValue(), ISBN);
+    assert.equal(lookups.length, 1);
+    const detectCalls = await page.evaluate(() => (window as unknown as { __camera: CameraStub }).__camera.detectCalls);
+    assert.equal(detectCalls >= 4, true);
+  });
+
+  it('should fall back to the zxing decoder when the native detector keeps failing', async (t) => {
+    const { page, requests, camera } = await openForm(t, '/books/add', 'ok', { native: 'broken' });
+    assert.equal(
+      requests.some((path) => path.includes('zxing')),
+      false
+    );
+
+    await page.getByRole('button', { name: 'Scan ISBN' }).click();
+    await page.getByRole('dialog', { name: 'Look up book' }).waitFor({ timeout: 15_000 });
+
+    assert.equal(
+      requests.some((path) => path.includes('zxing')),
+      true
+    );
+    assert.equal(await page.locator('#isbn').inputValue(), ISBN);
+    assert.deepEqual(await camera.tracksEnded(), [true]);
+  });
+
+  it('should not keep the camera when the dialog is closed while the permission prompt is open', async (t) => {
+    const { page, camera } = await openForm(t, '/books/add', 'pending');
+
+    await page.getByRole('button', { name: 'Scan ISBN' }).click();
+    await page.getByRole('dialog', { name: 'Scan ISBN' }).waitFor();
+    await page.waitForFunction(() => (window as unknown as { __camera: CameraStub }).__camera.requests.length === 1);
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    assert.deepEqual(await camera.tracksEnded(), []);
+
+    // The user allows the camera after the dialog is gone: the stream that arrives must be stopped at once.
+    await page.evaluate(() => (window as unknown as { __camera: CameraStub }).__camera.releasePending?.());
+    await page.waitForFunction(() =>
+      (window as unknown as { __camera: CameraStub }).__camera.streams.every((stream) =>
+        stream.getTracks().every((track) => track.readyState === 'ended')
+      )
+    );
+    assert.deepEqual(await camera.tracksEnded(), [true]);
+    assert.equal(await page.getByRole('dialog', { name: 'Scan ISBN' }).isVisible(), false);
+  });
+
+  it('should release the camera when the form is replaced while the scanner is open', async (t) => {
+    // A detector that finds nothing keeps the scanner open while the form is re-rendered underneath it.
+    const { page, camera } = await openForm(t, '/books/add', 'ok', { native: 'absent' });
+    await page.evaluate(() => {
+      (window as unknown as { BarcodeDetector: unknown }).BarcodeDetector = class {
+        async detect() {
+          return [];
+        }
+      };
+    });
+    await page.locator('#title').fill('Dune');
+    await page.getByRole('button', { name: 'Scan ISBN' }).click();
+    await page.getByRole('dialog', { name: 'Scan ISBN' }).waitFor();
+    await page.waitForFunction(() => document.querySelector('video')?.srcObject != null);
+    assert.deepEqual(await camera.tracksEnded(), [false]);
+
+    // Run a title lookup and apply its result: the form renders fresh (new key) and its islands are removed.
+    await page.evaluate(() => {
+      const form = document.querySelector('form')!;
+      form.requestSubmit(form.querySelector<HTMLButtonElement>('button[value="lookup:title"]')!);
+    });
+    const results = page.getByRole('dialog', { name: 'Look up book' });
+    await results.waitFor();
+    await results.getByRole('button', { name: 'Use this result' }).click();
+    await results.waitFor({ state: 'detached' });
+
+    await page.waitForFunction(() =>
+      (window as unknown as { __camera: CameraStub }).__camera.streams.every((stream) =>
+        stream.getTracks().every((track) => track.readyState === 'ended')
+      )
+    );
+    assert.deepEqual(await camera.tracksEnded(), [true]);
+  });
+
+  it('should close on a backdrop click but not on a click inside the dialog', async (t) => {
+    const { page } = await openForm(t, '/books/add', 'ok', { native: 'absent' });
+    await page.evaluate(() => {
+      (window as unknown as { BarcodeDetector: unknown }).BarcodeDetector = class {
+        async detect() {
+          return [];
+        }
+      };
+    });
+    const scanner = page.getByRole('dialog', { name: 'Scan ISBN' });
+    await page.getByRole('button', { name: 'Scan ISBN' }).click();
+    await scanner.waitFor();
+
+    // The dialog's edge area is padding inside the content wrapper, not a backdrop.
+    const box = (await scanner.boundingBox())!;
+    await page.mouse.click(box.x + 2, box.y + 2);
+    assert.equal(await scanner.isVisible(), true);
+
+    await page.mouse.click(2, 2);
+    await scanner.waitFor({ state: 'hidden' });
   });
 
   it('should show a clear error when camera permission is denied', async (t) => {

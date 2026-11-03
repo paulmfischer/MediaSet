@@ -110,7 +110,8 @@ export const BarcodeScannerDialog = clientEntry(
           try {
             code = await decode(video);
           } catch {
-            // A frame that cannot be read is skipped; the next one may work.
+            // The decoder gave up (the native one failed repeatedly and the fallback would not load).
+            return fail(current, MESSAGES.failed);
           }
           if (current.stopped) return;
           if (code) return finish(code);
@@ -140,11 +141,13 @@ export const BarcodeScannerDialog = clientEntry(
     });
 
     const closed = () => {
+      // Not open, or the dialog is open again: a late close event belongs to an earlier session.
+      if (!open || dialog?.open) return;
       release();
-      if (!open) return;
       open = false;
       handle.update();
-      // The form is still there (a detected code submits it), so hand focus back to the scan button.
+      // Return focus to the scan button. After a detected code the form is submitted and the lookup
+      // re-renders it, so this only matters for Cancel, Escape and the backdrop; it is harmless otherwise.
       const { field } = handle.props;
       form()?.querySelector<HTMLElement>(`[data-scan-field="${field}"]`)?.focus();
     };
@@ -154,20 +157,20 @@ export const BarcodeScannerDialog = clientEntry(
       return (
         <dialog
           aria-labelledby={`scan-${handle.props.field}-title`}
-          class="w-full max-w-lg rounded-md border border-gray-600 bg-gray-900 p-4 text-white backdrop:bg-black/60"
+          class="w-full max-w-lg rounded-md border border-gray-600 bg-gray-900 p-0 text-white backdrop:bg-black/60"
           mix={[
             ref((node) => {
               dialog = node as HTMLDialogElement;
             }),
             // Close fires for Cancel, Escape and a detected code alike.
             on('close', closed),
-            // A click on the backdrop lands on the dialog itself.
+            // The content wrapper carries the padding, so only a backdrop click targets the dialog itself.
             on('click', (event) => {
               if (event.target === dialog) dialog?.close();
             }),
           ]}
         >
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-3 p-4">
             <h2 id={`scan-${handle.props.field}-title`} class="text-xl">
               Scan {identifierLabel}
             </h2>
