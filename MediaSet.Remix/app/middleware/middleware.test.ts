@@ -1,11 +1,12 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
+import { createRouter } from 'remix/router';
+
 import { createAppRouter } from '../router.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
-import { CONTENT_SECURITY_POLICY } from './security-headers.ts';
-import { createRouter } from 'remix/router';
 import { requestContext } from './request-context.ts';
+import { securityHeaders } from './security-headers.ts';
 
 const get = (router: { fetch: (url: URL) => Promise<Response> }, path: string) =>
   router.fetch(new URL(path, 'http://localhost'));
@@ -14,7 +15,7 @@ const EXPECTED_HEADERS: Record<string, string> = {
   'x-content-type-options': 'nosniff',
   'x-frame-options': 'DENY',
   'referrer-policy': 'strict-origin-when-cross-origin',
-  'permissions-policy': 'camera=self, microphone=(), geolocation=(), payment=()',
+  'permissions-policy': 'camera=(self), microphone=(), geolocation=(), payment=()',
 };
 
 function assertSecurityHeaders(response: Response) {
@@ -48,24 +49,69 @@ describe('securityHeaders middleware', () => {
     for (const path of ['/no/such/page/anywhere', '/favicon.ico']) {
       const response = await get(prod, path);
       assertSecurityHeaders(response);
-      assert.equal(response.headers.get('content-security-policy'), CONTENT_SECURITY_POLICY, path);
+      assert.ok(response.headers.get('content-security-policy'), path);
     }
   });
 
-  it('should allow blob: and WebAssembly compilation in the production policy', () => {
-    const directives = new Map(
-      CONTENT_SECURITY_POLICY.split('; ').map((directive) => {
-        const [name, ...sources] = directive.split(' ');
-        return [name, sources];
-      })
-    );
-    assert.ok(directives.get('script-src')?.includes('blob:'));
-    assert.ok(directives.get('script-src')?.includes("'wasm-unsafe-eval'"));
-    assert.ok(directives.get('img-src')?.includes('blob:'));
-    assert.deepEqual(directives.get('worker-src'), ['blob:']);
-    assert.ok(!directives.get('script-src')?.includes("'unsafe-eval'"));
+  it('should allow blob:, WebAssembly compilation and the hardening directives in the production policy', async () => {
+    const policy = await cspFor('http://api.example:8080');
+    assert.deepEqual(policy.get('script-src'), ["'self'", "'unsafe-inline'", 'blob:', "'wasm-unsafe-eval'"]);
+    assert.deepEqual(policy.get('worker-src'), ['blob:']);
+    assert.ok(policy.get('img-src')?.includes('blob:'));
+    assert.deepEqual(policy.get('base-uri'), ["'self'"]);
+    assert.deepEqual(policy.get('form-action'), ["'self'"]);
+    assert.deepEqual(policy.get('object-src'), ["'none'"]);
+    assert.deepEqual(policy.get('frame-ancestors'), ["'none'"]);
+  });
+
+  it('should allow images from the configured client API origin when in production', async () => {
+    const policy = await cspFor('http://media.example:8080/api/');
+    assert.deepEqual(policy.get('img-src'), ["'self'", 'data:', 'blob:', 'https:', 'http://media.example:8080']);
+  });
+
+  it('should add no API origin to img-src when the client API URL is relative, unset or invalid', async () => {
+    for (const url of ['/dev-api', '', 'not a url', 'ftp://files.example']) {
+      const policy = await cspFor(url);
+      assert.deepEqual(policy.get('img-src'), ["'self'", 'data:', 'blob:', 'https:'], url);
+    }
+  });
+
+  it('should keep status, body and headers of redirects and 304 responses', async () => {
+    const router = createRouter({ middleware: [securityHeaders({ production: true })] });
+    router.get('/moved', () => new Response(null, { status: 303, headers: { Location: '/elsewhere' } }));
+    router.get('/same', () => new Response(null, { status: 304, headers: { ETag: '"x"' } }));
+    router.get('/frozen', () => fetch('http://api.test/frozen'));
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('body', { status: 200 })) as typeof fetch;
+    try {
+      const moved = await get(router, '/moved');
+      assert.equal(moved.status, 303);
+      assert.equal(moved.headers.get('location'), '/elsewhere');
+      assertSecurityHeaders(moved);
+      const same = await get(router, '/same');
+      assert.equal(same.status, 304);
+      assert.equal(same.headers.get('etag'), '"x"');
+      assertSecurityHeaders(same);
+      const frozen = await get(router, '/frozen');
+      assert.equal(await frozen.text(), 'body');
+      assertSecurityHeaders(frozen);
+    } finally {
+      globalThis.fetch = original;
+    }
   });
 });
+
+// Reads the production Content-Security-Policy a router sends for the given client API URL.
+async function cspFor(clientApiUrl: string): Promise<Map<string, string[]>> {
+  const response = await get(createAppRouter({ production: true, clientApiUrl }), '/favicon.ico');
+  const header = response.headers.get('content-security-policy') ?? '';
+  return new Map(
+    header.split('; ').map((directive) => {
+      const [name, ...sources] = directive.split(' ');
+      return [name, sources];
+    })
+  );
+}
 
 describe('requestContext middleware', () => {
   it('should send a distinct, well-formed traceparent for each request', async (t) => {

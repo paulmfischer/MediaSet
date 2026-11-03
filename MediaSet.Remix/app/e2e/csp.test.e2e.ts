@@ -4,6 +4,14 @@ import { describe, it } from 'remix/test';
 
 import { createAppRouter } from '../router.ts';
 
+const book = { id: 'b1', type: 'Books', title: 'Dune', coverImage: { filePath: 'books/b1.png' } };
+
+// 1x1 transparent PNG.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64'
+);
+
 // The home page loads dashboard stats, so serve an empty collection: no items, no API needed.
 function stubApi(t: { after: (fn: () => void) => void }) {
   const original = globalThis.fetch;
@@ -17,6 +25,7 @@ function stubApi(t: { after: (fn: () => void) => void }) {
         musicStats: { total: 0 },
       });
     }
+    if (url.pathname === '/Books/b1') return Response.json(book);
     return Response.json([]);
   }) as typeof fetch;
   t.after(() => {
@@ -54,5 +63,29 @@ describe('production Content-Security-Policy (e2e)', () => {
     await menu.waitFor({ state: 'detached' });
 
     assert.deepEqual(problems, []);
+  });
+
+  it('loads a cover image from the client API origin with the CSP enforced', async (t) => {
+    stubApi(t);
+    const apiOrigin = 'http://api.csp-test.example:7130';
+    const page = await t.serve(
+      await createTestServer(createAppRouter({ production: true, clientApiUrl: apiOrigin }).fetch)
+    );
+    const violations: string[] = [];
+    page.on('console', (message) => {
+      if (message.text().includes('Content Security Policy')) violations.push(message.text());
+    });
+    // The browser never reaches the fake API host; answer its image request here.
+    await page.route(`${apiOrigin}/static/images/**`, (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
+    );
+    await page.goto('/books/b1');
+    const cover = page.getByRole('img', { name: 'Dune' });
+    await cover.waitFor();
+    await page.waitForLoadState('networkidle');
+
+    assert.equal(await cover.getAttribute('src'), `${apiOrigin}/static/images/books/b1.png`);
+    assert.equal(await cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0), true);
+    assert.deepEqual(violations, []);
   });
 });
