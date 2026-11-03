@@ -4,8 +4,32 @@ import { describe, it } from 'remix/test';
 
 import { router } from '../router.ts';
 
+// The home page loads dashboard stats, so serve an empty collection: no items, no API needed.
+function stubApi(t: { after: (fn: () => void) => void }) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.pathname === '/stats') {
+      return Response.json({
+        bookStats: { total: 0 },
+        movieStats: { total: 0 },
+        gameStats: { total: 0 },
+        musicStats: { total: 0 },
+      });
+    }
+    return Response.json([]);
+  }) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+}
+
+// A heading that is always on the empty home page.
+const HOME_HEADING = { name: 'No media items yet' };
+
 describe('app shell (e2e)', () => {
   it('loads the home page with the Tailwind stylesheet and the browser runtime, without errors', async (t) => {
+    stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
@@ -20,9 +44,9 @@ describe('app shell (e2e)', () => {
 
     assert.equal(await page.title(), 'Dashboard | MediaSet');
     assert.equal((await entryLoaded).status(), 200);
-    const heading = page.getByRole('heading', { name: 'Dashboard' });
-    // text-2xl and dark:bg-zinc-800 come from the prebuilt app.css.
-    assert.equal(await heading.evaluate((element) => getComputedStyle(element).fontSize), '24px');
+    const heading = page.getByRole('heading', HOME_HEADING);
+    // text-xl and dark:bg-zinc-800 come from the prebuilt app.css.
+    assert.equal(await heading.evaluate((element) => getComputedStyle(element).fontSize), '20px');
     assert.equal(
       await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor),
       'rgb(39, 39, 42)'
@@ -32,6 +56,7 @@ describe('app shell (e2e)', () => {
   });
 
   it('hydrates the mobile menu: opens, then closes on outside click and on navigation', async (t) => {
+    stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
@@ -57,7 +82,7 @@ describe('app shell (e2e)', () => {
       'Image Statistics',
     ]);
 
-    await page.getByRole('heading', { name: 'Dashboard' }).click();
+    await page.getByRole('heading', HOME_HEADING).click();
     await menu.waitFor({ state: 'detached' });
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
 
@@ -73,6 +98,7 @@ describe('app shell (e2e)', () => {
   });
 
   it('hydrates the desktop tools dropdown: closes on outside click, Escape (refocusing the toggle) and navigation', async (t) => {
+    stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
@@ -86,7 +112,7 @@ describe('app shell (e2e)', () => {
     await statistics.waitFor();
     assert.equal(await tools.getAttribute('aria-expanded'), 'true');
 
-    await page.getByRole('heading', { name: 'Dashboard' }).click();
+    await page.getByRole('heading', HOME_HEADING).click();
     await statistics.waitFor({ state: 'detached' });
     assert.equal(await tools.getAttribute('aria-expanded'), 'false');
 
@@ -109,6 +135,7 @@ describe('app shell (e2e)', () => {
   });
 
   it('closes the mobile menu on Escape and returns focus to the toggle', async (t) => {
+    stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
@@ -123,6 +150,7 @@ describe('app shell (e2e)', () => {
   });
 
   it('shows the pending indicator while a client navigation is in flight', async (t) => {
+    stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
