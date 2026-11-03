@@ -70,6 +70,6 @@ describe('item detail (e2e)', () => {
     await page.getByRole('heading', { name: 'Book not found' }).waitFor();
     await page.getByRole('link', { name: 'Back to Books' }).click();
     await page.waitForURL('**/books');
-    await page.getByRole('link', { name: 'Dune: Book One' }).waitFor();
+    await page.getByRole('link', { name: 'Dune: Book One' }).first().waitFor();
   });
 });

@@ -1,6 +1,8 @@
 import { Entity, type IdentifierType } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
 import { MOVIE_FIELDS, type MovieFormValues } from './movie-form.ts';
+import { submittedValues } from '../../forms/form-schema.ts';
+import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
 /** The form field a lookup searches by: the title, or the barcode. */
 export type MovieLookupField = 'title' | 'barcode';
@@ -59,4 +61,22 @@ export function applyMovieResult(current: MovieFormValues, result: Record<string
     if (list.length > 0) applied[name] = list.map((item) => item.trim());
   }
   return applied;
+}
+
+/** Handles this form's lookup intents (look up, apply a result, dismiss) for both the add and edit forms. */
+export function resolveMovieLookupIntent(
+  formData: FormData,
+  intent: string
+): Promise<LookupIntentState<MovieFormValues>> {
+  return resolveLookupIntent(formData, intent, {
+    entityType: Entity.Movies,
+    readValues: (data) => submittedValues(data, MOVIE_FIELDS),
+    parseLookupIntent: parseMovieLookupIntent,
+    toRequest: (field, values) => {
+      const request = toMovieLookupRequest(field, values);
+      return request ? { request } : { missing: field };
+    },
+    missingLabels: { title: 'a title', barcode: 'a barcode' },
+    applyResult: applyMovieResult,
+  });
 }

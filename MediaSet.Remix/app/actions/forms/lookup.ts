@@ -1,5 +1,6 @@
 import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../api/lookup-capabilities-data.ts';
 import { isLookupError, lookup } from '../../api/lookup-data.server.ts';
+import type { LookupDialogProps } from '../../ui/forms/public/lookup-dialog.tsx';
 import type { BookEntity, Entity, GameEntity, IdentifierType, MovieEntity, MusicEntity } from '../../models.ts';
 import { serverLogger } from '../../utils/serverLogger.ts';
 
@@ -13,9 +14,11 @@ import { serverLogger } from '../../utils/serverLogger.ts';
  * - The browser keeps typed input over a re-rendered value, so an apply render sets a new `formKey`
  *   (`data-rmx-key` on the form) to make the server's values win.
  * - The lookup buttons submit urlencoded, so a chosen cover file is not sent and is dropped by the
- *   re-render; the user picks the cover after looking up.
- * Another media type adds its own search-parameter and apply helpers (see `book-lookup.ts`) and
- * reuses `runLookup` and the `LookupDialog` island.
+ *   re-render, on the add and the edit form alike; the user picks the cover after looking up. On
+ *   edit the saved image is unaffected, and the remove-image checkbox is carried back as a value.
+ * Another media type adds its own search-parameter and apply helpers (see `book-lookup.ts`), a
+ * `resolve<Type>LookupIntent` built on `resolveLookupIntent`, and reuses `runLookup` and the
+ * `LookupDialog` island. The add and edit controllers both call that resolver.
  */
 
 type LookupEntity = BookEntity | MovieEntity | GameEntity | MusicEntity;
@@ -76,4 +79,106 @@ export function parseLookupResults(raw: FormDataEntryValue | null): Record<strin
   } catch {
     return [];
   }
+}
+
+/** What a lookup intent asks the form to render: the values to show and, if any, an error or dialog. */
+export interface LookupIntentState<Values> {
+  values: Values;
+  errors?: Record<string, string>;
+  formError?: string;
+  status?: number;
+  /** The outcome of a lookup, shown in the results dialog. */
+  lookup?: LookupOutcome;
+  /** Set on an apply, so the browser takes `values` over what is typed in its inputs. */
+  formKey?: string;
+}
+
+/** The type-specific parts of handling a form's lookup intents. */
+export interface LookupIntentAdapter<Values, Field extends string, Missing extends string = Field> {
+  entityType: Entity;
+  /** The values the user has entered so far. */
+  readValues: (formData: FormData) => Values;
+  parseLookupIntent: (intent: string) => Field | undefined;
+  /** The lookup to run, or the field that is missing. */
+  toRequest: (
+    field: Field,
+    values: Values
+  ) => { request: { identifierType: IdentifierType; searchParams: Record<string, string> } } | { missing: Missing };
+  /** How a missing field reads in "Enter ... to look up". */
+  missingLabels: Record<Missing, string>;
+  applyResult: (current: Values, result: Record<string, unknown>) => Values;
+}
+
+/**
+ * Handles the form's non-save intents: look metadata up, apply a result to the form, or close the
+ * dialog. None of them saves. Add and edit forms share this, each rendering the returned state.
+ */
+export async function resolveLookupIntent<Values, Field extends string, Missing extends string = Field>(
+  formData: FormData,
+  intent: string,
+  adapter: LookupIntentAdapter<Values, Field, Missing>
+): Promise<LookupIntentState<Values>> {
+  const values = adapter.readValues(formData);
+
+  const field = adapter.parseLookupIntent(intent);
+  if (field) {
+    const outcome = adapter.toRequest(field, values);
+    if ('missing' in outcome) {
+      return {
+        values,
+        errors: { [outcome.missing]: `Enter ${adapter.missingLabels[outcome.missing]} to look up` },
+        status: 400,
+      };
+    }
+    const { identifierType, searchParams } = outcome.request;
+    return { values, lookup: await runLookup(adapter.entityType, identifierType, searchParams) };
+  }
+
+  const index = parseApplyIntent(intent);
+  if (index !== undefined) {
+    const result = parseLookupResults(formData.get(LOOKUP_RESULTS_FIELD))[index];
+    if (!result) {
+      return { values, formError: 'That result is no longer available. Look it up again.', status: 400 };
+    }
+    return { values: adapter.applyResult(values, result), formKey: crypto.randomUUID() };
+  }
+
+  // Closing the dialog, or an intent this form doesn't know.
+  return { values };
+}
+
+/**
+ * The `lookup` prop of a form page: whether lookup is offered and, while an outcome is open, the
+ * dialog's props. The results travel back with the apply submission as form values, so applying
+ * needs no second lookup.
+ */
+export function buildLookupProps<Values>(options: {
+  available: boolean;
+  itemLabel: string;
+  lookup: LookupOutcome | undefined;
+  /** Turns a looked-up entity into form values. */
+  toValues: (result: LookupEntity) => Values;
+  toSummary: (values: Values) => { title: string; details: string[]; imageUrl?: string };
+}): { available: boolean; dialog: LookupDialogProps | undefined } {
+  const { available, itemLabel, lookup, toValues, toSummary } = options;
+  if (!lookup) return { available, dialog: undefined };
+  const resultValues = lookup.status === 'results' ? lookup.results.map(toValues) : [];
+  return {
+    available,
+    dialog: {
+      itemLabel,
+      status: lookup.status,
+      message: lookup.status === 'error' ? lookup.message : undefined,
+      results: resultValues.map(toSummary),
+      resultsField: LOOKUP_RESULTS_FIELD,
+      resultsValue: JSON.stringify(resultValues),
+      returnFocusId: 'title',
+    },
+  };
+}
+
+/** The submit button's `intent` (`save` when none was sent) and whether "remove the current image" is ticked. */
+export function readEditSubmission(formData: FormData): { intent: string; removeImage: boolean } {
+  const intent = formData.get('intent');
+  return { intent: typeof intent === 'string' ? intent : 'save', removeImage: formData.get('removeImage') !== null };
 }

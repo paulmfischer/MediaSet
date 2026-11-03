@@ -9,6 +9,8 @@ interface ImageInputProps {
   imageUrl: string;
   /** Offer a "remove" checkbox (an item that already has an image). */
   allowRemove?: boolean;
+  /** The remove checkbox starts ticked, so it survives a lookup re-render. */
+  removeImage?: boolean | undefined;
   /** Validation messages for the `coverImage` and `imageUrl` fields. */
   errors: { coverImage?: string | undefined; imageUrl?: string | undefined };
 }
@@ -28,6 +30,8 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
   let fileName = '';
   let objectUrl = '';
   let failed = false;
+  // Controlled, so a re-render keeps what was ticked; it starts from the server's value.
+  let remove = handle.props.removeImage ?? false;
 
   handle.signal.addEventListener('abort', () => {
     clearTimeout(previewTimer);
@@ -144,7 +148,16 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
         </div>
         {allowRemove ? (
           <label class="flex items-center gap-2 text-sm text-gray-300">
-            <input type="checkbox" name="removeImage" /> Remove the current image
+            <input
+              type="checkbox"
+              name="removeImage"
+              checked={remove}
+              mix={on('change', (event) => {
+                remove = event.currentTarget.checked;
+                handle.update();
+              })}
+            />{' '}
+            Remove the current image
           </label>
         ) : null}
       </fieldset>

@@ -31,6 +31,8 @@ interface GameFormPageProps {
   optionsUnavailable?: boolean;
   /** Browser URL of the game's saved cover, when editing a game that has one. */
   existingImageSrc?: string | undefined;
+  /** The "remove the current image" box starts ticked (a re-render after it was ticked). */
+  removeImage?: boolean | undefined;
   /** Metadata lookup: the form offers it when `available`, and shows `dialog` while results are open. */
   lookup?: { available: boolean; dialog?: LookupDialogProps | undefined } | undefined;
   /**
@@ -65,6 +67,7 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
       options,
       optionsUnavailable,
       existingImageSrc,
+      removeImage,
       lookup,
       formKey,
     } = handle.props;
@@ -220,6 +223,7 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
             existingSrc={existingImageSrc}
             imageUrl={values.imageUrl}
             allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
             errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
           />
           <div class="flex gap-2 justify-end">
