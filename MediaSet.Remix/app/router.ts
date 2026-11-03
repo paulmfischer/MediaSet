@@ -22,6 +22,8 @@ import entityListsController from './actions/entity/controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
 import { renderError, type ErrorContext } from './actions/render-error.tsx';
 import { assets } from './assets.ts';
+import { requestContext } from './middleware/request-context.ts';
+import { securityHeaders, type SecurityHeadersOptions } from './middleware/security-headers.ts';
 import { routes } from './routes.ts';
 import { serverLogger } from './utils/serverLogger.ts';
 
@@ -42,17 +44,43 @@ export const errorPages: Middleware = async (context, next) => {
   }
 };
 
-export const router = createRouter({
-  middleware: [
-    compression(),
-    staticFiles('./public', { index: false }),
-    render({ assets }),
-    errorPages,
-    boundedFormData(),
-  ],
-  // Paths no route matches, including unknown collections, get the shared 404 page.
-  defaultHandler: (context) => renderError(context, 404),
-});
+export function createAppRouter(options: SecurityHeadersOptions = {}) {
+  const router = createRouter({
+    middleware: [
+      // First, so static files and error pages get the headers and every API call a trace context.
+      securityHeaders(options),
+      requestContext(),
+      compression(),
+      staticFiles('./public', { index: false }),
+      render({ assets }),
+      errorPages,
+      boundedFormData(),
+    ],
+    // Paths no route matches, including unknown collections, get the shared 404 page.
+    defaultHandler: (context) => renderError(context, 404),
+  });
+
+  router.map(routes, controller);
+  router.map(routes.entityLists, entityListsController);
+  router.map(routes.entityDetail, entityDetailController);
+  router.map(routes.entityAdd.books, entityAddController);
+  router.map(routes.entityEdit.books, entityEditController);
+  router.map(routes.entityDelete.books, entityDeleteController);
+  router.map(routes.entityAdd.movies, entityAddMovieController);
+  router.map(routes.entityEdit.movies, entityEditMovieController);
+  router.map(routes.entityDelete.movies, entityDeleteMovieController);
+  router.map(routes.entityAdd.games, entityAddGameController);
+  router.map(routes.entityEdit.games, entityEditGameController);
+  router.map(routes.entityDelete.games, entityDeleteGameController);
+  router.map(routes.entityAdd.musics, entityAddMusicController);
+  router.map(routes.entityEdit.musics, entityEditMusicController);
+  router.map(routes.entityDelete.musics, entityDeleteMusicController);
+  router.map(routes.imageStats, imageStatsController);
+
+  return router;
+}
+
+export const router = createAppRouter();
 
 export type AppContext = RouterContext<typeof router>;
 
@@ -61,20 +89,3 @@ declare module 'remix' {
     context: AppContext;
   }
 }
-
-router.map(routes, controller);
-router.map(routes.entityLists, entityListsController);
-router.map(routes.entityDetail, entityDetailController);
-router.map(routes.entityAdd.books, entityAddController);
-router.map(routes.entityEdit.books, entityEditController);
-router.map(routes.entityDelete.books, entityDeleteController);
-router.map(routes.entityAdd.movies, entityAddMovieController);
-router.map(routes.entityEdit.movies, entityEditMovieController);
-router.map(routes.entityDelete.movies, entityDeleteMovieController);
-router.map(routes.entityAdd.games, entityAddGameController);
-router.map(routes.entityEdit.games, entityEditGameController);
-router.map(routes.entityDelete.games, entityDeleteGameController);
-router.map(routes.entityAdd.musics, entityAddMusicController);
-router.map(routes.entityEdit.musics, entityEditMusicController);
-router.map(routes.entityDelete.musics, entityDeleteMusicController);
-router.map(routes.imageStats, imageStatsController);
