@@ -28,6 +28,13 @@ function generateRandomHex(length: number): string {
  * - spanId: 16 hex characters (64-bit)
  * - traceFlags: 2 hex characters (01 for sampled/recorded, 00 for not sampled)
  */
+export function createRequestContext(): RequestContext {
+  const traceId = generateRandomHex(32); // 128-bit trace ID
+  const spanId = generateRandomHex(16); // 64-bit span ID
+  const traceparent = `00-${traceId}-${spanId}-01`; // 01 = sampled/recorded
+  return { traceId, spanId, traceparent };
+}
+
 export function initializeRequestContext(): RequestContext {
   // Return existing context if already initialized
   const existingContext = requestContextStorage.getStore();
@@ -35,11 +42,7 @@ export function initializeRequestContext(): RequestContext {
     return existingContext;
   }
 
-  const traceId = generateRandomHex(32); // 128-bit trace ID
-  const spanId = generateRandomHex(16); // 64-bit span ID
-  const traceparent = `00-${traceId}-${spanId}-01`; // 01 = sampled/recorded
-
-  const context: RequestContext = { traceId, spanId, traceparent };
+  const context = createRequestContext();
   requestContextStorage.enterWith(context);
   return context;
 }
