@@ -7,22 +7,10 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { DeletePage } from '../../../ui/entity/delete/delete-page.tsx';
-import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string) {
-  return context.render(
-    <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-      <UnavailablePage
-        heading={heading}
-        message={message}
-        backHref={routes.entityLists.books.href()}
-        backLabel="Back to Books"
-      />
-    </Document>,
-    { status }
-  );
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.books.href(), 'Back to Books');
 
 const notFound = (context: AppContext) =>
   renderUnavailable(context, 404, 'Book not found', "We couldn't find that book.");
@@ -55,7 +43,8 @@ export default createController(routes.entityDelete.books, {
           context,
           500,
           "Couldn't load this book",
-          'Something went wrong while loading it. Please try again.'
+          'Something went wrong while loading it. Please try again.',
+          error
         );
       }
     },

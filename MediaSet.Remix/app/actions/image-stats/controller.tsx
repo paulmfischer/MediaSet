@@ -6,10 +6,10 @@ import { getImageStats, type ImageStats } from '../../api/image-stats-data.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
-import { UnavailablePage } from '../../ui/entity/unavailable-page.tsx';
 import { ENTITY_ENUMS, isEntityType } from '../../ui/image-stats/format.ts';
 import { ImageStatsPage } from '../../ui/image-stats/image-stats-page.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
+import { renderError } from '../render-error.tsx';
 
 const TITLE = 'Image Statistics | MediaSet';
 const DESCRIPTION = 'Statistics about stored cover images';
@@ -35,18 +35,14 @@ function renderPage(context: AppContext, stats: ImageStats | null, error?: strin
   );
 }
 
-function renderUnavailable(context: AppContext) {
-  return context.render(
-    <Document path={context.url.pathname} title={TITLE}>
-      <UnavailablePage
-        heading="Couldn't load image statistics"
-        message="Something went wrong while loading them. Please try again."
-        backHref={routes.home.href()}
-        backLabel="Back to Home"
-      />
-    </Document>,
-    { status: 500 }
-  );
+function renderUnavailable(context: AppContext, error?: unknown) {
+  return renderError(context, 500, error, {
+    heading: "Couldn't load image statistics",
+    message: 'Something went wrong while loading them. Please try again.',
+    title: 'Image Statistics',
+    backHref: routes.home.href(),
+    backLabel: 'Back to Home',
+  });
 }
 
 async function renderFormError(context: AppContext, message: string) {
@@ -55,23 +51,19 @@ async function renderFormError(context: AppContext, message: string) {
     stats = await getImageStats();
   } catch (error) {
     serverLogger.error('Failed to load image statistics', error, { operation: 'imageStats' });
-    return renderUnavailable(context);
+    return renderUnavailable(context, error);
   }
   return renderPage(context, stats, message, 400);
 }
 
 function renderUnavailableNotFound(context: AppContext) {
-  return context.render(
-    <Document path={context.url.pathname} title={TITLE}>
-      <UnavailablePage
-        heading="Unknown media type"
-        message="That media type isn't supported."
-        backHref={routes.imageStats.index.href()}
-        backLabel="Back to Image Statistics"
-      />
-    </Document>,
-    { status: 404 }
-  );
+  return renderError(context, 404, undefined, {
+    heading: 'Unknown media type',
+    message: "That media type isn't supported.",
+    title: 'Image Statistics',
+    backHref: routes.imageStats.index.href(),
+    backLabel: 'Back to Image Statistics',
+  });
 }
 
 export default createController(routes.imageStats, {
@@ -82,7 +74,7 @@ export default createController(routes.imageStats, {
         stats = await getImageStats();
       } catch (error) {
         serverLogger.error('Failed to load image statistics', error, { operation: 'imageStats' });
-        return renderUnavailable(context);
+        return renderUnavailable(context, error);
       }
       return renderPage(context, stats, undefined, 200, context.url.searchParams.get('tab') ?? undefined);
     },
@@ -111,7 +103,7 @@ export default createController(routes.imageStats, {
         }
       } catch (error) {
         serverLogger.error('Image statistics action failed', error, { operation: 'imageStatsAction' });
-        return renderUnavailable(context);
+        return renderUnavailable(context, error);
       }
       return back;
     },

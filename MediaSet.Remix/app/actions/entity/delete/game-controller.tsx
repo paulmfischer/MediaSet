@@ -7,22 +7,10 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { DeletePage } from '../../../ui/entity/delete/delete-page.tsx';
-import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string) {
-  return context.render(
-    <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-      <UnavailablePage
-        heading={heading}
-        message={message}
-        backHref={routes.entityLists.games.href()}
-        backLabel="Back to Games"
-      />
-    </Document>,
-    { status }
-  );
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.games.href(), 'Back to Games');
 
 const notFound = (context: AppContext) =>
   renderUnavailable(context, 404, 'Game not found', "We couldn't find that game.");
@@ -55,7 +43,8 @@ export default createController(routes.entityDelete.games, {
           context,
           500,
           "Couldn't load this game",
-          'Something went wrong while loading it. Please try again.'
+          'Something went wrong while loading it. Please try again.',
+          error
         );
       }
     },

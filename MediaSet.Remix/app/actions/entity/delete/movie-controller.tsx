@@ -7,22 +7,10 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { DeletePage } from '../../../ui/entity/delete/delete-page.tsx';
-import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string) {
-  return context.render(
-    <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-      <UnavailablePage
-        heading={heading}
-        message={message}
-        backHref={routes.entityLists.movies.href()}
-        backLabel="Back to Movies"
-      />
-    </Document>,
-    { status }
-  );
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.movies.href(), 'Back to Movies');
 
 const notFound = (context: AppContext) =>
   renderUnavailable(context, 404, 'Movie not found', "We couldn't find that movie.");
@@ -55,7 +43,8 @@ export default createController(routes.entityDelete.movies, {
           context,
           500,
           "Couldn't load this movie",
-          'Something went wrong while loading it. Please try again.'
+          'Something went wrong while loading it. Please try again.',
+          error
         );
       }
     },

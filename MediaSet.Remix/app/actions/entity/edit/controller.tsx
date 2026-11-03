@@ -10,11 +10,11 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
-import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 import { BOOK_FIELDS, bookForm, toBookUpdate, toBookValues, type BookFormValues } from '../add/book-form.ts';
 import { resolveBookLookupIntent, toBookResultSummary } from '../add/book-lookup.ts';
 import { loadBookOptions } from '../book-options.ts';
@@ -22,19 +22,7 @@ import { loadBookOptions } from '../book-options.ts';
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string) {
-  return context.render(
-    <Document path={context.url.pathname} title={`${heading} | MediaSet`}>
-      <UnavailablePage
-        heading={heading}
-        message={message}
-        backHref={routes.entityLists.books.href()}
-        backLabel="Back to Books"
-      />
-    </Document>,
-    { status }
-  );
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.books.href(), 'Back to Books');
 
 async function renderEditForm(
   context: AppContext,
@@ -103,7 +91,8 @@ async function loadBook(context: AppContext, id: string): Promise<BookEntity | R
       context,
       500,
       "Couldn't load this book",
-      'Something went wrong while loading it. Please try again.'
+      'Something went wrong while loading it. Please try again.',
+      error
     );
   }
 }
