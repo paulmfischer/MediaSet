@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { clientApiUrl } from '../constants.server.ts';
 import { createAppRouter } from '../router.ts';
 
 const book = { id: 'b1', type: 'Books', title: 'Dune', coverImage: { filePath: 'books/b1.png' } };
@@ -67,10 +68,9 @@ describe('production Content-Security-Policy (e2e)', () => {
 
   it('loads a cover image from the client API origin with the CSP enforced', async (t) => {
     stubApi(t);
-    const apiOrigin = 'http://api.csp-test.example:7130';
-    const page = await t.serve(
-      await createTestServer(createAppRouter({ production: true, clientApiUrl: apiOrigin }).fetch)
-    );
+    // The page builds image URLs from the configured clientApiUrl (default in tests), a different origin.
+    const apiOrigin = clientApiUrl;
+    const page = await t.serve(await createTestServer(createAppRouter({ production: true }).fetch));
     const violations: string[] = [];
     page.on('console', (message) => {
       if (message.text().includes('Content Security Policy')) violations.push(message.text());
