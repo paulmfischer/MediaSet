@@ -1,50 +1,41 @@
-# Build stage
+# Build stage: install all dependencies and generate the stylesheet (public/app.css)
 FROM node:24.22.1-alpine AS build
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install all dependencies (including dev dependencies needed for build)
 RUN npm ci && \
     npm cache clean --force
 
-# Copy source code
 COPY . .
-
-# Build argument for versioning - must match what's passed from CI/CD
-ARG VITE_APP_VERSION=0.0.0-local
-ENV VITE_APP_VERSION=${VITE_APP_VERSION}
-
-# Build the application
 RUN npm run build
 
-# Runtime stage
+# Runtime stage: Node runs the TypeScript sources directly (no compiled output)
 FROM node:24.22.1-alpine AS runtime
 WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -S mediaset && adduser -S mediaset -G mediaset
 
-# Copy package files and install only production dependencies
-COPY package*.json ./
+# Own /app so the install and copies below need no recursive chown layer
+RUN chown mediaset:mediaset /app
+USER mediaset
+
+COPY --chown=mediaset:mediaset package*.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 
-# Copy built application from build stage
-COPY --from=build /app/build ./build
-COPY --from=build /app/public ./public
+COPY --from=build --chown=mediaset:mediaset /app/server.ts /app/tsconfig.json ./
+COPY --from=build --chown=mediaset:mediaset /app/app ./app
+COPY --from=build --chown=mediaset:mediaset /app/public ./public
 
-# Set ownership
-RUN chown -R mediaset:mediaset /app
-
-# Switch to non-root user
-USER mediaset
-
-# Expose port
 EXPOSE 3000
 
-# Set environment variables
 ENV NODE_ENV=production
 
-CMD ["npm", "run", "start"]
+# Footer version, read at run time. Pass --build-arg APP_VERSION=x.y.z to bake it into the image;
+# a container can override it with an APP_VERSION environment variable.
+ARG APP_VERSION=0.0.0-local
+ENV APP_VERSION=${APP_VERSION}
+
+# Run node directly (not through npm) so SIGTERM from `docker stop` reaches the server.
+CMD ["node", "--import", "remix/node-tsx", "server.ts"]

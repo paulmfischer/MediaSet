@@ -53,7 +53,7 @@ jobs:
           file: MediaSet.Remix/Dockerfile
           platforms: linux/amd64
           build-args: |
-            VITE_APP_VERSION=${{ steps.version.outputs.version }}
+            APP_VERSION=${{ steps.version.outputs.version }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
