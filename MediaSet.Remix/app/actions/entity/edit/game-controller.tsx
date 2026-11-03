@@ -10,11 +10,11 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { GameFormPage } from '../../../ui/entity/add/game-form-page.tsx';
-import { renderError } from '../../render-error.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 import { GAME_FIELDS, gameForm, toGameUpdate, toGameValues, type GameFormValues } from '../add/game-form.ts';
 import { resolveGameLookupIntent, toGameResultSummary } from '../add/game-lookup.ts';
 import { loadGameOptions } from '../game-options.ts';
@@ -22,14 +22,7 @@ import { loadGameOptions } from '../game-options.ts';
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string, error?: unknown) {
-  return renderError(context, status, error, {
-    heading,
-    message,
-    backHref: routes.entityLists.games.href(),
-    backLabel: 'Back to Games',
-  });
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.games.href(), 'Back to Games');
 
 async function renderEditForm(
   context: AppContext,

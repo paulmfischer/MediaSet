@@ -10,7 +10,8 @@ import { createRouter } from 'remix/router';
 import { render } from 'remix/middleware/render';
 import { assets } from './assets.ts';
 import { Document } from './ui/document.tsx';
-import { router } from './router.ts';
+import { errorPages, router } from './router.ts';
+import { renderError } from './actions/render-error.tsx';
 import { routes } from './routes.ts';
 import { serverLogger } from './utils/serverLogger.ts';
 import { createRequestHandler, readHttpsOptions, readPort } from './server-config.ts';
@@ -556,12 +557,18 @@ describe('error pages', () => {
     assert.doesNotMatch(html, /secret-connection-detail/);
   });
 
-  it('renders the 404 page when an action throws a 404 response', async () => {
-    router.get('/__test/throws-404', () => {
-      throw new Response('missing', { status: 404 });
-    });
+  // Routes that throw, on a router with the same error middleware, so they never join the app router.
+  const throwing = createRouter({ middleware: [render({ assets }), errorPages] });
+  throwing.get('/throws-404', () => {
+    throw new Response('missing', { status: 404 });
+  });
+  throwing.get('/throws-error', () => {
+    throw new Error('secret-boom');
+  });
+  const getThrowing = (path: string) => throwing.fetch(new URL(path, 'http://localhost'));
 
-    const response = await get('/__test/throws-404');
+  it('renders the 404 page when an action throws a 404 response', async () => {
+    const response = await getThrowing('/throws-404');
     const html = await response.text();
 
     assert.equal(response.status, 404);
@@ -572,11 +579,8 @@ describe('error pages', () => {
   it('renders the 500 page with the logged error for any other thrown value', async (t) => {
     setDetails(t, undefined);
     const logged = captureErrors(t);
-    router.get('/__test/throws-error', () => {
-      throw new Error('secret-boom');
-    });
 
-    const response = await get('/__test/throws-error');
+    const response = await getThrowing('/throws-error');
     const html = await response.text();
 
     assert.equal(response.status, 500);
@@ -584,6 +588,72 @@ describe('error pages', () => {
     assert.doesNotMatch(html, /secret-boom/);
     assert.equal(logged.length, 1);
     assert.equal((logged[0][1] as Error).message, 'secret-boom');
+  });
+
+  it('answers a plain-text 500 when the error page itself cannot render', async (t) => {
+    const logged = captureErrors(t);
+    const context = {
+      url: new URL('http://localhost/x'),
+      render: () => {
+        throw new Error('layout broke');
+      },
+    };
+
+    const response = await renderError(context, 500, new Error('original'));
+
+    assert.equal(response.status, 500);
+    assert.match(response.headers.get('Content-Type') ?? '', /text\/plain/);
+    assert.equal(await response.text(), 'Internal Server Error');
+    assert.equal(logged.length, 1);
+  });
+
+  it('shows the error details on the dashboard, an item page and image statistics when on', async (t) => {
+    setDetails(t, 'true');
+    captureErrors(t);
+    failApi(t, new TypeError('secret-connection-detail'));
+
+    for (const path of ['/', '/books/b1', '/image-stats']) {
+      const response = await get(path);
+      const html = await response.text();
+
+      assert.equal(response.status, 500, path);
+      assert.match(html, /data-testid="error-details"/, path);
+      assert.match(html, /secret-connection-detail/, path);
+    }
+  });
+
+  it('hides the error details on the dashboard, an item page and image statistics when off', async (t) => {
+    setDetails(t, undefined);
+    captureErrors(t);
+    failApi(t, new TypeError('secret-connection-detail'));
+
+    for (const path of ['/', '/books/b1', '/image-stats']) {
+      const response = await get(path);
+      const html = await response.text();
+
+      assert.equal(response.status, 500, path);
+      assert.doesNotMatch(html, /secret-connection-detail/, path);
+      assert.doesNotMatch(html, /data-testid="error-details"/, path);
+    }
+  });
+
+  it('renders the upload-too-large page in the layout with a link back to the form', async (t) => {
+    setDetails(t, undefined);
+    const body = new FormData();
+    body.set('title', 'Dune');
+    body.set('coverImage', new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'cover.png', { type: 'image/png' }));
+
+    const response = await router.fetch(
+      new Request(new URL('/books/add', 'http://localhost'), { method: 'POST', body })
+    );
+    const html = await response.text();
+
+    assert.equal(response.status, 413);
+    assert.equal(response.headers.get('connection'), 'close');
+    assert.match(html, /<title>Upload too large \| MediaSet<\/title>/);
+    assert.match(html, /<a href="\/books\/add">Back to the form<\/a>/);
+    assert.match(html, /<footer/);
+    assert.doesNotMatch(html, /data-testid="error-details"/);
   });
 });
 

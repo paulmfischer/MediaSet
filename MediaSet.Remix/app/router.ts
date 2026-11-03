@@ -20,14 +20,14 @@ import entityEditMovieController from './actions/entity/edit/movie-controller.ts
 import entityEditMusicController from './actions/entity/edit/music-controller.tsx';
 import entityListsController from './actions/entity/controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
-import { assets } from './assets.ts';
 import { renderError, type ErrorContext } from './actions/render-error.tsx';
+import { assets } from './assets.ts';
 import { routes } from './routes.ts';
 import { serverLogger } from './utils/serverLogger.ts';
 
 // Turns anything an action throws into a rendered error page: a thrown 404 Response is the shared
 // 404 page, everything else is logged and answered with the generic 500 page.
-const errorPages: Middleware = async (context, next) => {
+export const errorPages: Middleware = async (context, next) => {
   try {
     return await next();
   } catch (error) {

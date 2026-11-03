@@ -7,17 +7,10 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { DeletePage } from '../../../ui/entity/delete/delete-page.tsx';
-import { renderError } from '../../render-error.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string, error?: unknown) {
-  return renderError(context, status, error, {
-    heading,
-    message,
-    backHref: routes.entityLists.movies.href(),
-    backLabel: 'Back to Movies',
-  });
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.movies.href(), 'Back to Movies');
 
 const notFound = (context: AppContext) =>
   renderUnavailable(context, 404, 'Movie not found', "We couldn't find that movie.");

@@ -7,8 +7,8 @@ import { getClientConfig } from '../config.server.ts';
 import { routes } from '../routes.ts';
 import type { DashboardStats } from '../ui/dashboard/stats.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
-import { errorDetails } from '../ui/error-page.tsx';
 import { HomePage } from './home-page.tsx';
+import { errorDetails } from './render-error.tsx';
 
 export default createController(routes, {
   actions: {

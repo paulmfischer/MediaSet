@@ -1,10 +1,10 @@
 import type { Handle } from 'remix/component';
 
 import type { Integration } from '../api/integrations-data.ts';
+import { routes } from '../routes.ts';
 import { AttributionBadges } from '../ui/attribution-badges.tsx';
 import { Dashboard } from '../ui/dashboard/dashboard.tsx';
 import type { DashboardStats } from '../ui/dashboard/stats.ts';
-import { routes } from '../routes.ts';
 import { Document } from '../ui/document.tsx';
 import { ErrorPage } from '../ui/error-page.tsx';
 

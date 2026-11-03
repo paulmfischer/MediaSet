@@ -10,11 +10,11 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MusicFormPage } from '../../../ui/entity/add/music-form-page.tsx';
-import { renderError } from '../../render-error.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
+import { entityErrorPage } from '../../render-error.tsx';
 import { MUSIC_FIELDS, musicForm, toMusicUpdate, toMusicValues, type MusicFormValues } from '../add/music-form.ts';
 import { resolveMusicLookupIntent, toMusicResultSummary } from '../add/music-lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
@@ -22,14 +22,7 @@ import { loadMusicOptions } from '../music-options.ts';
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);
 
-function renderUnavailable(context: AppContext, status: number, heading: string, message: string, error?: unknown) {
-  return renderError(context, status, error, {
-    heading,
-    message,
-    backHref: routes.entityLists.musics.href(),
-    backLabel: 'Back to Music',
-  });
-}
+const renderUnavailable = entityErrorPage(routes.entityLists.musics.href(), 'Back to Music');
 
 async function renderEditForm(
   context: AppContext,

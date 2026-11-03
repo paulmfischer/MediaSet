@@ -6,11 +6,11 @@ import { clientApiUrl } from '../../constants.server.ts';
 import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { renderError } from '../render-error.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
 import { Document } from '../../ui/document.tsx';
 import { bookDetail, gameDetail, movieDetail, musicDetail, type DetailConfig } from '../../ui/entity/detail-config.ts';
 import { DetailPage } from '../../ui/entity/detail-page.tsx';
+import { renderError } from '../render-error.tsx';
 
 async function renderDetail<T extends BaseEntity>(context: AppContext, config: DetailConfig<T>, id: string) {
   const basePath = `/${config.entity.toLowerCase()}`;

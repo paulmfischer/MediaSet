@@ -1,7 +1,5 @@
 import type { Handle } from 'remix/component';
 
-import { getShowErrorDetails } from '../config.server.ts';
-
 interface ErrorPageProps {
   heading: string;
   message: string;
@@ -10,14 +8,6 @@ interface ErrorPageProps {
   backLabel: string;
   /** Message and stack of the error; only passed when the server allows showing them. */
   details?: string;
-}
-
-/** The text for the details block, or undefined unless SHOW_ERROR_DETAILS is on and there is an error. */
-export function errorDetails(error: unknown): string | undefined {
-  if (!getShowErrorDetails() || error === undefined || error === null) return undefined;
-  if (error instanceof Error) return error.stack ?? `${error.name}: ${error.message}`;
-  if (error instanceof Response) return `${error.status} ${error.statusText}`.trim();
-  return String(error);
 }
 
 // Shown in place of a page that is missing or cannot be loaded.

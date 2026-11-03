@@ -8,8 +8,8 @@ import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { ENTITY_ENUMS, isEntityType } from '../../ui/image-stats/format.ts';
 import { ImageStatsPage } from '../../ui/image-stats/image-stats-page.tsx';
-import { renderError } from '../render-error.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
+import { renderError } from '../render-error.tsx';
 
 const TITLE = 'Image Statistics | MediaSet';
 const DESCRIPTION = 'Statistics about stored cover images';
