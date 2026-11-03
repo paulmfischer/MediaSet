@@ -3,6 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity, updateEntity } from '../../../api/entity-data.ts';
+import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
 import { clientApiUrl } from '../../../constants.server.ts';
 import { Entity, type MovieEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
@@ -13,7 +14,9 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
+import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { MOVIE_FIELDS, movieForm, toMovieUpdate, toMovieValues, type MovieFormValues } from '../add/movie-form.ts';
+import { resolveMovieLookupIntent, toMovieResultSummary } from '../add/movie-lookup.ts';
 import { loadMovieOptions } from '../movie-options.ts';
 
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
@@ -37,10 +40,21 @@ async function renderEditForm(
   context: AppContext,
   id: string,
   movie: MovieEntity,
-  state: { values?: MovieFormValues; errors?: Record<string, string>; formError?: string; status?: number } = {}
+  state: {
+    values?: MovieFormValues;
+    errors?: Record<string, string>;
+    formError?: string;
+    status?: number;
+    /** The outcome of a lookup, shown in the results dialog. */
+    lookup?: LookupOutcome;
+    /** Makes the browser take `values` over what is typed in its inputs. */
+    formKey?: string;
+    /** The "remove the current image" box was ticked; kept across a re-render. */
+    removeImage?: boolean;
+  } = {}
 ) {
-  const { values = toMovieValues(movie), errors = {}, formError, status = 200 } = state;
-  const { options, unavailable } = await loadMovieOptions();
+  const { values = toMovieValues(movie), errors = {}, formError, status = 200, lookup, formKey, removeImage } = state;
+  const [{ options, unavailable }, capabilities] = await Promise.all([loadMovieOptions(), getLookupCapabilities()]);
   return context.render(
     <Document
       path={context.url.pathname}
@@ -56,6 +70,15 @@ async function renderEditForm(
         formError={formError}
         options={options}
         optionsUnavailable={unavailable}
+        formKey={formKey}
+        removeImage={removeImage}
+        lookup={buildLookupProps({
+          available: isBarcodeLookupAvailable(capabilities, Entity.Movies),
+          itemLabel: 'movie',
+          lookup,
+          toValues: (result) => toMovieValues(result as MovieEntity),
+          toSummary: toMovieResultSummary,
+        })}
         existingImageSrc={
           movie.coverImage
             ? `${clientApiUrl}/static/images/${movie.coverImage.filePath.split('/').map(encodeURIComponent).join('/')}`
@@ -96,6 +119,15 @@ export default createController(routes.entityEdit.movies, {
       const movie = await loadMovie(context, id);
       if (movie instanceof Response) return movie;
 
+      // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
+      const rawIntent = context.formData.get('intent');
+      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
+      const removeImage = context.formData.get('removeImage') !== null;
+      if (intent !== 'save') {
+        const state = await resolveMovieLookupIntent(context.formData, intent);
+        return renderEditForm(context, id, movie, { ...state, removeImage });
+      }
+
       const parsed = s.parseSafe(movieForm, context.formData);
       const image = readCoverImage(context.formData);
       if (!parsed.success || image.error) {
@@ -106,11 +138,12 @@ export default createController(routes.entityEdit.movies, {
             ...(parsed.success ? {} : fieldErrors(parsed.issues)),
           },
           status: 400,
+          removeImage,
         });
       }
 
       try {
-        const update = toMovieUpdate(movie, parsed.value, context.formData.get('removeImage') !== null);
+        const update = toMovieUpdate(movie, parsed.value, removeImage);
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete update.imageUrl;
@@ -126,12 +159,18 @@ export default createController(routes.entityEdit.movies, {
         const values = submittedValues(context.formData, MOVIE_FIELDS);
         // The API rejecting the movie (4xx) is the user's to fix and carries its reason; anything else is ours.
         if (isStatus(error, (status) => status >= 400 && status < 500)) {
-          return renderEditForm(context, id, movie, { values, formError: await error.text(), status: 400 });
+          return renderEditForm(context, id, movie, {
+            values,
+            formError: await error.text(),
+            status: 400,
+            removeImage,
+          });
         }
         return renderEditForm(context, id, movie, {
           values,
           formError: 'The movie could not be saved. Please try again.',
           status: 500,
+          removeImage,
         });
       }
       return redirect(routes.entityDetail.movies.href({ id }), 303);

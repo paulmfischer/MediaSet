@@ -67,3 +67,74 @@ describe('edit and delete book (e2e)', () => {
     assert.deepEqual(requests, ['PUT']);
   });
 });
+
+describe('edit book metadata lookup (e2e)', () => {
+  it('looks up on an edit form and applies a result into it, keeping the saved image and saving only on Save', async (t) => {
+    const original = globalThis.fetch;
+    const requests: Array<{ method: string; body: Record<string, unknown> }> = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      if (url.pathname.endsWith('/Books/b1')) {
+        if (request.method === 'PUT') {
+          requests.push({ method: 'PUT', body: (await request.json()) as Record<string, unknown> });
+          return new Response(null, { status: 204 });
+        }
+        return Response.json({
+          id: 'b1',
+          type: 'Books',
+          title: 'Dune',
+          subtitle: 'Kept subtitle',
+          coverImage: { filePath: 'books/b1.jpg' },
+        });
+      }
+      if (url.pathname.endsWith('/config/lookup-capabilities')) return Response.json({ supportsBookLookup: true });
+      // The match has no subtitle and no image, so those keep what the form had.
+      if (url.pathname.includes('/lookup/Books/')) {
+        return Response.json([
+          { title: 'Dune Messiah', authors: [{ name: 'Frank Herbert', url: '' }], numberOfPages: 331 },
+        ]);
+      }
+      return Response.json([]);
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    // The saved cover is served by the API in production; answer its request with a one-pixel image.
+    const pixel = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    await page.route('**/static/images/**', (route) => route.fulfill({ contentType: 'image/png', body: pixel }));
+    await page.goto('/books/b1/edit');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByLabel(/Remove the current image/).check();
+    await page.getByRole('button', { name: 'Look up by title' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Look up book' });
+    await dialog.waitFor();
+    assert.match(await dialog.innerText(), /Dune Messiah/);
+    await dialog.getByRole('button', { name: 'Use this result' }).click();
+    await dialog.waitFor({ state: 'detached' });
+
+    // The form is filled, the saved image is still shown and the remove box is still ticked; nothing was saved.
+    assert.equal(await page.locator('#title').inputValue(), 'Dune Messiah');
+    assert.equal(await page.getByLabel('Pages').inputValue(), '331');
+    assert.equal(await page.getByLabel('Subtitle').inputValue(), 'Kept subtitle');
+    assert.match((await page.getByRole('img', { name: 'Cover preview' }).getAttribute('src')) ?? '', /books\/b1\.jpg$/);
+    assert.match(await page.getByTestId('image-preview').innerText(), /Current cover image/);
+    assert.equal(await page.getByLabel(/Remove the current image/).isChecked(), true);
+    assert.equal(requests.length, 0);
+
+    await page.getByLabel(/Remove the current image/).uncheck();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForURL('**/books/b1');
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].body.title, 'Dune Messiah');
+    assert.equal(requests[0].body.pages, 331);
+    assert.deepEqual(requests[0].body.coverImage, { filePath: 'books/b1.jpg' });
+  });
+});

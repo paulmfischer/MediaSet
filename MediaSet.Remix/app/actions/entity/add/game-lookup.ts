@@ -1,6 +1,8 @@
 import { Entity, type IdentifierType } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
 import { GAME_FIELDS, type GameFormValues } from './game-form.ts';
+import { submittedValues } from '../../forms/form-schema.ts';
+import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
 /** The form field a lookup searches by: the title, or the barcode. */
 export type GameLookupField = 'title' | 'barcode';
@@ -53,4 +55,22 @@ export function applyGameResult(current: GameFormValues, result: Record<string, 
     if (list.length > 0) applied[name] = list.map((item) => item.trim());
   }
   return applied;
+}
+
+/** Handles this form's lookup intents (look up, apply a result, dismiss) for both the add and edit forms. */
+export function resolveGameLookupIntent(
+  formData: FormData,
+  intent: string
+): Promise<LookupIntentState<GameFormValues>> {
+  return resolveLookupIntent(formData, intent, {
+    entityType: Entity.Games,
+    readValues: (data) => submittedValues(data, GAME_FIELDS),
+    parseLookupIntent: parseGameLookupIntent,
+    toRequest: (field, values) => {
+      const request = toGameLookupRequest(field, values);
+      return request ? { request } : { missing: field };
+    },
+    missingLabels: { title: 'a title', barcode: 'a barcode' },
+    applyResult: applyGameResult,
+  });
 }

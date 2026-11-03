@@ -3,6 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity, updateEntity } from '../../../api/entity-data.ts';
+import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
 import { clientApiUrl } from '../../../constants.server.ts';
 import { Entity, type MusicEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
@@ -13,7 +14,9 @@ import { UnavailablePage } from '../../../ui/entity/unavailable-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
+import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { MUSIC_FIELDS, musicForm, toMusicUpdate, toMusicValues, type MusicFormValues } from '../add/music-form.ts';
+import { resolveMusicLookupIntent, toMusicResultSummary } from '../add/music-lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
 
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
@@ -37,10 +40,21 @@ async function renderEditForm(
   context: AppContext,
   id: string,
   album: MusicEntity,
-  state: { values?: MusicFormValues; errors?: Record<string, string>; formError?: string; status?: number } = {}
+  state: {
+    values?: MusicFormValues;
+    errors?: Record<string, string>;
+    formError?: string;
+    status?: number;
+    /** The outcome of a lookup, shown in the results dialog. */
+    lookup?: LookupOutcome;
+    /** Makes the browser take `values` over what is typed in its inputs. */
+    formKey?: string;
+    /** The "remove the current image" box was ticked; kept across a re-render. */
+    removeImage?: boolean;
+  } = {}
 ) {
-  const { values = toMusicValues(album), errors = {}, formError, status = 200 } = state;
-  const { options, unavailable } = await loadMusicOptions();
+  const { values = toMusicValues(album), errors = {}, formError, status = 200, lookup, formKey, removeImage } = state;
+  const [{ options, unavailable }, capabilities] = await Promise.all([loadMusicOptions(), getLookupCapabilities()]);
   return context.render(
     <Document
       path={context.url.pathname}
@@ -56,6 +70,15 @@ async function renderEditForm(
         formError={formError}
         options={options}
         optionsUnavailable={unavailable}
+        formKey={formKey}
+        removeImage={removeImage}
+        lookup={buildLookupProps({
+          available: isBarcodeLookupAvailable(capabilities, Entity.Musics),
+          itemLabel: 'album',
+          lookup,
+          toValues: (result) => toMusicValues(result as MusicEntity),
+          toSummary: toMusicResultSummary,
+        })}
         existingImageSrc={
           album.coverImage
             ? `${clientApiUrl}/static/images/${album.coverImage.filePath.split('/').map(encodeURIComponent).join('/')}`
@@ -96,6 +119,15 @@ export default createController(routes.entityEdit.musics, {
       const album = await loadMusic(context, id);
       if (album instanceof Response) return album;
 
+      // Lookup, apply and dismiss re-render the form with what the user has entered; they never save.
+      const rawIntent = context.formData.get('intent');
+      const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
+      const removeImage = context.formData.get('removeImage') !== null;
+      if (intent !== 'save') {
+        const state = await resolveMusicLookupIntent(context.formData, intent);
+        return renderEditForm(context, id, album, { ...state, removeImage });
+      }
+
       const parsed = s.parseSafe(musicForm, context.formData);
       const image = readCoverImage(context.formData);
       if (!parsed.success || image.error) {
@@ -106,6 +138,7 @@ export default createController(routes.entityEdit.musics, {
             ...(parsed.success ? {} : fieldErrors(parsed.issues)),
           },
           status: 400,
+          removeImage,
         });
       }
 
@@ -126,12 +159,18 @@ export default createController(routes.entityEdit.musics, {
         const values = submittedValues(context.formData, MUSIC_FIELDS);
         // The API rejecting the album (4xx) is the user's to fix and carries its reason; anything else is ours.
         if (isStatus(error, (status) => status >= 400 && status < 500)) {
-          return renderEditForm(context, id, album, { values, formError: await error.text(), status: 400 });
+          return renderEditForm(context, id, album, {
+            values,
+            formError: await error.text(),
+            status: 400,
+            removeImage,
+          });
         }
         return renderEditForm(context, id, album, {
           values,
           formError: 'The album could not be saved. Please try again.',
           status: 500,
+          removeImage,
         });
       }
       return redirect(routes.entityDetail.musics.href({ id }), 303);

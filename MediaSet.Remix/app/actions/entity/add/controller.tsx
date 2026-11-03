@@ -12,13 +12,7 @@ import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import {
-  LOOKUP_RESULTS_FIELD,
-  parseApplyIntent,
-  parseLookupResults,
-  runLookup,
-  type LookupOutcome,
-} from '../../forms/lookup.ts';
+import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadBookOptions } from '../book-options.ts';
 import {
   BOOK_FIELDS,
@@ -28,9 +22,7 @@ import {
   toBookValues,
   type BookFormValues,
 } from './book-form.ts';
-import { applyBookResult, parseLookupIntent, toBookLookupRequest, toBookResultSummary } from './book-lookup.ts';
-
-type BookEntityResult = Extract<LookupOutcome, { status: 'results' }>['results'][number];
+import { resolveBookLookupIntent, toBookResultSummary } from './book-lookup.ts';
 
 async function renderBookForm(
   context: AppContext,
@@ -47,9 +39,6 @@ async function renderBookForm(
 ) {
   const { values = emptyBookValues, errors = {}, formError, status = 200, lookup, formKey } = state;
   const [{ options, unavailable }, capabilities] = await Promise.all([loadBookOptions(), getLookupCapabilities()]);
-  // The results travel back with the apply submission as form values, so applying needs no second lookup.
-  const resultValues =
-    lookup?.status === 'results' ? lookup.results.map((result) => toBookValues(result as BookEntityResult)) : [];
   return context.render(
     <Document path={context.url.pathname} title="Add Book | MediaSet" description="Add a book to your collection">
       <BookFormPage
@@ -62,20 +51,13 @@ async function renderBookForm(
         options={options}
         optionsUnavailable={unavailable}
         formKey={formKey}
-        lookup={{
+        lookup={buildLookupProps({
           available: isBarcodeLookupAvailable(capabilities, Entity.Books),
-          dialog: lookup
-            ? {
-                itemLabel: 'book',
-                status: lookup.status,
-                message: lookup.status === 'error' ? lookup.message : undefined,
-                results: resultValues.map(toBookResultSummary),
-                resultsField: LOOKUP_RESULTS_FIELD,
-                resultsValue: JSON.stringify(resultValues),
-                returnFocusId: 'title',
-              }
-            : undefined,
-        }}
+          itemLabel: 'book',
+          lookup,
+          toValues: (result) => toBookValues(result as BookEntity),
+          toSummary: toBookResultSummary,
+        })}
       />
     </Document>,
     { status }
@@ -84,35 +66,8 @@ async function renderBookForm(
 
 // The form's other submit buttons: look metadata up, apply a result to the form, or close the dialog.
 // None of them saves; each re-renders the form with what the user has entered so far.
-async function handleLookupIntent(context: AppContext, intent: string) {
-  const values = submittedValues(context.formData, BOOK_FIELDS);
-
-  const field = parseLookupIntent(intent);
-  if (field) {
-    const request = toBookLookupRequest(field, values);
-    if (!request) {
-      const label = field === 'isbn' ? 'an ISBN' : 'a title';
-      return renderBookForm(context, { values, errors: { [field]: `Enter ${label} to look up` }, status: 400 });
-    }
-    const lookup = await runLookup(Entity.Books, request.identifierType, request.searchParams);
-    return renderBookForm(context, { values, lookup });
-  }
-
-  const index = parseApplyIntent(intent);
-  if (index !== undefined) {
-    const result = parseLookupResults(context.formData.get(LOOKUP_RESULTS_FIELD))[index];
-    if (!result) {
-      return renderBookForm(context, {
-        values,
-        formError: 'That result is no longer available. Look it up again.',
-        status: 400,
-      });
-    }
-    return renderBookForm(context, { values: applyBookResult(values, result), formKey: crypto.randomUUID() });
-  }
-
-  // Closing the dialog, or an intent this form doesn't know.
-  return renderBookForm(context, { values });
+function handleLookupIntent(context: AppContext, intent: string) {
+  return resolveBookLookupIntent(context.formData, intent).then((state) => renderBookForm(context, state));
 }
 
 export default createController(routes.entityAdd.books, {

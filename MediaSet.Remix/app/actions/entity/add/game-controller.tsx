@@ -12,13 +12,7 @@ import { GameFormPage } from '../../../ui/entity/add/game-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
-import {
-  LOOKUP_RESULTS_FIELD,
-  parseApplyIntent,
-  parseLookupResults,
-  runLookup,
-  type LookupOutcome,
-} from '../../forms/lookup.ts';
+import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadGameOptions } from '../game-options.ts';
 import {
   GAME_FIELDS,
@@ -28,9 +22,7 @@ import {
   toGameValues,
   type GameFormValues,
 } from './game-form.ts';
-import { applyGameResult, parseGameLookupIntent, toGameLookupRequest, toGameResultSummary } from './game-lookup.ts';
-
-type GameEntityResult = Extract<LookupOutcome, { status: 'results' }>['results'][number];
+import { resolveGameLookupIntent, toGameResultSummary } from './game-lookup.ts';
 
 async function renderGameForm(
   context: AppContext,
@@ -47,9 +39,6 @@ async function renderGameForm(
 ) {
   const { values = emptyGameValues, errors = {}, formError, status = 200, lookup, formKey } = state;
   const [{ options, unavailable }, capabilities] = await Promise.all([loadGameOptions(), getLookupCapabilities()]);
-  // The results travel back with the apply submission as form values, so applying needs no second lookup.
-  const resultValues =
-    lookup?.status === 'results' ? lookup.results.map((result) => toGameValues(result as GameEntityResult)) : [];
   return context.render(
     <Document path={context.url.pathname} title="Add Game | MediaSet" description="Add a game to your collection">
       <GameFormPage
@@ -62,20 +51,13 @@ async function renderGameForm(
         options={options}
         optionsUnavailable={unavailable}
         formKey={formKey}
-        lookup={{
+        lookup={buildLookupProps({
           available: isBarcodeLookupAvailable(capabilities, Entity.Games),
-          dialog: lookup
-            ? {
-                itemLabel: 'game',
-                status: lookup.status,
-                message: lookup.status === 'error' ? lookup.message : undefined,
-                results: resultValues.map(toGameResultSummary),
-                resultsField: LOOKUP_RESULTS_FIELD,
-                resultsValue: JSON.stringify(resultValues),
-                returnFocusId: 'title',
-              }
-            : undefined,
-        }}
+          itemLabel: 'game',
+          lookup,
+          toValues: (result) => toGameValues(result as GameEntity),
+          toSummary: toGameResultSummary,
+        })}
       />
     </Document>,
     { status }
@@ -84,35 +66,8 @@ async function renderGameForm(
 
 // The form's other submit buttons: look metadata up, apply a result to the form, or close the dialog.
 // None of them saves; each re-renders the form with what the user has entered so far.
-async function handleLookupIntent(context: AppContext, intent: string) {
-  const values = submittedValues(context.formData, GAME_FIELDS);
-
-  const field = parseGameLookupIntent(intent);
-  if (field) {
-    const request = toGameLookupRequest(field, values);
-    if (!request) {
-      const label = field === 'barcode' ? 'a barcode' : 'a title';
-      return renderGameForm(context, { values, errors: { [field]: `Enter ${label} to look up` }, status: 400 });
-    }
-    const lookup = await runLookup(Entity.Games, request.identifierType, request.searchParams);
-    return renderGameForm(context, { values, lookup });
-  }
-
-  const index = parseApplyIntent(intent);
-  if (index !== undefined) {
-    const result = parseLookupResults(context.formData.get(LOOKUP_RESULTS_FIELD))[index];
-    if (!result) {
-      return renderGameForm(context, {
-        values,
-        formError: 'That result is no longer available. Look it up again.',
-        status: 400,
-      });
-    }
-    return renderGameForm(context, { values: applyGameResult(values, result), formKey: crypto.randomUUID() });
-  }
-
-  // Closing the dialog, or an intent this form doesn't know.
-  return renderGameForm(context, { values });
+function handleLookupIntent(context: AppContext, intent: string) {
+  return resolveGameLookupIntent(context.formData, intent).then((state) => renderGameForm(context, state));
 }
 
 export default createController(routes.entityAdd.games, {

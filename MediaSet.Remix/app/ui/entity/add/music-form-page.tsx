@@ -30,6 +30,8 @@ interface MusicFormPageProps {
   optionsUnavailable?: boolean;
   /** Browser URL of the album's saved cover, when editing an album that has one. */
   existingImageSrc?: string | undefined;
+  /** The "remove the current image" box starts ticked (a re-render after it was ticked). */
+  removeImage?: boolean | undefined;
   /** Metadata lookup: the form offers it when `available`, and shows `dialog` while results are open. */
   lookup?: { available: boolean; dialog?: LookupDialogProps | undefined } | undefined;
   /**
@@ -64,6 +66,7 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
       options,
       optionsUnavailable,
       existingImageSrc,
+      removeImage,
       lookup,
       formKey,
     } = handle.props;
@@ -248,6 +251,7 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
             existingSrc={existingImageSrc}
             imageUrl={values.imageUrl}
             allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
             errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
           />
           <div class="flex gap-2 justify-end">

@@ -29,6 +29,8 @@ interface MovieFormPageProps {
   optionsUnavailable?: boolean;
   /** Browser URL of the movie's saved poster, when editing a movie that has one. */
   existingImageSrc?: string | undefined;
+  /** The "remove the current image" box starts ticked (a re-render after it was ticked). */
+  removeImage?: boolean | undefined;
   /** Metadata lookup: the form offers it when `available`, and shows `dialog` while results are open. */
   lookup?: { available: boolean; dialog?: LookupDialogProps | undefined } | undefined;
   /**
@@ -63,6 +65,7 @@ export function MovieFormPage(handle: Handle<MovieFormPageProps>) {
       options,
       optionsUnavailable,
       existingImageSrc,
+      removeImage,
       lookup,
       formKey,
     } = handle.props;
@@ -210,6 +213,7 @@ export function MovieFormPage(handle: Handle<MovieFormPageProps>) {
             existingSrc={existingImageSrc}
             imageUrl={values.imageUrl}
             allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
             errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
           />
           <div class="flex gap-2 justify-end">
