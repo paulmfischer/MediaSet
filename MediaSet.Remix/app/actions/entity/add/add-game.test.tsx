@@ -207,7 +207,9 @@ describe('add game metadata lookup', () => {
     assert.equal(response.status, 400);
     const html = await response.text();
     assert.match(html, /Enter a barcode to look up/);
-    assert.match(html, /name="barcode"[^>]*aria-invalid[^>]*aria-describedby="barcode-error"/);
+    const barcodeInput = html.match(/<input[^>]*name="barcode"[^>]*>/)?.[0] ?? '';
+    assert.match(barcodeInput, /aria-invalid/);
+    assert.match(barcodeInput, /aria-describedby="barcode-error"/);
     assert.equal(lookups.length, 0);
   });
 
