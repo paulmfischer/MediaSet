@@ -29,8 +29,8 @@ export function originOf(url: string | undefined): string | null {
 // lacks multiple import maps it links modules as blob: URLs and parses them with a WebAssembly lexer. Without
 // them hydration logs CSP violations or fails. The barcode scanner needs neither (@zxing/library is a same-origin
 // dynamic import covered by 'self'; no workers or wasm; the preview is a MediaStream), so there is no worker-src
-// (it falls back to default-src 'self') and 'unsafe-eval' stays off. app/e2e/csp.test.e2e.ts and
-// app/e2e/barcode-scanner.test.e2e.ts run the app under this policy and fail if a directive is removed.
+// (workers would fall back through child-src to script-src, which includes blob:) and
+// 'unsafe-eval' stays off. app/e2e/csp.test.e2e.ts and app/e2e/barcode-scanner.test.e2e.ts run the app under this policy and fail if a directive is removed.
 export function buildContentSecurityPolicy(clientApiUrl?: string): string {
   const apiOrigin = originOf(clientApiUrl);
   return [

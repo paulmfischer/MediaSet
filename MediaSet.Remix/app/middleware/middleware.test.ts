@@ -53,12 +53,23 @@ describe('securityHeaders middleware', () => {
     }
   });
 
-  it('should allow blob: and WebAssembly compilation for the import-map polyfill, no workers, and the hardening directives in the production policy', async () => {
+  it('should allow blob: and WebAssembly compilation but not unsafe-eval in script-src when in production', async () => {
     const policy = await cspFor('http://api.example:8080');
     assert.deepEqual(policy.get('script-src'), ["'self'", "'unsafe-inline'", 'blob:', "'wasm-unsafe-eval'"]);
+  });
+
+  it('should set no worker-src when in production', async () => {
+    const policy = await cspFor('http://api.example:8080');
     assert.equal(policy.has('worker-src'), false);
-    assert.equal(policy.get('script-src')?.includes("'unsafe-eval'"), false);
+  });
+
+  it('should allow blob: images when in production', async () => {
+    const policy = await cspFor('http://api.example:8080');
     assert.ok(policy.get('img-src')?.includes('blob:'));
+  });
+
+  it('should restrict base-uri, form-action, object-src and frame-ancestors when in production', async () => {
+    const policy = await cspFor('http://api.example:8080');
     assert.deepEqual(policy.get('base-uri'), ["'self'"]);
     assert.deepEqual(policy.get('form-action'), ["'self'"]);
     assert.deepEqual(policy.get('object-src'), ["'none'"]);

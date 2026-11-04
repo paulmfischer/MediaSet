@@ -85,7 +85,11 @@ describe('production Content-Security-Policy (e2e)', () => {
       const append = Node.prototype.appendChild;
       let maps = 0;
       Node.prototype.appendChild = function <T extends Node>(this: Node, node: T): T {
-        if (node instanceof HTMLScriptElement && node.type === 'importmap' && (maps += 1) > 1) return node;
+        if (node instanceof HTMLScriptElement && node.type === 'importmap' && (maps += 1) > 1) {
+          // Same-origin srcdoc frame: record in the page that detection was made to fail.
+          (window.top as unknown as { __detectionStripped?: boolean }).__detectionStripped = true;
+          return node;
+        }
         return append.call(this, node) as T;
       };
     });
@@ -96,6 +100,11 @@ describe('production Content-Security-Policy (e2e)', () => {
 
     const toggle = page.getByRole('button', { name: 'Toggle menu' });
     const menu = page.getByRole('navigation', { name: 'Mobile' });
+    // Guard against this test silently turning into a copy of the hydration test: the polyfill path was taken.
+    assert.equal(
+      await page.evaluate(() => (window as unknown as { __detectionStripped?: boolean }).__detectionStripped),
+      true
+    );
     await toggle.click();
     await menu.waitFor();
     assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
