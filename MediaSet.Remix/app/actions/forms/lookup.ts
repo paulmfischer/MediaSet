@@ -1,4 +1,4 @@
-import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../api/lookup-capabilities-data.ts';
+import { getLookupCapabilities, isLookupAvailable } from '../../api/lookup-capabilities-data.ts';
 import { isLookupError, lookup } from '../../api/lookup-data.server.ts';
 import type { LookupDialogProps } from '../../ui/forms/public/lookup-dialog.tsx';
 import type { BookEntity, Entity, GameEntity, IdentifierType, MovieEntity, MusicEntity } from '../../models.ts';
@@ -39,7 +39,7 @@ export async function runLookup(
   identifierType: IdentifierType,
   searchParams: Record<string, string>
 ): Promise<LookupOutcome> {
-  if (!isBarcodeLookupAvailable(await getLookupCapabilities(), entityType)) return { status: 'unavailable' };
+  if (!isLookupAvailable(await getLookupCapabilities(), entityType)) return { status: 'unavailable' };
 
   try {
     const result = await lookup(entityType, identifierType, searchParams);

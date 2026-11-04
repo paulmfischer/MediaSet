@@ -3,7 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity, updateEntity } from '../../../api/entity-data.ts';
-import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
+import { getLookupCapabilities, isLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
 import { clientApiUrl } from '../../../constants.server.ts';
 import { Entity, type BookEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
@@ -61,7 +61,7 @@ async function renderEditForm(
         formKey={formKey}
         removeImage={removeImage}
         lookup={buildLookupProps({
-          available: isBarcodeLookupAvailable(capabilities, Entity.Books),
+          available: isLookupAvailable(capabilities, Entity.Books),
           itemLabel: 'book',
           lookup,
           toValues: (result) => toBookValues(result as BookEntity),

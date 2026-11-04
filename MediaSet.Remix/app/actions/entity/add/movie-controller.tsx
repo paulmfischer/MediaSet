@@ -3,7 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { addEntity } from '../../../api/entity-data.ts';
-import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
+import { getLookupCapabilities, isLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
 import { Entity, type MovieEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
@@ -52,7 +52,7 @@ async function renderMovieForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
-          available: isBarcodeLookupAvailable(capabilities, Entity.Movies),
+          available: isLookupAvailable(capabilities, Entity.Movies),
           itemLabel: 'movie',
           lookup,
           toValues: (result) => toMovieValues(result as MovieEntity),
