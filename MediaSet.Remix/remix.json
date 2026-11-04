@@ -1,14 +1,10 @@
 {
   "$schema": "./node_modules/remix/schema/remix.json",
   "test": {
-    "exclude": [
-      "node_modules/**"
-    ],
+    "exclude": ["node_modules/**"],
     "playwright": {
       "configFile": "./playwright.config.ts",
-      "projects": [
-        "chromium"
-      ]
+      "projects": ["chromium"]
     }
   }
 }

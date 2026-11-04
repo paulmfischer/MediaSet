@@ -1,7 +1,6 @@
 import { expect } from 'remix/assert';
 import { afterEach, beforeEach, describe, it } from 'remix/test';
 
-import { clientApiUrl as loadedClientApiUrl } from './constants.server.ts';
 import { getClientConfig } from './config.server.ts';
 
 const ENV_KEYS = ['NODE_ENV', 'apiUrl', 'clientApiUrl'] as const;
@@ -31,31 +30,33 @@ describe('API URL configuration', () => {
 
   it('should use the host API and same-origin browser proxy in development', async () => {
     process.env['NODE_ENV'] = 'development';
-    const { baseUrl, clientApiUrl } = await loadConstants();
+    const constants = await loadConstants();
+    const { baseUrl, clientApiUrl } = constants;
 
     expect(baseUrl).toBe('http://127.0.0.1:5000');
     expect(clientApiUrl).toBe('/dev-api');
+    expect(getClientConfig(constants).apiUrl).toBe('/dev-api');
   });
 
   it('should preserve production URL defaults', async () => {
     process.env['NODE_ENV'] = 'production';
-    const { baseUrl, clientApiUrl } = await loadConstants();
+    const constants = await loadConstants();
+    const { baseUrl, clientApiUrl } = constants;
 
     expect(baseUrl).toBe('http://localhost:7130');
     expect(clientApiUrl).toBe('http://localhost:7130');
+    expect(getClientConfig(constants).apiUrl).toBe(clientApiUrl);
   });
 
   it('should honor distinct configured server and browser URLs', async () => {
     process.env['NODE_ENV'] = 'development';
     process.env['apiUrl'] = 'http://other-api:8080';
     process.env['clientApiUrl'] = 'https://media.example.test';
-    const { baseUrl, clientApiUrl } = await loadConstants();
+    const constants = await loadConstants();
+    const { baseUrl, clientApiUrl } = constants;
 
     expect(baseUrl).toBe('http://other-api:8080');
     expect(clientApiUrl).toBe('https://media.example.test');
-  });
-
-  it('should expose the browser API URL through the client config', () => {
-    expect(getClientConfig().apiUrl).toBe(loadedClientApiUrl);
+    expect(getClientConfig(constants).apiUrl).toBe(clientApiUrl);
   });
 });
