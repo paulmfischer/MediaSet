@@ -175,23 +175,110 @@ describe('add music form', () => {
     assert.deepEqual(saved, [{ type: 'Musics', title: 'A', artist: 'B', genres: [] }]);
   });
 
-  it('passes a track list through unchanged and ignores a malformed one', async (t) => {
+  it('saves the track rows in order, pairing the repeated fields by position', async (t) => {
+    const { saved } = stubApi(t);
+    const response = await post([
+      ['title', 'A'],
+      ['artist', 'B'],
+      ['trackNumber', '2'],
+      ['trackTitle', ' Second '],
+      ['trackMinutes', '3'],
+      ['trackSeconds', '5'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'First'],
+      ['trackMinutes', ''],
+      ['trackSeconds', ''],
+    ]);
+
+    assert.equal(response.status, 303);
+    assert.deepEqual(saved, [
+      {
+        type: 'Musics',
+        title: 'A',
+        artist: 'B',
+        discList: [
+          { trackNumber: 2, title: 'Second', duration: 185000 },
+          { trackNumber: 1, title: 'First', duration: null },
+        ],
+        genres: [],
+      },
+    ]);
+  });
+
+  it('drops fully blank track rows', async (t) => {
     const { saved } = stubApi(t);
     await post([
       ['title', 'A'],
       ['artist', 'B'],
-      ['discList', JSON.stringify(discList)],
-    ]);
-    await post([
-      ['title', 'A'],
-      ['artist', 'B'],
-      ['discList', '{not json'],
+      ['trackNumber', ''],
+      ['trackTitle', ' '],
+      ['trackMinutes', ''],
+      ['trackSeconds', ''],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Only'],
+      ['trackMinutes', ''],
+      ['trackSeconds', '30'],
     ]);
 
     assert.deepEqual(saved, [
-      { type: 'Musics', title: 'A', artist: 'B', discList, genres: [] },
-      { type: 'Musics', title: 'A', artist: 'B', genres: [] },
+      {
+        type: 'Musics',
+        title: 'A',
+        artist: 'B',
+        discList: [{ trackNumber: 1, title: 'Only', duration: 30000 }],
+        genres: [],
+      },
     ]);
+  });
+
+  it('shows per-row track errors under the offending inputs and keeps every submitted row', async (t) => {
+    const { saved } = stubApi(t);
+    const response = await post([
+      ['title', 'A'],
+      ['artist', 'B'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Fine'],
+      ['trackMinutes', '2'],
+      ['trackSeconds', '0'],
+      ['trackNumber', '0'],
+      ['trackTitle', ''],
+      ['trackMinutes', 'x'],
+      ['trackSeconds', '60'],
+      ['trackNumber', ''],
+      ['trackTitle', 'No number'],
+      ['trackMinutes', ''],
+      ['trackSeconds', ''],
+    ]);
+
+    assert.equal(response.status, 400);
+    assert.equal(saved.length, 0);
+    const html = await response.text();
+    assert.match(html, /id="track-2-trackNumber-error"[^>]*>Track number must be a whole number from 1 to 999999</);
+    assert.match(html, /id="track-2-trackTitle-error"[^>]*>Title is required</);
+    assert.match(html, /id="track-2-trackMinutes-error"[^>]*>Minutes must be a whole number from 0 to 9999</);
+    assert.match(html, /id="track-2-trackSeconds-error"[^>]*>Seconds must be a whole number from 0 to 59</);
+    assert.match(html, /id="track-3-trackNumber-error"[^>]*>Track number is required</);
+    assert.doesNotMatch(html, /id="track-1-[a-zA-Z]+-error"/);
+    assert.match(html, /name="trackTitle"[^>]*value="Fine"/);
+    assert.match(html, /name="trackTitle"[^>]*value="No number"/);
+    assert.match(html, /name="trackMinutes"[^>]*value="x"/);
+    assert.match(html, /aria-label="Track 3 number"/);
+  });
+
+  it('rejects a track number above 999999 and renders the editor on GET', async (t) => {
+    stubApi(t);
+    const response = await post([
+      ['title', 'A'],
+      ['artist', 'B'],
+      ['trackNumber', '1000000'],
+      ['trackTitle', 'Too high'],
+    ]);
+    assert.equal(response.status, 400);
+    assert.match(await response.text(), /Track number must be a whole number from 1 to 999999/);
+
+    const html = await (await get()).text();
+    assert.match(html, /Add track/);
+    assert.doesNotMatch(html, /name="trackTitle"/);
   });
 
   it('shows an error with the input kept when the API fails or rejects the album', async (t) => {
@@ -305,10 +392,13 @@ describe('add music metadata lookup', () => {
     assert.match(html, /name="tracks"[^>]*value="10"/);
     assert.match(html, /name="barcode"[^>]*value="602547"/);
     assert.match(html, /<input type="hidden" name="genres" value="Rock"/);
-    assert.match(html, /<input type="hidden" name="discList" value="[^"]*Speak to Me/);
+    assert.match(html, /name="trackTitle"[^>]*value="Speak to Me"/);
+    assert.match(html, /name="trackNumber"[^>]*value="1"/);
+    assert.match(html, /name="trackMinutes"[^>]*value="1"/);
+    assert.match(html, /name="trackSeconds"[^>]*value="8"/);
   });
 
-  it('clears a track list from an earlier result when the new result has none', async (t) => {
+  it('clears the track rows when the applied result has no track list', async (t) => {
     stubApi(t, { lookup: () => Response.json([{ ...album, discList: undefined }]) });
     const search = await (
       await post([
@@ -324,11 +414,14 @@ describe('add music metadata lookup', () => {
         ['intent', 'apply:0'],
         ['lookupResults', results],
         ['title', 'Dark Side'],
-        ['discList', JSON.stringify(discList)],
+        ['trackNumber', '1'],
+        ['trackTitle', 'Typed track'],
+        ['trackMinutes', ''],
+        ['trackSeconds', ''],
       ])
     ).text();
 
-    assert.doesNotMatch(html, /name="discList"/);
+    assert.doesNotMatch(html, /name="trackTitle"/);
   });
 
   it('links the barcode lookup error to the barcode input', async (t) => {

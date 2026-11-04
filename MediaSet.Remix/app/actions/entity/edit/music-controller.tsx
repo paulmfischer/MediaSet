@@ -1,4 +1,3 @@
-import * as s from 'remix/data-schema';
 import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
@@ -12,10 +11,15 @@ import { Document } from '../../../ui/document.tsx';
 import { MusicFormPage } from '../../../ui/entity/add/music-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
-import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { entityErrorPage } from '../../render-error.tsx';
-import { MUSIC_FIELDS, musicForm, toMusicUpdate, toMusicValues, type MusicFormValues } from '../add/music-form.ts';
+import {
+  parseMusicSubmission,
+  submittedMusicValues,
+  toMusicUpdate,
+  toMusicValues,
+  type MusicFormValues,
+} from '../add/music-form.ts';
 import { resolveMusicLookupIntent, toMusicResultSummary } from '../add/music-lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
 
@@ -115,14 +119,14 @@ export default createController(routes.entityEdit.musics, {
         return renderEditForm(context, id, album, { ...state, removeImage });
       }
 
-      const parsed = s.parseSafe(musicForm, context.formData);
+      const parsed = parseMusicSubmission(context.formData);
       const image = readCoverImage(context.formData);
       if (!parsed.success || image.error) {
         return renderEditForm(context, id, album, {
-          values: submittedValues(context.formData, MUSIC_FIELDS),
+          values: submittedMusicValues(context.formData),
           errors: {
             ...(image.error ? { coverImage: image.error } : {}),
-            ...(parsed.success ? {} : fieldErrors(parsed.issues)),
+            ...(parsed.success ? {} : parsed.errors),
           },
           status: 400,
           removeImage,
@@ -130,7 +134,12 @@ export default createController(routes.entityEdit.musics, {
       }
 
       try {
-        const update = toMusicUpdate(album, parsed.value, context.formData.get('removeImage') !== null);
+        const update = toMusicUpdate(
+          album,
+          parsed.value,
+          parsed.discList,
+          context.formData.get('removeImage') !== null
+        );
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete update.imageUrl;
@@ -143,7 +152,7 @@ export default createController(routes.entityEdit.musics, {
         if (isStatus(error, (status) => status === 404)) {
           return renderUnavailable(context, 404, 'Album not found', "We couldn't find that album.");
         }
-        const values = submittedValues(context.formData, MUSIC_FIELDS);
+        const values = submittedMusicValues(context.formData);
         // The API rejecting the album (4xx) is the user's to fix and carries its reason; anything else is ours.
         if (isStatus(error, (status) => status >= 400 && status < 500)) {
           return renderEditForm(context, id, album, {
