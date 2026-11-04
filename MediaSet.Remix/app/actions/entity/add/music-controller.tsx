@@ -50,10 +50,11 @@ async function renderMusicForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
+          entityType: Entity.Musics,
           available: isLookupAvailable(capabilities, Entity.Musics),
           itemLabel: 'album',
           lookup,
-          toValues: (result) => toMusicValues(result as MusicEntity),
+          toValues: toMusicValues,
           toSummary: toMusicResultSummary,
         })}
       />

@@ -61,10 +61,11 @@ async function renderEditForm(
         formKey={formKey}
         removeImage={removeImage}
         lookup={buildLookupProps({
+          entityType: Entity.Games,
           available: isLookupAvailable(capabilities, Entity.Games),
           itemLabel: 'game',
           lookup,
-          toValues: (result) => toGameValues(result as GameEntity),
+          toValues: toGameValues,
           toSummary: toGameResultSummary,
         })}
         existingImageSrc={

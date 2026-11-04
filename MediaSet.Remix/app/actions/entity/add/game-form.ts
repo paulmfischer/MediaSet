@@ -2,7 +2,7 @@ import type { InferOutput } from 'remix/data-schema';
 import * as f from 'remix/data-schema/form-data';
 
 import { Entity, type GameEntity } from '../../../models.ts';
-import { optionalHttpUrl, requiredText, text, textList } from '../../forms/form-schema.ts';
+import { blankToUndefined, optionalHttpUrl, requiredText, text, textList } from '../../forms/form-schema.ts';
 
 export const gameForm = f.object({
   title: f.field(requiredText('Title is required')),
@@ -55,9 +55,20 @@ type ParsedGame = InferOutput<typeof gameForm>;
 
 /** Builds the API payload from validated form output; empty optional text is left out. */
 export function toGameEntity(parsed: ParsedGame): GameEntity {
-  const { developers, publishers, genres, ...strings } = parsed;
-  const present = Object.fromEntries(Object.entries(strings).filter(([, value]) => value !== ''));
-  return { type: Entity.Games, ...present, developers, publishers, genres } as GameEntity;
+  return {
+    type: Entity.Games,
+    title: parsed.title,
+    barcode: blankToUndefined(parsed.barcode),
+    format: blankToUndefined(parsed.format),
+    platform: blankToUndefined(parsed.platform),
+    releaseDate: blankToUndefined(parsed.releaseDate),
+    rating: blankToUndefined(parsed.rating),
+    description: blankToUndefined(parsed.description),
+    imageUrl: blankToUndefined(parsed.imageUrl),
+    developers: parsed.developers,
+    publishers: parsed.publishers,
+    genres: parsed.genres,
+  };
 }
 
 /** Form values for an existing game, as the edit form shows them. */
@@ -82,16 +93,12 @@ export function toGameValues(game: GameEntity): GameFormValues {
  * dropped, and `removeImage` drops the saved cover.
  */
 export function toGameUpdate(existing: GameEntity, parsed: ParsedGame, removeImage = false): GameEntity {
-  const { developers, publishers, genres, ...strings } = parsed;
-  const updated: Record<string, unknown> = { ...existing, developers, publishers, genres };
-  for (const [name, value] of Object.entries(strings)) {
-    if (value === '') delete updated[name];
-    else updated[name] = value;
-  }
-  if (removeImage) {
-    // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
-    delete updated.coverImage;
-    if (updated.imageUrl === existing.imageUrl) delete updated.imageUrl;
-  }
-  return updated as unknown as GameEntity;
+  // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
+  const entity = toGameEntity(parsed);
+  return {
+    ...existing,
+    ...entity,
+    coverImage: removeImage ? undefined : existing.coverImage,
+    imageUrl: removeImage && entity.imageUrl === existing.imageUrl ? undefined : entity.imageUrl,
+  };
 }

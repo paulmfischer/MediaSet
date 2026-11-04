@@ -52,10 +52,11 @@ async function renderGameForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
+          entityType: Entity.Games,
           available: isLookupAvailable(capabilities, Entity.Games),
           itemLabel: 'game',
           lookup,
-          toValues: (result) => toGameValues(result as GameEntity),
+          toValues: toGameValues,
           toSummary: toGameResultSummary,
         })}
       />
