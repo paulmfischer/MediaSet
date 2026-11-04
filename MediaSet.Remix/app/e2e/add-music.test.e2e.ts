@@ -116,6 +116,8 @@ describe('add music (e2e)', () => {
     assert.equal(await page.getByLabel('Track 2 number').inputValue(), '3');
     await page.getByRole('button', { name: 'Remove track 1' }).click();
     assert.equal(await page.getByLabel('Track 1 title').inputValue(), 'Another Brick in the Wall');
+    // Removing a row focuses the neighbouring row's remove button.
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Remove track 1');
 
     // A track without a title is flagged on its row, with every row kept.
     await page.getByLabel('Track 2 title').fill('');
@@ -123,6 +125,8 @@ describe('add music (e2e)', () => {
     await page.locator('[id$="trackTitle-error"]').waitFor();
     assert.equal(await page.locator('[id$="trackTitle-error"]').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Track 1 title').inputValue(), 'Another Brick in the Wall');
+    // Focus moves to the invalid input so the error is announced.
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Track 2 title');
     assert.equal(saved.length, 0);
 
     await page.getByLabel('Track 2 title').fill('The Thin Ice');

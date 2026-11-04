@@ -64,6 +64,14 @@ export const TrackListInput = clientEntry(
         if (element instanceof HTMLElement && !(element as HTMLButtonElement).disabled) element.focus();
       });
 
+    // Announce server-side errors by moving to the first invalid input.
+    const focusFirstInvalid = () => {
+      const invalid = rows.find((row) => Object.keys(row.errors).length > 0);
+      const first = invalid && ROW_FIELDS.find((field) => invalid.errors[field]);
+      if (invalid && first) focusLater(`track-${invalid.id}-${first === 'trackTitle' ? 'title' : first}`);
+    };
+    focusFirstInvalid();
+
     const add = () => {
       const last = Number(rows[rows.length - 1]?.trackNumber);
       const row = newRow({ trackNumber: String(Number.isInteger(last) && last > 0 ? last + 1 : rows.length + 1) });
@@ -75,7 +83,9 @@ export const TrackListInput = clientEntry(
     const remove = (index: number) => {
       rows = rows.filter((_, current) => current !== index);
       handle.update();
-      focusLater('track-add');
+      // The neighbouring row's remove button, or Add track when no rows are left.
+      const neighbour = rows[index] ?? rows[index - 1];
+      focusLater(neighbour ? `track-${neighbour.id}-remove` : 'track-add');
     };
 
     const move = (index: number, offset: -1 | 1) => {
@@ -93,8 +103,9 @@ export const TrackListInput = clientEntry(
     };
 
     const edit = (row: Row, field: RowField, value: string) => {
-      row[field] = value;
-      delete row.errors[field];
+      const errors = { ...row.errors };
+      delete errors[field];
+      rows = rows.map((current) => (current === row ? { ...current, [field]: value, errors } : current));
       // The inputs follow the state, so a render must not put back an older value.
       handle.update();
     };
@@ -103,6 +114,7 @@ export const TrackListInput = clientEntry(
       if (handle.props.rows !== seenRows) {
         seenRows = handle.props.rows;
         rows = fromProps();
+        focusFirstInvalid();
       }
       const control = (row: Row, field: RowField, index: number, props: Record<string, unknown>, label: string) => {
         const error = row.errors[field];
@@ -131,6 +143,15 @@ export const TrackListInput = clientEntry(
 
       return (
         <div class="flex flex-col gap-3">
+          {rows.length > 0 ? (
+            <div class="hidden sm:flex gap-2 text-sm font-medium text-gray-200" aria-hidden="true">
+              <span class="w-24">No.</span>
+              <span class="min-w-48 flex-1">Title</span>
+              <span class="w-24">Minutes</span>
+              <span class="w-24">Seconds</span>
+              <span class="w-[7.5rem]" />
+            </div>
+          ) : null}
           {rows.map((row, index) => (
             <div key={row.id} class="flex flex-wrap items-start gap-2" role="group" aria-label={`Track ${index + 1}`}>
               <div class="w-24">
@@ -150,7 +171,7 @@ export const TrackListInput = clientEntry(
                   row,
                   'trackMinutes',
                   index,
-                  { type: 'number', min: '0', step: '1', placeholder: 'Min' },
+                  { type: 'number', min: '0', max: '9999', step: '1', placeholder: 'Min' },
                   'minutes'
                 )}
               </div>
@@ -185,6 +206,7 @@ export const TrackListInput = clientEntry(
                   <Icon icon={ChevronDown} size={16} />
                 </button>
                 <button
+                  id={`track-${row.id}-remove`}
                   type="button"
                   class="secondary"
                   aria-label={`Remove track ${index + 1}`}
