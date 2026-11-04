@@ -32,7 +32,7 @@ export async function getLookupCapabilities(): Promise<LookupCapabilities> {
   }
 }
 
-export function isBarcodeLookupAvailable(capabilities: LookupCapabilities, entityType: Entity): boolean {
+export function isLookupAvailable(capabilities: LookupCapabilities, entityType: Entity): boolean {
   switch (entityType) {
     case Entity.Books:
       return capabilities.supportsBookLookup;

@@ -3,7 +3,7 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { addEntity } from '../../../api/entity-data.ts';
-import { getLookupCapabilities, isBarcodeLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
+import { getLookupCapabilities, isLookupAvailable } from '../../../api/lookup-capabilities-data.ts';
 import { Entity, type BookEntity } from '../../../models.ts';
 import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
@@ -52,7 +52,7 @@ async function renderBookForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
-          available: isBarcodeLookupAvailable(capabilities, Entity.Books),
+          available: isLookupAvailable(capabilities, Entity.Books),
           itemLabel: 'book',
           lookup,
           toValues: (result) => toBookValues(result as BookEntity),
