@@ -1,78 +1,54 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
 
-const { mockApiFetch } = vi.hoisted(() => ({
-  mockApiFetch: vi.fn(),
-}));
-
-vi.mock('../utils/apiFetch.server.ts', () => ({
-  apiFetch: mockApiFetch,
-}));
-
-vi.mock('../utils/serverLogger.ts', () => ({
-  serverLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
+import { createApiFakes, expectFetched } from '../test/api-fakes.ts';
 import { deleteOrphanedImages } from './image-management-data.ts';
 
 describe('image-management-data.ts', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockApiFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ deleted: 0 }),
-    });
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   describe('deleteOrphanedImages', () => {
-    it('should return the count of deleted files', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should return the count of deleted files', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => ({ deleted: 5 }),
       });
 
-      const result = await deleteOrphanedImages();
+      const result = await deleteOrphanedImages(api.deps);
 
       expect(result).toEqual({ deleted: 5 });
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('/images/orphaned'), { method: 'DELETE' });
+      expectFetched(api.apiFetch, '/images/orphaned', { method: 'DELETE' });
     });
 
-    it('should return zero when no orphaned files exist', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should return zero when no orphaned files exist', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => ({ deleted: 0 }),
       });
 
-      const result = await deleteOrphanedImages();
+      const result = await deleteOrphanedImages(api.deps);
 
       expect(result).toEqual({ deleted: 0 });
     });
 
-    it('should throw Response on non-ok status', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw Response on non-ok status', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({
         ok: false,
         status: 500,
         json: async () => null,
       });
 
-      await expect(deleteOrphanedImages()).rejects.toBeInstanceOf(Response);
+      await expect(deleteOrphanedImages(api.deps)).rejects.toBeInstanceOf(Response);
     });
 
-    it('should throw on network error', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should throw on network error', async (t) => {
+      const api = createApiFakes(t);
+      api.rejectOnce(new Error('Network error'));
 
-      await expect(deleteOrphanedImages()).rejects.toThrow('Network error');
+      await expect(deleteOrphanedImages(api.deps)).rejects.toThrow('Network error');
     });
   });
 });

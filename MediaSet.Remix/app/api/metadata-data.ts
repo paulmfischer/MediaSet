@@ -1,12 +1,11 @@
 import { baseUrl } from '../constants.server.ts';
 import { Entity } from '../models.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
-import { apiFetch } from '../utils/apiFetch.server.ts';
+import { type ApiDeps, defaultApiDeps } from './api-deps.ts';
 
 /**
  * Generic function to fetch metadata for a specific property of a media type
  */
-async function getMetadata(entityType: Entity, property: string) {
+async function getMetadata(entityType: Entity, property: string, { apiFetch, serverLogger }: ApiDeps) {
   serverLogger.info(`Fetching ${property} metadata for ${entityType}`, { entityType, property });
   try {
     const response = await apiFetch(`${baseUrl}/metadata/${entityType}/${property}`);
@@ -31,42 +30,42 @@ async function getMetadata(entityType: Entity, property: string) {
   }
 }
 
-export async function getAuthors() {
-  return getMetadata(Entity.Books, 'authors');
+export async function getAuthors(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Books, 'authors', deps);
 }
 
-export async function getPublishers() {
-  return getMetadata(Entity.Books, 'publisher');
+export async function getPublishers(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Books, 'publisher', deps);
 }
 
-export async function getGenres(entityType: Entity) {
-  return getMetadata(entityType, 'genres');
+export async function getGenres(entityType: Entity, deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(entityType, 'genres', deps);
 }
 
-export async function getFormats(entityType: Entity) {
-  return getMetadata(entityType, 'format');
+export async function getFormats(entityType: Entity, deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(entityType, 'format', deps);
 }
 
-export async function getStudios() {
-  return getMetadata(Entity.Movies, 'studios');
+export async function getStudios(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Movies, 'studios', deps);
 }
 
-export async function getDevelopers() {
-  return getMetadata(Entity.Games, 'developers');
+export async function getDevelopers(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Games, 'developers', deps);
 }
 
-export async function getPlatforms() {
-  return getMetadata(Entity.Games, 'platform');
+export async function getPlatforms(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Games, 'platform', deps);
 }
 
-export async function getLabels() {
-  return getMetadata(Entity.Musics, 'label');
+export async function getLabels(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Musics, 'label', deps);
 }
 
-export async function getGamePublishers() {
-  return getMetadata(Entity.Games, 'publishers');
+export async function getGamePublishers(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Games, 'publishers', deps);
 }
 
-export async function getArtist() {
-  return getMetadata(Entity.Musics, 'artist');
+export async function getArtist(deps: ApiDeps = defaultApiDeps) {
+  return getMetadata(Entity.Musics, 'artist', deps);
 }

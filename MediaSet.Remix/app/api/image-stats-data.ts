@@ -1,6 +1,5 @@
 import { baseUrl } from '../constants.server.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
-import { apiFetch } from '../utils/apiFetch.server.ts';
+import { type ApiDeps, defaultApiDeps } from './api-deps.ts';
 
 export type BrokenImageLink = {
   entityId: string;
@@ -39,7 +38,7 @@ export type ImageStats = {
   lastUpdated: string;
 };
 
-export async function getImageStats(): Promise<ImageStats | null> {
+export async function getImageStats({ apiFetch, serverLogger }: ApiDeps = defaultApiDeps): Promise<ImageStats | null> {
   try {
     const response = await apiFetch(`${baseUrl}/stats/images`);
     if (response.status === 204) {

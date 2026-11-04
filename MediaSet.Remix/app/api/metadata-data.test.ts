@@ -1,24 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
 
-// Create a global mock function before mocking
-const { mockApiFetch } = vi.hoisted(() => ({
-  mockApiFetch: vi.fn(),
-}));
+import { createApiFakes, expectFetched } from '../test/api-fakes.ts';
 
-vi.mock('../utils/apiFetch.server.ts', () => ({
-  apiFetch: mockApiFetch,
-}));
-
-vi.mock('../utils/serverLogger.ts', () => ({
-  serverLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
-// Now import after mocking
 import {
   getAuthors,
   getPublishers,
@@ -34,65 +18,54 @@ import {
 import { Entity } from '../models.ts';
 
 describe('metadata-data.ts', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Set up default mock for any apiFetch calls (e.g., from serverLogger)
-    // to prevent actual network requests during tests
-    mockApiFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({}),
-    });
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   describe('getMetadata - generic metadata fetching', () => {
     describe('getAuthors', () => {
-      it('should fetch and return authors with label and value', async () => {
+      it('should fetch and return authors with label and value', async (t) => {
+        const api = createApiFakes(t);
         const mockAuthors = ['Author One', 'Author Two', 'Author Three'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
+        api.respondOnce({ ok: true, json: async () => mockAuthors });
 
-        const result = await getAuthors();
+        const result = await getAuthors(api.deps);
 
         expect(result).toEqual([
           { label: 'Author One', value: 'Author One' },
           { label: 'Author Two', value: 'Author Two' },
           { label: 'Author Three', value: 'Author Three' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/authors`));
+        expectFetched(api.apiFetch, `/${Entity.Books}/authors`);
         expect(result).toHaveLength(3);
       });
 
-      it('should handle empty authors list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty authors list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getAuthors();
+        const result = await getAuthors(api.deps);
 
         expect(result).toEqual([]);
         expect(result).toHaveLength(0);
       });
 
-      it('should handle single author', async () => {
+      it('should handle single author', async (t) => {
+        const api = createApiFakes(t);
         const mockAuthors = ['Single Author'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
+        api.respondOnce({ ok: true, json: async () => mockAuthors });
 
-        const result = await getAuthors();
+        const result = await getAuthors(api.deps);
 
         expect(result).toEqual([{ label: 'Single Author', value: 'Single Author' }]);
         expect(result).toHaveLength(1);
       });
 
-      it('should preserve author names with special characters', async () => {
+      it('should preserve author names with special characters', async (t) => {
+        const api = createApiFakes(t);
         const mockAuthors = ["O'Brien, Patrick", 'José García', "D'Amato"];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockAuthors });
+        api.respondOnce({ ok: true, json: async () => mockAuthors });
 
-        const result = await getAuthors();
+        const result = await getAuthors(api.deps);
 
         expect(result).toEqual([
           { label: "O'Brien, Patrick", value: "O'Brien, Patrick" },
@@ -103,34 +76,37 @@ describe('metadata-data.ts', () => {
     });
 
     describe('getPublishers', () => {
-      it('should fetch and return publishers with label and value', async () => {
+      it('should fetch and return publishers with label and value', async (t) => {
+        const api = createApiFakes(t);
         const mockPublishers = ['Publisher One', 'Publisher Two'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
+        api.respondOnce({ ok: true, json: async () => mockPublishers });
 
-        const result = await getPublishers();
+        const result = await getPublishers(api.deps);
 
         expect(result).toEqual([
           { label: 'Publisher One', value: 'Publisher One' },
           { label: 'Publisher Two', value: 'Publisher Two' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/publisher`));
+        expectFetched(api.apiFetch, `/${Entity.Books}/publisher`);
       });
 
-      it('should handle empty publishers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty publishers list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getPublishers();
+        const result = await getPublishers(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should preserve publisher names', async () => {
+      it('should preserve publisher names', async (t) => {
+        const api = createApiFakes(t);
         const mockPublishers = ['Penguin Books', 'Simon & Schuster', 'HarperCollins'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
+        api.respondOnce({ ok: true, json: async () => mockPublishers });
 
-        const result = await getPublishers();
+        const result = await getPublishers(api.deps);
 
         expect(result).toHaveLength(3);
         expect(result[1]).toEqual({ label: 'Simon & Schuster', value: 'Simon & Schuster' });
@@ -138,153 +114,166 @@ describe('metadata-data.ts', () => {
     });
 
     describe('getGenres', () => {
-      it('should fetch and return genres for books', async () => {
+      it('should fetch and return genres for books', async (t) => {
+        const api = createApiFakes(t);
         const mockGenres = ['Fiction', 'Mystery', 'Science Fiction'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
+        api.respondOnce({ ok: true, json: async () => mockGenres });
 
-        const result = await getGenres(Entity.Books);
+        const result = await getGenres(Entity.Books, api.deps);
 
         expect(result).toEqual([
           { label: 'Fiction', value: 'Fiction' },
           { label: 'Mystery', value: 'Mystery' },
           { label: 'Science Fiction', value: 'Science Fiction' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/genres`));
+        expectFetched(api.apiFetch, `/${Entity.Books}/genres`);
       });
 
-      it('should fetch and return genres for movies', async () => {
+      it('should fetch and return genres for movies', async (t) => {
+        const api = createApiFakes(t);
         const mockGenres = ['Action', 'Drama', 'Comedy'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
+        api.respondOnce({ ok: true, json: async () => mockGenres });
 
-        const result = await getGenres(Entity.Movies);
+        const result = await getGenres(Entity.Movies, api.deps);
 
         expect(result).toEqual([
           { label: 'Action', value: 'Action' },
           { label: 'Drama', value: 'Drama' },
           { label: 'Comedy', value: 'Comedy' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/genres`));
+        expectFetched(api.apiFetch, `/${Entity.Movies}/genres`);
       });
 
-      it('should fetch and return genres for games', async () => {
+      it('should fetch and return genres for games', async (t) => {
+        const api = createApiFakes(t);
         const mockGenres = ['RPG', 'Action', 'Strategy'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
+        api.respondOnce({ ok: true, json: async () => mockGenres });
 
-        const result = await getGenres(Entity.Games);
+        const result = await getGenres(Entity.Games, api.deps);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/genres`));
+        expectFetched(api.apiFetch, `/${Entity.Games}/genres`);
         expect(result).toHaveLength(3);
       });
 
-      it('should fetch and return genres for music', async () => {
+      it('should fetch and return genres for music', async (t) => {
+        const api = createApiFakes(t);
         const mockGenres = ['Rock', 'Pop', 'Jazz'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockGenres });
+        api.respondOnce({ ok: true, json: async () => mockGenres });
 
-        const result = await getGenres(Entity.Musics);
+        const result = await getGenres(Entity.Musics, api.deps);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/genres`));
+        expectFetched(api.apiFetch, `/${Entity.Musics}/genres`);
         expect(result).toHaveLength(3);
       });
 
-      it('should handle empty genres list for any entity', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty genres list for any entity', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getGenres(Entity.Books);
+        const result = await getGenres(Entity.Books, api.deps);
 
         expect(result).toEqual([]);
       });
     });
 
     describe('getFormats', () => {
-      it('should fetch and return formats for books', async () => {
+      it('should fetch and return formats for books', async (t) => {
+        const api = createApiFakes(t);
         const mockFormats = ['Hardcover', 'Paperback', 'eBook'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
+        api.respondOnce({ ok: true, json: async () => mockFormats });
 
-        const result = await getFormats(Entity.Books);
+        const result = await getFormats(Entity.Books, api.deps);
 
         expect(result).toEqual([
           { label: 'Hardcover', value: 'Hardcover' },
           { label: 'Paperback', value: 'Paperback' },
           { label: 'eBook', value: 'eBook' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/format`));
+        expectFetched(api.apiFetch, `/${Entity.Books}/format`);
       });
 
-      it('should fetch and return formats for movies', async () => {
+      it('should fetch and return formats for movies', async (t) => {
+        const api = createApiFakes(t);
         const mockFormats = ['Blu-ray', 'DVD', '4K Ultra HD'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
+        api.respondOnce({ ok: true, json: async () => mockFormats });
 
-        const result = await getFormats(Entity.Movies);
+        const result = await getFormats(Entity.Movies, api.deps);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/format`));
+        expectFetched(api.apiFetch, `/${Entity.Movies}/format`);
         expect(result).toHaveLength(3);
       });
 
-      it('should fetch and return formats for games', async () => {
+      it('should fetch and return formats for games', async (t) => {
+        const api = createApiFakes(t);
         const mockFormats = ['Disc', 'Digital', 'Cartridge'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
+        api.respondOnce({ ok: true, json: async () => mockFormats });
 
-        await getFormats(Entity.Games);
+        await getFormats(Entity.Games, api.deps);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/format`));
+        expectFetched(api.apiFetch, `/${Entity.Games}/format`);
       });
 
-      it('should fetch and return formats for music', async () => {
+      it('should fetch and return formats for music', async (t) => {
+        const api = createApiFakes(t);
         const mockFormats = ['CD', 'Vinyl', 'Cassette', 'Digital'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockFormats });
+        api.respondOnce({ ok: true, json: async () => mockFormats });
 
-        await getFormats(Entity.Musics);
+        await getFormats(Entity.Musics, api.deps);
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/format`));
+        expectFetched(api.apiFetch, `/${Entity.Musics}/format`);
       });
 
-      it('should handle empty formats list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty formats list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getFormats(Entity.Books);
+        const result = await getFormats(Entity.Books, api.deps);
 
         expect(result).toEqual([]);
       });
     });
 
     describe('getStudios', () => {
-      it('should fetch and return movie studios', async () => {
+      it('should fetch and return movie studios', async (t) => {
+        const api = createApiFakes(t);
         const mockStudios = ['Warner Bros', 'Universal Pictures', 'Disney'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockStudios });
+        api.respondOnce({ ok: true, json: async () => mockStudios });
 
-        const result = await getStudios();
+        const result = await getStudios(api.deps);
 
         expect(result).toEqual([
           { label: 'Warner Bros', value: 'Warner Bros' },
           { label: 'Universal Pictures', value: 'Universal Pictures' },
           { label: 'Disney', value: 'Disney' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/studios`));
+        expectFetched(api.apiFetch, `/${Entity.Movies}/studios`);
       });
 
-      it('should handle empty studios list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty studios list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getStudios();
+        const result = await getStudios(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should preserve studio names with special characters', async () => {
+      it('should preserve studio names with special characters', async (t) => {
+        const api = createApiFakes(t);
         const mockStudios = ['20th Century Studios', 'A24 Films', 'Focus Features'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockStudios });
+        api.respondOnce({ ok: true, json: async () => mockStudios });
 
-        const result = await getStudios();
+        const result = await getStudios(api.deps);
 
         expect(result).toHaveLength(3);
         expect(result[0]).toEqual({ label: '20th Century Studios', value: '20th Century Studios' });
@@ -292,47 +281,51 @@ describe('metadata-data.ts', () => {
     });
 
     describe('getDevelopers', () => {
-      it('should fetch and return game developers', async () => {
+      it('should fetch and return game developers', async (t) => {
+        const api = createApiFakes(t);
         const mockDevelopers = ['FromSoftware', 'Rockstar Games', 'Naughty Dog'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockDevelopers });
+        api.respondOnce({ ok: true, json: async () => mockDevelopers });
 
-        const result = await getDevelopers();
+        const result = await getDevelopers(api.deps);
 
         expect(result).toEqual([
           { label: 'FromSoftware', value: 'FromSoftware' },
           { label: 'Rockstar Games', value: 'Rockstar Games' },
           { label: 'Naughty Dog', value: 'Naughty Dog' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/developers`));
+        expectFetched(api.apiFetch, `/${Entity.Games}/developers`);
       });
 
-      it('should handle empty developers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty developers list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getDevelopers();
+        const result = await getDevelopers(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should handle single developer', async () => {
+      it('should handle single developer', async (t) => {
+        const api = createApiFakes(t);
         const mockDevelopers = ['Nintendo'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockDevelopers });
+        api.respondOnce({ ok: true, json: async () => mockDevelopers });
 
-        const result = await getDevelopers();
+        const result = await getDevelopers(api.deps);
 
         expect(result).toHaveLength(1);
       });
     });
 
     describe('getPlatforms', () => {
-      it('should fetch and return game platforms', async () => {
+      it('should fetch and return game platforms', async (t) => {
+        const api = createApiFakes(t);
         const mockPlatforms = ['PlayStation 5', 'Xbox Series X', 'Nintendo Switch', 'PC'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPlatforms });
+        api.respondOnce({ ok: true, json: async () => mockPlatforms });
 
-        const result = await getPlatforms();
+        const result = await getPlatforms(api.deps);
 
         expect(result).toEqual([
           { label: 'PlayStation 5', value: 'PlayStation 5' },
@@ -340,23 +333,25 @@ describe('metadata-data.ts', () => {
           { label: 'Nintendo Switch', value: 'Nintendo Switch' },
           { label: 'PC', value: 'PC' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/platform`));
+        expectFetched(api.apiFetch, `/${Entity.Games}/platform`);
       });
 
-      it('should handle empty platforms list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty platforms list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getPlatforms();
+        const result = await getPlatforms(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should handle multiple platforms', async () => {
+      it('should handle multiple platforms', async (t) => {
+        const api = createApiFakes(t);
         const mockPlatforms = Array.from({ length: 10 }, (_, i) => `Platform ${i + 1}`);
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPlatforms });
+        api.respondOnce({ ok: true, json: async () => mockPlatforms });
 
-        const result = await getPlatforms();
+        const result = await getPlatforms(api.deps);
 
         expect(result).toHaveLength(10);
         expect(result[0]).toEqual({ label: 'Platform 1', value: 'Platform 1' });
@@ -364,71 +359,77 @@ describe('metadata-data.ts', () => {
     });
 
     describe('getLabels', () => {
-      it('should fetch and return music labels', async () => {
+      it('should fetch and return music labels', async (t) => {
+        const api = createApiFakes(t);
         const mockLabels = ['Atlantic Records', 'Sony Music', 'Universal Music Group'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockLabels });
+        api.respondOnce({ ok: true, json: async () => mockLabels });
 
-        const result = await getLabels();
+        const result = await getLabels(api.deps);
 
         expect(result).toEqual([
           { label: 'Atlantic Records', value: 'Atlantic Records' },
           { label: 'Sony Music', value: 'Sony Music' },
           { label: 'Universal Music Group', value: 'Universal Music Group' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/label`));
+        expectFetched(api.apiFetch, `/${Entity.Musics}/label`);
       });
 
-      it('should handle empty labels list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty labels list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getLabels();
+        const result = await getLabels(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should preserve label names', async () => {
+      it('should preserve label names', async (t) => {
+        const api = createApiFakes(t);
         const mockLabels = ['4AD', 'Sub Pop', 'Matador Records'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockLabels });
+        api.respondOnce({ ok: true, json: async () => mockLabels });
 
-        const result = await getLabels();
+        const result = await getLabels(api.deps);
 
         expect(result).toHaveLength(3);
-        expect(result).toContainEqual({ label: '4AD', value: '4AD' });
+        expect(result.some((option) => option.label === '4AD' && option.value === '4AD')).toBe(true);
       });
     });
 
     describe('getGamePublishers', () => {
-      it('should fetch and return game publishers', async () => {
+      it('should fetch and return game publishers', async (t) => {
+        const api = createApiFakes(t);
         const mockPublishers = ['Nintendo', 'Sony Interactive Entertainment', 'Microsoft'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
+        api.respondOnce({ ok: true, json: async () => mockPublishers });
 
-        const result = await getGamePublishers();
+        const result = await getGamePublishers(api.deps);
 
         expect(result).toEqual([
           { label: 'Nintendo', value: 'Nintendo' },
           { label: 'Sony Interactive Entertainment', value: 'Sony Interactive Entertainment' },
           { label: 'Microsoft', value: 'Microsoft' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/publishers`));
+        expectFetched(api.apiFetch, `/${Entity.Games}/publishers`);
       });
 
-      it('should handle empty publishers list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty publishers list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getGamePublishers();
+        const result = await getGamePublishers(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should handle single publisher', async () => {
+      it('should handle single publisher', async (t) => {
+        const api = createApiFakes(t);
         const mockPublishers = ['EA Games'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockPublishers });
+        api.respondOnce({ ok: true, json: async () => mockPublishers });
 
-        const result = await getGamePublishers();
+        const result = await getGamePublishers(api.deps);
 
         expect(result).toHaveLength(1);
         expect(result[0].value).toBe('EA Games');
@@ -436,46 +437,50 @@ describe('metadata-data.ts', () => {
     });
 
     describe('getArtist', () => {
-      it('should fetch and return music artists', async () => {
+      it('should fetch and return music artists', async (t) => {
+        const api = createApiFakes(t);
         const mockArtists = ['The Beatles', 'Queen', 'David Bowie'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
+        api.respondOnce({ ok: true, json: async () => mockArtists });
 
-        const result = await getArtist();
+        const result = await getArtist(api.deps);
 
         expect(result).toEqual([
           { label: 'The Beatles', value: 'The Beatles' },
           { label: 'Queen', value: 'Queen' },
           { label: 'David Bowie', value: 'David Bowie' },
         ]);
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/artist`));
+        expectFetched(api.apiFetch, `/${Entity.Musics}/artist`);
       });
 
-      it('should handle empty artists list', async () => {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      it('should handle empty artists list', async (t) => {
+        const api = createApiFakes(t);
+        api.respondOnce({ ok: true, json: async () => [] });
 
-        const result = await getArtist();
+        const result = await getArtist(api.deps);
 
         expect(result).toEqual([]);
       });
 
-      it('should preserve artist names with special characters', async () => {
+      it('should preserve artist names with special characters', async (t) => {
+        const api = createApiFakes(t);
         const mockArtists = ['AC/DC', "Guns N' Roses", 'Wu-Tang Clan'];
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
+        api.respondOnce({ ok: true, json: async () => mockArtists });
 
-        const result = await getArtist();
+        const result = await getArtist(api.deps);
 
         expect(result).toHaveLength(3);
         expect(result[0]).toEqual({ label: 'AC/DC', value: 'AC/DC' });
       });
 
-      it('should handle many artists', async () => {
+      it('should handle many artists', async (t) => {
+        const api = createApiFakes(t);
         const mockArtists = Array.from({ length: 50 }, (_, i) => `Artist ${i + 1}`);
 
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockArtists });
+        api.respondOnce({ ok: true, json: async () => mockArtists });
 
-        const result = await getArtist();
+        const result = await getArtist(api.deps);
 
         expect(result).toHaveLength(50);
       });
@@ -483,12 +488,13 @@ describe('metadata-data.ts', () => {
   });
 
   describe('Data transformation - label/value mapping', () => {
-    it('should create proper label-value pair structure', async () => {
+    it('should create proper label-value pair structure', async (t) => {
+      const api = createApiFakes(t);
       const mockData = ['Item 1', 'Item 2'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result = await getAuthors();
+      const result = await getAuthors(api.deps);
 
       result.forEach((item, index) => {
         expect(item).toHaveProperty('label');
@@ -498,34 +504,37 @@ describe('metadata-data.ts', () => {
       });
     });
 
-    it('should use same value for both label and value field', async () => {
+    it('should use same value for both label and value field', async (t) => {
+      const api = createApiFakes(t);
       const mockData = ['Unique Item'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result = await getPublishers();
+      const result = await getPublishers(api.deps);
 
       expect(result[0].label).toBe(result[0].value);
     });
 
-    it('should preserve exact text from API response', async () => {
+    it('should preserve exact text from API response', async (t) => {
+      const api = createApiFakes(t);
       const mockData = ['Item With Spaces', 'item_with_underscore', 'ITEM-WITH-DASH'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result = await getGenres(Entity.Books);
+      const result = await getGenres(Entity.Books, api.deps);
 
       expect(result[0]).toEqual({ label: 'Item With Spaces', value: 'Item With Spaces' });
       expect(result[1]).toEqual({ label: 'item_with_underscore', value: 'item_with_underscore' });
       expect(result[2]).toEqual({ label: 'ITEM-WITH-DASH', value: 'ITEM-WITH-DASH' });
     });
 
-    it('should maintain order of items from API response', async () => {
+    it('should maintain order of items from API response', async (t) => {
+      const api = createApiFakes(t);
       const mockData = ['Z', 'A', 'M', 'B'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result = await getFormats(Entity.Movies);
+      const result = await getFormats(Entity.Movies, api.deps);
 
       expect(result[0].value).toBe('Z');
       expect(result[1].value).toBe('A');
@@ -535,177 +544,191 @@ describe('metadata-data.ts', () => {
   });
 
   describe('Error cases', () => {
-    it('should throw error when fetch fails', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should throw error when fetch fails', async (t) => {
+      const api = createApiFakes(t);
+      api.rejectOnce(new Error('Network error'));
 
-      await expect(getAuthors()).rejects.toThrow('Network error');
+      await expect(getAuthors(api.deps)).rejects.toThrow('Network error');
     });
 
-    it('should handle fetch failure for all metadata functions', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Connection failed'));
+    it('should handle fetch failure for all metadata functions', async (t) => {
+      const api = createApiFakes(t);
+      api.rejectOnce(new Error('Connection failed'));
 
-      await expect(getPublishers()).rejects.toThrow('Connection failed');
+      await expect(getPublishers(api.deps)).rejects.toThrow('Connection failed');
 
-      vi.clearAllMocks();
-      mockApiFetch.mockRejectedValueOnce(new Error('Connection failed'));
+      api.clearCalls();
+      api.rejectOnce(new Error('Connection failed'));
 
-      await expect(getStudios()).rejects.toThrow('Connection failed');
+      await expect(getStudios(api.deps)).rejects.toThrow('Connection failed');
 
-      vi.clearAllMocks();
-      mockApiFetch.mockRejectedValueOnce(new Error('Connection failed'));
+      api.clearCalls();
+      api.rejectOnce(new Error('Connection failed'));
 
-      await expect(getDevelopers()).rejects.toThrow('Connection failed');
+      await expect(getDevelopers(api.deps)).rejects.toThrow('Connection failed');
     });
 
-    it('should handle JSON parsing errors', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should handle JSON parsing errors', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({
         ok: true,
         json: async () => {
           throw new Error('Invalid JSON');
         },
       });
 
-      await expect(getGenres(Entity.Books)).rejects.toThrow('Invalid JSON');
+      await expect(getGenres(Entity.Books, api.deps)).rejects.toThrow('Invalid JSON');
     });
 
-    it('should throw error when API returns undefined', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => undefined });
+    it('should throw error when API returns undefined', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => undefined });
 
-      await expect(getAuthors()).rejects.toThrow();
+      await expect(getAuthors(api.deps)).rejects.toThrow();
     });
 
-    it('should throw error when API returns null', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => null });
+    it('should throw error when API returns null', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => null });
 
-      await expect(getPublishers()).rejects.toThrow();
+      await expect(getPublishers(api.deps)).rejects.toThrow();
     });
 
-    it('should throw error if fetch is called without response being ok (implicit)', async () => {
+    it('should throw error if fetch is called without response being ok (implicit)', async (t) => {
+      const api = createApiFakes(t);
       // The current implementation doesn't explicitly check response.ok,
       // but it should gracefully handle invalid JSON responses
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => {
           throw new TypeError('Failed to parse JSON');
         },
       });
 
-      await expect(getStudios()).rejects.toThrow();
+      await expect(getStudios(api.deps)).rejects.toThrow();
     });
   });
 
   describe('API endpoint construction', () => {
-    it('should construct correct endpoint for book authors', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should construct correct endpoint for book authors', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getAuthors();
+      await getAuthors(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Books}/authors`));
+      expectFetched(api.apiFetch, `${Entity.Books}/authors`);
     });
 
-    it('should construct correct endpoint for book publishers', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should construct correct endpoint for book publishers', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getPublishers();
+      await getPublishers(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Books}/publisher`));
+      expectFetched(api.apiFetch, `${Entity.Books}/publisher`);
     });
 
-    it('should construct correct endpoints for different entity types', async () => {
+    it('should construct correct endpoints for different entity types', async (t) => {
+      const api = createApiFakes(t);
       const testCases = [
-        { fn: () => getGenres(Entity.Books), entity: Entity.Books, property: 'genres' },
-        { fn: () => getGenres(Entity.Movies), entity: Entity.Movies, property: 'genres' },
-        { fn: () => getGenres(Entity.Games), entity: Entity.Games, property: 'genres' },
-        { fn: () => getGenres(Entity.Musics), entity: Entity.Musics, property: 'genres' },
-        { fn: () => getFormats(Entity.Books), entity: Entity.Books, property: 'format' },
-        { fn: () => getFormats(Entity.Movies), entity: Entity.Movies, property: 'format' },
-        { fn: () => getFormats(Entity.Games), entity: Entity.Games, property: 'format' },
-        { fn: () => getFormats(Entity.Musics), entity: Entity.Musics, property: 'format' },
+        { fn: () => getGenres(Entity.Books, api.deps), entity: Entity.Books, property: 'genres' },
+        { fn: () => getGenres(Entity.Movies, api.deps), entity: Entity.Movies, property: 'genres' },
+        { fn: () => getGenres(Entity.Games, api.deps), entity: Entity.Games, property: 'genres' },
+        { fn: () => getGenres(Entity.Musics, api.deps), entity: Entity.Musics, property: 'genres' },
+        { fn: () => getFormats(Entity.Books, api.deps), entity: Entity.Books, property: 'format' },
+        { fn: () => getFormats(Entity.Movies, api.deps), entity: Entity.Movies, property: 'format' },
+        { fn: () => getFormats(Entity.Games, api.deps), entity: Entity.Games, property: 'format' },
+        { fn: () => getFormats(Entity.Musics, api.deps), entity: Entity.Musics, property: 'format' },
       ];
 
       for (const testCase of testCases) {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+        api.respondOnce({ ok: true, json: async () => [] });
 
         await testCase.fn();
 
-        expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${testCase.entity}/${testCase.property}`));
+        expectFetched(api.apiFetch, `${testCase.entity}/${testCase.property}`);
 
-        vi.clearAllMocks();
+        api.clearCalls();
       }
     });
 
-    it('should use baseUrl from constants in fetch call', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should use baseUrl from constants in fetch call', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getAuthors();
+      await getAuthors(api.deps);
 
-      const calls = mockApiFetch.mock.calls;
-      expect(calls[0][0]).toContain('metadata');
-      expect(calls[0][0]).toContain(Entity.Books);
+      const calls = api.apiFetch.mock.calls;
+      expect(calls[0].arguments[0]).toContain('metadata');
+      expect(calls[0].arguments[0]).toContain(Entity.Books);
     });
 
-    it('should construct endpoints for game-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should construct endpoints for game-specific functions', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getDevelopers();
+      await getDevelopers(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/developers`));
+      expectFetched(api.apiFetch, `${Entity.Games}/developers`);
 
-      vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      api.clearCalls();
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getPlatforms();
+      await getPlatforms(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/platform`));
+      expectFetched(api.apiFetch, `${Entity.Games}/platform`);
 
-      vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      api.clearCalls();
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getGamePublishers();
+      await getGamePublishers(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Games}/publishers`));
+      expectFetched(api.apiFetch, `${Entity.Games}/publishers`);
     });
 
-    it('should construct endpoints for music-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should construct endpoints for music-specific functions', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getLabels();
+      await getLabels(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Musics}/label`));
+      expectFetched(api.apiFetch, `${Entity.Musics}/label`);
 
-      vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+      api.clearCalls();
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getArtist();
+      await getArtist(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Musics}/artist`));
+      expectFetched(api.apiFetch, `${Entity.Musics}/artist`);
     });
 
-    it('should construct endpoints for movie-specific functions', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    it('should construct endpoints for movie-specific functions', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => [] });
 
-      await getStudios();
+      await getStudios(api.deps);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`${Entity.Movies}/studios`));
+      expectFetched(api.apiFetch, `${Entity.Movies}/studios`);
     });
   });
 
   describe('Integration scenarios', () => {
-    it('should fetch metadata for all functions in sequence', async () => {
+    it('should fetch metadata for all functions in sequence', async (t) => {
+      const api = createApiFakes(t);
       const functions = [
-        { fn: getAuthors, name: 'getAuthors' },
-        { fn: getPublishers, name: 'getPublishers' },
-        { fn: () => getGenres(Entity.Books), name: 'getGenres(Books)' },
-        { fn: getStudios, name: 'getStudios' },
-        { fn: getDevelopers, name: 'getDevelopers' },
-        { fn: getPlatforms, name: 'getPlatforms' },
-        { fn: getLabels, name: 'getLabels' },
-        { fn: getGamePublishers, name: 'getGamePublishers' },
-        { fn: getArtist, name: 'getArtist' },
+        { fn: () => getAuthors(api.deps), name: 'getAuthors' },
+        { fn: () => getPublishers(api.deps), name: 'getPublishers' },
+        { fn: () => getGenres(Entity.Books, api.deps), name: 'getGenres(Books)' },
+        { fn: () => getStudios(api.deps), name: 'getStudios' },
+        { fn: () => getDevelopers(api.deps), name: 'getDevelopers' },
+        { fn: () => getPlatforms(api.deps), name: 'getPlatforms' },
+        { fn: () => getLabels(api.deps), name: 'getLabels' },
+        { fn: () => getGamePublishers(api.deps), name: 'getGamePublishers' },
+        { fn: () => getArtist(api.deps), name: 'getArtist' },
       ];
 
       for (const testCase of functions) {
-        mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => ['Item 1', 'Item 2'] });
+        api.respondOnce({ ok: true, json: async () => ['Item 1', 'Item 2'] });
 
         const result = await testCase.fn();
 
@@ -713,33 +736,35 @@ describe('metadata-data.ts', () => {
         expect(result[0]).toHaveProperty('label');
         expect(result[0]).toHaveProperty('value');
 
-        vi.clearAllMocks();
+        api.clearCalls();
       }
     });
 
-    it('should handle mixed success and error scenarios', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => ['Author 1'] });
+    it('should handle mixed success and error scenarios', async (t) => {
+      const api = createApiFakes(t);
+      api.respondOnce({ ok: true, json: async () => ['Author 1'] });
 
-      const authorsResult = await getAuthors();
+      const authorsResult = await getAuthors(api.deps);
       expect(authorsResult).toHaveLength(1);
 
-      vi.clearAllMocks();
-      mockApiFetch.mockRejectedValueOnce(new Error('API Error'));
+      api.clearCalls();
+      api.rejectOnce(new Error('API Error'));
 
-      await expect(getPublishers()).rejects.toThrow('API Error');
+      await expect(getPublishers(api.deps)).rejects.toThrow('API Error');
     });
 
-    it('should return consistently formatted responses', async () => {
+    it('should return consistently formatted responses', async (t) => {
+      const api = createApiFakes(t);
       const mockData = ['Data 1', 'Data 2', 'Data 3'];
 
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result1 = await getAuthors();
+      const result1 = await getAuthors(api.deps);
 
-      vi.clearAllMocks();
-      mockApiFetch.mockResolvedValueOnce({ ok: true, json: async () => mockData });
+      api.clearCalls();
+      api.respondOnce({ ok: true, json: async () => mockData });
 
-      const result2 = await getStudios();
+      const result2 = await getStudios(api.deps);
 
       expect(result1).toEqual(result2);
     });

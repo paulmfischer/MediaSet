@@ -51,7 +51,8 @@ const VALID_IDENTIFIER_TYPES = new Set<string>(['isbn', 'lccn', 'oclc', 'olid', 
 export async function lookup(
   entityType: Entity,
   identifierType: IdentifierType,
-  searchParams: Record<string, string>
+  searchParams: Record<string, string>,
+  fetchApi: typeof fetch = fetch
 ): Promise<Array<BookEntity | MovieEntity | GameEntity | MusicEntity> | LookupError> {
   if (!VALID_IDENTIFIER_TYPES.has(identifierType)) {
     return { message: `Invalid identifier type: ${identifierType}`, statusCode: 400 } as LookupError;
@@ -66,7 +67,7 @@ export async function lookup(
     url = `${baseUrl}/lookup/${entityType}/${identifierType}/${encodeURIComponent(identifierValue)}`;
   }
 
-  const response = await fetch(url);
+  const response = await fetchApi(url);
 
   if (!response.ok) {
     const errorText = await response.text();

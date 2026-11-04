@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
+
 import {
   Entity,
   type BaseEntity,
