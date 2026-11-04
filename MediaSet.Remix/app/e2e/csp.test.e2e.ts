@@ -51,6 +51,7 @@ describe('production Content-Security-Policy (e2e)', () => {
     const response = await page.goto('/');
     const policy = (await response?.headerValue('content-security-policy')) ?? '';
     assert.match(policy, /script-src[^;]*blob:/);
+    assert.match(policy, /(^|; )worker-src 'none'(;|$)/);
     await page.waitForLoadState('networkidle');
 
     // The menu toggle only works once its client entry has loaded and hydrated under the CSP.

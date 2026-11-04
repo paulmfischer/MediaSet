@@ -28,9 +28,11 @@ export function originOf(url: string | undefined): string | null {
 // loads every client entry (#733): its feature detection imports blob: modules in a frame, and where the browser
 // lacks multiple import maps it links modules as blob: URLs and parses them with a WebAssembly lexer. Without
 // them hydration logs CSP violations or fails. The barcode scanner needs neither (@zxing/library is a same-origin
-// dynamic import covered by 'self'; no workers or wasm; the preview is a MediaStream), so there is no worker-src
-// (workers would fall back through child-src to script-src, which includes blob:) and
-// 'unsafe-eval' stays off. app/e2e/csp.test.e2e.ts and app/e2e/barcode-scanner.test.e2e.ts run the app under this policy and fail if a directive is removed.
+// dynamic import covered by 'self'; no workers or wasm; the preview is a MediaStream). worker-src 'none' (#733)
+// hardens that: the app, @zxing and the polyfill create no workers, so Worker, SharedWorker and service worker
+// registration are denied instead of falling back through child-src to script-src (which allows blob:). Remove it
+// if a dependency ever needs a worker. 'unsafe-eval' stays off. app/e2e/csp.test.e2e.ts and
+// app/e2e/barcode-scanner.test.e2e.ts run the app under this policy and fail on any violation.
 export function buildContentSecurityPolicy(clientApiUrl?: string): string {
   const apiOrigin = originOf(clientApiUrl);
   return [
@@ -38,6 +40,7 @@ export function buildContentSecurityPolicy(clientApiUrl?: string): string {
     ['img-src', "'self'", 'data:', 'blob:', 'https:', ...(apiOrigin ? [apiOrigin] : [])].join(' '),
     "style-src 'self' 'unsafe-inline'",
     "script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval'",
+    "worker-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",

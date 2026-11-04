@@ -58,9 +58,9 @@ describe('securityHeaders middleware', () => {
     assert.deepEqual(policy.get('script-src'), ["'self'", "'unsafe-inline'", 'blob:', "'wasm-unsafe-eval'"]);
   });
 
-  it('should set no worker-src when in production', async () => {
+  it("should deny all workers with worker-src 'none' when in production", async () => {
     const policy = await cspFor('http://api.example:8080');
-    assert.equal(policy.has('worker-src'), false);
+    assert.deepEqual(policy.get('worker-src'), ["'none'"]);
   });
 
   it('should allow blob: images when in production', async () => {
