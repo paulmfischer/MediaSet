@@ -68,7 +68,7 @@ MediaSet.Remix/
 │   │   ├── entity/              # Collection list page
 │   │   └── public/              # Client entries (menus, navigation)
 │   ├── api/              # Server-side MediaSet API access, with module tests
-│   ├── test/             # Test fakes shared by the module tests
+│   ├── test/             # Fetch mocking helpers shared by the module tests
 │   ├── e2e/              # End-to-end tests
 │   ├── utils/            # Shared utilities
 │   ├── assets.ts         # Asset server: what the browser may load

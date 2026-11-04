@@ -1,7 +1,8 @@
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
 import { expect } from 'remix/assert';
 import { afterEach, beforeEach, describe, it } from 'remix/test';
-
-import { getClientConfig } from './config.server.ts';
 
 const ENV_KEYS = ['NODE_ENV', 'apiUrl', 'clientApiUrl'] as const;
 
@@ -12,6 +13,22 @@ let importCount = 0;
 async function loadConstants(): Promise<typeof import('./constants.server.ts')> {
   importCount += 1;
   return import(`./constants.server.ts?fresh=${importCount}`);
+}
+
+/** Reads getClientConfig() in a fresh process, since config.server.ts keeps its own cached constants. */
+function loadClientConfigApiUrl(env: Record<string, string>): string {
+  const configUrl = new URL('./config.server.ts', import.meta.url).href;
+  return execFileSync(
+    process.execPath,
+    [
+      '--import',
+      'remix/node-tsx',
+      '--input-type=module',
+      '-e',
+      `const { getClientConfig } = await import(${JSON.stringify(configUrl)}); process.stdout.write(getClientConfig().apiUrl);`,
+    ],
+    { cwd: fileURLToPath(new URL('..', import.meta.url)), env: { ...process.env, ...env }, encoding: 'utf8' }
+  );
 }
 
 describe('API URL configuration', () => {
@@ -30,33 +47,36 @@ describe('API URL configuration', () => {
 
   it('should use the host API and same-origin browser proxy in development', async () => {
     process.env['NODE_ENV'] = 'development';
-    const constants = await loadConstants();
-    const { baseUrl, clientApiUrl } = constants;
+    const { baseUrl, clientApiUrl } = await loadConstants();
 
     expect(baseUrl).toBe('http://127.0.0.1:5000');
     expect(clientApiUrl).toBe('/dev-api');
-    expect(getClientConfig(constants).apiUrl).toBe('/dev-api');
+    expect(loadClientConfigApiUrl({ NODE_ENV: 'development', apiUrl: '', clientApiUrl: '' })).toBe('/dev-api');
   });
 
   it('should preserve production URL defaults', async () => {
     process.env['NODE_ENV'] = 'production';
-    const constants = await loadConstants();
-    const { baseUrl, clientApiUrl } = constants;
+    const { baseUrl, clientApiUrl } = await loadConstants();
 
     expect(baseUrl).toBe('http://localhost:7130');
     expect(clientApiUrl).toBe('http://localhost:7130');
-    expect(getClientConfig(constants).apiUrl).toBe(clientApiUrl);
+    expect(loadClientConfigApiUrl({ NODE_ENV: 'production', apiUrl: '', clientApiUrl: '' })).toBe(clientApiUrl);
   });
 
   it('should honor distinct configured server and browser URLs', async () => {
     process.env['NODE_ENV'] = 'development';
     process.env['apiUrl'] = 'http://other-api:8080';
     process.env['clientApiUrl'] = 'https://media.example.test';
-    const constants = await loadConstants();
-    const { baseUrl, clientApiUrl } = constants;
+    const { baseUrl, clientApiUrl } = await loadConstants();
 
     expect(baseUrl).toBe('http://other-api:8080');
     expect(clientApiUrl).toBe('https://media.example.test');
-    expect(getClientConfig(constants).apiUrl).toBe(clientApiUrl);
+    expect(
+      loadClientConfigApiUrl({
+        NODE_ENV: 'development',
+        apiUrl: 'http://other-api:8080',
+        clientApiUrl: 'https://media.example.test',
+      })
+    ).toBe(clientApiUrl);
   });
 });

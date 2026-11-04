@@ -10,10 +10,10 @@ export interface ClientConfig {
   showErrorDetails: boolean;
 }
 
-export function getClientConfig(urls: { clientApiUrl: string } = { clientApiUrl }): ClientConfig {
+export function getClientConfig(): ClientConfig {
   return {
     // Client-side API URL must be accessible from the browser
-    apiUrl: urls.clientApiUrl,
+    apiUrl: clientApiUrl,
     showErrorDetails: getShowErrorDetails(),
   };
 }

@@ -1,7 +1,7 @@
 import { expect } from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { mockApiResponse } from '../test/api-fakes.ts';
+import { mockApiResponse } from '../test/fetch-fakes.ts';
 
 import { lookup, getIdentifierTypeForField, isLookupError } from './lookup-data.server.ts';
 import {
@@ -46,9 +46,9 @@ describe('lookup-data.server.ts', () => {
   describe('lookup', () => {
     describe('error handling', () => {
       it('returns a LookupError when the response is not ok', async (t) => {
-        const fetchSpy = t.mock.fn(async () => new Response('Not found', { status: 404 }));
+        t.mock.method(globalThis, 'fetch', async () => new Response('Not found', { status: 404 }));
 
-        const result = await lookup(Entity.Books, 'isbn', { isbn: '9781234567890' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Books, 'isbn', { isbn: '9781234567890' });
 
         expect(isLookupError(result)).toBe(true);
         if (isLookupError(result)) {
@@ -57,9 +57,9 @@ describe('lookup-data.server.ts', () => {
       });
 
       it('returns a LookupError with a fallback message when body is empty', async (t) => {
-        const fetchSpy = t.mock.fn(async () => new Response('', { status: 500 }));
+        t.mock.method(globalThis, 'fetch', async () => new Response('', { status: 500 }));
 
-        const result = await lookup(Entity.Movies, 'upc', { barcode: '123456789' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Movies, 'upc', { barcode: '123456789' });
 
         expect(isLookupError(result)).toBe(true);
         if (isLookupError(result)) {
@@ -79,9 +79,9 @@ describe('lookup-data.server.ts', () => {
       });
 
       it('encodes path traversal sequences in identifierValue', async (t) => {
-        const fetchSpy = t.mock.fn(async () => mockApiResponse([]));
+        const fetchSpy = t.mock.method(globalThis, 'fetch', async () => mockApiResponse([]));
 
-        await lookup(Entity.Books, 'isbn', { isbn: '../../admin/delete' }, fetchSpy as typeof fetch);
+        await lookup(Entity.Books, 'isbn', { isbn: '../../admin/delete' });
 
         expect(fetchSpy).toHaveBeenCalledTimes(1);
         const [calledUrl] = fetchSpy.mock.calls[0].arguments as unknown as [string];
@@ -106,9 +106,9 @@ describe('lookup-data.server.ts', () => {
             imageUrl: 'http://example.com/cover.jpg',
           },
         ];
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockResponse));
 
-        const result = await lookup(Entity.Books, 'isbn', { isbn: isbnValue }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Books, 'isbn', { isbn: isbnValue });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -130,9 +130,9 @@ describe('lookup-data.server.ts', () => {
             subjects: [],
           },
         ];
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockResponse));
 
-        const result = await lookup(Entity.Books, 'entity', { title: 'Test Book' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Books, 'entity', { title: 'Test Book' });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -158,9 +158,9 @@ describe('lookup-data.server.ts', () => {
 
       it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '012345678901';
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockMovieResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
-        const result = await lookup(Entity.Movies, 'upc', { barcode: barcodeValue }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Movies, 'upc', { barcode: barcodeValue });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -172,9 +172,9 @@ describe('lookup-data.server.ts', () => {
 
       it('retains the barcode value when searchParams uses "upc" key', async (t) => {
         const upcValue = '012345678901';
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockMovieResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
-        const result = await lookup(Entity.Movies, 'upc', { upc: upcValue }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Movies, 'upc', { upc: upcValue });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -183,9 +183,9 @@ describe('lookup-data.server.ts', () => {
       });
 
       it('does not set barcode for entity (title) searches', async (t) => {
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockMovieResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
-        const result = await lookup(Entity.Movies, 'entity', { title: 'Test Movie' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Movies, 'entity', { title: 'Test Movie' });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -211,9 +211,9 @@ describe('lookup-data.server.ts', () => {
 
       it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '711719541486';
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockGameResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockGameResponse));
 
-        const result = await lookup(Entity.Games, 'upc', { barcode: barcodeValue }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Games, 'upc', { barcode: barcodeValue });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -224,9 +224,9 @@ describe('lookup-data.server.ts', () => {
       });
 
       it('does not set barcode for entity (title) searches', async (t) => {
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockGameResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockGameResponse));
 
-        const result = await lookup(Entity.Games, 'entity', { title: 'Test Game' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Games, 'entity', { title: 'Test Game' });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -253,9 +253,9 @@ describe('lookup-data.server.ts', () => {
 
       it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '093624936428';
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockMusicResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMusicResponse));
 
-        const result = await lookup(Entity.Musics, 'upc', { barcode: barcodeValue }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Musics, 'upc', { barcode: barcodeValue });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {
@@ -266,9 +266,9 @@ describe('lookup-data.server.ts', () => {
       });
 
       it('does not set barcode for entity (title) searches', async (t) => {
-        const fetchSpy = t.mock.fn(async () => mockApiResponse(mockMusicResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMusicResponse));
 
-        const result = await lookup(Entity.Musics, 'entity', { title: 'Test Album' }, fetchSpy as typeof fetch);
+        const result = await lookup(Entity.Musics, 'entity', { title: 'Test Album' });
 
         expect(Array.isArray(result)).toBe(true);
         if (Array.isArray(result)) {

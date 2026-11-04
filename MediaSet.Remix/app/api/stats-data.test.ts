@@ -1,14 +1,14 @@
 import { expect, fail } from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { createApiFakes, expectFetched } from '../test/api-fakes.ts';
+import { mockFetch, expectFetched } from '../test/fetch-fakes.ts';
 
 import { getStats } from './stats-data.ts';
 
 describe('stats-data.ts', () => {
   describe('getStats', () => {
     it('should fetch and return complete stats object', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: {
           total: 42,
@@ -44,14 +44,14 @@ describe('stats-data.ts', () => {
         json: async () => mockStats,
       });
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(result).toEqual(mockStats);
       expectFetched(api.apiFetch, '/stats');
     });
 
     it('should handle zero statistics', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const emptyStats = {
         bookStats: {
           total: 0,
@@ -87,7 +87,7 @@ describe('stats-data.ts', () => {
         json: async () => emptyStats,
       });
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(result.bookStats.total).toBe(0);
       expect(result.movieStats.total).toBe(0);
@@ -96,7 +96,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should have correct structure for all stats categories', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: { total: 10, totalFormats: 1, formats: ['Book'], uniqueAuthors: 5, totalPages: 1000 },
         movieStats: { total: 20, totalFormats: 1, formats: ['Movie'], totalTvSeries: 0 },
@@ -109,7 +109,7 @@ describe('stats-data.ts', () => {
         json: async () => mockStats,
       });
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(result).toHaveProperty('bookStats');
       expect(result).toHaveProperty('movieStats');
@@ -122,14 +122,14 @@ describe('stats-data.ts', () => {
     });
 
     it('should throw error when fetch fails', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 500,
       });
 
       try {
-        await getStats(api.deps);
+        await getStats();
         fail('Should have thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(Response);
@@ -137,14 +137,14 @@ describe('stats-data.ts', () => {
     });
 
     it('should handle network errors', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.rejectOnce(new Error('Network error'));
 
-      await expect(getStats(api.deps)).rejects.toThrow('Network error');
+      await expect(getStats()).rejects.toThrow('Network error');
     });
 
     it('should parse and return JSON response', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: { total: 5, totalFormats: 1, formats: ['Hardcover'], uniqueAuthors: 3, totalPages: 500 },
         movieStats: { total: 10, totalFormats: 1, formats: ['DVD'], totalTvSeries: 1 },
@@ -165,14 +165,14 @@ describe('stats-data.ts', () => {
 
       api.respondOnce(mockResponse);
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(mockResponse.json).toHaveBeenCalled();
       expect(result).toEqual(mockStats);
     });
 
     it('should preserve numeric and array types', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: { total: 42, totalFormats: 3, formats: ['A', 'B', 'C'], uniqueAuthors: 28, totalPages: 12504 },
         movieStats: { total: 156, totalFormats: 2, formats: ['X', 'Y'], totalTvSeries: 12 },
@@ -185,7 +185,7 @@ describe('stats-data.ts', () => {
         json: async () => mockStats,
       });
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(typeof result.bookStats.total).toBe('number');
       expect(typeof result.musicStats.totalTracks).toBe('number');
@@ -194,7 +194,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should handle large numbers', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: {
           total: 9999,
@@ -219,7 +219,7 @@ describe('stats-data.ts', () => {
         json: async () => mockStats,
       });
 
-      const result = await getStats(api.deps);
+      const result = await getStats();
 
       expect(result.bookStats.total).toBe(9999);
       expect(result.bookStats.totalPages).toBe(5000000);
@@ -228,7 +228,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should handle concurrent calls', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockStats = {
         bookStats: { total: 10, totalFormats: 1, formats: ['A'], uniqueAuthors: 5, totalPages: 500 },
         movieStats: { total: 20, totalFormats: 1, formats: ['B'], totalTvSeries: 0 },
@@ -239,7 +239,7 @@ describe('stats-data.ts', () => {
       api.respondOnce({ ok: true, json: async () => mockStats });
       api.respondOnce({ ok: true, json: async () => mockStats });
 
-      const [result1, result2] = await Promise.all([getStats(api.deps), getStats(api.deps)]);
+      const [result1, result2] = await Promise.all([getStats(), getStats()]);
 
       expect(result1).toEqual(mockStats);
       expect(result2).toEqual(mockStats);
@@ -247,7 +247,7 @@ describe('stats-data.ts', () => {
     });
 
     it('should handle JSON parsing errors', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
         json: async () => {
@@ -255,7 +255,7 @@ describe('stats-data.ts', () => {
         },
       });
 
-      await expect(getStats(api.deps)).rejects.toThrow('JSON parse error');
+      await expect(getStats()).rejects.toThrow('JSON parse error');
     });
   });
 });

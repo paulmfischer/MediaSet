@@ -90,8 +90,9 @@ Node runs the TypeScript sources directly; `tsc` only type checks. Import with t
 - Browser tests are `*.test.browser.tsx`; end-to-end tests are `*.test.e2e.ts`
   (`t.serve(...)` with `createTestServer(router.fetch)`).
 - Module tests (`app/api/`, `app/utils/`, `app/models.ts`) are `*.test.ts` files that also use
-  `remix/test` and `remix/assert`. Data functions in `app/api/` take their `apiFetch` and
-  `serverLogger` as a trailing `ApiDeps` argument (`app/api/api-deps.ts`); tests pass the fakes
-  from `app/test/api-fakes.ts` instead of mocking modules.
+  `remix/test` and `remix/assert`. Data functions call the global `fetch` (through `apiFetch`), so
+  tests mock it per test with `t.mock.method(globalThis, 'fetch', ...)`, which is restored
+  automatically; `mockFetch(t)` in `app/test/fetch-fakes.ts` wraps this. Do not add
+  dependency parameters to production code just for tests.
 - Write new tests with `remix test`. Name them
   `should [expected behavior] when [condition]` and test user-visible behavior.

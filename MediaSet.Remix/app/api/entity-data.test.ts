@@ -1,14 +1,14 @@
 import { expect } from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { createApiFakes, expectFetched } from '../test/api-fakes.ts';
+import { mockFetch, expectFetched } from '../test/fetch-fakes.ts';
 import { searchEntities, getEntity, updateEntity, addEntity, deleteEntity } from './entity-data.ts';
 import { Entity, type BookEntity, type MovieEntity, type GameEntity, type MusicEntity } from '../models.ts';
 
 describe('entity-data.ts', () => {
   describe('searchEntities', () => {
     it('should fetch and return search results for books', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [
         {
           type: Entity.Books,
@@ -31,7 +31,7 @@ describe('entity-data.ts', () => {
         json: async () => mockBooks,
       });
 
-      const result = await searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps);
+      const result = await searchEntities<BookEntity>(Entity.Books, 'test');
 
       expect(result).toEqual(mockBooks);
       expectFetched(api.apiFetch, `/${Entity.Books}/search?searchText=test`);
@@ -39,7 +39,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should fetch and return search results for movies', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockMovies: MovieEntity[] = [
         {
           type: Entity.Movies,
@@ -55,14 +55,14 @@ describe('entity-data.ts', () => {
         json: async () => mockMovies,
       });
 
-      const result = await searchEntities<MovieEntity>(Entity.Movies, 'action', undefined, api.deps);
+      const result = await searchEntities<MovieEntity>(Entity.Movies, 'action');
 
       expect(result).toEqual(mockMovies);
       expectFetched(api.apiFetch, `/${Entity.Movies}/search?searchText=action`);
     });
 
     it('should fetch and return search results for games', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockGames: GameEntity[] = [
         {
           type: Entity.Games,
@@ -78,14 +78,14 @@ describe('entity-data.ts', () => {
         json: async () => mockGames,
       });
 
-      const result = await searchEntities<GameEntity>(Entity.Games, 'rpg', undefined, api.deps);
+      const result = await searchEntities<GameEntity>(Entity.Games, 'rpg');
 
       expect(result).toEqual(mockGames);
       expectFetched(api.apiFetch, `/${Entity.Games}/search?searchText=rpg`);
     });
 
     it('should fetch and return search results for music', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockMusic: MusicEntity[] = [
         {
           type: Entity.Musics,
@@ -101,14 +101,14 @@ describe('entity-data.ts', () => {
         json: async () => mockMusic,
       });
 
-      const result = await searchEntities<MusicEntity>(Entity.Musics, 'rock', undefined, api.deps);
+      const result = await searchEntities<MusicEntity>(Entity.Musics, 'rock');
 
       expect(result).toEqual(mockMusic);
       expectFetched(api.apiFetch, `/${Entity.Musics}/search?searchText=rock`);
     });
 
     it('should handle null searchText by using empty string', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
       api.respondOnce({
@@ -116,13 +116,13 @@ describe('entity-data.ts', () => {
         json: async () => mockBooks,
       });
 
-      await searchEntities<BookEntity>(Entity.Books, null, undefined, api.deps);
+      await searchEntities<BookEntity>(Entity.Books, null);
 
       expectFetched(api.apiFetch, 'searchText=');
     });
 
     it('should include orderBy parameter when provided', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
       api.respondOnce({
@@ -130,13 +130,13 @@ describe('entity-data.ts', () => {
         json: async () => mockBooks,
       });
 
-      await searchEntities<BookEntity>(Entity.Books, 'test', 'title', api.deps);
+      await searchEntities<BookEntity>(Entity.Books, 'test', 'title');
 
       expectFetched(api.apiFetch, 'orderBy=title');
     });
 
     it('should handle empty orderBy parameter', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
       api.respondOnce({
@@ -144,36 +144,36 @@ describe('entity-data.ts', () => {
         json: async () => mockBooks,
       });
 
-      await searchEntities<BookEntity>(Entity.Books, 'test', '', api.deps);
+      await searchEntities<BookEntity>(Entity.Books, 'test', '');
 
       expectFetched(api.apiFetch, 'orderBy=');
     });
 
     it('should throw error when response is not ok', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 500,
       });
 
-      await expect(searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps)).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
     it('should return empty array when no results found', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
         json: async () => [],
       });
 
-      const result = await searchEntities<BookEntity>(Entity.Books, 'nonexistent', undefined, api.deps);
+      const result = await searchEntities<BookEntity>(Entity.Books, 'nonexistent');
 
       expect(result).toEqual([]);
       expect(result).toHaveLength(0);
     });
 
     it('should handle multiple search results', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = Array.from({ length: 10 }, (_, i) => ({
         type: Entity.Books,
         id: String(i + 1),
@@ -185,7 +185,7 @@ describe('entity-data.ts', () => {
         json: async () => mockBooks,
       });
 
-      const result = await searchEntities<BookEntity>(Entity.Books, 'book', undefined, api.deps);
+      const result = await searchEntities<BookEntity>(Entity.Books, 'book');
 
       expect(result).toHaveLength(10);
     });
@@ -193,7 +193,7 @@ describe('entity-data.ts', () => {
 
   describe('getEntity', () => {
     it('should fetch and return a specific book entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBook: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -208,14 +208,14 @@ describe('entity-data.ts', () => {
         json: async () => mockBook,
       });
 
-      const result = await getEntity<BookEntity>(Entity.Books, '123', api.deps);
+      const result = await getEntity<BookEntity>(Entity.Books, '123');
 
       expect(result).toEqual(mockBook);
       expectFetched(api.apiFetch, `/${Entity.Books}/123`);
     });
 
     it('should fetch and return a specific movie entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockMovie: MovieEntity = {
         type: Entity.Movies,
         id: '456',
@@ -230,13 +230,13 @@ describe('entity-data.ts', () => {
         json: async () => mockMovie,
       });
 
-      const result = await getEntity<MovieEntity>(Entity.Movies, '456', api.deps);
+      const result = await getEntity<MovieEntity>(Entity.Movies, '456');
 
       expect(result).toEqual(mockMovie);
     });
 
     it('should fetch and return a specific game entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockGame: GameEntity = {
         type: Entity.Games,
         id: '789',
@@ -250,13 +250,13 @@ describe('entity-data.ts', () => {
         json: async () => mockGame,
       });
 
-      const result = await getEntity<GameEntity>(Entity.Games, '789', api.deps);
+      const result = await getEntity<GameEntity>(Entity.Games, '789');
 
       expect(result).toEqual(mockGame);
     });
 
     it('should fetch and return a specific music entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockMusic: MusicEntity = {
         type: Entity.Musics,
         id: '101',
@@ -270,31 +270,31 @@ describe('entity-data.ts', () => {
         json: async () => mockMusic,
       });
 
-      const result = await getEntity<MusicEntity>(Entity.Musics, '101', api.deps);
+      const result = await getEntity<MusicEntity>(Entity.Musics, '101');
 
       expect(result).toEqual(mockMusic);
     });
 
     it('should throw 404 error when entity not found', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         status: 404,
       });
 
-      await expect(getEntity<BookEntity>(Entity.Books, 'nonexistent', api.deps)).rejects.toThrow();
+      await expect(getEntity<BookEntity>(Entity.Books, 'nonexistent')).rejects.toThrow();
     });
 
     it('should throw specific entity not found message for each type', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         status: 404,
       });
 
-      await expect(getEntity<MovieEntity>(Entity.Movies, '999', api.deps)).rejects.toThrow();
+      await expect(getEntity<MovieEntity>(Entity.Movies, '999')).rejects.toThrow();
     });
 
     it('should handle entity with all fields populated', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const fullBook: BookEntity = {
         type: Entity.Books,
         id: '1',
@@ -316,7 +316,7 @@ describe('entity-data.ts', () => {
         json: async () => fullBook,
       });
 
-      const result = await getEntity<BookEntity>(Entity.Books, '1', api.deps);
+      const result = await getEntity<BookEntity>(Entity.Books, '1');
 
       expect(result.authors).toHaveLength(2);
       expect(result.pages).toBe(300);
@@ -324,7 +324,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should handle entity with minimal fields', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const minimalGame: GameEntity = {
         type: Entity.Games,
         id: '1',
@@ -336,7 +336,7 @@ describe('entity-data.ts', () => {
         json: async () => minimalGame,
       });
 
-      const result = await getEntity<GameEntity>(Entity.Games, '1', api.deps);
+      const result = await getEntity<GameEntity>(Entity.Games, '1');
 
       expect(result.type).toBe(Entity.Games);
       expect(result.id).toBe('1');
@@ -346,7 +346,7 @@ describe('entity-data.ts', () => {
 
   describe('updateEntity', () => {
     it('should update a book entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const bookToUpdate: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -358,20 +358,20 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<BookEntity>('123', bookToUpdate, undefined, api.deps);
+      await updateEntity<BookEntity>('123', bookToUpdate);
 
       expectFetched(
         api.apiFetch,
         `/${Entity.Books}/123`,
         expect.objectContaining({
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       );
     });
 
     it('should update a movie entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const movieToUpdate: MovieEntity = {
         type: Entity.Movies,
         id: '456',
@@ -383,13 +383,13 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<MovieEntity>('456', movieToUpdate, undefined, api.deps);
+      await updateEntity<MovieEntity>('456', movieToUpdate);
 
       expectFetched(api.apiFetch, `/${Entity.Movies}/456`, expect.objectContaining({ method: 'PUT' }));
     });
 
     it('should update a game entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const gameToUpdate: GameEntity = {
         type: Entity.Games,
         id: '789',
@@ -401,13 +401,13 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<GameEntity>('789', gameToUpdate, undefined, api.deps);
+      await updateEntity<GameEntity>('789', gameToUpdate);
 
       expectFetched(api.apiFetch, `/${Entity.Games}/789`, expect.objectContaining({ method: 'PUT' }));
     });
 
     it('should update a music entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const musicToUpdate: MusicEntity = {
         type: Entity.Musics,
         id: '101',
@@ -419,13 +419,13 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<MusicEntity>('101', musicToUpdate, undefined, api.deps);
+      await updateEntity<MusicEntity>('101', musicToUpdate);
 
       expectFetched(api.apiFetch, `/${Entity.Musics}/101`, expect.objectContaining({ method: 'PUT' }));
     });
 
     it('should send entity data as JSON', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const book: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -437,7 +437,7 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<BookEntity>('123', book, undefined, api.deps);
+      await updateEntity<BookEntity>('123', book);
 
       const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = callArgs[1].body;
@@ -449,12 +449,10 @@ describe('entity-data.ts', () => {
     });
 
     it('should keep the status and message when the API rejects the update', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({ ok: false, status: 400, text: async () => ' ISBN already exists ' });
 
-      const error = await updateEntity<BookEntity>('123', { type: Entity.Books }, undefined, api.deps).catch(
-        (e: unknown) => e
-      );
+      const error = await updateEntity<BookEntity>('123', { type: Entity.Books }).catch((e: unknown) => e);
 
       expect(error).toBeInstanceOf(Response);
       expect((error as Response).status).toBe(400);
@@ -462,7 +460,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should throw error when update fails', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const book: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -474,11 +472,11 @@ describe('entity-data.ts', () => {
         status: 500,
       });
 
-      await expect(updateEntity<BookEntity>('123', book, undefined, api.deps)).rejects.toThrow();
+      await expect(updateEntity<BookEntity>('123', book)).rejects.toThrow();
     });
 
     it('should throw error with correct entity type in message', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const movie: MovieEntity = {
         type: Entity.Movies,
         id: '456',
@@ -490,11 +488,11 @@ describe('entity-data.ts', () => {
         status: 400,
       });
 
-      await expect(updateEntity<MovieEntity>('456', movie, undefined, api.deps)).rejects.toThrow();
+      await expect(updateEntity<MovieEntity>('456', movie)).rejects.toThrow();
     });
 
     it('should handle complex entity updates', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const complexBook: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -514,7 +512,7 @@ describe('entity-data.ts', () => {
         ok: true,
       });
 
-      await updateEntity<BookEntity>('123', complexBook, undefined, api.deps);
+      await updateEntity<BookEntity>('123', complexBook);
 
       const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = JSON.parse(callArgs[1].body);
@@ -527,7 +525,7 @@ describe('entity-data.ts', () => {
 
   describe('addEntity', () => {
     it('should add a new book entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
@@ -544,7 +542,7 @@ describe('entity-data.ts', () => {
         json: async () => responseBook,
       });
 
-      const result = await addEntity<BookEntity>(newBook, undefined, api.deps);
+      const result = await addEntity<BookEntity>(newBook);
 
       expect(result).toEqual(responseBook);
       expect(result.id).toBe('new-id-123');
@@ -553,13 +551,13 @@ describe('entity-data.ts', () => {
         `/${Entity.Books}`,
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       );
     });
 
     it('should add a new movie entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newMovie: MovieEntity = {
         type: Entity.Movies,
         title: 'New Movie',
@@ -576,14 +574,14 @@ describe('entity-data.ts', () => {
         json: async () => responseMovie,
       });
 
-      const result = await addEntity<MovieEntity>(newMovie, undefined, api.deps);
+      const result = await addEntity<MovieEntity>(newMovie);
 
       expect(result.id).toBe('movie-456');
       expect(result.type).toBe(Entity.Movies);
     });
 
     it('should add a new game entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newGame: GameEntity = {
         type: Entity.Games,
         title: 'New Game',
@@ -600,13 +598,13 @@ describe('entity-data.ts', () => {
         json: async () => responseGame,
       });
 
-      const result = await addEntity<GameEntity>(newGame, undefined, api.deps);
+      const result = await addEntity<GameEntity>(newGame);
 
       expect(result.id).toBe('game-789');
     });
 
     it('should add a new music entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newMusic: MusicEntity = {
         type: Entity.Musics,
         title: 'New Album',
@@ -623,13 +621,13 @@ describe('entity-data.ts', () => {
         json: async () => responseMusic,
       });
 
-      const result = await addEntity<MusicEntity>(newMusic, undefined, api.deps);
+      const result = await addEntity<MusicEntity>(newMusic);
 
       expect(result.id).toBe('music-101');
     });
 
     it('should send entity data as JSON in POST request', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'Test Book',
@@ -641,7 +639,7 @@ describe('entity-data.ts', () => {
         json: async () => ({ ...newBook, id: '1' }),
       });
 
-      await addEntity<BookEntity>(newBook, undefined, api.deps);
+      await addEntity<BookEntity>(newBook);
 
       const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = JSON.parse(callArgs[1].body);
@@ -652,7 +650,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should throw error when adding entity fails', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
@@ -663,11 +661,11 @@ describe('entity-data.ts', () => {
         status: 500,
       });
 
-      await expect(addEntity<BookEntity>(newBook, undefined, api.deps)).rejects.toThrow();
+      await expect(addEntity<BookEntity>(newBook)).rejects.toThrow();
     });
 
     it('should throw error with correct entity type in message', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newMovie: MovieEntity = {
         type: Entity.Movies,
         title: 'New Movie',
@@ -678,11 +676,11 @@ describe('entity-data.ts', () => {
         status: 400,
       });
 
-      await expect(addEntity<MovieEntity>(newMovie, undefined, api.deps)).rejects.toThrow();
+      await expect(addEntity<MovieEntity>(newMovie)).rejects.toThrow();
     });
 
     it('should handle complex entity additions', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const complexGame: GameEntity = {
         type: Entity.Games,
         title: 'Complex Game',
@@ -704,7 +702,7 @@ describe('entity-data.ts', () => {
         json: async () => responseGame,
       });
 
-      const result = await addEntity<GameEntity>(complexGame, undefined, api.deps);
+      const result = await addEntity<GameEntity>(complexGame);
 
       expect(result.developers).toHaveLength(2);
       expect(result.genres).toHaveLength(2);
@@ -712,7 +710,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should return entity with assigned ID from response', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const bookWithoutId: BookEntity = {
         type: Entity.Books,
         title: 'Book',
@@ -728,7 +726,7 @@ describe('entity-data.ts', () => {
         json: async () => responseBook,
       });
 
-      const result = await addEntity<BookEntity>(bookWithoutId, undefined, api.deps);
+      const result = await addEntity<BookEntity>(bookWithoutId);
 
       expect(result.id).toBe('assigned-id-12345');
       expect(result.title).toBe('Book');
@@ -737,112 +735,112 @@ describe('entity-data.ts', () => {
 
   describe('deleteEntity', () => {
     it('should delete a book entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Books, '123', api.deps);
+      await deleteEntity(Entity.Books, '123');
 
       expectFetched(api.apiFetch, `/${Entity.Books}/123`, expect.objectContaining({ method: 'DELETE' }));
     });
 
     it('should delete a movie entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Movies, '456', api.deps);
+      await deleteEntity(Entity.Movies, '456');
 
       expectFetched(api.apiFetch, `/${Entity.Movies}/456`, expect.objectContaining({ method: 'DELETE' }));
     });
 
     it('should delete a game entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Games, '789', api.deps);
+      await deleteEntity(Entity.Games, '789');
 
       expectFetched(api.apiFetch, `/${Entity.Games}/789`, expect.objectContaining({ method: 'DELETE' }));
     });
 
     it('should delete a music entity', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Musics, '101', api.deps);
+      await deleteEntity(Entity.Musics, '101');
 
       expectFetched(api.apiFetch, `/${Entity.Musics}/101`, expect.objectContaining({ method: 'DELETE' }));
     });
 
     it('should throw error when deletion fails', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 500,
       });
 
-      await expect(deleteEntity(Entity.Books, '123', api.deps)).rejects.toThrow();
+      await expect(deleteEntity(Entity.Books, '123')).rejects.toThrow();
     });
 
     it('should report a missing entity as 404 and other failures as 500', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({ ok: false, status: 404 });
-      const missing = await deleteEntity(Entity.Books, '1', api.deps).catch((e: unknown) => e);
+      const missing = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
       api.respondOnce({ ok: false, status: 503 });
-      const failed = await deleteEntity(Entity.Books, '1', api.deps).catch((e: unknown) => e);
+      const failed = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
 
       expect((missing as Response).status).toBe(404);
       expect((failed as Response).status).toBe(500);
     });
 
     it('should throw error with correct entity type and id in message', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 404,
       });
 
-      await expect(deleteEntity(Entity.Movies, '999', api.deps)).rejects.toThrow();
+      await expect(deleteEntity(Entity.Movies, '999')).rejects.toThrow();
     });
 
     it('should handle deletion of multiple entities sequentially', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({ ok: true });
       api.respondOnce({ ok: true });
       api.respondOnce({ ok: true });
 
-      await deleteEntity(Entity.Books, '1', api.deps);
-      await deleteEntity(Entity.Books, '2', api.deps);
-      await deleteEntity(Entity.Books, '3', api.deps);
+      await deleteEntity(Entity.Books, '1');
+      await deleteEntity(Entity.Books, '2');
+      await deleteEntity(Entity.Books, '3');
 
       expect(api.apiFetch).toHaveBeenCalledTimes(3);
     });
 
     it('should send correct DELETE request', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Games, '123', api.deps);
+      await deleteEntity(Entity.Games, '123');
 
       const callArgs = api.apiFetch.mock.calls[0].arguments;
       expect(callArgs[1].method).toBe('DELETE');
     });
 
     it('should handle deletion with numeric-like string IDs', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: true,
       });
 
-      await deleteEntity(Entity.Musics, '999999', api.deps);
+      await deleteEntity(Entity.Musics, '999999');
 
       expectFetched(api.apiFetch, '/999999', { method: 'DELETE' });
     });
@@ -850,7 +848,7 @@ describe('entity-data.ts', () => {
 
   describe('Entity type handling across all functions', () => {
     it('should correctly handle all entity types', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const entities = [Entity.Books, Entity.Movies, Entity.Games, Entity.Musics];
 
       for (const entity of entities) {
@@ -859,7 +857,7 @@ describe('entity-data.ts', () => {
           json: async () => [{ type: entity, id: '1' }],
         });
 
-        const result = await searchEntities(entity, 'test', undefined, api.deps);
+        const result = await searchEntities(entity, 'test');
         expect(result).toHaveLength(1);
         expect(result[0].type).toBe(entity);
         api.clearCalls();
@@ -867,7 +865,7 @@ describe('entity-data.ts', () => {
     });
 
     it('should maintain entity type throughout CRUD operations', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, title: 'Test' };
 
       // Search
@@ -875,7 +873,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => [book],
       });
-      const result = await searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps);
+      const result = await searchEntities<BookEntity>(Entity.Books, 'test');
       expect(result[0].type).toBe(Entity.Books);
 
       // Get
@@ -884,75 +882,73 @@ describe('entity-data.ts', () => {
         status: 200,
         json: async () => ({ ...book, id: '1' }),
       });
-      const getResult = await getEntity<BookEntity>(Entity.Books, '1', api.deps);
+      const getResult = await getEntity<BookEntity>(Entity.Books, '1');
       expect(getResult.type).toBe(Entity.Books);
     });
   });
 
   describe('Error handling', () => {
     it('should handle network errors during search', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.rejectOnce(new Error('Network error'));
 
-      await expect(searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps)).rejects.toThrow(
-        'Network error'
-      );
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during get', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.rejectOnce(new Error('Network error'));
 
-      await expect(getEntity<BookEntity>(Entity.Books, '1', api.deps)).rejects.toThrow('Network error');
+      await expect(getEntity<BookEntity>(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during update', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, id: '1', title: 'Test' };
       api.rejectOnce(new Error('Network error'));
 
-      await expect(updateEntity<BookEntity>('1', book, undefined, api.deps)).rejects.toThrow('Network error');
+      await expect(updateEntity<BookEntity>('1', book)).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during add', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, title: 'Test' };
       api.rejectOnce(new Error('Network error'));
 
-      await expect(addEntity<BookEntity>(book, undefined, api.deps)).rejects.toThrow('Network error');
+      await expect(addEntity<BookEntity>(book)).rejects.toThrow('Network error');
     });
 
     it('should handle network errors during delete', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.rejectOnce(new Error('Network error'));
 
-      await expect(deleteEntity(Entity.Books, '1', api.deps)).rejects.toThrow('Network error');
+      await expect(deleteEntity(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
     it('should handle 5xx errors appropriately', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 503,
       });
 
-      await expect(searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps)).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
     it('should handle 4xx errors appropriately', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       api.respondOnce({
         ok: false,
         status: 400,
       });
 
-      await expect(searchEntities<BookEntity>(Entity.Books, 'test', undefined, api.deps)).rejects.toThrow();
+      await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
   });
 
   describe('Integration-like scenarios', () => {
     it('should perform full CRUD cycle for a book', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
@@ -964,7 +960,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => ({ ...newBook, id: '1' }),
       });
-      const created = await addEntity<BookEntity>(newBook, undefined, api.deps);
+      const created = await addEntity<BookEntity>(newBook);
       expect(created.id).toBe('1');
 
       // Read
@@ -973,7 +969,7 @@ describe('entity-data.ts', () => {
         status: 200,
         json: async () => created,
       });
-      const retrieved = await getEntity<BookEntity>(Entity.Books, '1', api.deps);
+      const retrieved = await getEntity<BookEntity>(Entity.Books, '1');
       expect(retrieved.title).toBe('New Book');
 
       // Update
@@ -981,19 +977,19 @@ describe('entity-data.ts', () => {
       api.respondOnce({
         ok: true,
       });
-      await updateEntity<BookEntity>('1', updated, undefined, api.deps);
+      await updateEntity<BookEntity>('1', updated);
 
       // Delete
       api.respondOnce({
         ok: true,
       });
-      await deleteEntity(Entity.Books, '1', api.deps);
+      await deleteEntity(Entity.Books, '1');
 
       expect(api.apiFetch).toHaveBeenCalledTimes(4);
     });
 
     it('should search and then retrieve individual items', async (t) => {
-      const api = createApiFakes(t);
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [
         { type: Entity.Books, id: '1', title: 'Book 1' },
         { type: Entity.Books, id: '2', title: 'Book 2' },
@@ -1004,7 +1000,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => mockBooks,
       });
-      const searchResults = await searchEntities<BookEntity>(Entity.Books, 'book', undefined, api.deps);
+      const searchResults = await searchEntities<BookEntity>(Entity.Books, 'book');
       expect(searchResults).toHaveLength(2);
 
       // Get specific item
@@ -1013,7 +1009,7 @@ describe('entity-data.ts', () => {
         status: 200,
         json: async () => mockBooks[0],
       });
-      const singleBook = await getEntity<BookEntity>(Entity.Books, '1', api.deps);
+      const singleBook = await getEntity<BookEntity>(Entity.Books, '1');
       expect(singleBook.title).toBe('Book 1');
     });
   });

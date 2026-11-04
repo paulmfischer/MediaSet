@@ -1,5 +1,6 @@
 import { baseUrl } from '../constants.server.ts';
-import { type ApiDeps, defaultApiDeps } from './api-deps.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type NameCount = { name: string; count: number };
 
@@ -65,7 +66,7 @@ type MusicStats = {
   topLabels: NameCount[];
 };
 
-export async function getStats({ apiFetch, serverLogger }: ApiDeps = defaultApiDeps) {
+export async function getStats() {
   serverLogger.info('Fetching stats for all entities', {});
   try {
     const response = await apiFetch(`${baseUrl}/stats`);

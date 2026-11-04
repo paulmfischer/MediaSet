@@ -1,7 +1,8 @@
 import { baseUrl } from '../constants.server.ts';
 import { singular } from '../utils/helpers.ts';
 import { type BaseEntity, type Entity } from '../models.ts';
-import { type ApiDeps, defaultApiDeps } from './api-deps.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type PagedResult<TEntity> = {
   items: TEntity[];
@@ -18,8 +19,7 @@ function getEntityType<T extends BaseEntity>(entity: T): Entity {
 export async function searchEntities<TEntity extends BaseEntity>(
   entityType: Entity,
   searchText: string | null,
-  orderBy: string = '',
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
+  orderBy: string = ''
 ): Promise<Array<TEntity>> {
   serverLogger.info(`Searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}`, {
     operation: 'searchEntities',
@@ -58,8 +58,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
   searchText: string | null,
   orderBy: string = '',
   page: number = 1,
-  pageSize: number = 75,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
+  pageSize: number = 75
 ): Promise<PagedResult<TEntity>> {
   serverLogger.info(
     `Paged searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}, page: ${page}`,
@@ -101,11 +100,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
   }
 }
 
-export async function getEntity<TEntity extends BaseEntity>(
-  entityType: Entity,
-  id: string,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
-): Promise<TEntity> {
+export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
   serverLogger.info(`Fetching ${singular(entityType)} with id ${id}`, { operation: 'getEntity', entityType, id });
   try {
     const response = await apiFetch(`${baseUrl}/${entityType}/${encodeURIComponent(id)}`);
@@ -143,8 +138,7 @@ export async function getEntity<TEntity extends BaseEntity>(
 export async function updateEntity<TEntity extends BaseEntity>(
   id: string,
   entity: TEntity,
-  formData?: FormData,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
+  formData?: FormData
 ): Promise<void> {
   const entityType = getEntityType(entity);
   serverLogger.info(`Updating ${singular(entityType)} with id ${id}`, {
@@ -195,11 +189,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
   }
 }
 
-export async function addEntity<TEntity extends BaseEntity>(
-  entity: TEntity,
-  formData?: FormData,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
-): Promise<TEntity> {
+export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, formData?: FormData): Promise<TEntity> {
   const entityType = getEntityType(entity);
   serverLogger.info(`Creating new ${singular(entityType)}`, {
     operation: 'addEntity',
@@ -249,11 +239,7 @@ export async function addEntity<TEntity extends BaseEntity>(
   }
 }
 
-export async function deleteEntity(
-  entity: Entity,
-  id: string,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
-): Promise<void> {
+export async function deleteEntity(entity: Entity, id: string): Promise<void> {
   serverLogger.info(`Deleting ${singular(entity)} with id ${id}`, {
     operation: 'deleteEntity',
     entityType: entity,

@@ -1,12 +1,9 @@
 import { baseUrl } from '../constants.server.ts';
-import { type ApiDeps, defaultApiDeps } from './api-deps.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 import { type Entity } from '../models.ts';
 
-export async function resetImageLookup(
-  entityIds: string[],
-  entityType: Entity,
-  { apiFetch, serverLogger }: ApiDeps = defaultApiDeps
-): Promise<{ reset: number }> {
+export async function resetImageLookup(entityIds: string[], entityType: Entity): Promise<{ reset: number }> {
   try {
     const response = await apiFetch(`${baseUrl}/images/lookup/${entityType}`, {
       method: 'DELETE',
@@ -25,9 +22,7 @@ export async function resetImageLookup(
   }
 }
 
-export async function deleteOrphanedImages({ apiFetch, serverLogger }: ApiDeps = defaultApiDeps): Promise<{
-  deleted: number;
-}> {
+export async function deleteOrphanedImages(): Promise<{ deleted: number }> {
   try {
     const response = await apiFetch(`${baseUrl}/images/orphaned`, { method: 'DELETE' });
     if (!response.ok) {
