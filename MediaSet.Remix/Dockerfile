@@ -9,6 +9,23 @@ RUN npm ci && \
 COPY . .
 RUN npm run build
 
+# Trim stage: install the production dependencies once and prune what the server never loads
+# (see scripts/trim-runtime-deps.mjs). This is its own stage because deleting files in a later
+# layer of the runtime stage would not shrink the image.
+FROM node:24.22.1-alpine AS trim
+WORKDIR /app
+
+COPY package*.json ./
+# `--omit=dev` still installs playwright and playwright-core: @remix-run/test declares playwright
+# as an optional peer dependency and npm installs it. Only the test runner uses it, so the trim
+# script removes both.
+RUN npm ci --omit=dev && \
+    npm cache clean --force
+
+COPY scripts/trim-runtime-deps.mjs ./scripts/
+COPY app/ui/icons.ts ./app/ui/icons.ts
+RUN node scripts/trim-runtime-deps.mjs node_modules app/ui/icons.ts
+
 # Runtime stage: Node runs the TypeScript sources directly (no compiled output)
 FROM node:24.22.1-alpine AS runtime
 WORKDIR /app
@@ -21,8 +38,7 @@ RUN chown mediaset:mediaset /app
 USER mediaset
 
 COPY --chown=mediaset:mediaset package*.json ./
-RUN npm ci --omit=dev && \
-    npm cache clean --force
+COPY --from=trim --chown=mediaset:mediaset /app/node_modules ./node_modules
 
 COPY --from=build --chown=mediaset:mediaset /app/server.ts /app/tsconfig.json ./
 COPY --from=build --chown=mediaset:mediaset /app/app ./app
