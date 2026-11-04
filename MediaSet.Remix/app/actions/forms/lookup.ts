@@ -23,6 +23,9 @@ import { serverLogger } from '../../utils/serverLogger.ts';
 
 type LookupEntity = BookEntity | MovieEntity | GameEntity | MusicEntity;
 
+/** The lookup result type for one media type. */
+type LookupResultOf<T extends Entity> = Extract<LookupEntity, { type: T }>;
+
 /** What a metadata lookup came back with; the results dialog shows one of these. */
 export type LookupOutcome =
   | { status: 'results'; results: LookupEntity[] }
@@ -152,17 +155,20 @@ export async function resolveLookupIntent<Values, Field extends string, Missing 
  * dialog's props. The results travel back with the apply submission as form values, so applying
  * needs no second lookup.
  */
-export function buildLookupProps<Values>(options: {
+export function buildLookupProps<T extends Entity, Values>(options: {
+  /** The media type the form is for; results of any other type are ignored. */
+  entityType: T;
   available: boolean;
   itemLabel: string;
   lookup: LookupOutcome | undefined;
   /** Turns a looked-up entity into form values. */
-  toValues: (result: LookupEntity) => Values;
+  toValues: (result: LookupResultOf<T>) => Values;
   toSummary: (values: Values) => { title: string; details: string[]; imageUrl?: string };
 }): { available: boolean; dialog: LookupDialogProps | undefined } {
-  const { available, itemLabel, lookup, toValues, toSummary } = options;
+  const { entityType, available, itemLabel, lookup, toValues, toSummary } = options;
   if (!lookup) return { available, dialog: undefined };
-  const resultValues = lookup.status === 'results' ? lookup.results.map(toValues) : [];
+  const isResult = (result: LookupEntity): result is LookupResultOf<T> => result.type === entityType;
+  const resultValues = lookup.status === 'results' ? lookup.results.filter(isResult).map(toValues) : [];
   return {
     available,
     dialog: {

@@ -44,6 +44,7 @@ export interface BaseEntity {
 
 // Backend model
 export interface BookEntity extends BaseEntity {
+  type: Entity.Books;
   isbn?: string;
   pages?: number;
   publicationDate?: string;
@@ -59,6 +60,7 @@ export type Book = Override<BookEntity, { authors: string; genres: string }>;
 
 // Backend model
 export interface MovieEntity extends BaseEntity {
+  type: Entity.Movies;
   barcode?: string;
   releaseDate?: string;
   rating?: string;
@@ -73,6 +75,7 @@ export type Movie = Override<MovieEntity, { studios: string; genres: string }>;
 
 // Backend model
 export interface GameEntity extends BaseEntity {
+  type: Entity.Games;
   barcode?: string;
   releaseDate?: string;
   rating?: string;
@@ -93,6 +96,7 @@ export interface Disc {
 
 // Backend model
 export interface MusicEntity extends BaseEntity {
+  type: Entity.Musics;
   artist?: string;
   releaseDate?: string;
   genres?: Array<string>;

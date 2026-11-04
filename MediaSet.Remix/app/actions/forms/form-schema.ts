@@ -5,6 +5,9 @@ import * as f from 'remix/data-schema/form-data';
 /** Blank (or missing) input becomes an empty string; otherwise the trimmed text. */
 export const text = (): Schema<unknown, string> => s.defaulted(s.string(), '').transform((value) => value.trim());
 
+/** A blank optional text value as `undefined`, so the field is left out of the payload. */
+export const blankToUndefined = (value: string): string | undefined => (value === '' ? undefined : value);
+
 /** Like `text()`, but a blank value is an issue with `message`. */
 export const requiredText = (message: string): Schema<unknown, string> =>
   text().refine((value) => value.length > 0, message);

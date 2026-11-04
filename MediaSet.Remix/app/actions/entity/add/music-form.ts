@@ -4,6 +4,7 @@ import * as f from 'remix/data-schema/form-data';
 
 import { Entity, type Disc, type MusicEntity } from '../../../models.ts';
 import {
+  blankToUndefined,
   fieldErrors,
   optionalHttpUrl,
   optionalWholeNumber,
@@ -189,18 +190,21 @@ export function fromMilliseconds(duration: number | undefined): { minutes: strin
 
 /** Builds the API payload from validated form output; empty optional text is left out. */
 export function toMusicEntity(parsed: ParsedMusic, discList: Disc[] = []): MusicEntity {
-  const { tracks, discs, durationMinutes, durationSeconds, genres, ...strings } = parsed;
-  const present = Object.fromEntries(Object.entries(strings).filter(([, value]) => value !== ''));
-  const duration = toMilliseconds(durationMinutes, durationSeconds);
   return {
     type: Entity.Musics,
-    ...present,
-    ...(tracks === undefined ? {} : { tracks }),
-    ...(discs === undefined ? {} : { discs }),
-    ...(duration === undefined ? {} : { duration }),
-    ...(discList.length === 0 ? {} : { discList }),
-    genres,
-  } as MusicEntity;
+    title: parsed.title,
+    artist: parsed.artist,
+    barcode: blankToUndefined(parsed.barcode),
+    format: blankToUndefined(parsed.format),
+    releaseDate: blankToUndefined(parsed.releaseDate),
+    label: blankToUndefined(parsed.label),
+    tracks: parsed.tracks,
+    discs: parsed.discs,
+    duration: toMilliseconds(parsed.durationMinutes, parsed.durationSeconds),
+    discList: discList.length === 0 ? undefined : discList,
+    imageUrl: blankToUndefined(parsed.imageUrl),
+    genres: parsed.genres,
+  };
 }
 
 /** A saved track as an editor row. */
@@ -239,25 +243,13 @@ export function toMusicUpdate(
   discList: Disc[],
   removeImage = false
 ): MusicEntity {
-  const { tracks, discs, durationMinutes, durationSeconds, genres, ...strings } = parsed;
-  const updated: Record<string, unknown> = { ...existing, genres };
-  for (const [name, value] of Object.entries(strings)) {
-    if (value === '') delete updated[name];
-    else updated[name] = value;
-  }
-  if (tracks === undefined) delete updated.tracks;
-  else updated.tracks = tracks;
-  if (discs === undefined) delete updated.discs;
-  else updated.discs = discs;
+  const entity = toMusicEntity(parsed, discList);
 
-  const duration = toMilliseconds(durationMinutes, durationSeconds);
   // The form shows whole seconds, so an unchanged duration keeps its saved milliseconds.
-  const unchanged =
-    duration !== undefined &&
+  const unchangedDuration =
+    entity.duration !== undefined &&
     existing.duration !== undefined &&
-    Math.floor(existing.duration / 1000) * 1000 === duration;
-  if (duration === undefined) delete updated.duration;
-  else if (!unchanged) updated.duration = duration;
+    Math.floor(existing.duration / 1000) * 1000 === entity.duration;
 
   // The form shows whole seconds, so an unchanged saved track keeps its milliseconds.
   const keepSaved = (disc: Disc): Disc => {
@@ -271,13 +263,14 @@ export function toMusicUpdate(
     );
     return saved ?? disc;
   };
-  if (discList.length === 0) delete updated.discList;
-  else updated.discList = discList.map(keepSaved);
 
-  if (removeImage) {
-    // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
-    delete updated.coverImage;
-    if (updated.imageUrl === existing.imageUrl) delete updated.imageUrl;
-  }
-  return updated as unknown as MusicEntity;
+  // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
+  return {
+    ...existing,
+    ...entity,
+    duration: unchangedDuration ? existing.duration : entity.duration,
+    discList: entity.discList?.map(keepSaved),
+    coverImage: removeImage ? undefined : existing.coverImage,
+    imageUrl: removeImage && entity.imageUrl === existing.imageUrl ? undefined : entity.imageUrl,
+  };
 }

@@ -52,10 +52,11 @@ async function renderBookForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
+          entityType: Entity.Books,
           available: isLookupAvailable(capabilities, Entity.Books),
           itemLabel: 'book',
           lookup,
-          toValues: (result) => toBookValues(result as BookEntity),
+          toValues: toBookValues,
           toSummary: toBookResultSummary,
         })}
       />

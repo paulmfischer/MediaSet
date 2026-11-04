@@ -52,10 +52,11 @@ async function renderMovieForm(
         optionsUnavailable={unavailable}
         formKey={formKey}
         lookup={buildLookupProps({
+          entityType: Entity.Movies,
           available: isLookupAvailable(capabilities, Entity.Movies),
           itemLabel: 'movie',
           lookup,
-          toValues: (result) => toMovieValues(result as MovieEntity),
+          toValues: toMovieValues,
           toSummary: toMovieResultSummary,
         })}
       />

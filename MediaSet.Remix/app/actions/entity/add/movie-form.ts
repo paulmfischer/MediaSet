@@ -3,6 +3,7 @@ import * as f from 'remix/data-schema/form-data';
 
 import { Entity, type MovieEntity } from '../../../models.ts';
 import {
+  blankToUndefined,
   checkbox,
   optionalHttpUrl,
   optionalWholeNumber,
@@ -61,16 +62,19 @@ type ParsedMovie = InferOutput<typeof movieForm>;
 
 /** Builds the API payload from validated form output; empty optional text is left out. */
 export function toMovieEntity(parsed: ParsedMovie): MovieEntity {
-  const { runtime, isTvSeries, studios, genres, ...strings } = parsed;
-  const present = Object.fromEntries(Object.entries(strings).filter(([, value]) => value !== ''));
   return {
     type: Entity.Movies,
-    ...present,
-    ...(runtime === undefined ? {} : { runtime }),
-    isTvSeries,
-    studios,
-    genres,
-  } as MovieEntity;
+    title: parsed.title,
+    barcode: blankToUndefined(parsed.barcode),
+    format: blankToUndefined(parsed.format),
+    runtime: parsed.runtime,
+    releaseDate: blankToUndefined(parsed.releaseDate),
+    isTvSeries: parsed.isTvSeries,
+    plot: blankToUndefined(parsed.plot),
+    imageUrl: blankToUndefined(parsed.imageUrl),
+    studios: parsed.studios,
+    genres: parsed.genres,
+  };
 }
 
 /** Form values for an existing movie, as the edit form shows them. */
@@ -94,18 +98,12 @@ export function toMovieValues(movie: MovieEntity): MovieFormValues {
  * dropped, and `removeImage` drops the saved poster.
  */
 export function toMovieUpdate(existing: MovieEntity, parsed: ParsedMovie, removeImage = false): MovieEntity {
-  const { runtime, isTvSeries, studios, genres, ...strings } = parsed;
-  const updated: Record<string, unknown> = { ...existing, isTvSeries, studios, genres };
-  for (const [name, value] of Object.entries(strings)) {
-    if (value === '') delete updated[name];
-    else updated[name] = value;
-  }
-  if (runtime === undefined) delete updated.runtime;
-  else updated.runtime = runtime;
-  if (removeImage) {
-    // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
-    delete updated.coverImage;
-    if (updated.imageUrl === existing.imageUrl) delete updated.imageUrl;
-  }
-  return updated as unknown as MovieEntity;
+  // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
+  const entity = toMovieEntity(parsed);
+  return {
+    ...existing,
+    ...entity,
+    coverImage: removeImage ? undefined : existing.coverImage,
+    imageUrl: removeImage && entity.imageUrl === existing.imageUrl ? undefined : entity.imageUrl,
+  };
 }
