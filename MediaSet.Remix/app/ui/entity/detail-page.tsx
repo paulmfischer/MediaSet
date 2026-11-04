@@ -20,6 +20,14 @@ interface DetailPageProps<T extends BaseEntity> {
   integrations?: Integration[];
 }
 
+// "Jan 5, 2025"; falls back to the raw text when it is not a parseable date.
+function formatLookupDate(value: string | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
 const row = 'flex flex-col md:flex-row mb-2 md:mb-0';
 const label = 'basis-2/12 dark:text-slate-400';
 
@@ -31,6 +39,7 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
     const subtitle = config.subtitleOf?.(entity);
     const discs = config.discList?.(entity);
     const lookup = entity.imageLookup;
+    const attemptedOn = lookup ? formatLookupDate(lookup.lookupAttemptedAt) : '';
     const lookupFailed = lookup && (lookup.failureReason || lookup.permanentFailure);
 
     return (
@@ -102,12 +111,21 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                 </div>
               ) : null}
               {lookupFailed ? (
-                <p class="mt-4 text-sm text-amber-400" data-testid="image-lookup-info">
-                  {lookup.permanentFailure
-                    ? 'Image lookup failed permanently and will not be retried.'
-                    : 'Image lookup failed and will be retried.'}
-                  {lookup.failureReason ? ` Reason: ${lookup.failureReason}` : ''}
-                </p>
+                <div
+                  class="mt-4 flex flex-col items-start gap-2 text-sm text-amber-400"
+                  data-testid="image-lookup-info"
+                >
+                  <p>
+                    {lookup.permanentFailure
+                      ? 'Image lookup failed permanently and will not be retried.'
+                      : 'Image lookup failed and will be retried.'}
+                    {lookup.failureReason ? ` Reason: ${lookup.failureReason}` : ''}
+                    {attemptedOn ? ` Last attempted ${attemptedOn}.` : ''}
+                  </p>
+                  <form method="post" action={`${basePath}/${itemId}/clear-image-lookup`}>
+                    <button type="submit">Clear &amp; retry</button>
+                  </form>
+                </div>
               ) : null}
             </div>
           </div>

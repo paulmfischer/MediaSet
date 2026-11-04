@@ -1,4 +1,4 @@
-import { form, get, route } from 'remix/routes';
+import { form, get, post, route } from 'remix/routes';
 
 export const routes = route({
   assets: get('/assets/*path'),
@@ -39,5 +39,12 @@ export const routes = route({
     movies: form('/movies/:id/delete'),
     games: form('/games/:id/delete'),
     musics: form('/musics/:id/delete'),
+  }),
+  // Clear an item's failed image lookup so it is retried; a POST that redirects back to the detail page.
+  entityClearImageLookup: route({
+    books: post('/books/:id/clear-image-lookup'),
+    movies: post('/movies/:id/clear-image-lookup'),
+    games: post('/games/:id/clear-image-lookup'),
+    musics: post('/musics/:id/clear-image-lookup'),
   }),
 });
