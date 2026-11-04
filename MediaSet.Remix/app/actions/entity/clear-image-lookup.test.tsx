@@ -51,7 +51,7 @@ function stubApi(
 
 for (const type of types) {
   describe(`clearing the image lookup for ${type.path}`, () => {
-    it('shows the attempt date, reason and a retry button for a failed lookup', async (t) => {
+    it('should show the attempt date, reason and a retry button when the lookup failed', async (t) => {
       stubApi(t, type);
       const html = await (await get(`/${type.path}/i1`)).text();
       assert.match(html, /Image lookup failed and will be retried\./);
@@ -61,7 +61,7 @@ for (const type of types) {
       assert.match(html, /<button type="submit">Clear &amp; retry<\/button>/);
     });
 
-    it('shows the permanent-failure note with the retry button', async (t) => {
+    it('should show the permanent-failure note with the retry button when the failure is permanent', async (t) => {
       stubApi(t, type, { permanentFailure: true });
       const html = await (await get(`/${type.path}/i1`)).text();
       assert.match(html, /Image lookup failed permanently and will not be retried\./);
@@ -69,7 +69,7 @@ for (const type of types) {
       assert.match(html, /Clear &amp; retry/);
     });
 
-    it('resets the lookup and redirects to the detail page', async (t) => {
+    it('should reset the lookup and redirect to the detail page when the retry is posted', async (t) => {
       const resets = stubApi(t, type);
       const response = await post(`/${type.path}/i1/clear-image-lookup`);
       assert.equal(response.status, 303);
@@ -79,7 +79,7 @@ for (const type of types) {
       assert.deepEqual(resets[0].body, { entityIds: ['i1'] });
     });
 
-    it('renders the error page when the reset fails', async (t) => {
+    it('should render the error page when the reset fails', async (t) => {
       stubApi(t, type, { resetStatus: 500 });
       const response = await post(`/${type.path}/i1/clear-image-lookup`);
       const html = await response.text();
@@ -88,7 +88,7 @@ for (const type of types) {
       assert.match(html, new RegExp(`href="/${type.path}/i1"`));
     });
 
-    it('renders the error page when the API answers 404 (the API client reports it as a failure)', async (t) => {
+    it('should render the error page when the API answers 404', async (t) => {
       stubApi(t, type, { resetStatus: 404 });
       const response = await post(`/${type.path}/i1/clear-image-lookup`);
       assert.equal(response.status, 500);

@@ -5,7 +5,6 @@ import { resetImageLookup } from '../../api/image-management-data.ts';
 import { Entity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { serverLogger } from '../../utils/serverLogger.ts';
 import { entityErrorPage } from '../render-error.tsx';
 
 // Resets the item's failed image lookup so it is retried, then returns to its detail page.
@@ -20,11 +19,6 @@ async function clearImageLookup(
   try {
     await resetImageLookup([id], entity);
   } catch (error) {
-    serverLogger.error('Failed to clear image lookup', error, {
-      operation: 'clearImageLookup',
-      entityType: entity,
-      id,
-    });
     return unavailable(
       context,
       500,
