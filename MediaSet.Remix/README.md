@@ -45,7 +45,7 @@ Optional overrides go in `.env.local`; see [`.env.example`](.env.example).
 ```bash
 cd MediaSet.Remix
 
-# Vitest module suites and router tests
+# Server tests: router, controllers and module suites (remix test)
 npm test
 
 # Browser and end-to-end tests (needs `npx playwright install chromium` once)
@@ -67,7 +67,8 @@ MediaSet.Remix/
 │   │   ├── document.tsx         # Shared HTML document
 │   │   ├── entity/              # Collection list page
 │   │   └── public/              # Client entries (menus, navigation)
-│   ├── api/              # Server-side MediaSet API access
+│   ├── api/              # Server-side MediaSet API access, with module tests
+│   ├── test/             # Test fakes shared by the module tests
 │   ├── e2e/              # End-to-end tests
 │   ├── utils/            # Shared utilities
 │   ├── assets.ts         # Asset server: what the browser may load

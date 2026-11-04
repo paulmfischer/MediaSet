@@ -89,5 +89,9 @@ Node runs the TypeScript sources directly; `tsc` only type checks. Import with t
   They are `*.test.ts(x)` next to the code or controller they cover.
 - Browser tests are `*.test.browser.tsx`; end-to-end tests are `*.test.e2e.ts`
   (`t.serve(...)` with `createTestServer(router.fetch)`).
-- Write new tests with `remix test`, not Vitest. Name them
+- Module tests (`app/api/`, `app/utils/`, `app/models.ts`) are `*.test.ts` files that also use
+  `remix/test` and `remix/assert`. Data functions in `app/api/` take their `apiFetch` and
+  `serverLogger` as a trailing `ApiDeps` argument (`app/api/api-deps.ts`); tests pass the fakes
+  from `app/test/api-fakes.ts` instead of mocking modules.
+- Write new tests with `remix test`. Name them
   `should [expected behavior] when [condition]` and test user-visible behavior.
