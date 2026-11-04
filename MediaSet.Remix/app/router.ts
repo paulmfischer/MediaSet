@@ -9,6 +9,7 @@ import entityAddController from './actions/entity/add/controller.tsx';
 import entityAddGameController from './actions/entity/add/game-controller.tsx';
 import entityAddMovieController from './actions/entity/add/movie-controller.tsx';
 import entityAddMusicController from './actions/entity/add/music-controller.tsx';
+import entityClearImageLookupController from './actions/entity/clear-image-lookup-controller.tsx';
 import entityDeleteController from './actions/entity/delete/controller.tsx';
 import entityDeleteGameController from './actions/entity/delete/game-controller.tsx';
 import entityDeleteMovieController from './actions/entity/delete/movie-controller.tsx';
@@ -63,6 +64,7 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
   router.map(routes, controller);
   router.map(routes.entityLists, entityListsController);
   router.map(routes.entityDetail, entityDetailController);
+  router.map(routes.entityClearImageLookup, entityClearImageLookupController);
   router.map(routes.entityAdd.books, entityAddController);
   router.map(routes.entityEdit.books, entityEditController);
   router.map(routes.entityDelete.books, entityDeleteController);
