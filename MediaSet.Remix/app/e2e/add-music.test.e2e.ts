@@ -87,4 +87,59 @@ describe('add music (e2e)', () => {
       },
     ]);
   });
+
+  it('adds, edits, reorders and removes tracks, then saves them in row order', async (t) => {
+    const saved = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/musics/add');
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('#title').fill('The Wall');
+    await page.getByRole('combobox', { name: 'Artist' }).click();
+    await page.getByRole('option', { name: 'Pink Floyd' }).click();
+
+    for (let count = 1; count <= 3; count++) await page.getByRole('button', { name: 'Add track' }).click();
+    // A new row is numbered after the previous one and takes focus in its title.
+    assert.equal(await page.getByLabel('Track 3 number').inputValue(), '3');
+    await page.getByLabel('Track 1 title').fill('In the Flesh?');
+    await page.getByLabel('Track 1 minutes').fill('3');
+    await page.getByLabel('Track 1 seconds').fill('19');
+    await page.getByLabel('Track 2 title').fill('The Thin Ice');
+    await page.getByLabel('Track 3 title').fill('Another Brick in the Wall');
+    await page.getByLabel('Track 3 minutes').fill('3');
+    await page.getByLabel('Track 3 seconds').fill('1');
+
+    // Move the third track up (no renumbering), then remove the first.
+    await page.getByRole('button', { name: 'Move track 3 up' }).click();
+    assert.equal(await page.getByLabel('Track 2 title').inputValue(), 'Another Brick in the Wall');
+    assert.equal(await page.getByLabel('Track 2 number').inputValue(), '3');
+    await page.getByRole('button', { name: 'Remove track 1' }).click();
+    assert.equal(await page.getByLabel('Track 1 title').inputValue(), 'Another Brick in the Wall');
+
+    // A track without a title is flagged on its row, with every row kept.
+    await page.getByLabel('Track 2 title').fill('');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.locator('[id$="trackTitle-error"]').waitFor();
+    assert.equal(await page.locator('[id$="trackTitle-error"]').innerText(), 'Title is required');
+    assert.equal(await page.getByLabel('Track 1 title').inputValue(), 'Another Brick in the Wall');
+    assert.equal(saved.length, 0);
+
+    await page.getByLabel('Track 2 title').fill('The Thin Ice');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForURL('**/musics/new-id');
+
+    assert.deepEqual(saved, [
+      {
+        type: 'Musics',
+        title: 'The Wall',
+        artist: 'Pink Floyd',
+        discList: [
+          { trackNumber: 3, title: 'Another Brick in the Wall', duration: 181000 },
+          { trackNumber: 2, title: 'The Thin Ice', duration: null },
+        ],
+        genres: [],
+      },
+    ]);
+  });
 });

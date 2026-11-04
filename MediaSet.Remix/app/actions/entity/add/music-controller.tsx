@@ -1,4 +1,3 @@
-import * as s from 'remix/data-schema';
 import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
@@ -11,13 +10,12 @@ import { Document } from '../../../ui/document.tsx';
 import { MusicFormPage } from '../../../ui/entity/add/music-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
 import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
-import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
 import {
-  MUSIC_FIELDS,
-  musicForm,
   emptyMusicValues,
+  parseMusicSubmission,
+  submittedMusicValues,
   toMusicEntity,
   toMusicValues,
   type MusicFormValues,
@@ -78,21 +76,21 @@ export default createController(routes.entityAdd.musics, {
       const intent = typeof rawIntent === 'string' ? rawIntent : 'save';
       if (intent !== 'save') return handleLookupIntent(context, intent);
 
-      const parsed = s.parseSafe(musicForm, context.formData);
+      const parsed = parseMusicSubmission(context.formData);
       const image = readCoverImage(context.formData);
       if (!parsed.success || image.error) {
         // Render here rather than redirecting to the GET page, which would lose the input and errors.
         return renderMusicForm(context, {
-          values: submittedValues(context.formData, MUSIC_FIELDS),
+          values: submittedMusicValues(context.formData),
           errors: {
             ...(image.error ? { coverImage: image.error } : {}),
-            ...(parsed.success ? {} : fieldErrors(parsed.issues)),
+            ...(parsed.success ? {} : parsed.errors),
           },
           status: 400,
         });
       }
 
-      const album: MusicEntity = toMusicEntity(parsed.value);
+      const album: MusicEntity = toMusicEntity(parsed.value, parsed.discList);
       let saved: MusicEntity;
       try {
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
@@ -104,7 +102,7 @@ export default createController(routes.entityAdd.musics, {
         }
       } catch (error) {
         serverLogger.error('Failed to add album', error, { operation: 'addMusic' });
-        const values = submittedValues(context.formData, MUSIC_FIELDS);
+        const values = submittedMusicValues(context.formData);
         // The API rejecting the album (4xx) is the user's to fix and carries its reason; anything else is ours.
         if (error instanceof Response && error.status >= 400 && error.status < 500) {
           return renderMusicForm(context, { values, formError: await error.text(), status: 400 });
@@ -120,7 +118,7 @@ export default createController(routes.entityAdd.musics, {
       if (!saved.id) {
         serverLogger.error('Saved album has no id', undefined, { operation: 'addMusic' });
         return renderMusicForm(context, {
-          values: submittedValues(context.formData, MUSIC_FIELDS),
+          values: submittedMusicValues(context.formData),
           formError: 'The album was saved, but it could not be opened. Check your Music list before trying again.',
           status: 500,
         });

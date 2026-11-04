@@ -100,6 +100,10 @@ describe('edit album', () => {
     assert.match(html, /name="durationMinutes"[^>]*value="47"/);
     assert.match(html, /name="durationSeconds"[^>]*value="14"/);
     assert.match(html, /<input type="hidden" name="genres" value="Rock"/);
+    assert.match(html, /name="trackTitle"[^>]*value="Come Together"/);
+    assert.match(html, /name="trackNumber"[^>]*value="1"/);
+    assert.match(html, /name="trackMinutes"[^>]*value="4"/);
+    assert.match(html, /name="trackSeconds"[^>]*value="19"/);
   });
 
   it('returns 404 for a missing album and 500 when it cannot be loaded', async (t) => {
@@ -153,6 +157,10 @@ describe('edit album', () => {
       ['durationSeconds', '14'],
       ['genres', 'Rock'],
       ['genres', 'Pop'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Come Together'],
+      ['trackMinutes', '4'],
+      ['trackSeconds', '19'],
     ]);
 
     assert.equal(response.status, 303);
@@ -169,7 +177,7 @@ describe('edit album', () => {
           discs: 2,
           // Unchanged whole seconds keep the saved milliseconds.
           duration: 2834500,
-          // The track list is not editable and is kept as saved.
+          // An unchanged track keeps its saved milliseconds.
           discList: [{ trackNumber: 1, title: 'Come Together', duration: 259000 }],
           genres: ['Rock', 'Pop'],
           coverImage: { filePath: 'musics/m1.jpg' },
@@ -178,14 +186,13 @@ describe('edit album', () => {
     ]);
   });
 
-  it('changes or clears the duration, and ignores a submitted track list', async (t) => {
+  it('changes or clears the duration', async (t) => {
     const calls = stubApi(t);
     await post('/musics/m1/edit', [
       ['title', 'Abbey Road'],
       ['artist', 'The Beatles'],
       ['durationMinutes', '1'],
       ['durationSeconds', '2'],
-      ['discList', '[]'],
     ]);
     await post('/musics/m1/edit', [
       ['title', 'Abbey Road'],
@@ -194,8 +201,79 @@ describe('edit album', () => {
 
     const bodies = calls.map((call) => call.body as Record<string, unknown>);
     assert.equal(bodies[0]?.duration, 62000);
-    assert.deepEqual(bodies[0]?.discList, [{ trackNumber: 1, title: 'Come Together', duration: 259000 }]);
     assert.equal('duration' in (bodies[1] ?? {}), false);
+  });
+
+  it('adds, edits, reorders and removes tracks, and drops the list when it is emptied', async (t) => {
+    const calls = stubApi(t);
+    const base: Array<[string, string]> = [
+      ['title', 'Abbey Road'],
+      ['artist', 'The Beatles'],
+    ];
+    await post('/musics/m1/edit', [
+      ...base,
+      // Reordered (no renumbering), one edited, one added, and a blank row dropped.
+      ['trackNumber', '2'],
+      ['trackTitle', 'Something'],
+      ['trackMinutes', '3'],
+      ['trackSeconds', '0'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Come Together (remaster)'],
+      ['trackMinutes', '4'],
+      ['trackSeconds', '19'],
+      ['trackNumber', ''],
+      ['trackTitle', ''],
+      ['trackMinutes', ''],
+      ['trackSeconds', ''],
+    ]);
+    await post('/musics/m1/edit', base);
+
+    const bodies = calls.map((call) => call.body as Record<string, unknown>);
+    assert.deepEqual(bodies[0]?.discList, [
+      { trackNumber: 2, title: 'Something', duration: 180000 },
+      { trackNumber: 1, title: 'Come Together (remaster)', duration: 259000 },
+    ]);
+    assert.equal('discList' in (bodies[1] ?? {}), false);
+  });
+
+  it('keeps the saved milliseconds of a track whose whole seconds are unchanged', async (t) => {
+    const calls = stubApi(t);
+    await post('/musics/m1/edit', [
+      ['title', 'Abbey Road'],
+      ['artist', 'The Beatles'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Come Together'],
+      ['trackMinutes', '4'],
+      ['trackSeconds', '19'],
+    ]);
+    assert.deepEqual((calls[0]?.body as { discList: unknown }).discList, [
+      { trackNumber: 1, title: 'Come Together', duration: 259000 },
+    ]);
+  });
+
+  it('shows per-row track errors with the rows kept, and saves nothing', async (t) => {
+    const calls = stubApi(t);
+    const response = await post('/musics/m1/edit', [
+      ['title', 'Abbey Road'],
+      ['artist', 'The Beatles'],
+      ['trackNumber', '1'],
+      ['trackTitle', 'Come Together'],
+      ['trackMinutes', ''],
+      ['trackSeconds', ''],
+      ['trackNumber', 'abc'],
+      ['trackTitle', ''],
+      ['trackMinutes', ''],
+      ['trackSeconds', '75'],
+    ]);
+
+    assert.equal(response.status, 400);
+    const html = await response.text();
+    assert.match(html, /id="track-2-trackNumber-error"/);
+    assert.match(html, /id="track-2-trackTitle-error"[^>]*>Title is required</);
+    assert.match(html, /id="track-2-trackSeconds-error"/);
+    assert.doesNotMatch(html, /id="track-1-[a-zA-Z]+-error"/);
+    assert.match(html, /name="trackNumber"[^>]*value="abc"/);
+    assert.equal(calls.length, 0);
   });
 
   it('shows the API rejection with a 400, and a generic error with a 500', async (t) => {
@@ -253,6 +331,45 @@ describe('edit album metadata lookup', () => {
     assert.match(html, /name="title"[^>]*value=" ?Abbey Road ?"/);
     assert.ok(html.includes(savedImage), 'the saved image is still shown');
     assert.deepEqual(calls, []);
+  });
+
+  it("replaces the track rows with the applied result's tracks", async (t) => {
+    stubApi(t, {
+      lookup: () =>
+        Response.json([
+          {
+            ...result,
+            discList: [
+              { trackNumber: 1, title: 'Two Of Us', duration: 216000 },
+              { trackNumber: 2, title: 'Dig a Pony', duration: null },
+            ],
+          },
+        ]),
+    });
+    const search = await (
+      await post(editUrl, [
+        ['intent', 'lookup:title'],
+        ['title', 'Let It Be'],
+        ['artist', 'The Beatles'],
+      ])
+    ).text();
+    const html = await (
+      await post(editUrl, [
+        ['intent', 'apply:0'],
+        ['lookupResults', resultsOf(search)],
+        ['title', 'Let It Be'],
+        ['trackNumber', '9'],
+        ['trackTitle', 'Typed before'],
+        ['trackMinutes', ''],
+        ['trackSeconds', ''],
+      ])
+    ).text();
+
+    assert.match(html, /name="trackTitle"[^>]*value="Two Of Us"/);
+    assert.match(html, /name="trackTitle"[^>]*value="Dig a Pony"/);
+    assert.doesNotMatch(html, /Typed before/);
+    assert.match(html, /name="trackMinutes"[^>]*value="3"/);
+    assert.match(html, /name="trackSeconds"[^>]*value="36"/);
   });
 
   it('looks up by barcode too', async (t) => {

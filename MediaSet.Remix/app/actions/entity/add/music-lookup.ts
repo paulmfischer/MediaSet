@@ -1,7 +1,6 @@
 import { Entity, type IdentifierType } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
-import { MUSIC_FIELDS, type MusicFormValues } from './music-form.ts';
-import { submittedValues } from '../../forms/form-schema.ts';
+import { MUSIC_FIELDS, submittedMusicValues, type MusicFormValues, type TrackRowValues } from './music-form.ts';
 import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
 /** The form field a lookup searches by: the title with the artist, or the barcode. */
@@ -49,14 +48,25 @@ export function toMusicResultSummary(values: MusicFormValues): { title: string; 
 
 const isText = (value: unknown): value is string => typeof value === 'string';
 
+/** The track rows of a result (form values that travelled back from the browser); anything malformed is dropped. */
+function readResultTracks(value: unknown): TrackRowValues[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): TrackRowValues[] => {
+    if (typeof item !== 'object' || item === null) return [];
+    const { trackNumber, title, minutes, seconds } = item as Record<string, unknown>;
+    const text = (field: unknown) => (isText(field) ? field.trim() : '');
+    return [{ trackNumber: text(trackNumber), title: text(title), minutes: text(minutes), seconds: text(seconds) }];
+  });
+}
+
 /**
  * Applies a looked-up result to the form: each field the result has replaces the form's value, and
  * a field it lacks keeps what the user already entered. Only known form fields are read, and only
  * as text, because the result comes back from the browser.
  */
 export function applyMusicResult(current: MusicFormValues, result: Record<string, unknown>): MusicFormValues {
-  // The track list belongs to one release, so a result without one clears a list applied earlier.
-  const applied: MusicFormValues = { ...current, discList: '' };
+  // The track list belongs to one release, so a result without one clears the rows entered or applied earlier.
+  const applied: MusicFormValues = { ...current, trackList: readResultTracks(result.trackList) };
   for (const name of MUSIC_FIELDS.single) {
     const value = result[name];
     if (isText(value) && value.trim() !== '') applied[name] = value.trim();
@@ -76,7 +86,7 @@ export function resolveMusicLookupIntent(
 ): Promise<LookupIntentState<MusicFormValues>> {
   return resolveLookupIntent(formData, intent, {
     entityType: Entity.Musics,
-    readValues: (data) => submittedValues(data, MUSIC_FIELDS),
+    readValues: submittedMusicValues,
     parseLookupIntent: parseMusicLookupIntent,
     toRequest: toMusicLookupRequest,
     missingLabels: { title: 'a title', artist: 'an artist', barcode: 'a barcode' },

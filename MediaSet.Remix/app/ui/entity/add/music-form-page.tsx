@@ -9,6 +9,7 @@ import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
+import { TrackListInput } from '../../forms/public/track-list-input.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
 export interface MusicFormOptions {
@@ -248,8 +249,10 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
               />
             </Field>
           </div>
-          {/* The track list comes from a lookup and is not editable; it travels with the form unchanged. */}
-          {values.discList ? <input type="hidden" name="discList" value={values.discList} /> : null}
+          <fieldset class="flex flex-col gap-2">
+            <legend class="block text-sm font-medium text-gray-200 mb-1">Track list</legend>
+            <TrackListInput rows={values.trackList} errors={errors} />
+          </fieldset>
           <ImageInput
             existingSrc={existingImageSrc}
             imageUrl={values.imageUrl}

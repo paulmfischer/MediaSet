@@ -1,8 +1,17 @@
+import * as s from 'remix/data-schema';
 import type { InferOutput } from 'remix/data-schema';
 import * as f from 'remix/data-schema/form-data';
 
 import { Entity, type Disc, type MusicEntity } from '../../../models.ts';
-import { optionalHttpUrl, optionalWholeNumber, requiredText, text, textList } from '../../forms/form-schema.ts';
+import {
+  fieldErrors,
+  optionalHttpUrl,
+  optionalWholeNumber,
+  requiredText,
+  submittedValues,
+  text,
+  textList,
+} from '../../forms/form-schema.ts';
 
 export const musicForm = f.object({
   title: f.field(requiredText('Title is required')),
@@ -16,8 +25,6 @@ export const musicForm = f.object({
   // The duration is entered as minutes and seconds and stored in milliseconds.
   durationMinutes: f.field(optionalWholeNumber('Minutes must be a whole number from 0 to 9999', 4)),
   durationSeconds: f.field(optionalWholeNumber('Seconds must be a whole number from 0 to 59', 2, 59)),
-  // The track list is not editable; a lookup fills it and it travels as JSON in a hidden field.
-  discList: f.field(text()),
   genres: textList('genres'),
   imageUrl: f.field(optionalHttpUrl('Enter a valid http or https image URL')),
 });
@@ -34,10 +41,24 @@ export const MUSIC_FIELDS = {
     'discs',
     'durationMinutes',
     'durationSeconds',
-    'discList',
     'imageUrl',
   ],
   repeated: ['genres'],
+} as const;
+
+/** One row of the track editor, as the text the user entered. */
+export interface TrackRowValues {
+  trackNumber: string;
+  title: string;
+  minutes: string;
+  seconds: string;
+}
+
+export const TRACK_ROW_FIELDS = {
+  trackNumber: 'trackNumber',
+  title: 'trackTitle',
+  minutes: 'trackMinutes',
+  seconds: 'trackSeconds',
 } as const;
 
 export type MusicFormValues = {
@@ -51,8 +72,8 @@ export type MusicFormValues = {
   discs: string;
   durationMinutes: string;
   durationSeconds: string;
-  /** The looked-up track list as JSON; empty when there is none. Not editable. */
-  discList: string;
+  /** The track editor's rows, in the order shown; validated separately by `parseTrackRows`. */
+  trackList: TrackRowValues[];
   imageUrl: string;
   genres: string[];
 };
@@ -68,31 +89,89 @@ export const emptyMusicValues: MusicFormValues = {
   discs: '',
   durationMinutes: '',
   durationSeconds: '',
-  discList: '',
+  trackList: [],
   imageUrl: '',
   genres: [],
 };
 
 type ParsedMusic = InferOutput<typeof musicForm>;
 
-/** The track list from its hidden-field JSON; anything that is not a list of tracks is ignored. */
-export function parseDiscList(value: string): Disc[] | undefined {
-  if (value === '') return undefined;
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) return undefined;
-    const discs: Disc[] = [];
-    for (const item of parsed) {
-      if (typeof item !== 'object' || item === null) return undefined;
-      const { trackNumber, title, duration } = item as Record<string, unknown>;
-      if (typeof trackNumber !== 'number' || typeof title !== 'string') return undefined;
-      if (duration !== null && duration !== undefined && typeof duration !== 'number') return undefined;
-      discs.push({ trackNumber, title, duration: duration ?? null });
-    }
-    return discs;
-  } catch {
-    return undefined;
+const isBlankRow = (row: TrackRowValues) => Object.values(row).every((value) => value.trim() === '');
+
+/** The track rows as submitted (repeated `trackNumber`, `trackTitle`, `trackMinutes`, `trackSeconds` fields, paired by index). */
+export function readTrackRows(formData: FormData): TrackRowValues[] {
+  const column = (name: string) => formData.getAll(name).filter((value): value is string => typeof value === 'string');
+  const numbers = column(TRACK_ROW_FIELDS.trackNumber);
+  const titles = column(TRACK_ROW_FIELDS.title);
+  const minutes = column(TRACK_ROW_FIELDS.minutes);
+  const seconds = column(TRACK_ROW_FIELDS.seconds);
+  const count = Math.max(numbers.length, titles.length, minutes.length, seconds.length);
+  return Array.from({ length: count }, (_, index) => ({
+    trackNumber: numbers[index] ?? '',
+    title: titles[index] ?? '',
+    minutes: minutes[index] ?? '',
+    seconds: seconds[index] ?? '',
+  }));
+}
+
+const trackNumberSchema = optionalWholeNumber('Track number must be a whole number from 1 to 999999');
+const trackMinutesSchema = optionalWholeNumber('Minutes must be a whole number from 0 to 9999', 4);
+const trackSecondsSchema = optionalWholeNumber('Seconds must be a whole number from 0 to 59', 2, 59);
+
+/**
+ * Validates the track rows. Fully blank rows are dropped; every other row needs a track number
+ * (1 to 999999) and a title, and may have a duration (minutes 0 to 9999, seconds 0 to 59, both blank
+ * for none). Errors are keyed `track.<row>.<field>` by the row's 1-based position as submitted.
+ */
+export function parseTrackRows(rows: readonly TrackRowValues[]): { discs: Disc[]; errors: Record<string, string> } {
+  const discs: Disc[] = [];
+  const errors: Record<string, string> = {};
+  rows.forEach((row, index) => {
+    if (isBlankRow(row)) return;
+    const key = (field: string) => `track.${index + 1}.${field}`;
+
+    const number = s.parseSafe(trackNumberSchema, row.trackNumber);
+    let trackNumber = 0;
+    if (!number.success) errors[key('trackNumber')] = number.issues[0]?.message ?? '';
+    else if (number.value === undefined) errors[key('trackNumber')] = 'Track number is required';
+    else if (number.value < 1) errors[key('trackNumber')] = 'Track number must be a whole number from 1 to 999999';
+    else trackNumber = number.value;
+
+    const title = row.title.trim();
+    if (title === '') errors[key('trackTitle')] = 'Title is required';
+
+    const minutes = s.parseSafe(trackMinutesSchema, row.minutes);
+    const seconds = s.parseSafe(trackSecondsSchema, row.seconds);
+    if (!minutes.success) errors[key('trackMinutes')] = minutes.issues[0]?.message ?? '';
+    if (!seconds.success) errors[key('trackSeconds')] = seconds.issues[0]?.message ?? '';
+
+    if (Object.keys(errors).some((name) => name.startsWith(`track.${index + 1}.`))) return;
+    const duration = toMilliseconds(
+      minutes.success ? minutes.value : undefined,
+      seconds.success ? seconds.value : undefined
+    );
+    discs.push({ trackNumber, title, duration: duration ?? null });
+  });
+  return { discs, errors };
+}
+
+/** The values a failed submission or lookup re-renders: the text fields plus the track rows, unchanged. */
+export function submittedMusicValues(formData: FormData): MusicFormValues {
+  return { ...submittedValues(formData, MUSIC_FIELDS), trackList: readTrackRows(formData) };
+}
+
+export type MusicSubmission =
+  | { success: true; value: ParsedMusic; discList: Disc[] }
+  | { success: false; errors: Record<string, string> };
+
+/** Validates the whole form: the fields by schema and the track rows by `parseTrackRows`. */
+export function parseMusicSubmission(formData: FormData): MusicSubmission {
+  const parsed = s.parseSafe(musicForm, formData);
+  const tracks = parseTrackRows(readTrackRows(formData));
+  if (!parsed.success || Object.keys(tracks.errors).length > 0) {
+    return { success: false, errors: { ...(parsed.success ? {} : fieldErrors(parsed.issues)), ...tracks.errors } };
   }
+  return { success: true, value: parsed.value, discList: tracks.discs };
 }
 
 /** Minutes and seconds to milliseconds; `undefined` when both are blank. */
@@ -109,20 +188,25 @@ export function fromMilliseconds(duration: number | undefined): { minutes: strin
 }
 
 /** Builds the API payload from validated form output; empty optional text is left out. */
-export function toMusicEntity(parsed: ParsedMusic): MusicEntity {
-  const { tracks, discs, durationMinutes, durationSeconds, discList, genres, ...strings } = parsed;
+export function toMusicEntity(parsed: ParsedMusic, discList: Disc[] = []): MusicEntity {
+  const { tracks, discs, durationMinutes, durationSeconds, genres, ...strings } = parsed;
   const present = Object.fromEntries(Object.entries(strings).filter(([, value]) => value !== ''));
   const duration = toMilliseconds(durationMinutes, durationSeconds);
-  const disclist = parseDiscList(discList);
   return {
     type: Entity.Musics,
     ...present,
     ...(tracks === undefined ? {} : { tracks }),
     ...(discs === undefined ? {} : { discs }),
     ...(duration === undefined ? {} : { duration }),
-    ...(disclist === undefined ? {} : { discList: disclist }),
+    ...(discList.length === 0 ? {} : { discList }),
     genres,
   } as MusicEntity;
+}
+
+/** A saved track as an editor row. */
+export function toTrackRow(disc: Disc): TrackRowValues {
+  const { minutes, seconds } = fromMilliseconds(disc.duration ?? undefined);
+  return { trackNumber: String(disc.trackNumber), title: disc.title, minutes, seconds };
 }
 
 /** Form values for an existing album, as the edit form shows them. */
@@ -139,7 +223,7 @@ export function toMusicValues(music: MusicEntity): MusicFormValues {
     discs: music.discs === undefined ? '' : String(music.discs),
     durationMinutes: minutes,
     durationSeconds: seconds,
-    discList: music.discList && music.discList.length > 0 ? JSON.stringify(music.discList) : '',
+    trackList: (music.discList ?? []).map(toTrackRow),
     imageUrl: music.imageUrl ?? '',
     genres: music.genres ?? [],
   };
@@ -147,13 +231,17 @@ export function toMusicValues(music: MusicEntity): MusicFormValues {
 
 /**
  * The API payload for an edit: the existing album with the form's fields applied; cleared fields are
- * dropped, the track list is kept as saved, and `removeImage` drops the saved cover.
+ * dropped, the track list is replaced by the submitted one (none removes it), and `removeImage` drops the saved cover.
  */
-export function toMusicUpdate(existing: MusicEntity, parsed: ParsedMusic, removeImage = false): MusicEntity {
+export function toMusicUpdate(
+  existing: MusicEntity,
+  parsed: ParsedMusic,
+  discList: Disc[],
+  removeImage = false
+): MusicEntity {
   const { tracks, discs, durationMinutes, durationSeconds, genres, ...strings } = parsed;
   const updated: Record<string, unknown> = { ...existing, genres };
   for (const [name, value] of Object.entries(strings)) {
-    if (name === 'discList') continue; // not editable: the saved track list stays
     if (value === '') delete updated[name];
     else updated[name] = value;
   }
@@ -170,6 +258,21 @@ export function toMusicUpdate(existing: MusicEntity, parsed: ParsedMusic, remove
     Math.floor(existing.duration / 1000) * 1000 === duration;
   if (duration === undefined) delete updated.duration;
   else if (!unchanged) updated.duration = duration;
+
+  // The form shows whole seconds, so an unchanged saved track keeps its milliseconds.
+  const keepSaved = (disc: Disc): Disc => {
+    const saved = existing.discList?.find(
+      (old) =>
+        old.trackNumber === disc.trackNumber &&
+        old.title === disc.title &&
+        old.duration !== null &&
+        disc.duration !== null &&
+        Math.floor(old.duration / 1000) * 1000 === disc.duration
+    );
+    return saved ?? disc;
+  };
+  if (discList.length === 0) delete updated.discList;
+  else updated.discList = discList.map(keepSaved);
 
   if (removeImage) {
     // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
