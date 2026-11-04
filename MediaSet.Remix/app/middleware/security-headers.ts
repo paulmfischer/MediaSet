@@ -24,10 +24,13 @@ export function originOf(url: string | undefined): string | null {
 // Cover images are loaded by the browser straight from the API (`<img src="${clientApiUrl}/static/...">`),
 // so that origin must be in img-src; it is often plain http, which `https:` does not cover.
 // blob: in img-src is for previewing a chosen image file. Hydration inlines scripts and styles, hence
-// 'unsafe-inline'. script-src blob: and 'wasm-unsafe-eval' and worker-src blob: are allowed (#687) for the
-// barcode scanner's decoders (#698); 'unsafe-eval' stays off. The scanner itself needs no more than that:
-// @zxing/library is a same-origin module loaded by dynamic import (covered by 'self') and the camera
-// preview is a MediaStream, not a URL. app/e2e/barcode-scanner.test.e2e.ts runs it under this policy.
+// 'unsafe-inline'. script-src blob: and 'wasm-unsafe-eval' are needed by the multiple-import-maps polyfill that
+// loads every client entry (#733): its feature detection imports blob: modules in a frame, and where the browser
+// lacks multiple import maps it links modules as blob: URLs and parses them with a WebAssembly lexer. Without
+// them hydration logs CSP violations or fails. The barcode scanner needs neither (@zxing/library is a same-origin
+// dynamic import covered by 'self'; no workers or wasm; the preview is a MediaStream), so there is no worker-src
+// (it falls back to default-src 'self') and 'unsafe-eval' stays off. app/e2e/csp.test.e2e.ts and
+// app/e2e/barcode-scanner.test.e2e.ts run the app under this policy and fail if a directive is removed.
 export function buildContentSecurityPolicy(clientApiUrl?: string): string {
   const apiOrigin = originOf(clientApiUrl);
   return [
@@ -35,7 +38,6 @@ export function buildContentSecurityPolicy(clientApiUrl?: string): string {
     ['img-src', "'self'", 'data:', 'blob:', 'https:', ...(apiOrigin ? [apiOrigin] : [])].join(' '),
     "style-src 'self' 'unsafe-inline'",
     "script-src 'self' 'unsafe-inline' blob: 'wasm-unsafe-eval'",
-    'worker-src blob:',
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",

@@ -50,7 +50,7 @@ describe('production Content-Security-Policy (e2e)', () => {
 
     const response = await page.goto('/');
     const policy = (await response?.headerValue('content-security-policy')) ?? '';
-    assert.match(policy, /script-src[^;]*blob:[^;]*'wasm-unsafe-eval'/);
+    assert.match(policy, /script-src[^;]*blob:/);
     await page.waitForLoadState('networkidle');
 
     // The menu toggle only works once its client entry has loaded and hydrated under the CSP.
@@ -63,6 +63,42 @@ describe('production Content-Security-Policy (e2e)', () => {
     await page.keyboard.press('Escape');
     await menu.waitFor({ state: 'detached' });
 
+    assert.deepEqual(problems, []);
+  });
+
+  it('hydrates through the import-map polyfill with the CSP enforced', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(createAppRouter({ production: true }).fetch));
+    const problems: string[] = [];
+    page.on('pageerror', (error) => problems.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.text().includes('Content Security Policy')) {
+        problems.push(message.text());
+      }
+    });
+    // Browsers with import maps but not multiple of them (Chromium before 133, older Safari and Firefox) load every
+    // client entry through the polyfill, which parses modules with a WebAssembly lexer and re-links them as blob:
+    // URLs, so it needs script-src blob: and 'wasm-unsafe-eval'. Chromium has native support: make the polyfill's
+    // feature-detection frame (the only frame here) lose its second import map so detection fails and it kicks in.
+    await page.addInitScript(() => {
+      if (window === window.top) return;
+      const append = Node.prototype.appendChild;
+      let maps = 0;
+      Node.prototype.appendChild = function <T extends Node>(this: Node, node: T): T {
+        if (node instanceof HTMLScriptElement && node.type === 'importmap' && (maps += 1) > 1) return node;
+        return append.call(this, node) as T;
+      };
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    const toggle = page.getByRole('button', { name: 'Toggle menu' });
+    const menu = page.getByRole('navigation', { name: 'Mobile' });
+    await toggle.click();
+    await menu.waitFor();
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
     assert.deepEqual(problems, []);
   });
 
