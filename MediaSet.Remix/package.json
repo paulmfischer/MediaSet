@@ -14,8 +14,7 @@
     "lint:format": "prettier --check \"*.ts\" \"app/**/*.{ts,tsx,json}\"",
     "lint:format:fix": "prettier --write \"*.ts\" \"app/**/*.{ts,tsx,json}\"",
     "start": "NODE_ENV=production node --import remix/node-tsx server.ts",
-    "test": "npm run test:unit && npm run test:server",
-    "test:unit": "vitest run",
+    "test": "npm run test:server",
     "test:server": "NODE_ENV=test remix test --type server",
     "test:e2e": "npm run css && NODE_ENV=test remix test --type browser --type e2e",
     "typecheck": "tsc"
@@ -39,8 +38,7 @@
     "postcss": "^8.4.38",
     "prettier": "^3.8.1",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5.7.3",
-    "vitest": "^4.0.8"
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">=24.22.1 <25"

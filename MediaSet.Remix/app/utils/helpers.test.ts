@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
+
 import { toTitleCase, getEntityFromParams, singular, millisecondsToMinutesSeconds, formToDto } from './helpers.ts';
 import { Entity, type BookEntity, type MovieEntity, type GameEntity, type MusicEntity } from '../models.ts';
+
+// Drops properties whose value is undefined, so entities compare by what they carry.
+const plain = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
 
 describe('helpers.ts', () => {
   describe('toTitleCase', () => {
@@ -185,7 +190,7 @@ describe('helpers.ts', () => {
 
         const result = formToDto(formData);
 
-        expect(result).toEqual({
+        expect(plain(result)).toEqual({
           type: Entity.Books,
           title: 'Test Book',
           authors: ['Author 1', 'Author 2'],
@@ -246,7 +251,7 @@ describe('helpers.ts', () => {
 
         const result = formToDto(formData) as MovieEntity;
 
-        expect(result).toEqual({
+        expect(plain(result)).toEqual({
           type: Entity.Movies,
           title: 'Test Movie',
           studios: ['Studio 1', 'Studio 2'],
@@ -316,7 +321,7 @@ describe('helpers.ts', () => {
 
         const result = formToDto(formData) as GameEntity;
 
-        expect(result).toEqual({
+        expect(plain(result)).toEqual({
           type: Entity.Games,
           title: 'Test Game',
           developers: ['Dev 1', 'Dev 2'],

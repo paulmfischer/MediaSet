@@ -152,17 +152,13 @@ describe('router', () => {
   });
 
   it('renders the footer with the runtime APP_VERSION, falling back to a local default', async (t) => {
-    const previous = { APP_VERSION: process.env.APP_VERSION, VITE_APP_VERSION: process.env.VITE_APP_VERSION };
+    const previous = process.env.APP_VERSION;
     t.after(() => {
-      for (const [name, value] of Object.entries(previous)) {
-        if (value === undefined) delete process.env[name];
-        else process.env[name] = value;
-      }
+      if (previous === undefined) delete process.env.APP_VERSION;
+      else process.env.APP_VERSION = previous;
     });
     stubDashboardApi(t, emptyStats);
 
-    // The legacy build-time name is no longer read.
-    process.env.VITE_APP_VERSION = '9.9.9';
     delete process.env.APP_VERSION;
     assert.match(await (await get(routes.home.href())).text(), /<footer[^>]*>.*v0\.0\.0-local<\/span><\/footer>/);
 

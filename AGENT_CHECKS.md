@@ -23,7 +23,7 @@ npm run build
 npm test
 ```
 
-`npm test` runs the router (server) tests plus the retained Vitest module suites.
+`npm test` runs every server test with `remix test` (router, controller and module suites).
 Browser and end-to-end tests run separately in Playwright Chromium:
 
 ```bash
@@ -52,10 +52,12 @@ They use the same commands as above and never format in place.
 ```bash
 # NUnit class or method (append .MethodName to narrow)
 dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --filter "FullyQualifiedName~TestClassName"
-# From MediaSet.Remix: router tests by partial file name
-NODE_ENV=test npx remix test router
-# From MediaSet.Remix: one retained Vitest file
-npm run test:unit -- app/path/to/test-file.test.ts
+# From MediaSet.Remix: server tests whose file name contains a fragment
+NODE_ENV=test npx remix test --type server router
+# From MediaSet.Remix: one test file (any server test, e.g. a data module)
+NODE_ENV=test npx remix test --type server app/api/entity-data.test.ts
+# From MediaSet.Remix: browser or end-to-end tests by file name fragment
+NODE_ENV=test npx remix test --type browser --type e2e router
 ```
 
 Focused tests do not replace the full checks.

@@ -1,45 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
 
-// Create a global mock function before mocking
-const { mockApiFetch } = vi.hoisted(() => ({
-  mockApiFetch: vi.fn(),
-}));
-
-vi.mock('../utils/apiFetch.server.ts', () => ({
-  apiFetch: mockApiFetch,
-}));
-
-vi.mock('../utils/serverLogger.ts', () => ({
-  serverLogger: {
-    info: vi.fn(() => undefined),
-    warn: vi.fn(() => undefined),
-    error: vi.fn(() => undefined),
-    debug: vi.fn(() => undefined),
-  },
-}));
-
-// Now import after mocking
+import { mockFetch, expectFetched } from '../test/fetch-fakes.ts';
 import { searchEntities, getEntity, updateEntity, addEntity, deleteEntity } from './entity-data.ts';
 import { Entity, type BookEntity, type MovieEntity, type GameEntity, type MusicEntity } from '../models.ts';
 
 describe('entity-data.ts', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Set up default mock for any apiFetch calls (e.g., from serverLogger)
-    // to prevent actual network requests during tests
-    mockApiFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({}),
-    });
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   describe('searchEntities', () => {
-    it('should fetch and return search results for books', async () => {
+    it('should fetch and return search results for books', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [
         {
           type: Entity.Books,
@@ -57,7 +26,7 @@ describe('entity-data.ts', () => {
         },
       ];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
@@ -65,11 +34,12 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<BookEntity>(Entity.Books, 'test');
 
       expect(result).toEqual(mockBooks);
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/search?searchText=test`));
+      expectFetched(api.apiFetch, `/${Entity.Books}/search?searchText=test`);
       expect(result).toHaveLength(2);
     });
 
-    it('should fetch and return search results for movies', async () => {
+    it('should fetch and return search results for movies', async (t) => {
+      const api = mockFetch(t);
       const mockMovies: MovieEntity[] = [
         {
           type: Entity.Movies,
@@ -80,7 +50,7 @@ describe('entity-data.ts', () => {
         },
       ];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockMovies,
       });
@@ -88,10 +58,11 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<MovieEntity>(Entity.Movies, 'action');
 
       expect(result).toEqual(mockMovies);
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Movies}/search?searchText=action`));
+      expectFetched(api.apiFetch, `/${Entity.Movies}/search?searchText=action`);
     });
 
-    it('should fetch and return search results for games', async () => {
+    it('should fetch and return search results for games', async (t) => {
+      const api = mockFetch(t);
       const mockGames: GameEntity[] = [
         {
           type: Entity.Games,
@@ -102,7 +73,7 @@ describe('entity-data.ts', () => {
         },
       ];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockGames,
       });
@@ -110,10 +81,11 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<GameEntity>(Entity.Games, 'rpg');
 
       expect(result).toEqual(mockGames);
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Games}/search?searchText=rpg`));
+      expectFetched(api.apiFetch, `/${Entity.Games}/search?searchText=rpg`);
     });
 
-    it('should fetch and return search results for music', async () => {
+    it('should fetch and return search results for music', async (t) => {
+      const api = mockFetch(t);
       const mockMusic: MusicEntity[] = [
         {
           type: Entity.Musics,
@@ -124,7 +96,7 @@ describe('entity-data.ts', () => {
         },
       ];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockMusic,
       });
@@ -132,50 +104,54 @@ describe('entity-data.ts', () => {
       const result = await searchEntities<MusicEntity>(Entity.Musics, 'rock');
 
       expect(result).toEqual(mockMusic);
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Musics}/search?searchText=rock`));
+      expectFetched(api.apiFetch, `/${Entity.Musics}/search?searchText=rock`);
     });
 
-    it('should handle null searchText by using empty string', async () => {
+    it('should handle null searchText by using empty string', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
 
       await searchEntities<BookEntity>(Entity.Books, null);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('searchText='));
+      expectFetched(api.apiFetch, 'searchText=');
     });
 
-    it('should include orderBy parameter when provided', async () => {
+    it('should include orderBy parameter when provided', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
 
       await searchEntities<BookEntity>(Entity.Books, 'test', 'title');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('orderBy=title'));
+      expectFetched(api.apiFetch, 'orderBy=title');
     });
 
-    it('should handle empty orderBy parameter', async () => {
+    it('should handle empty orderBy parameter', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [];
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
 
       await searchEntities<BookEntity>(Entity.Books, 'test', '');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('orderBy='));
+      expectFetched(api.apiFetch, 'orderBy=');
     });
 
-    it('should throw error when response is not ok', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw error when response is not ok', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 500,
       });
@@ -183,8 +159,9 @@ describe('entity-data.ts', () => {
       await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
-    it('should return empty array when no results found', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should return empty array when no results found', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
         json: async () => [],
       });
@@ -195,14 +172,15 @@ describe('entity-data.ts', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('should handle multiple search results', async () => {
+    it('should handle multiple search results', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = Array.from({ length: 10 }, (_, i) => ({
         type: Entity.Books,
         id: String(i + 1),
         title: `Book ${i + 1}`,
       }));
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
@@ -214,7 +192,8 @@ describe('entity-data.ts', () => {
   });
 
   describe('getEntity', () => {
-    it('should fetch and return a specific book entity', async () => {
+    it('should fetch and return a specific book entity', async (t) => {
+      const api = mockFetch(t);
       const mockBook: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -223,7 +202,7 @@ describe('entity-data.ts', () => {
         authors: ['Author'],
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockBook,
@@ -232,10 +211,11 @@ describe('entity-data.ts', () => {
       const result = await getEntity<BookEntity>(Entity.Books, '123');
 
       expect(result).toEqual(mockBook);
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining(`/${Entity.Books}/123`));
+      expectFetched(api.apiFetch, `/${Entity.Books}/123`);
     });
 
-    it('should fetch and return a specific movie entity', async () => {
+    it('should fetch and return a specific movie entity', async (t) => {
+      const api = mockFetch(t);
       const mockMovie: MovieEntity = {
         type: Entity.Movies,
         id: '456',
@@ -244,7 +224,7 @@ describe('entity-data.ts', () => {
         runtime: 120,
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockMovie,
@@ -255,7 +235,8 @@ describe('entity-data.ts', () => {
       expect(result).toEqual(mockMovie);
     });
 
-    it('should fetch and return a specific game entity', async () => {
+    it('should fetch and return a specific game entity', async (t) => {
+      const api = mockFetch(t);
       const mockGame: GameEntity = {
         type: Entity.Games,
         id: '789',
@@ -263,7 +244,7 @@ describe('entity-data.ts', () => {
         platform: 'PS5',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockGame,
@@ -274,7 +255,8 @@ describe('entity-data.ts', () => {
       expect(result).toEqual(mockGame);
     });
 
-    it('should fetch and return a specific music entity', async () => {
+    it('should fetch and return a specific music entity', async (t) => {
+      const api = mockFetch(t);
       const mockMusic: MusicEntity = {
         type: Entity.Musics,
         id: '101',
@@ -282,7 +264,7 @@ describe('entity-data.ts', () => {
         artist: 'Test Artist',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockMusic,
@@ -293,23 +275,26 @@ describe('entity-data.ts', () => {
       expect(result).toEqual(mockMusic);
     });
 
-    it('should throw 404 error when entity not found', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw 404 error when entity not found', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         status: 404,
       });
 
       await expect(getEntity<BookEntity>(Entity.Books, 'nonexistent')).rejects.toThrow();
     });
 
-    it('should throw specific entity not found message for each type', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw specific entity not found message for each type', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         status: 404,
       });
 
       await expect(getEntity<MovieEntity>(Entity.Movies, '999')).rejects.toThrow();
     });
 
-    it('should handle entity with all fields populated', async () => {
+    it('should handle entity with all fields populated', async (t) => {
+      const api = mockFetch(t);
       const fullBook: BookEntity = {
         type: Entity.Books,
         id: '1',
@@ -325,7 +310,7 @@ describe('entity-data.ts', () => {
         format: 'Hardcover',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => fullBook,
@@ -338,13 +323,14 @@ describe('entity-data.ts', () => {
       expect(result.format).toBe('Hardcover');
     });
 
-    it('should handle entity with minimal fields', async () => {
+    it('should handle entity with minimal fields', async (t) => {
+      const api = mockFetch(t);
       const minimalGame: GameEntity = {
         type: Entity.Games,
         id: '1',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => minimalGame,
@@ -359,7 +345,8 @@ describe('entity-data.ts', () => {
   });
 
   describe('updateEntity', () => {
-    it('should update a book entity', async () => {
+    it('should update a book entity', async (t) => {
+      const api = mockFetch(t);
       const bookToUpdate: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -367,22 +354,24 @@ describe('entity-data.ts', () => {
         isbn: '978-1234567890',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<BookEntity>('123', bookToUpdate);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Books}/123`),
+      expectFetched(
+        api.apiFetch,
+        `/${Entity.Books}/123`,
         expect.objectContaining({
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       );
     });
 
-    it('should update a movie entity', async () => {
+    it('should update a movie entity', async (t) => {
+      const api = mockFetch(t);
       const movieToUpdate: MovieEntity = {
         type: Entity.Movies,
         id: '456',
@@ -390,19 +379,17 @@ describe('entity-data.ts', () => {
         barcode: '987654321',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<MovieEntity>('456', movieToUpdate);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Movies}/456`),
-        expect.objectContaining({ method: 'PUT' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Movies}/456`, expect.objectContaining({ method: 'PUT' }));
     });
 
-    it('should update a game entity', async () => {
+    it('should update a game entity', async (t) => {
+      const api = mockFetch(t);
       const gameToUpdate: GameEntity = {
         type: Entity.Games,
         id: '789',
@@ -410,19 +397,17 @@ describe('entity-data.ts', () => {
         platform: 'Xbox Series X',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<GameEntity>('789', gameToUpdate);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Games}/789`),
-        expect.objectContaining({ method: 'PUT' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Games}/789`, expect.objectContaining({ method: 'PUT' }));
     });
 
-    it('should update a music entity', async () => {
+    it('should update a music entity', async (t) => {
+      const api = mockFetch(t);
       const musicToUpdate: MusicEntity = {
         type: Entity.Musics,
         id: '101',
@@ -430,19 +415,17 @@ describe('entity-data.ts', () => {
         artist: 'Updated Artist',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<MusicEntity>('101', musicToUpdate);
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Musics}/101`),
-        expect.objectContaining({ method: 'PUT' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Musics}/101`, expect.objectContaining({ method: 'PUT' }));
     });
 
-    it('should send entity data as JSON', async () => {
+    it('should send entity data as JSON', async (t) => {
+      const api = mockFetch(t);
       const book: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -450,13 +433,13 @@ describe('entity-data.ts', () => {
         authors: ['Author'],
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<BookEntity>('123', book);
 
-      const callArgs = mockApiFetch.mock.calls[0];
+      const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = callArgs[1].body;
       const parsedBody = JSON.parse(body);
 
@@ -465,8 +448,9 @@ describe('entity-data.ts', () => {
       expect(parsedBody.authors).toEqual(['Author']);
     });
 
-    it('should keep the status and message when the API rejects the update', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 400, text: async () => ' ISBN already exists ' });
+    it('should keep the status and message when the API rejects the update', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({ ok: false, status: 400, text: async () => ' ISBN already exists ' });
 
       const error = await updateEntity<BookEntity>('123', { type: Entity.Books }).catch((e: unknown) => e);
 
@@ -475,14 +459,15 @@ describe('entity-data.ts', () => {
       expect(await (error as Response).text()).toBe('ISBN already exists');
     });
 
-    it('should throw error when update fails', async () => {
+    it('should throw error when update fails', async (t) => {
+      const api = mockFetch(t);
       const book: BookEntity = {
         type: Entity.Books,
         id: '123',
         title: 'Test',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: false,
         status: 500,
       });
@@ -490,14 +475,15 @@ describe('entity-data.ts', () => {
       await expect(updateEntity<BookEntity>('123', book)).rejects.toThrow();
     });
 
-    it('should throw error with correct entity type in message', async () => {
+    it('should throw error with correct entity type in message', async (t) => {
+      const api = mockFetch(t);
       const movie: MovieEntity = {
         type: Entity.Movies,
         id: '456',
         title: 'Test',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: false,
         status: 400,
       });
@@ -505,7 +491,8 @@ describe('entity-data.ts', () => {
       await expect(updateEntity<MovieEntity>('456', movie)).rejects.toThrow();
     });
 
-    it('should handle complex entity updates', async () => {
+    it('should handle complex entity updates', async (t) => {
+      const api = mockFetch(t);
       const complexBook: BookEntity = {
         type: Entity.Books,
         id: '123',
@@ -521,13 +508,13 @@ describe('entity-data.ts', () => {
         format: 'Hardcover',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
 
       await updateEntity<BookEntity>('123', complexBook);
 
-      const callArgs = mockApiFetch.mock.calls[0];
+      const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = JSON.parse(callArgs[1].body);
 
       expect(body.authors).toHaveLength(3);
@@ -537,7 +524,8 @@ describe('entity-data.ts', () => {
   });
 
   describe('addEntity', () => {
-    it('should add a new book entity', async () => {
+    it('should add a new book entity', async (t) => {
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
@@ -549,7 +537,7 @@ describe('entity-data.ts', () => {
         id: 'new-id-123',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseBook,
       });
@@ -558,16 +546,18 @@ describe('entity-data.ts', () => {
 
       expect(result).toEqual(responseBook);
       expect(result.id).toBe('new-id-123');
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Books}`),
+      expectFetched(
+        api.apiFetch,
+        `/${Entity.Books}`,
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
         })
       );
     });
 
-    it('should add a new movie entity', async () => {
+    it('should add a new movie entity', async (t) => {
+      const api = mockFetch(t);
       const newMovie: MovieEntity = {
         type: Entity.Movies,
         title: 'New Movie',
@@ -579,7 +569,7 @@ describe('entity-data.ts', () => {
         id: 'movie-456',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseMovie,
       });
@@ -590,7 +580,8 @@ describe('entity-data.ts', () => {
       expect(result.type).toBe(Entity.Movies);
     });
 
-    it('should add a new game entity', async () => {
+    it('should add a new game entity', async (t) => {
+      const api = mockFetch(t);
       const newGame: GameEntity = {
         type: Entity.Games,
         title: 'New Game',
@@ -602,7 +593,7 @@ describe('entity-data.ts', () => {
         id: 'game-789',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseGame,
       });
@@ -612,7 +603,8 @@ describe('entity-data.ts', () => {
       expect(result.id).toBe('game-789');
     });
 
-    it('should add a new music entity', async () => {
+    it('should add a new music entity', async (t) => {
+      const api = mockFetch(t);
       const newMusic: MusicEntity = {
         type: Entity.Musics,
         title: 'New Album',
@@ -624,7 +616,7 @@ describe('entity-data.ts', () => {
         id: 'music-101',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseMusic,
       });
@@ -634,21 +626,22 @@ describe('entity-data.ts', () => {
       expect(result.id).toBe('music-101');
     });
 
-    it('should send entity data as JSON in POST request', async () => {
+    it('should send entity data as JSON in POST request', async (t) => {
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'Test Book',
         isbn: '123',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => ({ ...newBook, id: '1' }),
       });
 
       await addEntity<BookEntity>(newBook);
 
-      const callArgs = mockApiFetch.mock.calls[0];
+      const callArgs = api.apiFetch.mock.calls[0].arguments;
       const body = JSON.parse(callArgs[1].body);
 
       expect(body.type).toBe(Entity.Books);
@@ -656,13 +649,14 @@ describe('entity-data.ts', () => {
       expect(body.isbn).toBe('123');
     });
 
-    it('should throw error when adding entity fails', async () => {
+    it('should throw error when adding entity fails', async (t) => {
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: false,
         status: 500,
       });
@@ -670,13 +664,14 @@ describe('entity-data.ts', () => {
       await expect(addEntity<BookEntity>(newBook)).rejects.toThrow();
     });
 
-    it('should throw error with correct entity type in message', async () => {
+    it('should throw error with correct entity type in message', async (t) => {
+      const api = mockFetch(t);
       const newMovie: MovieEntity = {
         type: Entity.Movies,
         title: 'New Movie',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: false,
         status: 400,
       });
@@ -684,7 +679,8 @@ describe('entity-data.ts', () => {
       await expect(addEntity<MovieEntity>(newMovie)).rejects.toThrow();
     });
 
-    it('should handle complex entity additions', async () => {
+    it('should handle complex entity additions', async (t) => {
+      const api = mockFetch(t);
       const complexGame: GameEntity = {
         type: Entity.Games,
         title: 'Complex Game',
@@ -701,7 +697,7 @@ describe('entity-data.ts', () => {
         id: 'game-999',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseGame,
       });
@@ -713,7 +709,8 @@ describe('entity-data.ts', () => {
       expect(result.id).toBe('game-999');
     });
 
-    it('should return entity with assigned ID from response', async () => {
+    it('should return entity with assigned ID from response', async (t) => {
+      const api = mockFetch(t);
       const bookWithoutId: BookEntity = {
         type: Entity.Books,
         title: 'Book',
@@ -724,7 +721,7 @@ describe('entity-data.ts', () => {
         id: 'assigned-id-12345',
       };
 
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => responseBook,
       });
@@ -737,60 +734,53 @@ describe('entity-data.ts', () => {
   });
 
   describe('deleteEntity', () => {
-    it('should delete a book entity', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should delete a book entity', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Books, '123');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Books}/123`),
-        expect.objectContaining({ method: 'DELETE' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Books}/123`, expect.objectContaining({ method: 'DELETE' }));
     });
 
-    it('should delete a movie entity', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should delete a movie entity', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Movies, '456');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Movies}/456`),
-        expect.objectContaining({ method: 'DELETE' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Movies}/456`, expect.objectContaining({ method: 'DELETE' }));
     });
 
-    it('should delete a game entity', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should delete a game entity', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Games, '789');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Games}/789`),
-        expect.objectContaining({ method: 'DELETE' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Games}/789`, expect.objectContaining({ method: 'DELETE' }));
     });
 
-    it('should delete a music entity', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should delete a music entity', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Musics, '101');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(
-        expect.stringContaining(`/${Entity.Musics}/101`),
-        expect.objectContaining({ method: 'DELETE' })
-      );
+      expectFetched(api.apiFetch, `/${Entity.Musics}/101`, expect.objectContaining({ method: 'DELETE' }));
     });
 
-    it('should throw error when deletion fails', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw error when deletion fails', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 500,
       });
@@ -798,18 +788,20 @@ describe('entity-data.ts', () => {
       await expect(deleteEntity(Entity.Books, '123')).rejects.toThrow();
     });
 
-    it('should report a missing entity as 404 and other failures as 500', async () => {
-      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    it('should report a missing entity as 404 and other failures as 500', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({ ok: false, status: 404 });
       const missing = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
-      mockApiFetch.mockResolvedValueOnce({ ok: false, status: 503 });
+      api.respondOnce({ ok: false, status: 503 });
       const failed = await deleteEntity(Entity.Books, '1').catch((e: unknown) => e);
 
       expect((missing as Response).status).toBe(404);
       expect((failed as Response).status).toBe(500);
     });
 
-    it('should throw error with correct entity type and id in message', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw error with correct entity type and id in message', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 404,
       });
@@ -817,47 +809,50 @@ describe('entity-data.ts', () => {
       await expect(deleteEntity(Entity.Movies, '999')).rejects.toThrow();
     });
 
-    it('should handle deletion of multiple entities sequentially', async () => {
-      mockApiFetch
-        .mockResolvedValueOnce({ ok: true })
-        .mockResolvedValueOnce({ ok: true })
-        .mockResolvedValueOnce({ ok: true });
+    it('should handle deletion of multiple entities sequentially', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({ ok: true });
+      api.respondOnce({ ok: true });
+      api.respondOnce({ ok: true });
 
       await deleteEntity(Entity.Books, '1');
       await deleteEntity(Entity.Books, '2');
       await deleteEntity(Entity.Books, '3');
 
-      expect(mockApiFetch).toHaveBeenCalledTimes(3);
+      expect(api.apiFetch).toHaveBeenCalledTimes(3);
     });
 
-    it('should send correct DELETE request', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should send correct DELETE request', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Games, '123');
 
-      const callArgs = mockApiFetch.mock.calls[0];
+      const callArgs = api.apiFetch.mock.calls[0].arguments;
       expect(callArgs[1].method).toBe('DELETE');
     });
 
-    it('should handle deletion with numeric-like string IDs', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should handle deletion with numeric-like string IDs', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
       });
 
       await deleteEntity(Entity.Musics, '999999');
 
-      expect(mockApiFetch).toHaveBeenCalledWith(expect.stringContaining('/999999'), expect.any(Object));
+      expectFetched(api.apiFetch, '/999999', { method: 'DELETE' });
     });
   });
 
   describe('Entity type handling across all functions', () => {
-    it('should correctly handle all entity types', async () => {
+    it('should correctly handle all entity types', async (t) => {
+      const api = mockFetch(t);
       const entities = [Entity.Books, Entity.Movies, Entity.Games, Entity.Musics];
 
       for (const entity of entities) {
-        mockApiFetch.mockResolvedValueOnce({
+        api.respondOnce({
           ok: true,
           json: async () => [{ type: entity, id: '1' }],
         });
@@ -865,15 +860,16 @@ describe('entity-data.ts', () => {
         const result = await searchEntities(entity, 'test');
         expect(result).toHaveLength(1);
         expect(result[0].type).toBe(entity);
-        vi.clearAllMocks();
+        api.clearCalls();
       }
     });
 
-    it('should maintain entity type throughout CRUD operations', async () => {
+    it('should maintain entity type throughout CRUD operations', async (t) => {
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, title: 'Test' };
 
       // Search
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => [book],
       });
@@ -881,7 +877,7 @@ describe('entity-data.ts', () => {
       expect(result[0].type).toBe(Entity.Books);
 
       // Get
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => ({ ...book, id: '1' }),
@@ -892,40 +888,46 @@ describe('entity-data.ts', () => {
   });
 
   describe('Error handling', () => {
-    it('should handle network errors during search', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should handle network errors during search', async (t) => {
+      const api = mockFetch(t);
+      api.rejectOnce(new Error('Network error'));
 
       await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow('Network error');
     });
 
-    it('should handle network errors during get', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should handle network errors during get', async (t) => {
+      const api = mockFetch(t);
+      api.rejectOnce(new Error('Network error'));
 
       await expect(getEntity<BookEntity>(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
-    it('should handle network errors during update', async () => {
+    it('should handle network errors during update', async (t) => {
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, id: '1', title: 'Test' };
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+      api.rejectOnce(new Error('Network error'));
 
       await expect(updateEntity<BookEntity>('1', book)).rejects.toThrow('Network error');
     });
 
-    it('should handle network errors during add', async () => {
+    it('should handle network errors during add', async (t) => {
+      const api = mockFetch(t);
       const book: BookEntity = { type: Entity.Books, title: 'Test' };
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+      api.rejectOnce(new Error('Network error'));
 
       await expect(addEntity<BookEntity>(book)).rejects.toThrow('Network error');
     });
 
-    it('should handle network errors during delete', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should handle network errors during delete', async (t) => {
+      const api = mockFetch(t);
+      api.rejectOnce(new Error('Network error'));
 
       await expect(deleteEntity(Entity.Books, '1')).rejects.toThrow('Network error');
     });
 
-    it('should handle 5xx errors appropriately', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should handle 5xx errors appropriately', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 503,
       });
@@ -933,8 +935,9 @@ describe('entity-data.ts', () => {
       await expect(searchEntities<BookEntity>(Entity.Books, 'test')).rejects.toThrow();
     });
 
-    it('should handle 4xx errors appropriately', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should handle 4xx errors appropriately', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 400,
       });
@@ -944,7 +947,8 @@ describe('entity-data.ts', () => {
   });
 
   describe('Integration-like scenarios', () => {
-    it('should perform full CRUD cycle for a book', async () => {
+    it('should perform full CRUD cycle for a book', async (t) => {
+      const api = mockFetch(t);
       const newBook: BookEntity = {
         type: Entity.Books,
         title: 'New Book',
@@ -952,7 +956,7 @@ describe('entity-data.ts', () => {
       };
 
       // Create
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => ({ ...newBook, id: '1' }),
       });
@@ -960,7 +964,7 @@ describe('entity-data.ts', () => {
       expect(created.id).toBe('1');
 
       // Read
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => created,
@@ -970,28 +974,29 @@ describe('entity-data.ts', () => {
 
       // Update
       const updated: BookEntity = { ...retrieved, title: 'Updated Book' };
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
       await updateEntity<BookEntity>('1', updated);
 
       // Delete
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
       });
       await deleteEntity(Entity.Books, '1');
 
-      expect(mockApiFetch).toHaveBeenCalledTimes(4);
+      expect(api.apiFetch).toHaveBeenCalledTimes(4);
     });
 
-    it('should search and then retrieve individual items', async () => {
+    it('should search and then retrieve individual items', async (t) => {
+      const api = mockFetch(t);
       const mockBooks: BookEntity[] = [
         { type: Entity.Books, id: '1', title: 'Book 1' },
         { type: Entity.Books, id: '2', title: 'Book 2' },
       ];
 
       // Search
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         json: async () => mockBooks,
       });
@@ -999,7 +1004,7 @@ describe('entity-data.ts', () => {
       expect(searchResults).toHaveLength(2);
 
       // Get specific item
-      mockApiFetch.mockResolvedValueOnce({
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockBooks[0],
