@@ -11,6 +11,10 @@ import type { AppContext } from '../../router.ts';
 import { renderError } from '../render-error.tsx';
 import { COVER_IMAGE_MAX_BYTES } from './cover-image.ts';
 
+// Each selected genre, author or track field is one part, and a metadata lookup can apply a hundred or
+// more genres at once, so the cap is generous; the total size limit still bounds the request.
+const MAX_FORM_PARTS = 1000;
+
 const isLimitError = (error: unknown) =>
   error instanceof MaxFilesExceededError ||
   error instanceof MaxFileSizeExceededError ||
@@ -27,7 +31,7 @@ export function boundedFormData() {
   const parse = formData({
     maxFiles: 1,
     maxFileSize: COVER_IMAGE_MAX_BYTES,
-    maxParts: 100,
+    maxParts: MAX_FORM_PARTS,
     maxTotalSize: COVER_IMAGE_MAX_BYTES + 256 * 1024,
   });
 

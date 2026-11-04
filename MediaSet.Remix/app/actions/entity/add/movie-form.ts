@@ -83,7 +83,7 @@ export function toMovieValues(movie: MovieEntity): MovieFormValues {
     title: movie.title ?? '',
     barcode: movie.barcode ?? '',
     format: movie.format ?? '',
-    runtime: movie.runtime === undefined ? '' : String(movie.runtime),
+    runtime: typeof movie.runtime === 'number' ? String(movie.runtime) : '',
     releaseDate: movie.releaseDate ?? '',
     isTvSeries: movie.isTvSeries ? 'true' : '',
     plot: movie.plot ?? '',
