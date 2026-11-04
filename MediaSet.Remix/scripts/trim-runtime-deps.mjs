@@ -10,17 +10,22 @@
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-const nodeModules = process.argv[2] ?? 'node_modules';
-const iconsSource = process.argv[3] ?? 'app/ui/icons.ts';
+// Destructive: it deletes packages from node_modules. Refuse to run outside the image build and
+// require explicit paths (no defaults), so a local run can never prune a real dev node_modules.
+if (process.env.MEDIASET_IMAGE_BUILD !== '1') {
+  throw new Error('Refusing to run: this script only runs in the Docker trim stage (MEDIASET_IMAGE_BUILD=1).');
+}
+const [nodeModules, iconsSource] = process.argv.slice(2);
+if (!nodeModules || !iconsSource) {
+  throw new Error('Usage: trim-runtime-deps.mjs <node_modules dir> <icons.ts path>');
+}
 
 for (const name of ['playwright', 'playwright-core']) {
   rmSync(join(nodeModules, name), { recursive: true, force: true });
 }
 
 const wanted = new Set(
-  [...readFileSync(iconsSource, 'utf8').matchAll(/lucide\/dist\/esm\/icons\/([\w.-]+\.mjs)/g)].map(
-    (match) => match[1],
-  ),
+  [...readFileSync(iconsSource, 'utf8').matchAll(/lucide\/dist\/esm\/icons\/([\w.-]+\.mjs)/g)].map((match) => match[1])
 );
 if (wanted.size === 0) {
   throw new Error(`No lucide icon imports found in ${iconsSource}`);

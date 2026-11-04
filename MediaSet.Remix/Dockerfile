@@ -24,7 +24,7 @@ RUN npm ci --omit=dev && \
 
 COPY scripts/trim-runtime-deps.mjs ./scripts/
 COPY app/ui/icons.ts ./app/ui/icons.ts
-RUN node scripts/trim-runtime-deps.mjs node_modules app/ui/icons.ts
+RUN MEDIASET_IMAGE_BUILD=1 node scripts/trim-runtime-deps.mjs node_modules app/ui/icons.ts
 
 # Runtime stage: Node runs the TypeScript sources directly (no compiled output)
 FROM node:24.22.1-alpine AS runtime
