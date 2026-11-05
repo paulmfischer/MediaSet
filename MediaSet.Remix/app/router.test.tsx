@@ -226,6 +226,14 @@ describe('home dashboard', () => {
     assert.doesNotMatch(html, /id="dashboard-panel-musics"/);
   });
 
+  it('should keep the hidden heading out of the spaced wrapper so no gap opens under the header', async (t) => {
+    stubDashboardApi(t, fullStats);
+
+    const html = await (await get('/')).text();
+
+    assert.match(html, /<h1 class="sr-only">Dashboard<\/h1>\s*<div class="space-y-8">/);
+  });
+
   it('should select the Books tab by default', async (t) => {
     stubDashboardApi(t, fullStats);
 

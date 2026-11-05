@@ -22,8 +22,9 @@ export function HomePage(handle: Handle<HomePageProps>) {
     const { path, stats, integrations, errorDetails } = handle.props;
     return (
       <Document path={path} title="Dashboard | MediaSet" description="Your personal media collection dashboard">
+        {/* Outside the spaced wrapper: a visually hidden first child would still push the next one down. */}
+        {stats ? <h1 class="sr-only">Dashboard</h1> : null}
         <div class="space-y-8">
-          {stats ? <h1 class="sr-only">Dashboard</h1> : null}
           {stats ? (
             <Dashboard stats={stats} />
           ) : (
