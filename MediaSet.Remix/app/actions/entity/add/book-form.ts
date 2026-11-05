@@ -85,7 +85,7 @@ export function toBookValues(book: BookEntity): BookFormValues {
     isbn: book.isbn ?? '',
     subtitle: book.subtitle ?? '',
     format: book.format ?? '',
-    pages: book.pages === undefined ? '' : String(book.pages),
+    pages: typeof book.pages === 'number' ? String(book.pages) : '',
     publicationDate: book.publicationDate ?? '',
     publisher: book.publisher ?? '',
     plot: book.plot ?? '',

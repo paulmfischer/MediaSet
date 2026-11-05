@@ -36,7 +36,7 @@ export const booksList: ListConfig<BookEntity> = {
   columns: [
     { label: 'Authors', field: 'authors', class: 'hidden sm:table-cell', cell: (book) => join(book.authors, ',') },
     { label: 'Format', field: 'format', class: 'hidden md:table-cell', cell: (book) => book.format },
-    { label: 'Pages', field: 'pages', class: 'hidden lg:table-cell', cell: (book) => book.pages },
+    { label: 'Pages', field: 'pages', class: 'hidden lg:table-cell', cell: (book) => book.pages ?? undefined },
   ],
 };
 
@@ -81,6 +81,6 @@ export const musicsList: ListConfig<MusicEntity> = {
   columns: [
     { label: 'Artist', field: 'artist', class: 'hidden md:table-cell', cell: (music) => music.artist },
     { label: 'Format', field: 'format', class: 'hidden lg:table-cell', cell: (music) => music.format },
-    { label: 'Tracks', field: 'tracks', class: 'hidden xl:table-cell', cell: (music) => music.tracks },
+    { label: 'Tracks', field: 'tracks', class: 'hidden xl:table-cell', cell: (music) => music.tracks ?? undefined },
   ],
 };

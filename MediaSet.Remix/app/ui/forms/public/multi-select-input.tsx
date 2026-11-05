@@ -76,7 +76,7 @@ export const MultiSelectInput = clientEntry(
               mix={combobox.inputMix()}
             />
             {selected.map((value) => (
-              <input key={value} type="hidden" name={name} value={value} />
+              <input key={`hidden-${value}`} type="hidden" name={name} value={value} />
             ))}
           </div>
           {combobox.listbox()}

@@ -149,6 +149,19 @@ describe('book cover image on add', () => {
     assert.equal(saved.length, 0);
   });
 
+  it('saves a book with a hundred and fifty genres, as a lookup can apply', async (t) => {
+    const saved = stubApi(t);
+    const body = new FormData();
+    body.set('title', 'Dune');
+    for (let i = 0; i < 150; i++) body.append('genres', `Genre ${i}`);
+    const response = await router.fetch(
+      new Request(new URL('/books/add', 'http://localhost'), { method: 'POST', body })
+    );
+
+    assert.equal(response.status, 303);
+    assert.equal(saved.length, 1);
+  });
+
   it('answers 413 when the request has more than one file', async (t) => {
     const saved = stubApi(t);
     const body = new FormData();
