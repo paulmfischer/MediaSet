@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 
+@layer base {
+  /* The design is dark-only (see darkMode in tailwind.config.ts): tell the browser, so native controls,
+     scrollbars and the default canvas match. */
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
 @layer components {
   a {
     @apply dark:text-blue-300 underline;
