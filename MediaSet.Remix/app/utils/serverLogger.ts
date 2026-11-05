@@ -12,6 +12,7 @@ export function seqEnvironmentName(nodeEnv: string | undefined): string {
       return 'Development';
     case 'production':
       return 'Production';
+    // The API's name for its test environment is `Testing`, not `Test`.
     case 'test':
       return 'Testing';
     default:
