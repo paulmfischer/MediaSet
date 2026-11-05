@@ -83,4 +83,17 @@ describe('add movie (e2e)', () => {
       },
     ]);
   });
+
+  it('shows typed text in the form inputs in white, not the dark base colour', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/add');
+    await page.waitForLoadState('networkidle');
+
+    const colorOf = (selector: string) => page.locator(selector).evaluate((node) => getComputedStyle(node).color);
+
+    assert.equal(await colorOf('#title'), 'rgb(255, 255, 255)');
+    assert.equal(await colorOf('#barcode'), 'rgb(255, 255, 255)');
+    assert.equal(await colorOf('#plot'), 'rgb(255, 255, 255)');
+  });
 });

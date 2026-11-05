@@ -20,10 +20,12 @@
     @apply dark:bg-zinc-800;
   }
 
+  /* No dark: prefix on the text colour. With darkMode "class" a dark: rule is more specific than a
+     utility, so it would override the text-white on the form inputs and hide what is typed. */
   textarea,
   select,
   input {
-    @apply p-1 pl-2 dark:text-slate-800 rounded-sm;
+    @apply p-1 pl-2 text-slate-800 rounded-sm;
   }
 
   input::placeholder {
