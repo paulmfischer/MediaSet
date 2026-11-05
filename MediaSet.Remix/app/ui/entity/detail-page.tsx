@@ -67,13 +67,9 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   loading="lazy"
                 />
               ) : (
-                <div class="flex h-48 w-48 items-center justify-center overflow-hidden rounded-lg bg-gray-800 lg:h-64 lg:w-64">
-                  <div class="flex h-full w-full items-center justify-center rounded-lg bg-gray-700">
-                    <div class="text-center">
-                      <Icon icon={ImageOff} size={64} class="mx-auto text-gray-300" />
-                      <p class="mt-2 text-sm text-gray-300">No image available</p>
-                    </div>
-                  </div>
+                <div class="flex h-48 w-48 flex-col items-center justify-center rounded-lg bg-gray-700 text-center text-sm text-gray-300 lg:h-64 lg:w-64">
+                  <Icon icon={ImageOff} size={64} />
+                  <p class="mt-2">No image available</p>
                 </div>
               )}
             </div>
