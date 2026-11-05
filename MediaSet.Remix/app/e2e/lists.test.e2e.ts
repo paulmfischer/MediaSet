@@ -123,4 +123,20 @@ describe('collection lists (e2e)', () => {
     assert.equal(style.borderTopWidth, '1px');
     assert.equal(style.backgroundColor, 'rgb(31, 41, 55)');
   });
+
+  it('clears the search box when navigating from one list to another', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/books?searchText=Book');
+    await page.waitForLoadState('networkidle');
+    const search = page.getByRole('searchbox');
+    assert.equal(await search.inputValue(), 'Book');
+
+    await page.getByRole('link', { name: 'Movies' }).click();
+    await page.waitForURL('**/movies');
+    await page.getByRole('searchbox', { name: 'Search Movies' }).waitFor();
+
+    assert.equal(await page.getByRole('searchbox').inputValue(), '');
+  });
 });
