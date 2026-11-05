@@ -65,12 +65,23 @@ describe('item detail pages', () => {
     stubApi(t, () => Response.json(book));
     const withCover = await (await get('/books/b1')).text();
     assert.match(withCover, /<img src="[^"]*\/static\/images\/books\/b1\.jpg" alt="Dune"/);
-    assert.doesNotMatch(withCover, /aria-label="No image"/);
+    assert.doesNotMatch(withCover, /No image available/);
 
     stubApi(t, () => Response.json({ ...book, coverImage: undefined }));
     const without = await (await get('/books/b1')).text();
     assert.doesNotMatch(without, /<img/);
-    assert.match(without, /aria-label="No image"/);
+    assert.match(without, /No image available/);
+  });
+
+  it('shows the no-image placeholder for every media type without a cover', async (t) => {
+    for (const [path, type] of [
+      ['movies/m1', 'Movies'],
+      ['games/g1', 'Games'],
+      ['musics/u1', 'Musics'],
+    ] as const) {
+      stubApi(t, () => Response.json({ id: 'x1', type, title: 'Untitled' }));
+      assert.match(await (await get(`/${path}`)).text(), /No image available/);
+    }
   });
 
   it('links to the existing edit and delete URLs', async (t) => {
