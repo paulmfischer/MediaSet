@@ -206,6 +206,35 @@ describe('collection lists', () => {
     });
   }
 
+  for (const path of ['/books', '/movies', '/games', '/musics']) {
+    it(`${path} links every row and card to its delete page`, async (t) => {
+      stubApi(
+        t,
+        paged([
+          { id: 'x1', title: 'Thing' },
+          { id: 'x2', title: 'Other' },
+        ])
+      );
+
+      const html = await (await get(path)).text();
+
+      // Row and card each render one link; read each tag's attributes without relying on their order.
+      const links = (html.match(/<a\b[^>]*data-delete-href[^>]*>/g) ?? []).map((tag) => ({
+        href: /\shref="([^"]*)"/.exec(tag)?.[1],
+        target: /\sdata-delete-href="([^"]*)"/.exec(tag)?.[1],
+        label: /\saria-label="([^"]*)"/.exec(tag)?.[1],
+      }));
+      for (const [id, title] of [
+        ['x1', 'Thing'],
+        ['x2', 'Other'],
+      ]) {
+        const forItem = links.filter((link) => link.href === `${path}/${id}/delete`);
+        assert.equal(forItem.length, 2);
+        assert.ok(forItem.every((link) => link.target === `${path}/${id}/delete` && link.label === `Delete ${title}`));
+      }
+    });
+  }
+
   it('shows a check mark for a TV series and none for a movie, and 0 for a missing runtime', async (t) => {
     stubApi(
       t,

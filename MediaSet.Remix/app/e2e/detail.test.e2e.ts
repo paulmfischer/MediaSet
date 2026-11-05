@@ -44,7 +44,7 @@ describe('item detail (e2e)', () => {
       (window as unknown as { sameDocument: boolean }).sameDocument = true;
     });
 
-    await page.getByRole('link', { name: 'Dune: Book One' }).click();
+    await page.getByRole('link', { name: 'Dune: Book One', exact: true }).click();
     await page.waitForURL('**/books/b1');
     await page.getByRole('heading', { name: 'Dune', level: 1 }).waitFor();
 
@@ -70,6 +70,6 @@ describe('item detail (e2e)', () => {
     await page.getByRole('heading', { name: 'Book not found' }).waitFor();
     await page.getByRole('link', { name: 'Back to Books' }).click();
     await page.waitForURL('**/books');
-    await page.getByRole('link', { name: 'Dune: Book One' }).first().waitFor();
+    await page.getByRole('link', { name: 'Dune: Book One', exact: true }).first().waitFor();
   });
 });
