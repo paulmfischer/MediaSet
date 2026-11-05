@@ -138,6 +138,13 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               </div>
             </Field>
           </LookupPanel>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <Field name="subtitle" label="Subtitle" error={errors.subtitle}>
             <input
               id="subtitle"
@@ -224,13 +231,6 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               value={values.plot}
             />
           </Field>
-          <ImageInput
-            existingSrc={existingImageSrc}
-            imageUrl={values.imageUrl}
-            allowRemove={Boolean(existingImageSrc)}
-            removeImage={removeImage}
-            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
-          />
           <div class="flex gap-2 justify-end">
             <a href={cancelHref} class="px-3 py-1">
               Cancel

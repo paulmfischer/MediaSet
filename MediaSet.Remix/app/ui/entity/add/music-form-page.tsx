@@ -151,6 +151,13 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
               </div>
             </Field>
           </LookupPanel>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
               name="format"
@@ -255,13 +262,6 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
             <legend class="block text-sm font-medium text-gray-200 mb-1">Track list</legend>
             <TrackListInput rows={values.trackList} errors={errors} />
           </fieldset>
-          <ImageInput
-            existingSrc={existingImageSrc}
-            imageUrl={values.imageUrl}
-            allowRemove={Boolean(existingImageSrc)}
-            removeImage={removeImage}
-            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
-          />
           <div class="flex gap-2 justify-end">
             <a href={cancelHref} class="px-3 py-1">
               Cancel

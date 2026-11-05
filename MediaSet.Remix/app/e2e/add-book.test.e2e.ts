@@ -186,7 +186,7 @@ describe('add book metadata lookup (e2e)', () => {
     await page.getByLabel('Pages').fill('1');
     // A cover over the upload limit must not get in the way of a lookup, which doesn't send it.
     await page
-      .getByLabel(/Upload an image/)
+      .getByLabel('Upload cover image')
       .setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(6 * 1024 * 1024) });
     await page.getByRole('button', { name: 'Search by title' }).click();
 

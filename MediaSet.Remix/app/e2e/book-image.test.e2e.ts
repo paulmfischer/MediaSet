@@ -76,6 +76,32 @@ describe('book cover image (e2e)', () => {
     assert.deepEqual(saved[0]?.file, { name: 'dune.png', type: 'image/png', size: PNG.length });
   });
 
+  it('accepts a file dropped on the upload area and saves it', async (t) => {
+    const { saved } = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    await page.locator('#title').fill('Dune');
+
+    const area = page.locator('label[for="coverImage"]');
+    const data = await page.evaluateHandle(
+      ([bytes]) => {
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([new Uint8Array(bytes as number[])], 'dropped.png', { type: 'image/png' }));
+        return transfer;
+      },
+      [Array.from(PNG)]
+    );
+    await area.dispatchEvent('drop', { dataTransfer: data });
+    const preview = page.getByTestId('image-preview');
+    await preview.waitFor();
+    assert.match(await preview.innerText(), /Uploaded file: dropped\.png/);
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForURL('**/books/new-id');
+    assert.deepEqual(saved[0]?.file, { name: 'dropped.png', type: 'image/png', size: PNG.length });
+  });
+
   it('previews an image URL and says when it fails to load', async (t) => {
     stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
