@@ -219,5 +219,4 @@ Result and date: _to be filled in by the maintainer_.
 | Movie, game and music lookups against live providers | Not verified live | Verify with credentials before release if wanted |
 
 Rows 1 to 5 and the accessibility section above describe the state before PRs #750 to #753; those PRs are
-independent of this one and target `feat/remix-3` too. The 2 `Open` statuses above are the only ones left
-for the maintainer apart from the manual device checks.
+independent of this one and target `feat/remix-3` too.
