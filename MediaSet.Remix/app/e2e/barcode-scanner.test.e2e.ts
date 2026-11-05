@@ -1,6 +1,7 @@
 import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it, type TestContext } from 'remix/test';
+import type { Page } from 'playwright';
 
 import { createAppRouter } from '../router.ts';
 
@@ -173,6 +174,12 @@ async function openForm(t: TestContext, path: string, mode: CameraMode, options:
   return { page, lookups, problems, requests, camera };
 }
 
+// Waits for the scanned ISBN's single match to fill the form (title from the stubbed lookup).
+const filled = (page: Page, timeout = 5000) =>
+  page.waitForFunction(() => document.querySelector<HTMLInputElement>('#title')?.value === 'Dune', undefined, {
+    timeout,
+  });
+
 describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
   it('should open with a live preview, then fill the ISBN and run the lookup on detection with the native detector', async (t) => {
     const { page, lookups, problems, requests, camera } = await openForm(t, '/books/add', 'ok');
@@ -181,13 +188,13 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     });
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    const lookupDialog = page.getByRole('dialog', { name: 'Look up book' });
-    await lookupDialog.waitFor();
+    await filled(page);
 
     assert.equal(await page.locator('#isbn').inputValue(), ISBN);
     assert.equal(lookups.length, 1);
     assert.match(lookups[0] ?? '', new RegExp(ISBN));
-    assert.equal(await lookupDialog.getByRole('listitem').count(), 1);
+    // The ISBN has a single match, so the form is filled and there is no dialog to choose from.
+    assert.equal(await page.getByRole('dialog', { name: 'Look up book' }).count(), 0);
     // The existing lookup flow ran in the same document, and the scanner is gone with the camera released.
     assert.equal(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), true);
     assert.equal(await page.getByRole('dialog', { name: 'Scan ISBN' }).isVisible(), false);
@@ -209,7 +216,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     );
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor({ timeout: 15_000 });
+    await filled(page, 15_000);
 
     assert.equal(
       requests.some((path) => path.includes('zxing')),
@@ -267,7 +274,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     const { page, lookups } = await openForm(t, '/books/add', 'ok', { native: 'slow' });
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor();
+    await filled(page);
 
     assert.equal(await page.locator('#isbn').inputValue(), ISBN);
     assert.equal(lookups.length, 1);
@@ -283,7 +290,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     );
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor({ timeout: 15_000 });
+    await filled(page, 15_000);
 
     assert.equal(
       requests.some((path) => path.includes('zxing')),

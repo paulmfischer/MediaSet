@@ -217,7 +217,10 @@ describe('edit book metadata lookup', () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(lookups, ['/lookup/Books/isbn/9780441172719']);
-    assert.match(await response.text(), /<dialog open/);
+    const html = await response.text();
+    // One match for an ISBN or barcode fills the form at once; no dialog to choose from.
+    assert.doesNotMatch(html, /<dialog open/);
+    assert.match(html, /data-rmx-key="/);
   });
 
   it('asks for a value, with a 400, when the search field is blank', async (t) => {

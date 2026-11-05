@@ -1,6 +1,6 @@
-import { Entity, type IdentifierType } from '../../../models.ts';
+import { Entity, type IdentifierType, type BookEntity } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
-import { BOOK_FIELDS, type BookFormValues } from './book-form.ts';
+import { BOOK_FIELDS, toBookValues, type BookFormValues } from './book-form.ts';
 import { submittedValues } from '../../forms/form-schema.ts';
 import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
@@ -85,6 +85,7 @@ export function resolveBookLookupIntent(
       return request ? { request } : { missing: field };
     },
     missingLabels: { title: 'a title', isbn: 'an ISBN' },
+    resultToValues: (result) => ({ ...toBookValues(result as BookEntity) }),
     applyResult: applyBookResult,
   });
 }

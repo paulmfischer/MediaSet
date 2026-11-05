@@ -1,6 +1,12 @@
-import { Entity, type IdentifierType } from '../../../models.ts';
+import { Entity, type IdentifierType, type MusicEntity } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
-import { MUSIC_FIELDS, submittedMusicValues, type MusicFormValues, type TrackRowValues } from './music-form.ts';
+import {
+  MUSIC_FIELDS,
+  submittedMusicValues,
+  toMusicValues,
+  type MusicFormValues,
+  type TrackRowValues,
+} from './music-form.ts';
 import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
 /** The form field a lookup searches by: the title with the artist, or the barcode. */
@@ -90,6 +96,7 @@ export function resolveMusicLookupIntent(
     parseLookupIntent: parseMusicLookupIntent,
     toRequest: toMusicLookupRequest,
     missingLabels: { title: 'a title', artist: 'an artist', barcode: 'a barcode' },
+    resultToValues: (result) => ({ ...toMusicValues(result as MusicEntity) }),
     applyResult: applyMusicResult,
   });
 }

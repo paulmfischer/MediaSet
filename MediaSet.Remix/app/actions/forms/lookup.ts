@@ -109,12 +109,14 @@ export interface LookupIntentAdapter<Values, Field extends string, Missing exten
   ) => { request: { identifierType: IdentifierType; searchParams: Record<string, string> } } | { missing: Missing };
   /** How a missing field reads in "Enter ... to look up". */
   missingLabels: Record<Missing, string>;
+  /** A looked-up entity as the form values an apply reads. */
+  resultToValues: (result: LookupEntity) => Record<string, unknown>;
   applyResult: (current: Values, result: Record<string, unknown>) => Values;
 }
 
 /**
  * Handles the form's non-save intents: look metadata up, apply a result to the form, or close the
- * dialog. None of them saves. Add and edit forms share this, each rendering the returned state.
+ * dialog (a barcode or ISBN lookup with one match applies it straight away). None of them saves. Add and edit forms share this, each rendering the returned state.
  */
 export async function resolveLookupIntent<Values, Field extends string, Missing extends string = Field>(
   formData: FormData,
@@ -134,7 +136,19 @@ export async function resolveLookupIntent<Values, Field extends string, Missing 
       };
     }
     const { identifierType, searchParams } = outcome.request;
-    return { values, lookup: await runLookup(adapter.entityType, identifierType, searchParams) };
+    const lookup = await runLookup(adapter.entityType, identifierType, searchParams);
+    // An ISBN or barcode names one release: a single match fills the form at once, as the old UI did,
+    // while a title search (or several matches) lets the user choose in the dialog.
+    if (identifierType !== 'entity' && lookup.status === 'results' && lookup.results.length === 1) {
+      const [match] = lookup.results;
+      if (match?.type === adapter.entityType) {
+        return {
+          values: adapter.applyResult(values, adapter.resultToValues(match)),
+          formKey: crypto.randomUUID(),
+        };
+      }
+    }
+    return { values, lookup };
   }
 
   const index = parseApplyIntent(intent);
