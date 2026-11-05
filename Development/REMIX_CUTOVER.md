@@ -208,12 +208,16 @@ Result and date: _to be filled in by the maintainer_.
 
 ## 6. Open items from this review
 
-| Item | Kind | Recommendation |
+| Item | Kind | Status |
 | --- | --- | --- |
-| List rows have no delete icon (row 4) | Behavior change vs `main` | Decide: restore a per-row delete dialog or accept detail-page-only delete |
-| Detail page lacks the "No image available" placeholder (row 5) | Visual difference | Fix or accept |
-| Color contrast on dark tiles, placeholders and detail footer captions (axe) | Accessibility, inherited | File an issue, design decision |
-| Remix `Environment` property is lowercase `development`, the API's is `Development` | Observability consistency | Small fix, file an issue |
+| List rows have no delete icon (row 4) | Behavior change vs `main` | Restored in PR #752 (closes #746) |
+| Detail page placeholder differs from `main` (row 5; the Remix 3 page already had an icon-only placeholder, not nothing as first reported) | Visual difference | Matched to `main`'s box and caption in PR #751 (closes #747) |
+| Color contrast on dark tiles, placeholders and detail footer captions (axe) | Accessibility, inherited | Fixed in PR #753 (closes #748): always-dark theme (the light OS theme gave light text on white), slightly darker primary buttons, lighter footer and label text. axe color-contrast is 0 in both schemes |
+| Remix `Environment` property is lowercase `development`, the API's is `Development` | Observability consistency | Fixed in PR #750 (closes #749) |
 | Issue #698 (Barcode scanner) is still open although the scanner and its e2e tests are merged | Tracker hygiene | Close or update #698 |
 | Real-device scan, WebKit and iOS checks | Manual | Maintainer, section 5 |
 | Movie, game and music lookups against live providers | Not verified live | Verify with credentials before release if wanted |
+
+Rows 1 to 5 and the accessibility section above describe the state before PRs #750 to #753; those PRs are
+independent of this one and target `feat/remix-3` too. The 2 `Open` statuses above are the only ones left
+for the maintainer apart from the manual device checks.
