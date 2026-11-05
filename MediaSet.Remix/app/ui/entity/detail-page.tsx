@@ -29,7 +29,7 @@ function formatLookupDate(value: string | undefined): string {
 }
 
 const row = 'flex flex-col md:flex-row mb-2 md:mb-0';
-const label = 'basis-2/12 dark:text-slate-400';
+const label = 'basis-2/12 dark:text-slate-300';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {

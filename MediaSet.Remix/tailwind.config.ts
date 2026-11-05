@@ -17,6 +17,8 @@ const ENTITY_COLORS = {
 };
 
 export default {
+  // The design is dark-only: `<html class="dark">` always applies the `dark:` styles, whatever the OS theme.
+  darkMode: 'class',
   content: ['./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {

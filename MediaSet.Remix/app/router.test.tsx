@@ -124,7 +124,8 @@ describe('router', () => {
     assert.equal(response.status, 200);
     assert.match(response.headers.get('Content-Type') ?? '', /text\/html/);
     const html = await response.text();
-    assert.match(html, /<html lang="en">/);
+    // The design is dark-only, so every page is always dark (see tailwind.config.ts darkMode).
+    assert.match(html, /<html lang="en" class="dark">/);
     assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
     assert.match(html, /<link rel="stylesheet" href="\/app.css"/);
     assert.match(html, /<script type="module" src="\/assets\/app\/actions\/public\/entry\.ts[^"]*"/);

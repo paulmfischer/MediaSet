@@ -29,7 +29,7 @@
     [class~='secondary'],
     [class~='tertiary']
   ) {
-    @apply px-3 py-1 dark:text-slate-200 dark:bg-blue-600 dark:hover:bg-blue-500 dark:disabled:bg-slate-900 dark:disabled:text-slate-500 rounded bg-white transition-colors;
+    @apply px-3 py-1 dark:text-slate-200 dark:bg-blue-700 dark:hover:bg-blue-600 dark:disabled:bg-slate-900 dark:disabled:text-slate-500 rounded bg-white transition-colors;
   }
 
   button[class~='text-icon'] {
