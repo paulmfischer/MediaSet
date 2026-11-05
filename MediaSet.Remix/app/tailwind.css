@@ -42,8 +42,10 @@
     @apply px-3 py-1 dark:text-slate-200 dark:bg-blue-700 dark:hover:bg-blue-600 dark:disabled:bg-slate-900 dark:disabled:text-slate-500 rounded bg-white transition-colors;
   }
 
-  button[class~='text-icon'] {
-    @apply px-3 py-2 bg-gray-800 hover:bg-gray-700 text-slate-300 border border-gray-600 rounded-l-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400;
+  /* A text-icon control joins the input beside it; a link (the clear-search X) gets the same look. */
+  button[class~='text-icon'],
+  a[class~='text-icon'] {
+    @apply px-3 py-2 no-underline bg-gray-800 hover:bg-gray-700 text-slate-300 border border-gray-600 rounded-l-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400;
   }
 
   button[class~='secondary'] {
