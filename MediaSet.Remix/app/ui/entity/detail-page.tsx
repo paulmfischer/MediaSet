@@ -67,12 +67,9 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   loading="lazy"
                 />
               ) : (
-                <div
-                  role="img"
-                  aria-label="No image"
-                  class="flex h-48 w-48 items-center justify-center rounded-lg border border-slate-700 text-slate-500"
-                >
-                  <Icon icon={ImageOff} size={48} />
+                <div class="flex h-48 w-48 flex-col items-center justify-center rounded-lg bg-gray-700 text-center text-sm text-gray-300 lg:h-64 lg:w-64">
+                  <Icon icon={ImageOff} size={64} />
+                  <p class="mt-2">No image available</p>
                 </div>
               )}
             </div>
