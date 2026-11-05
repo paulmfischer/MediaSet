@@ -9,6 +9,7 @@ export const RowDeleteDialog = clientEntry(import.meta.url, function RowDeleteDi
   let title = '';
   let href = '';
   let pending = false;
+  let failed = false;
 
   const setPending = (value: boolean) => {
     pending = value;
@@ -24,6 +25,7 @@ export const RowDeleteDialog = clientEntry(import.meta.url, function RowDeleteDi
         const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-delete-href]');
         if (!link) return;
         event.preventDefault();
+        failed = false;
         title = link.dataset.deleteTitle ?? '';
         href = link.dataset.deleteHref ?? link.href;
         handle.update();
@@ -32,8 +34,29 @@ export const RowDeleteDialog = clientEntry(import.meta.url, function RowDeleteDi
       { signal: handle.signal }
     );
     const top = handle.frames.top;
-    top.addEventListener('reloadStart', () => setPending(true), { signal: handle.signal });
-    top.addEventListener('reloadComplete', () => setPending(false), { signal: handle.signal });
+    top.addEventListener(
+      'reloadStart',
+      () => {
+        failed = false;
+        setPending(true);
+      },
+      { signal: handle.signal }
+    );
+    // The reload also completes when it fails. The island outlives a successful reload (the page is
+    // patched in place), so close the dialog once the row is gone; if the row is still listed the delete
+    // did not happen, so keep the dialog usable with an error and a working Delete button.
+    top.addEventListener(
+      'reloadComplete',
+      () => {
+        const stillListed = [...document.querySelectorAll<HTMLElement>('a[data-delete-href]')].some(
+          (link) => link.dataset.deleteHref === href
+        );
+        if (stillListed) failed = true;
+        else dialog?.close();
+        setPending(false);
+      },
+      { signal: handle.signal }
+    );
   });
 
   return () => (
@@ -47,6 +70,11 @@ export const RowDeleteDialog = clientEntry(import.meta.url, function RowDeleteDi
           Delete {title}?
         </h2>
         <p>This can't be undone.</p>
+        {failed ? (
+          <p role="alert" class="text-red-300">
+            Couldn't delete this item. Try again.
+          </p>
+        ) : null}
         <div class="flex gap-2 justify-end">
           <button type="button" mix={on('click', () => dialog?.close())}>
             Cancel

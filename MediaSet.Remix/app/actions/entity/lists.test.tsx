@@ -218,11 +218,20 @@ describe('collection lists', () => {
 
       const html = await (await get(path)).text();
 
-      for (const id of ['x1', 'x2']) {
-        assert.equal(html.split(`href="${path}/${id}/delete" data-delete-href="${path}/${id}/delete"`).length - 1, 2);
+      // Row and card each render one link; read each tag's attributes without relying on their order.
+      const links = (html.match(/<a\b[^>]*data-delete-href[^>]*>/g) ?? []).map((tag) => ({
+        href: /\shref="([^"]*)"/.exec(tag)?.[1],
+        target: /\sdata-delete-href="([^"]*)"/.exec(tag)?.[1],
+        label: /\saria-label="([^"]*)"/.exec(tag)?.[1],
+      }));
+      for (const [id, title] of [
+        ['x1', 'Thing'],
+        ['x2', 'Other'],
+      ]) {
+        const forItem = links.filter((link) => link.href === `${path}/${id}/delete`);
+        assert.equal(forItem.length, 2);
+        assert.ok(forItem.every((link) => link.target === `${path}/${id}/delete` && link.label === `Delete ${title}`));
       }
-      assert.match(html, /aria-label="Delete Thing"/);
-      assert.match(html, /aria-label="Delete Other"/);
     });
   }
 

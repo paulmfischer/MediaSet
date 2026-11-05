@@ -5,7 +5,7 @@ import { describe, it } from 'remix/test';
 import { router } from '../router.ts';
 
 // Serves two movies and records DELETE requests; a deleted movie disappears from the list.
-function stubApi(t: { after: (fn: () => void) => void }) {
+function stubApi(t: { after: (fn: () => void) => void }, deleteStatus = 204) {
   const original = globalThis.fetch;
   const deleted: string[] = [];
   const movies = [
@@ -22,6 +22,10 @@ function stubApi(t: { after: (fn: () => void) => void }) {
     }
     if (url.pathname.includes('/Movies/') && request.method === 'DELETE') {
       deleted.push(id);
+      if (deleteStatus !== 204) {
+        deleted.pop();
+        return new Response(null, { status: deleteStatus });
+      }
       return new Response(null, { status: 204 });
     }
     if (url.pathname.includes('/Movies/')) return Response.json(movies.find((movie) => movie.id === id) ?? null);
@@ -53,9 +57,47 @@ describe('list row delete (e2e)', () => {
     await page.getByRole('link', { name: 'Delete Brazil' }).first().click();
     await dialog.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('link', { name: 'Brazil', exact: true }).waitFor({ state: 'detached' });
+    assert.equal(await page.locator('dialog[open]').count(), 0);
     assert.deepEqual(deleted, ['m2']);
     assert.equal(new URL(page.url()).pathname, '/movies');
     assert.equal(await page.getByRole('link', { name: 'Alien' }).first().isVisible(), true);
+  });
+
+  it('closes on Escape and returns focus to the delete link that opened it', async (t) => {
+    const deleted = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/movies');
+    await page.waitForLoadState('networkidle');
+
+    const link = page.getByRole('link', { name: 'Delete Alien' }).first();
+    await link.click();
+    await page.getByRole('dialog').waitFor();
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    assert.equal(await link.evaluate((node) => node === document.activeElement), true);
+    assert.deepEqual(deleted, []);
+  });
+
+  it('does not hang when the delete fails', async (t) => {
+    stubApi(t, 500);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/movies');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('link', { name: 'Delete Brazil' }).first().click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+    // Either the delete page's error is shown, or the dialog stays open with its Delete button usable again.
+    await page.waitForFunction(
+      () =>
+        !document.querySelector('dialog[open]') ||
+        (document.querySelector('dialog[open] [role=alert]') !== null &&
+          [...document.querySelectorAll<HTMLButtonElement>('dialog[open] button[type=submit]')].every(
+            (button) => !button.disabled
+          ))
+    );
+    assert.equal(await page.getByRole('button', { name: 'Deleting…' }).count(), 0);
   });
 
   it('links each row to its delete confirmation page for use without JavaScript', async (t) => {
