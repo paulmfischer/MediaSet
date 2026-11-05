@@ -67,6 +67,9 @@ function installCamera([mode, native, code]: readonly [CameraMode, NativeMode, s
   for (let i = 0; i < 6; i += 1) bits += R[digits[i + 7]!]!;
   bits += '101';
 
+  // A phone or tablet: the scan button is only offered on touch devices.
+  Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
+
   const stub: CameraStub = { streams: [], requests: [], detectCalls: 0 };
   (window as unknown as { __camera: CameraStub }).__camera = stub;
 
@@ -397,6 +400,23 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
 
     assert.equal(await page.getByRole('button', { name: 'Scan ISBN' }).count(), 0);
     // The plain lookup button is still there.
-    assert.equal(await page.getByRole('button', { name: 'Look up by ISBN' }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Search by ISBN' }).count(), 1);
+  });
+
+  it('should offer the scan button only on a touch device that is narrow or a phone/tablet', async (t) => {
+    const { page } = await openForm(t, '/books/add', 'ok');
+    const scan = page.getByRole('button', { name: 'Scan ISBN' });
+    await scan.waitFor();
+
+    // A desktop-sized window hides it, and narrowing the window brings it back.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await scan.waitFor({ state: 'detached' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await scan.waitFor();
+
+    // No touch hardware, however narrow the window, means no scan button.
+    await page.evaluate(() => Object.defineProperty(navigator, 'maxTouchPoints', { value: 0, configurable: true }));
+    await page.setViewportSize({ width: 380, height: 844 });
+    await scan.waitFor({ state: 'detached' });
   });
 });

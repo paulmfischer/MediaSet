@@ -3,6 +3,7 @@ import type { Handle } from 'remix/component';
 import type { GameFormValues } from '../../../actions/entity/add/game-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupPanel } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
@@ -52,7 +53,6 @@ const lookupButtonProps = (field: 'title' | 'barcode') =>
     type: 'submit',
     name: 'intent',
     value: `lookup:${field}`,
-    class: 'secondary',
     formnovalidate: true,
     formenctype: 'application/x-www-form-urlencoded',
   }) as const;
@@ -100,44 +100,46 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
           <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
             Save
           </button>
-          <Field name="title" label="Title" required error={errors.title}>
-            <div class="flex gap-2">
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('title')} aria-label="Look up by title">
-                  Look up
-                </button>
-              ) : null}
-            </div>
-          </Field>
-          <Field name="barcode" label="Barcode" error={errors.barcode}>
-            <div class="flex gap-2">
-              <input
-                id="barcode"
-                name="barcode"
-                type="text"
-                inputMode="numeric"
-                class={inputClasses}
-                placeholder="Barcode"
-                value={values.barcode}
-                {...errorProps('barcode', errors.barcode)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('barcode')} aria-label="Look up by barcode">
-                  Look up
-                </button>
-              ) : null}
-              {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
-            </div>
-          </Field>
+          <LookupPanel label="Game Lookup" enabled={Boolean(lookup?.available)}>
+            <Field name="title" label="Title" required error={errors.title}>
+              <div class="flex gap-2">
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('title')} aria-label="Search by title">
+                    Search
+                  </button>
+                ) : null}
+              </div>
+            </Field>
+            <Field name="barcode" label="Barcode" error={errors.barcode}>
+              <div class="flex gap-2">
+                <input
+                  id="barcode"
+                  name="barcode"
+                  type="text"
+                  inputMode="numeric"
+                  class={inputClasses}
+                  placeholder="Barcode"
+                  value={values.barcode}
+                  {...errorProps('barcode', errors.barcode)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('barcode')} aria-label="Search by barcode">
+                    Search
+                  </button>
+                ) : null}
+                {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
+              </div>
+            </Field>
+          </LookupPanel>
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
               name="format"

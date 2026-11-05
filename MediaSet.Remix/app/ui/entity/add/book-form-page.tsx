@@ -3,6 +3,7 @@ import type { Handle } from 'remix/component';
 import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupPanel } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
@@ -51,7 +52,6 @@ const lookupButtonProps = (field: 'title' | 'isbn') =>
     type: 'submit',
     name: 'intent',
     value: `lookup:${field}`,
-    class: 'secondary',
     formnovalidate: true,
     formenctype: 'application/x-www-form-urlencoded',
   }) as const;
@@ -99,24 +99,45 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
           <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
             Save
           </button>
-          <Field name="title" label="Title" required error={errors.title}>
-            <div class="flex gap-2">
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('title')} aria-label="Look up by title">
-                  Look up
-                </button>
-              ) : null}
-            </div>
-          </Field>
+          <LookupPanel label="Book Lookup" enabled={Boolean(lookup?.available)}>
+            <Field name="title" label="Title" required error={errors.title}>
+              <div class="flex gap-2">
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('title')} aria-label="Search by title">
+                    Search
+                  </button>
+                ) : null}
+              </div>
+            </Field>
+            <Field name="isbn" label="ISBN" error={errors.isbn}>
+              <div class="flex gap-2">
+                <input
+                  id="isbn"
+                  name="isbn"
+                  type="text"
+                  inputMode="numeric"
+                  class={inputClasses}
+                  placeholder="ISBN"
+                  value={values.isbn}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('isbn')} aria-label="Search by ISBN">
+                    Search
+                  </button>
+                ) : null}
+                {lookup?.available ? <ScanButton field="isbn" identifierLabel="ISBN" /> : null}
+              </div>
+            </Field>
+          </LookupPanel>
           <Field name="subtitle" label="Subtitle" error={errors.subtitle}>
             <input
               id="subtitle"
@@ -126,25 +147,6 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               placeholder="Subtitle"
               value={values.subtitle}
             />
-          </Field>
-          <Field name="isbn" label="ISBN" error={errors.isbn}>
-            <div class="flex gap-2">
-              <input
-                id="isbn"
-                name="isbn"
-                type="text"
-                inputMode="numeric"
-                class={inputClasses}
-                placeholder="ISBN"
-                value={values.isbn}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('isbn')} aria-label="Look up by ISBN">
-                  Look up
-                </button>
-              ) : null}
-              {lookup?.available ? <ScanButton field="isbn" identifierLabel="ISBN" /> : null}
-            </div>
           </Field>
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput

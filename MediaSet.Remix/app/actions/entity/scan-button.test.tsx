@@ -63,4 +63,28 @@ describe('barcode scanner on the entity forms', () => {
       });
     }
   }
+
+  for (const { type, path, label } of CASES) {
+    it(`should group the ${type} lookup fields in an entity-tinted panel with Search buttons`, async (t) => {
+      stubApi(t, true);
+      const html = await get(`/${path}/add`);
+
+      const panel = new RegExp(
+        `<div role="group" aria-label="${type.replace(/s$/, '')} Lookup" class="[^"]*bg-entity/10`
+      );
+      assert.match(html, panel);
+      assert.match(html, />Search<\/button>/);
+      assert.doesNotMatch(html, />Look up<\/button>/);
+      assert.doesNotMatch(html, /value="lookup:[a-z]+"[^>]*class="secondary"|class="secondary"[^>]*value="lookup:/);
+      assert.match(html, new RegExp(`aria-label="Search by ${label === 'ISBN' ? 'ISBN' : 'barcode'}"`));
+    });
+
+    it(`should render the ${type} lookup fields without a panel when lookup is unavailable`, async (t) => {
+      stubApi(t, false);
+      const html = await get(`/${path}/add`);
+
+      assert.doesNotMatch(html, /role="group"/);
+      assert.match(html, /name="title"/);
+    });
+  }
 });
