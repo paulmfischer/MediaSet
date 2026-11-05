@@ -193,7 +193,8 @@ describe('add book metadata lookup (e2e)', () => {
     // The results open in a modal dialog; the form behind it keeps what was typed.
     const dialog = page.getByRole('dialog', { name: 'Look up book' });
     await dialog.waitFor();
-    assert.equal(await page.evaluate(() => document.querySelector('dialog')?.matches(':modal')), true);
+    // The island opens it modally in a queued task after render, so wait for that rather than race it.
+    await page.waitForFunction(() => document.querySelector('dialog[open]')?.matches(':modal') === true);
     assert.equal(await dialog.getByRole('listitem').count(), 2);
     assert.match(await dialog.innerText(), /Dune Messiah/);
 
