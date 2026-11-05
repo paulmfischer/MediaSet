@@ -6,20 +6,17 @@ import { toBookValues } from './book-form.ts';
 import { toMovieValues } from './movie-form.ts';
 import { toMusicValues } from './music-form.ts';
 
-// The API serializes an unset number as `null`, although the models type it as optional.
-const apiNull = null as unknown as undefined;
-
 describe('form values from an item with unset numbers', () => {
   it('should leave a book page count blank', () => {
-    assert.equal(toBookValues({ title: 'Book', pages: apiNull } as BookEntity).pages, '');
+    assert.equal(toBookValues({ title: 'Book', pages: null } as BookEntity).pages, '');
   });
 
   it('should leave a movie runtime blank', () => {
-    assert.equal(toMovieValues({ title: 'Movie', runtime: apiNull } as MovieEntity).runtime, '');
+    assert.equal(toMovieValues({ title: 'Movie', runtime: null } as MovieEntity).runtime, '');
   });
 
   it('should leave music track and disc counts blank', () => {
-    const values = toMusicValues({ title: 'Album', tracks: apiNull, discs: apiNull } as MusicEntity);
+    const values = toMusicValues({ title: 'Album', tracks: null, discs: null } as MusicEntity);
 
     assert.equal(values.tracks, '');
     assert.equal(values.discs, '');

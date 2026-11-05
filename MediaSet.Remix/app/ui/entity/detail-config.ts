@@ -38,7 +38,7 @@ export const bookDetail: DetailConfig<BookEntity> = {
   coverAlt: 'Book cover',
   fields: [
     { label: 'Format', value: (book) => book.format },
-    { label: 'Pages', value: (book) => book.pages },
+    { label: 'Pages', value: (book) => book.pages ?? undefined },
     { label: 'Publication Date', value: (book) => book.publicationDate },
     { label: 'Authors', value: (book) => join(book.authors) },
     { label: 'Genres', value: (book) => join(book.genres) },
@@ -55,7 +55,7 @@ export const movieDetail: DetailConfig<MovieEntity> = {
   coverAlt: 'Movie poster',
   fields: [
     { label: 'Format', value: (movie) => movie.format },
-    { label: 'Runtime', value: (movie) => movie.runtime },
+    { label: 'Runtime', value: (movie) => movie.runtime ?? undefined },
     { label: 'Release Date', value: (movie) => movie.releaseDate },
     { label: 'Is TV Show', value: () => undefined, check: (movie) => movie.isTvSeries },
     { label: 'Genres', value: (movie) => join(movie.genres) },
@@ -96,8 +96,8 @@ export const musicDetail: DetailConfig<MusicEntity> = {
     { label: 'Duration', value: (music) => millisecondsToMinutesSeconds(music.duration) },
     { label: 'Label', value: (music) => music.label },
     { label: 'Barcode', value: (music) => music.barcode },
-    { label: 'Tracks', value: (music) => music.tracks },
-    { label: 'Discs', value: (music) => music.discs },
+    { label: 'Tracks', value: (music) => music.tracks ?? undefined },
+    { label: 'Discs', value: (music) => music.discs ?? undefined },
   ],
   discList: (music) => music.discList,
 };

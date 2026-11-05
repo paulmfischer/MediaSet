@@ -46,7 +46,7 @@ export interface BaseEntity {
 export interface BookEntity extends BaseEntity {
   type: Entity.Books;
   isbn?: string;
-  pages?: number;
+  pages?: number | null;
   publicationDate?: string;
   authors?: Array<string>;
   publisher?: string;
@@ -64,7 +64,7 @@ export interface MovieEntity extends BaseEntity {
   barcode?: string;
   releaseDate?: string;
   rating?: string;
-  runtime?: number;
+  runtime?: number | null;
   studios?: Array<string>;
   genres?: Array<string>;
   plot?: string;
@@ -103,8 +103,8 @@ export interface MusicEntity extends BaseEntity {
   duration?: number;
   label?: string;
   barcode?: string;
-  tracks?: number;
-  discs?: number;
+  tracks?: number | null;
+  discs?: number | null;
   discList?: Array<Disc>;
 }
 // UI model

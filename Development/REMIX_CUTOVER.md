@@ -33,7 +33,7 @@ Routes come from `main`'s `MediaSet.Remix/app/routes/` (flat routes) and `MediaS
 | 9 | Metadata lookup, by title and by identifier | PASS after fix | Live OpenLibrary: title "The Hobbit" lists results in a dialog and "Use this result" fills the form; ISBN 9780261103344 returns a result (both apps). FIXED: saving, or running another lookup, after applying a real result failed with 413 "Upload too large": OpenLibrary returned 93 genres, the form then had 100+ fields and `boundedFormData()` capped parts at 100 (urlencoded bodies are counted too). The cap is now 1000 with a test. Verified live: the book saved with 93 genres. Movie, game and music lookups were not run live (TMDB and IGDB credentials are not configured here); they are covered by server tests and `add-book` / `edit-delete-book` e2e lookup flows |
 | 10 | Cover image upload (file) | PASS | Uploaded a PNG on add in both apps; the list shows the stored cover. e2e: `book-image.test.e2e.ts` (preview, URL preview, failed URL, replace and remove on edit) |
 | 11 | Cover image by URL | PASS | e2e only (`book-image.test.e2e.ts`, `csp.test.e2e.ts` for the production CSP and the client API origin). Lookup apply sets `imageUrl` (seen live) |
-| 12 | Barcode scan | PASS (automated); real device PENDING | e2e `barcode-scanner.test.e2e.ts` (41 e2e tests total pass): native detector, zxing fallback, cancel and Escape release the camera, permission denied, no camera, no camera API, production CSP. The real-device check is in section 5 and is for the maintainer |
+| 12 | Barcode scan | PASS (automated); real device PENDING | e2e `barcode-scanner.test.e2e.ts` (42 e2e tests total pass): native detector, zxing fallback, cancel and Escape release the camera, permission denied, no camera, no camera API, production CSP. The real-device check is in section 5 and is for the maintainer |
 | 13 | `/image-stats` | PASS | Rendered main text identical. e2e: `image-stats.test.e2e.ts` |
 | 14 | `/config.json` | PASS | Remix 3 returns the runtime config in dev and in the container (200). `main`'s Vite dev server answers 404 for it (it works under `remix-serve`; not re-run here) |
 | 15 | Errors: unknown path, unknown collection, missing item | DIFF (improvement) | Remix 3: "Page not found" / "Book not found" pages with status 404 and no console noise. `main`: bare 404 with `Root Error` logged to the console |
@@ -44,7 +44,7 @@ Browser console: with the fixes, no errors or warnings on any route in either ap
 404 resource logs. One benign network entry on every Remix 3 page: a `blob:` script request reported as
 `net::ERR_ABORTED` (the import-map feature probe, revoked after use), not a console error.
 
-### Playwright e2e coverage (Remix 3, `npm run test:e2e`, 13 files, 41 tests)
+### Playwright e2e coverage (Remix 3, `npm run test:e2e`, 13 files, 42 tests)
 
 | Area | File |
 | --- | --- |
@@ -107,7 +107,7 @@ the same routes of `main`.
 
 | Browser | Result | How |
 | --- | --- | --- |
-| Chromium (Playwright 1.64, desktop and 390 px) | PASS | Full workflows above, 41 e2e tests, axe |
+| Chromium (Playwright 1.64, desktop and 390 px) | PASS | Full workflows above, 42 e2e tests, axe |
 | Firefox (Playwright) | PASS (smoke) | Add Book renders and hydrates, input works, no page errors, Scan button shown (no `BarcodeDetector`, zxing path) |
 | WebKit / Safari | NOT RUN | Playwright WebKit cannot launch on this Fedora host (missing system libraries); needs a Mac or iPhone, see section 5 |
 | iOS Safari, Android Chrome | PENDING (maintainer) | Section 5 |
@@ -145,7 +145,7 @@ Run from the repository with Node 24.22.1 and the .NET SDK from `global.json`, a
 | `dotnet test` | 771 passed, 1 skipped, 0 failed |
 | `npm run lint`, `lint:format`, `typecheck`, `build` | pass |
 | `npm test` | 606 tests pass |
-| `npm run test:e2e` | 13 files, 41 tests pass |
+| `npm run test:e2e` | 13 files, 42 tests pass |
 | `git diff --check` (worktree, cached, `origin/main...HEAD`) | clean |
 | `podman-compose -f docker-compose.prod.yml config` | valid; no diff to `docker-compose.prod.yml` or `docker-compose.dev.yml` against `main` |
 

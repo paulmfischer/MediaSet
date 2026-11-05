@@ -68,6 +68,38 @@ describe('edit and delete book (e2e)', () => {
   });
 });
 
+describe('edit book multi-select (e2e)', () => {
+  it('renders the chosen values without duplicate sibling keys', async (t) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(new Request(input, init).url);
+      if (url.pathname.endsWith('/Books/b1')) {
+        return Response.json({
+          id: 'b1',
+          type: 'Books',
+          title: 'Dune',
+          authors: ['Frank Herbert'],
+          genres: ['Sci-Fi'],
+        });
+      }
+      return Response.json([]);
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+    const page = await t.serve(await createTestServer(router.fetch));
+    const warnings: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'warning' || message.type() === 'error') warnings.push(message.text());
+    });
+    await page.goto('/books/b1/edit');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Remove Frank Herbert' }).waitFor();
+    assert.deepEqual(warnings, []);
+  });
+});
+
 describe('edit book metadata lookup (e2e)', () => {
   it('looks up on an edit form and applies a result into it, keeping the saved image and saving only on Save', async (t) => {
     const original = globalThis.fetch;
