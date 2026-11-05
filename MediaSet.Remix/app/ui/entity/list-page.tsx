@@ -4,9 +4,10 @@ import { DEFAULT_ORDER_BY, listHref } from '../../actions/entity/list-params.ts'
 import type { PagedResult } from '../../api/entity-data.ts';
 import type { BaseEntity } from '../../models.ts';
 import { Icon } from '../icon.tsx';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, X } from '../icons.ts';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, Trash2, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
 import { PageSelect } from './public/page-select.tsx';
+import { RowDeleteDialog } from './public/row-delete-dialog.tsx';
 
 interface ListPageProps<T extends BaseEntity> {
   config: ListConfig<T>;
@@ -62,6 +63,19 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
     const editLink = (item: T) => (
       <a href={`${basePath}/${item.id}/edit`} aria-label="Edit" title="Edit">
         <Icon icon={Pencil} size={18} />
+      </a>
+    );
+
+    // Without JavaScript this is a link to the item's delete confirmation page.
+    const deleteLink = (item: T) => (
+      <a
+        href={`${basePath}/${item.id}/delete`}
+        data-delete-href={`${basePath}/${item.id}/delete`}
+        data-delete-title={config.titleOf(item) || 'this item'}
+        aria-label={`Delete ${config.titleOf(item) || 'this item'}`}
+        title="Delete"
+      >
+        <Icon icon={Trash2} size={18} />
       </a>
     );
 
@@ -149,7 +163,10 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                       </a>
                       <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
                     </div>
-                    <div class="flex flex-row gap-3 flex-shrink-0">{editLink(item)}</div>
+                    <div class="flex flex-row gap-3 flex-shrink-0">
+                      {editLink(item)}
+                      {deleteLink(item)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -180,11 +197,15 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                           )}
                         </td>
                       ))}
-                      <td class="flex flex-row gap-3 p-1 pt-2">{editLink(item)}</td>
+                      <td class="flex flex-row gap-3 p-1 pt-2">
+                        {editLink(item)}
+                        {deleteLink(item)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <RowDeleteDialog />
             </>
           )}
         </div>

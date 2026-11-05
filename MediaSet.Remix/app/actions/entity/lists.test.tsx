@@ -206,6 +206,26 @@ describe('collection lists', () => {
     });
   }
 
+  for (const path of ['/books', '/movies', '/games', '/musics']) {
+    it(`${path} links every row and card to its delete page`, async (t) => {
+      stubApi(
+        t,
+        paged([
+          { id: 'x1', title: 'Thing' },
+          { id: 'x2', title: 'Other' },
+        ])
+      );
+
+      const html = await (await get(path)).text();
+
+      for (const id of ['x1', 'x2']) {
+        assert.equal(html.split(`href="${path}/${id}/delete" data-delete-href="${path}/${id}/delete"`).length - 1, 2);
+      }
+      assert.match(html, /aria-label="Delete Thing"/);
+      assert.match(html, /aria-label="Delete Other"/);
+    });
+  }
+
   it('shows a check mark for a TV series and none for a movie, and 0 for a missing runtime', async (t) => {
     stubApi(
       t,
