@@ -20,6 +20,9 @@ interface ImageInputProps {
 /** How long typing in the URL field pauses before the preview loads it. */
 const PREVIEW_DELAY_MS = 400;
 
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
+const MAX_BYTES = 5 * 1024 * 1024;
+
 const isWebUrl = (value: string) => /^https?:\/\//i.test(value);
 
 // Cover image inputs for any media type's form: choose a file or give a URL, with a preview and where
@@ -33,6 +36,7 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
   let objectUrl = '';
   let failed = false;
   let dragging = false;
+  let fileProblem: string | undefined;
   // Controlled, so a re-render keeps what was ticked; it starts from the server's value.
   let remove = handle.props.removeImage ?? false;
 
@@ -54,30 +58,48 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
     handle.update();
   };
 
+  // The same limits as the server and the old UI: JPEG or PNG, up to 5MB.
+  const problemWith = (file: File): string | undefined => {
+    if (!ACCEPTED_TYPES.includes(file.type)) return 'Only JPEG and PNG images are allowed';
+    if (file.size > MAX_BYTES) return 'File size must be less than 5MB';
+    return undefined;
+  };
+
   const chooseFile = (input: HTMLInputElement) => {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     const file = input.files?.[0];
-    objectUrl = file ? URL.createObjectURL(file) : '';
-    fileName = file?.name ?? '';
+    fileProblem = file ? problemWith(file) : undefined;
+    // A file that can't be used is dropped, so it is neither previewed nor submitted.
+    if (fileProblem) input.value = '';
+    const usable = file && !fileProblem ? file : undefined;
+    objectUrl = usable ? URL.createObjectURL(usable) : '';
+    fileName = usable?.name ?? '';
     failed = false;
     handle.update();
   };
 
   const setDragging = (event: DragEvent, value: boolean) => {
     event.preventDefault();
+    // dragleave also fires when the pointer moves onto a child of the area; only leaving the area counts.
+    if (!value && event.currentTarget instanceof Node && event.relatedTarget instanceof Node) {
+      if (event.currentTarget.contains(event.relatedTarget)) return;
+    }
     if (dragging === value) return;
     dragging = value;
     handle.update();
   };
 
-  // A dropped file goes into the file input, so it is submitted like a chosen one.
+  // A dropped file goes into the file input, so it is submitted like a chosen one. The input takes
+  // one file and bypasses its accept filter for drops, so only the first file is used and it is checked here.
   const dropFile = (event: DragEvent) => {
     event.preventDefault();
     dragging = false;
     const input = document.getElementById('coverImage');
-    const files = event.dataTransfer?.files;
-    if (input instanceof HTMLInputElement && files && files.length > 0) {
-      input.files = files;
+    const file = event.dataTransfer?.files[0];
+    if (input instanceof HTMLInputElement && file) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
       chooseFile(input);
     } else {
       handle.update();
@@ -172,6 +194,11 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
               </>
             )}
           </label>
+          {fileProblem ? (
+            <p role="alert" class="mt-1 text-sm text-red-400">
+              {fileProblem}
+            </p>
+          ) : null}
           {errors.coverImage ? (
             <p id={errorId('coverImage')} class="mt-1 text-sm text-red-400">
               {errors.coverImage}

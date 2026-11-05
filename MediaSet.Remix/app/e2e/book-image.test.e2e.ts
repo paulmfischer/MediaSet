@@ -102,6 +102,60 @@ describe('book cover image (e2e)', () => {
     assert.deepEqual(saved[0]?.file, { name: 'dropped.png', type: 'image/png', size: PNG.length });
   });
 
+  it('rejects a dropped file of the wrong type, and uses only the first of several dropped files', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    const area = page.locator('label[for="coverImage"]');
+    const drop = async (files: Array<{ name: string; type: string }>) => {
+      const data = await page.evaluateHandle(
+        ([list, bytes]) => {
+          const transfer = new DataTransfer();
+          for (const file of list as Array<{ name: string; type: string }>) {
+            transfer.items.add(new File([new Uint8Array(bytes as number[])], file.name, { type: file.type }));
+          }
+          return transfer;
+        },
+        [files, Array.from(PNG)] as const
+      );
+      await area.dispatchEvent('drop', { dataTransfer: data });
+    };
+
+    await drop([{ name: 'notes.txt', type: 'text/plain' }]);
+    await page.getByRole('alert').filter({ hasText: 'Only JPEG and PNG images are allowed' }).waitFor();
+    assert.equal(await page.getByTestId('image-preview').count(), 0);
+    assert.equal(await page.locator('#coverImage').evaluate((node: HTMLInputElement) => node.files?.length), 0);
+
+    await drop([
+      { name: 'first.png', type: 'image/png' },
+      { name: 'second.png', type: 'image/png' },
+    ]);
+    await page.getByTestId('image-preview').waitFor();
+    assert.match(await page.getByTestId('image-preview').innerText(), /first\.png/);
+    assert.equal(await page.locator('#coverImage').evaluate((node: HTMLInputElement) => node.files?.length), 1);
+  });
+
+  it('keeps the drag highlight while the pointer moves over the area contents', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    const area = page.locator('label[for="coverImage"]');
+    const highlighted = () => area.evaluate((node) => node.classList.contains('border-blue-400'));
+
+    await area.dispatchEvent('dragenter');
+    assert.equal(await highlighted(), true);
+    // Leaving onto a child of the area is not leaving the area.
+    await area.evaluate((node) => {
+      const child = node.querySelector('span')!;
+      node.dispatchEvent(new DragEvent('dragleave', { bubbles: true, relatedTarget: child }));
+    });
+    assert.equal(await highlighted(), true);
+    await area.evaluate((node) => node.dispatchEvent(new DragEvent('dragleave', { bubbles: true })));
+    assert.equal(await highlighted(), false);
+  });
+
   it('previews an image URL and says when it fails to load', async (t) => {
     stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));

@@ -116,7 +116,8 @@ export interface LookupIntentAdapter<Values, Field extends string, Missing exten
 
 /**
  * Handles the form's non-save intents: look metadata up, apply a result to the form, or close the
- * dialog (a barcode or ISBN lookup with one match applies it straight away). None of them saves. Add and edit forms share this, each rendering the returned state.
+ * dialog (a barcode or ISBN lookup with one match applies it straight away). None of them saves.
+ * Add and edit forms share this, each rendering the returned state.
  */
 export async function resolveLookupIntent<Values, Field extends string, Missing extends string = Field>(
   formData: FormData,
