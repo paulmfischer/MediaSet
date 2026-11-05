@@ -3,6 +3,22 @@ import { initializeRequestContext, getRequestContext } from './apiFetch.server.t
 const SEQ_ENABLED = process.env['ExternalLogging__Enabled'] === 'true';
 const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
 
+/** The ASP.NET environment name for a `NODE_ENV` value, so Seq's `Environment` property matches the API's. */
+export function seqEnvironmentName(nodeEnv: string | undefined): string {
+  switch (nodeEnv) {
+    case undefined:
+    case '':
+    case 'development':
+      return 'Development';
+    case 'production':
+      return 'Production';
+    case 'test':
+      return 'Testing';
+    default:
+      return nodeEnv.charAt(0).toUpperCase() + nodeEnv.slice(1);
+  }
+}
+
 type LogLevel = 'Debug' | 'Information' | 'Warning' | 'Error';
 
 // Information is the CLEF default — omit @l for info-level events
@@ -23,7 +39,7 @@ async function sendLogToSeq(level: LogLevel, message: string, properties?: Recor
     '@m': message,
     ...(CLEF_LEVEL[level] !== undefined ? { '@l': CLEF_LEVEL[level] } : {}),
     Application: 'MediaSet.Remix',
-    Environment: process.env.NODE_ENV ?? 'development',
+    Environment: seqEnvironmentName(process.env.NODE_ENV),
     Message: message,
     ...properties,
   };
