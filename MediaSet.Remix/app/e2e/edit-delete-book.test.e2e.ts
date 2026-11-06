@@ -56,6 +56,19 @@ describe('edit and delete book (e2e)', () => {
     assert.deepEqual(requests, ['DELETE']);
   });
 
+  it('leaves the edit form for the item page on Cancel, saving nothing', async (t) => {
+    const requests = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/b1/edit');
+    await page.waitForLoadState('networkidle');
+    await page.locator('#title').fill('Not saved');
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/books/b1');
+    await page.getByRole('heading', { name: 'Dune', level: 1 }).waitFor();
+    assert.deepEqual(requests, []);
+  });
+
   it('saves an edit and returns to the detail page', async (t) => {
     const requests = stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));

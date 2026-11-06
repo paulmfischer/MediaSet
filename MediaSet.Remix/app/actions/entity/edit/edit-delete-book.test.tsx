@@ -195,6 +195,13 @@ describe('edit book metadata lookup', () => {
     assert.doesNotMatch(await (await router.fetch(url(editUrl))).text(), /value="lookup:/);
   });
 
+  it('prefills the lookup Author with the first author of the saved book', async (t) => {
+    stubApi(t);
+    const html = await (await router.fetch(url(editUrl))).text();
+
+    assert.match(html, /name="lookupAuthor"[^>]*value="Frank Herbert"/);
+  });
+
   it('lists the matches, keeping the entered values and the saved image, without saving', async (t) => {
     const lookups: string[] = [];
     const calls = stubApi(t, { lookups });

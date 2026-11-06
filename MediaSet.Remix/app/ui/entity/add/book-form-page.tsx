@@ -104,7 +104,7 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             Save
           </button>
           <LookupPanel label="Book Lookup" enabled={Boolean(lookup?.available)}>
-            <Field name="title" label="Title" error={errors.title}>
+            <Field name="title" label="Title" required error={errors.title}>
               <input
                 id="title"
                 name="title"
@@ -130,13 +130,6 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
                 <button {...lookupButtonProps('title')} aria-label="Search by title and author">
                   Search
                 </button>
-              </div>
-            ) : null}
-            {lookup?.available ? (
-              <div class="flex items-center gap-3" aria-hidden="true">
-                <div class="flex-1 border-t border-gray-700" />
-                <span class="text-xs text-gray-500">or</span>
-                <div class="flex-1 border-t border-gray-700" />
               </div>
             ) : null}
             <Field name="isbn" label="ISBN" error={errors.isbn}>

@@ -96,7 +96,8 @@ export function toBookEntity(parsed: ParsedBook): BookEntity {
 export function toBookValues(book: BookEntity): BookFormValues {
   return {
     title: book.title ?? '',
-    lookupAuthor: '',
+    // Starts as the book's first author, so a title lookup from the edit form is narrowed by it.
+    lookupAuthor: book.authors?.[0] ?? '',
     isbn: book.isbn ?? '',
     subtitle: book.subtitle ?? '',
     format: book.format ?? '',

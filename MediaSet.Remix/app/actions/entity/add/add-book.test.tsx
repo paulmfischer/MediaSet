@@ -248,34 +248,43 @@ describe('add book metadata lookup', () => {
     assert.match(html, /Typed already/);
   });
 
-  it('does not narrow a title lookup by the saved Authors selection, only by the panel Author', async (t) => {
+  it('narrows a title lookup by the first selected author when the panel Author is empty', async (t) => {
     const lookups = stubLookupApi(t);
     await post([
       ['intent', 'lookup:title'],
       ['title', 'Dune'],
       ['authors', 'Frank Herbert'],
+      ['authors', 'Brian Herbert'],
     ]);
 
-    assert.deepEqual(lookups, ['/lookup/Books/entity?title=Dune']);
+    assert.deepEqual(lookups, ['/lookup/Books/entity?title=Dune&author=Frank+Herbert']);
   });
 
-  it('lays the lookup panel out as Title, Author, Search, an or divider and ISBN with its own Search', async (t) => {
+  it('prefers the panel Author over the selected authors', async (t) => {
+    const lookups = stubLookupApi(t);
+    await post([
+      ['intent', 'lookup:title'],
+      ['title', 'Dune'],
+      ['lookupAuthor', 'Herbert'],
+      ['authors', 'Someone Else'],
+    ]);
+
+    assert.deepEqual(lookups, ['/lookup/Books/entity?title=Dune&author=Herbert']);
+  });
+
+  it('lays the lookup panel out as a required Title, Author, Search, then ISBN with its own Search', async (t) => {
     stubLookupApi(t);
     const html = await (await get()).text();
 
-    const order = [
-      'id="title"',
-      'id="lookupAuthor"',
-      'value="lookup:title"',
-      '>or<',
-      'id="isbn"',
-      'value="lookup:isbn"',
-    ].map((part) => html.indexOf(part));
+    const order = ['id="title"', 'id="lookupAuthor"', 'value="lookup:title"', 'id="isbn"', 'value="lookup:isbn"'].map(
+      (part) => html.indexOf(part)
+    );
     assert.ok(
       order.every((at, index) => at !== -1 && (index === 0 || at > order[index - 1]!)),
       'in order'
     );
-    assert.doesNotMatch(html, /for="title"[^>]*>\s*Title\s*<span/);
+    assert.doesNotMatch(html, />or</);
+    assert.match(html, /<label for="title"[^>]*>\s*Title<span aria-hidden="true"> \*<\/span>/);
   });
 
   it('looks up by ISBN with the identifier alone', async (t) => {
