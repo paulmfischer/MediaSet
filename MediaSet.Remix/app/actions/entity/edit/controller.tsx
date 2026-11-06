@@ -53,6 +53,7 @@ async function renderEditForm(
         heading="Edit Book"
         action={routes.entityEdit.books.action.href({ id })}
         cancelHref={routes.entityDetail.books.href({ id })}
+        submitLabel="Update"
         values={values}
         errors={errors}
         formError={formError}

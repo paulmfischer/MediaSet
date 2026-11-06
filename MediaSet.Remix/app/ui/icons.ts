@@ -21,6 +21,7 @@ export { default as HardDrive } from 'lucide/dist/esm/icons/hard-drive.mjs';
 export { default as Hash } from 'lucide/dist/esm/icons/hash.mjs';
 export { default as Home } from 'lucide/dist/esm/icons/house.mjs';
 export { default as ImageOff } from 'lucide/dist/esm/icons/image-off.mjs';
+export { default as ImagePlus } from 'lucide/dist/esm/icons/image-plus.mjs';
 export { default as Layers } from 'lucide/dist/esm/icons/layers.mjs';
 export { default as LibraryBig } from 'lucide/dist/esm/icons/library-big.mjs';
 export { default as Link2Off } from 'lucide/dist/esm/icons/link-2-off.mjs';

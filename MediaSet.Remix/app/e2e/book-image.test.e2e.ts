@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 // 1x1 transparent PNG.
@@ -68,12 +69,93 @@ describe('book cover image (e2e)', () => {
     assert.match(await preview.innerText(), /Uploaded file: dune\.png/);
     assert.match((await preview.locator('img').getAttribute('src')) ?? '', /^blob:/);
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
 
     assert.equal(saved.length, 1);
     assert.equal(saved[0]?.entity.title, 'Dune');
     assert.deepEqual(saved[0]?.file, { name: 'dune.png', type: 'image/png', size: PNG.length });
+  });
+
+  it('accepts a file dropped on the upload area and saves it', async (t) => {
+    const { saved } = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    await page.locator('#title').fill('Dune');
+
+    const area = page.locator('label[for="coverImage"]');
+    const data = await page.evaluateHandle(
+      ([bytes]) => {
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([new Uint8Array(bytes as number[])], 'dropped.png', { type: 'image/png' }));
+        return transfer;
+      },
+      [Array.from(PNG)]
+    );
+    await area.dispatchEvent('drop', { dataTransfer: data });
+    const preview = page.getByTestId('image-preview');
+    await preview.waitFor();
+    assert.match(await preview.innerText(), /Uploaded file: dropped\.png/);
+
+    await submitButton(page, 'add', 'Book').click();
+    await page.waitForURL('**/books/new-id');
+    assert.deepEqual(saved[0]?.file, { name: 'dropped.png', type: 'image/png', size: PNG.length });
+  });
+
+  it('rejects a dropped file of the wrong type, and uses only the first of several dropped files', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    const area = page.locator('label[for="coverImage"]');
+    const drop = async (files: Array<{ name: string; type: string }>) => {
+      const data = await page.evaluateHandle(
+        ([list, bytes]) => {
+          const transfer = new DataTransfer();
+          for (const file of list as Array<{ name: string; type: string }>) {
+            transfer.items.add(new File([new Uint8Array(bytes as number[])], file.name, { type: file.type }));
+          }
+          return transfer;
+        },
+        [files, Array.from(PNG)] as const
+      );
+      await area.dispatchEvent('drop', { dataTransfer: data });
+    };
+
+    await drop([{ name: 'notes.txt', type: 'text/plain' }]);
+    await page.getByRole('alert').filter({ hasText: 'Only JPEG and PNG images are allowed' }).waitFor();
+    assert.equal(await page.getByTestId('image-preview').count(), 0);
+    assert.equal(await page.locator('#coverImage').evaluate((node: HTMLInputElement) => node.files?.length), 0);
+
+    await drop([
+      { name: 'first.png', type: 'image/png' },
+      { name: 'second.png', type: 'image/png' },
+    ]);
+    await page.getByTestId('image-preview').waitFor();
+    assert.match(await page.getByTestId('image-preview').innerText(), /first\.png/);
+    assert.equal(await page.locator('#coverImage').evaluate((node: HTMLInputElement) => node.files?.length), 1);
+  });
+
+  it('keeps the drag highlight while the pointer moves over the area contents', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/add');
+    await page.waitForLoadState('networkidle');
+    const area = page.locator('label[for="coverImage"]');
+    const highlighted = () => area.evaluate((node) => node.classList.contains('border-blue-400'));
+
+    const child = area.locator('span').first();
+
+    // Entering the area, then a child of it (the area gets a leave for that move), keeps the highlight.
+    await area.dispatchEvent('dragenter');
+    assert.equal(await highlighted(), true);
+    await child.dispatchEvent('dragenter');
+    await area.dispatchEvent('dragleave');
+    assert.equal(await highlighted(), true);
+    // Leaving the child and then the area ends it.
+    await child.dispatchEvent('dragleave');
+    assert.equal(await highlighted(), false);
   });
 
   it('previews an image URL and says when it fails to load', async (t) => {
@@ -138,7 +220,7 @@ describe('book cover image (e2e)', () => {
     assert.match(await page.getByTestId('image-preview').innerText(), /Current cover image/);
 
     await page.getByLabel('Remove the current image').check();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates.length, 1);
@@ -157,7 +239,7 @@ describe('book cover image (e2e)', () => {
 
     await page.setInputFiles('#coverImage', { name: 'new.png', mimeType: 'image/png', buffer: PNG });
     assert.match(await page.getByTestId('image-preview').innerText(), /Uploaded file: new\.png/);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates[0]?.file, 'new.png');

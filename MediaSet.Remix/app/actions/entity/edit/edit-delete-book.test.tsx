@@ -178,6 +178,15 @@ describe('edit book metadata lookup', () => {
   const resultsOf = (html: string) =>
     /name="lookupResults" value="([^"]*)"/.exec(html)?.[1]?.replaceAll('&quot;', '"').replaceAll('&amp;', '&') ?? '[]';
 
+  it('shows Update before a Cancel button', async (t) => {
+    stubApi(t);
+    const html = await (await router.fetch(url(editUrl))).text();
+
+    const update = html.indexOf('>Update</button>');
+    const cancel = html.search(/<button[^>]*class="secondary"[^>]*>Cancel<\/button>/);
+    assert.ok(update !== -1 && cancel !== -1 && update < cancel);
+  });
+
   it('offers the lookup buttons only when the provider supports book lookup', async (t) => {
     stubApi(t);
     assert.match(await (await router.fetch(url(editUrl))).text(), /value="lookup:title"[\s\S]*value="lookup:isbn"/);
@@ -186,12 +195,20 @@ describe('edit book metadata lookup', () => {
     assert.doesNotMatch(await (await router.fetch(url(editUrl))).text(), /value="lookup:/);
   });
 
+  it('prefills the lookup Author with the first author of the saved book', async (t) => {
+    stubApi(t);
+    const html = await (await router.fetch(url(editUrl))).text();
+
+    assert.match(html, /name="lookupAuthor"[^>]*value="Frank Herbert"/);
+  });
+
   it('lists the matches, keeping the entered values and the saved image, without saving', async (t) => {
     const lookups: string[] = [];
     const calls = stubApi(t, { lookups });
     const response = await post(editUrl, [
       ['intent', 'lookup:title'],
       ['title', ' Dune '],
+      ['lookupAuthor', ' Frank Herbert '],
       ['authors', 'Frank Herbert'],
       ['subtitle', 'Typed subtitle'],
     ]);
@@ -217,7 +234,10 @@ describe('edit book metadata lookup', () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(lookups, ['/lookup/Books/isbn/9780441172719']);
-    assert.match(await response.text(), /<dialog open/);
+    const html = await response.text();
+    // One match for an ISBN or barcode fills the form at once; no dialog to choose from.
+    assert.doesNotMatch(html, /<dialog open/);
+    assert.match(html, /data-rmx-key="/);
   });
 
   it('asks for a value, with a 400, when the search field is blank', async (t) => {

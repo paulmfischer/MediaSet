@@ -45,6 +45,7 @@ async function renderMovieForm(
         heading="Add Movie"
         action={routes.entityAdd.movies.action.href()}
         cancelHref={routes.entityLists.movies.href()}
+        submitLabel="Add Movie"
         values={values}
         errors={errors}
         formError={formError}

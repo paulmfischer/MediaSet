@@ -192,6 +192,34 @@ describe('add movie metadata lookup', () => {
     assert.deepEqual(lookups, ['/lookup/Movies/upc/024543123456']);
   });
 
+  it('fills the form at once when a barcode has a single match', async (t) => {
+    stubApi(t);
+    const response = await post([
+      ['intent', 'lookup:barcode'],
+      ['barcode', '024543123456'],
+      ['plot', 'Typed already'],
+    ]);
+
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.doesNotMatch(html, /<dialog open/);
+    assert.match(html, /name="title"[^>]*value="Alien"/);
+    assert.match(html, /name="barcode"[^>]*value="024543123456"/);
+    assert.match(html, /data-rmx-key="/);
+  });
+
+  it('lists the matches when a barcode has several', async (t) => {
+    stubApi(t, { lookup: () => Response.json([alien, { ...alien, title: 'Aliens' }]) });
+    const response = await post([
+      ['intent', 'lookup:barcode'],
+      ['barcode', '024543123456'],
+    ]);
+
+    const html = await response.text();
+    assert.match(html, /<dialog open/);
+    assert.match(html, /name="intent" value="apply:1"/);
+  });
+
   it('asks for a value when the search field is blank', async (t) => {
     const { lookups } = stubApi(t);
     const response = await post([

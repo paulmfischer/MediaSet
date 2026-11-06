@@ -1,6 +1,14 @@
 import { clientEntry, on, ref, type Handle } from 'remix/component';
 
-import { errorId, errorProps, inputClasses } from '../field.tsx';
+import { Icon } from '../../icon.tsx';
+import { ImagePlus } from '../../icons.ts';
+import {
+  COVER_IMAGE_MAX_BYTES,
+  COVER_IMAGE_SIZE_ERROR,
+  COVER_IMAGE_TYPES,
+  COVER_IMAGE_TYPE_ERROR,
+} from './cover-image-limits.ts';
+import { errorId, errorProps, Field, inputClasses } from '../field.tsx';
 
 interface ImageInputProps {
   /** Browser URL of the saved cover image (edit form); shown until another image is chosen. */
@@ -30,6 +38,8 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
   let fileName = '';
   let objectUrl = '';
   let failed = false;
+  let dragging = false;
+  let fileProblem: string | undefined;
   // Controlled, so a re-render keeps what was ticked; it starts from the server's value.
   let remove = handle.props.removeImage ?? false;
 
@@ -51,13 +61,57 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
     handle.update();
   };
 
+  // The server's limits (cover-image-limits.ts), checked early for quicker feedback.
+  const problemWith = (file: File): string | undefined => {
+    if (!COVER_IMAGE_TYPES.includes(file.type)) return COVER_IMAGE_TYPE_ERROR;
+    if (file.size > COVER_IMAGE_MAX_BYTES) return COVER_IMAGE_SIZE_ERROR;
+    return undefined;
+  };
+
   const chooseFile = (input: HTMLInputElement) => {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     const file = input.files?.[0];
-    objectUrl = file ? URL.createObjectURL(file) : '';
-    fileName = file?.name ?? '';
+    fileProblem = file ? problemWith(file) : undefined;
+    // A file that can't be used is dropped, so it is neither previewed nor submitted.
+    if (fileProblem) input.value = '';
+    const usable = file && !fileProblem ? file : undefined;
+    objectUrl = usable ? URL.createObjectURL(usable) : '';
+    fileName = usable?.name ?? '';
     failed = false;
     handle.update();
+  };
+
+  // dragenter and dragleave also fire as the pointer crosses the area's children, so the highlight
+  // follows a count of enters minus leaves (event.relatedTarget is not reliable across browsers).
+  let dragDepth = 0;
+  const dragEvent = (event: DragEvent, change: 1 | -1) => {
+    event.preventDefault();
+    dragDepth = Math.max(0, dragDepth + change);
+    const next = dragDepth > 0;
+    if (dragging === next) return;
+    dragging = next;
+    handle.update();
+  };
+
+  // dragover only keeps the drop allowed.
+  const allowDrop = (event: DragEvent) => event.preventDefault();
+
+  // A dropped file goes into the file input, so it is submitted like a chosen one. The input takes
+  // one file and bypasses its accept filter for drops, so only the first file is used and it is checked here.
+  const dropFile = (event: DragEvent) => {
+    event.preventDefault();
+    dragging = false;
+    dragDepth = 0;
+    const input = document.getElementById('coverImage');
+    const file = event.dataTransfer?.files[0];
+    if (input instanceof HTMLInputElement && file) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
+      chooseFile(input);
+    } else {
+      handle.update();
+    }
   };
 
   const showUrl = () => {
@@ -84,68 +138,101 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
   return () => {
     const { allowRemove, errors } = handle.props;
     const current = source();
-    return (
-      <fieldset class="flex flex-col gap-3">
-        <legend class="block text-sm font-medium text-gray-200 mb-1">Cover Image</legend>
-        {current ? (
-          <figure class="flex flex-col items-start gap-1" data-testid="image-preview">
-            {failed ? (
-              <p role="alert" class="text-sm text-red-400">
-                Unable to load image
-              </p>
-            ) : null}
-            <img
-              src={current.src}
-              alt="Cover preview"
-              class={failed ? 'hidden' : 'h-40 w-auto rounded-md object-contain'}
-              mix={[
-                ref((node) => checkLoaded(node as HTMLImageElement)),
-                on('error', () => setFailed(true)),
-                on('load', () => setFailed(false)),
-              ]}
-            />
-            <figcaption class="text-xs text-gray-400">{current.origin}</figcaption>
-          </figure>
+    // A chosen file or the saved image fills the drop area; an image from the URL sits beside the URL field.
+    const fromUrl = current?.origin === 'From URL';
+    const preview = current ? (
+      <figure class="flex flex-col items-center gap-1" data-testid="image-preview">
+        {failed ? (
+          <p role="alert" class="text-xs text-red-400">
+            Unable to load image
+          </p>
         ) : null}
+        <img
+          src={current.src}
+          alt="Cover preview"
+          class={failed ? 'hidden' : fromUrl ? 'h-24 w-auto object-contain' : 'mx-auto h-40 w-auto object-contain'}
+          mix={[
+            ref((node) => checkLoaded(node as HTMLImageElement)),
+            on('error', () => setFailed(true)),
+            on('load', () => setFailed(false)),
+          ]}
+        />
+        <figcaption class="text-sm text-gray-300">{current.origin}</figcaption>
+      </figure>
+    ) : null;
+    return (
+      <fieldset class="flex flex-col gap-4">
+        <legend class="block text-sm font-medium text-gray-200 mb-1">Cover Image</legend>
         <div>
-          <label class="block text-sm text-gray-300 mb-1">
-            <span class="block mb-1">Upload an image (JPEG or PNG, up to 5 MB)</span>
+          {/* The whole area is the file input's label, so clicking it opens the picker without JavaScript. */}
+          <label
+            for="coverImage"
+            class={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-400 ${
+              dragging
+                ? 'border-blue-400 bg-blue-900/30'
+                : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
+            }`}
+            mix={[
+              on('dragenter', (event) => dragEvent(event, 1)),
+              on('dragover', (event) => allowDrop(event)),
+              on('dragleave', (event) => dragEvent(event, -1)),
+              on('drop', (event) => dropFile(event)),
+            ]}
+          >
             <input
               id="coverImage"
               name="coverImage"
               type="file"
               accept="image/jpeg,image/png"
-              class={inputClasses}
+              class="sr-only"
+              aria-label="Upload cover image"
               {...errorProps('coverImage', errors.coverImage)}
               mix={on('change', (event) => chooseFile(event.currentTarget))}
             />
+            {current && !fromUrl ? (
+              preview
+            ) : (
+              <>
+                <Icon icon={ImagePlus} size={48} class="text-gray-400" />
+                <span class="text-sm text-gray-300">
+                  <span class="block font-medium">Drag and drop your image here</span>
+                  <span class="block text-xs text-gray-400">or click to select</span>
+                </span>
+                <span class="text-xs text-gray-400">PNG or JPEG up to 5MB</span>
+              </>
+            )}
           </label>
+          {fileProblem ? (
+            <p role="alert" class="mt-1 text-sm text-red-400">
+              {fileProblem}
+            </p>
+          ) : null}
           {errors.coverImage ? (
             <p id={errorId('coverImage')} class="mt-1 text-sm text-red-400">
               {errors.coverImage}
             </p>
           ) : null}
         </div>
-        <div>
-          <label class="block text-sm text-gray-300 mb-1">
-            <span class="block mb-1">Or an image URL (an uploaded file takes precedence)</span>
+        <Field name="imageUrl" label="Image URL" error={errors.imageUrl}>
+          <p id="imageUrl-help" class="text-xs text-gray-400 mb-2">
+            Provide an image URL or upload a file above. If both are provided, the uploaded file takes precedence.
+            Accepted: JPEG or PNG, up to 5MB.
+          </p>
+          <div class="flex items-start gap-2">
             <input
               id="imageUrl"
               name="imageUrl"
               type="url"
-              class={inputClasses}
-              placeholder="https://example.com/cover.jpg"
+              class={`${inputClasses} flex-1`}
+              placeholder="https://example.com/image.jpg"
               value={url}
-              {...errorProps('imageUrl', errors.imageUrl)}
+              aria-describedby={errors.imageUrl ? `imageUrl-help ${errorId('imageUrl')}` : 'imageUrl-help'}
+              aria-invalid={errors.imageUrl ? 'true' : undefined}
               mix={[on('input', (event) => typeUrl(event.currentTarget)), on('change', showUrl)]}
             />
-          </label>
-          {errors.imageUrl ? (
-            <p id={errorId('imageUrl')} class="mt-1 text-sm text-red-400">
-              {errors.imageUrl}
-            </p>
-          ) : null}
-        </div>
+            {fromUrl ? <div class="flex w-32 justify-center">{preview}</div> : null}
+          </div>
+        </Field>
         {allowRemove ? (
           <label class="flex items-center gap-2 text-sm text-gray-300">
             <input

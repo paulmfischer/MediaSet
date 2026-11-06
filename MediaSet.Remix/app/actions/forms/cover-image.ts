@@ -1,6 +1,12 @@
-/** Cover image limits, shared by the upload middleware and the form's own checks. */
-export const COVER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-export const COVER_IMAGE_TYPES = ['image/jpeg', 'image/png'];
+import {
+  COVER_IMAGE_MAX_BYTES,
+  COVER_IMAGE_SIZE_ERROR,
+  COVER_IMAGE_TYPES,
+  COVER_IMAGE_TYPE_ERROR,
+} from '../../ui/forms/public/cover-image-limits.ts';
+
+// Cover image limits, shared with the browser form (see cover-image-limits.ts).
+export { COVER_IMAGE_MAX_BYTES, COVER_IMAGE_TYPES };
 
 /** The uploaded file in a form submission, or the message to show when it can't be used. */
 export type CoverImageUpload = { file?: File; error?: string };
@@ -9,8 +15,8 @@ export type CoverImageUpload = { file?: File; error?: string };
 export function readCoverImage(formData: FormData): CoverImageUpload {
   const value = formData.get('coverImage');
   if (!(value instanceof File) || value.size === 0) return {};
-  if (!COVER_IMAGE_TYPES.includes(value.type)) return { error: 'Only JPEG and PNG images are allowed' };
-  if (value.size > COVER_IMAGE_MAX_BYTES) return { error: 'The image must be 5 MB or smaller' };
+  if (!COVER_IMAGE_TYPES.includes(value.type)) return { error: COVER_IMAGE_TYPE_ERROR };
+  if (value.size > COVER_IMAGE_MAX_BYTES) return { error: COVER_IMAGE_SIZE_ERROR };
   return { file: value };
 }
 

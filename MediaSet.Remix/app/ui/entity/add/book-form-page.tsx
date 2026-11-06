@@ -3,11 +3,13 @@ import type { Handle } from 'remix/component';
 import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupPanel, LookupSearchGroup } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
+import { CancelButton } from '../../forms/public/cancel-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
@@ -22,6 +24,8 @@ interface BookFormPageProps {
   heading: string;
   action: string;
   cancelHref: string;
+  /** The submit button's text, for example "Add Movie" or "Update". */
+  submitLabel: string;
   values: BookFormValues;
   /** First validation message per field name. */
   errors: Record<string, string>;
@@ -51,7 +55,6 @@ const lookupButtonProps = (field: 'title' | 'isbn') =>
     type: 'submit',
     name: 'intent',
     value: `lookup:${field}`,
-    class: 'secondary',
     formnovalidate: true,
     formenctype: 'application/x-www-form-urlencoded',
   }) as const;
@@ -62,6 +65,7 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
       heading,
       action,
       cancelHref,
+      submitLabel,
       values,
       errors,
       formError,
@@ -99,24 +103,64 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
           <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
             Save
           </button>
-          <Field name="title" label="Title" required error={errors.title}>
-            <div class="flex gap-2">
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
+          <LookupPanel label="Book Lookup" enabled={Boolean(lookup?.available)}>
+            <LookupSearchGroup label="Search by title and author" enabled={Boolean(lookup?.available)}>
+              <Field name="title" label="Title" required error={errors.title}>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+              </Field>
+              <Field name="lookupAuthor" label="Author">
+                <input
+                  id="lookupAuthor"
+                  name="lookupAuthor"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Author"
+                  value={values.lookupAuthor}
+                />
+              </Field>
               {lookup?.available ? (
-                <button {...lookupButtonProps('title')} aria-label="Look up by title">
-                  Look up
-                </button>
+                <div class="flex justify-end">
+                  <button {...lookupButtonProps('title')} aria-label="Search by title and author">
+                    Search
+                  </button>
+                </div>
               ) : null}
-            </div>
-          </Field>
+            </LookupSearchGroup>
+            <Field name="isbn" label="ISBN" error={errors.isbn}>
+              <div class="flex gap-2">
+                <input
+                  id="isbn"
+                  name="isbn"
+                  type="text"
+                  inputMode="numeric"
+                  class={inputClasses}
+                  placeholder="ISBN"
+                  value={values.isbn}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('isbn')} aria-label="Search by ISBN">
+                    Search
+                  </button>
+                ) : null}
+                {lookup?.available ? <ScanButton field="isbn" identifierLabel="ISBN" /> : null}
+              </div>
+            </Field>
+          </LookupPanel>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <Field name="subtitle" label="Subtitle" error={errors.subtitle}>
             <input
               id="subtitle"
@@ -126,25 +170,6 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               placeholder="Subtitle"
               value={values.subtitle}
             />
-          </Field>
-          <Field name="isbn" label="ISBN" error={errors.isbn}>
-            <div class="flex gap-2">
-              <input
-                id="isbn"
-                name="isbn"
-                type="text"
-                inputMode="numeric"
-                class={inputClasses}
-                placeholder="ISBN"
-                value={values.isbn}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('isbn')} aria-label="Look up by ISBN">
-                  Look up
-                </button>
-              ) : null}
-              {lookup?.available ? <ScanButton field="isbn" identifierLabel="ISBN" /> : null}
-            </div>
           </Field>
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
@@ -222,18 +247,9 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               value={values.plot}
             />
           </Field>
-          <ImageInput
-            existingSrc={existingImageSrc}
-            imageUrl={values.imageUrl}
-            allowRemove={Boolean(existingImageSrc)}
-            removeImage={removeImage}
-            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
-          />
-          <div class="flex gap-2 justify-end">
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
-            <SaveButton label="Save" pendingLabel="Saving…" />
+          <div class="flex flex-row gap-2">
+            <SaveButton label={submitLabel} pendingLabel={`${submitLabel}…`} />
+            <CancelButton fallbackHref={cancelHref} />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
           {lookup?.available ? <BarcodeScannerDialog field="isbn" identifierLabel="ISBN" /> : null}

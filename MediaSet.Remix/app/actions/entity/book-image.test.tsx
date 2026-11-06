@@ -224,13 +224,11 @@ describe('book cover image on edit', () => {
 });
 
 describe('attribution on the detail page', () => {
-  it('credits the enabled integrations only', async (t) => {
+  it('is not shown; credits belong to the home page only', async (t) => {
     stubApi(t);
     const html = await (await router.fetch(new URL('/books/b1', 'http://localhost'))).text();
 
-    assert.match(html, /id="attribution-heading"/);
-    assert.match(html, /aria-label="TMDB"/);
-    assert.match(html, /Data by TMDB/);
-    assert.doesNotMatch(html, /Disabled Source/);
+    assert.doesNotMatch(html, /attribution-heading/);
+    assert.doesNotMatch(html, /Data by TMDB/);
   });
 });

@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 // Serves one book and a list, and records the PUT and DELETE requests.
@@ -55,6 +56,19 @@ describe('edit and delete book (e2e)', () => {
     assert.deepEqual(requests, ['DELETE']);
   });
 
+  it('leaves the edit form for the item page on Cancel, saving nothing', async (t) => {
+    const requests = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/books/b1/edit');
+    await page.waitForLoadState('networkidle');
+    await page.locator('#title').fill('Not saved');
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/books/b1');
+    await page.getByRole('heading', { name: 'Dune', level: 1 }).waitFor();
+    assert.deepEqual(requests, []);
+  });
+
   it('saves an edit and returns to the detail page', async (t) => {
     const requests = stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
@@ -62,7 +76,7 @@ describe('edit and delete book (e2e)', () => {
     await page.waitForLoadState('networkidle');
 
     await page.locator('#title').fill('Dune Messiah');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
     assert.deepEqual(requests, ['PUT']);
   });
@@ -145,7 +159,7 @@ describe('edit book metadata lookup (e2e)', () => {
     await page.waitForLoadState('networkidle');
 
     await page.getByLabel(/Remove the current image/).check();
-    await page.getByRole('button', { name: 'Look up by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
     const dialog = page.getByRole('dialog', { name: 'Look up book' });
     await dialog.waitFor();
     assert.match(await dialog.innerText(), /Dune Messiah/);
@@ -162,7 +176,7 @@ describe('edit book metadata lookup (e2e)', () => {
     assert.equal(requests.length, 0);
 
     await page.getByLabel(/Remove the current image/).uncheck();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
     assert.equal(requests.length, 1);
     assert.equal(requests[0].body.title, 'Dune Messiah');

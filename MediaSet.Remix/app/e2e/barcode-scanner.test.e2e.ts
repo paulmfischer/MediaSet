@@ -1,6 +1,7 @@
 import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it, type TestContext } from 'remix/test';
+import type { Page } from 'playwright';
 
 import { createAppRouter } from '../router.ts';
 
@@ -66,6 +67,9 @@ function installCamera([mode, native, code]: readonly [CameraMode, NativeMode, s
   bits += '01010';
   for (let i = 0; i < 6; i += 1) bits += R[digits[i + 7]!]!;
   bits += '101';
+
+  // A phone or tablet: the scan button is only offered on touch devices.
+  Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
 
   const stub: CameraStub = { streams: [], requests: [], detectCalls: 0 };
   (window as unknown as { __camera: CameraStub }).__camera = stub;
@@ -170,6 +174,12 @@ async function openForm(t: TestContext, path: string, mode: CameraMode, options:
   return { page, lookups, problems, requests, camera };
 }
 
+// Waits for the scanned ISBN's single match to fill the form (title from the stubbed lookup).
+const filled = (page: Page, timeout = 5000) =>
+  page.waitForFunction(() => document.querySelector<HTMLInputElement>('#title')?.value === 'Dune', undefined, {
+    timeout,
+  });
+
 describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
   it('should open with a live preview, then fill the ISBN and run the lookup on detection with the native detector', async (t) => {
     const { page, lookups, problems, requests, camera } = await openForm(t, '/books/add', 'ok');
@@ -178,13 +188,13 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     });
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    const lookupDialog = page.getByRole('dialog', { name: 'Look up book' });
-    await lookupDialog.waitFor();
+    await filled(page);
 
     assert.equal(await page.locator('#isbn').inputValue(), ISBN);
     assert.equal(lookups.length, 1);
     assert.match(lookups[0] ?? '', new RegExp(ISBN));
-    assert.equal(await lookupDialog.getByRole('listitem').count(), 1);
+    // The ISBN has a single match, so the form is filled and there is no dialog to choose from.
+    assert.equal(await page.getByRole('dialog', { name: 'Look up book' }).count(), 0);
     // The existing lookup flow ran in the same document, and the scanner is gone with the camera released.
     assert.equal(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), true);
     assert.equal(await page.getByRole('dialog', { name: 'Scan ISBN' }).isVisible(), false);
@@ -206,7 +216,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     );
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor({ timeout: 15_000 });
+    await filled(page, 15_000);
 
     assert.equal(
       requests.some((path) => path.includes('zxing')),
@@ -264,7 +274,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     const { page, lookups } = await openForm(t, '/books/add', 'ok', { native: 'slow' });
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor();
+    await filled(page);
 
     assert.equal(await page.locator('#isbn').inputValue(), ISBN);
     assert.equal(lookups.length, 1);
@@ -280,7 +290,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     );
 
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
-    await page.getByRole('dialog', { name: 'Look up book' }).waitFor({ timeout: 15_000 });
+    await filled(page, 15_000);
 
     assert.equal(
       requests.some((path) => path.includes('zxing')),
@@ -296,7 +306,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
     await page.getByRole('dialog', { name: 'Scan ISBN' }).waitFor();
     await page.waitForFunction(() => (window as unknown as { __camera: CameraStub }).__camera.requests.length === 1);
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     assert.deepEqual(await camera.tracksEnded(), []);
 
     // The user allows the camera after the dialog is gone: the stream that arrives must be stopped at once.
@@ -375,7 +385,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     assert.match(await alert.innerText(), /Camera access was denied/);
     assert.equal(await camera.requestCount(), 1);
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     await alert.waitFor({ state: 'hidden' });
     // Opening again retries and shows the error again.
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
@@ -397,6 +407,23 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
 
     assert.equal(await page.getByRole('button', { name: 'Scan ISBN' }).count(), 0);
     // The plain lookup button is still there.
-    assert.equal(await page.getByRole('button', { name: 'Look up by ISBN' }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Search by ISBN' }).count(), 1);
+  });
+
+  it('should offer the scan button only on a touch device that is narrow or a phone/tablet', async (t) => {
+    const { page } = await openForm(t, '/books/add', 'ok');
+    const scan = page.getByRole('button', { name: 'Scan ISBN' });
+    await scan.waitFor();
+
+    // A desktop-sized window hides it, and narrowing the window brings it back.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await scan.waitFor({ state: 'detached' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await scan.waitFor();
+
+    // No touch hardware, however narrow the window, means no scan button.
+    await page.evaluate(() => Object.defineProperty(navigator, 'maxTouchPoints', { value: 0, configurable: true }));
+    await page.setViewportSize({ width: 380, height: 844 });
+    await scan.waitFor({ state: 'detached' });
   });
 });

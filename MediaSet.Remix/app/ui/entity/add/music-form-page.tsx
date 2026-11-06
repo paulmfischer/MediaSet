@@ -3,11 +3,13 @@ import type { Handle } from 'remix/component';
 import type { MusicFormValues } from '../../../actions/entity/add/music-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupPanel, LookupSearchGroup } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
+import { CancelButton } from '../../forms/public/cancel-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { TrackListInput } from '../../forms/public/track-list-input.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
@@ -23,6 +25,8 @@ interface MusicFormPageProps {
   heading: string;
   action: string;
   cancelHref: string;
+  /** The submit button's text, for example "Add Movie" or "Update". */
+  submitLabel: string;
   values: MusicFormValues;
   /** First validation message per field name. */
   errors: Record<string, string>;
@@ -52,7 +56,6 @@ const lookupButtonProps = (field: 'title' | 'barcode') =>
     type: 'submit',
     name: 'intent',
     value: `lookup:${field}`,
-    class: 'secondary',
     formnovalidate: true,
     formenctype: 'application/x-www-form-urlencoded',
   }) as const;
@@ -63,6 +66,7 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
       heading,
       action,
       cancelHref,
+      submitLabel,
       values,
       errors,
       formError,
@@ -100,55 +104,66 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
           <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
             Save
           </button>
-          <Field name="title" label="Title" required error={errors.title}>
-            <div class="flex gap-2">
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
+          <LookupPanel label="Music Lookup" enabled={Boolean(lookup?.available)}>
+            <LookupSearchGroup label="Search by title and artist" enabled={Boolean(lookup?.available)}>
+              <Field name="title" label="Title" required error={errors.title}>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+              </Field>
+              <Field name="artist" label="Artist" required error={errors.artist}>
+                <SingleSelectInput
+                  name="artist"
+                  placeholder="Select Artist..."
+                  addLabel="Add new Artist:"
+                  options={options.artists}
+                  selectedValue={values.artist}
+                  invalid={Boolean(errors.artist)}
+                  describedBy={errors.artist ? errorId('artist') : undefined}
+                />
+              </Field>
               {lookup?.available ? (
-                <button {...lookupButtonProps('title')} aria-label="Look up by title and artist">
-                  Look up
-                </button>
+                <div class="flex justify-end">
+                  <button {...lookupButtonProps('title')} aria-label="Search by title and artist">
+                    Search
+                  </button>
+                </div>
               ) : null}
-            </div>
-          </Field>
-          <Field name="artist" label="Artist" required error={errors.artist}>
-            <SingleSelectInput
-              name="artist"
-              placeholder="Select Artist..."
-              addLabel="Add new Artist:"
-              options={options.artists}
-              selectedValue={values.artist}
-              invalid={Boolean(errors.artist)}
-              describedBy={errors.artist ? errorId('artist') : undefined}
-            />
-          </Field>
-          <Field name="barcode" label="Barcode" error={errors.barcode}>
-            <div class="flex gap-2">
-              <input
-                id="barcode"
-                name="barcode"
-                type="text"
-                inputMode="numeric"
-                class={inputClasses}
-                placeholder="Barcode"
-                value={values.barcode}
-                {...errorProps('barcode', errors.barcode)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('barcode')} aria-label="Look up by barcode">
-                  Look up
-                </button>
-              ) : null}
-              {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
-            </div>
-          </Field>
+            </LookupSearchGroup>
+            <Field name="barcode" label="Barcode" error={errors.barcode}>
+              <div class="flex gap-2">
+                <input
+                  id="barcode"
+                  name="barcode"
+                  type="text"
+                  inputMode="numeric"
+                  class={inputClasses}
+                  placeholder="Barcode"
+                  value={values.barcode}
+                  {...errorProps('barcode', errors.barcode)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('barcode')} aria-label="Search by barcode">
+                    Search
+                  </button>
+                ) : null}
+                {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
+              </div>
+            </Field>
+          </LookupPanel>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
               name="format"
@@ -253,18 +268,9 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
             <legend class="block text-sm font-medium text-gray-200 mb-1">Track list</legend>
             <TrackListInput rows={values.trackList} errors={errors} />
           </fieldset>
-          <ImageInput
-            existingSrc={existingImageSrc}
-            imageUrl={values.imageUrl}
-            allowRemove={Boolean(existingImageSrc)}
-            removeImage={removeImage}
-            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
-          />
-          <div class="flex gap-2 justify-end">
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
-            <SaveButton label="Save" pendingLabel="Saving…" />
+          <div class="flex flex-row gap-2">
+            <SaveButton label={submitLabel} pendingLabel={`${submitLabel}…`} />
+            <CancelButton fallbackHref={cancelHref} />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
           {lookup?.available ? <BarcodeScannerDialog field="barcode" identifierLabel="barcode" /> : null}

@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 const metadata: Record<string, string[]> = {
@@ -55,7 +56,7 @@ describe('add game (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Cartridge' }).click();
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Game').click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Rating').inputValue(), 'E10+');
@@ -65,7 +66,7 @@ describe('add game (e2e)', () => {
     assert.equal(saved.length, 0);
 
     await page.locator('#title').fill('Zelda');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Game').click();
     await page.waitForURL('**/games/new-id');
 
     assert.equal(await sameDocument(), true);

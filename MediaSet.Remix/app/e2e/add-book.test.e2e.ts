@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 const metadata: Record<string, string[]> = {
@@ -63,7 +64,7 @@ describe('add book (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Hardcover' }).click();
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Subtitle').inputValue(), 'Book One');
@@ -77,7 +78,7 @@ describe('add book (e2e)', () => {
     // Fix the error and save.
     await page.locator('#title').fill('Dune');
     await page.getByRole('button', { name: 'Remove Frank Herbert' }).click();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
 
     assert.equal(await sameDocument(), true);
@@ -101,8 +102,8 @@ describe('add book (e2e)', () => {
     await page.waitForLoadState('networkidle');
     await page.locator('#title').fill('Dune');
 
-    await page.getByRole('button', { name: 'Save' }).click();
-    const pending = page.getByRole('button', { name: 'Saving…' });
+    await submitButton(page, 'add', 'Book').click();
+    const pending = page.getByRole('button', { name: /…$/ });
     await pending.waitFor();
     assert.equal(await pending.isDisabled(), true);
     await page.waitForURL('**/books/new-id');
@@ -186,14 +187,15 @@ describe('add book metadata lookup (e2e)', () => {
     await page.getByLabel('Pages').fill('1');
     // A cover over the upload limit must not get in the way of a lookup, which doesn't send it.
     await page
-      .getByLabel(/Upload an image/)
+      .getByLabel('Upload cover image')
       .setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(6 * 1024 * 1024) });
-    await page.getByRole('button', { name: 'Look up by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
 
     // The results open in a modal dialog; the form behind it keeps what was typed.
     const dialog = page.getByRole('dialog', { name: 'Look up book' });
     await dialog.waitFor();
-    assert.equal(await page.evaluate(() => document.querySelector('dialog')?.matches(':modal')), true);
+    // The island opens it modally in a queued task after render, so wait for that rather than race it.
+    await page.waitForFunction(() => document.querySelector('dialog[open]')?.matches(':modal') === true);
     assert.equal(await dialog.getByRole('listitem').count(), 2);
     assert.match(await dialog.innerText(), /Dune Messiah/);
 
@@ -202,7 +204,7 @@ describe('add book metadata lookup (e2e)', () => {
     await dialog.waitFor({ state: 'hidden' });
     await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
     assert.equal(await page.getByLabel('Pages').inputValue(), '1');
-    await page.getByRole('button', { name: 'Look up by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
     await dialog.waitFor();
 
     // Applying the second match fills the form, including the select islands.
@@ -217,7 +219,7 @@ describe('add book metadata lookup (e2e)', () => {
     await page.getByRole('button', { name: 'Clear Berkley' }).waitFor();
     await page.getByRole('button', { name: 'Clear Paperback' }).waitFor();
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
     assert.deepEqual(saved, [
       {

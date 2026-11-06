@@ -225,12 +225,12 @@ describe('add book metadata lookup', () => {
     assert.doesNotMatch(await (await get()).text(), /value="lookup:/);
   });
 
-  it('looks up by title with the first author as an extra parameter and lists the matches', async (t) => {
+  it('looks up by title with the panel Author as an extra parameter and lists the matches', async (t) => {
     const lookups = stubLookupApi(t);
     const response = await post([
       ['intent', 'lookup:title'],
       ['title', ' Dune '],
-      ['authors', 'Frank Herbert'],
+      ['lookupAuthor', ' Frank Herbert '],
       ['authors', 'Brian Herbert'],
       ['plot', 'Typed already'],
     ]);
@@ -240,11 +240,51 @@ describe('add book metadata lookup', () => {
     const html = await response.text();
     assert.match(html, /<dialog open/);
     assert.match(html, /Dune: Book One/);
+    assert.match(html, /name="lookupAuthor"[^>]*value=" Frank Herbert "/);
     assert.match(html, /Frank Herbert · Ace · 1990 · 412 pages · Paperback/);
     assert.match(html, /name="intent" value="apply:0"/);
     // The form keeps what was entered, as typed.
     assert.match(html, /name="title"[^>]*value=" Dune "/);
     assert.match(html, /Typed already/);
+  });
+
+  it('narrows a title lookup by the first selected author when the panel Author is empty', async (t) => {
+    const lookups = stubLookupApi(t);
+    await post([
+      ['intent', 'lookup:title'],
+      ['title', 'Dune'],
+      ['authors', 'Frank Herbert'],
+      ['authors', 'Brian Herbert'],
+    ]);
+
+    assert.deepEqual(lookups, ['/lookup/Books/entity?title=Dune&author=Frank+Herbert']);
+  });
+
+  it('prefers the panel Author over the selected authors', async (t) => {
+    const lookups = stubLookupApi(t);
+    await post([
+      ['intent', 'lookup:title'],
+      ['title', 'Dune'],
+      ['lookupAuthor', 'Herbert'],
+      ['authors', 'Someone Else'],
+    ]);
+
+    assert.deepEqual(lookups, ['/lookup/Books/entity?title=Dune&author=Herbert']);
+  });
+
+  it('lays the lookup panel out as a required Title, Author, Search, then ISBN with its own Search', async (t) => {
+    stubLookupApi(t);
+    const html = await (await get()).text();
+
+    const order = ['id="title"', 'id="lookupAuthor"', 'value="lookup:title"', 'id="isbn"', 'value="lookup:isbn"'].map(
+      (part) => html.indexOf(part)
+    );
+    assert.ok(
+      order.every((at, index) => at !== -1 && (index === 0 || at > order[index - 1]!)),
+      'in order'
+    );
+    assert.doesNotMatch(html, />or</);
+    assert.match(html, /<label for="title"[^>]*>\s*Title<span aria-hidden="true"> \*<\/span>/);
   });
 
   it('looks up by ISBN with the identifier alone', async (t) => {

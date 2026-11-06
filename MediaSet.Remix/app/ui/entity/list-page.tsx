@@ -107,7 +107,14 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
             </a>
           </div>
           <div class="flex flex-row w-full sm:w-auto gap-2 items-center">
-            <form role="search" method="get" action={basePath} class="flex flex-1 sm:flex-none gap-2">
+            {/* The key renders the form afresh when the list or the search changes, so text typed in another list's box doesn't carry over. */}
+            <form
+              role="search"
+              method="get"
+              action={basePath}
+              class="flex flex-1 sm:flex-none gap-2"
+              data-rmx-key={`${basePath}:${searchText ?? ''}`}
+            >
               {orderBy !== DEFAULT_ORDER_BY ? <input type="hidden" name="orderBy" value={orderBy} /> : null}
               <div class="flex flex-1 gap-0 z-20">
                 <input

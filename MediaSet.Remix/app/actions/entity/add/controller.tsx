@@ -45,6 +45,7 @@ async function renderBookForm(
         heading="Add Book"
         action={routes.entityAdd.books.action.href()}
         cancelHref={routes.entityLists.books.href()}
+        submitLabel="Add Book"
         values={values}
         errors={errors}
         formError={formError}

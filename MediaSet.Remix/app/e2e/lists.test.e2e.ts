@@ -99,4 +99,44 @@ describe('collection lists (e2e)', () => {
     assert.equal(await page.getByRole('searchbox', { name: 'Search Books' }).inputValue(), '');
     assert.equal(await sameDocument(), true);
   });
+
+  it('draws the clear-search X as part of the search input', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/books?searchText=Book');
+    await page.waitForLoadState('networkidle');
+
+    const input = await page.getByRole('searchbox', { name: 'Search Books' }).boundingBox();
+    const clear = page.getByRole('link', { name: 'Clear search' });
+    const box = await clear.boundingBox();
+    const style = await clear.evaluate((node) => {
+      const { textDecorationLine, borderTopWidth, backgroundColor } = getComputedStyle(node);
+      return { textDecorationLine, borderTopWidth, backgroundColor };
+    });
+
+    // Flush against the input, the same height, boxed like it and not an underlined link.
+    assert.ok(input && box);
+    assert.ok(Math.abs(box.x - (input.x + input.width)) <= 1);
+    assert.ok(Math.abs(box.height - input.height) <= 1);
+    assert.equal(style.textDecorationLine, 'none');
+    assert.equal(style.borderTopWidth, '1px');
+    assert.equal(style.backgroundColor, 'rgb(31, 41, 55)');
+  });
+
+  it('clears the search box when navigating from one list to another', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/books?searchText=Book');
+    await page.waitForLoadState('networkidle');
+    const search = page.getByRole('searchbox');
+    assert.equal(await search.inputValue(), 'Book');
+
+    await page.getByRole('link', { name: 'Movies' }).click();
+    await page.waitForURL('**/movies');
+    await page.getByRole('searchbox', { name: 'Search Movies' }).waitFor();
+
+    assert.equal(await page.getByRole('searchbox').inputValue(), '');
+  });
 });

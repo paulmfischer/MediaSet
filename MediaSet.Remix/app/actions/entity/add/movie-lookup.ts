@@ -1,6 +1,6 @@
-import { Entity, type IdentifierType } from '../../../models.ts';
+import { Entity, type IdentifierType, type MovieEntity } from '../../../models.ts';
 import { getIdentifierTypeForField } from '../../../api/lookup-data.server.ts';
-import { MOVIE_FIELDS, type MovieFormValues } from './movie-form.ts';
+import { MOVIE_FIELDS, toMovieValues, type MovieFormValues } from './movie-form.ts';
 import { submittedValues } from '../../forms/form-schema.ts';
 import { resolveLookupIntent, type LookupIntentState } from '../../forms/lookup.ts';
 
@@ -77,6 +77,7 @@ export function resolveMovieLookupIntent(
       return request ? { request } : { missing: field };
     },
     missingLabels: { title: 'a title', barcode: 'a barcode' },
+    resultToValues: (result) => ({ ...toMovieValues(result as MovieEntity) }),
     applyResult: applyMovieResult,
   });
 }

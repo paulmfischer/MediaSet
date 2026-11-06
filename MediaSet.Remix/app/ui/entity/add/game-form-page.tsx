@@ -3,11 +3,13 @@ import type { Handle } from 'remix/component';
 import type { GameFormValues } from '../../../actions/entity/add/game-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
+import { LookupPanel } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
+import { CancelButton } from '../../forms/public/cancel-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
@@ -23,6 +25,8 @@ interface GameFormPageProps {
   heading: string;
   action: string;
   cancelHref: string;
+  /** The submit button's text, for example "Add Movie" or "Update". */
+  submitLabel: string;
   values: GameFormValues;
   /** First validation message per field name. */
   errors: Record<string, string>;
@@ -52,7 +56,6 @@ const lookupButtonProps = (field: 'title' | 'barcode') =>
     type: 'submit',
     name: 'intent',
     value: `lookup:${field}`,
-    class: 'secondary',
     formnovalidate: true,
     formenctype: 'application/x-www-form-urlencoded',
   }) as const;
@@ -63,6 +66,7 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
       heading,
       action,
       cancelHref,
+      submitLabel,
       values,
       errors,
       formError,
@@ -100,44 +104,53 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
           <button type="submit" name="intent" value="save" class="sr-only" tabindex={-1} aria-hidden="true">
             Save
           </button>
-          <Field name="title" label="Title" required error={errors.title}>
-            <div class="flex gap-2">
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('title')} aria-label="Look up by title">
-                  Look up
-                </button>
-              ) : null}
-            </div>
-          </Field>
-          <Field name="barcode" label="Barcode" error={errors.barcode}>
-            <div class="flex gap-2">
-              <input
-                id="barcode"
-                name="barcode"
-                type="text"
-                inputMode="numeric"
-                class={inputClasses}
-                placeholder="Barcode"
-                value={values.barcode}
-                {...errorProps('barcode', errors.barcode)}
-              />
-              {lookup?.available ? (
-                <button {...lookupButtonProps('barcode')} aria-label="Look up by barcode">
-                  Look up
-                </button>
-              ) : null}
-              {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
-            </div>
-          </Field>
+          <LookupPanel label="Game Lookup" enabled={Boolean(lookup?.available)}>
+            <Field name="title" label="Title" required error={errors.title}>
+              <div class="flex gap-2">
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('title')} aria-label="Search by title">
+                    Search
+                  </button>
+                ) : null}
+              </div>
+            </Field>
+            <Field name="barcode" label="Barcode" error={errors.barcode}>
+              <div class="flex gap-2">
+                <input
+                  id="barcode"
+                  name="barcode"
+                  type="text"
+                  inputMode="numeric"
+                  class={inputClasses}
+                  placeholder="Barcode"
+                  value={values.barcode}
+                  {...errorProps('barcode', errors.barcode)}
+                />
+                {lookup?.available ? (
+                  <button {...lookupButtonProps('barcode')} aria-label="Search by barcode">
+                    Search
+                  </button>
+                ) : null}
+                {lookup?.available ? <ScanButton field="barcode" identifierLabel="barcode" /> : null}
+              </div>
+            </Field>
+          </LookupPanel>
+          <ImageInput
+            existingSrc={existingImageSrc}
+            imageUrl={values.imageUrl}
+            allowRemove={Boolean(existingImageSrc)}
+            removeImage={removeImage}
+            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
+          />
           <Field name="format" label="Format" error={errors.format}>
             <SingleSelectInput
               name="format"
@@ -222,18 +235,9 @@ export function GameFormPage(handle: Handle<GameFormPageProps>) {
               value={values.description}
             />
           </Field>
-          <ImageInput
-            existingSrc={existingImageSrc}
-            imageUrl={values.imageUrl}
-            allowRemove={Boolean(existingImageSrc)}
-            removeImage={removeImage}
-            errors={{ coverImage: errors.coverImage, imageUrl: errors.imageUrl }}
-          />
-          <div class="flex gap-2 justify-end">
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
-            <SaveButton label="Save" pendingLabel="Saving…" />
+          <div class="flex flex-row gap-2">
+            <SaveButton label={submitLabel} pendingLabel={`${submitLabel}…`} />
+            <CancelButton fallbackHref={cancelHref} />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
           {lookup?.available ? <BarcodeScannerDialog field="barcode" identifierLabel="barcode" /> : null}

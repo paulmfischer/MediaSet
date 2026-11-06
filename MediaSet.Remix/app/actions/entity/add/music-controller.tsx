@@ -43,6 +43,7 @@ async function renderMusicForm(
         heading="Add Music"
         action={routes.entityAdd.musics.action.href()}
         cancelHref={routes.entityLists.musics.href()}
+        submitLabel="Add Music"
         values={values}
         errors={errors}
         formError={formError}
