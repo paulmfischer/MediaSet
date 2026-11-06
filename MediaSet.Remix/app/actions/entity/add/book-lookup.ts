@@ -20,8 +20,8 @@ export function parseLookupIntent(intent: string): BookLookupField | undefined {
 }
 
 /**
- * The lookup to run for a search field. A title search also sends the first author as an extra
- * parameter, which narrows the matches; an ISBN search sends the ISBN alone. `undefined` when the
+ * The lookup to run for a search field. A title search also sends the lookup panel's Author as an
+ * extra parameter, which narrows the matches; an ISBN search sends the ISBN alone. `undefined` when the
  * search field is blank.
  */
 export function toBookLookupRequest(field: BookLookupField, values: BookFormValues): BookLookupRequest | undefined {
@@ -29,7 +29,7 @@ export function toBookLookupRequest(field: BookLookupField, values: BookFormValu
   if (!term) return undefined;
 
   const searchParams: Record<string, string> = { [field]: term };
-  const author = values.authors[0]?.trim();
+  const author = values.lookupAuthor.trim();
   if (field === 'title' && author) searchParams.author = author;
   return { field, identifierType: getIdentifierTypeForField(Entity.Books, field), searchParams };
 }

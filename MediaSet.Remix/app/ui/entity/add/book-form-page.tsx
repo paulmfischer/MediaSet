@@ -104,24 +104,41 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             Save
           </button>
           <LookupPanel label="Book Lookup" enabled={Boolean(lookup?.available)}>
-            <Field name="title" label="Title" required error={errors.title}>
-              <div class="flex gap-2">
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  class={inputClasses}
-                  placeholder="Title"
-                  value={values.title}
-                  {...errorProps('title', errors.title)}
-                />
-                {lookup?.available ? (
-                  <button {...lookupButtonProps('title')} aria-label="Search by title">
-                    Search
-                  </button>
-                ) : null}
-              </div>
+            <Field name="title" label="Title" error={errors.title}>
+              <input
+                id="title"
+                name="title"
+                type="text"
+                class={inputClasses}
+                placeholder="Title"
+                value={values.title}
+                {...errorProps('title', errors.title)}
+              />
             </Field>
+            <Field name="lookupAuthor" label="Author">
+              <input
+                id="lookupAuthor"
+                name="lookupAuthor"
+                type="text"
+                class={inputClasses}
+                placeholder="Author"
+                value={values.lookupAuthor}
+              />
+            </Field>
+            {lookup?.available ? (
+              <div class="flex justify-end">
+                <button {...lookupButtonProps('title')} aria-label="Search by title and author">
+                  Search
+                </button>
+              </div>
+            ) : null}
+            {lookup?.available ? (
+              <div class="flex items-center gap-3" aria-hidden="true">
+                <div class="flex-1 border-t border-gray-700" />
+                <span class="text-xs text-gray-500">or</span>
+                <div class="flex-1 border-t border-gray-700" />
+              </div>
+            ) : null}
             <Field name="isbn" label="ISBN" error={errors.isbn}>
               <div class="flex gap-2">
                 <input

@@ -145,7 +145,7 @@ describe('edit book metadata lookup (e2e)', () => {
     await page.waitForLoadState('networkidle');
 
     await page.getByLabel(/Remove the current image/).check();
-    await page.getByRole('button', { name: 'Search by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
     const dialog = page.getByRole('dialog', { name: 'Look up book' });
     await dialog.waitFor();
     assert.match(await dialog.innerText(), /Dune Messiah/);

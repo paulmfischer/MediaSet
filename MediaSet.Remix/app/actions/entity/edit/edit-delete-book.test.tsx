@@ -192,6 +192,7 @@ describe('edit book metadata lookup', () => {
     const response = await post(editUrl, [
       ['intent', 'lookup:title'],
       ['title', ' Dune '],
+      ['lookupAuthor', ' Frank Herbert '],
       ['authors', 'Frank Herbert'],
       ['subtitle', 'Typed subtitle'],
     ]);

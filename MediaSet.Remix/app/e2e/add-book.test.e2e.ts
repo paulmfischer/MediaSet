@@ -188,7 +188,7 @@ describe('add book metadata lookup (e2e)', () => {
     await page
       .getByLabel('Upload cover image')
       .setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(6 * 1024 * 1024) });
-    await page.getByRole('button', { name: 'Search by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
 
     // The results open in a modal dialog; the form behind it keeps what was typed.
     const dialog = page.getByRole('dialog', { name: 'Look up book' });
@@ -203,7 +203,7 @@ describe('add book metadata lookup (e2e)', () => {
     await dialog.waitFor({ state: 'hidden' });
     await page.waitForFunction(() => document.activeElement?.id === 'title', undefined, { timeout: 2000 });
     assert.equal(await page.getByLabel('Pages').inputValue(), '1');
-    await page.getByRole('button', { name: 'Search by title' }).click();
+    await page.getByRole('button', { name: 'Search by title and author' }).click();
     await dialog.waitFor();
 
     // Applying the second match fills the form, including the select islands.

@@ -26,12 +26,25 @@ export const bookForm = f.object({
 });
 
 export const BOOK_FIELDS = {
-  single: ['title', 'isbn', 'subtitle', 'format', 'pages', 'publicationDate', 'publisher', 'plot', 'imageUrl'],
+  single: [
+    'title',
+    'lookupAuthor',
+    'isbn',
+    'subtitle',
+    'format',
+    'pages',
+    'publicationDate',
+    'publisher',
+    'plot',
+    'imageUrl',
+  ],
   repeated: ['authors', 'genres'],
 } as const;
 
 export type BookFormValues = {
   title: string;
+  /** Narrows a title lookup; it is not saved with the book. */
+  lookupAuthor: string;
   isbn: string;
   subtitle: string;
   format: string;
@@ -46,6 +59,7 @@ export type BookFormValues = {
 
 export const emptyBookValues: BookFormValues = {
   title: '',
+  lookupAuthor: '',
   isbn: '',
   subtitle: '',
   format: '',
@@ -82,6 +96,7 @@ export function toBookEntity(parsed: ParsedBook): BookEntity {
 export function toBookValues(book: BookEntity): BookFormValues {
   return {
     title: book.title ?? '',
+    lookupAuthor: '',
     isbn: book.isbn ?? '',
     subtitle: book.subtitle ?? '',
     format: book.format ?? '',
