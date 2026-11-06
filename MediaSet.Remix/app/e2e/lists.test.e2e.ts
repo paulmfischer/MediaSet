@@ -121,7 +121,7 @@ describe('collection lists (e2e)', () => {
     assert.ok(Math.abs(box.height - input.height) <= 1);
     assert.equal(style.textDecorationLine, 'none');
     assert.equal(style.borderTopWidth, '1px');
-    assert.equal(style.backgroundColor, 'rgb(31, 41, 55)');
+    assert.equal(style.backgroundColor, 'oklch(0.278 0.033 256.848)');
   });
 
   it('clears the search box when navigating from one list to another', async (t) => {
