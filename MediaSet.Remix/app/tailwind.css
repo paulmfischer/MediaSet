@@ -1,5 +1,4 @@
 @import 'tailwindcss' source(none);
-@import './tailwind-colors.css';
 
 /* Scan only the application sources for utility classes. */
 @source '../app/**/*.{js,jsx,ts,tsx}';

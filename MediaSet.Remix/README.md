@@ -75,8 +75,7 @@ MediaSet.Remix/
 │   ├── models.ts         # TypeScript interfaces
 │   ├── router.ts         # Router and controller registration
 │   ├── routes.ts         # Route map
-│   ├── tailwind.css      # Tailwind configuration (CSS-first: theme, dark variant, entity colours) and base styles
-│   └── tailwind-colors.css # Tailwind 3 colour values the design uses
+│   └── tailwind.css      # Tailwind configuration (CSS-first: theme, dark variant, entity colours) and base styles
 ├── public/               # Static assets; app.css is generated
 ├── dev.ts                # Development launcher (Tailwind watch + server)
 ├── remix.json            # remix test configuration
