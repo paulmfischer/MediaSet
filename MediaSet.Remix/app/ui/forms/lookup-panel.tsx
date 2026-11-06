@@ -26,3 +26,30 @@ export function LookupPanel(handle: Handle<LookupPanelProps>) {
     );
   };
 }
+
+interface LookupSearchGroupProps {
+  /** Names the search the grouped fields make together, for example "Search by title and author". */
+  label: string;
+  /** Lookup is available; when it isn't the fields are plain form fields with no group. */
+  enabled: boolean;
+  children?: RemixNode;
+}
+
+// Insets fields that one search uses together (a title and its author or artist, with the one Search
+// button below them) inside a LookupPanel, apart from an identifier's own search.
+export function LookupSearchGroup(handle: Handle<LookupSearchGroupProps>) {
+  return () => {
+    const { label, enabled, children } = handle.props;
+    if (!enabled) return <>{children}</>;
+    return (
+      <div
+        role="group"
+        aria-label={label}
+        class="flex flex-col gap-4 rounded-md border border-entity/20 bg-black/20 p-3"
+      >
+        <p class="text-xs font-medium text-gray-400">{label}</p>
+        {children}
+      </div>
+    );
+  };
+}

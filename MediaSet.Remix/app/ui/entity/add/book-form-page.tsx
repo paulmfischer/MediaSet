@@ -3,7 +3,7 @@ import type { Handle } from 'remix/component';
 import type { BookFormValues } from '../../../actions/entity/add/book-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
-import { LookupPanel } from '../../forms/lookup-panel.tsx';
+import { LookupPanel, LookupSearchGroup } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
@@ -104,34 +104,36 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
             Save
           </button>
           <LookupPanel label="Book Lookup" enabled={Boolean(lookup?.available)}>
-            <Field name="title" label="Title" required error={errors.title}>
-              <input
-                id="title"
-                name="title"
-                type="text"
-                class={inputClasses}
-                placeholder="Title"
-                value={values.title}
-                {...errorProps('title', errors.title)}
-              />
-            </Field>
-            <Field name="lookupAuthor" label="Author">
-              <input
-                id="lookupAuthor"
-                name="lookupAuthor"
-                type="text"
-                class={inputClasses}
-                placeholder="Author"
-                value={values.lookupAuthor}
-              />
-            </Field>
-            {lookup?.available ? (
-              <div class="flex justify-end">
-                <button {...lookupButtonProps('title')} aria-label="Search by title and author">
-                  Search
-                </button>
-              </div>
-            ) : null}
+            <LookupSearchGroup label="Search by title and author" enabled={Boolean(lookup?.available)}>
+              <Field name="title" label="Title" required error={errors.title}>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Title"
+                  value={values.title}
+                  {...errorProps('title', errors.title)}
+                />
+              </Field>
+              <Field name="lookupAuthor" label="Author">
+                <input
+                  id="lookupAuthor"
+                  name="lookupAuthor"
+                  type="text"
+                  class={inputClasses}
+                  placeholder="Author"
+                  value={values.lookupAuthor}
+                />
+              </Field>
+              {lookup?.available ? (
+                <div class="flex justify-end">
+                  <button {...lookupButtonProps('title')} aria-label="Search by title and author">
+                    Search
+                  </button>
+                </div>
+              ) : null}
+            </LookupSearchGroup>
             <Field name="isbn" label="ISBN" error={errors.isbn}>
               <div class="flex gap-2">
                 <input

@@ -64,4 +64,24 @@ describe('cover image field on the entity forms', () => {
       assert.doesNotMatch(html, /<a [^>]*>Cancel<\/a>/);
     });
   }
+
+  for (const [path, group, second, identifier] of [
+    ['books', 'Search by title and author', 'id="lookupAuthor"', 'id="isbn"'],
+    ['musics', 'Search by title and artist', 'name="artist"', 'id="barcode"'],
+  ] as const) {
+    it(`should group the ${path} title search fields with one Search button below them`, async (t) => {
+      stubApi(t);
+      const html = await get(`/${path}/add`);
+
+      const parts = [`aria-label="${group}"`, 'id="title"', second, 'value="lookup:title"', identifier].map((part) =>
+        html.indexOf(part)
+      );
+      assert.ok(
+        parts.every((at, index) => at !== -1 && (index === 0 || at > parts[index - 1]!)),
+        'group, title, second field, its Search, then the identifier'
+      );
+      assert.equal(html.split('value="lookup:title"').length - 1, 1);
+      assert.doesNotMatch(html, />or</);
+    });
+  }
 });

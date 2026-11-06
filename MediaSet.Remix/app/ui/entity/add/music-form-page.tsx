@@ -3,7 +3,7 @@ import type { Handle } from 'remix/component';
 import type { MusicFormValues } from '../../../actions/entity/add/music-form.ts';
 import type { Option } from '../../../models.ts';
 import { errorId, errorProps, Field, inputClasses } from '../../forms/field.tsx';
-import { LookupPanel } from '../../forms/lookup-panel.tsx';
+import { LookupPanel, LookupSearchGroup } from '../../forms/lookup-panel.tsx';
 import { LookupDialog, type LookupDialogProps } from '../../forms/public/lookup-dialog.tsx';
 import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
@@ -105,8 +105,8 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
             Save
           </button>
           <LookupPanel label="Music Lookup" enabled={Boolean(lookup?.available)}>
-            <Field name="title" label="Title" required error={errors.title}>
-              <div class="flex gap-2">
+            <LookupSearchGroup label="Search by title and artist" enabled={Boolean(lookup?.available)}>
+              <Field name="title" label="Title" required error={errors.title}>
                 <input
                   id="title"
                   name="title"
@@ -116,24 +116,26 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
                   value={values.title}
                   {...errorProps('title', errors.title)}
                 />
-                {lookup?.available ? (
+              </Field>
+              <Field name="artist" label="Artist" required error={errors.artist}>
+                <SingleSelectInput
+                  name="artist"
+                  placeholder="Select Artist..."
+                  addLabel="Add new Artist:"
+                  options={options.artists}
+                  selectedValue={values.artist}
+                  invalid={Boolean(errors.artist)}
+                  describedBy={errors.artist ? errorId('artist') : undefined}
+                />
+              </Field>
+              {lookup?.available ? (
+                <div class="flex justify-end">
                   <button {...lookupButtonProps('title')} aria-label="Search by title and artist">
                     Search
                   </button>
-                ) : null}
-              </div>
-            </Field>
-            <Field name="artist" label="Artist" required error={errors.artist}>
-              <SingleSelectInput
-                name="artist"
-                placeholder="Select Artist..."
-                addLabel="Add new Artist:"
-                options={options.artists}
-                selectedValue={values.artist}
-                invalid={Boolean(errors.artist)}
-                describedBy={errors.artist ? errorId('artist') : undefined}
-              />
-            </Field>
+                </div>
+              ) : null}
+            </LookupSearchGroup>
             <Field name="barcode" label="Barcode" error={errors.barcode}>
               <div class="flex gap-2">
                 <input
