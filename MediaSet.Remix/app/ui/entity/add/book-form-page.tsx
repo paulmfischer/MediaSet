@@ -9,6 +9,7 @@ import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
+import { CancelButton } from '../../forms/public/cancel-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
 
@@ -23,6 +24,8 @@ interface BookFormPageProps {
   heading: string;
   action: string;
   cancelHref: string;
+  /** The submit button's text, for example "Add Movie" or "Update". */
+  submitLabel: string;
   values: BookFormValues;
   /** First validation message per field name. */
   errors: Record<string, string>;
@@ -62,6 +65,7 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
       heading,
       action,
       cancelHref,
+      submitLabel,
       values,
       errors,
       formError,
@@ -231,11 +235,9 @@ export function BookFormPage(handle: Handle<BookFormPageProps>) {
               value={values.plot}
             />
           </Field>
-          <div class="flex gap-2 justify-end">
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
-            <SaveButton label="Save" pendingLabel="Saving…" />
+          <div class="flex flex-row gap-2">
+            <SaveButton label={submitLabel} pendingLabel={`${submitLabel}…`} />
+            <CancelButton fallbackHref={cancelHref} />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
           {lookup?.available ? <BarcodeScannerDialog field="isbn" identifierLabel="ISBN" /> : null}

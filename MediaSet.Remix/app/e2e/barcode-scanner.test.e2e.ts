@@ -306,7 +306,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     await page.getByRole('button', { name: 'Scan ISBN' }).click();
     await page.getByRole('dialog', { name: 'Scan ISBN' }).waitFor();
     await page.waitForFunction(() => (window as unknown as { __camera: CameraStub }).__camera.requests.length === 1);
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     assert.deepEqual(await camera.tracksEnded(), []);
 
     // The user allows the camera after the dialog is gone: the stream that arrives must be stopped at once.
@@ -385,7 +385,7 @@ describe('barcode scanner (e2e, production CSP, stubbed camera)', () => {
     assert.match(await alert.innerText(), /Camera access was denied/);
     assert.equal(await camera.requestCount(), 1);
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
     await alert.waitFor({ state: 'hidden' });
     // Opening again retries and shows the error again.
     await page.getByRole('button', { name: 'Scan ISBN' }).click();

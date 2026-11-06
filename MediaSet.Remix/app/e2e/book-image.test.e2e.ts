@@ -68,7 +68,7 @@ describe('book cover image (e2e)', () => {
     assert.match(await preview.innerText(), /Uploaded file: dune\.png/);
     assert.match((await preview.locator('img').getAttribute('src')) ?? '', /^blob:/);
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/new-id');
 
     assert.equal(saved.length, 1);
@@ -97,7 +97,7 @@ describe('book cover image (e2e)', () => {
     await preview.waitFor();
     assert.match(await preview.innerText(), /Uploaded file: dropped\.png/);
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/new-id');
     assert.deepEqual(saved[0]?.file, { name: 'dropped.png', type: 'image/png', size: PNG.length });
   });
@@ -218,7 +218,7 @@ describe('book cover image (e2e)', () => {
     assert.match(await page.getByTestId('image-preview').innerText(), /Current cover image/);
 
     await page.getByLabel('Remove the current image').check();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates.length, 1);
@@ -237,7 +237,7 @@ describe('book cover image (e2e)', () => {
 
     await page.setInputFiles('#coverImage', { name: 'new.png', mimeType: 'image/png', buffer: PNG });
     assert.match(await page.getByTestId('image-preview').innerText(), /Uploaded file: new\.png/);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates[0]?.file, 'new.png');

@@ -45,6 +45,7 @@ async function renderGameForm(
         heading="Add Game"
         action={routes.entityAdd.games.action.href()}
         cancelHref={routes.entityLists.games.href()}
+        submitLabel="Add Game"
         values={values}
         errors={errors}
         formError={formError}

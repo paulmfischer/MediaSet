@@ -62,7 +62,7 @@ describe('edit and delete book (e2e)', () => {
     await page.waitForLoadState('networkidle');
 
     await page.locator('#title').fill('Dune Messiah');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/b1');
     assert.deepEqual(requests, ['PUT']);
   });
@@ -162,7 +162,7 @@ describe('edit book metadata lookup (e2e)', () => {
     assert.equal(requests.length, 0);
 
     await page.getByLabel(/Remove the current image/).uncheck();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/books/b1');
     assert.equal(requests.length, 1);
     assert.equal(requests[0].body.title, 'Dune Messiah');

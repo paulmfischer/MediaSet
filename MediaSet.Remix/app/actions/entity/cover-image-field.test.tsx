@@ -47,4 +47,21 @@ describe('cover image field on the entity forms', () => {
       assert.match(html, /placeholder="https:\/\/example\.com\/image\.jpg"/);
     });
   }
+
+  for (const [path, label] of [
+    ['books', 'Add Book'],
+    ['movies', 'Add Movie'],
+    ['games', 'Add Game'],
+    ['musics', 'Add Music'],
+  ] as const) {
+    it(`should show ${label} before a Cancel button on the ${path} add form`, async (t) => {
+      stubApi(t);
+      const html = await get(`/${path}/add`);
+
+      const submit = html.indexOf(`>${label}</button>`);
+      const cancel = html.search(/<button[^>]*class="secondary"[^>]*>Cancel<\/button>/);
+      assert.ok(submit !== -1 && cancel !== -1 && submit < cancel, 'submit then Cancel');
+      assert.doesNotMatch(html, /<a [^>]*>Cancel<\/a>/);
+    });
+  }
 });

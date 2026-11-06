@@ -57,7 +57,7 @@ describe('add music (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Vinyl' }).click();
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.locator('#artist-error').innerText(), 'Artist is required');
@@ -71,7 +71,7 @@ describe('add music (e2e)', () => {
     await page.locator('#title').fill('The Wall');
     await page.getByRole('combobox', { name: 'Artist' }).click();
     await page.getByRole('option', { name: 'Pink Floyd' }).click();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/musics/new-id');
 
     assert.equal(await sameDocument(), true);
@@ -121,7 +121,7 @@ describe('add music (e2e)', () => {
 
     // A track without a title is flagged on its row, with every row kept.
     await page.getByLabel('Track 2 title').fill('');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.locator('[id$="trackTitle-error"]').waitFor();
     assert.equal(await page.locator('[id$="trackTitle-error"]').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Track 1 title').inputValue(), 'Another Brick in the Wall');
@@ -130,7 +130,7 @@ describe('add music (e2e)', () => {
     assert.equal(saved.length, 0);
 
     await page.getByLabel('Track 2 title').fill('The Thin Ice');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/musics/new-id');
 
     assert.deepEqual(saved, [

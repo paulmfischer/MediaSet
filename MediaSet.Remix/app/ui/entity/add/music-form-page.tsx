@@ -9,6 +9,7 @@ import { MultiSelectInput } from '../../forms/public/multi-select-input.tsx';
 import { ImageInput } from '../../forms/public/image-input.tsx';
 import { BarcodeScannerDialog } from '../../forms/public/barcode-scanner-dialog.tsx';
 import { ScanButton } from '../../forms/public/scan-button.tsx';
+import { CancelButton } from '../../forms/public/cancel-button.tsx';
 import { SaveButton } from '../../forms/public/save-button.tsx';
 import { TrackListInput } from '../../forms/public/track-list-input.tsx';
 import { SingleSelectInput } from '../../forms/public/single-select-input.tsx';
@@ -24,6 +25,8 @@ interface MusicFormPageProps {
   heading: string;
   action: string;
   cancelHref: string;
+  /** The submit button's text, for example "Add Movie" or "Update". */
+  submitLabel: string;
   values: MusicFormValues;
   /** First validation message per field name. */
   errors: Record<string, string>;
@@ -63,6 +66,7 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
       heading,
       action,
       cancelHref,
+      submitLabel,
       values,
       errors,
       formError,
@@ -262,11 +266,9 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
             <legend class="block text-sm font-medium text-gray-200 mb-1">Track list</legend>
             <TrackListInput rows={values.trackList} errors={errors} />
           </fieldset>
-          <div class="flex gap-2 justify-end">
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
-            <SaveButton label="Save" pendingLabel="Saving…" />
+          <div class="flex flex-row gap-2">
+            <SaveButton label={submitLabel} pendingLabel={`${submitLabel}…`} />
+            <CancelButton fallbackHref={cancelHref} />
           </div>
           {lookup?.dialog ? <LookupDialog {...lookup.dialog} /> : null}
           {lookup?.available ? <BarcodeScannerDialog field="barcode" identifierLabel="barcode" /> : null}

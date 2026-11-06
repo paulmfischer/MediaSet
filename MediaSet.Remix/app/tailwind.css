@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   /* The design is dark-only (see darkMode in tailwind.config.ts): tell the browser, so native controls,
      scrollbars and the default canvas match. */

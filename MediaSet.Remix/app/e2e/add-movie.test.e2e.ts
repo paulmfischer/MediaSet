@@ -56,7 +56,7 @@ describe('add movie (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Blu-ray' }).click();
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Runtime (minutes)').inputValue(), '117');
@@ -67,7 +67,7 @@ describe('add movie (e2e)', () => {
     assert.equal(saved.length, 0);
 
     await page.locator('#title').fill('Alien');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
     await page.waitForURL('**/movies/new-id');
 
     assert.equal(await sameDocument(), true);
@@ -95,5 +95,18 @@ describe('add movie (e2e)', () => {
     assert.equal(await colorOf('#title'), 'rgb(255, 255, 255)');
     assert.equal(await colorOf('#barcode'), 'rgb(255, 255, 255)');
     assert.equal(await colorOf('#plot'), 'rgb(255, 255, 255)');
+  });
+
+  it('goes back in history on Cancel', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Add' }).click();
+    await page.waitForURL('**/movies/add');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/movies');
   });
 });
