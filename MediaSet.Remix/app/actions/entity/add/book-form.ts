@@ -1,0 +1,127 @@
+import type { InferOutput } from 'remix/data-schema';
+import * as f from 'remix/data-schema/form-data';
+
+import { Entity, type BookEntity } from '../../../models.ts';
+import {
+  blankToUndefined,
+  optionalHttpUrl,
+  optionalWholeNumber,
+  requiredText,
+  text,
+  textList,
+} from '../../forms/form-schema.ts';
+
+export const bookForm = f.object({
+  title: f.field(requiredText('Title is required')),
+  isbn: f.field(text()),
+  subtitle: f.field(text()),
+  format: f.field(text()),
+  pages: f.field(optionalWholeNumber('Pages must be a whole number from 0 to 999999')),
+  publicationDate: f.field(text()),
+  authors: textList('authors'),
+  genres: textList('genres'),
+  publisher: f.field(text()),
+  plot: f.field(text()),
+  imageUrl: f.field(optionalHttpUrl('Enter a valid http or https image URL')),
+});
+
+export const BOOK_FIELDS = {
+  single: [
+    'title',
+    'lookupAuthor',
+    'isbn',
+    'subtitle',
+    'format',
+    'pages',
+    'publicationDate',
+    'publisher',
+    'plot',
+    'imageUrl',
+  ],
+  repeated: ['authors', 'genres'],
+} as const;
+
+export type BookFormValues = {
+  title: string;
+  /** Narrows a title lookup; it is not saved with the book. */
+  lookupAuthor: string;
+  isbn: string;
+  subtitle: string;
+  format: string;
+  pages: string;
+  publicationDate: string;
+  publisher: string;
+  plot: string;
+  imageUrl: string;
+  authors: string[];
+  genres: string[];
+};
+
+export const emptyBookValues: BookFormValues = {
+  title: '',
+  lookupAuthor: '',
+  isbn: '',
+  subtitle: '',
+  format: '',
+  pages: '',
+  publicationDate: '',
+  publisher: '',
+  plot: '',
+  imageUrl: '',
+  authors: [],
+  genres: [],
+};
+
+type ParsedBook = InferOutput<typeof bookForm>;
+
+/** Builds the API payload from validated form output; empty optional text is left out. */
+export function toBookEntity(parsed: ParsedBook): BookEntity {
+  return {
+    type: Entity.Books,
+    title: parsed.title,
+    isbn: blankToUndefined(parsed.isbn),
+    subtitle: blankToUndefined(parsed.subtitle),
+    format: blankToUndefined(parsed.format),
+    pages: parsed.pages,
+    publicationDate: blankToUndefined(parsed.publicationDate),
+    publisher: blankToUndefined(parsed.publisher),
+    plot: blankToUndefined(parsed.plot),
+    imageUrl: blankToUndefined(parsed.imageUrl),
+    authors: parsed.authors,
+    genres: parsed.genres,
+  };
+}
+
+/** Form values for an existing book, as the edit form shows them. */
+export function toBookValues(book: BookEntity): BookFormValues {
+  return {
+    title: book.title ?? '',
+    // Starts as the book's first author, so a title lookup from the edit form is narrowed by it.
+    lookupAuthor: book.authors?.[0] ?? '',
+    isbn: book.isbn ?? '',
+    subtitle: book.subtitle ?? '',
+    format: book.format ?? '',
+    pages: typeof book.pages === 'number' ? String(book.pages) : '',
+    publicationDate: book.publicationDate ?? '',
+    publisher: book.publisher ?? '',
+    plot: book.plot ?? '',
+    imageUrl: book.imageUrl ?? '',
+    authors: book.authors ?? [],
+    genres: book.genres ?? [],
+  };
+}
+
+/**
+ * The API payload for an edit: the existing book with the form's fields applied; cleared fields are
+ * dropped, and `removeImage` drops the saved cover image.
+ */
+export function toBookUpdate(existing: BookEntity, parsed: ParsedBook, removeImage = false): BookEntity {
+  // The API deletes the stored image when the update carries none; a newly entered URL still replaces it.
+  const entity = toBookEntity(parsed);
+  return {
+    ...existing,
+    ...entity,
+    coverImage: removeImage ? undefined : existing.coverImage,
+    imageUrl: removeImage && entity.imageUrl === existing.imageUrl ? undefined : entity.imageUrl,
+  };
+}

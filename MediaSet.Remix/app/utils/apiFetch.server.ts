@@ -19,6 +19,14 @@ function generateRandomHex(length: number): string {
     .join('');
 }
 
+/** Creates a fresh W3C trace context: 00-{traceId}-{spanId}-01. */
+export function createRequestContext(): RequestContext {
+  const traceId = generateRandomHex(32); // 128-bit trace ID
+  const spanId = generateRandomHex(16); // 64-bit span ID
+  const traceparent = `00-${traceId}-${spanId}-01`; // 01 = sampled/recorded
+  return { traceId, spanId, traceparent };
+}
+
 /**
  * Gets or initializes the request context with W3C traceparent header format.
  * If a context already exists for this request, returns it.
@@ -35,11 +43,7 @@ export function initializeRequestContext(): RequestContext {
     return existingContext;
   }
 
-  const traceId = generateRandomHex(32); // 128-bit trace ID
-  const spanId = generateRandomHex(16); // 64-bit span ID
-  const traceparent = `00-${traceId}-${spanId}-01`; // 01 = sampled/recorded
-
-  const context: RequestContext = { traceId, spanId, traceparent };
+  const context = createRequestContext();
   requestContextStorage.enterWith(context);
   return context;
 }

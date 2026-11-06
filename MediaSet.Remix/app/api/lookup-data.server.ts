@@ -1,18 +1,18 @@
-import { baseUrl } from '~/constants.server';
-import { singular } from '~/utils/helpers';
+import { baseUrl } from '../constants.server.ts';
+import { singular } from '../utils/helpers.ts';
 import {
-  BookEntity,
-  MovieEntity,
-  GameEntity,
-  MusicEntity,
+  type BookEntity,
+  type MovieEntity,
+  type GameEntity,
+  type MusicEntity,
   Entity,
-  IdentifierType,
-  BookLookupResponse,
-  MovieLookupResponse,
-  GameLookupResponse,
-  MusicLookupResponse,
-  LookupError,
-} from '~/models';
+  type IdentifierType,
+  type BookLookupResponse,
+  type MovieLookupResponse,
+  type GameLookupResponse,
+  type MusicLookupResponse,
+  type LookupError,
+} from '../models.ts';
 
 type Link = {
   name: string;
@@ -81,77 +81,73 @@ export async function lookup(
   if (entityType === Entity.Books) {
     const bookLookups = (await response.json()) as BookLookupResponse[];
     return bookLookups.map(
-      (bookLookup) =>
-        ({
-          type: Entity.Books,
-          authors: bookLookup.authors?.map(linkMap),
-          pages: bookLookup.numberOfPages,
-          isbn: isEntitySearch ? undefined : searchParams['isbn'],
-          publicationDate: bookLookup.publishDate,
-          publisher: bookLookup.publishers?.[0]?.name,
-          title: bookLookup.title,
-          subtitle: bookLookup.subtitle,
-          genres: bookLookup.subjects?.map(linkMap),
-          format: bookLookup.format,
-          imageUrl: bookLookup.imageUrl,
-        }) as BookEntity
+      (bookLookup): BookEntity => ({
+        type: Entity.Books,
+        authors: bookLookup.authors?.map(linkMap),
+        pages: bookLookup.numberOfPages,
+        isbn: isEntitySearch ? undefined : searchParams['isbn'],
+        publicationDate: bookLookup.publishDate,
+        publisher: bookLookup.publishers?.[0]?.name,
+        title: bookLookup.title,
+        subtitle: bookLookup.subtitle,
+        genres: bookLookup.subjects?.map(linkMap),
+        format: bookLookup.format,
+        imageUrl: bookLookup.imageUrl,
+      })
     );
   } else if (entityType === Entity.Movies) {
     const movieLookups = (await response.json()) as MovieLookupResponse[];
     return movieLookups.map(
-      (movieLookup) =>
-        ({
-          type: Entity.Movies,
-          title: movieLookup.title,
-          genres: movieLookup.genres,
-          studios: movieLookup.studios,
-          releaseDate: movieLookup.releaseDate,
-          rating: movieLookup.rating,
-          runtime: movieLookup.runtime ?? undefined,
-          plot: movieLookup.plot,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
-          format: movieLookup.format,
-          imageUrl: movieLookup.imageUrl,
-        }) as MovieEntity
+      (movieLookup): MovieEntity => ({
+        type: Entity.Movies,
+        title: movieLookup.title,
+        genres: movieLookup.genres,
+        studios: movieLookup.studios,
+        releaseDate: movieLookup.releaseDate,
+        rating: movieLookup.rating,
+        runtime: movieLookup.runtime ?? undefined,
+        plot: movieLookup.plot,
+        barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
+        format: movieLookup.format,
+        imageUrl: movieLookup.imageUrl,
+      })
     );
   } else if (entityType === Entity.Games) {
     const gameLookups = (await response.json()) as GameLookupResponse[];
     return gameLookups.map(
-      (gameLookup) =>
-        ({
-          type: Entity.Games,
-          title: gameLookup.title,
-          platform: gameLookup.platform,
-          genres: gameLookup.genres,
-          developers: gameLookup.developers,
-          publishers: gameLookup.publishers,
-          releaseDate: gameLookup.releaseDate,
-          rating: gameLookup.rating,
-          description: gameLookup.description,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
-          format: gameLookup.format,
-          imageUrl: gameLookup.imageUrl,
-        }) as GameEntity
+      (gameLookup): GameEntity => ({
+        type: Entity.Games,
+        title: gameLookup.title,
+        platform: gameLookup.platform,
+        genres: gameLookup.genres,
+        developers: gameLookup.developers,
+        publishers: gameLookup.publishers,
+        releaseDate: gameLookup.releaseDate,
+        rating: gameLookup.rating,
+        description: gameLookup.description,
+        barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
+        format: gameLookup.format,
+        imageUrl: gameLookup.imageUrl,
+      })
     );
   } else if (entityType === Entity.Musics) {
     const musicLookups = (await response.json()) as MusicLookupResponse[];
     return musicLookups.map(
-      (musicLookup) =>
-        ({
-          type: Entity.Musics,
-          title: musicLookup.title,
-          artist: musicLookup.artist,
-          releaseDate: musicLookup.releaseDate,
-          genres: musicLookup.genres,
-          duration: musicLookup.duration ?? undefined,
-          label: musicLookup.label,
-          tracks: musicLookup.tracks ?? undefined,
-          discs: musicLookup.discs ?? undefined,
-          discList: musicLookup.discList,
-          barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
-          format: musicLookup.format,
-          imageUrl: musicLookup.imageUrl,
-        }) as MusicEntity
+      (musicLookup): MusicEntity => ({
+        type: Entity.Musics,
+        title: musicLookup.title,
+        artist: musicLookup.artist,
+        releaseDate: musicLookup.releaseDate,
+        genres: musicLookup.genres,
+        duration: musicLookup.duration ?? undefined,
+        label: musicLookup.label,
+        tracks: musicLookup.tracks ?? undefined,
+        discs: musicLookup.discs ?? undefined,
+        discList: musicLookup.discList,
+        barcode: isEntitySearch ? undefined : (searchParams['upc'] ?? searchParams['ean'] ?? searchParams['barcode']),
+        format: musicLookup.format,
+        imageUrl: musicLookup.imageUrl,
+      })
     );
   }
 

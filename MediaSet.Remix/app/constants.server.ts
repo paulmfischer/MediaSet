@@ -6,7 +6,7 @@ export const baseUrl =
   process.env.apiUrl || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5000' : 'http://localhost:7130');
 
 /**
- * Browser API URL. Vite proxies development requests on the UI's origin,
+ * Browser API URL. The development server proxies requests on the UI's origin,
  * including HTTPS mobile requests. Production supplies an external API URL.
  */
 export const clientApiUrl =

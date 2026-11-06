@@ -1,6 +1,6 @@
-import { baseUrl } from '~/constants.server';
-import { serverLogger } from '~/utils/serverLogger';
-import { apiFetch } from '~/utils/apiFetch.server';
+import { baseUrl } from '../constants.server.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type BrokenImageLink = {
   entityId: string;

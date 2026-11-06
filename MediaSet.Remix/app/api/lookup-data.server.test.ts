@@ -1,26 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mockApiResponse } from '~/test/mocks';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
 
-// Now import after mocking
-import { lookup, getIdentifierTypeForField, isLookupError } from '~/api/lookup-data.server';
+import { mockApiResponse } from '../test/fetch-fakes.ts';
+
+import { lookup, getIdentifierTypeForField, isLookupError } from './lookup-data.server.ts';
 import {
   Entity,
-  IdentifierType,
-  BookLookupResponse,
-  MovieLookupResponse,
-  GameLookupResponse,
-  MusicLookupResponse,
-} from '~/models';
+  type IdentifierType,
+  type BookLookupResponse,
+  type MovieLookupResponse,
+  type GameLookupResponse,
+  type MusicLookupResponse,
+} from '../models.ts';
 
 describe('lookup-data.server.ts', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   describe('getIdentifierTypeForField', () => {
     it('returns "entity" for title field', () => {
       expect(getIdentifierTypeForField(Entity.Books, 'title')).toBe('entity');
@@ -52,8 +45,8 @@ describe('lookup-data.server.ts', () => {
 
   describe('lookup', () => {
     describe('error handling', () => {
-      it('returns a LookupError when the response is not ok', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce(new Response('Not found', { status: 404 }));
+      it('returns a LookupError when the response is not ok', async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => new Response('Not found', { status: 404 }));
 
         const result = await lookup(Entity.Books, 'isbn', { isbn: '9781234567890' });
 
@@ -63,8 +56,8 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('returns a LookupError with a fallback message when body is empty', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce(new Response('', { status: 500 }));
+      it('returns a LookupError with a fallback message when body is empty', async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => new Response('', { status: 500 }));
 
         const result = await lookup(Entity.Movies, 'upc', { barcode: '123456789' });
 
@@ -85,21 +78,20 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('encodes path traversal sequences in identifierValue', async () => {
-        const fetchSpy = vi.fn().mockResolvedValueOnce(mockApiResponse([]));
-        global.fetch = fetchSpy;
+      it('encodes path traversal sequences in identifierValue', async (t) => {
+        const fetchSpy = t.mock.method(globalThis, 'fetch', async () => mockApiResponse([]));
 
         await lookup(Entity.Books, 'isbn', { isbn: '../../admin/delete' });
 
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        const calledUrl = fetchSpy.mock.calls[0][0] as string;
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const [calledUrl] = fetchSpy.mock.calls[0].arguments as unknown as [string];
         expect(calledUrl).not.toContain('../');
         expect(calledUrl).toContain(encodeURIComponent('../../admin/delete'));
       });
     });
 
     describe('book isbn lookup', () => {
-      it('retains the isbn value in the returned entity', async () => {
+      it('retains the isbn value in the returned entity', async (t) => {
         const isbnValue = '9781234567890';
         const mockResponse: BookLookupResponse[] = [
           {
@@ -114,7 +106,7 @@ describe('lookup-data.server.ts', () => {
             imageUrl: 'http://example.com/cover.jpg',
           },
         ];
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockResponse));
 
         const result = await lookup(Entity.Books, 'isbn', { isbn: isbnValue });
 
@@ -126,7 +118,7 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('does not set isbn for entity (title) searches', async () => {
+      it('does not set isbn for entity (title) searches', async (t) => {
         const mockResponse: BookLookupResponse[] = [
           {
             title: 'Test Book',
@@ -138,7 +130,7 @@ describe('lookup-data.server.ts', () => {
             subjects: [],
           },
         ];
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockResponse));
 
         const result = await lookup(Entity.Books, 'entity', { title: 'Test Book' });
 
@@ -164,9 +156,9 @@ describe('lookup-data.server.ts', () => {
         },
       ];
 
-      it('retains the barcode value when searchParams uses "barcode" key', async () => {
+      it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '012345678901';
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockMovieResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
         const result = await lookup(Entity.Movies, 'upc', { barcode: barcodeValue });
 
@@ -178,9 +170,9 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('retains the barcode value when searchParams uses "upc" key', async () => {
+      it('retains the barcode value when searchParams uses "upc" key', async (t) => {
         const upcValue = '012345678901';
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockMovieResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
         const result = await lookup(Entity.Movies, 'upc', { upc: upcValue });
 
@@ -190,8 +182,8 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('does not set barcode for entity (title) searches', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockMovieResponse));
+      it('does not set barcode for entity (title) searches', async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMovieResponse));
 
         const result = await lookup(Entity.Movies, 'entity', { title: 'Test Movie' });
 
@@ -217,9 +209,9 @@ describe('lookup-data.server.ts', () => {
         },
       ];
 
-      it('retains the barcode value when searchParams uses "barcode" key', async () => {
+      it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '711719541486';
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockGameResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockGameResponse));
 
         const result = await lookup(Entity.Games, 'upc', { barcode: barcodeValue });
 
@@ -231,8 +223,8 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('does not set barcode for entity (title) searches', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockGameResponse));
+      it('does not set barcode for entity (title) searches', async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockGameResponse));
 
         const result = await lookup(Entity.Games, 'entity', { title: 'Test Game' });
 
@@ -259,9 +251,9 @@ describe('lookup-data.server.ts', () => {
         },
       ];
 
-      it('retains the barcode value when searchParams uses "barcode" key', async () => {
+      it('retains the barcode value when searchParams uses "barcode" key', async (t) => {
         const barcodeValue = '093624936428';
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockMusicResponse));
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMusicResponse));
 
         const result = await lookup(Entity.Musics, 'upc', { barcode: barcodeValue });
 
@@ -273,8 +265,8 @@ describe('lookup-data.server.ts', () => {
         }
       });
 
-      it('does not set barcode for entity (title) searches', async () => {
-        global.fetch = vi.fn().mockResolvedValueOnce(mockApiResponse(mockMusicResponse));
+      it('does not set barcode for entity (title) searches', async (t) => {
+        t.mock.method(globalThis, 'fetch', async () => mockApiResponse(mockMusicResponse));
 
         const result = await lookup(Entity.Musics, 'entity', { title: 'Test Album' });
 

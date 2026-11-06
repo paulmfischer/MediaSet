@@ -1,0 +1,131 @@
+import * as assert from 'remix/assert';
+import { createTestServer } from 'remix/node-fetch-server/test';
+import { describe, it } from 'remix/test';
+
+import { submitButton } from './form-buttons.ts';
+import { router } from '../router.ts';
+
+const metadata: Record<string, string[]> = {
+  studios: ['Universal', '20th Century Fox'],
+  genres: ['Horror'],
+  format: ['Blu-ray', 'DVD'],
+};
+
+// Serves metadata and the (empty) movie list, and records the movies the form saves.
+function stubApi(t: { after: (fn: () => void) => void }) {
+  const original = globalThis.fetch;
+  const saved: Array<Record<string, unknown>> = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init);
+    const url = new URL(request.url);
+    if (request.method === 'POST') {
+      saved.push((await request.json()) as Record<string, unknown>);
+      return Response.json({ id: 'new-id' }, { status: 201 });
+    }
+    if (url.pathname.endsWith('/Movies/new-id')) {
+      return Response.json({ id: 'new-id', type: 'Movies', title: 'Alien' });
+    }
+    if (url.pathname.endsWith('/pagedsearch')) {
+      return Response.json({ items: [], totalCount: 0, page: 1, pageSize: 75, totalPages: 0 });
+    }
+    return Response.json(metadata[url.pathname.split('/').pop() ?? ''] ?? []);
+  }) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  return saved;
+}
+
+describe('add movie (e2e)', () => {
+  it('shows the error with input preserved, then saves and redirects, without a full reload', async (t) => {
+    const saved = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/movies/add');
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => {
+      (window as unknown as { sameDocument: boolean }).sameDocument = true;
+    });
+    const sameDocument = () =>
+      page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument === true);
+
+    await page.getByLabel('Runtime (minutes)').fill('117');
+    await page.getByLabel('Is TV Series').check();
+    const studios = page.getByRole('combobox', { name: 'Studios' });
+    await studios.click();
+    await page.getByRole('option', { name: '20th Century Fox' }).click();
+    await page.getByRole('combobox', { name: 'Format' }).click();
+    await page.getByRole('option', { name: 'Blu-ray' }).click();
+
+    await submitButton(page, 'add', 'Movie').click();
+    await page.locator('#title-error').waitFor();
+    assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
+    assert.equal(await page.getByLabel('Runtime (minutes)').inputValue(), '117');
+    assert.equal(await page.getByLabel('Is TV Series').isChecked(), true);
+    await page.getByRole('button', { name: 'Remove 20th Century Fox' }).waitFor();
+    await page.getByRole('button', { name: 'Clear Blu-ray' }).waitFor();
+    assert.equal(new URL(page.url()).pathname, '/movies/add');
+    assert.equal(saved.length, 0);
+
+    await page.locator('#title').fill('Alien');
+    await submitButton(page, 'add', 'Movie').click();
+    await page.waitForURL('**/movies/new-id');
+
+    assert.equal(await sameDocument(), true);
+    assert.deepEqual(saved, [
+      {
+        type: 'Movies',
+        title: 'Alien',
+        format: 'Blu-ray',
+        runtime: 117,
+        isTvSeries: true,
+        studios: ['20th Century Fox'],
+        genres: [],
+      },
+    ]);
+  });
+
+  it('shows typed text in the form inputs in white, not the dark base colour', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/add');
+    await page.waitForLoadState('networkidle');
+
+    const colorOf = (selector: string) => page.locator(selector).evaluate((node) => getComputedStyle(node).color);
+
+    assert.equal(await colorOf('#title'), 'rgb(255, 255, 255)');
+    assert.equal(await colorOf('#barcode'), 'rgb(255, 255, 255)');
+    assert.equal(await colorOf('#plot'), 'rgb(255, 255, 255)');
+  });
+
+  it('leaves the form on Cancel, even after a failed save', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('link', { name: 'Add' }).click();
+    await page.waitForURL('**/movies/add');
+    await page.waitForLoadState('networkidle');
+
+    // A failed save re-renders the form at the same URL (another history entry); Cancel still leaves it.
+    await submitButton(page, 'add', 'Movie').click();
+    await page.locator('#title-error').waitFor();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/movies');
+    await page.getByRole('heading', { name: 'Movies', level: 1 }).waitFor();
+    assert.equal(await page.getByRole('heading', { name: 'Add Movie' }).count(), 0);
+  });
+
+  it('leaves for the list on Cancel without JavaScript, saving nothing', async (t) => {
+    const saved = stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.route('**/assets/**', (route) => route.abort());
+    await page.goto('/movies/add');
+    await page.locator('#title').fill('Typed');
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/movies');
+    assert.equal(await page.getByRole('heading', { name: 'Movies', level: 1 }).count(), 1);
+    assert.equal(saved.length, 0);
+  });
+});

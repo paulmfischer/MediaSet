@@ -18,15 +18,25 @@
       "name": "Launch UI",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev -- --open",
-      "cwd": "${workspaceFolder}/MediaSet.Remix"
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/MediaSet.Remix",
+      "serverReadyAction": {
+        "pattern": "Local: (https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
     },
     {
       "name": "Launch UI — Mobile HTTPS",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev:mobile -- --open",
-      "cwd": "${workspaceFolder}/MediaSet.Remix"
+      "command": "npm run dev:mobile",
+      "cwd": "${workspaceFolder}/MediaSet.Remix",
+      "serverReadyAction": {
+        "pattern": "Local: (https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
     }
   ],
   "compounds": [

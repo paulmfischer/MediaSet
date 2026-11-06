@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss';
-import plugin from 'tailwindcss/plugin';
-import colors from 'tailwindcss/colors';
+import plugin from 'tailwindcss/plugin.js';
+import colors from 'tailwindcss/colors.js';
 
 function hexToRgbChannels(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -17,6 +17,8 @@ const ENTITY_COLORS = {
 };
 
 export default {
+  // The design is dark-only: `<html class="dark">` always applies the `dark:` styles, whatever the OS theme.
+  darkMode: 'class',
   content: ['./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {

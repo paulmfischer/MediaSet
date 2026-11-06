@@ -1,23 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { expect } from 'remix/assert';
+import { describe, it } from 'remix/test';
 
-const { mockApiFetch } = vi.hoisted(() => ({
-  mockApiFetch: vi.fn(),
-}));
+import { mockFetch } from '../test/fetch-fakes.ts';
 
-vi.mock('~/utils/apiFetch.server', () => ({
-  apiFetch: mockApiFetch,
-}));
-
-vi.mock('~/utils/serverLogger', () => ({
-  serverLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
-import { getImageStats } from '~/api/image-stats-data';
+import { getImageStats } from './image-stats-data.ts';
 
 const mockStats = {
   totalFiles: 42,
@@ -32,22 +18,10 @@ const mockStats = {
 };
 
 describe('image-stats-data.ts', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockApiFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({}),
-    });
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   describe('getImageStats', () => {
-    it('should return full image stats including broken links and orphaned files', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should return full image stats including broken links and orphaned files', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
         status: 200,
         json: async () => mockStats,
@@ -60,8 +34,9 @@ describe('image-stats-data.ts', () => {
       expect(result?.orphanedFiles).toHaveLength(1);
     });
 
-    it('should return null on 204 No Content', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should return null on 204 No Content', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: true,
         status: 204,
         json: async () => null,
@@ -72,8 +47,9 @@ describe('image-stats-data.ts', () => {
       expect(result).toBeNull();
     });
 
-    it('should throw Response on non-ok status', async () => {
-      mockApiFetch.mockResolvedValueOnce({
+    it('should throw Response on non-ok status', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
         ok: false,
         status: 500,
         json: async () => null,
@@ -82,8 +58,9 @@ describe('image-stats-data.ts', () => {
       await expect(getImageStats()).rejects.toBeInstanceOf(Response);
     });
 
-    it('should throw on network error', async () => {
-      mockApiFetch.mockRejectedValueOnce(new Error('Network error'));
+    it('should throw on network error', async (t) => {
+      const api = mockFetch(t);
+      api.rejectOnce(new Error('Network error'));
 
       await expect(getImageStats()).rejects.toThrow('Network error');
     });

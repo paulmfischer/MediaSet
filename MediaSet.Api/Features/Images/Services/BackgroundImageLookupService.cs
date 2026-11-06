@@ -287,7 +287,7 @@ public class BackgroundImageLookupService : BackgroundService
             MediaTypes.Movies => await GetEntitiesAsync<Movie>(databaseService, limit, cancellationToken),
             MediaTypes.Games => await GetEntitiesAsync<Game>(databaseService, limit, cancellationToken),
             MediaTypes.Musics => await GetEntitiesAsync<Music>(databaseService, limit, cancellationToken),
-            _ => (new List<IEntity>(), null!)
+            _ => ([], null!)
         };
     }
 

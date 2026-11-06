@@ -1,8 +1,8 @@
-import { baseUrl } from '~/constants.server';
-import { singular } from '~/utils/helpers';
-import { BaseEntity, Entity } from '~/models';
-import { serverLogger } from '~/utils/serverLogger';
-import { apiFetch } from '~/utils/apiFetch.server';
+import { baseUrl } from '../constants.server.ts';
+import { singular } from '../utils/helpers.ts';
+import { type BaseEntity, type Entity } from '../models.ts';
+import { serverLogger } from '../utils/serverLogger.ts';
+import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type PagedResult<TEntity> = {
   items: TEntity[];
@@ -103,7 +103,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
   serverLogger.info(`Fetching ${singular(entityType)} with id ${id}`, { operation: 'getEntity', entityType, id });
   try {
-    const response = await apiFetch(`${baseUrl}/${entityType}/${id}`);
+    const response = await apiFetch(`${baseUrl}/${entityType}/${encodeURIComponent(id)}`);
     if (response.status === 404) {
       serverLogger.warn(`${singular(entityType)} with id ${id} not found`, {
         operation: 'getEntity',
@@ -171,7 +171,12 @@ export async function updateEntity<TEntity extends BaseEntity>(
         id,
         status: response.status,
       });
-      throw new Response(`Error updating a ${singular(entityType)}`, { status: 500 });
+      // A 4xx is the API rejecting the entity (or a missing one); keep its status and message so callers can show them.
+      const rejected = response.status >= 400 && response.status < 500;
+      const message = rejected ? (await response.text()).trim() : '';
+      throw new Response(message || `Error updating a ${singular(entityType)}`, {
+        status: rejected ? response.status : 500,
+      });
     }
     serverLogger.info(`Successfully updated ${singular(entityType)} with id ${id}`, {
       operation: 'updateEntity',
@@ -214,7 +219,12 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, for
         entityType,
         status: response.status,
       });
-      throw new Response(`Error creating a new ${singular(entityType)}`, { status: 500 });
+      // A 4xx is the API rejecting the entity; keep its status and message so callers can show them.
+      const rejected = response.status >= 400 && response.status < 500;
+      const message = rejected ? (await response.text()).trim() : '';
+      throw new Response(message || `Error creating a new ${singular(entityType)}`, {
+        status: rejected ? response.status : 500,
+      });
     }
     const newEntity = (await response.json()) as TEntity;
     serverLogger.info(`Successfully created new ${singular(entityType)} with id ${(newEntity as { id?: string }).id}`, {
@@ -245,7 +255,9 @@ export async function deleteEntity(entity: Entity, id: string): Promise<void> {
         id,
         status: response.status,
       });
-      throw new Response(`Error deleting ${singular(entity)} with id: ${id}`, { status: 500 });
+      throw new Response(`Error deleting ${singular(entity)} with id: ${id}`, {
+        status: response.status === 404 ? 404 : 500,
+      });
     }
     serverLogger.info(`Successfully deleted ${singular(entity)} with id ${id}`, {
       operation: 'deleteEntity',

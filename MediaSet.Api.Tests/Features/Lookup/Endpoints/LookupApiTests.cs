@@ -87,11 +87,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Effective Java",
             "Best Practices for the Java Platform",
-            new List<Author> { new Author("Joshua Bloch", "/authors/OL1234A") },
+            [new Author("Joshua Bloch", "/authors/OL1234A")],
             416,
-            new List<Publisher> { new Publisher("Addison-Wesley") },
+            [new Publisher("Addison-Wesley")],
             "2018-01-06",
-            new List<Subject> { new Subject("Programming", "/subjects/programming") },
+            [new Subject("Programming", "/subjects/programming")],
             "Hardcover"
         );
 
@@ -148,11 +148,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Test Book",
             "A Test",
-            new List<Author> { new Author("Test Author", "/authors/OL5678A") },
+            [new Author("Test Author", "/authors/OL5678A")],
             300,
-            new List<Publisher> { new Publisher("Test Publisher") },
+            [new Publisher("Test Publisher")],
             "2018",
-            new List<Subject>(),
+            [],
             "Paperback"
         );
 
@@ -182,11 +182,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "OCLC Book",
             "",
-            new List<Author> { new Author("OCLC Author", "/authors/OL9012A") },
+            [new Author("OCLC Author", "/authors/OL9012A")],
             250,
-            new List<Publisher> { new Publisher("OCLC Publisher") },
+            [new Publisher("OCLC Publisher")],
             "2019",
-            new List<Subject>(),
+            [],
             null
         );
 
@@ -216,11 +216,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "OpenLibrary Book",
             "An ID Test",
-            new List<Author> { new Author("OL Author", "/authors/OL3456A") },
+            [new Author("OL Author", "/authors/OL3456A")],
             200,
-            new List<Publisher> { new Publisher("OL Publisher") },
+            [new Publisher("OL Publisher")],
             "2020",
-            new List<Subject>(),
+            [],
             "eBook"
         );
 
@@ -271,11 +271,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Test Book",
             "",
-            new List<Author> { new Author("Author", "/authors/OL1A") },
+            [new Author("Author", "/authors/OL1A")],
             300,
-            new List<Publisher> { new Publisher("Publisher") },
+            [new Publisher("Publisher")],
             "2020",
-            new List<Subject>(),
+            [],
             null
         );
 
@@ -303,16 +303,15 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Clean Code",
             "A Handbook of Agile Software Craftsmanship",
-            new List<Author>
-            {
+            [
                 new Author("Robert C. Martin", "/authors/OL1A"),
                 new Author("Contributor One", "/authors/OL2A"),
                 new Author("Contributor Two", "/authors/OL3A")
-            },
+            ],
             464,
-            new List<Publisher> { new Publisher("Prentice Hall") },
+            [new Publisher("Prentice Hall")],
             "2008",
-            new List<Subject> { new Subject("Software Engineering", "/subjects/software") },
+            [new Subject("Software Engineering", "/subjects/software")],
             "Hardcover"
         );
 
@@ -345,15 +344,14 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "The Pragmatic Programmer",
             "From Journeyman to Master",
-            new List<Author> { new Author("Andrew Hunt", "/authors/OL4A") },
+            [new Author("Andrew Hunt", "/authors/OL4A")],
             352,
-            new List<Publisher>
-            {
+            [
                 new Publisher("Addison-Wesley"),
                 new Publisher("Pearson Education")
-            },
+            ],
             "1999",
-            new List<Subject>(),
+            [],
             "Paperback"
         );
 
@@ -385,16 +383,15 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Head First Design Patterns",
             "",
-            new List<Author> { new Author("Eric Freeman", "/authors/OL5A") },
+            [new Author("Eric Freeman", "/authors/OL5A")],
             694,
-            new List<Publisher> { new Publisher("O'Reilly Media") },
+            [new Publisher("O'Reilly Media")],
             "2004",
-            new List<Subject>
-            {
+            [
                 new Subject("Software Engineering", "/subjects/software_engineering"),
                 new Subject("Design Patterns", "/subjects/design_patterns"),
                 new Subject("Object-Oriented Programming", "/subjects/oop")
-            },
+            ],
             "Paperback"
         );
 
@@ -427,11 +424,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "1984",
             "",
-            new List<Author> { new Author("George Orwell", "/authors/OL6A") },
+            [new Author("George Orwell", "/authors/OL6A")],
             328,
-            new List<Publisher> { new Publisher("Signet Classics") },
+            [new Publisher("Signet Classics")],
             "1961",
-            new List<Subject> { new Subject("Fiction", "/subjects/fiction") },
+            [new Subject("Fiction", "/subjects/fiction")],
             "Paperback"
         );
 
@@ -460,11 +457,11 @@ public class LookupApiTests : IntegrationTestBase
         var expectedResponse = new BookResponse(
             "Pride and Prejudice",
             "",
-            new List<Author> { new Author("Jane Austen", "/authors/OL7A") },
+            [new Author("Jane Austen", "/authors/OL7A")],
             279,
-            new List<Publisher> { new Publisher("Penguin Classics") },
+            [new Publisher("Penguin Classics")],
             "2002",
-            new List<Subject>(),
+            [],
             null
         );
 

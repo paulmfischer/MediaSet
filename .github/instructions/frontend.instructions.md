@@ -1,99 +1,98 @@
----
-description: Code style and conventions for Remix.js/TypeScript frontend UI
-applyTo: "**/*.ts,**/*.tsx"
----
+# Frontend conventions (Remix 3 / TypeScript)
 
-# Frontend UI Code Style Guide (Remix.js/TypeScript)
+Node runs the TypeScript sources directly; `tsc` only type checks. Import with the explicit
+`.ts` / `.tsx` extension.
 
-## File Organization
+## Structure
 
-- Follow Remix.js routing conventions
-- Place route components in `app/routes/`
-- Place reusable components in `app/components/`
-- Place data functions in `app/*-data.ts` files
-- Place type definitions in `app/models.ts` or co-locate with components
-- Use `.tsx` for files with JSX, `.ts` for pure TypeScript
+- `app/routes.ts` is the route map. Each page area has its own nested map
+  (`routes.entityLists`); link with `routes.*.href()`.
+- `app/actions/<area>/controller.tsx` holds the area's actions, helpers and server tests.
+  `app/ui/<area>/` holds its page components. The two trees mirror each other, with
+  sub-pages in matching sub-folders (`detail`, `add`, `edit`). Register a controller in
+  `app/router.ts` with `router.map(routes.<area>, <area>Controller)`.
+- Layout shared by every page stays at the `app/ui/` root. `app/api/` holds data functions
+  that call the API, `app/models.ts` shared types, `app/utils/` shared helpers.
 
-## Naming Conventions
+## Naming and types
 
-- **Components**: PascalCase class in `kebab-case.tsx` file | `MovieCard` class in `movie-card.tsx`
-- **Functions/variables**: camelCase | `fetchBooks`, `formatTitle`
-- **Interfaces**: PascalCase (optionally `IPascalCase` prefix) | `IBook`, `MovieCardProps`
-- **Constants**: SCREAMING_SNAKE_CASE | `MAX_ITEMS`, `DEFAULT_SORT`
-- **Files**: `kebab-case.ts` or `kebab-case.tsx` | `movie-card.tsx`, `data-functions.ts`
+- Components: PascalCase function in a `kebab-case.tsx` file. Files are `kebab-case`.
+  Functions and variables are camelCase, constants SCREAMING_SNAKE_CASE, interfaces
+  PascalCase.
+- Annotate parameters and return types. No `any`; use `unknown` and type guards.
 
-## TypeScript
+## Actions
 
-- Always use TypeScript for type safety
-- Define interfaces for all data structures
-- Use type annotations for function parameters and return types
-- Avoid `any` type; prefer `unknown` if type is truly unknown
-- Use union types and type guards where appropriate
+- Declare a route once in `routes.ts`; handle it with
+  `createController(routes.<area>, { actions: { ... } })`.
+- An action reads and validates URL and form input (a helper such as `parseListParams` next
+  to it is fine), fetches data, then renders with `context.render(<Document>...</Document>)`
+  or returns `redirect()`. Components never fetch and receive plain, parsed values.
+- Return a user-friendly page with the right status for not-found and failed requests.
 
-## Component Design
+## Forms
 
-- Prefer function components over class components
-- Use React hooks for state and side effects
-- Keep components focused and single-purpose
-- Extract complex logic into custom hooks
-- Use proper prop typing with TypeScript interfaces
-- Memoize expensive components with `React.memo()` when needed
+- Declare an editable page with `form(pattern)`: the controller's `index` renders the form
+  and `action` handles the submit. Use a native `<form method="post">` with named inputs
+  that works without JavaScript.
+- `formData()` middleware (in `router.ts`) provides `context.formData`. Validate it with a
+  `remix/data-schema` schema (`s.parseSafe`) using the helpers in
+  `app/actions/forms/form-schema.ts`, and save `parsed.value`, never the raw form data.
+- On a validation failure, re-render from the same action with status `400`, passing the
+  submitted `values` and `issues` so input is kept and each error is linked to its field
+  with `aria-describedby`. Do not redirect back to the GET page.
+- On success return `redirect(..., 303)`.
+- Use `Field` / `errorProps` (`app/ui/forms/field.tsx`) for labels and errors, and the
+  select and image islands in `app/ui/forms/public/`.
+- Hydrate only what needs it, such as the submit button's pending state, never the whole
+  form.
+- File inputs use `enctype="multipart/form-data"` and `boundedFormData()` for size limits;
+  validate the file in the action.
+- Extra form actions (metadata lookup, applying a result, closing a dialog) are submit
+  buttons with `name="intent"`; the action re-renders with status `200` and never saves.
+  Set a new `formKey` on the render that should replace what the user typed.
+- Browsers only send GET and POST. For PUT, PATCH or DELETE use a hidden `_method` field
+  with `methodOverride()` installed right after `formData()`.
 
-## Remix.js Conventions
+## Components
 
-- Use `loader` functions for data fetching (GET requests)
-- Use `action` functions for mutations (POST, PUT, DELETE)
-- Follow Remix's nested routing patterns
-- Use Remix `Form` component for forms that trigger actions
-- Use `useLoaderData()` and `useActionData()` hooks appropriately
-- Add `CatchBoundary` and `ErrorBoundary` for error handling
+- Components come from `remix/component`:
+  `function Name(handle: Handle<Props>) { return () => ... }`, with props read from
+  `handle.props`. Use `class`, not `className`.
+- Server components render once to HTML with no state or effects; keep most UI this way.
+- Interactivity lives only in client entries under a `public/` folder, declared with
+  `clientEntry(import.meta.url, function Name(handle) { ... })`. State is a closure
+  variable; call `handle.update()` to re-render, `handle.queueTask()` for browser-only
+  work and `handle.signal` for cleanup.
+- Keep components small and single-purpose; put behavior in plain functions.
+
+## Browser boundary
+
+- Code reaches the browser only through the asset server in `app/assets.ts`, which serves
+  `app/**/public/**` plus the files in `allowFiles`. Put every client entry and everything
+  it imports in a `public/` folder.
+- Never import server code (API data functions, config, environment) from a `public/`
+  module; pass what it needs as props.
+- Browser requests use `clientApiUrl`; server-side calls use `apiUrl`.
 
 ## Styling
 
-- Use Tailwind CSS exclusively for styling
-- Prefer utility classes over custom CSS
-- Use consistent spacing and sizing tokens
-- Extract repeated patterns into reusable components
-- Follow mobile-first responsive design approach
-- Utilize global styles in `app/tailwind.css` for common styles
+- Tailwind only, mobile-first, with utility classes and shared tokens. Common styles live
+  in `app/tailwind.css`; buttons use the global button styles, not per-button color or
+  size classes.
+- Use semantic HTML, labels and keyboard-reachable controls.
 
-## Accessibility
+## Tests
 
-- Use semantic HTML elements
-- Provide proper ARIA labels where needed
-- Ensure keyboard navigation works correctly
-- Maintain sufficient color contrast
-- Test with screen readers when possible
-
-## Error Handling
-
-- Handle errors gracefully with user-friendly messages
-- Use error boundaries for component-level error handling
-- Validate form inputs on both client and server
-- Provide loading states for async operations
-- Use Remix error boundaries for route-level errors
-
-## Logging
-
-- Log errors with sufficient context for debugging
-- Use console methods appropriately (console.error for errors, console.info for important info)
-- Avoid verbose logging in production
-
-## Testing
-
-- Use Vitest for unit tests
-- Use React Testing Library for component tests
-- Test naming: `should [expected behavior] when [condition]`
-- Test user interactions over implementation details
-- Mock external dependencies appropriately
-
-## Code Quality Checks
-
-After making changes to the frontend, always verify compliance before committing:
-
-- **ESLint**: `npm run lint` — checks for code quality issues and enforces code style rules
-- **ESLint (auto-fix)**: `npm run lint:fix` — automatically fixes ESLint violations where possible
-- **Prettier**: `npm run lint:format` — checks that all files conform to the project's formatting rules
-- **Prettier (auto-fix)**: `npm run lint:format:fix` — automatically reformats files to conform to Prettier rules
-
-Both check commands must pass without errors. Run them from the `MediaSet.Remix/` directory.
+- Router (server) tests use `remix/test` and `remix/assert`: `describe` / `it` with
+  `router.fetch(new URL(path, 'http://localhost'))`, asserting on status, headers and HTML.
+  They are `*.test.ts(x)` next to the code or controller they cover.
+- Browser tests are `*.test.browser.tsx`; end-to-end tests are `*.test.e2e.ts`
+  (`t.serve(...)` with `createTestServer(router.fetch)`).
+- Module tests (`app/api/`, `app/utils/`, `app/models.ts`) are `*.test.ts` files that also use
+  `remix/test` and `remix/assert`. Data functions call the global `fetch` (through `apiFetch`), so
+  tests mock it per test with `t.mock.method(globalThis, 'fetch', ...)`, which is restored
+  automatically; `mockFetch(t)` in `app/test/fetch-fakes.ts` wraps this. Do not add
+  dependency parameters to production code just for tests.
+- Write new tests with `remix test`. Name them
+  `should [expected behavior] when [condition]` and test user-visible behavior.
