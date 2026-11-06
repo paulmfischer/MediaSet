@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 const metadata: Record<string, string[]> = {
@@ -56,7 +57,7 @@ describe('add movie (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Blu-ray' }).click();
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Movie').click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Runtime (minutes)').inputValue(), '117');
@@ -67,7 +68,7 @@ describe('add movie (e2e)', () => {
     assert.equal(saved.length, 0);
 
     await page.locator('#title').fill('Alien');
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Movie').click();
     await page.waitForURL('**/movies/new-id');
 
     assert.equal(await sameDocument(), true);
@@ -97,7 +98,7 @@ describe('add movie (e2e)', () => {
     assert.equal(await colorOf('#plot'), 'rgb(255, 255, 255)');
   });
 
-  it('goes back in history on Cancel', async (t) => {
+  it('leaves the form on Cancel, even after a failed save or a lookup', async (t) => {
     stubApi(t);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.goto('/movies');
@@ -106,7 +107,25 @@ describe('add movie (e2e)', () => {
     await page.waitForURL('**/movies/add');
     await page.waitForLoadState('networkidle');
 
+    // A failed save re-renders the form at the same URL (another history entry); Cancel still leaves it.
+    await submitButton(page, 'add', 'Movie').click();
+    await page.locator('#title-error').waitFor();
     await page.getByRole('button', { name: 'Cancel' }).click();
     await page.waitForURL((url) => url.pathname === '/movies');
+    await page.getByRole('heading', { name: 'Movies', level: 1 }).waitFor();
+    assert.equal(await page.getByRole('heading', { name: 'Add Movie' }).count(), 0);
+  });
+
+  it('leaves for the list on Cancel without JavaScript', async (t) => {
+    stubApi(t);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.route('**/assets/**', (route) => route.abort());
+    await page.goto('/movies/add');
+    await page.locator('#title').fill('Typed');
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForURL((url) => url.pathname === '/movies');
+    // Nothing was saved, and the list page is shown.
+    assert.equal(await page.getByRole('heading', { name: 'Movies', level: 1 }).count(), 1);
   });
 });

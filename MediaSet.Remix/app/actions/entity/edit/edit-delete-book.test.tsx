@@ -178,6 +178,15 @@ describe('edit book metadata lookup', () => {
   const resultsOf = (html: string) =>
     /name="lookupResults" value="([^"]*)"/.exec(html)?.[1]?.replaceAll('&quot;', '"').replaceAll('&amp;', '&') ?? '[]';
 
+  it('shows Update before a Cancel button', async (t) => {
+    stubApi(t);
+    const html = await (await router.fetch(url(editUrl))).text();
+
+    const update = html.indexOf('>Update</button>');
+    const cancel = html.search(/<button[^>]*class="secondary"[^>]*>Cancel<\/button>/);
+    assert.ok(update !== -1 && cancel !== -1 && update < cancel);
+  });
+
   it('offers the lookup buttons only when the provider supports book lookup', async (t) => {
     stubApi(t);
     assert.match(await (await router.fetch(url(editUrl))).text(), /value="lookup:title"[\s\S]*value="lookup:isbn"/);

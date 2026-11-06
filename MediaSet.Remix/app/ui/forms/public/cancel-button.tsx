@@ -1,12 +1,14 @@
-import { clientEntry, on, type Handle } from 'remix/component';
+import { clientEntry, navigate, on, type Handle } from 'remix/component';
 
 interface CancelButtonProps {
-  /** Where Cancel goes when the page can't go back, and without JavaScript. */
+  /** Where Cancel goes: the collection page for an add form, the item's page for an edit form. */
   fallbackHref: string;
 }
 
-// Cancel for a form: goes back in history, as the old UI did. Without JavaScript it is a native
-// submit button that loads `fallbackHref` with a GET, which skips validation and saves nothing.
+// Cancel for a form: leaves for `fallbackHref`. It does not use history.back(): every form submission
+// (a failed save, a lookup, applying a result) adds a history entry for the same URL, so stepping back
+// would land on an earlier copy of the form. Without JavaScript it is a native submit button that loads
+// the same page with a GET, which skips validation and saves nothing.
 export const CancelButton = clientEntry(import.meta.url, function CancelButton(handle: Handle<CancelButtonProps>) {
   return () => (
     <button
@@ -18,8 +20,7 @@ export const CancelButton = clientEntry(import.meta.url, function CancelButton(h
       formnovalidate
       mix={on('click', (event) => {
         event.preventDefault();
-        if (window.history.length > 1) window.history.back();
-        else window.location.assign(handle.props.fallbackHref);
+        void navigate(handle.props.fallbackHref);
       })}
     >
       Cancel

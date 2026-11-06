@@ -84,7 +84,7 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                 {discs && discs.length > 0 ? (
                   <>
                     <span class={`${label} mt-2`}>Disc List</span>
-                    <div class={`${value} mt-2`}>
+                    <div class={`${value} mt-2`} data-field="Disc List">
                       <table class="w-full text-sm">
                         <thead class="border-b border-gray-600">
                           <tr>

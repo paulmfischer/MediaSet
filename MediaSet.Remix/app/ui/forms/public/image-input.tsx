@@ -2,6 +2,12 @@ import { clientEntry, on, ref, type Handle } from 'remix/component';
 
 import { Icon } from '../../icon.tsx';
 import { ImagePlus } from '../../icons.ts';
+import {
+  COVER_IMAGE_MAX_BYTES,
+  COVER_IMAGE_SIZE_ERROR,
+  COVER_IMAGE_TYPES,
+  COVER_IMAGE_TYPE_ERROR,
+} from './cover-image-limits.ts';
 import { errorId, errorProps, Field, inputClasses } from '../field.tsx';
 
 interface ImageInputProps {
@@ -19,9 +25,6 @@ interface ImageInputProps {
 
 /** How long typing in the URL field pauses before the preview loads it. */
 const PREVIEW_DELAY_MS = 400;
-
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
-const MAX_BYTES = 5 * 1024 * 1024;
 
 const isWebUrl = (value: string) => /^https?:\/\//i.test(value);
 
@@ -58,10 +61,10 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
     handle.update();
   };
 
-  // The same limits as the server and the old UI: JPEG or PNG, up to 5MB.
+  // The server's limits (cover-image-limits.ts), checked early for quicker feedback.
   const problemWith = (file: File): string | undefined => {
-    if (!ACCEPTED_TYPES.includes(file.type)) return 'Only JPEG and PNG images are allowed';
-    if (file.size > MAX_BYTES) return 'File size must be less than 5MB';
+    if (!COVER_IMAGE_TYPES.includes(file.type)) return COVER_IMAGE_TYPE_ERROR;
+    if (file.size > COVER_IMAGE_MAX_BYTES) return COVER_IMAGE_SIZE_ERROR;
     return undefined;
   };
 
@@ -78,22 +81,27 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
     handle.update();
   };
 
-  const setDragging = (event: DragEvent, value: boolean) => {
+  // dragenter and dragleave also fire as the pointer crosses the area's children, so the highlight
+  // follows a count of enters minus leaves (event.relatedTarget is not reliable across browsers).
+  let dragDepth = 0;
+  const dragEvent = (event: DragEvent, change: 1 | -1) => {
     event.preventDefault();
-    // dragleave also fires when the pointer moves onto a child of the area; only leaving the area counts.
-    if (!value && event.currentTarget instanceof Node && event.relatedTarget instanceof Node) {
-      if (event.currentTarget.contains(event.relatedTarget)) return;
-    }
-    if (dragging === value) return;
-    dragging = value;
+    dragDepth = Math.max(0, dragDepth + change);
+    const next = dragDepth > 0;
+    if (dragging === next) return;
+    dragging = next;
     handle.update();
   };
+
+  // dragover only keeps the drop allowed.
+  const allowDrop = (event: DragEvent) => event.preventDefault();
 
   // A dropped file goes into the file input, so it is submitted like a chosen one. The input takes
   // one file and bypasses its accept filter for drops, so only the first file is used and it is checked here.
   const dropFile = (event: DragEvent) => {
     event.preventDefault();
     dragging = false;
+    dragDepth = 0;
     const input = document.getElementById('coverImage');
     const file = event.dataTransfer?.files[0];
     if (input instanceof HTMLInputElement && file) {
@@ -165,9 +173,9 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
                 : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
             }`}
             mix={[
-              on('dragenter', (event) => setDragging(event, true)),
-              on('dragover', (event) => setDragging(event, true)),
-              on('dragleave', (event) => setDragging(event, false)),
+              on('dragenter', (event) => dragEvent(event, 1)),
+              on('dragover', (event) => allowDrop(event)),
+              on('dragleave', (event) => dragEvent(event, -1)),
               on('drop', (event) => dropFile(event)),
             ]}
           >

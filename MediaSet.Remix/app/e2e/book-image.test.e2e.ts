@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 // 1x1 transparent PNG.
@@ -68,7 +69,7 @@ describe('book cover image (e2e)', () => {
     assert.match(await preview.innerText(), /Uploaded file: dune\.png/);
     assert.match((await preview.locator('img').getAttribute('src')) ?? '', /^blob:/);
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
 
     assert.equal(saved.length, 1);
@@ -97,7 +98,7 @@ describe('book cover image (e2e)', () => {
     await preview.waitFor();
     assert.match(await preview.innerText(), /Uploaded file: dropped\.png/);
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
     assert.deepEqual(saved[0]?.file, { name: 'dropped.png', type: 'image/png', size: PNG.length });
   });
@@ -144,15 +145,16 @@ describe('book cover image (e2e)', () => {
     const area = page.locator('label[for="coverImage"]');
     const highlighted = () => area.evaluate((node) => node.classList.contains('border-blue-400'));
 
+    const child = area.locator('span').first();
+
+    // Entering the area, then a child of it (the area gets a leave for that move), keeps the highlight.
     await area.dispatchEvent('dragenter');
     assert.equal(await highlighted(), true);
-    // Leaving onto a child of the area is not leaving the area.
-    await area.evaluate((node) => {
-      const child = node.querySelector('span')!;
-      node.dispatchEvent(new DragEvent('dragleave', { bubbles: true, relatedTarget: child }));
-    });
+    await child.dispatchEvent('dragenter');
+    await area.dispatchEvent('dragleave');
     assert.equal(await highlighted(), true);
-    await area.evaluate((node) => node.dispatchEvent(new DragEvent('dragleave', { bubbles: true })));
+    // Leaving the child and then the area ends it.
+    await child.dispatchEvent('dragleave');
     assert.equal(await highlighted(), false);
   });
 
@@ -218,7 +220,7 @@ describe('book cover image (e2e)', () => {
     assert.match(await page.getByTestId('image-preview').innerText(), /Current cover image/);
 
     await page.getByLabel('Remove the current image').check();
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates.length, 1);
@@ -237,7 +239,7 @@ describe('book cover image (e2e)', () => {
 
     await page.setInputFiles('#coverImage', { name: 'new.png', mimeType: 'image/png', buffer: PNG });
     assert.match(await page.getByTestId('image-preview').innerText(), /Uploaded file: new\.png/);
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'edit', 'Book').click();
     await page.waitForURL('**/books/b1');
 
     assert.equal(updates[0]?.file, 'new.png');

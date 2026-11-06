@@ -2,6 +2,7 @@ import * as assert from 'remix/assert';
 import { createTestServer } from 'remix/node-fetch-server/test';
 import { describe, it } from 'remix/test';
 
+import { submitButton } from './form-buttons.ts';
 import { router } from '../router.ts';
 
 const metadata: Record<string, string[]> = {
@@ -63,7 +64,7 @@ describe('add book (e2e)', () => {
     await page.getByRole('combobox', { name: 'Format' }).click();
     await page.getByRole('option', { name: 'Hardcover' }).click();
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.locator('#title-error').waitFor();
     assert.equal(await page.locator('#title-error').innerText(), 'Title is required');
     assert.equal(await page.getByLabel('Subtitle').inputValue(), 'Book One');
@@ -77,7 +78,7 @@ describe('add book (e2e)', () => {
     // Fix the error and save.
     await page.locator('#title').fill('Dune');
     await page.getByRole('button', { name: 'Remove Frank Herbert' }).click();
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
 
     assert.equal(await sameDocument(), true);
@@ -101,7 +102,7 @@ describe('add book (e2e)', () => {
     await page.waitForLoadState('networkidle');
     await page.locator('#title').fill('Dune');
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     const pending = page.getByRole('button', { name: /…$/ });
     await pending.waitFor();
     assert.equal(await pending.isDisabled(), true);
@@ -218,7 +219,7 @@ describe('add book metadata lookup (e2e)', () => {
     await page.getByRole('button', { name: 'Clear Berkley' }).waitFor();
     await page.getByRole('button', { name: 'Clear Paperback' }).waitFor();
 
-    await page.getByRole('button', { name: /^(Add (Book|Movie|Game|Music)|Update)$/ }).click();
+    await submitButton(page, 'add', 'Book').click();
     await page.waitForURL('**/books/new-id');
     assert.deepEqual(saved, [
       {
