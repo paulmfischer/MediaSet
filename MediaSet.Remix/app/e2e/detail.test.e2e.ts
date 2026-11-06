@@ -72,4 +72,44 @@ describe('item detail (e2e)', () => {
     await page.waitForURL('**/books');
     await page.getByRole('link', { name: 'Dune: Book One', exact: true }).first().waitFor();
   });
+
+  it('lines every value up in one column, with long values wrapping inside it', async (t) => {
+    const long = 'A very long description that goes on and on '.repeat(12);
+    const game = {
+      id: 'g1',
+      type: 'Games',
+      title: 'Alan Wake',
+      platform: 'Xbox 360',
+      developers: ['Remedy'],
+      publishers: ['Microsoft Game Studios', 'Xbox Game Studios', 'Another Publisher Name'],
+      description: long,
+    };
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.pathname === '/Games/g1') return Response.json(game);
+      return new Response('missing', { status: 404 });
+    }) as typeof fetch;
+    t.after(() => {
+      globalThis.fetch = original;
+    });
+    const page = await t.serve(await createTestServer(router.fetch));
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/games/g1');
+      await page.waitForLoadState('networkidle');
+
+      const boxes = await page.locator('[data-field]').evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const value = node.getBoundingClientRect();
+          const label = node.previousElementSibling!.getBoundingClientRect();
+          return { left: Math.round(value.left), labelRight: Math.round(label.right), right: Math.round(value.right) };
+        })
+      );
+      const lefts = new Set(boxes.map((box) => box.left));
+      assert.equal(lefts.size, 1, `values share one left edge at ${width}px`);
+      for (const box of boxes) assert.ok(box.left > box.labelRight, 'a value starts after its label');
+      assert.ok(Math.max(...boxes.map((box) => box.right)) <= width, 'nothing overflows the viewport');
+    }
+  });
 });

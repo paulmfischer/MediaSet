@@ -24,8 +24,10 @@ function formatLookupDate(value: string | undefined): string {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
-const row = 'flex flex-col md:flex-row mb-2 md:mb-0';
-const label = 'basis-2/12 dark:text-slate-300';
+// Two columns: field names (as wide as the longest) and values, so every value starts at the same left edge and
+// a long value wraps inside its own column.
+const label = 'dark:text-slate-300';
+const value = 'min-w-0 break-words';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
@@ -70,39 +72,41 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
               )}
             </div>
             <div class="lg:basis-4/5">
-              {config.fields.map((field) => (
-                <div class={row}>
-                  <span class={label}>{field.label}</span>
-                  <div class="grow" data-field={field.label}>
-                    {field.check ? field.check(entity) ? <Icon icon={Check} size={18} /> : null : field.value(entity)}
-                  </div>
-                </div>
-              ))}
-              {discs && discs.length > 0 ? (
-                <div class={`${row} mt-4`}>
-                  <span class={label}>Disc List</span>
-                  <div class="grow">
-                    <table class="w-full text-sm">
-                      <thead class="border-b border-gray-600">
-                        <tr>
-                          <th class="text-left py-1 px-2">Track #</th>
-                          <th class="text-left py-1 px-2">Title</th>
-                          <th class="text-left py-1 px-2">Duration</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {discs.map((disc) => (
-                          <tr class="border-b border-gray-700">
-                            <td class="py-1 px-2">{disc.trackNumber}</td>
-                            <td class="py-1 px-2">{disc.title}</td>
-                            <td class="py-1 px-2">{millisecondsToMinutesSeconds(disc.duration)}</td>
+              <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2">
+                {config.fields.map((field) => (
+                  <>
+                    <span class={label}>{field.label}</span>
+                    <div class={value} data-field={field.label}>
+                      {field.check ? field.check(entity) ? <Icon icon={Check} size={18} /> : null : field.value(entity)}
+                    </div>
+                  </>
+                ))}
+                {discs && discs.length > 0 ? (
+                  <>
+                    <span class={`${label} mt-2`}>Disc List</span>
+                    <div class={`${value} mt-2`}>
+                      <table class="w-full text-sm">
+                        <thead class="border-b border-gray-600">
+                          <tr>
+                            <th class="text-left py-1 px-2">Track #</th>
+                            <th class="text-left py-1 px-2">Title</th>
+                            <th class="text-left py-1 px-2">Duration</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : null}
+                        </thead>
+                        <tbody>
+                          {discs.map((disc) => (
+                            <tr class="border-b border-gray-700">
+                              <td class="py-1 px-2">{disc.trackNumber}</td>
+                              <td class="py-1 px-2">{disc.title}</td>
+                              <td class="py-1 px-2">{millisecondsToMinutesSeconds(disc.duration)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : null}
+              </div>
               {lookupFailed ? (
                 <div
                   class="mt-4 flex flex-col items-start gap-2 text-sm text-amber-400"
