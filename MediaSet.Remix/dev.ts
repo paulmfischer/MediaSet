@@ -20,9 +20,7 @@ const children: ChildProcess[] = [
   spawn(
     process.execPath,
     [
-      'node_modules/tailwindcss/lib/cli.js',
-      '-c',
-      'tailwind.config.ts',
+      'node_modules/@tailwindcss/cli/dist/index.mjs',
       '-i',
       'app/tailwind.css',
       '-o',

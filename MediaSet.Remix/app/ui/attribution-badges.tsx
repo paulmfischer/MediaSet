@@ -27,7 +27,7 @@ export function AttributionBadges(handle: Handle<AttributionBadgesProps>) {
                 aria-label={integration.displayName}
                 class="group block"
               >
-                <div class="bg-zinc-800 ring-1 ring-zinc-800 rounded-md p-3 flex items-center justify-center shadow-sm">
+                <div class="bg-zinc-800 ring-1 ring-zinc-800 rounded-md p-3 flex items-center justify-center shadow-xs">
                   <img
                     src={integration.logoPath ?? ''}
                     alt={integration.displayName}
@@ -41,7 +41,7 @@ export function AttributionBadges(handle: Handle<AttributionBadgesProps>) {
                     href={integration.attributionUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="mt-2 block text-xs text-zinc-400 max-w-[280px] text-center underline hover:text-zinc-200"
+                    class="mt-2 block text-xs max-w-[280px] text-center"
                   >
                     {integration.attributionText}
                   </a>

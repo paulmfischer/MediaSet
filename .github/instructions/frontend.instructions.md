@@ -77,9 +77,12 @@ Node runs the TypeScript sources directly; `tsc` only type checks. Import with t
 
 ## Styling
 
-- Tailwind only, mobile-first, with utility classes and shared tokens. Common styles live
+- Tailwind CSS 4 only, mobile-first, with utility classes and shared tokens. Common styles live
   in `app/tailwind.css`; buttons use the global button styles, not per-button color or
-  size classes.
+  size classes. Configuration is CSS-first in that file (`@theme`, `@source`, the class-based
+  `dark` variant, the `.entity-*` colours); there is no `tailwind.config.ts`. A rule in its
+  component layer loses to any utility class, so do not add utilities that conflict with the
+  global element styles.
 - Use semantic HTML, labels and keyboard-reachable controls.
 
 ## Tests

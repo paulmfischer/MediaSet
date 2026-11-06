@@ -15,7 +15,7 @@ export const PageSelect = clientEntry(import.meta.url, function PageSelect(handl
     return (
       <select
         aria-label="Select page"
-        class="bg-gray-800 border border-gray-600 text-white rounded px-2 py-1 text-sm"
+        class="bg-gray-800 border border-gray-600 text-white rounded-sm px-2 py-1 text-sm"
         mix={on('change', (event) => {
           const target = event.currentTarget as HTMLSelectElement;
           const href = hrefs[Number(target.value) - 1];

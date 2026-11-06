@@ -24,7 +24,7 @@ export const MobileMenu = clientEntry(import.meta.url, function MobileMenu(handl
     <div class="contents" mix={ref((node, signal) => dismissOnOutsideOrEscape(node, signal, close))}>
       <button
         type="button"
-        class="md:hidden p-2 rounded-md"
+        class="md:hidden"
         aria-label="Toggle menu"
         aria-haspopup="true"
         aria-controls="mobile-menu-panel"

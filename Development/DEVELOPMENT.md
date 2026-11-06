@@ -92,7 +92,7 @@ npm run dev
 - API and Swagger: http://127.0.0.1:5000 and http://127.0.0.1:5000/swagger.
 - API port and Development environment come from the API launch profile.
 - `npm run dev` runs the Remix 3 server (`server.ts`) with `node --watch`,
-  plus the Tailwind CLI in watch mode writing `public/app.css`. Port 3000 is
+  plus the Tailwind CSS 4 CLI (`@tailwindcss/cli`) in watch mode writing `public/app.css`. Port 3000 is
   fixed; the server fails if it is already occupied.
 - Server source changes restart the server; reload the browser to see them.
   See [Hot reload decision](#hot-reload-decision).

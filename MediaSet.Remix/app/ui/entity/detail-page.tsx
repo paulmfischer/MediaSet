@@ -27,7 +27,7 @@ function formatLookupDate(value: string | undefined): string {
 // Two columns: field names (as wide as the longest) and values, so every value starts at the same left edge and
 // a long value wraps inside its own column.
 const label = 'dark:text-slate-300';
-const value = 'min-w-0 break-words';
+const value = 'min-w-0 wrap-break-word';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {

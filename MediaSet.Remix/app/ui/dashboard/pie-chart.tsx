@@ -79,10 +79,10 @@ export function PieChart(handle: Handle<PieChartProps>) {
             ))}
           </svg>
         </div>
-        <ul class="flex flex-shrink-0 flex-wrap justify-center gap-x-4 gap-y-1">
+        <ul class="flex shrink-0 flex-wrap justify-center gap-x-4 gap-y-1">
           {slices.map((slice) => (
             <li class="flex items-center gap-1.5">
-              <span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: slice.color }} />
+              <span class="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: slice.color }} />
               <span class="text-xs text-zinc-200">{slice.name}</span>
               <span class="text-xs text-zinc-400">
                 {count(slice.value)} · {slice.pct}%

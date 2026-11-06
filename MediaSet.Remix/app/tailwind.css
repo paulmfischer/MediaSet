@@ -1,12 +1,53 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+@import './tailwind-colors.css';
+
+/* Scan only the application sources for utility classes. */
+@source '../app/**/*.{js,jsx,ts,tsx}';
+
+/* The design is dark-only: `<html class="dark">` is always set, so the `dark:` variant follows that class
+   and never the OS colour scheme (Tailwind's default). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* `inline` keeps `var(--entity-color)` in the generated utilities, so it resolves on the element that has
+   an `.entity-*` class instead of once on :root, where it is not defined. Opacity modifiers
+   (`bg-entity/10`) become a colour-mix of this colour. */
+@theme inline {
+  --color-entity: rgb(var(--entity-color));
+}
+
+/* The colour of each media type, as RGB channels: Tailwind green-400, red-400, purple-400 and pink-400. */
+.entity-books {
+  --entity-color: 74 222 128;
+}
+
+.entity-movies {
+  --entity-color: 248 113 113;
+}
+
+.entity-games {
+  --entity-color: 192 132 252;
+}
+
+.entity-musics {
+  --entity-color: 244 114 182;
+}
 
 @layer base {
-  /* The design is dark-only (see darkMode in tailwind.config.ts): tell the browser, so native controls,
+  /* The design is dark-only (see the dark variant above): tell the browser, so native controls,
      scrollbars and the default canvas match. */
   html.dark {
     color-scheme: dark;
+  }
+
+  /* Tailwind 4 resets every element's margin, which un-centres a modal <dialog> (the browser's `margin: auto`). */
+  dialog {
+    margin: auto;
+  }
+
+  /* Tailwind 4 no longer gives buttons a pointer cursor. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
   }
 }
 
@@ -19,15 +60,16 @@
     @apply dark:bg-zinc-800;
   }
 
-  /* No dark: prefix on the text colour. With darkMode "class" a dark: rule is more specific than a
-     utility, so it would override the text-white on the form inputs and hide what is typed. */
+  /* No dark: prefix on the text colour: a component rule loses to any utility (cascade layers), so a
+     text-white on a form input replaces this slate-800, and typed text stays visible. */
   textarea,
   select,
   input {
-    @apply p-1 pl-2 text-slate-800 rounded-sm;
+    @apply p-1 pl-2 text-slate-800 rounded-xs;
   }
 
-  input::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     @apply text-gray-400 opacity-100;
   }
 
@@ -38,21 +80,21 @@
     [class~='secondary'],
     [class~='tertiary']
   ) {
-    @apply px-3 py-1 dark:text-slate-200 dark:bg-blue-700 dark:hover:bg-blue-600 dark:disabled:bg-slate-900 dark:disabled:text-slate-500 rounded bg-white transition-colors;
+    @apply px-3 py-1 dark:text-slate-200 dark:bg-blue-700 dark:hover:bg-blue-600 dark:disabled:bg-slate-900 dark:disabled:text-slate-500 rounded-sm bg-white transition-colors;
   }
 
   /* A text-icon control joins the input beside it; a link (the clear-search X) gets the same look. */
   button[class~='text-icon'],
   a[class~='text-icon'] {
-    @apply px-3 py-2 no-underline bg-gray-800 hover:bg-gray-700 text-slate-300 border border-gray-600 rounded-l-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400;
+    @apply px-3 py-2 no-underline bg-gray-800 hover:bg-gray-700 text-slate-300 border border-gray-600 rounded-l-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-400;
   }
 
   button[class~='secondary'] {
-    @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:disabled:bg-gray-950 rounded bg-white transition-colors;
+    @apply px-3 py-1 dark:text-slate-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:disabled:bg-gray-950 rounded-sm bg-white transition-colors;
   }
 
   button[class~='tertiary'] {
-    @apply px-3 py-1 dark:text-slate-300 dark:bg-transparent dark:border dark:border-gray-500 dark:hover:bg-gray-800 dark:disabled:opacity-50 rounded bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 transition-colors;
+    @apply px-3 py-1 dark:text-slate-300 dark:bg-transparent dark:border dark:border-gray-500 dark:hover:bg-gray-800 dark:disabled:opacity-50 rounded-sm bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 transition-colors;
   }
 
   button[class~='link'] {

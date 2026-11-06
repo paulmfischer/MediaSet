@@ -149,7 +149,7 @@ export const TrackListInput = clientEntry(
               <span class="min-w-48 flex-1">Title</span>
               <span class="w-24">Minutes</span>
               <span class="w-24">Seconds</span>
-              <span class="w-[7.5rem]" />
+              <span class="w-30" />
             </div>
           ) : null}
           {rows.map((row, index) => (

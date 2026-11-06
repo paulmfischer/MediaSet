@@ -39,7 +39,7 @@ export function BarChart(handle: Handle<BarChartProps>) {
               );
             })}
           </div>
-          <div class="flex flex-shrink-0">
+          <div class="flex shrink-0">
             {items.map((item) => (
               <span class="flex-1 truncate px-1.5 text-center text-xs text-zinc-400" title={item.name}>
                 {item.name}
@@ -58,11 +58,11 @@ export function BarChart(handle: Handle<BarChartProps>) {
             const widthPct = max > 0 ? (item.value / max) * 100 : 0;
             return (
               <li class="flex items-center gap-2" title={`${item.name}: ${count(item.value)}`}>
-                <span class="w-4 flex-shrink-0 text-right text-xs text-zinc-500">{i + 1}</span>
+                <span class="w-4 shrink-0 text-right text-xs text-zinc-500">{i + 1}</span>
                 <div class="flex flex-1 flex-col gap-0.5">
                   <div class="flex items-center justify-between">
                     <span class="truncate text-xs font-medium text-zinc-200">{item.name}</span>
-                    <span class="ml-2 flex-shrink-0 text-xs text-zinc-400">{item.value}</span>
+                    <span class="ml-2 shrink-0 text-xs text-zinc-400">{item.value}</span>
                   </div>
                   <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
                     <div

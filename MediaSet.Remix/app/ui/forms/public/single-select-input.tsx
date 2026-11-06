@@ -54,7 +54,7 @@ export const SingleSelectInput = clientEntry(
             {selected ? (
               <button
                 type="button"
-                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm bg-blue-600 text-white hover:bg-blue-700"
+                class="inline-flex items-center gap-1 text-sm"
                 aria-label={`Clear ${selected}`}
                 mix={on('click', clear)}
               >
@@ -65,7 +65,7 @@ export const SingleSelectInput = clientEntry(
             <input
               id={name}
               type="text"
-              class="flex-1 min-w-32 pl-1 p-0 outline-none bg-transparent text-white placeholder-gray-400"
+              class="flex-1 min-w-32 pl-1 p-0 outline-hidden bg-transparent text-white placeholder:text-gray-400"
               placeholder={selected ? '' : placeholder}
               aria-invalid={invalid ? 'true' : undefined}
               aria-describedby={describedBy}

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "npm run css",
-    "css": "tailwindcss -c tailwind.config.ts -i app/tailwind.css -o public/app.css --minify",
-    "css:watch": "tailwindcss -c tailwind.config.ts -i app/tailwind.css -o public/app.css --watch",
+    "css": "tailwindcss -i app/tailwind.css -o public/app.css --minify",
+    "css:watch": "tailwindcss -i app/tailwind.css -o public/app.css --watch",
     "dev": "node --env-file-if-exists=.env.local dev.ts",
     "dev:mobile": "node --env-file-if-exists=.env.local dev.ts --mobile",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
@@ -25,19 +25,18 @@
     "remix": "^3.1.0"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.5",
     "@types/node": "^24.19.2",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
-    "autoprefixer": "^10.4.19",
     "eslint": "^9.19.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "playwright": "^1.64.1",
-    "postcss": "^8.4.38",
     "prettier": "^3.8.1",
-    "tailwindcss": "^3.4.19",
+    "tailwindcss": "^4.3.5",
     "typescript": "^5.7.3"
   },
   "engines": {

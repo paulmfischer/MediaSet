@@ -1,7 +1,7 @@
 # MediaSet agent guidelines
 
 MediaSet manages personal media collections: a .NET 10 minimal API with MongoDB and a
-Remix 3 / TypeScript / Tailwind frontend. Tests are NUnit (API) and `remix test` (UI). For the directory map,
+Remix 3 / TypeScript / Tailwind CSS 4 frontend. Tests are NUnit (API) and `remix test` (UI). For the directory map,
 route/data patterns, integrations and image storage read [architecture](../../Development/ARCHITECTURE.md).
 Before editing TypeScript or TSX read [frontend conventions](frontend.instructions.md).
 C# style is enforced by `.editorconfig`.
