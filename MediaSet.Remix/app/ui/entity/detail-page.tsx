@@ -1,8 +1,6 @@
 import type { Handle } from 'remix/component';
 
-import type { Integration } from '../../api/integrations-data.ts';
 import type { BaseEntity } from '../../models.ts';
-import { AttributionBadges } from '../attribution-badges.tsx';
 import { Icon } from '../icon.tsx';
 import { Check, ImageOff, Pencil } from '../icons.ts';
 import { millisecondsToMinutesSeconds } from '../../utils/helpers.ts';
@@ -16,8 +14,6 @@ interface DetailPageProps<T extends BaseEntity> {
   basePath: string;
   /** Browser-reachable API origin, used for the cover image. */
   apiUrl: string;
-  /** Lookup integrations to credit; none when they could not be loaded. */
-  integrations?: Integration[];
 }
 
 // "Jan 5, 2025"; falls back to the raw text when it is not a parseable date.
@@ -33,7 +29,7 @@ const label = 'basis-2/12 dark:text-slate-300';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
-    const { config, entity, basePath, apiUrl, integrations = [] } = handle.props;
+    const { config, entity, basePath, apiUrl } = handle.props;
     const itemId = encodeURIComponent(entity.id ?? '');
     const title = config.titleOf(entity);
     const subtitle = config.subtitleOf?.(entity);
@@ -127,7 +123,6 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
             </div>
           </div>
         </div>
-        <AttributionBadges integrations={integrations} />
       </div>
     );
   };

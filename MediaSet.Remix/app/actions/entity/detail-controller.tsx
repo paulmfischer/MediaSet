@@ -1,7 +1,6 @@
 import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
-import { getIntegrations } from '../../api/integrations-data.ts';
 import { clientApiUrl } from '../../constants.server.ts';
 import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
@@ -22,8 +21,6 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
       backLabel: `Back to ${config.entity}`,
     });
 
-  // Credits are best-effort (it never throws), so load them alongside the item.
-  const integrationsRequest = getIntegrations();
   let entity: T;
   try {
     entity = await getEntity<T>(config.entity, id);
@@ -49,20 +46,13 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
   }
 
   const title = config.titleOf(entity) || config.singular;
-  const integrations = await integrationsRequest;
   return context.render(
     <Document
       path={context.url.pathname}
       title={`${title} | MediaSet`}
       description={`${config.singular} Detail: ${title}`}
     >
-      <DetailPage
-        config={config}
-        entity={entity}
-        basePath={basePath}
-        apiUrl={clientApiUrl}
-        integrations={integrations}
-      />
+      <DetailPage config={config} entity={entity} basePath={basePath} apiUrl={clientApiUrl} />
     </Document>
   );
 }

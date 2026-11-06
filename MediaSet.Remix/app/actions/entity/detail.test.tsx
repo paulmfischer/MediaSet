@@ -5,7 +5,7 @@ import { router } from '../../router.ts';
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
 
-// Stubs the API and records the item URLs the page asked for (not the credits lookup). A function body can return any Response.
+// Stubs the API and records the item URLs the page asked for. A function body can return any Response.
 function stubApi(t: { after: (fn: () => void) => void }, respond: (url: URL) => Response) {
   const original = globalThis.fetch;
   const urls: URL[] = [];
