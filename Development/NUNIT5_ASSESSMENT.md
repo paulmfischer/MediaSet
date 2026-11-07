@@ -89,12 +89,19 @@ What the compiler does with the unmigrated code under NUnit 5 (measured in the p
 - 13 sites that use the returned exception fail to compile (17 CS1061 errors, `Task<T?>` has no
   `Message`, `ParamName` or `StatusCode`).
 - 5 sites in already-async methods fail to compile (CS4014, because `TreatWarningsAsErrors` is on).
+- Why 22 errors cover 18 sites: a site that reads the returned exception can raise several CS1061
+  errors, one per member access. For example `ImageServiceTests` line 166 raises one error for
+  `ParamName`, while lines 182 and 199 raise one for `Message`, and `EntityServiceTests` lines 415
+  and 416 raise two for the same site. The 11 `ImageServiceTests` sites, 1 `TmdbTvClientTests`
+  site and 1 `EntityServiceTests` site are 13 sites with 17 errors. Adding the 5 CS4014 errors
+  (one per site) gives 22 errors at 18 sites. The 38 calls therefore split as 13 (CS1061) + 5
+  (CS4014) + 20 silent.
 - The remaining 20 sites in `void` methods that ignore the result compile cleanly and are no
   longer evaluated. This is the dangerous group: the build and the test run stay green.
 
 ## Probe
 
-Method: a copy of the repository under the session scratchpad
+Method: a copy of the repository at `main` commit e49b383 (the base of this branch), under the session scratchpad
 (`.../scratchpad/probe`, not committed), with the three packages bumped, then migrated with the
 mechanical edit described above (an `await` on each of the 38 calls and `void` to `async Task`
 where needed), plus a probe fixture with deliberate cases.
