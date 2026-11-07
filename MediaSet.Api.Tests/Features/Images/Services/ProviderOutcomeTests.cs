@@ -104,8 +104,8 @@ public class ProviderOutcomeTests
             Assert.That(request.Headers.Contains("key_type"), Is.EqualTo(keyed));
             if (keyed)
             {
-                Assert.That(request.Headers.GetValues("user_key"), Is.EqualTo(new[] { "fake-key" }));
-                Assert.That(request.Headers.GetValues("key_type"), Is.EqualTo(new[] { "3scale" }));
+                Assert.That(request.Headers.GetValues("user_key"), Is.EqualTo(["fake-key"]));
+                Assert.That(request.Headers.GetValues("key_type"), Is.EqualTo(["3scale"]));
             }
             if (++calls == 1 && burst)
             {
