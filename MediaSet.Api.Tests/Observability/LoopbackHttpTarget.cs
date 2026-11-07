@@ -9,20 +9,38 @@ namespace MediaSet.Api.Tests.Observability;
 /// <summary>Local loopback HTTP listener that records the traceparent header of the last request.</summary>
 public sealed class LoopbackHttpTarget : IDisposable
 {
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly CancellationTokenSource _cts = new();
     private volatile string? _lastTraceparent;
 
     public LoopbackHttpTarget()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
+        // HttpListener cannot bind port 0, so pick a free port and retry if another process wins it.
+        for (var attempt = 0; ; attempt++)
+        {
+            var probe = new TcpListener(IPAddress.Loopback, 0);
+            probe.Start();
+            var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+            probe.Stop();
 
-        Url = $"http://127.0.0.1:{port}/";
-        _listener.Prefixes.Add(Url);
-        _listener.Start();
+            var url = $"http://127.0.0.1:{port}/";
+            var listener = new HttpListener();
+            listener.Prefixes.Add(url);
+            try
+            {
+                listener.Start();
+            }
+            catch (HttpListenerException) when (attempt < 9)
+            {
+                listener.Close();
+                continue;
+            }
+
+            _listener = listener;
+            Url = url;
+            break;
+        }
+
         _ = Task.Run(ServeAsync);
     }
 

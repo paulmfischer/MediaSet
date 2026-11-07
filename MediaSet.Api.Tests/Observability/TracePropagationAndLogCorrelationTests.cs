@@ -5,7 +5,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using OpenTelemetry.Trace;
 using Serilog.Events;
 
 namespace MediaSet.Api.Tests.Observability;
@@ -13,6 +15,9 @@ namespace MediaSet.Api.Tests.Observability;
 /// <summary>
 /// Behavior checks for trace propagation, span creation and log correlation. They run the real API
 /// host in memory with isolated capture seams so they can guard package upgrades.
+/// The in-memory log sink is a process-wide static that only these tests attach (through their own
+/// Serilog:WriteTo config), so the fixture must not run in parallel with itself or other host tests
+/// that clear or read it; hence [NonParallelizable].
 /// </summary>
 [TestFixture]
 [NonParallelizable]
@@ -65,7 +70,8 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.SendAsync(request);
 
         var serverSpan = await WaitForServerSpanAsync();
-        Assert.That(serverSpan.TraceId?.ToString(), Is.EqualTo(IncomingTraceId));
+        Assert.That(serverSpan, Is.Not.Null, "expected a SerilogTracing server span event");
+        Assert.That(serverSpan!.TraceId?.ToString(), Is.EqualTo(IncomingTraceId));
         Assert.That(Property(serverSpan, "ParentSpanId"), Is.EqualTo(IncomingSpanId));
     }
 
@@ -78,7 +84,8 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.GetAsync(RealEndpoint);
 
         var serverSpan = await WaitForServerSpanAsync();
-        Assert.That(serverSpan.TraceId?.ToString(), Is.Not.Null.And.Not.EqualTo(IncomingTraceId));
+        Assert.That(serverSpan, Is.Not.Null, "expected a SerilogTracing server span event");
+        Assert.That(serverSpan!.TraceId?.ToString(), Is.Not.Null.And.Not.EqualTo(IncomingTraceId));
         Assert.That(Property(serverSpan, "ParentSpanId"), Is.Null);
     }
 
@@ -92,9 +99,11 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.GetAsync("/_probe/outgoing");
 
         var serverSpan = await WaitForServerSpanAsync();
+        Assert.That(serverSpan, Is.Not.Null, "expected a SerilogTracing server span event");
         var clientSpan = await WaitForSpanAsync(a => a.Kind == ActivityKind.Client);
-        Assert.That(clientSpan.TraceId.ToString(), Is.EqualTo(serverSpan.TraceId?.ToString()));
-        Assert.That(clientSpan.ParentSpanId.ToString(), Is.EqualTo(serverSpan.SpanId?.ToString()));
+        Assert.That(clientSpan, Is.Not.Null, ExportedSpans());
+        Assert.That(clientSpan!.TraceId.ToString(), Is.EqualTo(serverSpan!.TraceId?.ToString()));
+        Assert.That(clientSpan!.ParentSpanId.ToString(), Is.EqualTo(serverSpan!.SpanId?.ToString()));
     }
 
     [Test]
@@ -107,11 +116,12 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.GetAsync("/_probe/outgoing");
 
         var clientSpan = await WaitForSpanAsync(a => a.Kind == ActivityKind.Client);
+        Assert.That(clientSpan, Is.Not.Null, ExportedSpans());
         var traceparent = target.LastTraceparent;
         Assert.That(traceparent, Is.Not.Null);
         var parts = traceparent!.Split('-');
-        Assert.That(parts[1], Is.EqualTo(clientSpan.TraceId.ToString()));
-        Assert.That(parts[2], Is.EqualTo(clientSpan.SpanId.ToString()));
+        Assert.That(parts[1], Is.EqualTo(clientSpan!.TraceId.ToString()));
+        Assert.That(parts[2], Is.EqualTo(clientSpan!.SpanId.ToString()));
     }
 
     [Test]
@@ -142,12 +152,13 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.SendAsync(request);
 
         var serverSpan = await WaitForServerSpanAsync();
+        Assert.That(serverSpan, Is.Not.Null, "expected a SerilogTracing server span event");
         var requestLogs = InMemoryLogSink.Events
             .Where(e => Property(e, "RequestPath") == RealEndpoint && e.Properties.ContainsKey("TraceId") && !e.Properties.ContainsKey("SpanStartTimestamp"))
             .ToList();
         Assert.That(requestLogs, Is.Not.Empty, "expected at least one log event correlated to the request");
         Assert.That(requestLogs.Select(e => Property(e, "TraceId")), Has.All.EqualTo(IncomingTraceId));
-        Assert.That(requestLogs.Select(e => Property(e, "SpanId")), Has.All.EqualTo(serverSpan.SpanId.ToString()));
+        Assert.That(requestLogs.Select(e => Property(e, "SpanId")), Has.All.EqualTo(serverSpan!.SpanId.ToString()));
     }
 
     [Test]
@@ -175,8 +186,9 @@ public class TracePropagationAndLogCorrelationTests
         using var response = await client.GetAsync("/_probe/outgoing");
 
         var clientSpan = await WaitForSpanAsync(a => a.Kind == ActivityKind.Client);
+        Assert.That(clientSpan, Is.Not.Null, ExportedSpans());
         var spans = await WaitForSerilogSpansAsync(e =>
-            e.SpanId?.ToString() == clientSpan.SpanId.ToString() && Property(e, "SpanKind") == "Client");
+            e.SpanId?.ToString() == clientSpan!.SpanId.ToString() && Property(e, "SpanKind") == "Client");
         Assert.That(spans, Is.Not.Empty, "expected the outgoing call as a SerilogTracing span event");
     }
 
@@ -185,13 +197,20 @@ public class TracePropagationAndLogCorrelationTests
     {
         // Recorded current behavior: SerilogTracing owns the ASP.NET Core server span, and the
         // built-in Microsoft.AspNetCore activity is not recorded, so OpenTelemetry sees no server span.
-        using var factory = ObservabilityTestHost.Create(_exporter, externalLoggingEnabled: false);
+        // The outgoing call acts as a positive control: its client span proves the OpenTelemetry
+        // pipeline is live, and ForceFlush plus the SerilogTracing server span event (emitted when the
+        // request ends) remove any dependence on sleeping.
+        using var target = new LoopbackHttpTarget();
+        using var factory = ObservabilityTestHost.Create(_exporter, false, target.Url);
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync(RealEndpoint);
+        using var response = await client.GetAsync("/_probe/outgoing");
 
-        await WaitForServerSpanAsync();
-        await Task.Delay(500);
+        var serverSpan = await WaitForServerSpanAsync();
+        Assert.That(serverSpan, Is.Not.Null, "expected a SerilogTracing server span event");
+        var clientSpan = await WaitForSpanAsync(a => a.Kind == ActivityKind.Client);
+        Assert.That(clientSpan, Is.Not.Null, ExportedSpans());
+        factory.Services.GetRequiredService<TracerProvider>().ForceFlush();
         Assert.That(_exporter.Activities.Where(a => a.Kind == ActivityKind.Server), Is.Empty);
     }
 
@@ -200,7 +219,11 @@ public class TracePropagationAndLogCorrelationTests
             ? scalar.Value?.ToString()
             : null;
 
-    private async Task<Activity> WaitForSpanAsync(Func<Activity, bool> predicate)
+    private string ExportedSpans() =>
+        "Expected span was not exported. Exported: " +
+        string.Join(", ", _exporter.Activities.Select(a => $"{a.Kind}:{a.OperationName}"));
+
+    private async Task<Activity?> WaitForSpanAsync(Func<Activity, bool> predicate)
     {
         for (var i = 0; i < 50; i++)
         {
@@ -213,16 +236,13 @@ public class TracePropagationAndLogCorrelationTests
             await Task.Delay(100);
         }
 
-        Assert.Fail("Expected span was not exported. Exported: " +
-            string.Join(", ", _exporter.Activities.Select(a => $"{a.Kind}:{a.OperationName}")));
-        throw new InvalidOperationException();
+        return null;
     }
 
-    private static async Task<LogEvent> WaitForServerSpanAsync()
+    private static async Task<LogEvent?> WaitForServerSpanAsync()
     {
         var spans = await WaitForSerilogSpansAsync(e => Property(e, "SpanKind") == "Server");
-        Assert.That(spans, Is.Not.Empty, "expected a SerilogTracing server span event");
-        return spans[0];
+        return spans.Count > 0 ? spans[0] : null;
     }
 
     private static async Task<IReadOnlyList<LogEvent>> WaitForSerilogSpansAsync(Func<LogEvent, bool> predicate)

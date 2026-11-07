@@ -63,6 +63,11 @@ public static class ObservabilityTestHost
         {
             app.Map("/_probe/outgoing", probe => probe.Run(async context =>
             {
+                if (string.IsNullOrEmpty(outgoingTargetUrl))
+                {
+                    throw new InvalidOperationException("The /_probe/outgoing endpoint requires an outgoing target URL.");
+                }
+
                 var client = context.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
                 using var response = await client.GetAsync(outgoingTargetUrl);
                 context.Response.StatusCode = (int)response.StatusCode;
