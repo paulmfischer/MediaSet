@@ -31,6 +31,8 @@ public class BackgroundImageLookupService : BackgroundService
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
+    private DateTime UtcNow => _timeProvider.GetUtcNow().UtcDateTime;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var scopeProperties = new Dictionary<string, object?>
@@ -81,7 +83,7 @@ public class BackgroundImageLookupService : BackgroundService
                 {
                     _logger.LogError(ex, "Error in background image lookup service main loop");
                     // Wait a bit before retrying to avoid rapid failure loops
-                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    await Task.Delay(TimeSpan.FromMinutes(1), _timeProvider, stoppingToken);
                 }
             }
 
@@ -91,7 +93,7 @@ public class BackgroundImageLookupService : BackgroundService
 
     private async Task ProcessAllEntityTypesAsync(CancellationToken cancellationToken)
     {
-        var runStartTime = DateTime.UtcNow;
+        var runStartTime = UtcNow;
         var maxRuntime = TimeSpan.FromMinutes(_config.Value.MaxRuntimeMinutes);
         var totalProcessed = 0;
         var totalSucceeded = 0;
@@ -130,7 +132,7 @@ public class BackgroundImageLookupService : BackgroundService
             }
 
             // Check max runtime
-            if (DateTime.UtcNow - runStartTime > maxRuntime)
+            if (UtcNow - runStartTime > maxRuntime)
             {
                 _logger.LogInformation(
                     "Max runtime of {MaxRuntime} minutes reached, stopping processing",
@@ -151,7 +153,7 @@ public class BackgroundImageLookupService : BackgroundService
 
         _logger.LogInformation(
             "Background image lookup run completed. Total processed: {Processed}, Succeeded: {Succeeded}, Failed: {Failed}, Duration: {Duration}",
-            totalProcessed, totalSucceeded, totalFailed, DateTime.UtcNow - runStartTime);
+            totalProcessed, totalSucceeded, totalFailed, UtcNow - runStartTime);
         _logger.LogInformation("Background image lookup run diagnostics: {@Attempts}", _runAttempts);
     }
 
@@ -224,7 +226,7 @@ public class BackgroundImageLookupService : BackgroundService
                 }
 
                 // Check max runtime
-                if (DateTime.UtcNow - runStartTime > maxRuntime)
+                if (UtcNow - runStartTime > maxRuntime)
                 {
                     _logger.LogInformation("Max runtime reached during {MediaType} processing", mediaType);
                     break;
@@ -314,7 +316,7 @@ public class BackgroundImageLookupService : BackgroundService
             .ToListAsync(cancellationToken);
 
         var retries = limit > fresh.Count ? await collection
-            .Find(ImageRetryPolicy.DueFilter<TEntity>(DateTime.UtcNow))
+            .Find(ImageRetryPolicy.DueFilter<TEntity>(UtcNow))
             .SortBy(e => e.ImageLookup!.NextEligibleAt).ThenBy(e => e.Id)
             .Limit(limit - fresh.Count)
             .ToListAsync(cancellationToken) : [];
@@ -407,7 +409,7 @@ public class BackgroundImageLookupService : BackgroundService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var imageLookup = ImageRetryPolicy.Complete(entity, result, _config.Value, DateTime.UtcNow);
+        var imageLookup = ImageRetryPolicy.Complete(entity, result, _config.Value, UtcNow);
 
         switch (mediaType)
         {
@@ -455,6 +457,6 @@ public class BackgroundImageLookupService : BackgroundService
     private async Task ApplyRateLimitAsync(CancellationToken cancellationToken)
     {
         var delayMs = (int)(60_000.0 / _config.Value.RequestsPerMinute);
-        await Task.Delay(delayMs, cancellationToken);
+        await Task.Delay(TimeSpan.FromMilliseconds(delayMs), _timeProvider, cancellationToken);
     }
 }
