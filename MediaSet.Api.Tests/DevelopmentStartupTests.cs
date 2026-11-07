@@ -4,7 +4,6 @@ using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
@@ -19,16 +18,23 @@ public class DevelopmentStartupTests
         using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, configuration) =>
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["IgdbConfiguration:ClientId"] = string.Empty,
-                    ["IgdbConfiguration:ClientSecret"] = string.Empty,
-                    ["MediaSetDatabaseSettings:ConnectionString"] = "mongodb://127.0.0.1:27017",
-                    ["ImageConfiguration:StoragePath"] = TestContext.CurrentContext.WorkDirectory,
-                    ["ExternalLogging:Enabled"] = "false",
-                    ["BackgroundImageLookupConfiguration:Enabled"] = "false"
-                }));
+            // Program.cs reads configuration while building, before ConfigureAppConfiguration
+            // overrides apply, so personal user-secrets (loaded in Development) would win.
+            // UseSetting writes to the host configuration, which the app builder reads first
+            // and which outranks user-secrets, so the result is machine independent.
+            var settings = new Dictionary<string, string?>
+            {
+                ["IgdbConfiguration:ClientId"] = string.Empty,
+                ["IgdbConfiguration:ClientSecret"] = string.Empty,
+                ["MediaSetDatabaseSettings:ConnectionString"] = "mongodb://127.0.0.1:27017",
+                ["ImageConfiguration:StoragePath"] = TestContext.CurrentContext.WorkDirectory,
+                ["ExternalLogging:Enabled"] = "false",
+                ["BackgroundImageLookupConfiguration:Enabled"] = "false"
+            };
+            foreach (var (key, value) in settings)
+            {
+                builder.UseSetting(key, value);
+            }
         });
 
         // Accessing Services builds the Development host and validates its dependency graph.

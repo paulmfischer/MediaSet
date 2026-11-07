@@ -49,6 +49,8 @@ public abstract class IntegrationTestBase
     /// <summary>
     /// Configures WebApplicationFactory to use the test environment settings.
     /// This ensures appsettings.Testing.json is loaded and the content root is properly set.
+    /// The Testing environment never loads user-secrets (only Development does), so this host does
+    /// not depend on the developer machine's secrets.
     /// </summary>
     protected static WebApplicationFactory<Program> CreateWebApplicationFactory()
     {
