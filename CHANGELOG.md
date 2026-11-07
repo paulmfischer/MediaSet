@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.2.1](https://github.com/paulmfischer/MediaSet/compare/v4.2.0...v4.2.1) (2026-11-07)
+
+
+### Tests
+
+* **api:** isolate Development startup test from user-secrets ([#780](https://github.com/paulmfischer/MediaSet/issues/780)) ([e49b383](https://github.com/paulmfischer/MediaSet/commit/e49b383f58f274c11be6e78f7d65d5cee3def819)), closes [#774](https://github.com/paulmfischer/MediaSet/issues/774)
+
+
+### Miscellaneous
+
+* **api:** align .NET 10 SDK and test-host servicing ([#772](https://github.com/paulmfischer/MediaSet/issues/772)) ([6d553c3](https://github.com/paulmfischer/MediaSet/commit/6d553c3cee53499bfaf978510671ceb0522740b5)), closes [#655](https://github.com/paulmfischer/MediaSet/issues/655)
+* **api:** refresh backend test tools ([#779](https://github.com/paulmfischer/MediaSet/issues/779)) ([91eb2e9](https://github.com/paulmfischer/MediaSet/commit/91eb2e94bcef0807e8869e04b9c3f9893cf7162d)), closes [#658](https://github.com/paulmfischer/MediaSet/issues/658)
+* **api:** update observability packages ([#778](https://github.com/paulmfischer/MediaSet/issues/778)) ([c0d3ed3](https://github.com/paulmfischer/MediaSet/commit/c0d3ed3787c14180afc4239126a908fd3e75f043)), closes [#657](https://github.com/paulmfischer/MediaSet/issues/657)
+* **api:** update Swashbuckle and OpenAPI packages ([#777](https://github.com/paulmfischer/MediaSet/issues/777)) ([ba8e8ce](https://github.com/paulmfischer/MediaSet/commit/ba8e8ceb80c17a837ab023f148a42ad4dc5ddcf0)), closes [#656](https://github.com/paulmfischer/MediaSet/issues/656)
+
 ## [4.2.0](https://github.com/paulmfischer/MediaSet/compare/v4.1.0...v4.2.0) (2026-11-07)
 
 
