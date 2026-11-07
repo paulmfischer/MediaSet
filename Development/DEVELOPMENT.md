@@ -267,6 +267,29 @@ podman-compose -f docker-compose.dev.yml up -d --force-recreate mongodb
 - **SELinux:** only MongoDB/init-script mounts need container labels now.
   Investigate their labels and scoped permissions; do not disable enforcement.
 
+## .NET servicing policy
+
+- **SDK baseline:** `global.json` requires SDK 10.0.403 with `rollForward: latestFeature`,
+  so any newer 10.0.x SDK (including later feature bands) satisfies it; older ones do not.
+  CI (`setup-dotnet` with `global-json-file`) and the API Docker build stage read it.
+- **Targets:** every project targets `net10.0` (.NET 10 LTS, supported until 2028-11-14).
+  Do not advance the framework major as part of servicing.
+- **Images:** `MediaSet.Api/Dockerfile` deliberately uses the floating `sdk:10.0` and
+  `aspnet:10.0` tags so each image build picks up the latest 10.0 servicing patch and
+  security fixes without edits. Because the build stage also honors `global.json`, the
+  `sdk:10.0` image must be at least the baseline SDK; if a build fails on that, the
+  image mirror lags: wait for it or lower the baseline. Production only changes by
+  deploying a newly built image, with the previous image tag kept for rollback.
+- **Test host:** `Microsoft.AspNetCore.Mvc.Testing` is pinned in `MediaSet.Api.Tests` to
+  the ASP.NET Core patch matching the baseline runtime (10.0.14). Move it together with
+  `global.json` when servicing; there is no other framework-version package pin in the
+  solution (Serilog.AspNetCore and Swashbuckle have their own release streams).
+- **Current resolution (2026-11-07):** release 10.0.14 (published 2026-10-25), SDK
+  10.0.403, .NET and ASP.NET Core runtime 10.0.14. 10.0.14 is a security release
+  published 13 days before adoption, taken as a security exception to the usual
+  14-day minimum so the test host matches what the floating images resolve to.
+  Previously: SDK 10.0.101 baseline and Mvc.Testing 10.0.2.
+
 ## Checks and formatting
 
 Build, test, lint and formatting commands, and what CI runs, are in
