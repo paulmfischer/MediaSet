@@ -45,11 +45,11 @@ describe('app shell (e2e)', () => {
     assert.equal(await page.title(), 'Dashboard | MediaSet');
     assert.equal((await entryLoaded).status(), 200);
     const heading = page.getByRole('heading', HOME_HEADING);
-    // text-xl and dark:bg-zinc-800 come from the prebuilt app.css.
+    // text-xl and dark:bg-zinc-800 (the Tailwind 4 oklch palette) come from the prebuilt app.css.
     assert.equal(await heading.evaluate((element) => getComputedStyle(element).fontSize), '20px');
     assert.equal(
       await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor),
-      'rgb(39, 39, 42)'
+      'oklch(0.274 0.006 286.033)'
     );
     await page.waitForLoadState('networkidle');
     assert.deepEqual(errors, []);

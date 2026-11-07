@@ -124,7 +124,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                   value={searchText ?? ''}
                   placeholder={`Search ${name}`}
                   aria-label={`Search ${name}`}
-                  class={`w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${searchText ? 'border-r-0 rounded-l-md rounded-r-none' : 'rounded-md'}`}
+                  class={`w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${searchText ? 'border-r-0 rounded-l-md rounded-r-none' : 'rounded-md'}`}
                 />
                 {searchText ? (
                   <a
@@ -163,14 +163,14 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
               <div class="md:hidden flex flex-col divide-y divide-slate-700">
                 {items.map((item) => (
                   <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
-                    {item.coverImage ? <div class="flex-shrink-0">{cover(item)}</div> : null}
+                    {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
                     <div class="flex-1 min-w-0">
                       <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
                         {config.titleOf(item)}
                       </a>
                       <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
                     </div>
-                    <div class="flex flex-row gap-3 flex-shrink-0">
+                    <div class="flex flex-row gap-3 shrink-0">
                       {editLink(item)}
                       {deleteLink(item)}
                     </div>
@@ -220,7 +220,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
         {totalPages > 1 ? (
           <nav
             aria-label="Pagination"
-            class="sticky bottom-2 mb-2 flex items-center justify-center gap-6 py-3 px-4 bg-entity/20 border border-entity/30 rounded-lg backdrop-blur-sm"
+            class="sticky bottom-2 mb-2 flex items-center justify-center gap-6 py-3 px-4 bg-entity/20 border border-entity/30 rounded-lg backdrop-blur-xs"
           >
             <span class="text-sm text-gray-400">{totalCount} items</span>
             {pageLink(page - 1, 'Prev', ChevronLeft, true)}

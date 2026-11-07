@@ -51,7 +51,7 @@ export function Header(handle: Handle<{ path: string }>) {
                   key={item.href}
                   item={item}
                   active={isActivePath(path, item.href)}
-                  class="flex gap-2 items-center px-4 py-3 rounded-lg hover:dark:bg-zinc-700"
+                  class="flex gap-2 items-center px-4 py-3 rounded-lg dark:hover:bg-zinc-700"
                 />
               ))}
             </ToolsMenu>

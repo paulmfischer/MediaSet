@@ -60,7 +60,7 @@ export function DashboardTabs(handle: Handle<DashboardTabsProps>) {
               <label
                 for={tab.inputId}
                 id={`dashboard-label-${tab.id}`}
-                class={`${tab.entityClass} ${tab.activeLabelClass} ${tab.focusLabelClass} block w-full cursor-pointer rounded border border-gray-500 bg-transparent p-6 text-left text-slate-300 transition-colors hover:bg-gray-800`}
+                class={`${tab.entityClass} ${tab.activeLabelClass} ${tab.focusLabelClass} block w-full cursor-pointer rounded-sm border border-gray-500 bg-transparent p-6 text-left text-slate-300 transition-colors hover:bg-gray-800`}
               >
                 <div class="flex items-center gap-2">
                   <Icon icon={tab.icon} size={16} class="text-entity" />

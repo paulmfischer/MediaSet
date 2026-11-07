@@ -38,7 +38,7 @@ export function Document(handle: Handle<DocumentProps>) {
           <div class="flex flex-col min-h-screen 2xl:mx-14">
             <a
               href="#main-content"
-              class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:p-3 focus:rounded-lg focus:bg-zinc-200 focus:dark:bg-zinc-800"
+              class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:p-3 focus:rounded-lg focus:bg-zinc-200 dark:focus:bg-zinc-800"
             >
               Skip to main content
             </a>

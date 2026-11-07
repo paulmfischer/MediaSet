@@ -26,7 +26,7 @@ export const PendingNavigation = clientEntry(import.meta.url, function PendingNa
       </div>
       {pending ? (
         <>
-          <div aria-hidden="true" class="fixed inset-0 2xl:mx-14 z-20 bg-gray-900 bg-opacity-60"></div>
+          <div aria-hidden="true" class="fixed inset-0 2xl:mx-14 z-20 bg-gray-900/60"></div>
           <div
             aria-hidden="true"
             class="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center text-slate-400"

@@ -10,7 +10,7 @@ The MediaSet frontend provides a responsive interface for managing your personal
 
 - **Remix 3** (the `remix` package): router, server-rendered components, asset server and test runner.
 - **TypeScript**: Type-safe development; Node runs the sources directly and `tsc` only type checks
-- **Tailwind CSS**: Utility-first CSS, compiled to `public/app.css`
+- **Tailwind CSS 4**: Utility-first CSS, compiled to `public/app.css` by `@tailwindcss/cli` (`npm run css`)
 - **Playwright**: Browser and end-to-end tests through `remix test`
 
 ## Getting Started
@@ -75,7 +75,7 @@ MediaSet.Remix/
 │   ├── models.ts         # TypeScript interfaces
 │   ├── router.ts         # Router and controller registration
 │   ├── routes.ts         # Route map
-│   └── tailwind.css      # Tailwind base styles
+│   └── tailwind.css      # Tailwind configuration (CSS-first: theme, dark variant, entity colours) and base styles
 ├── public/               # Static assets; app.css is generated
 ├── dev.ts                # Development launcher (Tailwind watch + server)
 ├── remix.json            # remix test configuration

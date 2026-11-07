@@ -26,7 +26,7 @@ export const ToolsMenu = clientEntry(
       <div class="relative" mix={ref((node, signal) => dismissOnOutsideOrEscape(node, signal, close))}>
         <button
           type="button"
-          class={`p-3 flex gap-2 items-center rounded-lg tertiary${handle.props.active ? ' active bg-zinc-300 dark:bg-zinc-800' : ''}`}
+          class={`flex gap-2 items-center tertiary${handle.props.active ? ' active' : ''}`}
           aria-label="Tools"
           aria-haspopup="true"
           aria-controls="tools-menu-panel"

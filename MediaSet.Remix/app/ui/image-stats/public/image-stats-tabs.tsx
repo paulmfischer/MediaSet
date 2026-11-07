@@ -37,9 +37,9 @@ export const ImageStatsTabs = clientEntry(
                   id={`image-stats-tab-${tab.id}`}
                   aria-pressed={isActive ? 'true' : 'false'}
                   aria-controls={`image-stats-panel-${tab.id}`}
-                  class={`tertiary !p-6 w-full text-left ${tab.className}${
+                  class={`tertiary p-6! w-full text-left ${tab.className}${
                     isActive
-                      ? ' relative -mb-[5px] z-10 !bg-zinc-800 !border-x-zinc-700 !border-b-zinc-900 !rounded-b-none !border-t-entity'
+                      ? ' relative -mb-[5px] z-10 bg-zinc-800! border-x-zinc-700! border-b-zinc-900! rounded-b-none! border-t-entity!'
                       : ''
                   }`}
                   mix={on('click', () => {

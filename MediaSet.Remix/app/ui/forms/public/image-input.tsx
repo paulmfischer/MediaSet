@@ -167,7 +167,7 @@ export const ImageInput = clientEntry(import.meta.url, function ImageInput(handl
           {/* The whole area is the file input's label, so clicking it opens the picker without JavaScript. */}
           <label
             for="coverImage"
-            class={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-400 ${
+            class={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors has-focus-visible:ring-2 has-focus-visible:ring-blue-400 ${
               dragging
                 ? 'border-blue-400 bg-blue-900/30'
                 : 'border-gray-600 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'

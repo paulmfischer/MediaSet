@@ -43,7 +43,7 @@ interface ImageStatsPageProps {
 function renderTitleLink(entityType: string, id: string, title: string) {
   const href = detailHref(entityType, id);
   return href ? (
-    <a href={href} class="text-cyan-400 hover:underline">
+    <a href={href} class="hover:underline">
       {title}
     </a>
   ) : (
