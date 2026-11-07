@@ -148,7 +148,7 @@ Probe fixture (11 tests, run in addition to the 783):
 
 ## Draft implementation ticket
 
-Filed as a single ticket because the three packages and the guard are one reviewable
+Filed as [#781](https://github.com/paulmfischer/MediaSet/issues/781), a single ticket because the three packages and the guard are one reviewable
 compatibility boundary.
 
 ### Migrate the API test project to NUnit 5, adapter 6, Test SDK 18 and the unawaited-assertion analyzer
