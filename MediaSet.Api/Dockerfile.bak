@@ -1,4 +1,4 @@
-# Legacy backup. Image tags follow MediaSet.Api/Dockerfile: floating 10.0 (see Development/DEVELOPMENT.md, ".NET servicing policy").
+# Legacy backup. Image tags follow MediaSet.Api/Dockerfile (floating 10.0; see ".NET versions" in Development/DEVELOPMENT.md).
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
 WORKDIR /build
 
