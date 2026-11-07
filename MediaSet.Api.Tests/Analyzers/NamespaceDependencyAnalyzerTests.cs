@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using MediaSet.Api.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -50,7 +50,7 @@ public class NamespaceDependencyAnalyzerTests
         var diagnostics = await RunAnalyzerAsync(source, withRules: true);
 
         // Assert
-        Assert.That(diagnostics, Is.Not.Empty);
+        AssertArch001Lines(diagnostics, 4, 4, 4, 4, 4, 4);
         Assert.That(diagnostics.Select(d => d.Id).Distinct(), Is.EqualTo(["ARCH001"]));
         Assert.That(diagnostics.Select(d => d.GetMessage()), Has.All.EqualTo("Infrastructure layer cannot reference Feature types"));
     }
@@ -72,7 +72,7 @@ public class NamespaceDependencyAnalyzerTests
         var diagnostics = await RunAnalyzerAsync(source, withRules: true);
 
         // Assert
-        Assert.That(diagnostics, Is.Not.Empty);
+        AssertArch001Lines(diagnostics, 4, 4, 4, 4, 5);
         Assert.That(diagnostics.Select(d => d.Id).Distinct(), Is.EqualTo(["ARCH001"]));
         Assert.That(diagnostics.Select(d => d.GetMessage()), Has.All.EqualTo("Shared code cannot depend on specific features"));
     }
@@ -90,7 +90,7 @@ public class NamespaceDependencyAnalyzerTests
         var diagnostics = await RunAnalyzerAsync(source, withRules: true);
 
         // Assert
-        Assert.That(diagnostics, Is.Not.Empty);
+        AssertArch001Lines(diagnostics, 2, 2, 2, 2);
         Assert.That(diagnostics.Select(d => d.Id).Distinct(), Is.EqualTo(["ARCH001"]));
         Assert.That(diagnostics.Select(d => d.GetMessage()), Has.All.EqualTo("Features should not reference other features"));
     }
@@ -156,6 +156,16 @@ public class NamespaceDependencyAnalyzerTests
         Assert.That(diagnostics, Is.Empty);
     }
 
+    /// <summary>Asserts the exact number and 1-based source lines of the reported diagnostics (one entry per diagnostic).</summary>
+    private static void AssertArch001Lines(ImmutableArray<Diagnostic> diagnostics, params int[] expectedLines)
+    {
+        var lines = diagnostics
+            .Select(d => d.Location.GetLineSpan().StartLinePosition.Line + 1)
+            .Order()
+            .ToArray();
+        Assert.That(lines, Is.EqualTo(expectedLines));
+    }
+
     private static async Task<ImmutableArray<Diagnostic>> RunAnalyzerAsync(string source, bool withRules)
     {
         var tree = CSharpSyntaxTree.ParseText(source);
@@ -213,8 +223,10 @@ public class NamespaceDependencyAnalyzerTests
     {
         private readonly Options _global = new(values);
         public override AnalyzerConfigOptions GlobalOptions => _global;
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => _global;
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => _global;
+        // Rules are global-only (build_metadata keys from .globalconfig); per-file lookups carry no extra keys.
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty;
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty;
+        private static readonly Options Empty = new(new Dictionary<string, string>());
     }
 
     private sealed class Options(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
