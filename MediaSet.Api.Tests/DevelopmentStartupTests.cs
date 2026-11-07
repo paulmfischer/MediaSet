@@ -20,8 +20,8 @@ public class DevelopmentStartupTests
             builder.UseEnvironment("Development");
             // Program.cs reads configuration while building, before ConfigureAppConfiguration
             // overrides apply, so personal user-secrets (loaded in Development) would win.
-            // UseSetting writes to the host configuration, which the app builder reads first
-            // and which outranks user-secrets, so the result is machine independent.
+            // UseSetting values are applied to host configuration before Program.cs reads them,
+            // so they win over user-secrets here (observed behavior, not a documented guarantee).
             var settings = new Dictionary<string, string?>
             {
                 ["IgdbConfiguration:ClientId"] = string.Empty,
