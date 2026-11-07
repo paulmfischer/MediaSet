@@ -8,9 +8,9 @@ namespace MediaSet.Api.Shared.Extensions;
 /// </summary>
 internal static class LookupNotConfiguredFilter
 {
-    public static IResult ToProblem() => TypedResults.Problem(
+    public static IResult ToProblem(string? detail = null) => TypedResults.Problem(
         title: "Lookup provider not configured",
-        detail: LookupNotConfiguredException.DefaultMessage,
+        detail: detail ?? LookupNotConfiguredException.DefaultMessage,
         statusCode: StatusCodes.Status503ServiceUnavailable);
 
     public static TBuilder AddLookupNotConfiguredFilter<TBuilder>(this TBuilder builder)

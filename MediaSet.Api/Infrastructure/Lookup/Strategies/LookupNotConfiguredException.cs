@@ -7,5 +7,6 @@ public class LookupNotConfiguredException() : InvalidOperationException(DefaultM
 {
     public const string DefaultMessage =
         "Lookup is not available because no lookup provider is configured. " +
-        "Set at least one of the configuration sections OpenLibraryConfiguration, TmdbConfiguration or MusicBrainzConfiguration.";
+        "Set MusicBrainzConfiguration (music), or UpcItemDbConfiguration together with OpenLibraryConfiguration (books), " +
+        "TmdbConfiguration (movies) or IgdbConfiguration with ClientId and ClientSecret (games).";
 }

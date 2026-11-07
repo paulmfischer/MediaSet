@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
@@ -40,7 +39,8 @@ public class NoLookupProviderTests
         _factories.Clear();
     }
 
-    private HttpClient CreateClient(string environment = "Production", bool removeImageLookup = false)
+    private HttpClient CreateClient(string environment = "Production", bool removeStrategies = false,
+        IReadOnlyDictionary<string, string>? extraSettings = null)
     {
         var databaseMock = new Mock<IDatabaseService>();
         var collectionMock = new Mock<IMongoCollection<BsonDocument>>();
@@ -62,16 +62,26 @@ public class NoLookupProviderTests
             builder.UseSetting("ImageConfiguration:StoragePath", TestContext.CurrentContext.WorkDirectory);
             builder.UseSetting("ExternalLogging:Enabled", "false");
             builder.UseSetting("BackgroundImageLookupConfiguration:Enabled", "false");
+            foreach (var (key, value) in extraSettings ?? new Dictionary<string, string>())
+            {
+                builder.UseSetting(key, value);
+            }
             builder.ConfigureServices(services =>
             {
                 Replace(services, typeof(IDatabaseService), databaseMock.Object);
                 Replace(services, typeof(IEntityService<Book>), bookServiceMock.Object);
-                if (removeImageLookup)
+                if (removeStrategies)
                 {
-                    foreach (var d in services.Where(d => d.ServiceType == typeof(IImageLookupService)).ToList())
+                    // Independent of any provider secrets the developer machine may load in Development
+                    foreach (var d in services.Where(d => d.ServiceType.IsGenericType
+                        && d.ServiceType.GetGenericTypeDefinition() == typeof(ILookupStrategy<>)).ToList())
                     {
                         services.Remove(d);
                     }
+                    var bookServiceMock = new Mock<IEntityService<Book>>();
+                    bookServiceMock.Setup(x => x.GetAsync("abc", It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new Book { Id = "abc", Title = "Dune", ISBN = "9780441172719" });
+                    Replace(services, typeof(IEntityService<Book>), bookServiceMock.Object);
                 }
             });
         });
@@ -153,10 +163,10 @@ public class NoLookupProviderTests
     }
 
     [Test]
-    public async Task DevImageLookup_ImageLookupServiceNotRegistered_ReturnsProblemDetails503()
+    public async Task DevImageLookup_ServiceRegisteredButNoStrategies_ReturnsProblemDetails503()
     {
         // Arrange
-        using var client = CreateClient("Development", removeImageLookup: true);
+        using var client = CreateClient("Development", removeStrategies: true);
 
         // Act
         var response = await client.PostAsync("/images/dev/lookup/Books/abc", content: null);
@@ -164,6 +174,66 @@ public class NoLookupProviderTests
         // Assert
         await AssertLookupNotConfiguredProblemAsync(response);
     }
+
+    [Test]
+    public async Task Lookup_MusicBrainzConfigured_DoesNotReturn503()
+    {
+        // Arrange
+        using var client = CreateClient(extraSettings: MusicBrainzSettings);
+
+        // Act
+        var response = await client.GetAsync("/lookup/Books/isbn/9780140328721");
+
+        // Assert: no Books strategy exists, so the request is rejected as unsupported, not as unconfigured
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task Lookup_IgdbWithUpcItemDbConfigured_DoesNotReturn503()
+    {
+        // Arrange
+        using var client = CreateClient(extraSettings: new Dictionary<string, string>
+        {
+            ["IgdbConfiguration:ClientId"] = "id",
+            ["IgdbConfiguration:ClientSecret"] = "secret",
+            ["UpcItemDbConfiguration:BaseUrl"] = "https://api.upcitemdb.com",
+            ["UpcItemDbConfiguration:Timeout"] = "30",
+            ["UpcItemDbConfiguration:MaxRequestsPerMinute"] = "100",
+            ["UpcItemDbConfiguration:MaxRequestsPerDay"] = "1000",
+            ["UpcItemDbConfiguration:MinDelayBetweenRequestsMs"] = "0",
+            ["UpcItemDbConfiguration:MaxRetryPauseSeconds"] = "65"
+        });
+
+        // Act: an unsupported search property is rejected after the Game strategy is resolved
+        var response = await client.GetAsync("/lookup/Games/entity?bogus=x");
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task Lookup_IgdbCredentialsWithoutUpcItemDb_ReturnsProblemDetails503()
+    {
+        // Arrange: a Game strategy needs both IGDB credentials and UpcItemDb, so none is registered
+        using var client = CreateClient(extraSettings: new Dictionary<string, string>
+        {
+            ["IgdbConfiguration:ClientId"] = "id",
+            ["IgdbConfiguration:ClientSecret"] = "secret"
+        });
+
+        // Act
+        var response = await client.GetAsync("/lookup/Games/entity?title=Halo");
+
+        // Assert
+        await AssertLookupNotConfiguredProblemAsync(response);
+    }
+
+    private static readonly Dictionary<string, string> MusicBrainzSettings = new()
+    {
+        ["MusicBrainzConfiguration:BaseUrl"] = "https://musicbrainz.org/ws/2",
+        ["MusicBrainzConfiguration:Timeout"] = "30",
+        ["MusicBrainzConfiguration:ContactEmail"] = "test@example.com"
+    };
 
     [Test]
     public async Task Lookup_ProviderConfigured_StillResolvesStrategies()

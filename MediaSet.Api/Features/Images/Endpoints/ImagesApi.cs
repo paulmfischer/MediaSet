@@ -1,5 +1,6 @@
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -67,7 +68,10 @@ internal static class ImagesApi
                 var imageLookupService = httpContext.RequestServices.GetService<IImageLookupService>();
                 if (imageLookupService is null)
                 {
-                    return LookupNotConfiguredFilter.ToProblem();
+                    // Defensive: in Development the service is always registered, so this should not occur.
+                    return LookupNotConfiguredFilter.ToProblem(
+                        "Image lookup is not available because IImageLookupService is not registered. " +
+                        "If the cause is a missing provider: " + LookupNotConfiguredException.DefaultMessage);
                 }
 
                 if (!Enum.TryParse<MediaTypes>(entityType, ignoreCase: true, out var mediaType))
