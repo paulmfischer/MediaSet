@@ -271,21 +271,21 @@ public class MetadataServiceNewTests
     }
 
     [Test]
-    public void GetMetadata_ShouldThrowException_ForInvalidMediaType()
+    public async Task GetMetadata_ShouldThrowException_ForInvalidMediaType()
     {
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentException>(async () => 
+        await Assert.ThrowsAsync<ArgumentException>(async () => 
             await _metadataService.GetMetadata((MediaTypes)999, "Format"));
     }
 
     [Test]
-    public void GetMetadata_ShouldThrowException_ForInvalidProperty()
+    public async Task GetMetadata_ShouldThrowException_ForInvalidProperty()
     {
         // Arrange
         _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<Book>());
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentException>(async () => 
+        await Assert.ThrowsAsync<ArgumentException>(async () => 
             await _metadataService.GetMetadata(MediaTypes.Books, "NonExistentProperty"));
     }
 

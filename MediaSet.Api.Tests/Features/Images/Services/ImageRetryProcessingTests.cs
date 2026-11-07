@@ -101,12 +101,12 @@ public class ImageRetryProcessingTests
     }
 
     [Test]
-    public void RequeueAsync_Cancelled_DoesNotUpdate()
+    public async Task RequeueAsync_Cancelled_DoesNotUpdate()
     {
         collection.Setup(c => c.FindAsync(It.IsAny<FilterDefinition<Book>>(), It.IsAny<FindOptions<Book, Book>>(),
             It.IsAny<CancellationToken>())).ReturnsAsync(Cursor([new Book { ImageLookup = new() { FailureReason = "old" } }]));
         var service = new ImageRequeueService(database.Object, Options.Create(new BackgroundImageLookupConfiguration()));
-        Assert.ThrowsAsync<OperationCanceledException>(async () => await service.RequeueAsync("books",
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await service.RequeueAsync("books",
             new("operation", DateTime.UtcNow), new CancellationToken(true)));
         Assert.That(updates, Is.Empty);
     }
@@ -136,7 +136,7 @@ public class ImageRetryProcessingTests
     }
 
     [Test]
-    public void ProcessEntityAsync_CancelledLookup_DoesNotWriteDefinitiveFailure()
+    public async Task ProcessEntityAsync_CancelledLookup_DoesNotWriteDefinitiveFailure()
     {
         var lookup = new Mock<IImageLookupService>();
         lookup.Setup(l => l.LookupAndSaveImageAsync(It.IsAny<IEntity>(), It.IsAny<MediaTypes>(), It.IsAny<CancellationToken>()))
@@ -146,7 +146,7 @@ public class ImageRetryProcessingTests
         var worker = new BackgroundImageLookupService(provider.GetRequiredService<IServiceScopeFactory>(),
             Options.Create(new BackgroundImageLookupConfiguration()), NullLogger<BackgroundImageLookupService>.Instance);
         var method = typeof(BackgroundImageLookupService).GetMethod("ProcessEntityAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        Assert.ThrowsAsync<OperationCanceledException>(async () => await (Task)method.Invoke(worker,
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await (Task)method.Invoke(worker,
             [scope, new Book { Id = "000000000000000000000001" }, MediaTypes.Books, collection.Object, new CancellationToken(true)])!);
         Assert.That(updates, Is.Empty);
     }

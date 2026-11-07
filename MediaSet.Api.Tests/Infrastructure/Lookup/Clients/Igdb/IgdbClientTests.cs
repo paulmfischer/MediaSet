@@ -110,7 +110,7 @@ public class IgdbClientTests
     }
 
     [Test]
-    public void SearchGameAsync_WithRateLimit_ThrowsHttpRequestException()
+    public async Task SearchGameAsync_WithRateLimit_ThrowsHttpRequestException()
     {
         _httpMessageHandlerMock
             .Protected()
@@ -123,7 +123,7 @@ public class IgdbClientTests
                 StatusCode = HttpStatusCode.TooManyRequests
             });
 
-        Assert.ThrowsAsync<HttpRequestException>(async () =>
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
             await _client.SearchGameAsync("Test Game", CancellationToken.None));
     }
 
@@ -203,7 +203,7 @@ public class IgdbClientTests
     }
 
     [Test]
-    public void GetGameDetailsAsync_WithRateLimit_ThrowsHttpRequestException()
+    public async Task GetGameDetailsAsync_WithRateLimit_ThrowsHttpRequestException()
     {
         _httpMessageHandlerMock
             .Protected()
@@ -216,7 +216,7 @@ public class IgdbClientTests
                 StatusCode = HttpStatusCode.TooManyRequests
             });
 
-        Assert.ThrowsAsync<HttpRequestException>(async () =>
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
             await _client.GetGameDetailsAsync(12345, CancellationToken.None));
     }
 

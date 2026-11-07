@@ -154,20 +154,20 @@ public class ImageServiceTests : IDisposable
     }
 
     [Test]
-    public void SaveImageAsync_WithNullFile_ThrowsArgumentException()
+    public async Task SaveImageAsync_WithNullFile_ThrowsArgumentException()
     {
         // Arrange
         var entityType = "books";
         var entityId = "123";
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(null!, entityType, entityId, CancellationToken.None));
         Assert.That(ex?.ParamName, Is.EqualTo("file"));
     }
 
     [Test]
-    public void SaveImageAsync_WithUnsupportedMimeType_ThrowsArgumentException()
+    public async Task SaveImageAsync_WithUnsupportedMimeType_ThrowsArgumentException()
     {
         // Arrange
         var entityType = "books";
@@ -177,13 +177,13 @@ public class ImageServiceTests : IDisposable
         var formFile = CreateFormFile(fileName, fileContent, "application/pdf");
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(formFile, entityType, entityId, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("Unsupported file type"));
     }
 
     [Test]
-    public void SaveImageAsync_WithFileSizeExceedsLimit_ThrowsArgumentException()
+    public async Task SaveImageAsync_WithFileSizeExceedsLimit_ThrowsArgumentException()
     {
         // Arrange
         var entityType = "books";
@@ -194,20 +194,20 @@ public class ImageServiceTests : IDisposable
         var formFile = CreateFormFile(fileName, fileContent, "image/jpeg");
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(formFile, entityType, entityId, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
     }
 
     [Test]
-    public void SaveImageAsync_WithNullEntityType_ThrowsArgumentException()
+    public async Task SaveImageAsync_WithNullEntityType_ThrowsArgumentException()
     {
         // Arrange
         var fileContent = CreateImage(SKEncodedImageFormat.Jpeg);
         var formFile = CreateFormFile("cover.jpg", fileContent, "image/jpeg");
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentException>(async () =>
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(formFile, null!, "123", CancellationToken.None));
     }
 
@@ -264,40 +264,40 @@ public class ImageServiceTests : IDisposable
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithNullUrl_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithNullUrl_ThrowsArgumentException()
     {
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(null!, "movies", "456", CancellationToken.None));
         Assert.That(ex?.ParamName, Is.EqualTo("imageUrl"));
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithInvalidUrl_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithInvalidUrl_ThrowsArgumentException()
     {
         // Arrange
         var invalidUrl = "not-a-valid-url";
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(invalidUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("valid HTTP or HTTPS URL"));
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithFtpUrl_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithFtpUrl_ThrowsArgumentException()
     {
         // Arrange
         var ftpUrl = "ftp://example.com/image.jpg";
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(ftpUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("valid HTTP or HTTPS URL"));
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithUnsupportedMimeType_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithUnsupportedMimeType_ThrowsArgumentException()
     {
         // Arrange
         var imageUrl = "http://1.2.3.4/file.pdf";
@@ -328,14 +328,14 @@ public class ImageServiceTests : IDisposable
                 _loggerMock!.Object);
 
             // Act & Assert
-            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("Unsupported file type"));
         }
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithDownloadSizeExceedsLimit_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithDownloadSizeExceedsLimit_ThrowsArgumentException()
     {
         // Arrange
         var imageUrl = "http://1.2.3.4/large-image.jpg";
@@ -367,7 +367,7 @@ public class ImageServiceTests : IDisposable
                 _loggerMock!.Object);
 
             // Act & Assert
-            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
         }
@@ -382,10 +382,10 @@ public class ImageServiceTests : IDisposable
     [TestCase("http://10.0.0.1/image.jpg")]
     [TestCase("http://172.16.0.1/image.jpg")]
     [TestCase("http://169.254.169.254/latest/meta-data/")]
-    public void DownloadAndSaveImageAsync_WithPrivateIpUrl_ThrowsArgumentException(string imageUrl)
+    public async Task DownloadAndSaveImageAsync_WithPrivateIpUrl_ThrowsArgumentException(string imageUrl)
     {
         // Act & Assert — no HTTP mock needed; SSRF check fires before any network call
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(imageUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
     }
@@ -444,7 +444,7 @@ public class ImageServiceTests : IDisposable
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithRedirectToPrivateIp_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithRedirectToPrivateIp_ThrowsArgumentException()
     {
         // Arrange — first request returns a redirect to a private IP
         var initialUrl = "http://1.2.3.4/redirect";
@@ -470,13 +470,13 @@ public class ImageServiceTests : IDisposable
             _loggerMock!.Object);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
     }
 
     [Test]
-    public void DownloadAndSaveImageAsync_WithTooManyRedirects_ThrowsArgumentException()
+    public async Task DownloadAndSaveImageAsync_WithTooManyRedirects_ThrowsArgumentException()
     {
         // Arrange — every request redirects to the next URL
         var initialUrl = "http://1.2.3.4/redirect-0";
@@ -506,7 +506,7 @@ public class ImageServiceTests : IDisposable
             _loggerMock!.Object);
 
         // Act & Assert
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("redirect limit"));
     }

@@ -397,18 +397,18 @@ public class EntityServiceTests
     }
 
     [Test]
-    public void SearchAsync_ShouldThrowArgumentException_WhenOrderByFieldIsInvalid()
+    public async Task SearchAsync_ShouldThrowArgumentException_WhenOrderByFieldIsInvalid()
     {
         // Arrange & Act & Assert
-        Assert.ThrowsAsync<ArgumentException>(
+        await Assert.ThrowsAsync<ArgumentException>(
             async () => await _entityService.SearchAsync("book", "nonExistentField:asc"));
     }
 
     [Test]
-    public void SearchAsync_ShouldThrowArgumentException_WithDescriptiveMessage_WhenOrderByFieldIsInvalid()
+    public async Task SearchAsync_ShouldThrowArgumentException_WithDescriptiveMessage_WhenOrderByFieldIsInvalid()
     {
         // Arrange & Act
-        var ex = Assert.ThrowsAsync<ArgumentException>(
+        var ex = await Assert.ThrowsAsync<ArgumentException>(
             async () => await _entityService.SearchAsync("book", "invalidField:asc"));
 
         // Assert

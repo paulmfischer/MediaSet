@@ -109,18 +109,18 @@ public class TmdbTvClientTests
     }
 
     [Test]
-    public void SearchTvAsync_RateLimit_PreservesProviderFailure()
+    public async Task SearchTvAsync_RateLimit_PreservesProviderFailure()
     {
         using var handler = new Handler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests)));
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
         using var scope = new LookupFailureScope();
-        var exception = Assert.ThrowsAsync<HttpRequestException>(() => Client(http).SearchTvAsync("Community", CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => Client(http).SearchTvAsync("Community", CancellationToken.None));
         Assert.That(exception?.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
     }
 
     [Test]
-    public void GetSeasonDetailsAsync_Canceled_PropagatesCancellation()
+    public async Task GetSeasonDetailsAsync_Canceled_PropagatesCancellation()
     {
         using var cancellation = new CancellationTokenSource();
         using var handler = new Handler((_, _) =>
@@ -129,7 +129,7 @@ public class TmdbTvClientTests
             throw new OperationCanceledException(cancellation.Token);
         });
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
-        Assert.ThrowsAsync<OperationCanceledException>(() =>
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
             Client(http).GetSeasonDetailsAsync(1, 6, cancellation.Token));
     }
 }

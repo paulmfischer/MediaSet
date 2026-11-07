@@ -232,10 +232,10 @@ public class ImageManagementServiceTests
     }
 
     [Test]
-    public void ResetImageLookupAsync_ShouldThrowArgumentException_ForUnknownEntityType()
+    public async Task ResetImageLookupAsync_ShouldThrowArgumentException_ForUnknownEntityType()
     {
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentException>(
+        await Assert.ThrowsAsync<ArgumentException>(
             async () => await _imageManagementService.ResetImageLookupAsync(new[] { "1" }, "unknown"));
     }
 

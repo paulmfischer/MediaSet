@@ -419,11 +419,11 @@ public class MovieLookupStrategyTests
     }
 
     [Test]
-    public void LookupAsync_BundleConflictsWithStoredFilm_RejectsFilmFallback()
+    public async Task LookupAsync_BundleConflictsWithStoredFilm_RejectsFilmFallback()
     {
         _upcItemDbClientMock.Setup(c => c.GetItemByCodeAsync("123", It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateUpcItemResponse("123", "Darkman Trilogy"));
-        Assert.ThrowsAsync<RetailBundleException>(() => _strategy.LookupAsync(IdentifierType.Upc,
+        await Assert.ThrowsAsync<RetailBundleException>(() => _strategy.LookupAsync(IdentifierType.Upc,
             new Dictionary<string, string> { ["storedTitle"] = "Darkman", ["upc"] = "123" }, CancellationToken.None));
     }
 

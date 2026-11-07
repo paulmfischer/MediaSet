@@ -147,7 +147,7 @@ public class ImageLookupServiceTests
     }
 
     [Test]
-    public void LookupAndSaveImageAsync_CancelledDuringDownload_PropagatesCancellation()
+    public async Task LookupAndSaveImageAsync_CancelledDuringDownload_PropagatesCancellation()
     {
         using var cancellation = new CancellationTokenSource();
         _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
@@ -157,7 +157,7 @@ public class ImageLookupServiceTests
                 cancellation.Cancel();
                 return Task.FromCanceled<Image>(cancellation.Token);
             });
-        Assert.ThrowsAsync<TaskCanceledException>(async () => await _service.LookupAndSaveImageAsync(
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await _service.LookupAndSaveImageAsync(
             new Book { Id = "1", ImageUrl = "https://example.com/image.jpg" }, MediaTypes.Books, cancellation.Token));
     }
 

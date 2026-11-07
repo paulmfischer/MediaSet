@@ -557,13 +557,13 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public void GetReadableBookAsync_WithInvalidIdentifierType_ThrowsArgumentOutOfRangeException()
+    public async Task GetReadableBookAsync_WithInvalidIdentifierType_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             await client.GetReadableBookAsync((IdentifierType)999, "value"));
     }
 
