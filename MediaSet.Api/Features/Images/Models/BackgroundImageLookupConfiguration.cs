@@ -42,7 +42,9 @@ public class BackgroundImageLookupConfiguration
     /// </summary>
     /// <param name="errorMessage">Error message if validation fails.</param>
     /// <returns>True if configuration is valid, false otherwise.</returns>
-    public bool IsValid(out string? errorMessage)
+    public bool IsValid(out string? errorMessage) => IsValid(out errorMessage, TimeProvider.System);
+
+    internal bool IsValid(out string? errorMessage, TimeProvider timeProvider)
     {
         errorMessage = null;
 
@@ -62,7 +64,7 @@ public class BackgroundImageLookupConfiguration
         try
         {
             var cronExpression = CronExpression.Parse(Schedule);
-            var now = DateTime.UtcNow;
+            var now = timeProvider.GetUtcNow().UtcDateTime;
             var nextRun = cronExpression.GetNextOccurrence(now, TimeZoneInfo.Utc);
 
             if (nextRun == null)

@@ -17,15 +17,18 @@ public class BackgroundImageLookupService : BackgroundService
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IOptions<BackgroundImageLookupConfiguration> _config;
     private readonly ILogger<BackgroundImageLookupService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public BackgroundImageLookupService(
         IServiceScopeFactory serviceScopeFactory,
         IOptions<BackgroundImageLookupConfiguration> config,
-        ILogger<BackgroundImageLookupService> logger)
+        ILogger<BackgroundImageLookupService> logger,
+        TimeProvider? timeProvider = null)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _config = config;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,8 +48,8 @@ public class BackgroundImageLookupService : BackgroundService
             {
                 try
                 {
-                    var localTimeZone = TimeZoneInfo.Local; // Respects TZ environment variable
-                    var now = DateTimeOffset.UtcNow;
+                    var localTimeZone = _timeProvider.LocalTimeZone; // Respects TZ environment variable
+                    var now = _timeProvider.GetUtcNow();
                     var nextRun = cronExpression.GetNextOccurrence(now, localTimeZone);
 
                     if (nextRun == null)
@@ -62,7 +65,7 @@ public class BackgroundImageLookupService : BackgroundService
                         "Next background image lookup run scheduled for {NextRun} {TimeZone} (in {Delay}) (current time: {CurrentTime})",
                         nextRunInTimeZone, localTimeZone.Id, delay, nowInTimeZone);
 
-                    await Task.Delay(delay, stoppingToken);
+                    await Task.Delay(delay, _timeProvider, stoppingToken);
 
                     if (!stoppingToken.IsCancellationRequested)
                     {
