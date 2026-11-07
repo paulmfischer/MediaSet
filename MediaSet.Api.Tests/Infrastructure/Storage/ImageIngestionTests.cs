@@ -85,7 +85,7 @@ public class ImageIngestionTests
         }
         else
         {
-            Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -95,13 +95,13 @@ public class ImageIngestionTests
     [TestCase(true, "png")]
     [TestCase(false, "jpeg")]
     [TestCase(true, "jpeg")]
-    public void Ingest_DisallowedDetectedFormat_RejectsRegardlessOfDeclaredMime(bool download, string allowed)
+    public async Task Ingest_DisallowedDetectedFormat_RejectsRegardlessOfDeclaredMime(bool download, string allowed)
     {
         var bytes = CreateImage(allowed == "png" ? SKEncodedImageFormat.Jpeg : SKEncodedImageFormat.Png);
         var storage = CreateStorage();
         using var client = CreateClient(bytes);
         var service = CreateService(storage, new ImageConfiguration { AllowedImageExtensions = allowed }, client);
-        Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
         storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -137,7 +137,7 @@ public class ImageIngestionTests
             var file = new Mock<IFormFile>();
             file.SetupGet(f => f.Length).Returns(1);
             file.Setup(f => f.OpenReadStream()).Returns(stream);
-            Assert.ThrowsAsync<ArgumentException>(() => download
+            await Assert.ThrowsAsync<ArgumentException>(() => download
                 ? Ingest(service, bytes, true)
                 : service.SaveImageAsync(file.Object, "books", "123", CancellationToken.None));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
@@ -149,7 +149,7 @@ public class ImageIngestionTests
     [TestCase(false, true)]
     [TestCase(true, false)]
     [TestCase(true, true)]
-    public void Ingest_InvalidOrUnsupportedBytes_NeverStores(bool download, bool strip)
+    public async Task Ingest_InvalidOrUnsupportedBytes_NeverStores(bool download, bool strip)
     {
         byte[][] invalidImages =
         [
@@ -166,7 +166,7 @@ public class ImageIngestionTests
             var storage = CreateStorage();
             using var client = CreateClient(bytes);
             var service = CreateService(storage, new ImageConfiguration { StripExifData = strip }, client);
-            Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -216,7 +216,7 @@ public class ImageIngestionTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void Ingest_DimensionsWhoseProductOverflowsInt_RejectsBeforeAllocation(bool download)
+    public async Task Ingest_DimensionsWhoseProductOverflowsInt_RejectsBeforeAllocation(bool download)
     {
         var bytes = CreateImage(SKEncodedImageFormat.Png);
         BinaryPrimitives.WriteInt32BigEndian(bytes.AsSpan(16), 65_536);
@@ -234,13 +234,13 @@ public class ImageIngestionTests
         var storage = CreateStorage();
         using var client = CreateClient(bytes);
         var service = CreateService(storage, new ImageConfiguration { MaxPixelCount = int.MaxValue }, client);
-        Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
         storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
-    public void Ingest_Cancelled_PropagatesCancellationWithoutStorage()
+    public async Task Ingest_Cancelled_PropagatesCancellationWithoutStorage()
     {
         var bytes = CreateImage(SKEncodedImageFormat.Png);
         var storage = CreateStorage();
@@ -248,7 +248,7 @@ public class ImageIngestionTests
         var service = CreateService(storage, new ImageConfiguration(), client);
         using var stream = new MemoryStream(bytes);
         var file = new FormFile(stream, 0, bytes.Length, "file", "cover.jpg");
-        Assert.CatchAsync<OperationCanceledException>(() =>
+        await Assert.CatchAsync<OperationCanceledException>(() =>
             service.SaveImageAsync(file, "books", "123", new CancellationToken(true)));
         storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);

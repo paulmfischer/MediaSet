@@ -37,6 +37,9 @@ public class TracePropagationAndLogCorrelationTests
         InMemoryLogSink.Clear();
     }
 
+    [TearDown]
+    public void TearDown() => _exporter.Dispose();
+
     [Test]
     public async Task Startup_WithExternalLoggingEnabled_ServesRequests()
     {

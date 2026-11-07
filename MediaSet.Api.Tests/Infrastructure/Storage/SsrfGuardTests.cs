@@ -81,10 +81,10 @@ public class SsrfGuardTests
     [TestCase("http://10.0.0.1/image.jpg")]
     [TestCase("http://172.16.0.1/image.jpg")]
     [TestCase("http://169.254.169.254/latest/meta-data/")]
-    public void ValidateUrlAsync_WithPrivateIpLiteralUrl_ThrowsArgumentException(string url)
+    public async Task ValidateUrlAsync_WithPrivateIpLiteralUrl_ThrowsArgumentException(string url)
     {
         var uri = new Uri(url);
-        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
     }
@@ -94,13 +94,13 @@ public class SsrfGuardTests
     public async Task ValidateUrlAsync_WithPublicIpLiteralUrl_DoesNotThrow(string url)
     {
         var uri = new Uri(url);
-        Assert.DoesNotThrowAsync(async () =>
+        await Assert.DoesNotThrowAsync(async () =>
             await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
         await Task.CompletedTask;
     }
 
     [Test]
-    public void ValidateUrlAsync_WithHostnameThatResolvesToPrivateIp_ThrowsArgumentException()
+    public async Task ValidateUrlAsync_WithHostnameThatResolvesToPrivateIp_ThrowsArgumentException()
     {
         var originalResolver = SsrfGuard.DnsResolver;
         try
@@ -108,7 +108,7 @@ public class SsrfGuardTests
             SsrfGuard.DnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("192.168.1.1") });
             var uri = new Uri("http://internal.example.com/image.jpg");
 
-            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
         }
@@ -127,7 +127,7 @@ public class SsrfGuardTests
             SsrfGuard.DnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("93.184.216.34") });
             var uri = new Uri("https://example.com/image.jpg");
 
-            Assert.DoesNotThrowAsync(async () =>
+            await Assert.DoesNotThrowAsync(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             await Task.CompletedTask;
         }
@@ -138,7 +138,7 @@ public class SsrfGuardTests
     }
 
     [Test]
-    public void ValidateUrlAsync_WithHostnameThatResolvesToNoAddresses_ThrowsArgumentException()
+    public async Task ValidateUrlAsync_WithHostnameThatResolvesToNoAddresses_ThrowsArgumentException()
     {
         var originalResolver = SsrfGuard.DnsResolver;
         try
@@ -146,7 +146,7 @@ public class SsrfGuardTests
             SsrfGuard.DnsResolver = (_, _) => Task.FromResult(Array.Empty<IPAddress>());
             var uri = new Uri("http://nonexistent.example.com/image.jpg");
 
-            var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
+            var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
         }

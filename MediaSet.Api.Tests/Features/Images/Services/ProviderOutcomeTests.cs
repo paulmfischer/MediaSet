@@ -151,7 +151,7 @@ public class ProviderOutcomeTests
         }
         using (var second = new LookupFailureScope())
         {
-            Assert.ThrowsAsync<ProviderLookupException>(async () => await exhausted.GetProviderAsync("lookup", CancellationToken.None));
+            await Assert.ThrowsAsync<ProviderLookupException>(async () => await exhausted.GetProviderAsync("lookup", CancellationToken.None));
             using var independentHandler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
             using var independent = new HttpClient(independentHandler) { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
             using var success = await independent.GetProviderAsync("lookup", CancellationToken.None);
