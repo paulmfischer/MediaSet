@@ -267,6 +267,14 @@ podman-compose -f docker-compose.dev.yml up -d --force-recreate mongodb
 - **SELinux:** only MongoDB/init-script mounts need container labels now.
   Investigate their labels and scoped permissions; do not disable enforcement.
 
+## .NET versions
+
+- Projects target `net10.0`. `global.json` sets the SDK baseline with `latestFeature`
+  roll-forward, so newer 10.0.x SDKs work; raise the baseline when servicing.
+- `MediaSet.Api/Dockerfile` uses the floating `sdk:10.0` and `aspnet:10.0` tags to pick up
+  patch releases on each build.
+- When servicing, keep `Microsoft.AspNetCore.Mvc.Testing` on the same 10.0.x as the runtime.
+
 ## Checks and formatting
 
 Build, test, lint and formatting commands, and what CI runs, are in
