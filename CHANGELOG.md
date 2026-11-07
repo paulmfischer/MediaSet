@@ -1,5 +1,20 @@
 # Changelog
 
+## [4.2.0](https://github.com/paulmfischer/MediaSet/compare/v4.1.0...v4.2.0) (2026-11-07)
+
+
+### Features
+
+* **ui:** migrate the frontend to Remix 3 ([#757](https://github.com/paulmfischer/MediaSet/issues/757)) ([40e054a](https://github.com/paulmfischer/MediaSet/commit/40e054a56ac78e286afa4edb0821370b01af4531)), closes [#704](https://github.com/paulmfischer/MediaSet/issues/704) [#685](https://github.com/paulmfischer/MediaSet/issues/685)
+
+
+### Miscellaneous
+
+* **docs:** remove dead docs ([#684](https://github.com/paulmfischer/MediaSet/issues/684)) ([a22b5a0](https://github.com/paulmfischer/MediaSet/commit/a22b5a0fd9df9f9a9cf67d5520cc5aeb0ed74b3d))
+* **runtime:** align Node 24 LTS closes [#653](https://github.com/paulmfischer/MediaSet/issues/653) ([#671](https://github.com/paulmfischer/MediaSet/issues/671)) ([ba3d3d1](https://github.com/paulmfischer/MediaSet/commit/ba3d3d1722352611b83c1eb180721fe1bb4738dd))
+* simplify agent guidance and PR checks ([#680](https://github.com/paulmfischer/MediaSet/issues/680)) ([dd3dc31](https://github.com/paulmfischer/MediaSet/commit/dd3dc31e00462c3bd9ad1d6606a54c2e064c15b9))
+* **ui:** migrate MediaSet.Remix to Tailwind CSS 4 ([#771](https://github.com/paulmfischer/MediaSet/issues/771)) ([e49ea62](https://github.com/paulmfischer/MediaSet/commit/e49ea624d61087917fe0247f7a1b6915590b995a)), closes [#756](https://github.com/paulmfischer/MediaSet/issues/756)
+
 ## [4.1.0](https://github.com/paulmfischer/MediaSet/compare/v4.0.1...v4.1.0) (2026-10-26)
 
 
