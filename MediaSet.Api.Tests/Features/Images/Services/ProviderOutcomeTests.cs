@@ -53,7 +53,7 @@ public class ProviderOutcomeTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task Quota_DefersSubsequentClientsUntilReset_AndPersistsEligibility(bool retryAfter)
+    public async Task Quota_DefersSubsequentClientsUntilReset_AndPersistsEligibilityAsync(bool retryAfter)
     {
         var reset = DateTimeOffset.UtcNow.AddHours(11);
         using var handler = new FakeHandler(_ =>
@@ -94,7 +94,7 @@ public class ProviderOutcomeTests
     [TestCase("Paid", "prod/v1/lookup", true, false)]
     [TestCase("Trial", "prod/trial/lookup", false, true)]
     [TestCase("Paid", "prod/v1/lookup", true, true)]
-    public async Task Plan_RoutesEndpointAndHeaders(string plan, string path, bool keyed, bool burst)
+    public async Task Plan_RoutesEndpointAndHeadersAsync(string plan, string path, bool keyed, bool burst)
     {
         var calls = 0;
         using var handler = new FakeHandler(request =>
@@ -104,8 +104,8 @@ public class ProviderOutcomeTests
             Assert.That(request.Headers.Contains("key_type"), Is.EqualTo(keyed));
             if (keyed)
             {
-                Assert.That(request.Headers.GetValues("user_key"), Is.EqualTo(new[] { "fake-key" }));
-                Assert.That(request.Headers.GetValues("key_type"), Is.EqualTo(new[] { "3scale" }));
+                Assert.That(request.Headers.GetValues("user_key"), Is.EqualTo(["fake-key"]));
+                Assert.That(request.Headers.GetValues("key_type"), Is.EqualTo(["3scale"]));
             }
             if (++calls == 1 && burst)
             {
@@ -134,7 +134,7 @@ public class ProviderOutcomeTests
     }
 
     [Test]
-    public async Task GenericProviderQuota_PreservesHeadersAndAllowsIndependentProvider()
+    public async Task GenericProviderQuota_PreservesHeadersAndAllowsIndependentProviderAsync()
     {
         using var handler = new FakeHandler(_ =>
         {

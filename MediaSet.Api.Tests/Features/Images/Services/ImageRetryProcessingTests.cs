@@ -169,7 +169,7 @@ public class ImageRetryProcessingTests
         var messages = new List<string>();
         logger.Setup(l => l.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback(new InvocationAction(i => messages.Add(i.Arguments[2].ToString()!)));
+            .Callback(new InvocationAction(i => messages.Add(i.Arguments[2]!.ToString()!)));
         var worker = new BackgroundImageLookupService(provider.GetRequiredService<IServiceScopeFactory>(),
             Options.Create(new BackgroundImageLookupConfiguration { RequestsPerMinute = int.MaxValue }), logger.Object);
         var method = typeof(BackgroundImageLookupService).GetMethod("ProcessMediaTypeAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
