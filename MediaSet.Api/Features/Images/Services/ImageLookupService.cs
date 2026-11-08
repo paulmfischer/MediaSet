@@ -187,6 +187,10 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                 Remember(new(false, null, null, ex.Message, !ImageRetryPolicy.IsRetryable(ex.Outcome),
                     ex.Outcome, ex.Provider, strategy, ex.RetryAt, confirmed));
             }
+            catch (LookupNotConfiguredException)
+            {
+                throw;
+            }
             catch (NotSupportedException ex)
             {
                 Remember(new(false, null, null, ex.Message, true, ImageLookupOutcome.UnsupportedStrategy));

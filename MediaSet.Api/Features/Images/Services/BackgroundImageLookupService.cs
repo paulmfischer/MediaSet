@@ -185,7 +185,7 @@ public class BackgroundImageLookupService : BackgroundService
 
                 availableTypes.Add(mediaType);
             }
-            catch (NotSupportedException)
+            catch (Exception ex) when (ex is NotSupportedException or LookupNotConfiguredException)
             {
                 _logger.LogDebug("No lookup strategy available for {MediaType}", mediaType);
             }

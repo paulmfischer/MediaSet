@@ -1,5 +1,7 @@
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Lookup.Strategies;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,13 +57,23 @@ internal static class ImagesApi
             group.MapPost("/dev/lookup/{entityType}/{id}", async (
                 string entityType,
                 string id,
-                IImageLookupService imageLookupService,
+                HttpContext httpContext,
                 IEntityService<Book> bookService,
                 IEntityService<Movie> movieService,
                 IEntityService<Game> gameService,
                 IEntityService<Music> musicService,
                 CancellationToken cancellationToken) =>
             {
+                // Resolved at request time so endpoint construction does not depend on registration
+                var imageLookupService = httpContext.RequestServices.GetService<IImageLookupService>();
+                if (imageLookupService is null)
+                {
+                    // Defensive: in Development the service is always registered, so this should not occur.
+                    return LookupNotConfiguredFilter.ToProblem(
+                        "Image lookup is not available because IImageLookupService is not registered. " +
+                        "If the cause is a missing provider: " + LookupNotConfiguredException.DefaultMessage);
+                }
+
                 if (!Enum.TryParse<MediaTypes>(entityType, ignoreCase: true, out var mediaType))
                 {
                     return Results.BadRequest(new { error = $"Invalid entity type '{entityType}'. Valid types: Books, Movies, Games, Musics" });
@@ -85,7 +97,7 @@ internal static class ImagesApi
 
                 var result = await imageLookupService.LookupAndSaveImageAsync(entity, mediaType, cancellationToken);
                 return Results.Ok(result);
-            });
+            }).AddLookupNotConfiguredFilter();
         }
 
         return group;

@@ -15,6 +15,7 @@ public class LookupStrategyFactory
     public ILookupStrategy<TResponse> GetStrategy<TResponse>(MediaTypes mediaType, IdentifierType identifierType)
         where TResponse : class
     {
+        EnsureConfigured();
         var strategies = _serviceProvider.GetServices<ILookupStrategy<TResponse>>();
 
         foreach (var strategy in strategies)
@@ -30,6 +31,7 @@ public class LookupStrategyFactory
 
     public ILookupStrategyBase GetStrategyBase(MediaTypes mediaType)
     {
+        EnsureConfigured();
         // Use BookResponse as a representative type to get any registered strategy for the media type
         return mediaType switch
         {
@@ -55,5 +57,26 @@ public class LookupStrategyFactory
         }
 
         throw new NotSupportedException($"No strategy found for {mediaType} with identifier type: Entity");
+    }
+
+    private bool _configured;
+
+    private void EnsureConfigured()
+    {
+        // Checked once per factory instance (it is scoped) so strategies are not re-resolved on every call
+        if (_configured)
+        {
+            return;
+        }
+
+        if (!_serviceProvider.GetServices<ILookupStrategy<BookResponse>>().Any()
+            && !_serviceProvider.GetServices<ILookupStrategy<MovieResponse>>().Any()
+            && !_serviceProvider.GetServices<ILookupStrategy<GameResponse>>().Any()
+            && !_serviceProvider.GetServices<ILookupStrategy<MusicResponse>>().Any())
+        {
+            throw new LookupNotConfiguredException();
+        }
+
+        _configured = true;
     }
 }

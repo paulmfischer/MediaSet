@@ -218,10 +218,8 @@ if (musicBrainzConfig.Exists())
 {
     builder.Services.AddScoped<ILookupStrategy<MusicResponse>, MusicLookupStrategy>();
 }
-if (openLibraryConfig.Exists() || tmdbConfig.Exists() || musicBrainzConfig.Exists())
-{
-    builder.Services.AddScoped<LookupStrategyFactory>();
-}
+// Always registered: it reports a clear "not configured" error when no strategy exists
+builder.Services.AddScoped<LookupStrategyFactory>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -394,10 +392,7 @@ app.MapMetadata();
 app.MapStats();
 app.MapImages();
 
-if (openLibraryConfig.Exists() || tmdbConfig.Exists() || igdbConfig.Exists())
-{
-    app.MapLookup();
-}
+app.MapLookup();
 
 // Map configuration endpoints
 app.MapConfig();
