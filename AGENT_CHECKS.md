@@ -41,6 +41,10 @@ git diff --cached --check
 git diff --check origin/main...HEAD --
 ```
 
+Line endings are LF everywhere (`.gitattributes`, `.editorconfig`). `git diff --check`
+flags any added CRLF line, so do not commit CRLF. Confirm with `git ls-files --eol`
+(no `i/crlf` or `i/mixed` on text files).
+
 ## CI
 
 Every eligible PR (base `main`, `feat/*`, `feature/*`, `fix/*`, `chore/*`) runs
@@ -75,5 +79,6 @@ npm exec -- prettier --write app/path/to/changed-file.tsx
 dotnet format MediaSet.sln --no-restore --include MediaSet.Api/path/to/changed-file.cs
 ```
 
-Use Prettier alone for application JSON. C# style comes from `.editorconfig`. Do not
+Use Prettier alone for application JSON. C# style comes from `.editorconfig`
+(LF line endings; `dotnet format` keeps them). Do not
 suppress diagnostics or skip signing to get a check or commit through.
