@@ -143,7 +143,7 @@ public class PlexSearchApiTests
         await client.GetAsync("/plex/movies/search?query=%20matrix%20");
 
         var request = handler.Requests.First(r => r.Uri.AbsolutePath == "/library/sections/1/all");
-        Assert.That(request.Uri.Query, Is.EqualTo("?title=matrix"));
+        Assert.That(request.Uri.Query, Is.EqualTo("?includeGuids=1&title=matrix"));
     }
 
     [Test]
@@ -253,5 +253,16 @@ public class PlexSearchApiTests
         var results = (await ReadJsonAsync(await client.GetAsync("/plex/movies/search?query=film"))).EnumerateArray().ToList();
 
         Assert.That(results, Has.Count.EqualTo(MediaSet.Api.Features.Plex.Services.PlexSearchService.MaxResults));
+    }
+
+    [Test]
+    public async Task Search_AnyRequest_NeverFetchesPerItemMetadata()
+    {
+        var handler = ServerWithMovieSections();
+        using var client = CreateClient(handler);
+
+        await client.GetAsync("/plex/movies/search?query=matrix");
+
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata"));
     }
 }

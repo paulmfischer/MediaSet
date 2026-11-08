@@ -25,8 +25,13 @@ public class PlexClientTests
 
     private static PlexLibrary Movies => new("1", "Movies", "movie");
 
+    // Real servers list items without streams; the per-item metadata responses carry them
     private static FakePlexHandler Serving(string fixture) =>
-        FakePlexHandler.WithServer().Route("/library/sections/1/all", fixture);
+        FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", fixture)
+            .Route("/library/metadata/1001", "metadata_1001.json")
+            .Route("/library/metadata/1002", "metadata_1002.json")
+            .Route("/library/metadata/1003", "metadata_1003.json");
 
     [Test]
     public async Task GetLibrariesAsync_LibrariesFixture_ReturnsAllSections()
@@ -170,7 +175,7 @@ public class PlexClientTests
         await client.GetItemsAsync(Movies, "Mat & rix", true, CancellationToken.None);
 
         var request = handler.Requests.Single(r => r.Uri.AbsolutePath.EndsWith("/all"));
-        Assert.That(request.Uri.Query, Is.EqualTo("?title=Mat%20%26%20rix"));
+        Assert.That(request.Uri.Query, Is.EqualTo("?includeGuids=1&title=Mat%20%26%20rix"));
     }
 
     [Test]
@@ -343,5 +348,57 @@ public class PlexClientTests
         await cts.CancelAsync();
 
         Assert.That(async () => await pending, Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task GetItemsAsync_Listing_RequestsGuidsWithIncludeGuids()
+    {
+        var handler = Serving("movie.json");
+        var client = Client(handler);
+
+        await client.GetItemsAsync(Movies, null, false, CancellationToken.None);
+
+        var request = handler.Requests.Single(r => r.Uri.AbsolutePath.EndsWith("/all"));
+        Assert.That(request.Uri.Query, Is.EqualTo("?includeGuids=1"));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_WithoutDetails_DoesNotFetchPerItemMetadataAndHasNoStreams()
+    {
+        var handler = Serving("subtitles_audio.json");
+        var client = Client(handler);
+
+        var version = (await client.GetItemsAsync(Movies, null, false, CancellationToken.None)).Single().Versions.Single();
+
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata"));
+        Assert.That(version.AudioTracks, Is.Empty);
+        Assert.That(version.Subtitles, Is.Empty);
+        Assert.That(version.FilePath, Is.EqualTo("/data/movies/Amelie (2001)/Amelie.mkv"));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_WithDetails_FetchesStreamsFromPerItemMetadataWithGetOnly()
+    {
+        var handler = Serving("subtitles_audio.json");
+        var client = Client(handler);
+
+        var version = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single();
+
+        var detail = handler.Requests.Single(r => r.Uri.AbsolutePath == "/library/metadata/1003");
+        Assert.That(detail.Method, Is.EqualTo(HttpMethod.Get));
+        Assert.That(detail.Uri.Query, Is.EqualTo("?includeGuids=1"));
+        Assert.That(version.AudioTracks, Has.Count.EqualTo(2));
+        Assert.That(version.Subtitles, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_ItemWithoutFiles_SkipsMetadataRequest()
+    {
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/2/all", "show.json");
+        var client = Client(handler);
+
+        await client.GetItemsAsync(new PlexLibrary("2", "TV Shows", "show"), null, true, CancellationToken.None);
+
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata"));
     }
 }

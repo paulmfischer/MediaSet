@@ -110,7 +110,7 @@ public class PlexClientRegistrationTests
     [Test]
     public async Task Client_RequestsAtTraceLevel_LogOutputNeverContainsToken()
     {
-        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", "movie.json");
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", "movie.json").Route("/library/metadata/1001", "metadata_1001.json");
         var logs = new CapturingLoggerProvider();
         using var provider = Provider(Settings(), handler, logs);
         var client = provider.GetRequiredService<IPlexClient>();

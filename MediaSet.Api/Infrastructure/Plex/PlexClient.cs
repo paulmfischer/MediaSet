@@ -53,15 +53,16 @@ public class PlexClient : IPlexClient
         return libraries.ToList();
     }
 
-    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDeepLinks, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDetails, CancellationToken cancellationToken)
     {
         var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
-        // The server identity is only needed to build deep links
-        var serverId = includeDeepLinks ? await GetMachineIdentifierAsync(cancellationToken) : null;
-        var path = $"library/sections/{Uri.EscapeDataString(library.Id)}/all";
+        // The server identity (deep links) and per-item stream detail are only needed when details are requested
+        var serverId = includeDetails ? await GetMachineIdentifierAsync(cancellationToken) : null;
+        // Plex omits the Guid entries from section listings unless includeGuids=1 is sent
+        var path = $"library/sections/{Uri.EscapeDataString(library.Id)}/all?includeGuids=1";
         if (!string.IsNullOrWhiteSpace(titleContains))
         {
-            path += $"?title={Uri.EscapeDataString(titleContains)}";
+            path += $"&title={Uri.EscapeDataString(titleContains)}";
         }
 
         var items = new List<PlexItem>();
@@ -71,7 +72,10 @@ public class PlexClient : IPlexClient
             var root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken);
             var container = root.MediaContainer;
             var metadata = container?.Metadata ?? [];
-            items.AddRange(metadata.Select(m => MapItem(m, library, DeepLinkBase(serverId))));
+            foreach (var m in metadata)
+            {
+                items.Add(MapItem(includeDetails ? await WithStreamsAsync(m, cancellationToken) : m, library, DeepLinkBase(serverId)));
+            }
 
             start += metadata.Count;
             if (metadata.Count < pageSize || (container?.TotalSize.HasValue == true && start >= container.TotalSize))
@@ -82,6 +86,29 @@ public class PlexClient : IPlexClient
 
         _logger.LogWarning("Plex library paging exceeded {MaxPages} pages", MaxPages);
         throw new PlexClientException(null, "Plex returned too many pages");
+    }
+
+    /// <summary>
+    /// Section listings carry Media and Part but no Stream entries (audio, subtitles, HDR fields). The
+    /// per-item metadata response has them, so the media of items that have files is taken from there.
+    /// </summary>
+    private async Task<RawMetadata> WithStreamsAsync(RawMetadata listed, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(listed.RatingKey) || listed.Media is not { Count: > 0 })
+        {
+            return listed;
+        }
+
+        var detail = await GetAsync<ItemsRoot>($"library/metadata/{Uri.EscapeDataString(listed.RatingKey)}?includeGuids=1", null, cancellationToken);
+        var detailed = detail.MediaContainer?.Metadata?.FirstOrDefault();
+        if (detailed?.Media is not { Count: > 0 })
+        {
+            return listed;
+        }
+
+        listed.Media = detailed.Media;
+        listed.Guid = listed.Guid is { Count: > 0 } ? listed.Guid : detailed.Guid;
+        return listed;
     }
 
     private async Task<string?> GetMachineIdentifierAsync(CancellationToken cancellationToken)
