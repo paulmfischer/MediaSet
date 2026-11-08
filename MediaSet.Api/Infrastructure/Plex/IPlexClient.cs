@@ -1,4 +1,3 @@
-
 namespace MediaSet.Api.Infrastructure.Plex;
 
 /// <summary>Read-only access to a Plex server. There are deliberately no write methods.</summary>
@@ -13,6 +12,9 @@ public interface IPlexClient
     /// </summary>
     Task<IReadOnlyList<PlexLibrary>> GetLibrariesForEntityTypeAsync(string entityType, CancellationToken cancellationToken);
 
-    /// <summary>Reads every item of a library in pages, optionally filtered by a title contains match.</summary>
-    Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, CancellationToken cancellationToken);
+    /// <summary>
+    /// Reads every item of a library in pages, optionally filtered by a title contains match. Deep links
+    /// need one extra request for the server identity; pass false when they are not needed (search).
+    /// </summary>
+    Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDeepLinks, CancellationToken cancellationToken);
 }

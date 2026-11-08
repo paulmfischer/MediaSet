@@ -12,14 +12,19 @@ public class PlexClient : IPlexClient
         NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
+    /// <summary>Safety cap on pages per library, so a misbehaving server cannot loop the client forever.</summary>
+    public const int MaxPages = 10_000;
+
     private readonly HttpClient _httpClient;
     private readonly PlexConfiguration _configuration;
+    private readonly ILogger<PlexClient> _logger;
     private string? _machineIdentifier;
 
-    public PlexClient(HttpClient httpClient, IOptions<PlexConfiguration> configuration)
+    public PlexClient(HttpClient httpClient, IOptions<PlexConfiguration> configuration, ILogger<PlexClient> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration.Value;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<PlexLibrary>> GetLibrariesAsync(CancellationToken cancellationToken)
@@ -48,10 +53,11 @@ public class PlexClient : IPlexClient
         return libraries.ToList();
     }
 
-    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDeepLinks, CancellationToken cancellationToken)
     {
         var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
-        var serverId = await GetMachineIdentifierAsync(cancellationToken);
+        // The server identity is only needed to build deep links
+        var serverId = includeDeepLinks ? await GetMachineIdentifierAsync(cancellationToken) : null;
         var path = $"library/sections/{Uri.EscapeDataString(library.Id)}/all";
         if (!string.IsNullOrWhiteSpace(titleContains))
         {
@@ -60,7 +66,7 @@ public class PlexClient : IPlexClient
 
         var items = new List<PlexItem>();
         var start = 0;
-        while (true)
+        for (var page = 0; page < MaxPages; page++)
         {
             var root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken);
             var container = root.MediaContainer;
@@ -68,14 +74,14 @@ public class PlexClient : IPlexClient
             items.AddRange(metadata.Select(m => MapItem(m, library, DeepLinkBase(serverId))));
 
             start += metadata.Count;
-            var total = container?.TotalSize ?? container?.Size;
-            var done = metadata.Count == 0
-                || (container?.TotalSize.HasValue == true ? start >= total : metadata.Count < pageSize);
-            if (done)
+            if (metadata.Count < pageSize || (container?.TotalSize.HasValue == true && start >= container.TotalSize))
             {
                 return items;
             }
         }
+
+        _logger.LogWarning("Plex library paging exceeded {MaxPages} pages", MaxPages);
+        throw new PlexClientException(null, "Plex returned too many pages");
     }
 
     private async Task<string?> GetMachineIdentifierAsync(CancellationToken cancellationToken)
@@ -106,25 +112,36 @@ public class PlexClient : IPlexClient
             using var response = await _httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                LogFailure(null, (int)response.StatusCode);
                 throw new PlexClientException((int)response.StatusCode, "Plex request failed");
             }
 
             return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken)
                 ?? throw new PlexClientException(null, "Plex returned an empty response");
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
+            LogFailure(ex, null);
             throw new PlexClientException(null, "Plex request timed out");
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
+            LogFailure(ex, null);
             throw new PlexClientException(null, "Plex server could not be reached");
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            LogFailure(ex, null);
             throw new PlexClientException(null, "Plex returned an unreadable response");
         }
     }
+
+    // Only the status code and exception type are logged: never the URL, headers, token or inner message
+    private void LogFailure(Exception? exception, int? statusCode) =>
+        _logger.LogWarning(
+            "Plex request failed (status code {StatusCode}, exception {ExceptionType})",
+            statusCode,
+            exception?.GetType().Name);
 
     private static PlexItem MapItem(RawMetadata m, PlexLibrary library, string? linkBase) => new(
         m.RatingKey ?? string.Empty,

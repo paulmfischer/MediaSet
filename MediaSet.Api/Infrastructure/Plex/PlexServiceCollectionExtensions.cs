@@ -16,6 +16,7 @@ public static class PlexServiceCollectionExtensions
         services.Configure<PlexConfiguration>(plexSection);
         services.AddHttpClient<IPlexClient, PlexClient>((serviceProvider, client) =>
                 ConfigureClient(client, serviceProvider.GetRequiredService<IOptions<PlexConfiguration>>().Value))
+            .RedactLoggedHeaders(name => string.Equals(name, TokenHeader, StringComparison.OrdinalIgnoreCase))
             .ConfigurePrimaryHttpMessageHandler(serviceProvider =>
                 CreatePrimaryHandler(serviceProvider.GetRequiredService<IOptions<PlexConfiguration>>().Value));
         return services;
@@ -26,7 +27,6 @@ public static class PlexServiceCollectionExtensions
         client.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + "/");
         client.Timeout = TimeSpan.FromSeconds(config.Timeout > 0 ? config.Timeout : 30);
         client.DefaultRequestHeaders.TryAddWithoutValidation(TokenHeader, config.Token);
-        client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
     }
 
     public static SocketsHttpHandler CreatePrimaryHandler(PlexConfiguration config)

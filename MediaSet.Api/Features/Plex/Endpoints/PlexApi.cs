@@ -31,11 +31,11 @@ internal static class PlexApi
             IPlexSearchService search,
             CancellationToken cancellationToken) =>
         {
-            if (string.IsNullOrWhiteSpace(query))
+            if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < PlexSearchService.MinQueryLength)
             {
                 return Results.Problem(
                     title: "Query required",
-                    detail: "The 'query' parameter is required.",
+                    detail: $"The 'query' parameter is required and must be at least {PlexSearchService.MinQueryLength} characters.",
                     statusCode: StatusCodes.Status400BadRequest);
             }
 

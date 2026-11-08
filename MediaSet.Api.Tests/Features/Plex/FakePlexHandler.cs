@@ -13,7 +13,7 @@ namespace MediaSet.Api.Tests.Features.Plex;
 /// <summary>Serves saved Plex JSON fixtures by request path and records every request. Never touches a network.</summary>
 public sealed class FakePlexHandler : HttpMessageHandler
 {
-    private readonly Dictionary<string, Func<HttpRequestMessage, HttpResponseMessage>> _routes = [];
+    private readonly Dictionary<string, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>> _routes = [];
 
     public List<RecordedRequest> Requests { get; } = [];
 
@@ -26,7 +26,10 @@ public sealed class FakePlexHandler : HttpMessageHandler
     public FakePlexHandler Route(string path, string fixture) =>
         Route(path, _ => Json(Fixture(fixture)));
 
-    public FakePlexHandler Route(string path, Func<HttpRequestMessage, HttpResponseMessage> respond)
+    public FakePlexHandler Route(string path, Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        Route(path, (request, _) => Task.FromResult(respond(request)));
+
+    public FakePlexHandler Route(string path, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
     {
         _routes[path] = respond;
         return this;
@@ -43,9 +46,9 @@ public sealed class FakePlexHandler : HttpMessageHandler
             request.RequestUri!,
             request.Headers.ToDictionary(h => h.Key, h => string.Join(",", h.Value), StringComparer.OrdinalIgnoreCase)));
 
-        return Task.FromResult(_routes.TryGetValue(request.RequestUri!.AbsolutePath, out var respond)
-            ? respond(request)
-            : new HttpResponseMessage(HttpStatusCode.NotFound));
+        return _routes.TryGetValue(request.RequestUri!.AbsolutePath, out var respond)
+            ? respond(request, cancellationToken)
+            : Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
     }
 }
 

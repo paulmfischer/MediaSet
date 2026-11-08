@@ -11,19 +11,22 @@ public interface IPlexSearchService
 
 public class PlexSearchService(IPlexClient client) : IPlexSearchService
 {
+    public const int MaxResults = 50;
+    public const int MinQueryLength = 2;
+
     public async Task<IReadOnlyList<PlexSearchResultDto>> SearchAsync(string entityType, string query, CancellationToken cancellationToken)
     {
         var itemType = PlexEntityTypes.LibraryType(entityType);
         var results = new List<PlexSearchResultDto>();
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, cancellationToken))
         {
-            var items = await client.GetItemsAsync(library, query, cancellationToken);
+            var items = await client.GetItemsAsync(library, query, false, cancellationToken);
             // Search is scoped to the entity type: movies never return shows
             results.AddRange(items
                 .Where(i => string.Equals(i.Type, itemType, StringComparison.OrdinalIgnoreCase))
                 .Select(i => new PlexSearchResultDto(i.Title, i.RatingKey, i.Year, i.LibraryTitle, i.Guids)));
         }
 
-        return results;
+        return results.Take(MaxResults).ToList();
     }
 }

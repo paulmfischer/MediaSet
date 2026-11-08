@@ -115,7 +115,7 @@ public class PlexClientRegistrationTests
         using var provider = Provider(Settings(), handler, logs);
         var client = provider.GetRequiredService<IPlexClient>();
 
-        await client.GetItemsAsync(new PlexLibrary("1", "Movies", "movie"), "matrix", CancellationToken.None);
+        await client.GetItemsAsync(new PlexLibrary("1", "Movies", "movie"), "matrix", true, CancellationToken.None);
 
         Assert.That(logs.Lines, Is.Not.Empty);
         Assert.That(string.Join('\n', logs.Lines), Does.Not.Contain(Token));
@@ -133,5 +133,37 @@ public class PlexClientRegistrationTests
 
         Assert.That(ex.ToString(), Does.Not.Contain(Token));
         Assert.That(string.Join('\n', logs.Lines), Does.Not.Contain(Token));
+    }
+
+    [Test]
+    public async Task Client_ServerSlowerThanConfiguredTimeout_TimesOutThroughHttpClientPipeline()
+    {
+        var handler = new FakePlexHandler().Route("/library/sections", async (_, token) =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), token);
+            return FakePlexHandler.Json("{}");
+        });
+        using var provider = Provider(Settings(timeout: "1"), handler);
+
+        var ex = await Assert.ThrowsAsync<PlexClientException>(
+            () => provider.GetRequiredService<IPlexClient>().GetLibrariesAsync(CancellationToken.None));
+
+        Assert.That(ex!.Message, Is.EqualTo("Plex request timed out."));
+    }
+
+    [Test]
+    public async Task Client_Failure_LogsWarningWithoutTokenUrlOrInnerMessage()
+    {
+        var handler = new FakePlexHandler().Route("/library/sections",
+            _ => throw new HttpRequestException($"refused http://plex.local:32400/?X-Plex-Token={Token}"));
+        var logs = new CapturingLoggerProvider();
+        using var provider = Provider(Settings(), handler, logs);
+
+        await Assert.ThrowsAsync<PlexClientException>(
+            () => provider.GetRequiredService<IPlexClient>().GetLibrariesAsync(CancellationToken.None));
+
+        var warnings = logs.Lines.Where(l => l.StartsWith("MediaSet.Api.Infrastructure.Plex.PlexClient")).ToList();
+        Assert.That(warnings, Has.Some.Contains("HttpRequestException"));
+        Assert.That(string.Join('\n', warnings), Does.Not.Contain(Token).And.Not.Contain("plex.local"));
     }
 }

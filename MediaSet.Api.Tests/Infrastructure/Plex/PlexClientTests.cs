@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Tests.Features.Plex;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NUnit.Framework;
 
@@ -19,7 +20,7 @@ public class PlexClientTests
     private static PlexClient Client(FakePlexHandler handler, PlexConfiguration? config = null)
     {
         var http = new HttpClient(handler) { BaseAddress = new Uri("http://plex.local:32400/") };
-        return new PlexClient(http, Options.Create(config ?? new PlexConfiguration { Token = Token }));
+        return new PlexClient(http, Options.Create(config ?? new PlexConfiguration { Token = Token }), NullLogger<PlexClient>.Instance);
     }
 
     private static PlexLibrary Movies => new("1", "Movies", "movie");
@@ -44,7 +45,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("movie.json"));
 
-        var item = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single();
+        var item = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single();
 
         Assert.That(item.RatingKey, Is.EqualTo("1001"));
         Assert.That(item.Type, Is.EqualTo("movie"));
@@ -63,7 +64,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("movie.json"));
 
-        var item = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single();
+        var item = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single();
 
         Assert.That(item.DeepLink, Is.EqualTo(
             "http://plex.local:32400/web/index.html#!/server/abc123machine/details?key=%2Flibrary%2Fmetadata%2F1001"));
@@ -75,7 +76,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("movie.json"));
 
-        var version = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single().Versions.Single();
+        var version = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single();
 
         Assert.That(version.Resolution, Is.EqualTo("1080"));
         Assert.That(version.VideoCodec, Is.EqualTo("h264"));
@@ -91,7 +92,7 @@ public class PlexClientTests
     {
         var client = Client(FakePlexHandler.WithServer().Route("/library/sections/2/all", "show.json"));
 
-        var item = (await client.GetItemsAsync(new PlexLibrary("2", "TV Shows", "show"), null, CancellationToken.None)).Single();
+        var item = (await client.GetItemsAsync(new PlexLibrary("2", "TV Shows", "show"), null, true, CancellationToken.None)).Single();
 
         Assert.That(item.Type, Is.EqualTo("show"));
         Assert.That(item.Guids, Is.EqualTo(new PlexGuids("1399", "tt0944947", "121361")));
@@ -103,7 +104,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("multiple_versions.json"));
 
-        var versions = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single().Versions;
+        var versions = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions;
 
         Assert.That(versions, Has.Count.EqualTo(2));
         Assert.That(versions.Select(v => v.Resolution), Is.EqualTo([ "1080", "4k" ]));
@@ -118,7 +119,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("multiple_versions.json"));
 
-        var versions = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single().Versions;
+        var versions = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions;
 
         Assert.That(versions.Select(v => v.Hdr), Is.EqualTo([ false, true ]));
         Assert.That(versions[1].VideoCodec, Is.EqualTo("hevc"));
@@ -129,7 +130,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("subtitles_audio.json"));
 
-        var subtitles = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single().Versions.Single().Subtitles;
+        var subtitles = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().Subtitles;
 
         Assert.That(subtitles, Is.EqualTo([ new PlexSubtitle("eng", false), new PlexSubtitle("deu", true) ]));
     }
@@ -139,7 +140,7 @@ public class PlexClientTests
     {
         var client = Client(Serving("subtitles_audio.json"));
 
-        var audio = (await client.GetItemsAsync(Movies, null, CancellationToken.None)).Single().Versions.Single().AudioTracks;
+        var audio = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().AudioTracks;
 
         Assert.That(audio, Is.EqualTo([ new PlexAudioTrack("dca", 6, "fra"), new PlexAudioTrack("aac", 2, "eng") ]));
     }
@@ -152,7 +153,7 @@ public class PlexClientTests
                 request.Headers.GetValues("X-Plex-Container-Start").Single() == "0" ? "paging_page1.json" : "paging_page2.json")));
         var client = Client(handler, new PlexConfiguration { Token = Token, PageSize = 2 });
 
-        var items = await client.GetItemsAsync(Movies, null, CancellationToken.None);
+        var items = await client.GetItemsAsync(Movies, null, true, CancellationToken.None);
 
         var pages = handler.Requests.Where(r => r.Uri.AbsolutePath.EndsWith("/all")).ToList();
         Assert.That(items.Select(i => i.Title), Is.EqualTo([ "Alpha", "Beta", "Gamma" ]));
@@ -166,7 +167,7 @@ public class PlexClientTests
         var handler = Serving("movie.json");
         var client = Client(handler);
 
-        await client.GetItemsAsync(Movies, "Mat & rix", CancellationToken.None);
+        await client.GetItemsAsync(Movies, "Mat & rix", true, CancellationToken.None);
 
         var request = handler.Requests.Single(r => r.Uri.AbsolutePath.EndsWith("/all"));
         Assert.That(request.Uri.Query, Is.EqualTo("?title=Mat%20%26%20rix"));
@@ -213,7 +214,7 @@ public class PlexClientTests
         var client = Client(handler);
 
         await client.GetLibrariesForEntityTypeAsync("movies", CancellationToken.None);
-        await client.GetItemsAsync(Movies, "x", CancellationToken.None);
+        await client.GetItemsAsync(Movies, "x", true, CancellationToken.None);
 
         Assert.That(handler.Requests, Is.Not.Empty);
         Assert.That(handler.Requests.Select(r => r.Method), Is.All.EqualTo(HttpMethod.Get));
@@ -284,5 +285,63 @@ public class PlexClientTests
         var ex = (await Assert.ThrowsAsync<PlexClientException>(() => client.GetLibrariesAsync(CancellationToken.None)))!;
 
         Assert.That(ex.Message, Is.EqualTo("Plex returned an unreadable response."));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_NoDeepLinksRequested_DoesNotCallIdentity()
+    {
+        var handler = Serving("movie.json");
+        var client = Client(handler);
+
+        var item = (await client.GetItemsAsync(Movies, null, false, CancellationToken.None)).Single();
+
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Does.Not.Contain("/identity"));
+        Assert.That(item.DeepLink, Is.Null);
+    }
+
+    [Test]
+    public async Task GetItemsAsync_ServerNeverEndsPaging_ThrowsAfterMaxPages()
+    {
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", _ => FakePlexHandler.Json(
+            """{"MediaContainer":{"size":1,"Metadata":[{"ratingKey":"1","type":"movie","title":"Loop"}]}}"""));
+        var client = Client(handler, new PlexConfiguration { Token = Token, PageSize = 1 });
+
+        var ex = await Assert.ThrowsAsync<PlexClientException>(() => client.GetItemsAsync(Movies, null, false, CancellationToken.None));
+
+        Assert.That(ex!.Message, Is.EqualTo("Plex returned too many pages."));
+        Assert.That(handler.Requests, Has.Count.EqualTo(PlexClient.MaxPages));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_ShortPageWithoutTotalSize_StopsAfterThatPage()
+    {
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", _ => FakePlexHandler.Json(
+            """{"MediaContainer":{"size":1,"Metadata":[{"ratingKey":"1","type":"movie","title":"One"}]}}"""));
+        var client = Client(handler, new PlexConfiguration { Token = Token, PageSize = 5 });
+
+        var items = await client.GetItemsAsync(Movies, null, false, CancellationToken.None);
+
+        Assert.That(items, Has.Count.EqualTo(1));
+        Assert.That(handler.Requests.Count(r => r.Uri.AbsolutePath.EndsWith("/all")), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetLibrariesAsync_CancelledMidRequest_CancellationReachesHandlerAndIsNotWrapped()
+    {
+        using var cts = new CancellationTokenSource();
+        var started = new TaskCompletionSource();
+        var handler = new FakePlexHandler().Route("/library/sections", async (_, token) =>
+        {
+            started.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return new HttpResponseMessage();
+        });
+        var client = Client(handler);
+
+        var pending = client.GetLibrariesAsync(cts.Token);
+        await started.Task;
+        await cts.CancelAsync();
+
+        Assert.That(async () => await pending, Throws.InstanceOf<OperationCanceledException>());
     }
 }

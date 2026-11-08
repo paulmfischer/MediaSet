@@ -68,15 +68,17 @@ public class PlexConfigurationValidatorTests
         Assert.That(result.Messages.Single(), Does.Contain("Token"));
     }
 
-    [Test]
-    public void Validate_NonPositiveTimeout_DisablesWholeIntegration()
+    [TestCase(0)]
+    [TestCase(-5)]
+    public void Validate_NonPositiveTimeout_DisablesWholeIntegration(int timeout)
     {
         var config = Valid();
-        config.Timeout = 0;
+        config.Timeout = timeout;
 
         var result = PlexConfigurationValidator.Validate(config);
 
         Assert.That(result.IntegrationEnabled, Is.False);
+        Assert.That(result.Messages.Single(), Does.Contain("Timeout"));
     }
 
     [TestCase(0)]

@@ -162,8 +162,10 @@ public class PlexSearchApiTests
 
     [TestCase("")]
     [TestCase("   ")]
+    [TestCase("a")]
+    [TestCase(" a ")]
     [TestCase(null)]
-    public async Task Search_BlankQuery_ReturnsBadRequestProblem(string? query)
+    public async Task Search_BlankOrTooShortQuery_ReturnsBadRequestProblem(string? query)
     {
         var handler = ServerWithMovieSections();
         using var client = CreateClient(handler);
@@ -226,5 +228,30 @@ public class PlexSearchApiTests
 
         Assert.That(handler.Requests.Select(r => r.Headers["X-Plex-Token"]), Is.All.EqualTo(Token));
         Assert.That(handler.Requests.Select(r => r.Uri.ToString()), Is.All.Not.Contain(Token));
+    }
+
+    [Test]
+    public async Task Search_IdentityEndpointFails_StillReturnsResults()
+    {
+        var handler = ServerWithMovieSections().Route("/identity", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        using var client = CreateClient(handler);
+
+        var response = await client.GetAsync("/plex/movies/search?query=matrix");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Does.Not.Contain("/identity"));
+    }
+
+    [Test]
+    public async Task Search_MoreMatchesThanCap_ReturnsOnlyCapResults()
+    {
+        var items = string.Join(",", Enumerable.Range(1, 80).Select(i => $$"""{"ratingKey":"{{i}}","type":"movie","title":"Film {{i}}"}"""));
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all",
+            _ => FakePlexHandler.Json("{\"MediaContainer\":{\"size\":80,\"totalSize\":80,\"Metadata\":[" + items + "]}}"));
+        using var client = CreateClient(handler, sectionIds: "1");
+
+        var results = (await ReadJsonAsync(await client.GetAsync("/plex/movies/search?query=film"))).EnumerateArray().ToList();
+
+        Assert.That(results, Has.Count.EqualTo(MediaSet.Api.Features.Plex.Services.PlexSearchService.MaxResults));
     }
 }
