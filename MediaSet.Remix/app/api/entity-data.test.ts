@@ -459,6 +459,17 @@ describe('entity-data.ts', () => {
       expect(await (error as Response).text()).toBe('ISBN already exists');
     });
 
+    it('should show the detail of a problem-details rejection of the update', async (t) => {
+      const api = mockFetch(t);
+      const problem = { title: 'Invalid ExternalId', status: 400, detail: "ExternalId must be 'source:value'." };
+      api.respondOnce({ ok: false, status: 400, text: async () => JSON.stringify(problem) });
+
+      const error = await updateEntity<MovieEntity>('123', { type: Entity.Movies }).catch((e: unknown) => e);
+
+      expect((error as Response).status).toBe(400);
+      expect(await (error as Response).text()).toBe("ExternalId must be 'source:value'.");
+    });
+
     it('should throw error when update fails', async (t) => {
       const api = mockFetch(t);
       const book: BookEntity = {
@@ -524,6 +535,17 @@ describe('entity-data.ts', () => {
   });
 
   describe('addEntity', () => {
+    it('should show the detail of a problem-details rejection of the create', async (t) => {
+      const api = mockFetch(t);
+      const problem = { title: 'Invalid ExternalId', status: 400, detail: "ExternalId must be 'source:value'." };
+      api.respondOnce({ ok: false, status: 400, text: async () => JSON.stringify(problem) });
+
+      const error = await addEntity<MovieEntity>({ type: Entity.Movies, title: 'T' }).catch((e: unknown) => e);
+
+      expect((error as Response).status).toBe(400);
+      expect(await (error as Response).text()).toBe("ExternalId must be 'source:value'.");
+    });
+
     it('should add a new book entity', async (t) => {
       const api = mockFetch(t);
       const newBook: BookEntity = {

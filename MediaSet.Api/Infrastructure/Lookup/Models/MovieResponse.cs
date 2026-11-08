@@ -10,5 +10,6 @@ public record MovieResponse(
     string Plot,
     string Format,
     string? ImageUrl = null,
-    LookupProvenance? Provenance = null
+    LookupProvenance? Provenance = null,
+    string? ExternalId = null
 );

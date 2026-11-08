@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,6 +69,48 @@ public class MovieLookupStrategyTests
 
     #endregion
 
+    #region LookupAsync - ExternalId
+
+    [Test]
+    public async Task LookupAsync_WithTitle_ReturnsTmdbExternalId()
+    {
+        _tmdbClientMock.Setup(x => x.SearchMovieAsync("1408", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateSearchResponse(1408, "1408"));
+        _tmdbClientMock.Setup(x => x.GetMovieDetailsAsync(1408, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateMovieDetails(id: 1408, title: "1408", releaseDate: "2007-06-22", runtime: 104));
+
+        var result = await _strategy.LookupAsync(IdentifierType.Entity,
+            new Dictionary<string, string> { ["title"] = "1408" }, CancellationToken.None);
+
+        Assert.That(result.Single().ExternalId, Is.EqualTo("tmdbid:1408"));
+    }
+
+    [Test]
+    public async Task LookupAsync_WithConfirmedMovieId_ReturnsTmdbExternalId()
+    {
+        _tmdbClientMock.Setup(x => x.GetMovieDetailsAsync(1408, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateMovieDetails(id: 1408, title: "1408", releaseDate: "2007-06-22", runtime: 104));
+
+        var result = await _strategy.LookupAsync(IdentifierType.Entity,
+            new Dictionary<string, string> { ["title"] = "1408", ["confirmedProviderId"] = "1408" }, CancellationToken.None);
+
+        Assert.That(result.Single().ExternalId, Is.EqualTo("tmdbid:1408"));
+    }
+
+    [Test]
+    public async Task LookupAsync_WithUpcAndNoMatch_ReturnsNoResultAndNoExternalId()
+    {
+        _upcItemDbClientMock.Setup(x => x.GetItemByCodeAsync("000", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UpcItemResponse?)null);
+
+        var result = await _strategy.LookupAsync(IdentifierType.Upc,
+            new Dictionary<string, string> { ["upc"] = "000" }, CancellationToken.None);
+
+        Assert.That(result, Is.Empty);
+    }
+
+    #endregion
+
     #region LookupAsync - Success Tests
 
     [Test]
@@ -105,6 +148,7 @@ public class MovieLookupStrategyTests
         // Format extraction finds "DVD" from the brackets
         Assert.That(result[0].Format, Is.EqualTo("DVD"));
         Assert.That(result[0].Rating, Is.EqualTo("7.5/10"));
+        Assert.That(result[0].ExternalId, Is.EqualTo("tmdbid:1408"));
 
         _upcItemDbClientMock.Verify(
             x => x.GetItemByCodeAsync(upc, It.IsAny<CancellationToken>()),
@@ -364,6 +408,7 @@ public class MovieLookupStrategyTests
         Assert.That(results, Has.Count.EqualTo(1));
         Assert.That(results[0].ImageUrl, Does.EndWith("/collection.jpg"));
         Assert.That(results[0].Provenance?.ProviderId, Is.EqualTo("collection:100"));
+        Assert.That(results[0].ExternalId, Is.EqualTo("tmdbid:100"));
         Assert.That(results[0].Title, Is.EqualTo(title));
         _tmdbClientMock.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }

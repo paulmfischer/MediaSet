@@ -151,7 +151,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
     private static MovieResponse MapCollection(TmdbCollectionResponse collection, string title) =>
         new(title, [], [], string.Empty, string.Empty, null, collection.Overview ?? string.Empty, string.Empty,
             string.IsNullOrWhiteSpace(collection.PosterPath) ? null : $"https://image.tmdb.org/t/p/w500{collection.PosterPath}",
-            new LookupProvenance("Tmdb", $"collection:{collection.Id}", title));
+            new LookupProvenance("Tmdb", $"collection:{collection.Id}", title),
+            ExternalIdFormat.ForTmdb(collection.Id));
 
     private static bool CollectionMatches(TmdbCollectionResponse collection, string title)
     {
@@ -242,7 +243,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             new LookupProvenance("Tmdb", providerId, title, MatchYears:
                 new[] { series.FirstAirDate, season?.AirDate, episode?.AirDate }
                     .Where(d => !string.IsNullOrWhiteSpace(d) && d.Length >= 4)
-                    .Select(d => d![..4]).Distinct().ToList()));
+                    .Select(d => d![..4]).Distinct().ToList()),
+            ExternalIdFormat.ForTmdb(series.Id));
     }
 
     private async Task<MovieResponse?> LookupByUpcAsync(
@@ -305,7 +307,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             Plot: tmdbMovie.Overview ?? string.Empty,
             Format: format,
             ImageUrl: imageUrl,
-            Provenance: new LookupProvenance("Tmdb", tmdbMovie.Id.ToString(), tmdbMovie.Title)
+            Provenance: new LookupProvenance("Tmdb", tmdbMovie.Id.ToString(), tmdbMovie.Title),
+            ExternalId: ExternalIdFormat.ForTmdb(tmdbMovie.Id)
         );
     }
 
