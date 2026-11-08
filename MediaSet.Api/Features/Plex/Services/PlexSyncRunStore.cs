@@ -25,6 +25,8 @@ public class PlexSyncRunStore(IDatabaseService database) : IPlexSyncRunStore
 
     private IMongoCollection<PlexSyncRun> Collection => database.GetCollection<PlexSyncRun>();
 
+    private volatile bool _ensured;
+
     public async Task EnsureCreatedAsync(CancellationToken cancellationToken)
     {
         // Creating an index also creates the collection when it does not exist
@@ -34,6 +36,7 @@ public class PlexSyncRunStore(IDatabaseService database) : IPlexSyncRunStore
         await Collection.Indexes.CreateOneAsync(
             new CreateIndexModel<PlexSyncRun>(keys, new CreateIndexOptions { Name = IndexName }),
             cancellationToken: cancellationToken);
+        _ensured = true;
     }
 
     public async Task<long> InterruptInProgressAsync(string message, DateTime endedAt, CancellationToken cancellationToken)
@@ -47,8 +50,16 @@ public class PlexSyncRunStore(IDatabaseService database) : IPlexSyncRunStore
         return result.ModifiedCount;
     }
 
-    public Task InsertAsync(PlexSyncRun run, CancellationToken cancellationToken) =>
-        Collection.InsertOneAsync(run, cancellationToken: cancellationToken);
+    public async Task InsertAsync(PlexSyncRun run, CancellationToken cancellationToken)
+    {
+        // The startup ensure may have failed (MongoDB briefly down): retry it before the first write
+        if (!_ensured)
+        {
+            await EnsureCreatedAsync(cancellationToken);
+        }
+
+        await Collection.InsertOneAsync(run, cancellationToken: cancellationToken);
+    }
 
     public Task UpdateAsync(PlexSyncRun run, CancellationToken cancellationToken) =>
         Collection.ReplaceOneAsync(r => r.Id == run.Id, run, cancellationToken: cancellationToken);

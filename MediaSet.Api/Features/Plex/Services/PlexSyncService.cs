@@ -25,21 +25,29 @@ public sealed class PlexSyncService(
     IPlexSyncRunStore store,
     IHostApplicationLifetime lifetime,
     IOptions<PlexConfiguration> options,
-    ILogger<PlexSyncService> logger) : IPlexSyncService
+    ILogger<PlexSyncService> logger) : IPlexSyncService, IHostedService
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly SemaphoreSlim _startGate = new(1, 1);
     private readonly object _gate = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Task, byte> _tasks = new();
     private readonly Dictionary<string, PlexSyncRun> _active = new(StringComparer.OrdinalIgnoreCase);
 
     public async Task<PlexSyncStartResult> StartAsync(string entityType, string trigger, CancellationToken cancellationToken)
     {
+        // Serializes check, lock acquisition and insert, so _active only ever holds persisted runs
+        // and a conflict always carries a run with an id
+        await _startGate.WaitAsync(cancellationToken);
         PlexSyncRun run;
         bool holdsLock;
-        lock (_gate)
+        try
         {
-            if (_active.TryGetValue(entityType, out var current))
+            lock (_gate)
             {
-                return new PlexSyncStartResult(current.Clone(), false);
+                if (_active.TryGetValue(entityType, out var current))
+                {
+                    return new PlexSyncStartResult(current.Clone(), false);
+                }
             }
 
             // Take the shared lock now when it is free, otherwise the run waits for it as queued
@@ -51,31 +59,52 @@ public sealed class PlexSyncService(
                 State = holdsLock ? PlexSyncRunStates.Running : PlexSyncRunStates.Queued,
                 StartedAt = DateTime.UtcNow
             };
-            _active[entityType] = run;
-        }
 
-        try
-        {
-            await store.InsertAsync(run, cancellationToken);
-        }
-        catch
-        {
+            try
+            {
+                await store.InsertAsync(run, cancellationToken);
+            }
+            catch
+            {
+                if (holdsLock)
+                {
+                    _lock.Release();
+                }
+                throw;
+            }
+
             lock (_gate)
             {
-                _active.Remove(entityType);
+                _active[entityType] = run;
             }
-            if (holdsLock)
-            {
-                _lock.Release();
-            }
-            throw;
+        }
+        finally
+        {
+            _startGate.Release();
         }
 
         // The run's token is linked to application shutdown, not to the request that started it
         var cts = CancellationTokenSource.CreateLinkedTokenSource(lifetime.ApplicationStopping);
         var snapshot = Snapshot(run);
-        _ = Task.Run(() => ExecuteAsync(run, holdsLock, cts));
+        var task = Task.Run(() => ExecuteAsync(run, holdsLock, cts));
+        _tasks[task] = 0;
+        _ = task.ContinueWith(t => _tasks.TryRemove(t, out _), TaskScheduler.Default);
         return new PlexSyncStartResult(snapshot, true);
+    }
+
+    /// <summary>Waits for runs to record their outcome (they are cancelled by ApplicationStopping first).</summary>
+    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.WhenAll(_tasks.Keys).WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutdown grace period over: the startup sweep closes anything left in progress
+        }
     }
 
     private PlexSyncRun Snapshot(PlexSyncRun run)

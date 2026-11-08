@@ -99,10 +99,67 @@ public class PlexSyncServiceTests
         await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
         await WaitUntilAsync(() => seen.CanBeCanceled);
         h.Shutdown.Cancel();
-        await WaitUntilAsync(() => h.Store.Runs.Single().State != PlexSyncRunStates.Running);
+        await WaitUntilAsync(() => h.Store.Runs.Single().State == PlexSyncRunStates.Interrupted);
 
         Assert.That(h.Store.Runs.Single().State, Is.EqualTo(PlexSyncRunStates.Interrupted));
         Assert.That(seen.IsCancellationRequested, Is.True);
+    }
+
+    [Test]
+    public async Task StartAsync_ApplicationStoppingWhileQueued_RecordsInterruptedWithoutCallingPlex()
+    {
+        var h = new Harness();
+        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                await Task.Delay(Timeout.Infinite, ct);
+                return (IReadOnlyList<PlexLibrary>)[];
+            });
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+        await h.Service.StartAsync("shows", PlexSyncTriggers.Manual, CancellationToken.None);
+
+        h.Shutdown.Cancel();
+        await WaitUntilAsync(() => h.Store.Runs.All(r => r.State == PlexSyncRunStates.Interrupted));
+
+        h.Client.Verify(c => c.GetLibrariesForEntityTypeAsync("shows", It.IsAny<CancellationToken>()), Times.Never);
+        Assert.That(h.Store.Runs.Single(r => r.EntityType == "shows").EndedAt, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task StartAsync_SameTypeWhileInProgress_ReturnsPersistedCurrentRun()
+    {
+        var h = new Harness();
+        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                await Task.Delay(Timeout.Infinite, ct);
+                return (IReadOnlyList<PlexLibrary>)[];
+            });
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 8)
+            .Select(_ => Task.Run(() => h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None))));
+
+        Assert.That(results.Count(r => r.Started), Is.EqualTo(1));
+        Assert.That(results.Select(r => r.Run.Id), Has.All.Not.Null.And.All.EqualTo(h.Store.Runs.Single().Id));
+        h.Shutdown.Cancel();
+    }
+
+    [Test]
+    public async Task StopAsync_RunInProgress_WaitsForOutcomeToBeRecorded()
+    {
+        var h = new Harness();
+        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                await Task.Delay(Timeout.Infinite, ct);
+                return (IReadOnlyList<PlexLibrary>)[];
+            });
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+
+        h.Shutdown.Cancel();
+        await h.Service.StopAsync(CancellationToken.None);
+
+        Assert.That(h.Store.Runs.Single().State, Is.EqualTo(PlexSyncRunStates.Interrupted));
     }
 
     [Test]
@@ -113,7 +170,7 @@ public class PlexSyncServiceTests
             .ThrowsAsync(new PlexClientException(null, "Plex said secret-token"));
 
         await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
-        await WaitUntilAsync(() => h.Store.Runs.Single().State != PlexSyncRunStates.Running);
+        await WaitUntilAsync(() => h.Store.Runs.Single().State == PlexSyncRunStates.Failed);
 
         Assert.That(h.Store.Runs.Single().State, Is.EqualTo(PlexSyncRunStates.Failed));
         Assert.That(h.Store.Runs.Single().Message, Does.Not.Contain("secret-token"));
@@ -123,6 +180,30 @@ public class PlexSyncServiceTests
 [TestFixture]
 public class PlexSyncRunStoreTests
 {
+    private static string RenderKeys(CreateIndexModel<PlexSyncRun> model) =>
+        model.Keys.Render(new RenderArgs<PlexSyncRun>(
+            MongoDB.Bson.Serialization.BsonSerializer.LookupSerializer<PlexSyncRun>(),
+            MongoDB.Bson.Serialization.BsonSerializer.SerializerRegistry)).ToString();
+
+    [Test]
+    public async Task InsertAsync_IndexNotYetEnsured_CreatesIndexBeforeInserting()
+    {
+        var indexes = new Mock<IMongoIndexManager<PlexSyncRun>>();
+        var collection = new Mock<IMongoCollection<PlexSyncRun>>();
+        collection.SetupGet(c => c.Indexes).Returns(indexes.Object);
+        collection.Setup(c => c.InsertOneAsync(It.IsAny<PlexSyncRun>(), It.IsAny<InsertOneOptions>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var database = new Mock<IDatabaseService>();
+        database.Setup(d => d.GetCollection<PlexSyncRun>()).Returns(collection.Object);
+        var store = new PlexSyncRunStore(database.Object);
+
+        await store.InsertAsync(new PlexSyncRun(), CancellationToken.None);
+        await store.InsertAsync(new PlexSyncRun(), CancellationToken.None);
+
+        indexes.Verify(i => i.CreateOneAsync(It.IsAny<CreateIndexModel<PlexSyncRun>>(), It.IsAny<CreateOneIndexOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+        collection.Verify(c => c.InsertOneAsync(It.IsAny<PlexSyncRun>(), It.IsAny<InsertOneOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
     [Test]
     public async Task EnsureCreatedAsync_CreatesIndexOnEntityTypeAndStartedAtDescending()
     {
@@ -136,7 +217,8 @@ public class PlexSyncRunStoreTests
         await store.EnsureCreatedAsync(CancellationToken.None);
 
         indexes.Verify(i => i.CreateOneAsync(
-            It.Is<CreateIndexModel<PlexSyncRun>>(m => m.Options.Name == PlexSyncRunStore.IndexName),
+            It.Is<CreateIndexModel<PlexSyncRun>>(m => m.Options.Name == PlexSyncRunStore.IndexName
+                && RenderKeys(m) == "{ \"EntityType\" : 1, \"StartedAt\" : -1 }"),
             It.IsAny<CreateOneIndexOptions>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
