@@ -1,5 +1,5 @@
 using System.Linq;
-using MediaSet.Api.Features.Plex.Models;
+using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Features.Plex.Services;
 using NUnit.Framework;
 

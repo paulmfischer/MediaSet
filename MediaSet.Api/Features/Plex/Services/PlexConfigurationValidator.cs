@@ -1,5 +1,4 @@
 using Cronos;
-using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Infrastructure.Plex;
 
 namespace MediaSet.Api.Features.Plex.Services;

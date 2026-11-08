@@ -1,4 +1,4 @@
-namespace MediaSet.Api.Features.Plex.Models;
+namespace MediaSet.Api.Infrastructure.Plex;
 
 public class PlexConfiguration
 {
