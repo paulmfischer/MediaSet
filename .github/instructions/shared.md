@@ -6,6 +6,9 @@ route/data patterns, integrations and image storage read [architecture](../../De
 Before editing TypeScript or TSX read [frontend conventions](frontend.instructions.md).
 C# style is enforced by `.editorconfig`.
 
+**Line endings are LF everywhere** (`.gitattributes`: `* text=auto eol=lf`; `.editorconfig`:
+`end_of_line = lf`). Never commit CRLF; set your editor to LF. `dotnet format` keeps LF.
+
 ## Git
 
 - Never commit to `main`. Branch from the latest `main` (or the branch you are told to
