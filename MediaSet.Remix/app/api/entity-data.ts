@@ -135,6 +135,24 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
   }
 }
 
+/**
+ * The message from a 4xx response: the API sends either plain text or an RFC 9457 problem-details
+ * JSON body, whose `detail` (or `title`) is the readable part.
+ */
+async function rejectionMessage(response: Response): Promise<string> {
+  const text = (await response.text()).trim();
+  if (!text.startsWith('{')) return text;
+  try {
+    const problem = JSON.parse(text) as { detail?: unknown; title?: unknown };
+    for (const value of [problem.detail, problem.title]) {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+  } catch {
+    // Not JSON after all; fall through to the raw text.
+  }
+  return text;
+}
+
 export async function updateEntity<TEntity extends BaseEntity>(
   id: string,
   entity: TEntity,
@@ -173,7 +191,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
       });
       // A 4xx is the API rejecting the entity (or a missing one); keep its status and message so callers can show them.
       const rejected = response.status >= 400 && response.status < 500;
-      const message = rejected ? (await response.text()).trim() : '';
+      const message = rejected ? await rejectionMessage(response) : '';
       throw new Response(message || `Error updating a ${singular(entityType)}`, {
         status: rejected ? response.status : 500,
       });
@@ -221,7 +239,7 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, for
       });
       // A 4xx is the API rejecting the entity; keep its status and message so callers can show them.
       const rejected = response.status >= 400 && response.status < 500;
-      const message = rejected ? (await response.text()).trim() : '';
+      const message = rejected ? await rejectionMessage(response) : '';
       throw new Response(message || `Error creating a new ${singular(entityType)}`, {
         status: rejected ? response.status : 500,
       });

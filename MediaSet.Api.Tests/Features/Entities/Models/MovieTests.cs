@@ -145,4 +145,12 @@ public class MovieTests
         // Assert
         Assert.That(result, Is.False);
     }
+
+    [Test]
+    public void IsEmpty_OnlyExternalIdSet_ReturnsFalse()
+    {
+        var movie = new Movie { ExternalId = "tmdbid:1234" };
+
+        Assert.That(movie.IsEmpty(), Is.False);
+    }
 }

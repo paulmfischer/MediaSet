@@ -70,6 +70,7 @@ public class Movie : IEntity
             && Studios.Count == 0
             && Genres.Count == 0
             && string.IsNullOrWhiteSpace(Plot)
+            && string.IsNullOrWhiteSpace(ExternalId)
             && CoverImage == null;
     }
 }
