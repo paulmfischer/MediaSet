@@ -61,6 +61,7 @@ guides are in `Setup/`.
 | IGDB | Game metadata | `IgdbConfiguration__` (`ClientId`, `ClientSecret`) | `IIgdbClient` |
 | MusicBrainz | Music album metadata | `MusicBrainzConfiguration__` (`UserAgent`) | `IMusicBrainzClient` |
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
+| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`) | none yet; `/plex/status` reports state |
 
 ## Local development
 

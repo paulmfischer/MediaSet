@@ -1,4 +1,5 @@
 using MediaSet.Api.Features.Config.Models;
+using MediaSet.Api.Infrastructure.Plex;
 
 namespace MediaSet.Api.Features.Config.Endpoints;
 
@@ -12,7 +13,7 @@ internal static class ConfigApi
         group.WithTags("Config");
 
         // GET /config/integrations
-        group.MapGet("/integrations", (IConfiguration configuration) =>
+        group.MapGet("/integrations", (IConfiguration configuration, IServiceProvider services) =>
         {
             // Build integration attribution entries from configuration so values can be changed at runtime
             var tmdbSection = configuration.GetSection("TmdbConfiguration");
@@ -45,7 +46,8 @@ internal static class ConfigApi
                 Build("igdb", "IGDB", igdbSection, "/integrations/igdb.svg",
                     defaultAttributionUrl: "https://www.igdb.com/",
                     defaultAttributionText: "Game data provided by IGDB."),
-                Build("musicbrainz", "MusicBrainz", musicBrainzSection, "/integrations/musicbrainz.svg")
+                Build("musicbrainz", "MusicBrainz", musicBrainzSection, "/integrations/musicbrainz.svg"),
+                BuildPlex(services.GetService<PlexEnablement>())
             };
 
             return Results.Ok(result);
@@ -78,4 +80,14 @@ internal static class ConfigApi
 
         return group;
     }
+
+    // Reads the startup enablement result, never raw configuration, so the token cannot leak.
+    // PlexEnablement is registered only when Plex is configured and valid.
+    private static IntegrationAttributionDto BuildPlex(PlexEnablement? enablement) => new()
+    {
+        Key = "plex",
+        DisplayName = "Plex",
+        Enabled = enablement != null,
+        EntityTypes = enablement?.EnabledEntityTypes
+    };
 }

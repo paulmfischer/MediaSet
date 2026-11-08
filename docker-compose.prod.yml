@@ -76,6 +76,14 @@ services:
       # TmdbConfiguration__BearerToken: "[ReplaceThis]"
       # TmdbConfiguration__Timeout: "10"
 
+      # Plex configuration (optional, read-only; omit all PlexConfiguration__ keys to disable)
+      # PlexConfiguration__BaseUrl: "http://plex.local:32400"
+      # PlexConfiguration__Token: "[ReplaceThis]"
+      # PlexConfiguration__Timeout: "30"
+      # PlexConfiguration__AcceptInvalidCertificate: "false"
+      # PlexConfiguration__Entities__Movies__Enabled: "true"
+      # PlexConfiguration__Entities__Movies__Schedule: "0 3 * * 0"
+
       # UpcItemDb configuration (for barcode lookup)
       # Free tier: 100 requests/day, 6 requests/minute burst
       # UpcItemDbConfiguration__BaseUrl: "https://api.upcitemdb.com/"

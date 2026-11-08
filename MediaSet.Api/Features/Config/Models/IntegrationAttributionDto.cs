@@ -8,4 +8,7 @@ public class IntegrationAttributionDto
     public string? AttributionUrl { get; set; }
     public string? AttributionText { get; set; }
     public string? LogoPath { get; set; }
+
+    /// <summary>Enabled entity types for integrations that are enabled per entity type; null otherwise.</summary>
+    public IReadOnlyList<string>? EntityTypes { get; set; }
 }

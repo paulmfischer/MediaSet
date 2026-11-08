@@ -11,6 +11,10 @@ using MediaSet.Api.Features.Metadata.Endpoints;
 using MediaSet.Api.Features.Health.Endpoints;
 using MediaSet.Api.Features.Images.Endpoints;
 using MediaSet.Api.Features.Statistics.Endpoints;
+using MediaSet.Api.Features.Plex.Endpoints;
+using MediaSet.Api.Features.Plex.Models;
+using MediaSet.Api.Features.Plex.Services;
+using MediaSet.Api.Infrastructure.Plex;
 
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Features.Metadata.Services;
@@ -199,6 +203,28 @@ if (musicBrainzConfig.Exists())
         client.Timeout = TimeSpan.FromSeconds(config.Timeout);
         client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", config.UserAgent);
     });
+}
+
+// Configure Plex. Nothing Plex-related is registered unless the section exists and is valid.
+var plexSection = builder.Configuration.GetSection(nameof(PlexConfiguration));
+var plexEnabled = false;
+if (plexSection.Exists())
+{
+    var plexConfig = plexSection.Get<PlexConfiguration>() ?? new PlexConfiguration();
+    var plexValidation = PlexConfigurationValidator.Validate(plexConfig);
+    foreach (var message in plexValidation.Messages)
+    {
+        bootstrapLogger.Warning("Plex configuration: {Message}", message);
+    }
+
+    if (plexValidation.IntegrationEnabled)
+    {
+        plexEnabled = true;
+        bootstrapLogger.Information(
+            "Plex integration enabled for entity types: {EntityTypes}",
+            plexValidation.EnabledEntityTypes.Count > 0 ? string.Join(", ", plexValidation.EnabledEntityTypes) : "(none)");
+        builder.Services.AddSingleton(new PlexEnablement(plexValidation.EnabledEntityTypes));
+    }
 }
 
 // Register lookup strategies and factory
@@ -396,6 +422,11 @@ app.MapLookup();
 
 // Map configuration endpoints
 app.MapConfig();
+
+if (plexEnabled)
+{
+    app.MapPlex();
+}
 
 app.Run();
 
