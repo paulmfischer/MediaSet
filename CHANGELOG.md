@@ -1,5 +1,31 @@
 # Changelog
 
+## [4.3.0](https://github.com/paulmfischer/MediaSet/compare/v4.2.0...v4.3.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* **api:** return problem details when no lookup provider is registered ([#788](https://github.com/paulmfischer/MediaSet/issues/788)) ([0d97948](https://github.com/paulmfischer/MediaSet/commit/0d97948d44c9af32471e5f41db6122f99cc5771d)), closes [#773](https://github.com/paulmfischer/MediaSet/issues/773)
+* **ci:** slim API docker build to restore fast release times ([#789](https://github.com/paulmfischer/MediaSet/issues/789)) ([eed4e3b](https://github.com/paulmfischer/MediaSet/commit/eed4e3b7d49e442439af7843880bb050d70d5ea6)), closes [#776](https://github.com/paulmfischer/MediaSet/issues/776)
+
+
+### Tests
+
+* **api:** isolate Development startup test from user-secrets ([#780](https://github.com/paulmfischer/MediaSet/issues/780)) ([e49b383](https://github.com/paulmfischer/MediaSet/commit/e49b383f58f274c11be6e78f7d65d5cee3def819)), closes [#774](https://github.com/paulmfischer/MediaSet/issues/774)
+
+
+### Miscellaneous
+
+* **api:** align .NET 10 SDK and test-host servicing ([#772](https://github.com/paulmfischer/MediaSet/issues/772)) ([6d553c3](https://github.com/paulmfischer/MediaSet/commit/6d553c3cee53499bfaf978510671ceb0522740b5)), closes [#655](https://github.com/paulmfischer/MediaSet/issues/655)
+* **api:** migrate API tests to NUnit 5 ([#783](https://github.com/paulmfischer/MediaSet/issues/783)) ([7a374cb](https://github.com/paulmfischer/MediaSet/commit/7a374cb3bc4c6d6d67992ca3d2e4391bcbd6ccca)), closes [#781](https://github.com/paulmfischer/MediaSet/issues/781)
+* **api:** refresh backend test tools ([#779](https://github.com/paulmfischer/MediaSet/issues/779)) ([91eb2e9](https://github.com/paulmfischer/MediaSet/commit/91eb2e94bcef0807e8869e04b9c3f9893cf7162d)), closes [#658](https://github.com/paulmfischer/MediaSet/issues/658)
+* **api:** update analyzer Roslyn deps and test ARCH001 ([#784](https://github.com/paulmfischer/MediaSet/issues/784)) ([5bfcd20](https://github.com/paulmfischer/MediaSet/commit/5bfcd203bb6eea687ae13f920cec7cec1add2915)), closes [#660](https://github.com/paulmfischer/MediaSet/issues/660)
+* **api:** update Cronos to 0.13.0 ([#785](https://github.com/paulmfischer/MediaSet/issues/785)) ([bc0e9e5](https://github.com/paulmfischer/MediaSet/commit/bc0e9e50104d638ad53e753a91495e68c58c0242)), closes [#661](https://github.com/paulmfischer/MediaSet/issues/661)
+* **api:** update MinVer to 8.0.0 ([#786](https://github.com/paulmfischer/MediaSet/issues/786)) ([76d91cf](https://github.com/paulmfischer/MediaSet/commit/76d91cff80307e84b8762028ead0d8955ea20634)), closes [#662](https://github.com/paulmfischer/MediaSet/issues/662)
+* **api:** update observability packages ([#778](https://github.com/paulmfischer/MediaSet/issues/778)) ([c0d3ed3](https://github.com/paulmfischer/MediaSet/commit/c0d3ed3787c14180afc4239126a908fd3e75f043)), closes [#657](https://github.com/paulmfischer/MediaSet/issues/657)
+* **api:** update Swashbuckle and OpenAPI packages ([#777](https://github.com/paulmfischer/MediaSet/issues/777)) ([ba8e8ce](https://github.com/paulmfischer/MediaSet/commit/ba8e8ceb80c17a837ab023f148a42ad4dc5ddcf0)), closes [#656](https://github.com/paulmfischer/MediaSet/issues/656)
+* **release:** release 4.3.0 ([#790](https://github.com/paulmfischer/MediaSet/issues/790)) ([130262d](https://github.com/paulmfischer/MediaSet/commit/130262d81b22a4410500b20992af38fac761428d))
+
 ## [4.2.0](https://github.com/paulmfischer/MediaSet/compare/v4.1.0...v4.2.0) (2026-11-07)
 
 
