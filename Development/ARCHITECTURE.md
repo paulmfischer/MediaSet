@@ -63,6 +63,16 @@ guides are in `Setup/`.
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
 | Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
+### Plex sync runs
+
+`POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another
+run holds the lock), starts it in the background and returns 202 with the run, or 409 with the current run when that entity
+type is already in progress. One lock in the singleton `PlexSyncService` serializes runs across all entity types and triggers.
+Each run reads the Plex libraries for the type and records `succeeded` with `ItemsScanned`, `failed` with a message that never
+holds the token, or `interrupted` (application shutdown, or a restart: `PlexSyncInitializer` closes leftover runs and creates
+the `(EntityType, StartedAt desc)` index at startup). The run's cancellation token is linked to application shutdown and passed
+to every Plex call; there is no cancel endpoint. `/plex/status` and `/plex/{entityType}/status` report the last run per type.
+
 ## Local development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md). The API and frontend run on the host; only MongoDB runs in a container.

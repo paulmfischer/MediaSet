@@ -62,6 +62,7 @@ public class PlexSearchApiTests
                     services.Remove(d);
                 }
                 services.AddSingleton(new Mock<IDatabaseService>().Object);
+                InMemoryPlexSyncRunStore.Replace(services);
                 services.AddHttpClient(nameof(IPlexClient)).ConfigurePrimaryHttpMessageHandler(() => handler);
             });
         });

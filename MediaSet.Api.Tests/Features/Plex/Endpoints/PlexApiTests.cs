@@ -69,6 +69,7 @@ public class PlexApiTests
                     services.Remove(d);
                 }
                 services.AddSingleton(new Mock<IDatabaseService>().Object);
+                InMemoryPlexSyncRunStore.Replace(services);
             });
         });
         _factories.Add(factory);
