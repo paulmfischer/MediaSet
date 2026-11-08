@@ -210,14 +210,24 @@ var plexSection = builder.Configuration.GetSection(nameof(PlexConfiguration));
 var plexEnabled = false;
 if (plexSection.Exists())
 {
-    var plexConfig = plexSection.Get<PlexConfiguration>() ?? new PlexConfiguration();
-    var plexValidation = PlexConfigurationValidator.Validate(plexConfig);
-    foreach (var message in plexValidation.Messages)
+    PlexConfiguration? plexConfig = null;
+    try
+    {
+        plexConfig = plexSection.Get<PlexConfiguration>() ?? new PlexConfiguration();
+    }
+    catch (InvalidOperationException)
+    {
+        // Never log the exception or raw values: they could expose the token
+        bootstrapLogger.Warning("Plex configuration: a setting has a malformed value. The Plex integration is disabled.");
+    }
+
+    var plexValidation = plexConfig != null ? PlexConfigurationValidator.Validate(plexConfig) : null;
+    foreach (var message in plexValidation?.Messages ?? [])
     {
         bootstrapLogger.Warning("Plex configuration: {Message}", message);
     }
 
-    if (plexValidation.IntegrationEnabled)
+    if (plexValidation is { IntegrationEnabled: true })
     {
         plexEnabled = true;
         bootstrapLogger.Information(

@@ -34,6 +34,7 @@ public class PlexConfigurationValidatorTests
         var entity = new PlexEntityConfiguration();
 
         Assert.That(config.Timeout, Is.EqualTo(30));
+        Assert.That(config.PageSize, Is.EqualTo(100));
         Assert.That(config.AcceptInvalidCertificate, Is.False);
         Assert.That(entity.Schedule, Is.EqualTo("0 3 * * 0"));
         Assert.That(entity.LibrarySectionIds, Is.Empty);
@@ -76,6 +77,19 @@ public class PlexConfigurationValidatorTests
         var result = PlexConfigurationValidator.Validate(config);
 
         Assert.That(result.IntegrationEnabled, Is.False);
+    }
+
+    [TestCase(0)]
+    [TestCase(-5)]
+    public void Validate_NonPositivePageSize_DisablesWholeIntegration(int pageSize)
+    {
+        var config = Valid();
+        config.PageSize = pageSize;
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.IntegrationEnabled, Is.False);
+        Assert.That(result.Messages.Single(), Does.Contain("PageSize"));
     }
 
     [Test]

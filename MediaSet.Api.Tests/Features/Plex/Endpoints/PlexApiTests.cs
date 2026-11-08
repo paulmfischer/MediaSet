@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Database;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using NUnit.Framework;
@@ -45,6 +46,14 @@ public class PlexApiTests
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Production");
+            // Ignore PlexConfiguration__* variables of the machine running the tests
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                foreach (var source in config.Sources.OfType<EnvironmentVariablesConfigurationSource>().ToList())
+                {
+                    config.Sources.Remove(source);
+                }
+            });
             builder.UseSetting("MediaSetDatabaseSettings:ConnectionString", "mongodb://127.0.0.1:27017");
             builder.UseSetting("ImageConfiguration:StoragePath", TestContext.CurrentContext.WorkDirectory);
             builder.UseSetting("ExternalLogging:Enabled", "false");
@@ -98,7 +107,7 @@ public class PlexApiTests
     [Test]
     public void Services_NoPlexSection_NoPlexServicesRegistered()
     {
-        using var client = CreateClient();
+        CreateClient();
         var factory = _factories.Single();
 
         var enablement = factory.Services.GetService<MediaSet.Api.Infrastructure.Plex.PlexEnablement>();
@@ -235,5 +244,38 @@ public class PlexApiTests
 
         Assert.That(statusResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         Assert.That(plex.GetProperty("enabled").GetBoolean(), Is.False);
+    }
+
+    [Test]
+    public async Task GetPlexStatus_MalformedSetting_StartsWithPlexDisabled()
+    {
+        var settings = PlexSettings();
+        settings["PlexConfiguration:Timeout"] = "abc";
+        using var client = CreateClient(settings);
+
+        var statusResponse = await client.GetAsync("/plex/status");
+        var integrations = await client.GetAsync("/config/integrations");
+        var plex = PlexEntry(await ReadJsonAsync(integrations));
+
+        Assert.That(statusResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(plex.GetProperty("enabled").GetBoolean(), Is.False);
+    }
+
+    [Test]
+    public async Task GetPlexStatus_UnsupportedEntityKey_ReportsOnlySupportedTypes()
+    {
+        var settings = PlexSettings();
+        settings["PlexConfiguration:Entities:Books:Enabled"] = "true";
+        using var client = CreateClient(settings);
+
+        var statusResponse = await client.GetAsync("/plex/status");
+        var entries = (await ReadJsonAsync(statusResponse)).EnumerateArray().ToList();
+        var booksResponse = await client.GetAsync("/plex/books/status");
+        var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
+
+        Assert.That(entries.Select(e => e.GetProperty("entityType").GetString()), Is.EqualTo(["movies"]));
+        Assert.That(entries[0].GetProperty("enabled").GetBoolean(), Is.True);
+        Assert.That(booksResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(plex.GetProperty("entityTypes").EnumerateArray().Select(e => e.GetString()), Is.EqualTo(["movies"]));
     }
 }
