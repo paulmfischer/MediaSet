@@ -48,6 +48,11 @@ public class Movie : IEntity
     [Upload(HeaderName = "Is TV Series", Converter = typeof(BoolConverter))]
     public bool IsTvSeries { get; set; }
 
+    /// <summary>
+    /// Optional external identifier in <c>source:value</c> form, e.g. <c>tmdbid:1234</c>.
+    /// </summary>
+    public string? ExternalId { get; set; }
+
     public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }

@@ -114,6 +114,15 @@ describe('toMovieUpdate', () => {
     });
   });
 
+  it('should keep an existing externalId when saving an edit', () => {
+    const update = wire(toMovieUpdate({ ...existing, externalId: 'tmdbid:1234' }, parsed));
+    assert.equal(update.externalId, 'tmdbid:1234');
+  });
+
+  it('should not add an externalId when the movie has none', () => {
+    assert.equal('externalId' in wire(toMovieUpdate(existing, parsed)), false);
+  });
+
   it('should drop the cover image and an unchanged image URL when removing the image', () => {
     const update = wire(toMovieUpdate(existing, parsed, true));
     assert.equal('coverImage' in update, false);

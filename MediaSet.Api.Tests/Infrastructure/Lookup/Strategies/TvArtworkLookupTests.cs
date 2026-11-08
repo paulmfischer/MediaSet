@@ -179,4 +179,22 @@ public class TvArtworkLookupTests
         Assert.That(result.Single().ImageUrl, Does.EndWith("/season.jpg"));
         client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Test]
+    public async Task LookupAsync_TvSeason_ReturnsTmdbExternalIdOfSeries()
+    {
+        Series("Community", 6, id: 18347);
+        var result = await Lookup("Community: Season 6");
+        Assert.That(result.Single().ExternalId, Is.EqualTo("tmdbid:18347"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ConfirmedTv_ReturnsTmdbExternalIdOfSeries()
+    {
+        Series("Community", 6, id: 18347);
+        var result = await strategy.LookupAsync(IdentifierType.Entity,
+            new Dictionary<string, string> { ["confirmedProviderId"] = "tv:18347:6", ["title"] = "Community: Season 6" },
+            CancellationToken.None);
+        Assert.That(result.Single().ExternalId, Is.EqualTo("tmdbid:18347"));
+    }
 }

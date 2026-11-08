@@ -71,7 +71,7 @@ internal static class EntityApi
             return TypedResults.NotFound();
         });
 
-        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest<string>>> (
+        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest<string>, ProblemHttpResult>> (
             IEntityService<TEntity> entityService,
             [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
             HttpContext context,
@@ -121,6 +121,12 @@ internal static class EntityApi
                     }
                     
                     newEntity = deserializedEntity;
+                }
+
+                if (ValidateExternalId(newEntity) is { } externalIdProblem)
+                {
+                    logger.LogWarning("Rejected {entityType} with invalid ExternalId", entityType);
+                    return externalIdProblem;
                 }
 
                 if (newEntity.IsEmpty())
@@ -229,7 +235,7 @@ internal static class EntityApi
             }
         }).DisableAntiforgery();
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (
+        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>, ProblemHttpResult>> (
             IEntityService<TEntity> entityService,
             [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
             string id,
@@ -286,6 +292,12 @@ internal static class EntityApi
                 {
                     logger.LogError("Ids on the entity and the request do not match: {pathId} != {entityId}", id, updatedEntity.Id);
                     return TypedResults.BadRequest("Ids on the entity and the request do not match");
+                }
+
+                if (ValidateExternalId(updatedEntity) is { } externalIdProblem)
+                {
+                    logger.LogWarning("Rejected {entityType}/{id} update with invalid ExternalId", entityType, id);
+                    return externalIdProblem;
                 }
 
                 // Get the existing entity to access old image for cleanup
@@ -607,6 +619,29 @@ internal static class EntityApi
             logger.LogWarning("Image validation failed: {error}", ex.Message);
             return (false, $"Image validation failed: {ex.Message}", null);
         }
+    }
+
+    /// <summary>
+    /// Validates and normalizes a Movie's ExternalId in place (source lowercased, value untouched).
+    /// Returns a 400 problem-details result when the value is malformed; other entity types are ignored.
+    /// </summary>
+    private static ProblemHttpResult? ValidateExternalId(IEntity entity)
+    {
+        if (entity is not Movie movie)
+        {
+            return null;
+        }
+
+        if (!ExternalIdFormat.TryNormalize(movie.ExternalId, out var normalized))
+        {
+            return TypedResults.Problem(
+                title: "Invalid ExternalId",
+                detail: ExternalIdFormat.ErrorMessage,
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        movie.ExternalId = normalized;
+        return null;
     }
 
     /// <summary>

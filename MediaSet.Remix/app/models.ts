@@ -69,6 +69,8 @@ export interface MovieEntity extends BaseEntity {
   genres?: Array<string>;
   plot?: string;
   isTvSeries?: boolean;
+  /** `source:value`, e.g. `tmdbid:1234`. Carried through saves; not shown or edited in the UI. */
+  externalId?: string;
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string }>;
@@ -134,6 +136,7 @@ export interface MovieLookupResponse {
   plot: string;
   format?: string;
   imageUrl?: string;
+  externalId?: string;
 }
 
 export interface GameLookupResponse {

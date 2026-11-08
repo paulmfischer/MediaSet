@@ -593,4 +593,171 @@ public class EntityApiTests : IntegrationTestBase
             Assert.That(result!.Count, Is.EqualTo(2));
         }
     }
+
+    #region Movie ExternalId
+
+    [Test]
+    public async Task CreateMovie_WithExternalId_PersistsLowercasedSourceAndKeepsValueCase()
+    {
+        // Arrange
+        var newMovie = _movieFaker.Generate();
+        newMovie.ExternalId = "TmdbID:Tt0111161";
+        Movie? saved = null;
+        _movieServiceMock.Setup(s => s.CreateAsync(It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback<Movie, CancellationToken>((m, _) => saved = m).Returns(Task.CompletedTask);
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/Movies", newMovie);
+        var body = await response.Content.ReadFromJsonAsync<Movie>(_jsonOptions);
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saved!.ExternalId, Is.EqualTo("tmdbid:Tt0111161"));
+        Assert.That(body!.ExternalId, Is.EqualTo("tmdbid:Tt0111161"));
+    }
+
+    [Test]
+    public async Task CreateMovie_WithoutExternalId_IsAccepted()
+    {
+        var newMovie = _movieFaker.Generate();
+        newMovie.ExternalId = null;
+        _movieServiceMock.Setup(s => s.CreateAsync(It.IsAny<Movie>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var response = await _client.PostAsJsonAsync("/Movies", newMovie);
+        var body = await response.Content.ReadFromJsonAsync<Movie>(_jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(body!.ExternalId, Is.Null);
+    }
+
+    [TestCase("tmdbid")]
+    [TestCase("tmdbid:")]
+    [TestCase(":1234")]
+    [TestCase("tmdbid:12:34")]
+    [TestCase("tmdbid: 1234")]
+    [TestCase("tmdb id:1234")]
+    public async Task CreateMovie_WithMalformedExternalId_ReturnsBadRequestProblemDetails(string externalId)
+    {
+        var newMovie = _movieFaker.Generate();
+        newMovie.ExternalId = externalId;
+
+        var response = await _client.PostAsJsonAsync("/Movies", newMovie);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(problem.GetProperty("title").GetString(), Is.EqualTo("Invalid ExternalId"));
+        Assert.That(problem.GetProperty("status").GetInt32(), Is.EqualTo(400));
+        Assert.That(problem.GetProperty("detail").GetString(), Does.Contain("source:value"));
+        _movieServiceMock.Verify(s => s.CreateAsync(It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateMovie_WithExternalId_PersistsNormalizedValue()
+    {
+        var movieId = "507f1f77bcf86cd799439011";
+        var existing = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        var updated = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        updated.ExternalId = "IMDBID:tt0111161";
+        Movie? saved = null;
+        _movieServiceMock.Setup(s => s.GetAsync(movieId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Movie?>(existing));
+        _movieServiceMock.Setup(s => s.UpdateAsync(movieId, It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Movie, CancellationToken>((_, m, _) => saved = m)
+            .Returns(Task.FromResult(Mock.Of<ReplaceOneResult>()));
+
+        var response = await _client.PutAsJsonAsync($"/Movies/{movieId}", updated);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(saved!.ExternalId, Is.EqualTo("imdbid:tt0111161"));
+    }
+
+    [Test]
+    public async Task UpdateMovie_WithMalformedExternalId_ReturnsBadRequestProblemDetails()
+    {
+        var movieId = "507f1f77bcf86cd799439011";
+        var updated = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        updated.ExternalId = "no-colon";
+
+        var response = await _client.PutAsJsonAsync($"/Movies/{movieId}", updated);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(problem.GetProperty("title").GetString(), Is.EqualTo("Invalid ExternalId"));
+        _movieServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateMovie_WithExistingExternalIdResent_KeepsExternalId()
+    {
+        var movieId = "507f1f77bcf86cd799439011";
+        var existing = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        existing.ExternalId = "tmdbid:1234";
+        var updated = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        updated.ExternalId = existing.ExternalId;
+        Movie? saved = null;
+        _movieServiceMock.Setup(s => s.GetAsync(movieId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Movie?>(existing));
+        _movieServiceMock.Setup(s => s.UpdateAsync(movieId, It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Movie, CancellationToken>((_, m, _) => saved = m)
+            .Returns(Task.FromResult(Mock.Of<ReplaceOneResult>()));
+
+        var response = await _client.PutAsJsonAsync($"/Movies/{movieId}", updated);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(saved!.ExternalId, Is.EqualTo("tmdbid:1234"));
+    }
+
+    [Test]
+    public async Task GetMovie_ReturnsExternalId()
+    {
+        var movieId = "507f1f77bcf86cd799439011";
+        var movie = _movieFaker.Clone().RuleFor(m => m.Id, movieId).Generate();
+        movie.ExternalId = "tmdbid:1234";
+        _movieServiceMock.Setup(s => s.GetAsync(movieId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Movie?>(movie));
+
+        var response = await _client.GetAsync($"/Movies/{movieId}");
+        var body = await response.Content.ReadFromJsonAsync<Movie>(_jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(body!.ExternalId, Is.EqualTo("tmdbid:1234"));
+    }
+
+    [Test]
+    public async Task CreateBook_WithExternalIdProperty_IsNotValidatedAndNotExposed()
+    {
+        var newBook = _bookFaker.Generate();
+        Book? saved = null;
+        _bookServiceMock.Setup(s => s.CreateAsync(It.IsAny<Book>(), It.IsAny<CancellationToken>()))
+            .Callback<Book, CancellationToken>((b, _) => saved = b).Returns(Task.CompletedTask);
+
+        var response = await _client.PostAsJsonAsync("/Books", newBook);
+        var raw = await response.Content.ReadAsStringAsync();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saved, Is.Not.Null);
+        Assert.That(raw, Does.Not.Contain("externalId").IgnoreCase);
+        Assert.That(typeof(Book).GetProperty("ExternalId"), Is.Null);
+        Assert.That(typeof(Game).GetProperty("ExternalId"), Is.Null);
+        Assert.That(typeof(Music).GetProperty("ExternalId"), Is.Null);
+    }
+
+    [TestCase(null, null)]
+    [TestCase("", null)]
+    [TestCase("TmdbID:Tt0111161", "tmdbid:Tt0111161")]
+    [TestCase("imdbid:tt0111161", "imdbid:tt0111161")]
+    public void TryNormalize_WithValidInput_LowercasesOnlySource(string? input, string? expected)
+    {
+        var ok = ExternalIdFormat.TryNormalize(input, out var normalized);
+
+        Assert.That(ok, Is.True);
+        Assert.That(normalized, Is.EqualTo(expected));
+    }
+
+    [TestCase(" ")]
+    [TestCase("a:b c")]
+    [TestCase("a::b")]
+    public void TryNormalize_WithInvalidInput_ReturnsFalse(string input)
+    {
+        Assert.That(ExternalIdFormat.TryNormalize(input, out _), Is.False);
+    }
+
+    #endregion
 }
