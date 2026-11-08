@@ -29,6 +29,7 @@ public sealed class PlexSyncService(
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly SemaphoreSlim _startGate = new(1, 1);
+    private volatile bool _stopping;
     private readonly object _gate = new();
     private readonly System.Collections.Concurrent.ConcurrentDictionary<Task, byte> _tasks = new();
     private readonly Dictionary<string, PlexSyncRun> _active = new(StringComparer.OrdinalIgnoreCase);
@@ -42,6 +43,11 @@ public sealed class PlexSyncService(
         bool holdsLock;
         try
         {
+            if (_stopping)
+            {
+                throw new InvalidOperationException("The application is stopping; no new Plex sync can start.");
+            }
+
             lock (_gate)
             {
                 if (_active.TryGetValue(entityType, out var current))
@@ -92,13 +98,18 @@ public sealed class PlexSyncService(
         return new PlexSyncStartResult(snapshot, true);
     }
 
-    /// <summary>Waits for runs to record their outcome (they are cancelled by ApplicationStopping first).</summary>
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+    /// <summary>Waits for runs to record their outcome (they are cancelled by ApplicationStopping first).</summary>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        // New starts are refused from here on. Passing through the start gate drains a start that is
+        // mid-insert, so every run it created is tracked before the snapshot below.
+        _stopping = true;
         try
         {
+            await _startGate.WaitAsync(cancellationToken);
+            _startGate.Release();
             await Task.WhenAll(_tasks.Keys).WaitAsync(cancellationToken);
         }
         catch (OperationCanceledException)

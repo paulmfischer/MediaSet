@@ -19,7 +19,7 @@ public interface IPlexSyncRunStore
     Task<PlexSyncRun?> GetLastAsync(string entityType, CancellationToken cancellationToken);
 }
 
-public class PlexSyncRunStore(IDatabaseService database) : IPlexSyncRunStore
+public class PlexSyncRunStore(IDatabaseService database, ILogger<PlexSyncRunStore> logger) : IPlexSyncRunStore
 {
     public const string IndexName = "EntityType_StartedAt";
 
@@ -53,9 +53,17 @@ public class PlexSyncRunStore(IDatabaseService database) : IPlexSyncRunStore
     public async Task InsertAsync(PlexSyncRun run, CancellationToken cancellationToken)
     {
         // The startup ensure may have failed (MongoDB briefly down): retry it before the first write
+        // A persistent failure must not block runs: warn, insert anyway, retry on the next insert
         if (!_ensured)
         {
-            await EnsureCreatedAsync(cancellationToken);
+            try
+            {
+                await EnsureCreatedAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "Could not create the PlexSyncRuns index before inserting a run");
+            }
         }
 
         await Collection.InsertOneAsync(run, cancellationToken: cancellationToken);

@@ -18,6 +18,12 @@ public sealed class InMemoryPlexSyncRunStore : IPlexSyncRunStore
 
     public bool EnsureCreatedCalled { get; private set; }
 
+    /// <summary>Awaited before an insert stores the run and assigns its id, to simulate a slow database.</summary>
+    public Func<Task>? BeforeInsert { get; set; }
+
+    /// <summary>When set, inserts throw it.</summary>
+    public Exception? InsertFailure { get; set; }
+
     public IReadOnlyList<PlexSyncRun> Runs
     {
         get { lock (_sync) { return _runs.Select(r => r.Clone()).ToList(); } }
@@ -56,14 +62,21 @@ public sealed class InMemoryPlexSyncRunStore : IPlexSyncRunStore
         }
     }
 
-    public Task InsertAsync(PlexSyncRun run, CancellationToken cancellationToken)
+    public async Task InsertAsync(PlexSyncRun run, CancellationToken cancellationToken)
     {
+        if (BeforeInsert != null)
+        {
+            await BeforeInsert();
+        }
+        if (InsertFailure != null)
+        {
+            throw InsertFailure;
+        }
         lock (_sync)
         {
             run.Id ??= ObjectId.GenerateNewId().ToString();
             _runs.Add(run.Clone());
         }
-        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(PlexSyncRun run, CancellationToken cancellationToken)
