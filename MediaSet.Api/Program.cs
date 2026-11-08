@@ -12,7 +12,6 @@ using MediaSet.Api.Features.Health.Endpoints;
 using MediaSet.Api.Features.Images.Endpoints;
 using MediaSet.Api.Features.Statistics.Endpoints;
 using MediaSet.Api.Features.Plex.Endpoints;
-using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Features.Plex.Services;
 using MediaSet.Api.Infrastructure.Plex;
 
@@ -234,6 +233,8 @@ if (plexSection.Exists())
             "Plex integration enabled for entity types: {EntityTypes}",
             plexValidation.EnabledEntityTypes.Count > 0 ? string.Join(", ", plexValidation.EnabledEntityTypes) : "(none)");
         builder.Services.AddSingleton(new PlexEnablement(plexValidation.EnabledEntityTypes));
+        builder.Services.AddPlexClient(plexSection);
+        builder.Services.AddScoped<IPlexSearchService, PlexSearchService>();
     }
 }
 

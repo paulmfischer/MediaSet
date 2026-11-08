@@ -40,6 +40,9 @@
         <None Update="appsettings.Testing.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Features/Plex/Fixtures/*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="test.runsettings">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>

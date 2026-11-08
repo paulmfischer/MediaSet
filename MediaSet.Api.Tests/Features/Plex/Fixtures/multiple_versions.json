@@ -1,0 +1,51 @@
+{
+ "MediaContainer": {
+  "size": 1,
+  "totalSize": 1,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "1002",
+    "type": "movie",
+    "title": "Dune",
+    "year": 2021,
+    "addedAt": 1705000000,
+    "Guid": [
+     {
+      "id": "tmdb://438631"
+     }
+    ],
+    "Media": [
+     {
+      "id": 5101,
+      "duration": 9300000,
+      "videoResolution": "1080",
+      "videoCodec": "h264",
+      "container": "mp4",
+      "Part": [
+       {
+        "file": "/data/movies/Dune (2021)/Dune - 1080p.mp4",
+        "size": 3000000000,
+        "container": "mp4"
+       }
+      ]
+     },
+     {
+      "id": 5102,
+      "duration": 9300000,
+      "videoResolution": "4k",
+      "videoCodec": "hevc",
+      "container": "mkv",
+      "Part": [
+       {
+        "file": "/data/movies/Dune (2021)/Dune - 2160p.mkv",
+        "size": 42000000000,
+        "container": "mkv"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "MediaContainer": {
+  "size": 1,
+  "totalSize": 1,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "1003",
+    "type": "movie",
+    "title": "Amelie",
+    "year": 2001,
+    "addedAt": 1706000000,
+    "Guid": [
+     {
+      "id": "imdb://tt0211915"
+     },
+     {
+      "id": "tmdb://194"
+     }
+    ],
+    "Media": [
+     {
+      "id": 5201,
+      "duration": 7320000,
+      "videoResolution": "720",
+      "videoCodec": "h264",
+      "container": "mkv",
+      "Part": [
+       {
+        "file": "/data/movies/Amelie (2001)/Amelie.mkv",
+        "size": 2000000000,
+        "container": "mkv"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

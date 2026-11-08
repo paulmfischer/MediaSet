@@ -1,0 +1,81 @@
+{
+ "MediaContainer": {
+  "size": 1,
+  "totalSize": 1,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "1003",
+    "type": "movie",
+    "title": "Amelie",
+    "year": 2001,
+    "addedAt": 1706000000,
+    "Guid": [
+     {
+      "id": "imdb://tt0211915"
+     },
+     {
+      "id": "tmdb://194"
+     }
+    ],
+    "Media": [
+     {
+      "id": 5201,
+      "duration": 7320000,
+      "videoResolution": "720",
+      "videoCodec": "h264",
+      "container": "mkv",
+      "Part": [
+       {
+        "file": "/data/movies/Amelie (2001)/Amelie.mkv",
+        "size": 2000000000,
+        "container": "mkv",
+        "Stream": [
+         {
+          "streamType": 1,
+          "codec": "h264",
+          "colorTrc": "bt709",
+          "bitDepth": 8,
+          "height": 720,
+          "displayTitle": "Video"
+         },
+         {
+          "streamType": 2,
+          "codec": "dca",
+          "channels": 6,
+          "languageTag": "fr",
+          "language": "French",
+          "displayTitle": "French (DCA)"
+         },
+         {
+          "streamType": 2,
+          "codec": "aac",
+          "channels": 2,
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (AAC)"
+         },
+         {
+          "streamType": 3,
+          "codec": "srt",
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (SRT)"
+         },
+         {
+          "streamType": 3,
+          "codec": "srt",
+          "key": "/library/streams/77",
+          "languageTag": "de",
+          "language": "German",
+          "displayTitle": "German (SRT)"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

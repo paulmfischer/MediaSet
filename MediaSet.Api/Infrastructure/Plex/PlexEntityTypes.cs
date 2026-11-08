@@ -10,4 +10,8 @@ public static class PlexEntityTypes
     /// <summary>Returns the canonical (lowercase) supported entity type, or null when unknown.</summary>
     public static string? Normalize(string? entityType) =>
         Supported.FirstOrDefault(s => string.Equals(s, entityType?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>The Plex library type that holds an entity type's items, or null when unsupported.</summary>
+    public static string? LibraryType(string? entityType) =>
+        Normalize(entityType) == Movies ? "movie" : null;
 }
