@@ -47,10 +47,6 @@ trim_trailing_whitespace = false
 indent_style = space
 indent_size = 2
 
-# Batch files
-[*.{cmd,bat}]
-end_of_line = crlf
-
 # Bash files
 [*.sh]
 end_of_line = lf
