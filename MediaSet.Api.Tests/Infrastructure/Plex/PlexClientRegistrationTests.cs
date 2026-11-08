@@ -166,4 +166,23 @@ public class PlexClientRegistrationTests
         Assert.That(warnings, Has.Some.Contains("HttpRequestException"));
         Assert.That(string.Join('\n', warnings), Does.Not.Contain(Token).And.Not.Contain("plex.local"));
     }
+
+    [Test]
+    public async Task Client_DetailFailure_LogsRatingKeyAndStatusWithoutTokenOrUrl()
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", "movie.json")
+            .Route("/library/metadata/1001", _ => new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError));
+        var logs = new CapturingLoggerProvider();
+        using var provider = Provider(Settings(), handler, logs);
+
+        var items = await provider.GetRequiredService<IPlexClient>()
+            .GetItemsAsync(new PlexLibrary("1", "Movies", "movie"), null, true, CancellationToken.None);
+
+        var ours = string.Join('\n', logs.Lines.Where(l => l.StartsWith("MediaSet.Api.Infrastructure.Plex.PlexClient")));
+        Assert.That(items, Has.Count.EqualTo(1));
+        Assert.That(ours, Does.Contain("1001").And.Contain("500"));
+        Assert.That(ours, Does.Not.Contain("plex.local"));
+        Assert.That(string.Join('\n', logs.Lines), Does.Not.Contain(Token));
+    }
 }

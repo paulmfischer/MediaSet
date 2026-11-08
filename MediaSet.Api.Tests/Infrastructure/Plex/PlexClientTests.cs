@@ -137,7 +137,7 @@ public class PlexClientTests
 
         var subtitles = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().Subtitles;
 
-        Assert.That(subtitles, Is.EqualTo([ new PlexSubtitle("eng", false), new PlexSubtitle("deu", true) ]));
+        Assert.That(subtitles, Is.EqualTo([ new PlexSubtitle("en", false), new PlexSubtitle("de", true) ]));
     }
 
     [Test]
@@ -147,7 +147,7 @@ public class PlexClientTests
 
         var audio = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().AudioTracks;
 
-        Assert.That(audio, Is.EqualTo([ new PlexAudioTrack("dca", 6, "fra"), new PlexAudioTrack("aac", 2, "eng") ]));
+        Assert.That(audio, Is.EqualTo([ new PlexAudioTrack("dca", 6, "fr"), new PlexAudioTrack("aac", 2, "en") ]));
     }
 
     [Test]
@@ -400,5 +400,86 @@ public class PlexClientTests
         await client.GetItemsAsync(new PlexLibrary("2", "TV Shows", "show"), null, true, CancellationToken.None);
 
         Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata"));
+    }
+
+    private const string ListedTwoMovies = """
+        {"MediaContainer":{"size":2,"totalSize":2,"Metadata":[
+         {"ratingKey":"10","type":"movie","title":"Ten","Media":[{"videoResolution":"1080","Part":[{"file":"/a.mkv","size":1}]}]},
+         {"ratingKey":"11","type":"movie","title":"Eleven","Media":[{"videoResolution":"720","Part":[{"file":"/b.mkv","size":2}]}]}]}}
+        """;
+
+    private const string DetailWithStream = """
+        {"MediaContainer":{"Metadata":[{"ratingKey":"11","Media":[{"videoResolution":"720","Part":[{"file":"/b.mkv","size":2,
+         "Stream":[{"streamType":2,"codec":"aac","channels":2,"languageTag":"en"}]}]}]}]}}
+        """;
+
+    [TestCase(HttpStatusCode.InternalServerError)]
+    [TestCase(HttpStatusCode.NotFound)]
+    public async Task GetItemsAsync_OneItemDetailFails_ReturnsAllItemsWithListingDataForTheFailedOne(HttpStatusCode status)
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", _ => FakePlexHandler.Json(ListedTwoMovies))
+            .Route("/library/metadata/10", _ => new HttpResponseMessage(status))
+            .Route("/library/metadata/11", _ => FakePlexHandler.Json(DetailWithStream));
+        var client = Client(handler);
+
+        var items = await client.GetItemsAsync(Movies, null, true, CancellationToken.None);
+
+        Assert.That(items.Select(i => i.Title), Is.EqualTo(["Ten", "Eleven"]));
+        Assert.That(items[0].Versions.Single().FilePath, Is.EqualTo("/a.mkv"));
+        Assert.That(items[0].Versions.Single().AudioTracks, Is.Empty);
+        Assert.That(items[1].Versions.Single().AudioTracks, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_DetailTimesOut_ReturnsListingDataForThatItem()
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", _ => FakePlexHandler.Json(ListedTwoMovies))
+            .Route("/library/metadata/10", _ => throw new TaskCanceledException("timeout"))
+            .Route("/library/metadata/11", _ => FakePlexHandler.Json(DetailWithStream));
+        var client = Client(handler);
+
+        var items = await client.GetItemsAsync(Movies, null, true, CancellationToken.None);
+
+        Assert.That(items, Has.Count.EqualTo(2));
+        Assert.That(items[0].Versions.Single().AudioTracks, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetItemsAsync_CallerCancelsDuringDetail_PropagatesCancellationUnwrapped()
+    {
+        using var cts = new CancellationTokenSource();
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", _ => FakePlexHandler.Json(ListedTwoMovies))
+            .Route("/library/metadata/10", async (_, token) =>
+            {
+                await cts.CancelAsync();
+                await Task.Delay(Timeout.Infinite, token);
+                return new HttpResponseMessage();
+            });
+        var client = Client(handler);
+
+        Assert.That(async () => await client.GetItemsAsync(Movies, null, true, cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task GetItemsAsync_StreamHasLanguageTagAndCode_PrefersLanguageTag()
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/sections/1/all", _ => FakePlexHandler.Json(ListedTwoMovies))
+            .Route("/library/metadata/10", _ => FakePlexHandler.Json("""
+                {"MediaContainer":{"Metadata":[{"ratingKey":"10","Media":[{"Part":[{"Stream":[
+                 {"streamType":2,"codec":"aac","channels":2,"languageTag":"en","languageCode":"eng","language":"English"},
+                 {"streamType":3,"languageCode":"fra","language":"French"},
+                 {"streamType":3,"language":"German"}]}]}]}]}}
+                """))
+            .Route("/library/metadata/11", _ => FakePlexHandler.Json(DetailWithStream));
+        var client = Client(handler);
+
+        var version = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None))[0].Versions.Single();
+
+        Assert.That(version.AudioTracks.Single().Language, Is.EqualTo("en"));
+        Assert.That(version.Subtitles.Select(s => s.Language), Is.EqualTo(["fra", "German"]));
     }
 }

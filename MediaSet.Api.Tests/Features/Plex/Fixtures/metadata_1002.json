@@ -31,13 +31,18 @@
          {
           "streamType": 1,
           "codec": "h264",
-          "colorTrc": "bt709"
+          "colorTrc": "bt709",
+          "bitDepth": 8,
+          "height": 1080,
+          "displayTitle": "Video"
          },
          {
           "streamType": 2,
           "codec": "aac",
           "channels": 2,
-          "languageCode": "eng"
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (AAC)"
          }
         ]
        }
@@ -59,13 +64,17 @@
           "streamType": 1,
           "codec": "hevc",
           "colorTrc": "smpte2084",
-          "displayTitle": "4K (HEVC Main 10 HDR)"
+          "displayTitle": "4K (HEVC Main 10 HDR)",
+          "bitDepth": 8,
+          "height": 2160
          },
          {
           "streamType": 2,
           "codec": "truehd",
           "channels": 8,
-          "languageCode": "eng"
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (TRUEHD)"
          }
         ]
        }

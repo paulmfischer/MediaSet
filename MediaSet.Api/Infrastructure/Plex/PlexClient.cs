@@ -99,16 +99,40 @@ public class PlexClient : IPlexClient
             return listed;
         }
 
-        var detail = await GetAsync<ItemsRoot>($"library/metadata/{Uri.EscapeDataString(listed.RatingKey)}?includeGuids=1", null, cancellationToken);
-        var detailed = detail.MediaContainer?.Metadata?.FirstOrDefault();
+        RawMetadata? detailed;
+        try
+        {
+            var detail = await GetAsync<ItemsRoot>($"library/metadata/{Uri.EscapeDataString(listed.RatingKey)}?includeGuids=1", null, cancellationToken);
+            detailed = detail.MediaContainer?.Metadata?.FirstOrDefault();
+        }
+        catch (PlexClientException ex)
+        {
+            // One failing item must not fail the library read: keep the listing data (no streams).
+            // Caller cancellation is not a PlexClientException and still propagates.
+            _logger.LogWarning(
+                "Plex item detail unavailable for rating key {RatingKey} (status code {StatusCode}, exception {ExceptionType}); using listing data",
+                listed.RatingKey,
+                ex.StatusCode,
+                ex.GetType().Name);
+            return listed;
+        }
+
         if (detailed?.Media is not { Count: > 0 })
         {
             return listed;
         }
 
-        listed.Media = detailed.Media;
-        listed.Guid = listed.Guid is { Count: > 0 } ? listed.Guid : detailed.Guid;
-        return listed;
+        // Copy instead of mutating the deserialized listing entry
+        return new RawMetadata
+        {
+            RatingKey = listed.RatingKey,
+            Type = listed.Type,
+            Title = listed.Title,
+            Year = listed.Year,
+            AddedAt = listed.AddedAt,
+            Guid = listed.Guid is { Count: > 0 } ? listed.Guid : detailed.Guid,
+            Media = detailed.Media
+        };
     }
 
     private async Task<string?> GetMachineIdentifierAsync(CancellationToken cancellationToken)
@@ -214,10 +238,10 @@ public class PlexClient : IPlexClient
             video != null && IsHdr(video),
             media.VideoCodec ?? video?.Codec,
             streams.Where(s => s.StreamType == 2)
-                .Select(s => new PlexAudioTrack(s.Codec, s.Channels, s.LanguageCode ?? s.Language))
+                .Select(s => new PlexAudioTrack(s.Codec, s.Channels, s.LanguageTag ?? s.LanguageCode ?? s.Language))
                 .ToList(),
             streams.Where(s => s.StreamType == 3)
-                .Select(s => new PlexSubtitle(s.LanguageCode ?? s.Language, !string.IsNullOrEmpty(s.Key)))
+                .Select(s => new PlexSubtitle(s.LanguageTag ?? s.LanguageCode ?? s.Language, !string.IsNullOrEmpty(s.Key)))
                 .ToList(),
             media.Duration is > 0 ? TimeSpan.FromMilliseconds(media.Duration.Value) : null,
             media.Container ?? part?.Container,
@@ -275,6 +299,7 @@ public class PlexClient : IPlexClient
         public int? StreamType { get; set; }
         public string? Codec { get; set; }
         public int? Channels { get; set; }
+        public string? LanguageTag { get; set; }
         public string? LanguageCode { get; set; }
         public string? Language { get; set; }
         public string? Key { get; set; }

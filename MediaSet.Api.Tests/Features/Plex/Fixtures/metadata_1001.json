@@ -43,13 +43,17 @@
           "streamType": 1,
           "codec": "h264",
           "colorTrc": "bt709",
-          "displayTitle": "1080p (H.264)"
+          "displayTitle": "1080p (H.264)",
+          "bitDepth": 8,
+          "height": 1080
          },
          {
           "streamType": 2,
           "codec": "ac3",
           "channels": 6,
-          "languageCode": "eng"
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (AC3)"
          }
         ]
        }

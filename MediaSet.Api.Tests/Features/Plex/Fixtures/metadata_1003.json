@@ -34,30 +34,41 @@
          {
           "streamType": 1,
           "codec": "h264",
-          "colorTrc": "bt709"
+          "colorTrc": "bt709",
+          "bitDepth": 8,
+          "height": 720,
+          "displayTitle": "Video"
          },
          {
           "streamType": 2,
           "codec": "dca",
           "channels": 6,
-          "languageCode": "fra"
+          "languageTag": "fr",
+          "language": "French",
+          "displayTitle": "French (DCA)"
          },
          {
           "streamType": 2,
           "codec": "aac",
           "channels": 2,
-          "languageCode": "eng"
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (AAC)"
          },
          {
           "streamType": 3,
           "codec": "srt",
-          "languageCode": "eng"
+          "languageTag": "en",
+          "language": "English",
+          "displayTitle": "English (SRT)"
          },
          {
           "streamType": 3,
           "codec": "srt",
-          "languageCode": "deu",
-          "key": "/library/streams/77"
+          "key": "/library/streams/77",
+          "languageTag": "de",
+          "language": "German",
+          "displayTitle": "German (SRT)"
          }
         ]
        }
