@@ -404,7 +404,7 @@ public class PlexSyncApiTests
         Assert.That(last.GetProperty("lastRun").GetProperty("erroredCount").GetInt32(), Is.EqualTo(1));
         Assert.That(items.Items.Keys, Is.EqualTo(["good"]));
         var lines = _logs.Lines.ToList();
-        Assert.That(lines, Has.Some.Contains("bad").And.Contains(nameof(InvalidOperationException)));
+        Assert.That(lines, Has.Some.EqualTo($"{typeof(PlexSyncService).FullName} Plex sync could not process movie bad (InvalidOperationException) "));
         Assert.That(lines, Has.None.Contains(Token));
     }
 

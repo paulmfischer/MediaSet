@@ -96,19 +96,21 @@ public sealed class PlexSyncService(
             {
                 _active[entityType] = run;
             }
+
+            // The run's token is linked to application shutdown, not to the request that started it.
+            // The task is tracked before the start gate is released, so StopAsync, which passes through
+            // the gate, always sees every run a start created.
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(lifetime.ApplicationStopping);
+            var snapshot = Snapshot(run);
+            var task = Task.Run(() => ExecuteAsync(run, holdsLock, cts));
+            _tasks[task] = 0;
+            _ = task.ContinueWith(t => _tasks.TryRemove(t, out _), TaskScheduler.Default);
+            return new PlexSyncStartResult(snapshot, true);
         }
         finally
         {
             _startGate.Release();
         }
-
-        // The run's token is linked to application shutdown, not to the request that started it
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(lifetime.ApplicationStopping);
-        var snapshot = Snapshot(run);
-        var task = Task.Run(() => ExecuteAsync(run, holdsLock, cts));
-        _tasks[task] = 0;
-        _ = task.ContinueWith(t => _tasks.TryRemove(t, out _), TaskScheduler.Default);
-        return new PlexSyncStartResult(snapshot, true);
     }
 
     public async Task<PlexRefreshResult> RefreshItemAsync(string entityType, string movieId, CancellationToken cancellationToken)
