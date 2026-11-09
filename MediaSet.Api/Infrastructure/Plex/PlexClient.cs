@@ -88,6 +88,35 @@ public class PlexClient : IPlexClient
         throw new PlexClientException(null, "Plex returned too many pages");
     }
 
+    public async Task<PlexItem?> GetItemAsync(string ratingKey, bool includeDetails, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(ratingKey))
+        {
+            return null;
+        }
+
+        // The metadata response already carries streams; only the deep link needs the server identity
+        var serverId = includeDetails ? await GetMachineIdentifierAsync(cancellationToken) : null;
+        ItemsRoot root;
+        try
+        {
+            root = await GetAsync<ItemsRoot>($"library/metadata/{Uri.EscapeDataString(ratingKey.Trim())}?includeGuids=1", null, cancellationToken, allowNotFound: true);
+        }
+        catch (PlexNotFoundException)
+        {
+            return null;
+        }
+
+        var m = root.MediaContainer?.Metadata?.FirstOrDefault();
+        if (m == null || string.IsNullOrEmpty(m.RatingKey))
+        {
+            return null;
+        }
+
+        var library = new PlexLibrary(m.LibrarySectionId?.ToString() ?? string.Empty, m.LibrarySectionTitle ?? string.Empty, string.Empty);
+        return MapItem(m, library, DeepLinkBase(serverId));
+    }
+
     /// <summary>
     /// Section listings carry Media and Part but no Stream entries (audio, subtitles, HDR fields). The
     /// per-item metadata response has them, so the media of items that have files is taken from there.
@@ -149,7 +178,7 @@ public class PlexClient : IPlexClient
         return _machineIdentifier;
     }
 
-    private async Task<T> GetAsync<T>(string path, (int Start, int Size)? page, CancellationToken cancellationToken) where T : class, new()
+    private async Task<T> GetAsync<T>(string path, (int Start, int Size)? page, CancellationToken cancellationToken, bool allowNotFound = false) where T : class, new()
     {
         // GET only; the token travels in the X-Plex-Token header of the HttpClient, never in the URL
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
@@ -163,6 +192,10 @@ public class PlexClient : IPlexClient
         try
         {
             using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (allowNotFound && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new PlexNotFoundException();
+            }
             if (!response.IsSuccessStatusCode)
             {
                 LogFailure(null, (int)response.StatusCode);
@@ -188,6 +221,9 @@ public class PlexClient : IPlexClient
             throw new PlexClientException(null, "Plex returned an unreadable response");
         }
     }
+
+    /// <summary>Internal signal that Plex answered 404 to a single-item read.</summary>
+    private sealed class PlexNotFoundException : Exception;
 
     // Only the status code and exception type are logged: never the URL, headers, token or inner message
     private void LogFailure(Exception? exception, int? statusCode) =>
@@ -279,6 +315,8 @@ public class PlexClient : IPlexClient
         public string? Title { get; set; }
         public int? Year { get; set; }
         public long? AddedAt { get; set; }
+        [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }
+        [JsonPropertyName("librarySectionTitle")] public string? LibrarySectionTitle { get; set; }
         public int? ViewCount { get; set; }
         public long? LastViewedAt { get; set; }
         [JsonPropertyName("Guid")] public List<RawGuid>? Guid { get; set; }

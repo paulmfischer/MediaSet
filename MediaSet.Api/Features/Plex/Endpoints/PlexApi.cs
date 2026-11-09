@@ -1,6 +1,8 @@
 using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Features.Plex.Services;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
+using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Features.Plex.Endpoints;
 
@@ -97,6 +99,121 @@ internal static class PlexApi
                 : Results.Ok(PlexItemDataDto.From(data));
         });
 
+        // PUT /plex/{entityType}/items/{id}/link: links a movie to a Plex item by hand and loads its data now
+        entity.MapPut("/items/{id}/link", async (
+            HttpContext context,
+            string id,
+            PlexLinkRequest? body,
+            IEntityService<Movie> movies,
+            IPlexLinkService links,
+            CancellationToken cancellationToken) =>
+        {
+            if (string.IsNullOrWhiteSpace(body?.PlexItemId))
+            {
+                return Results.Problem(
+                    title: "Plex item id required",
+                    detail: "The request body must contain a 'plexItemId'.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            if (await MovieMissingAsync(id, movies, cancellationToken))
+            {
+                return MovieNotFound();
+            }
+
+            try
+            {
+                var data = await links.LinkAsync(PlexEntityTypeFilter.GetEntityType(context), id, body.PlexItemId.Trim(), cancellationToken);
+                return data == null ? PlexItemNotFound(body.PlexItemId.Trim()) : Results.Ok(PlexItemDataDto.From(data));
+            }
+            catch (PlexClientException ex)
+            {
+                return PlexFailed(ex);
+            }
+        });
+
+        // DELETE /plex/{entityType}/items/{id}/link: removes the link and its stored Plex data
+        entity.MapDelete("/items/{id}/link", async (
+            string id,
+            IEntityService<Movie> movies,
+            IPlexLinkService links,
+            CancellationToken cancellationToken) =>
+        {
+            if (await MovieMissingAsync(id, movies, cancellationToken))
+            {
+                return MovieNotFound();
+            }
+
+            return await links.UnlinkAsync(id, cancellationToken)
+                ? Results.NoContent()
+                : Results.Problem(
+                    title: "Not linked to Plex",
+                    detail: "This item has no Plex link to remove.",
+                    statusCode: StatusCodes.Status404NotFound);
+        });
+
+        // POST /plex/{entityType}/items/{id}/refresh: re-reads one linked movie under the sync lock, 409 while a sync runs
+        entity.MapPost("/items/{id}/refresh", async (
+            HttpContext context,
+            string id,
+            IEntityService<Movie> movies,
+            IPlexSyncService sync,
+            CancellationToken cancellationToken) =>
+        {
+            if (await MovieMissingAsync(id, movies, cancellationToken))
+            {
+                return MovieNotFound();
+            }
+
+            var entityType = PlexEntityTypeFilter.GetEntityType(context);
+            try
+            {
+                var result = await sync.RefreshItemAsync(entityType, id, cancellationToken);
+                return result.Status switch
+                {
+                    PlexRefreshStatus.Refreshed => Results.Ok(PlexItemDataDto.From(result.Data!)),
+                    PlexRefreshStatus.NotLinked => Results.Problem(
+                        title: "Not linked to Plex",
+                        detail: "This item has no Plex link to refresh. Link it first.",
+                        statusCode: StatusCodes.Status400BadRequest),
+                    PlexRefreshStatus.PlexItemMissing => PlexItemNotFound(result.Data!.PlexItemId),
+                    _ => Results.Problem(
+                        title: "Plex sync already in progress",
+                        detail: result.Run is { } run
+                            ? $"A Plex sync for '{run.EntityType}' is already {run.State}."
+                            : "A Plex refresh is already in progress.",
+                        statusCode: StatusCodes.Status409Conflict,
+                        extensions: new Dictionary<string, object?> { ["run"] = result.Run == null ? null : PlexSyncRunDto.From(result.Run) })
+                };
+            }
+            catch (PlexClientException ex)
+            {
+                return PlexFailed(ex);
+            }
+        });
+
         return group;
     }
+
+    // Movie ids are ObjectIds; any other id cannot belong to a movie
+    private static async Task<bool> MovieMissingAsync(string id, IEntityService<Movie> movies, CancellationToken cancellationToken) =>
+        !MongoDB.Bson.ObjectId.TryParse(id, out _) || await movies.GetAsync(id, cancellationToken) == null;
+
+    private static IResult MovieNotFound() => Results.Problem(
+        title: "Movie not found",
+        detail: "No movie exists with this id.",
+        statusCode: StatusCodes.Status404NotFound);
+
+    private static IResult PlexItemNotFound(string plexItemId) => Results.Problem(
+        title: "Plex item not found",
+        detail: $"Plex has no movie with item id '{plexItemId}'.",
+        statusCode: StatusCodes.Status404NotFound);
+
+    // The exception message holds no URL or token
+    private static IResult PlexFailed(PlexClientException ex) => Results.Problem(
+        title: "Plex request failed",
+        detail: ex.Message,
+        statusCode: StatusCodes.Status502BadGateway);
 }
+
+public record PlexLinkRequest(string? PlexItemId);

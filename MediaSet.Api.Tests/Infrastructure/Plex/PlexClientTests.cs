@@ -56,6 +56,56 @@ public class PlexClientTests
     }
 
     [Test]
+    public async Task GetItemAsync_ExistingItem_ReturnsItemWithStreamsAndDeepLink()
+    {
+        var handler = Serving("movie.json");
+        var client = Client(handler);
+
+        var item = await client.GetItemAsync("1001", true, CancellationToken.None);
+
+        Assert.That(item, Is.Not.Null);
+        Assert.That(item!.RatingKey, Is.EqualTo("1001"));
+        Assert.That(item.Type, Is.EqualTo("movie"));
+        Assert.That(item.Guids.Tmdb, Is.EqualTo("603"));
+        Assert.That(item.Versions, Is.Not.Empty);
+        Assert.That(item.DeepLink, Does.Contain("/details?key="));
+    }
+
+    [Test]
+    public async Task GetItemAsync_PlexAnswersNotFound_ReturnsNull()
+    {
+        var client = Client(Serving("movie.json"));
+
+        var item = await client.GetItemAsync("424242", true, CancellationToken.None);
+
+        Assert.That(item, Is.Null);
+    }
+
+    [Test]
+    public async Task GetItemAsync_PlexServerError_ThrowsClientExceptionWithoutTokenOrUrl()
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/metadata/1001", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        var client = Client(handler);
+
+        var ex = await Assert.ThrowsAsync<PlexClientException>(() => client.GetItemAsync("1001", true, CancellationToken.None));
+
+        Assert.That(ex!.Message, Does.Not.Contain(Token).And.Not.Contain("plex.local"));
+    }
+
+    [Test]
+    public async Task GetItemAsync_Request_IsGetOnlyAndKeepsTokenOutOfUrl()
+    {
+        var handler = Serving("movie.json");
+        var client = Client(handler);
+
+        await client.GetItemAsync("1001", true, CancellationToken.None);
+
+        Assert.That(handler.Requests.Select(r => r.Method), Is.All.EqualTo(HttpMethod.Get));
+        Assert.That(handler.Requests.Select(r => r.Uri.ToString()), Has.None.Contain(Token));
+    }
+
+    [Test]
     public async Task GetLibrariesAsync_LibrariesFixture_ReturnsAllSections()
     {
         var client = Client(FakePlexHandler.WithServer());

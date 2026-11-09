@@ -3,6 +3,13 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace MediaSet.Api.Features.Plex.Models;
 
+/// <summary>How a Plex link was made. A document with no stored value reads as auto.</summary>
+public static class PlexLinkSources
+{
+    public const string Auto = "auto";
+    public const string Manual = "manual";
+}
+
 public record PlexAudioTrackData(string? Codec, int? Channels, string? Language);
 
 /// <summary>
@@ -19,6 +26,9 @@ public class PlexItemData
 
     /// <summary>The Plex rating key of the linked item.</summary>
     public string PlexItemId { get; set; } = string.Empty;
+
+    /// <summary>"auto" (matched by the sync) or "manual" (linked by the user; never re-matched or replaced by the sync).</summary>
+    public string LinkSource { get; set; } = PlexLinkSources.Auto;
 
     /// <summary>False when the linked item was not found in Plex on the last run (the data is then stale).</summary>
     public bool OnPlex { get; set; }
@@ -61,6 +71,7 @@ public record PlexItemDataDto(
     string MovieId,
     string PlexItemId,
     bool OnPlex,
+    string LinkSource,
     string? Library,
     string? Resolution,
     bool Hdr,
@@ -84,6 +95,7 @@ public record PlexItemDataDto(
         d.Id,
         d.PlexItemId,
         d.OnPlex,
+        d.LinkSource,
         d.Library,
         d.Resolution,
         d.Hdr,

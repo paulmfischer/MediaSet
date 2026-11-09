@@ -19,4 +19,10 @@ public interface IPlexClient
     /// when they are not needed (search).
     /// </summary>
     Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDetails, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reads one item by rating key, with its streams and deep link when details are requested. Null when
+    /// Plex has no such item.
+    /// </summary>
+    Task<PlexItem?> GetItemAsync(string ratingKey, bool includeDetails, CancellationToken cancellationToken);
 }

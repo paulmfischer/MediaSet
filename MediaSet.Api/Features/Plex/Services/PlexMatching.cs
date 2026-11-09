@@ -90,7 +90,7 @@ public static class PlexMatching
     };
 
     /// <summary>Builds the stored document for a movie from a Plex item.</summary>
-    public static PlexItemData Build(string movieId, PlexItem item, DateTime syncedAt)
+    public static PlexItemData Build(string movieId, PlexItem item, DateTime syncedAt, string linkSource = PlexLinkSources.Auto)
     {
         var best = BestVersion(item.Versions);
         var audio = best == null ? null : BestAudio(best.AudioTracks);
@@ -108,6 +108,7 @@ public static class PlexMatching
             Id = movieId,
             PlexItemId = item.RatingKey,
             OnPlex = true,
+            LinkSource = linkSource,
             Library = item.LibraryTitle,
             Resolution = best?.Resolution,
             Hdr = best?.Hdr ?? false,
