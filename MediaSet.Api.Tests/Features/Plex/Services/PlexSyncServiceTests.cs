@@ -1269,6 +1269,52 @@ public class PlexSyncServiceTests
     }
 
     [Test]
+    public async Task Sync_EpisodeStreamLookupFailed_RollupStaysStableFromKeptStreamFields()
+    {
+        var h = new Harness();
+        var old = Stored(2, 1);
+        old.Hdr = true;
+        old.AudioLanguages = ["eng"];
+        old.SubtitleLanguages = ["eng", "fra"];
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), old), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var data = h.Items.Items["a"];
+        Assert.That(data.Rollup!.Hdr, Is.True);
+        Assert.That(data.Rollup.AudioLanguages, Is.EqualTo(["eng"]));
+        Assert.That(data.Rollup.SubtitleLanguages, Is.EqualTo(["eng", "fra"]));
+        Assert.That(data.Hdr, Is.True);
+        Assert.That(data.SubtitleLanguages, Is.EqualTo(["eng", "fra"]));
+    }
+
+    [Test]
+    public async Task Sync_EpisodeStreamLookupFailedWithNoStoredRecord_LeavesStreamFieldsEmpty()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(episode.Hdr, Is.False);
+        Assert.That(episode.BestAudioTrack, Is.Null);
+        Assert.That(episode.AudioLanguages, Is.Empty);
+        Assert.That(episode.SubtitleLanguages, Is.Empty);
+        Assert.That(episode.FilePath, Is.EqualTo("/p/new.mkv"));
+    }
+
+    [Test]
     public async Task Sync_SeasonInScopeGoneFromPlex_TreatsItsEpisodesAsMissing()
     {
         var h = new Harness();
