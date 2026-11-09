@@ -19,9 +19,7 @@ internal static class PlexApi
             var statuses = new List<PlexEntityStatusDto>();
             foreach (var type in PlexEntityTypes.Supported)
             {
-                var enabled = enablement.IsEnabled(type);
-                var last = enabled ? await runs.GetLastAsync(type, cancellationToken) : null;
-                statuses.Add(new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), enabled ? schedule.GetNextRun(type) : null));
+                statuses.Add(await BuildStatusAsync(type, enablement, runs, schedule, cancellationToken));
             }
 
             return Results.Ok(statuses);
@@ -32,10 +30,8 @@ internal static class PlexApi
         group.MapGroup("/{entityType}").AddEndpointFilter(new PlexEntityTypeFilter(requireEnabled: false))
             .MapGet("/status", async (string entityType, HttpContext context, PlexEnablement enablement, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>
             {
-                var type = PlexEntityTypeFilter.GetEntityType(context);
-                var enabled = enablement.IsEnabled(type);
-                var last = enabled ? await runs.GetLastAsync(type, cancellationToken) : null;
-                return Results.Ok(new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), enabled ? schedule.GetNextRun(type) : null));
+                var status = await BuildStatusAsync(PlexEntityTypeFilter.GetEntityType(context), enablement, runs, schedule, cancellationToken);
+                return Results.Ok(status);
             });
 
         // Other per-entity routes: the filter rejects unknown and disabled entity types
@@ -223,6 +219,15 @@ internal static class PlexApi
     }
 
     private const int MaxSeason = 99;
+
+    // A disabled type has no last run and no next run
+    private static async Task<PlexEntityStatusDto> BuildStatusAsync(
+        string type, PlexEnablement enablement, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken)
+    {
+        var enabled = enablement.IsEnabled(type);
+        var last = enabled ? await runs.GetLastAsync(type, cancellationToken) : null;
+        return new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), enabled ? schedule.GetNextRun(type) : null);
+    }
 
     /// <summary>The scope for a manual TV link: the explicit one, validated, or else the one the title says. An error message when neither is usable.</summary>
     private static (PlexScope? Scope, string? Error) ResolveScope(PlexLinkScopeRequest? request, string title)
