@@ -217,7 +217,7 @@ public sealed class PlexSyncService(
                     r.ItemsScanned = scan.Scanned;
                     r.MatchedCount = scan.Matched;
                     r.UnmatchedCount = scan.Unmatched;
-                    r.FailedCount = scan.Failed;
+                    r.ErroredCount = scan.Errored;
                     r.EndedAt = DateTime.UtcNow;
                 });
             }
@@ -255,7 +255,12 @@ public sealed class PlexSyncService(
         }
     }
 
-    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Failed);
+    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored);
+
+    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item);
+
+    /// <summary>Consecutive runs an auto-linked item may be missing before its link is dropped.</summary>
+    private const int AutoLinkDropMisses = 2;
 
     /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
     private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
@@ -292,9 +297,10 @@ public sealed class PlexSyncService(
             }
         }
 
-        var matched = 0;
-        var failed = 0;
-        var syncedAt = DateTime.UtcNow;
+        // Phase 1 reads only: decide each movie's Plex item. A PlexClientException (outage, rejected token,
+        // timeout) is rethrown so the run fails before anything is written, and nothing is marked gone.
+        var plans = new List<MoviePlan>();
+        var errored = 0;
         foreach (var movie in movies)
         {
             token.ThrowIfCancellationRequested();
@@ -319,31 +325,78 @@ public sealed class PlexSyncService(
                     item = byId;
                 }
 
-                if (item != null)
+                plans.Add(new MoviePlan(movie, stored, manual, item));
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
+            {
+                // One failing movie must not fail the run. Log the id and exception type only, never the
+                // exception itself, so a token in a message can never reach the log.
+                errored++;
+                logger.LogWarning("Plex sync could not process movie {MovieId} ({ExceptionType})", movie.Id, ex.GetType().Name);
+            }
+        }
+
+        // Phase 2 writes
+        var matched = 0;
+        var syncedAt = DateTime.UtcNow;
+        var linkedBy = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var plan in plans)
+        {
+            token.ThrowIfCancellationRequested();
+            var movie = plan.Movie;
+            var stored = plan.Stored;
+            try
+            {
+                if (plan.Item is { } item)
                 {
                     // A manual link may have been made since the read above; it must never be replaced
-                    if (!manual && await itemStore.GetAsync(movie.Id!, token) is { LinkSource: PlexLinkSources.Manual })
+                    if (!plan.Manual && await itemStore.GetAsync(movie.Id!, token) is { LinkSource: PlexLinkSources.Manual })
                     {
                         matched++;
                         continue;
                     }
 
-                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, manual ? PlexLinkSources.Manual : PlexLinkSources.Auto), token);
+                    if (!linkedBy.TryAdd(item.RatingKey, movie.Id!))
+                    {
+                        // Duplicates are allowed; the owner may want to know
+                        logger.LogWarning("Plex item {RatingKey} is linked by movies {FirstMovieId} and {MovieId}", item.RatingKey, linkedBy[item.RatingKey], movie.Id);
+                    }
+
+                    // Build resets MissCount and Broken: a found item recovers the link
+                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto), token);
                     matched++;
                 }
-                else if (stored is { OnPlex: true })
+                else if (stored != null)
                 {
-                    // Linked earlier but gone from Plex now: keep the last data (and a manual link), flag it
-                    stored.OnPlex = false;
-                    stored.LastSyncedAt = syncedAt;
-                    await itemStore.UpsertAsync(stored, token);
+                    // Linked earlier but gone from Plex while the library is reachable
+                    var misses = stored.MissCount + 1;
+                    if (plan.Manual)
+                    {
+                        // A manual link is never dropped; flag it for the user
+                        stored.OnPlex = false;
+                        stored.Broken = true;
+                        stored.MissCount = misses;
+                        stored.LastSyncedAt = syncedAt;
+                        await itemStore.UpsertAsync(stored, token);
+                    }
+                    else if (misses >= AutoLinkDropMisses)
+                    {
+                        await itemStore.DeleteAsync(movie.Id!, token);
+                    }
+                    else
+                    {
+                        // Keep the last data, flag it
+                        stored.OnPlex = false;
+                        stored.MissCount = misses;
+                        stored.LastSyncedAt = syncedAt;
+                        await itemStore.UpsertAsync(stored, token);
+                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // One failing movie must not fail the run
-                failed++;
-                logger.LogWarning(ex, "Plex sync skipped movie {MovieId}", movie.Id);
+                errored++;
+                logger.LogWarning("Plex sync could not process movie {MovieId} ({ExceptionType})", movie.Id, ex.GetType().Name);
             }
         }
 
@@ -362,10 +415,10 @@ public sealed class PlexSyncService(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogWarning(ex, "Plex sync could not purge Plex data of deleted movies");
+            logger.LogWarning("Plex sync could not purge Plex data of deleted movies ({ExceptionType})", ex.GetType().Name);
         }
 
-        return new ScanResult(items.Count, matched, movies.Count - matched - failed, failed);
+        return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored);
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>

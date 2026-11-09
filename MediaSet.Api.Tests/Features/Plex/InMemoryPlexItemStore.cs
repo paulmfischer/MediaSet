@@ -23,6 +23,9 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
     /// <summary>When set, upserts of this movie id throw.</summary>
     public string? FailUpsertFor { get; set; }
 
+    /// <summary>Message of the exception thrown for FailUpsertFor.</summary>
+    public string FailUpsertMessage { get; set; } = "upsert failed";
+
     /// <summary>When set, deletes throw it.</summary>
     public Exception? DeleteFailure { get; set; }
 
@@ -58,7 +61,7 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
     {
         if (data.Id == FailUpsertFor)
         {
-            throw new InvalidOperationException("upsert failed");
+            throw new InvalidOperationException(FailUpsertMessage);
         }
         lock (_sync)
         {

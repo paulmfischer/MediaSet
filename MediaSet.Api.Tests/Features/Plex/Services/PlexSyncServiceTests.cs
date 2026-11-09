@@ -441,6 +441,7 @@ public class PlexSyncServiceTests
         Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.PlexItemMissing));
         Assert.That(h.Items.Items["a"].OnPlex, Is.False);
         Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+        Assert.That(h.Items.Items["a"].MissCount, Is.EqualTo(0));
     }
 
     [Test]
@@ -536,7 +537,7 @@ public class PlexSyncServiceTests
         Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
         Assert.That(h.Items.Items.Keys, Is.EqualTo(["b"]));
         Assert.That(run.MatchedCount, Is.EqualTo(1));
-        Assert.That(run.FailedCount, Is.EqualTo(1));
+        Assert.That(run.ErroredCount, Is.EqualTo(1));
         Assert.That(run.UnmatchedCount, Is.EqualTo(0));
     }
 
