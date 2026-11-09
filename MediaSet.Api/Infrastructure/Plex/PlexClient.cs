@@ -38,11 +38,14 @@ public class PlexClient : IPlexClient
 
     public async Task<IReadOnlyList<PlexLibrary>> GetLibrariesForEntityTypeAsync(string entityType, CancellationToken cancellationToken)
     {
-        var plexType = PlexEntityTypes.LibraryType(entityType)
-            ?? throw new ArgumentException("Unsupported Plex entity type.", nameof(entityType));
+        var plexTypes = PlexEntityTypes.LibraryTypes(entityType);
+        if (plexTypes.Count == 0)
+        {
+            throw new ArgumentException("Unsupported Plex entity type.", nameof(entityType));
+        }
 
         var libraries = (await GetLibrariesAsync(cancellationToken))
-            .Where(l => string.Equals(l.Type, plexType, StringComparison.OrdinalIgnoreCase));
+            .Where(l => plexTypes.Contains(l.Type, StringComparer.OrdinalIgnoreCase));
 
         if (_configuration.Entities.TryGetValue(entityType, out var entity) && entity.LibrarySectionIds.Count > 0)
         {
@@ -115,6 +118,29 @@ public class PlexClient : IPlexClient
 
         var library = new PlexLibrary(m.LibrarySectionId?.ToString() ?? string.Empty, m.LibrarySectionTitle ?? string.Empty, string.Empty);
         return MapItem(m, library, DeepLinkBase(serverId));
+    }
+
+    public async Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(showRatingKey))
+        {
+            return [];
+        }
+
+        var serverId = await GetMachineIdentifierAsync(cancellationToken);
+        var linkBase = DeepLinkBase(serverId);
+        var root = await GetAsync<ItemsRoot>($"library/metadata/{Uri.EscapeDataString(showRatingKey.Trim())}/children", null, cancellationToken);
+        return (root.MediaContainer?.Metadata ?? [])
+            .Where(m => !string.IsNullOrEmpty(m.RatingKey) && m.Index.HasValue && string.Equals(m.Type, "season", StringComparison.OrdinalIgnoreCase))
+            .Select(m => new PlexSeason(
+                m.RatingKey!,
+                m.Index!.Value,
+                m.Title ?? string.Empty,
+                m.LeafCount ?? 0,
+                m.AddedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.AddedAt.Value) : null,
+                DeepLink(linkBase, m.RatingKey)))
+            .OrderBy(s => s.Index)
+            .ToList();
     }
 
     /// <summary>
@@ -314,6 +340,8 @@ public class PlexClient : IPlexClient
         public string? Type { get; set; }
         public string? Title { get; set; }
         public int? Year { get; set; }
+        public int? Index { get; set; }
+        public int? LeafCount { get; set; }
         public long? AddedAt { get; set; }
         [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }
         [JsonPropertyName("librarySectionTitle")] public string? LibrarySectionTitle { get; set; }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Shared.Models;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Features.Plex.Services;
 
-/// <summary>Counts of one backfill: ids saved, and movies searched but left blank.</summary>
+/// <summary>Counts of one backfill: ids saved, and entries searched but left blank.</summary>
 public record ExternalIdBackfillResult(int Filled, int Skipped);
 
 public interface IExternalIdBackfillService
@@ -20,8 +21,12 @@ public interface IExternalIdBackfillService
 /// <summary>
 /// Looks up movies without an ExternalId on TMDB by title and year. A wrong id is worse than a missing one,
 /// so an id is saved only when exactly one result has the same title (case-insensitive) and release year.
+/// TV series entries (<c>IsTvSeries</c>) are searched on TMDB TV by their title with the season text removed
+/// (<see cref="PlexTvTitleParser.CleanTitle"/>), and need no year: a lone result, or a single result whose name equals
+/// the cleaned title, is taken; when several names match, the year (when known) is used only to break the tie, and a
+/// tie that remains leaves the field blank.
 /// A movie that already has an ExternalId is never selected. Throttled by <see cref="PlexBackfillConfiguration"/>,
-/// not by the background image lookup settings. Movies without a parseable year are never candidates. The last search time
+/// not by the background image lookup settings. Movies without a parseable year are never candidates (TV entries need only a title). The last search time
 /// of each movie is kept in <see cref="IExternalIdBackfillStore"/> so unresolved movies rotate behind untried ones. ITmdbClient is registered only when TMDB is configured.
 /// </summary>
 public sealed partial class ExternalIdBackfillService(
@@ -48,7 +53,7 @@ public sealed partial class ExternalIdBackfillService(
         // Movies without a parseable year are not candidates: they cost no search and are not counted
         var eligible = (await movies.GetListAsync(cancellationToken))
             .Where(m => !string.IsNullOrEmpty(m.Id) && string.IsNullOrWhiteSpace(m.ExternalId) && !string.IsNullOrWhiteSpace(m.Title)
-                && ParseYear(m.ReleaseDate) != null)
+                && (m.IsTvSeries ? PlexTvTitleParser.CleanTitle(m.Title).Length > 0 : ParseYear(m.ReleaseDate) != null))
             .ToList();
 
         // Never or least recently searched first (stable), so movies that never resolve rotate to the back
@@ -82,13 +87,26 @@ public sealed partial class ExternalIdBackfillService(
 
             try
             {
-                var response = await tmdb.SearchMovieAsync(movie.Title.Trim(), cancellationToken);
-                await RecordAttemptAsync(movie.Id!, cancellationToken);
-                var matches = (response?.Results ?? [])
-                    .Where(r => string.Equals(r.Title?.Trim(), movie.Title.Trim(), StringComparison.OrdinalIgnoreCase)
-                        && ParseYear(r.ReleaseDate) == year)
-                    .ToList();
-                if (matches.Count != 1)
+                int? tmdbId;
+                if (movie.IsTvSeries)
+                {
+                    var cleaned = PlexTvTitleParser.CleanTitle(movie.Title);
+                    var response = await tmdb.SearchTvAsync(cleaned, cancellationToken);
+                    await RecordAttemptAsync(movie.Id!, cancellationToken);
+                    tmdbId = PickShow(response?.Results ?? [], cleaned, year);
+                }
+                else
+                {
+                    var response = await tmdb.SearchMovieAsync(movie.Title.Trim(), cancellationToken);
+                    await RecordAttemptAsync(movie.Id!, cancellationToken);
+                    var matches = (response?.Results ?? [])
+                        .Where(r => string.Equals(r.Title?.Trim(), movie.Title.Trim(), StringComparison.OrdinalIgnoreCase)
+                            && ParseYear(r.ReleaseDate) == year)
+                        .ToList();
+                    tmdbId = matches.Count == 1 ? matches[0].Id : null;
+                }
+
+                if (tmdbId == null)
                 {
                     skipped++;
                     continue;
@@ -102,7 +120,7 @@ public sealed partial class ExternalIdBackfillService(
                     continue;
                 }
 
-                current.ExternalId = ExternalIdFormat.ForTmdb(matches[0].Id);
+                current.ExternalId = ExternalIdFormat.ForTmdb(tmdbId.Value);
                 await movies.UpdateAsync(movie.Id!, current, cancellationToken);
                 filled++;
             }
@@ -122,6 +140,24 @@ public sealed partial class ExternalIdBackfillService(
 
         logger.LogInformation("ExternalId backfill finished: {Filled} filled, {Skipped} skipped", filled, skipped);
         return new ExternalIdBackfillResult(filled, skipped);
+    }
+
+    /// <summary>
+    /// The confident TMDB show for a cleaned title, or null. Only results whose name equals the title (case-insensitive)
+    /// are candidates, so a fuzzy hit on an unrelated show is never saved. One candidate is taken; several are narrowed
+    /// by first air year, when the entry has one, and taken only if exactly one is left.
+    /// </summary>
+    private static int? PickShow(IReadOnlyList<TmdbTvSearchResult> results, string cleanedTitle, int? year)
+    {
+        var named = results
+            .Where(r => string.Equals(r.Name?.Trim(), cleanedTitle.Trim(), StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (named.Count > 1 && year != null)
+        {
+            named = [.. named.Where(r => ParseYear(r.FirstAirDate) == year)];
+        }
+
+        return named.Count == 1 ? named[0].Id : null;
     }
 
     /// <summary>Remembers the search so the movie goes behind untried ones next run. A store failure never fails the backfill.</summary>

@@ -62,7 +62,12 @@ public class ExternalIdBackfillServiceTests
                 .Callback((string t, CancellationToken _) => Calls.Add((t, Clock.GetUtcNow())))
                 .ReturnsAsync(Results(results));
 
-        private static Movie Copy(Movie m) => new() { Id = m.Id, Title = m.Title, ReleaseDate = m.ReleaseDate, ExternalId = m.ExternalId, Format = m.Format, Plot = m.Plot };
+        public void ReturnsTv(string title, params TmdbTvSearchResult[] results) =>
+            Tmdb.Setup(t => t.SearchTvAsync(title, It.IsAny<CancellationToken>()))
+                .Callback((string t, CancellationToken _) => Calls.Add((t, Clock.GetUtcNow())))
+                .ReturnsAsync(new TmdbTvSearchResponse([.. results]));
+
+        private static Movie Copy(Movie m) => new() { Id = m.Id, Title = m.Title, ReleaseDate = m.ReleaseDate, ExternalId = m.ExternalId, Format = m.Format, Plot = m.Plot, IsTvSeries = m.IsTvSeries };
     }
 
     private static TmdbSearchResponse Results(params TmdbMovieSearchResult[] results) => new(1, [.. results], 1, results.Length);
@@ -408,5 +413,162 @@ public class ExternalIdBackfillServiceTests
             public void Dispose() { }
             public ValueTask DisposeAsync() => ValueTask.CompletedTask;
         }
+    }
+
+    private static Movie TvNoId(string id, string title, string? date = null) => new() { Id = id, Title = title, ReleaseDate = date ?? string.Empty, IsTvSeries = true };
+
+    private static TmdbTvSearchResult Show(int id, string name, string? firstAir = null) => new(id, name, firstAir);
+
+    [Test]
+    public async Task RunAsync_TvEntry_SearchesTvOnCleanedTitleAndSavesIdOfExactNameMatch()
+    {
+        var h = new Harness(TvNoId("a", "Breaking Bad: Season 2"));
+        h.ReturnsTv("Breaking Bad", Show(1396, "breaking bad "), Show(5, "Breaking Bad: The Cartoon"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(1, 0)));
+        Assert.That(h.Movies.Single().ExternalId, Is.EqualTo("tmdbid:1396"));
+        Assert.That(h.Calls.Select(c => c.Title), Is.EqualTo(["Breaking Bad"]));
+        h.Tmdb.Verify(t => t.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWithLoneResultOfAnotherName_LeavesFieldBlank()
+    {
+        var h = new Harness(TvNoId("a", "Doctor Who: Series 2"));
+        h.ReturnsTv("Doctor Who", Show(57243, "Doctor Who (2005)"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
+        Assert.That(h.Movies.Single().ExternalId, Is.Null);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWithLoneResultOfSameName_SavesIt()
+    {
+        var h = new Harness(TvNoId("a", "Doctor Who: Series 2"));
+        h.ReturnsTv("Doctor Who", Show(57243, "doctor who"));
+
+        await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Movies.Single().ExternalId, Is.EqualTo("tmdbid:57243"));
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWhoseSeasonTextIsJoinedToOtherContent_IsNotSearched()
+    {
+        var h = new Harness(TvNoId("a", "Show: Seasons 1-3 + Movie"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 0)));
+        h.Tmdb.Verify(t => t.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWithSeveralSameNamedShows_UsesYearOnlyToBreakTheTie()
+    {
+        var h = new Harness(TvNoId("a", "Doctor Who: Series 2", "2006-04-15"));
+        h.ReturnsTv("Doctor Who", Show(1, "Doctor Who", "1963-11-23"), Show(2, "Doctor Who", "2005-03-26"), Show(3, "Doctor Who", "2006-04-01"));
+
+        await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Movies.Single().ExternalId, Is.EqualTo("tmdbid:3"));
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntrySameNamedShowsAndNoYear_LeavesFieldBlank()
+    {
+        var h = new Harness(TvNoId("a", "Doctor Who: Series 2"));
+        h.ReturnsTv("Doctor Who", Show(1, "Doctor Who", "1963-11-23"), Show(2, "Doctor Who", "2005-03-26"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
+        Assert.That(h.Movies.Single().ExternalId, Is.Null);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryYearMatchesTwoShows_LeavesFieldBlank()
+    {
+        var h = new Harness(TvNoId("a", "Show: Season 1", "2010-01-01"));
+        h.ReturnsTv("Show", Show(1, "Show", "2010-02-01"), Show(2, "Show", "2010-09-01"));
+
+        await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Movies.Single().ExternalId, Is.Null);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryNoResultOrNoExactNameAmongSeveral_LeavesFieldBlank()
+    {
+        var h = new Harness(TvNoId("a", "Nothing: Season 1"), TvNoId("b", "Show: Season 1")) { AutoAdvance = true };
+        h.ReturnsTv("Nothing");
+        h.ReturnsTv("Show", Show(1, "Show Two"), Show(2, "Show Three"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 2)));
+        Assert.That(h.Movies.Select(m => m.ExternalId), Is.All.Null);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWithExistingExternalId_IsNeverSearchedOrOverwritten()
+    {
+        var tv = TvNoId("a", "Show: Season 1");
+        tv.ExternalId = "tvdbid:7";
+        var h = new Harness(tv);
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 0)));
+        Assert.That(h.Movies.Single().ExternalId, Is.EqualTo("tvdbid:7"));
+        h.Tmdb.Verify(t => t.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryWhoseTitleIsOnlySeasonText_IsNotACandidate()
+    {
+        var h = new Harness(TvNoId("a", "Season 2"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 0)));
+        h.Tmdb.Verify(t => t.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task RunAsync_MixOfMovieAndTvEntries_ShareTheBatchAndThrottle()
+    {
+        var h = new Harness(NoId("m", "The Matrix"), TvNoId("t", "Show: Season 1"), TvNoId("u", "Other: Season 1"));
+        h.Config.BatchSize = 2;
+        h.AutoAdvance = true;
+        h.Returns("The Matrix", Hit(603, "The Matrix", "1999-03-31"));
+        h.ReturnsTv("Show", Show(10, "Show"));
+        h.ReturnsTv("Other", Show(11, "Other"));
+
+        await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Calls, Has.Count.EqualTo(2));
+        Assert.That((h.Calls[1].At - h.Calls[0].At).TotalSeconds, Is.GreaterThanOrEqualTo(2));
+        Assert.That(h.Movies.Count(m => m.ExternalId != null), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task RunAsync_TvEntryThatNeverResolves_RotatesBehindUntriedEntries()
+    {
+        var h = new Harness(TvNoId("a", "Unknown: Season 1"), TvNoId("b", "Show: Season 1"));
+        h.Config.BatchSize = 1;
+        h.ReturnsTv("Unknown");
+        h.ReturnsTv("Show", Show(10, "Show"));
+        var service = h.Build();
+
+        await service.RunAsync(CancellationToken.None);
+        h.Time.Advance(TimeSpan.FromHours(1));
+        await service.RunAsync(CancellationToken.None);
+
+        Assert.That(h.Movies.Single(m => m.Id == "b").ExternalId, Is.EqualTo("tmdbid:10"));
     }
 }

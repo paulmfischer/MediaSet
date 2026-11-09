@@ -100,26 +100,33 @@ public class PlexSearchApiTests
     }
 
     [Test]
-    public async Task Search_ForMovies_NeverQueriesShowLibrariesAndReturnsNoShows()
+    public async Task Search_ForMovies_AlsoSearchesShowLibrariesAndMarksTheType()
     {
         var handler = ServerWithMovieSections();
         using var client = CreateClient(handler);
 
         var results = (await ReadJsonAsync(await client.GetAsync("/plex/movies/search?query=matrix"))).EnumerateArray().ToList();
 
-        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Does.Not.Contain("/library/sections/2/all"));
-        Assert.That(results.Select(r => r.GetProperty("title").GetString()), Does.Not.Contain("The Matrix Show"));
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Does.Contain("/library/sections/2/all"));
+        var show = results.Single(r => r.GetProperty("title").GetString() == "The Matrix Show");
+        Assert.That(show.GetProperty("type").GetString(), Is.EqualTo("show"));
+        Assert.That(show.GetProperty("plexItemId").GetString(), Is.EqualTo("2001"));
+        Assert.That(results.Single(r => r.GetProperty("title").GetString() == "The Matrix").GetProperty("type").GetString(), Is.EqualTo("movie"));
     }
 
     [Test]
-    public async Task Search_MovieLibraryContainsShowItem_ShowIsExcluded()
+    public async Task Search_LibraryReturnsSeasonOrEpisodeItems_AreExcluded()
     {
-        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", "show.json").Route("/library/sections/3/all", "movie.json");
+        var handler = FakePlexHandler.WithServer().Route("/library/sections/1/all", "movie.json")
+            .Route("/library/sections/3/all", "movie.json")
+            .Route("/library/sections/2/all", _ => FakePlexHandler.Json(
+                """{"MediaContainer":{"size":1,"Metadata":[{"ratingKey":"2002","type":"episode","title":"Pilot"}]}}"""));
         using var client = CreateClient(handler);
 
         var results = (await ReadJsonAsync(await client.GetAsync("/plex/movies/search?query=matrix"))).EnumerateArray().ToList();
 
-        Assert.That(results.Select(r => r.GetProperty("title").GetString()), Is.EqualTo(["The Matrix"]));
+        Assert.That(results.Select(r => r.GetProperty("title").GetString()), Does.Contain("The Matrix"));
+        Assert.That(results.Select(r => r.GetProperty("title").GetString()), Does.Not.Contain("Pilot"));
     }
 
     [Test]

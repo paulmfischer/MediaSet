@@ -741,6 +741,279 @@ public class PlexSyncServiceTests
 
         Assert.That(PlexMatching.BestAudio(tracks)!.Codec, Is.EqualTo("truehd"));
     }
+
+    private static PlexItem Show(string key, PlexGuids guids) =>
+        new(key, "show", $"Show {key}", 2005, "2", "TV Shows", DateTimeOffset.FromUnixTimeSeconds(1700000000), $"link-{key}", guids, []);
+
+    private static PlexSeason Season(string showKey, int index, int episodes) =>
+        new($"{showKey}0{index}", index, index == 0 ? "Specials" : $"Season {index}", episodes, DateTimeOffset.FromUnixTimeSeconds(1700000000 + index), $"season-link-{showKey}-{index}");
+
+    private static Movie Tv(string id, string title, string? externalId) => new() { Id = id, Title = title, ExternalId = externalId, IsTvSeries = true };
+
+    private static void ServeShow(Harness h, string showKey, PlexGuids guids, params PlexSeason[] seasons)
+    {
+        h.Client.Setup(c => c.GetSeasonsAsync(showKey, It.IsAny<CancellationToken>())).ReturnsAsync(seasons);
+        Serve(h, Show(showKey, guids));
+    }
+
+    [Test]
+    public async Task Sync_TvEntryWithSeasonInTitle_MatchesShowByExternalIdAndStoresScopeAndSeason()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 0, 3), Season("90", 1, 7), Season("90", 2, 13));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        var data = h.Items.Items["a"];
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(data.PlexItemId, Is.EqualTo("90"));
+        Assert.That(data.LinkSource, Is.EqualTo(PlexLinkSources.Auto));
+        Assert.That(data.Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(data.Seasons.Select(x => x.Index), Is.EqualTo([2]));
+        Assert.That(data.Seasons.Single().EpisodeCount, Is.EqualTo(13));
+        Assert.That(data.Seasons.Single().PlexSeasonId, Is.EqualTo("9002"));
+    }
+
+    [Test]
+    public async Task Sync_TvEntry_StoresShowAndSeasonLevelFields()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids(null, "tt0944947", null), Season("90", 1, 7));
+        SetMovies(h, Tv("a", "Show - Season 1", "imdbid:tt0944947"));
+
+        await RunAsync(h);
+
+        var data = h.Items.Items["a"];
+        Assert.That(data.OnPlex, Is.True);
+        Assert.That(data.Library, Is.EqualTo("TV Shows"));
+        Assert.That(data.DateAdded, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(1700000000).UtcDateTime));
+        Assert.That(data.DeepLink, Is.EqualTo("link-90"));
+        Assert.That(data.LastSyncedAt, Is.Not.EqualTo(default(DateTime)));
+        Assert.That(data.Seasons.Single().DeepLink, Is.EqualTo("season-link-90-1"));
+        Assert.That(data.Seasons.Single().DateAdded, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(1700000001).UtcDateTime));
+        Assert.That(data.Seasons.Single().EpisodeCount, Is.EqualTo(7));
+    }
+
+    [Test]
+    public async Task Sync_TvEntryRangeAndCompleteSeries_SelectSeasonsByIndex()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 0, 3), Season("90", 1, 7), Season("90", 2, 13), Season("90", 3, 9));
+        SetMovies(h, Tv("a", "Show: Seasons 1-2", "tmdbid:1399"), Tv("b", "Show: Complete Series", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(new PlexScope(PlexScopeKinds.Range, 1, 2)));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([1, 2]));
+        Assert.That(h.Items.Items["b"].Scope, Is.EqualTo(PlexScope.AllSeasons));
+        Assert.That(h.Items.Items["b"].Seasons.Select(x => x.Index), Is.EqualTo([0, 1, 2, 3]));
+    }
+
+    [Test]
+    public async Task Sync_SeveralTvEntriesOneShow_EachLinksWithItsOwnScopeAndSeasonsAreReadOnce()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        SetMovies(h, Tv("a", "Show: Season 1", "tmdbid:1399"), Tv("b", "Show: Season 2", "tmdbid:1399"), Tv("c", "Show: Complete Series", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(3));
+        Assert.That(h.Items.Items.Values.Select(d => d.PlexItemId), Is.All.EqualTo("90"));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([1]));
+        Assert.That(h.Items.Items["b"].Seasons.Select(x => x.Index), Is.EqualTo([2]));
+        Assert.That(h.Items.Items["c"].Seasons.Select(x => x.Index), Is.EqualTo([1, 2]));
+        h.Client.Verify(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestCase("Show")]
+    [TestCase("Show: Seasons 1-3 + Movie")]
+    [TestCase("Show: Season 1 Season 2")]
+    public async Task Sync_TvEntryWithUnreadableScope_StaysUnmatched(string title)
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        SetMovies(h, Tv("a", title, "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(0));
+        Assert.That(run.UnmatchedCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_TvEntrySeasonMissingOnPlex_StaysUnmatched()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7));
+        SetMovies(h, Tv("a", "Show: Season 4", "tmdbid:1399"), Tv("b", "Show: Seasons 5-6", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.UnmatchedCount, Is.EqualTo(2));
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_TvEntryWithMovieOnlyGuidMatch_IsNotLinkedToTheMovie()
+    {
+        var h = new Harness();
+        // A Plex movie and a TV entry share the TMDB number 603: different TMDB namespaces
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, Tv("a", "Show: Season 1", "tmdbid:603"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(0));
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_MovieEntryWithShowGuid_IsNotLinkedToTheShow()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7));
+        SetMovies(h, MovieWith("a", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(0));
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_ManualTvLink_KeepsItsScopeEvenWhenTitleSaysOtherwise()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, LinkSource = PlexLinkSources.Manual, Scope = PlexScope.AllSeasons }, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        SetMovies(h, Tv("a", "Show: Season 1", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.AllSeasons));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([1, 2]));
+    }
+
+    [Test]
+    public async Task Sync_ManualTvLinkWithUnreadableTitle_IsStillRefreshed()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, LinkSource = PlexLinkSources.Manual, Scope = PlexScope.Single(1) }, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids(null, null, null), Season("90", 1, 8));
+        SetMovies(h, Tv("a", "Show", null));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items["a"].Seasons.Single().EpisodeCount, Is.EqualTo(8));
+    }
+
+    [Test]
+    public async Task Sync_AutoTvLinkWhoseTitleLosesItsScope_KeepsTheStoredScope()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, Scope = PlexScope.Single(2) }, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        SetMovies(h, Tv("a", "Show", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([2]));
+    }
+
+    [Test]
+    public async Task Sync_TvShowGoneFromPlex_FlagsOffPlexAndKeepsScopeAndSeasons()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData
+        {
+            Id = "a",
+            PlexItemId = "90",
+            OnPlex = true,
+            Scope = PlexScope.Single(2),
+            Seasons = [new PlexSeasonData { Index = 2, PlexSeasonId = "9002", EpisodeCount = 13 }]
+        }, CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].OnPlex, Is.False);
+        Assert.That(h.Items.Items["a"].MissCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(h.Items.Items["a"].Seasons.Single().EpisodeCount, Is.EqualTo(13));
+    }
+
+    [Test]
+    public async Task Sync_PlexSeasonsRequestFails_RunFailsAndStoredDataIsUntouched()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, Scope = PlexScope.Single(2) }, CancellationToken.None);
+        h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ThrowsAsync(new PlexClientException(500, "Plex request failed"));
+        Serve(h, Show("90", new PlexGuids("1399", null, null)));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Failed));
+        Assert.That(h.Items.Items["a"].OnPlex, Is.True);
+    }
+
+    [Test]
+    public async Task Sync_TvEntryNoExternalIdButBackfilledFromTmdb_MatchesInTheSameRun()
+    {
+        var h = new Harness(tmdbConfigured: true);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var tv = Tv("a", "Show: Season 2", null);
+        SetMovies(h, tv);
+        h.Movies.Setup(s => s.GetAsync("a", It.IsAny<CancellationToken>())).ReturnsAsync(() => tv);
+        h.Movies.Setup(s => s.UpdateAsync("a", It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback((string _, Movie m, CancellationToken _) => tv = m)
+            .ReturnsAsync(default(MongoDB.Driver.ReplaceOneResult)!);
+        h.Tmdb.Setup(t => t.SearchTvAsync("Show", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MediaSet.Api.Infrastructure.Lookup.Models.TmdbTvSearchResponse([new(1399, "Show")]));
+        h.Movies.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => [tv]);
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.ExternalIdsBackfilled, Is.EqualTo(1));
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+    }
+    [Test]
+    public async Task RefreshItemAsync_AutoLinkedTvEntryWhoseTitleChanged_RereadsScopeFromTitle()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, Scope = PlexScope.Single(1) }, CancellationToken.None);
+        h.Client.Setup(c => c.GetItemAsync("90", true, It.IsAny<CancellationToken>())).ReturnsAsync(Show("90", new PlexGuids("1399", null, null)));
+        h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ReturnsAsync([Season("90", 1, 7), Season("90", 2, 13)]);
+        h.Movies.Setup(s => s.GetAsync("a", It.IsAny<CancellationToken>())).ReturnsAsync(Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.Refreshed));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([2]));
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_ManualLinkedTvEntry_KeepsItsScopeDespiteTitle()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, LinkSource = PlexLinkSources.Manual, Scope = PlexScope.Single(1) }, CancellationToken.None);
+        h.Client.Setup(c => c.GetItemAsync("90", true, It.IsAny<CancellationToken>())).ReturnsAsync(Show("90", new PlexGuids("1399", null, null)));
+        h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ReturnsAsync([Season("90", 1, 7), Season("90", 2, 13)]);
+        h.Movies.Setup(s => s.GetAsync("a", It.IsAny<CancellationToken>())).ReturnsAsync(Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(1)));
+    }
 }
 
 [TestFixture]

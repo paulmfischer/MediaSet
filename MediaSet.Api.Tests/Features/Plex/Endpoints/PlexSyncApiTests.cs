@@ -91,7 +91,8 @@ public class PlexSyncApiTests
 
     private static FakePlexHandler ServerWithMovies() => FakePlexHandler.WithServer()
         .Route("/library/sections/1/all", "movie.json")
-        .Route("/library/sections/3/all", "subtitles_audio.json");
+        .Route("/library/sections/3/all", "subtitles_audio.json")
+        .Route("/library/sections/2/all", "show.json");
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
     {
@@ -149,10 +150,10 @@ public class PlexSyncApiTests
         var all = await ReadJsonAsync(await client.GetAsync("/plex/status"));
 
         Assert.That(last.GetProperty("state").GetString(), Is.EqualTo("succeeded"));
-        Assert.That(last.GetProperty("itemsScanned").GetInt32(), Is.EqualTo(2));
+        Assert.That(last.GetProperty("itemsScanned").GetInt32(), Is.EqualTo(3));
         Assert.That(last.GetProperty("endedAt").ValueKind, Is.EqualTo(JsonValueKind.String));
         Assert.That(all.EnumerateArray().Single().GetProperty("lastRun").GetProperty("state").GetString(), Is.EqualTo("succeeded"));
-        Assert.That(store.Runs.Single().ItemsScanned, Is.EqualTo(2));
+        Assert.That(store.Runs.Single().ItemsScanned, Is.EqualTo(3));
     }
 
     [Test]

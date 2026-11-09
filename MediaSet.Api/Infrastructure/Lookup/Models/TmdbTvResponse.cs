@@ -7,7 +7,8 @@ public record TmdbTvSearchResponse(
 
 public record TmdbTvSearchResult(
     [property: JsonPropertyName("id")] int Id,
-    [property: JsonPropertyName("name")] string Name);
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("first_air_date")] string? FirstAirDate = null);
 
 public record TmdbTvResponse(
     [property: JsonPropertyName("id")] int Id,

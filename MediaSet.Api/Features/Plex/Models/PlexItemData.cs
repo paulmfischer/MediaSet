@@ -13,7 +13,28 @@ public static class PlexLinkSources
 public record PlexAudioTrackData(string? Codec, int? Channels, string? Language);
 
 /// <summary>
-/// Plex data for one linked movie, stored in the PlexItems collection. The document id is the movie id, so
+/// One Plex season of a linked TV entry, as reported by Plex. Only the seasons the entry's scope covers are stored.
+/// Episodes are not stored here.
+/// </summary>
+public class PlexSeasonData
+{
+    /// <summary>The season number (0 is Plex's specials season).</summary>
+    public int Index { get; set; }
+
+    /// <summary>The Plex rating key of the season.</summary>
+    public string PlexSeasonId { get; set; } = string.Empty;
+
+    /// <summary>Episodes Plex reports for the season (what Plex has, not what MediaSet expects).</summary>
+    public int EpisodeCount { get; set; }
+
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? DateAdded { get; set; }
+
+    public string? DeepLink { get; set; }
+}
+
+/// <summary>
+/// Plex data for one linked movie or TV entry, stored in the PlexItems collection. The document id is the movie id, so
 /// there is at most one per movie and the built-in unique _id index is the unique index on the entity id.
 /// Kept apart from the movie so editing a movie never touches it.
 /// </summary>
@@ -38,6 +59,15 @@ public class PlexItemData
 
     /// <summary>A manual link whose item is gone from Plex. Never dropped automatically; reset by a match.</summary>
     public bool Broken { get; set; }
+
+    /// <summary>
+    /// Set only for a TV entry: the seasons of the Plex show it covers. <see cref="PlexItemId"/> is then the show's
+    /// rating key, and several entries may share it, each with its own scope. Null for a movie.
+    /// </summary>
+    public PlexScope? Scope { get; set; }
+
+    /// <summary>TV entries only: the Plex seasons the scope covers, with Plex's episode count per season.</summary>
+    public List<PlexSeasonData> Seasons { get; set; } = [];
 
     public string? Library { get; set; }
     public string? Resolution { get; set; }
@@ -95,7 +125,9 @@ public record PlexItemDataDto(
     string? Container,
     string? FilePath,
     long? SizeBytes,
-    DateTimeOffset LastSyncedAt)
+    DateTimeOffset LastSyncedAt,
+    PlexScope? Scope = null,
+    IReadOnlyList<PlexSeasonDto>? Seasons = null)
 {
     private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 
@@ -121,5 +153,10 @@ public record PlexItemDataDto(
         d.Container,
         d.FilePath,
         d.SizeBytes,
-        Utc(d.LastSyncedAt));
+        Utc(d.LastSyncedAt),
+        d.Scope,
+        d.Scope == null ? null : [.. d.Seasons.OrderBy(x => x.Index).Select(x => new PlexSeasonDto(
+            x.Index, x.PlexSeasonId, x.EpisodeCount, x.DateAdded.HasValue ? Utc(x.DateAdded.Value) : null, x.DeepLink))]);
 }
+
+public record PlexSeasonDto(int Index, string PlexSeasonId, int EpisodeCount, DateTimeOffset? DateAdded, string? DeepLink);
