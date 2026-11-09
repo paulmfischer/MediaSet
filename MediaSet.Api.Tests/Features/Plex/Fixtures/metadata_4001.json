@@ -1,0 +1,12 @@
+{"MediaContainer":{"size":1,"Metadata":[
+ {"ratingKey":"4001","type":"episode","title":"Pilot","index":1,"parentIndex":2,"viewCount":2,"lastViewedAt":1710000500,
+  "Media":[
+   {"duration":2700000,"videoResolution":"720","videoCodec":"h264","container":"mp4",
+    "Part":[{"file":"/data/tv/Show/S02E01.720.mp4","size":400,"container":"mp4","Stream":[{"streamType":1,"codec":"h264","colorTrc":"bt709"},{"streamType":2,"codec":"aac","channels":2,"languageTag":"en"}]}]},
+   {"duration":2760000,"videoResolution":"1080","videoCodec":"hevc","container":"mkv",
+    "Part":[{"file":"/data/tv/Show/S02E01.mkv","size":1000,"container":"mkv","Stream":[
+      {"streamType":1,"codec":"hevc","colorTrc":"smpte2084"},
+      {"streamType":2,"codec":"ac3","channels":6,"languageTag":"en"},
+      {"streamType":2,"codec":"aac","channels":2,"languageTag":"fr"},
+      {"streamType":3,"languageTag":"en"},
+      {"streamType":3,"languageTag":"es","key":"/library/streams/9"}]}]}]}]}}

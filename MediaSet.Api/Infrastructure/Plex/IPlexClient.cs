@@ -29,4 +29,11 @@ public interface IPlexClient
 
     /// <summary>The seasons of a show by its rating key (one request), with the episode count Plex reports. Empty when Plex has none.</summary>
     Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The episodes of one season by the season's rating key, read in pages, with audio, subtitle and HDR data from one
+    /// extra metadata request per episode with files (listings carry no streams). Empty when the season has none.
+    /// Throws PlexClientException when Plex cannot be reached or does not know the season.
+    /// </summary>
+    Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(string seasonRatingKey, CancellationToken cancellationToken);
 }

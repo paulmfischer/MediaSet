@@ -190,6 +190,118 @@ public class PlexClientTests
         Assert.That(seasons[2].DeepLink, Does.Contain("details?key=").And.Contain("2102"));
     }
 
+    private static FakePlexHandler ServingEpisodes() =>
+        FakePlexHandler.WithServer()
+            .Route("/library/metadata/2102/children", "episodes_2102.json")
+            .Route("/library/metadata/4001", "metadata_4001.json")
+            .Route("/library/metadata/4002", "metadata_4002.json");
+
+    [Test]
+    public async Task GetEpisodesAsync_SeasonWithEpisodes_ParsesNumbersTitleWatchedAndFile()
+    {
+        var client = Client(ServingEpisodes());
+
+        var episodes = await client.GetEpisodesAsync("2102", CancellationToken.None);
+
+        Assert.That(episodes.Select(e => e.EpisodeIndex), Is.EqualTo([1, 2, 3]));
+        Assert.That(episodes.Select(e => e.SeasonIndex), Is.All.EqualTo(2));
+        Assert.That(episodes[0].RatingKey, Is.EqualTo("4001"));
+        Assert.That(episodes[0].Title, Is.EqualTo("Pilot"));
+        Assert.That(episodes[0].ViewCount, Is.EqualTo(2));
+        Assert.That(episodes[0].LastViewedAt, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(1710000500)));
+        Assert.That(episodes[1].ViewCount, Is.EqualTo(0));
+        Assert.That(episodes[1].LastViewedAt, Is.Null);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_EpisodeWithTwoVersions_ParsesVersionsWithAudioSubtitlesAndHdr()
+    {
+        var client = Client(ServingEpisodes());
+
+        var pilot = (await client.GetEpisodesAsync("2102", CancellationToken.None)).First();
+
+        var hevc = pilot.Versions.Single(v => v.Resolution == "1080");
+        Assert.That(pilot.Versions, Has.Count.EqualTo(2));
+        Assert.That(hevc.Hdr, Is.True);
+        Assert.That(hevc.VideoCodec, Is.EqualTo("hevc"));
+        Assert.That(hevc.Container, Is.EqualTo("mkv"));
+        Assert.That(hevc.FilePath, Is.EqualTo("/data/tv/Show/S02E01.mkv"));
+        Assert.That(hevc.SizeBytes, Is.EqualTo(1000));
+        Assert.That(hevc.Duration, Is.EqualTo(TimeSpan.FromMilliseconds(2760000)));
+        Assert.That(hevc.AudioTracks.Select(a => (a.Codec, a.Channels, a.Language)), Is.EqualTo([("ac3", (int?)6, "en"), ("aac", (int?)2, "fr")]));
+        Assert.That(hevc.Subtitles.Select(x => (x.Language, x.External)), Is.EqualTo([("en", false), ("es", true)]));
+        Assert.That(pilot.Versions.Single(v => v.Resolution == "720").Hdr, Is.False);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_EpisodeWithoutFiles_HasNoVersionsAndNoStreamLookup()
+    {
+        var handler = ServingEpisodes();
+        var client = Client(handler);
+
+        var episodes = await client.GetEpisodesAsync("2102", CancellationToken.None);
+
+        Assert.That(episodes[2].Versions, Is.Empty);
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Does.Not.Contain("/library/metadata/4003"));
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_MoreThanOnePage_ReadsEveryPageWithContainerHeaders()
+    {
+        var handler = FakePlexHandler.WithServer().Route("/library/metadata/2101/children", request =>
+            FakePlexHandler.Json(FakePlexHandler.Fixture(
+                request.Headers.GetValues("X-Plex-Container-Start").Single() == "0" ? "episodes_page1.json" : "episodes_page2.json")));
+        var client = Client(handler, new PlexConfiguration { Token = Token, PageSize = 2 });
+
+        var episodes = await client.GetEpisodesAsync("2101", CancellationToken.None);
+
+        var pages = handler.Requests.Where(r => r.Uri.AbsolutePath.EndsWith("/children")).ToList();
+        Assert.That(episodes.Select(e => e.Title), Is.EqualTo(["One", "Two", "Three"]));
+        Assert.That(pages.Select(p => p.Headers["X-Plex-Container-Start"]), Is.EqualTo(["0", "2"]));
+        Assert.That(pages.Select(p => p.Headers["X-Plex-Container-Size"]), Is.All.EqualTo("2"));
+        Assert.That(handler.Requests.Select(r => r.Method), Is.All.EqualTo(HttpMethod.Get));
+    }
+
+    [Test]
+    public void GetEpisodesAsync_PlexUnreachable_ThrowsPlexClientException()
+    {
+        var client = Client(FakePlexHandler.WithServer().Route("/library/metadata/2102/children", _ => FakePlexHandler.Json("{}", HttpStatusCode.InternalServerError)));
+
+        Assert.That(async () => await client.GetEpisodesAsync("2102", CancellationToken.None), Throws.TypeOf<PlexClientException>());
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_SeasonUnknownToPlex_ReturnsNoEpisodes()
+    {
+        var client = Client(FakePlexHandler.WithServer());
+
+        Assert.That(await client.GetEpisodesAsync("2102", CancellationToken.None), Is.Empty);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_StreamLookupFails_KeepsListingDataAndFlagsStreamsUnavailable()
+    {
+        var handler = ServingEpisodes().Route("/library/metadata/4002", _ => FakePlexHandler.Json("{}", HttpStatusCode.InternalServerError));
+        var client = Client(handler);
+
+        var episodes = await client.GetEpisodesAsync("2102", CancellationToken.None);
+
+        Assert.That(episodes.Select(e => e.StreamsAvailable), Is.EqualTo([true, false, true]));
+        Assert.That(episodes[1].Versions.Single().Resolution, Is.EqualTo("720"));
+        Assert.That(episodes[1].Versions.Single().AudioTracks, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_BlankSeasonKey_ReturnsEmptyWithoutRequest()
+    {
+        var handler = ServingEpisodes();
+
+        var episodes = await Client(handler).GetEpisodesAsync(" ", CancellationToken.None);
+
+        Assert.That(episodes, Is.Empty);
+        Assert.That(handler.Requests, Is.Empty);
+    }
+
     [Test]
     public async Task GetSeasonsAsync_ShowWithoutSeasons_ReturnsEmpty()
     {

@@ -40,9 +40,18 @@ public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLi
             return null;
         }
 
-        var data = scope == null
-            ? PlexMatching.Build(movieId, item, DateTime.UtcNow, PlexLinkSources.Manual)
-            : PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, PlexLinkSources.Manual);
+        PlexItemData data;
+        if (scope == null)
+        {
+            data = PlexMatching.Build(movieId, item, DateTime.UtcNow, PlexLinkSources.Manual);
+        }
+        else
+        {
+            // All Plex reads (seasons, then the episodes of the covered seasons) happen before the write
+            var seasons = await client.GetSeasonsAsync(item.RatingKey, cancellationToken);
+            var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, cancellationToken);
+            data = PlexMatching.BuildShow(movieId, item, seasons, scope, DateTime.UtcNow, PlexLinkSources.Manual, episodes);
+        }
         await store.UpsertAsync(data, cancellationToken);
         return data;
     }

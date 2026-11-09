@@ -130,18 +130,35 @@ public static class PlexMatching
 
     /// <summary>
     /// Builds the stored document for a TV entry linked to a Plex show: show-level fields (library, date added,
-    /// deep link) plus the Plex seasons the scope covers, selected by their index. The show has no file of its
-    /// own, so the movie file fields stay empty; episode detail is not read here.
+    /// deep link), the Plex seasons the scope covers (selected by index), the episodes and the rollups. The show has no
+    /// file of its own, so the movie file fields stay empty. Episodes are the freshly read ones by season index; null
+    /// keeps the previous episodes as they were. Episodes the previous document had that Plex no longer returns are kept
+    /// with OnPlex false; with countMisses (a full sync) they gain a miss and an automatic link drops them at
+    /// <see cref="AutoLinkDropMisses"/>, while a manual link never drops them.
     /// </summary>
-    public static PlexItemData BuildShow(string entryId, PlexItem show, IReadOnlyList<PlexSeason> seasons, PlexScope scope, DateTime syncedAt, string linkSource = PlexLinkSources.Auto) =>
-        new()
+    public static PlexItemData BuildShow(
+        string entryId,
+        PlexItem show,
+        IReadOnlyList<PlexSeason> seasons,
+        PlexScope scope,
+        DateTime syncedAt,
+        string linkSource = PlexLinkSources.Auto,
+        IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? episodes = null,
+        PlexItemData? previous = null,
+        bool countMisses = false)
+    {
+        var inScope = SeasonsInScope(seasons, scope).ToList();
+        var data = new PlexItemData
         {
+            Episodes = episodes == null
+                ? [.. previous?.Episodes ?? []]
+                : MergeEpisodes(previous?.Episodes ?? [], scope, episodes, linkSource == PlexLinkSources.Manual, countMisses),
             Id = entryId,
             PlexItemId = show.RatingKey,
             OnPlex = true,
             LinkSource = linkSource,
             Scope = scope,
-            Seasons = [.. SeasonsInScope(seasons, scope).Select(s => new PlexSeasonData
+            Seasons = [.. inScope.Select(s => new PlexSeasonData
             {
                 Index = s.Index,
                 PlexSeasonId = s.RatingKey,
@@ -154,6 +171,98 @@ public static class PlexMatching
             DeepLink = show.DeepLink,
             LastSyncedAt = syncedAt
         };
+
+        PlexRollups.Apply(data);
+        return data;
+    }
+
+    /// <summary>
+    /// Merges the freshly read episodes into the stored ones. A found episode is rewritten from Plex (OnPlex true,
+    /// MissCount 0). A stored episode of a covered season that was not returned (or whose season Plex no longer has) is
+    /// kept with OnPlex false; when counting misses it gains one and an automatic link drops it at
+    /// <see cref="AutoLinkDropMisses"/>. Stored episodes of seasons the scope no longer covers are dropped.
+    /// </summary>
+    public static List<PlexEpisodeData> MergeEpisodes(
+        IReadOnlyList<PlexEpisodeData> stored,
+        PlexScope scope,
+        IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>> fetched,
+        bool manual,
+        bool countMisses)
+    {
+        var storedByKey = stored.GroupBy(e => (e.SeasonNumber, e.EpisodeNumber)).ToDictionary(g => g.Key, g => g.First());
+        var merged = new Dictionary<(int Season, int Episode), PlexEpisodeData>();
+        foreach (var (seasonIndex, episodes) in fetched)
+        {
+            foreach (var episode in episodes)
+            {
+                var built = BuildEpisode(seasonIndex, episode);
+                if (!episode.StreamsAvailable && storedByKey.TryGetValue((seasonIndex, episode.EpisodeIndex), out var previous))
+                {
+                    // The stream lookup failed this time: keep what was known rather than overwrite it with nothing
+                    built.Hdr = previous.Hdr;
+                    built.VideoCodec ??= previous.VideoCodec;
+                    built.BestAudioTrack = previous.BestAudioTrack;
+                    built.AudioLanguages = previous.AudioLanguages;
+                    built.SubtitleLanguages = previous.SubtitleLanguages;
+                }
+                merged.TryAdd((seasonIndex, episode.EpisodeIndex), built);
+            }
+        }
+
+        foreach (var old in stored.Where(e => scope.Covers(e.SeasonNumber)))
+        {
+            if (merged.ContainsKey((old.SeasonNumber, old.EpisodeNumber)))
+            {
+                continue;
+            }
+
+            var misses = countMisses ? old.MissCount + 1 : old.MissCount;
+            if (countMisses && !manual && misses >= AutoLinkDropMisses)
+            {
+                continue;
+            }
+
+            old.OnPlex = false;
+            old.MissCount = misses;
+            merged[(old.SeasonNumber, old.EpisodeNumber)] = old;
+        }
+
+        return [.. merged.Values.OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber)];
+    }
+
+    /// <summary>Consecutive runs an auto-linked item or episode may be missing before it is dropped.</summary>
+    public const int AutoLinkDropMisses = 2;
+
+    /// <summary>The stored episode for a Plex episode: its best version's file details and its watched state.</summary>
+    public static PlexEpisodeData BuildEpisode(int seasonIndex, PlexEpisode episode)
+    {
+        var best = BestVersion(episode.Versions);
+        var audio = best == null ? null : BestAudio(best.AudioTracks);
+        return new PlexEpisodeData
+        {
+            SeasonNumber = seasonIndex,
+            EpisodeNumber = episode.EpisodeIndex,
+            Title = episode.Title,
+            PlexEpisodeId = episode.RatingKey,
+            Watched = episode.ViewCount > 0,
+            LastWatchedAt = episode.LastViewedAt?.UtcDateTime,
+            Resolution = best?.Resolution,
+            Hdr = best?.Hdr ?? false,
+            VideoCodec = best?.VideoCodec,
+            BestAudioTrack = audio == null ? null : new PlexAudioTrackData(audio.Codec, audio.Channels, audio.Language),
+            AudioLanguages = Languages((best?.AudioTracks ?? []).Select(t => t.Language)),
+            SubtitleLanguages = Languages((best?.Subtitles ?? []).Select(t => t.Language)),
+            DurationSeconds = best?.Duration is { } d ? (long)d.TotalSeconds : null,
+            Container = best?.Container,
+            FilePath = best?.FilePath,
+            SizeBytes = best?.SizeBytes,
+            OnPlex = true,
+            MissCount = 0
+        };
+    }
+
+    private static List<string> Languages(IEnumerable<string?> languages) =>
+        [.. languages.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).Distinct(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>The seasons the scope covers, picked by season index, in index order. A season Plex lacks is simply absent.</summary>
     public static IEnumerable<PlexSeason> SeasonsInScope(IReadOnlyList<PlexSeason> seasons, PlexScope scope) =>

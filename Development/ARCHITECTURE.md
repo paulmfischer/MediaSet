@@ -136,13 +136,28 @@ and stores in the entry's `PlexItems` document the show id, the `Scope` (`season
 the show-level fields (library, date added, deep link, last sync time) and, for each season the scope covers, selected by its
 index: season rating key, episode count as Plex reports it, date added and deep link. Plex seasons carry no GUIDs. The parser is a heuristic: a real title that contains "Series 7" or "Season 2" is read as that season. An automatic
 match needs at least one covered season on Plex; the scope is re-read from the title by each run and by a single-item refresh of an
-automatic link (the stored one is kept when the title no longer says). A manual link keeps its scope. Episode detail and rollups are not stored yet. Several entries may link to
+automatic link (the stored one is kept when the title no longer says). A manual link keeps its scope. Several entries may link to
 one show, each with its own document and scope. `PUT .../link` for a TV entry takes an optional
 `scope`: `{ "kind": "season", "season": 2 }`, `{ "kind": "range", "from": 1, "to": 3 }` or `{ "kind": "all" }` (seasons 0 to 99);
 without it the title is parsed and an unreadable title answers 400. A scope on a non-TV entry is a 400, and a TV entry only links
 to a show (404 for a movie item). The backfill also covers TV entries: it searches TMDB TV on `PlexTvTitleParser.CleanTitle`
 (season text removed), needs no year, takes only a result named like the cleaned title (a lone differently named hit is not trusted; a title whose season text is joined to other content, such as "Seasons 1-3 + Movie", is not searched), uses the first air year
 only to break a tie between same-named shows, and otherwise leaves the field blank. It shares the batch, throttle and rotation.
+
+Episodes are read only for a linked entry (auto-matched or manually linked or refreshed) and only for the seasons its scope
+covers: `PlexEpisodeLoader` calls `GetEpisodesAsync` once per season (`library/metadata/{seasonKey}/children`, paged, with a
+stream lookup per episode and the best version chosen as for movies), cached per season within a run, in the read phase so
+an outage fails the run before any write. The `PlexItems` document embeds `Episodes` (season and episode number, title,
+watched, last watched, resolution, HDR, codec, best audio, audio and subtitle languages, duration, container, file path, size,
+`OnPlex`, `MissCount`) and a `Rollup` on the entry and on each season, computed by the pure `PlexRollups` from the episodes
+that are on Plex: watched count (the entry is watched only when every present episode is, and there is one), latest last
+watched, most common resolution (a tie goes to the higher one) with a mixed flag, HDR if any, the union of audio and subtitle
+languages with a flag when episodes differ, and episodes present against the count Plex reports (summed for the entry). The
+entry's top-level watched, last watched, resolution, HDR and subtitle fields come from that rollup. An episode a reachable
+season no longer returns keeps its data with `OnPlex` false and a miss; an automatic link drops it at the second consecutive
+miss (`AutoLinkDropMisses`), a manual link keeps it. A season in scope that Plex no longer has treats all its episodes as
+missing, and a refresh flags without counting misses. A show gone from Plex leaves stored episodes as they were. Episode file
+paths are returned only by the single-item responses (`GET .../items/{id}`, link and refresh).
 
 ## Local development
 

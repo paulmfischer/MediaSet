@@ -160,7 +160,10 @@ public sealed class PlexSyncService(
                     var parsed = PlexTvTitleParser.ParseScope(movie?.Title);
                     scope = parsed.IsReadable ? parsed : storedScope;
                 }
-                data = PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, stored.LinkSource);
+                // Reads first (seasons, then the episodes of the covered seasons), so an outage fails before the write
+                var seasons = await client.GetSeasonsAsync(item.RatingKey, cancellationToken);
+                var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, cancellationToken);
+                data = PlexMatching.BuildShow(movieId, item, seasons, scope, DateTime.UtcNow, stored.LinkSource, episodes, stored);
             }
             else
             {
@@ -281,10 +284,10 @@ public sealed class PlexSyncService(
 
     private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
 
-    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null);
+    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null);
 
     /// <summary>Consecutive runs an auto-linked item may be missing before its link is dropped.</summary>
-    private const int AutoLinkDropMisses = 2;
+    private const int AutoLinkDropMisses = PlexMatching.AutoLinkDropMisses;
 
     /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
     private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
@@ -346,6 +349,9 @@ public sealed class PlexSyncService(
             return seasons;
         }
 
+        // Episodes are read per season, once per run however many entries cover it, and only for linked shows
+        var episodesBySeason = new Dictionary<string, IReadOnlyList<PlexEpisode>>(StringComparer.Ordinal);
+
         // Phase 1 reads only: decide each movie's Plex item. A PlexClientException (outage, rejected token,
         // timeout) is rethrown so the run fails before anything is written, and nothing is marked gone.
         var plans = new List<MoviePlan>();
@@ -384,6 +390,7 @@ public sealed class PlexSyncService(
 
                 PlexScope? entryScope = null;
                 IReadOnlyList<PlexSeason>? seasons = null;
+                IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? episodes = null;
                 if (isTv)
                 {
                     // A manual link keeps its scope. An automatic one reads it from the title, and keeps its stored scope
@@ -402,10 +409,15 @@ public sealed class PlexSyncService(
                         {
                             item = null;
                         }
+                        else
+                        {
+                            // Linked: read the episodes of the covered seasons now, so an outage fails the run before any write
+                            episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, entryScope, episodesBySeason, token);
+                        }
                     }
                 }
 
-                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons));
+                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
             {
@@ -441,7 +453,8 @@ public sealed class PlexSyncService(
                     {
                         // Several TV entries may link to one show, each with its own scope: expected, not logged.
                         // Build resets MissCount and Broken: a found show recovers the link.
-                        await itemStore.UpsertAsync(PlexMatching.BuildShow(movie.Id!, item, plan.Seasons ?? [], plan.Scope, syncedAt, source), token);
+                        await itemStore.UpsertAsync(PlexMatching.BuildShow(
+                            movie.Id!, item, plan.Seasons ?? [], plan.Scope, syncedAt, source, plan.Episodes ?? new Dictionary<int, IReadOnlyList<PlexEpisode>>(), stored, countMisses: true), token);
                     }
                     else
                     {

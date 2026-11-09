@@ -143,6 +143,63 @@ public class PlexClient : IPlexClient
             .ToList();
     }
 
+    public async Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(string seasonRatingKey, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(seasonRatingKey))
+        {
+            return [];
+        }
+
+        var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
+        var path = $"library/metadata/{Uri.EscapeDataString(seasonRatingKey.Trim())}/children";
+        var episodes = new List<PlexEpisode>();
+        var start = 0;
+        for (var page = 0; page < MaxPages; page++)
+        {
+            ItemsRoot root;
+            try
+            {
+                root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken, allowNotFound: true);
+            }
+            catch (PlexNotFoundException)
+            {
+                // Plex no longer has the season: it has no episodes (the caller treats them as missing)
+                return [];
+            }
+
+            var container = root.MediaContainer;
+            var metadata = container?.Metadata ?? [];
+            foreach (var listed in metadata)
+            {
+                if (string.IsNullOrEmpty(listed.RatingKey) || !listed.Index.HasValue
+                    || !string.Equals(listed.Type, "episode", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var m = await WithStreamsAsync(listed, cancellationToken);
+                episodes.Add(new PlexEpisode(
+                    m.RatingKey!,
+                    m.ParentIndex ?? 0,
+                    m.Index!.Value,
+                    m.Title ?? string.Empty,
+                    m.ViewCount is > 0 ? m.ViewCount.Value : 0,
+                    m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
+                    (m.Media ?? []).Select(MapVersion).ToList(),
+                    !m.StreamLookupFailed));
+            }
+
+            start += metadata.Count;
+            if (metadata.Count < pageSize || (container?.TotalSize.HasValue == true && start >= container.TotalSize))
+            {
+                return episodes;
+            }
+        }
+
+        _logger.LogWarning("Plex season paging exceeded {MaxPages} pages", MaxPages);
+        throw new PlexClientException(null, "Plex returned too many pages");
+    }
+
     /// <summary>
     /// Section listings carry Media and Part but no Stream entries (audio, subtitles, HDR fields). The
     /// per-item metadata response has them, so the media of items that have files is taken from there.
@@ -169,6 +226,7 @@ public class PlexClient : IPlexClient
                 listed.RatingKey,
                 ex.StatusCode,
                 ex.GetType().Name);
+            listed.StreamLookupFailed = true;
             return listed;
         }
 
@@ -184,6 +242,8 @@ public class PlexClient : IPlexClient
             Type = listed.Type,
             Title = listed.Title,
             Year = listed.Year,
+            Index = listed.Index,
+            ParentIndex = listed.ParentIndex,
             AddedAt = listed.AddedAt,
             ViewCount = listed.ViewCount ?? detailed.ViewCount,
             LastViewedAt = listed.LastViewedAt ?? detailed.LastViewedAt,
@@ -341,6 +401,8 @@ public class PlexClient : IPlexClient
         public string? Title { get; set; }
         public int? Year { get; set; }
         public int? Index { get; set; }
+        public int? ParentIndex { get; set; }
+        [JsonIgnore] public bool StreamLookupFailed { get; set; }
         public int? LeafCount { get; set; }
         public long? AddedAt { get; set; }
         [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }
