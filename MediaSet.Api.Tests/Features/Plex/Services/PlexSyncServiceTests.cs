@@ -7,6 +7,8 @@ using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Features.Plex.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Database;
+using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Plex;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,13 +44,23 @@ public class PlexSyncServiceTests
         public Mock<IPlexClient> Client { get; } = new();
         public InMemoryPlexItemStore Items { get; } = new();
         public Mock<IEntityService<Movie>> Movies { get; } = InMemoryPlexItemStore.MovieService();
+        public Mock<ITmdbClient> Tmdb { get; } = new();
         public PlexSyncService Service { get; }
 
-        public Harness()
+        /// <param name="tmdbConfigured">When false, ITmdbClient is not registered, as when the TMDB section is absent.</param>
+        public Harness(bool tmdbConfigured = false)
         {
             var lifetime = new Mock<IHostApplicationLifetime>();
             lifetime.SetupGet(l => l.ApplicationStopping).Returns(Shutdown.Token);
-            var services = new ServiceCollection().AddSingleton(Client.Object).AddSingleton<IPlexItemStore>(Items).AddScoped(_ => Movies.Object).BuildServiceProvider();
+            var collection = new ServiceCollection().AddSingleton(Client.Object).AddSingleton<IPlexItemStore>(Items).AddScoped(_ => Movies.Object)
+                .AddSingleton(Options.Create(new PlexConfiguration { Backfill = new PlexBackfillConfiguration { RequestsPerMinute = 6000 } }))
+                .AddLogging()
+                .AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
+            if (tmdbConfigured)
+            {
+                collection.AddSingleton(Tmdb.Object);
+            }
+            var services = collection.BuildServiceProvider();
             Service = new PlexSyncService(
                 services,
                 Store,
@@ -281,6 +293,51 @@ public class PlexSyncServiceTests
 
     private static void SetMovies(Harness h, params Movie[] movies) =>
         h.Movies.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies.ToList());
+
+    [Test]
+    public async Task Sync_TmdbNotConfigured_SkipsBackfillAndSyncProceeds()
+    {
+        var h = new Harness(tmdbConfigured: false);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"), new Movie { Id = "b", Title = "No Id", ReleaseDate = "1999-03-31" });
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(run.ExternalIdsBackfilled, Is.EqualTo(0));
+        Assert.That(run.BackfillSkipped, Is.EqualTo(0));
+        h.Movies.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Sync_BackfilledMovie_MatchesInSameRunAndRecordsCounts()
+    {
+        var h = new Harness(tmdbConfigured: true);
+        var movies = new List<Movie>
+        {
+            new() { Id = "a", Title = "The Matrix", ReleaseDate = "1999-03-31" },
+            new() { Id = "b", Title = "Unknown", ReleaseDate = "2001-01-01" },
+            MovieWith("c", "tmdbid:1")
+        };
+        h.Movies.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => movies.ToList());
+        h.Movies.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((string id, CancellationToken _) => movies.First(m => m.Id == id));
+        h.Movies.Setup(s => s.UpdateAsync("a", It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback((string _, Movie m, CancellationToken _) => movies[0] = m)
+            .ReturnsAsync(default(ReplaceOneResult)!);
+        h.Tmdb.Setup(t => t.SearchMovieAsync("The Matrix", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbSearchResponse(1, [new TmdbMovieSearchResult(603, "The Matrix", "1999-03-31", null)], 1, 1));
+        h.Tmdb.Setup(t => t.SearchMovieAsync("Unknown", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbSearchResponse(1, [], 0, 0));
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(run.ExternalIdsBackfilled, Is.EqualTo(1));
+        Assert.That(run.BackfillSkipped, Is.EqualTo(1));
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("10"));
+    }
 
     [Test]
     public async Task Sync_MovieWithTmdbImdbOrTvdbExternalId_MatchesAndStoresRatingKey()

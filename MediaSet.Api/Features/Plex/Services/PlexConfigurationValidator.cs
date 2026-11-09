@@ -48,6 +48,16 @@ public static class PlexConfigurationValidator
             messages.Add("Plex PageSize must be positive. The Plex integration is disabled.");
         }
 
+        if (config.Backfill.RequestsPerMinute < 1)
+        {
+            messages.Add("Plex Backfill RequestsPerMinute must be at least 1. The Plex integration is disabled.");
+        }
+
+        if (config.Backfill.BatchSize < 1)
+        {
+            messages.Add("Plex Backfill BatchSize must be at least 1. The Plex integration is disabled.");
+        }
+
         if (messages.Count > 0)
         {
             return new PlexValidationResult(false, [], messages);

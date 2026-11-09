@@ -81,6 +81,41 @@ public class PlexConfigurationValidatorTests
         Assert.That(result.Messages.Single(), Does.Contain("Timeout"));
     }
 
+    [Test]
+    public void Defaults_Backfill_AreThirtyPerMinuteInBatchesOfFifty()
+    {
+        var config = new PlexConfiguration();
+
+        Assert.That(config.Backfill.RequestsPerMinute, Is.EqualTo(30));
+        Assert.That(config.Backfill.BatchSize, Is.EqualTo(50));
+    }
+
+    [TestCase(0)]
+    [TestCase(-1)]
+    public void Validate_BackfillRequestsPerMinuteBelowOne_DisablesWholeIntegration(int value)
+    {
+        var config = Valid();
+        config.Backfill.RequestsPerMinute = value;
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.IntegrationEnabled, Is.False);
+        Assert.That(result.Messages.Single(), Does.Contain("RequestsPerMinute"));
+    }
+
+    [TestCase(0)]
+    [TestCase(-1)]
+    public void Validate_BackfillBatchSizeBelowOne_DisablesWholeIntegration(int value)
+    {
+        var config = Valid();
+        config.Backfill.BatchSize = value;
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.IntegrationEnabled, Is.False);
+        Assert.That(result.Messages.Single(), Does.Contain("BatchSize"));
+    }
+
     [TestCase(0)]
     [TestCase(-5)]
     public void Validate_NonPositivePageSize_DisablesWholeIntegration(int pageSize)
