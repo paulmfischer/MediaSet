@@ -267,16 +267,54 @@ public class PlexApiTests
     }
 
     [Test]
-    public async Task GetEntityStatus_DisabledEntityType_ReturnsBadRequestProblem()
+    public async Task GetEntityStatus_DisabledEntityType_ReportsDisabledWithNoNextRun()
     {
         using var client = CreateClient(PlexSettings(moviesEnabled: "false"));
 
         var response = await client.GetAsync("/plex/movies/status");
+        var status = await ReadJsonAsync(response);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(status.GetProperty("entityType").GetString(), Is.EqualTo("movies"));
+        Assert.That(status.GetProperty("enabled").GetBoolean(), Is.False);
+        Assert.That(status.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
+    }
+
+    [Test]
+    public async Task PostEntitySync_DisabledEntityType_ReturnsBadRequestProblem()
+    {
+        using var client = CreateClient(PlexSettings(moviesEnabled: "false"));
+
+        var response = await client.PostAsync("/plex/movies/sync", null);
         var problem = await ReadJsonAsync(response);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/problem+json"));
         Assert.That(problem.GetProperty("detail").GetString(), Does.Contain("not enabled"));
+    }
+
+    [Test]
+    public async Task OpenApi_EntityScopedEndpoints_DeclareRequiredEntityTypePathParameter()
+    {
+        using var client = CreateClient(new Dictionary<string, string>(PlexSettings()) { ["EnableSwagger"] = "true" });
+
+        var doc = await ReadJsonAsync(await client.GetAsync("/swagger/v1/swagger.json"));
+        var paths = doc.GetProperty("paths").EnumerateObject()
+            .Where(p => p.Name.StartsWith("/plex/{entityType}/", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.That(paths, Is.Not.Empty);
+        foreach (var path in paths)
+        {
+            foreach (var operation in path.Value.EnumerateObject())
+            {
+                var parameters = operation.Value.GetProperty("parameters").EnumerateArray();
+                var entityType = parameters.SingleOrDefault(p => p.GetProperty("name").GetString() == "entityType");
+                Assert.That(entityType.ValueKind, Is.EqualTo(JsonValueKind.Object), $"{operation.Name} {path.Name}");
+                Assert.That(entityType.GetProperty("in").GetString(), Is.EqualTo("path"), $"{operation.Name} {path.Name}");
+                Assert.That(entityType.GetProperty("required").GetBoolean(), Is.True, $"{operation.Name} {path.Name}");
+            }
+        }
     }
 
     [Test]

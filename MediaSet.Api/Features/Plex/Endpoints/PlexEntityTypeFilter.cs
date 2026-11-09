@@ -5,9 +5,10 @@ namespace MediaSet.Api.Features.Plex.Endpoints;
 /// <summary>
 /// Endpoint filter for routes with an {entityType} segment. Rejects unknown (404) and disabled (400)
 /// entity types with ProblemDetails, otherwise stores the canonical type for the handler. Later
-/// per-entity endpoints reuse it by mapping under the same route group.
+/// per-entity endpoints reuse it by mapping under the same route group. With <c>requireEnabled: false</c> a
+/// disabled type passes, for the status endpoint that reports it.
 /// </summary>
-internal sealed class PlexEntityTypeFilter : IEndpointFilter
+internal sealed class PlexEntityTypeFilter(bool requireEnabled = true) : IEndpointFilter
 {
     private const string ItemKey = "plex.entityType";
 
@@ -27,7 +28,7 @@ internal sealed class PlexEntityTypeFilter : IEndpointFilter
         }
 
         var enablement = http.RequestServices.GetRequiredService<PlexEnablement>();
-        if (!enablement.IsEnabled(entityType))
+        if (requireEnabled && !enablement.IsEnabled(entityType))
         {
             return Results.Problem(
                 title: "Plex entity type disabled",

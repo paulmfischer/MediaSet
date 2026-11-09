@@ -27,19 +27,22 @@ internal static class PlexApi
             return Results.Ok(statuses);
         });
 
-        // Per-entity routes: the filter rejects unknown and disabled entity types
-        var entity = group.MapGroup("/{entityType}").AddEndpointFilter<PlexEntityTypeFilter>();
+        // GET /plex/{entityType}/status: rejects unknown entity types only, so a disabled one reports enabled: false.
+        // entityType is a bound handler parameter on every route below so OpenAPI declares it as a path parameter.
+        group.MapGroup("/{entityType}").AddEndpointFilter(new PlexEntityTypeFilter(requireEnabled: false))
+            .MapGet("/status", async (string entityType, HttpContext context, PlexEnablement enablement, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>
+            {
+                var type = PlexEntityTypeFilter.GetEntityType(context);
+                var enabled = enablement.IsEnabled(type);
+                var last = enabled ? await runs.GetLastAsync(type, cancellationToken) : null;
+                return Results.Ok(new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), enabled ? schedule.GetNextRun(type) : null));
+            });
 
-        // GET /plex/{entityType}/status
-        entity.MapGet("/status", async (HttpContext context, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>
-        {
-            var entityType = PlexEntityTypeFilter.GetEntityType(context);
-            var last = await runs.GetLastAsync(entityType, cancellationToken);
-            return Results.Ok(new PlexEntityStatusDto(entityType, true, last == null ? null : PlexSyncRunDto.From(last), schedule.GetNextRun(entityType)));
-        });
+        // Other per-entity routes: the filter rejects unknown and disabled entity types
+        var entity = group.MapGroup("/{entityType}").AddEndpointFilter(new PlexEntityTypeFilter(requireEnabled: true));
 
         // POST /plex/{entityType}/sync: starts a run in the background (202), or 409 with the current run
-        entity.MapPost("/sync", async (HttpContext context, IPlexSyncService sync, CancellationToken cancellationToken) =>
+        entity.MapPost("/sync", async (string entityType, HttpContext context, IPlexSyncService sync, CancellationToken cancellationToken) =>
         {
             var result = await sync.StartAsync(PlexEntityTypeFilter.GetEntityType(context), PlexSyncTriggers.Manual, cancellationToken);
             var run = PlexSyncRunDto.From(result.Run);
@@ -57,6 +60,7 @@ internal static class PlexApi
 
         // GET /plex/{entityType}/search?query=...: title search for manual linking
         entity.MapGet("/search", async (
+            string entityType,
             HttpContext context,
             string? query,
             IPlexSearchService search,
@@ -87,7 +91,7 @@ internal static class PlexApi
 
         // GET /plex/{entityType}/items/{movieId}: the Plex data of one linked movie, 404 when unlinked.
         // The only response that carries the file path.
-        entity.MapGet("/items/{id}", async (string id, IPlexItemStore items, CancellationToken cancellationToken) =>
+        entity.MapGet("/items/{id}", async (string entityType, string id, IPlexItemStore items, CancellationToken cancellationToken) =>
         {
             // Plex documents are keyed by ObjectId; any other id cannot be linked
             var data = MongoDB.Bson.ObjectId.TryParse(id, out _) ? await items.GetAsync(id, cancellationToken) : null;
@@ -101,6 +105,7 @@ internal static class PlexApi
 
         // PUT /plex/{entityType}/items/{id}/link: links a movie to a Plex item by hand and loads its data now
         entity.MapPut("/items/{id}/link", async (
+            string entityType,
             HttpContext context,
             string id,
             PlexLinkRequest? body,
@@ -154,6 +159,7 @@ internal static class PlexApi
 
         // DELETE /plex/{entityType}/items/{id}/link: removes the link and its stored Plex data
         entity.MapDelete("/items/{id}/link", async (
+            string entityType,
             string id,
             IEntityService<Movie> movies,
             IPlexLinkService links,
@@ -174,6 +180,7 @@ internal static class PlexApi
 
         // POST /plex/{entityType}/items/{id}/refresh: re-reads one linked movie under the sync lock, 409 while a sync runs
         entity.MapPost("/items/{id}/refresh", async (
+            string entityType,
             HttpContext context,
             string id,
             IEntityService<Movie> movies,
@@ -185,10 +192,10 @@ internal static class PlexApi
                 return MovieNotFound();
             }
 
-            var entityType = PlexEntityTypeFilter.GetEntityType(context);
+            var type = PlexEntityTypeFilter.GetEntityType(context);
             try
             {
-                var result = await sync.RefreshItemAsync(entityType, id, cancellationToken);
+                var result = await sync.RefreshItemAsync(type, id, cancellationToken);
                 return result.Status switch
                 {
                     PlexRefreshStatus.Refreshed => Results.Ok(PlexItemDataDto.From(result.Data!)),
