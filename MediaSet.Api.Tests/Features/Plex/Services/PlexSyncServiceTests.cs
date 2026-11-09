@@ -317,6 +317,170 @@ public class PlexSyncServiceTests
     }
 
     [Test]
+    public async Task Sync_ManualLinkWithConflictingExternalId_KeepsManualLinkAndRefreshesItsOwnItem()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
+        Serve(h,
+            Item("10", new PlexGuids("603", null, null), Version("1080")),
+            Item("20", new PlexGuids("999", null, null), Version("720")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("20"));
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+    }
+
+    [Test]
+    public async Task Sync_ManualLinkItemGoneFromPlex_IsFlaggedNotOnPlexAndNeverReplacedOrDeleted()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "720" }, CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("20"));
+        Assert.That(h.Items.Items["a"].OnPlex, Is.False);
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+    }
+
+    [Test]
+    public async Task Sync_ManualLinkOutsideScannedLibraries_IsRefreshedByRatingKey()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "30", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        h.Client.Setup(c => c.GetItemAsync("30", true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Item("30", new PlexGuids(null, null, null), Version("2160")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("30"));
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("2160"));
+    }
+
+    [Test]
+    public async Task Sync_ManualLinkMadeAfterStoredReadBeforeAutoWrite_IsNotReplaced()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+        var gets = 0;
+        // The first read finds nothing; the user links the movie right after it, before the auto match is written
+        h.Items.AfterGet = async id =>
+        {
+            if (id == "a" && ++gets == 1)
+            {
+                await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "720" }, CancellationToken.None);
+            }
+        };
+
+        var run = await RunAsync(h);
+
+        Assert.That(gets, Is.EqualTo(2));
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("20"));
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Sync_ManualLinkOfDeletedMovie_IsPurged()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "gone", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
+        Serve(h);
+        SetMovies(h, MovieWith("a", null));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items, Does.Not.ContainKey("gone"));
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_LinkedMovie_ReloadsFromItsRatingKeyIgnoringExternalId()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
+        h.Client.Setup(c => c.GetItemAsync("20", true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Item("20", new PlexGuids("999", null, null), Version("720")));
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.Refreshed));
+        Assert.That(result.Data!.Resolution, Is.EqualTo("720"));
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(h.Store.Runs, Is.Empty);
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_Unlinked_ReturnsNotLinkedWithoutCallingPlex()
+    {
+        var h = new Harness();
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.NotLinked));
+        h.Client.Verify(c => c.GetItemAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_PlexItemGone_FlagsNotOnPlexAndKeepsData()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, Resolution = "720" }, CancellationToken.None);
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.PlexItemMissing));
+        Assert.That(h.Items.Items["a"].OnPlex, Is.False);
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_SyncRunning_ReturnsBusyWithRunImmediately()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true }, CancellationToken.None);
+        var release = new TaskCompletionSource();
+        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                await release.Task.WaitAsync(ct);
+                return (IReadOnlyList<PlexLibrary>)[];
+            });
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+        release.SetResult();
+        await WaitUntilAsync(() => h.Store.Runs.Single().State == PlexSyncRunStates.Succeeded);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.Busy));
+        Assert.That(result.Run!.State, Is.EqualTo(PlexSyncRunStates.Running));
+        h.Client.Verify(c => c.GetItemAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task StartAsync_AfterRefreshItemAsync_LockIsReleasedSoSyncRuns()
+    {
+        var h = new Harness();
+        await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+        Serve(h);
+        SetMovies(h);
+
+        var result = await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+
+        Assert.That(result.Run.State, Is.EqualTo(PlexSyncRunStates.Running));
+        await WaitUntilAsync(() => h.Store.Runs.Single().State == PlexSyncRunStates.Succeeded);
+    }
+
+    [Test]
     public async Task Sync_LinkedMovieWithoutExternalId_StaysLinkedViaStoredPlexItemId()
     {
         var h = new Harness();

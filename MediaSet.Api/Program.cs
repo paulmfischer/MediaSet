@@ -235,6 +235,7 @@ if (plexSection.Exists())
         builder.Services.AddSingleton(new PlexEnablement(plexValidation.EnabledEntityTypes));
         builder.Services.AddPlexClient(plexSection);
         builder.Services.AddScoped<IPlexSearchService, PlexSearchService>();
+        builder.Services.AddScoped<IPlexLinkService, PlexLinkService>();
         builder.Services.AddSingleton<IPlexSyncRunStore, PlexSyncRunStore>();
         builder.Services.AddSingleton<IPlexItemStore, PlexItemStore>();
         builder.Services.AddSingleton<IPlexDataCleanup, PlexDataCleanup>();

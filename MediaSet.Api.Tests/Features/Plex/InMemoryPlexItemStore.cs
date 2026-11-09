@@ -37,12 +37,21 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         return Task.CompletedTask;
     }
 
-    public Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken)
+    /// <summary>When set, runs after each read (with the movie id) and before its result is returned.</summary>
+    public Func<string, Task>? AfterGet { get; set; }
+
+    public async Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken)
     {
+        PlexItemData? found;
         lock (_sync)
         {
-            return Task.FromResult(_items.GetValueOrDefault(movieId));
+            found = _items.GetValueOrDefault(movieId);
         }
+        if (AfterGet != null)
+        {
+            await AfterGet(movieId);
+        }
+        return found;
     }
 
     public Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken)

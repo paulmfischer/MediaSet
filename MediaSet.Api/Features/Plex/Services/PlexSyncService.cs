@@ -8,8 +8,19 @@ namespace MediaSet.Api.Features.Plex.Services;
 
 public record PlexSyncStartResult(PlexSyncRun Run, bool Started);
 
+public enum PlexRefreshStatus { Refreshed, Busy, NotLinked, PlexItemMissing }
+
+/// <summary>Outcome of a single-item refresh. Run is the sync in progress when Busy (null when only another refresh holds the lock).</summary>
+public record PlexRefreshResult(PlexRefreshStatus Status, PlexItemData? Data = null, PlexSyncRun? Run = null);
+
 public interface IPlexSyncService
 {
+    /// <summary>
+    /// Re-reads one linked movie from its own Plex item, under the same lock as full syncs. Does not queue:
+    /// when a sync or another refresh holds the lock it returns Busy at once. Runs inline and records no run.
+    /// </summary>
+    Task<PlexRefreshResult> RefreshItemAsync(string entityType, string movieId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Creates a run record and starts the run in the background. When a run for the entity type is already
     /// in progress nothing is started and that run is returned with Started false.
@@ -98,6 +109,63 @@ public sealed class PlexSyncService(
         _tasks[task] = 0;
         _ = task.ContinueWith(t => _tasks.TryRemove(t, out _), TaskScheduler.Default);
         return new PlexSyncStartResult(snapshot, true);
+    }
+
+    public async Task<PlexRefreshResult> RefreshItemAsync(string entityType, string movieId, CancellationToken cancellationToken)
+    {
+        // Never queue: a run holding the lock (or another refresh) makes this a conflict at once
+        if (!_lock.Wait(0))
+        {
+            return new PlexRefreshResult(PlexRefreshStatus.Busy, null, ActiveRun(entityType));
+        }
+
+        try
+        {
+            var itemStore = services.GetRequiredService<IPlexItemStore>();
+            var stored = await itemStore.GetAsync(movieId, cancellationToken);
+            if (stored == null)
+            {
+                return new PlexRefreshResult(PlexRefreshStatus.NotLinked);
+            }
+
+            var client = services.GetRequiredService<IPlexClient>();
+            var item = await FetchLinkedItemAsync(client, entityType, stored.PlexItemId, cancellationToken);
+            if (item == null)
+            {
+                // Keep the last data, flag it, as a full sync does
+                if (stored.OnPlex)
+                {
+                    stored.OnPlex = false;
+                    stored.LastSyncedAt = DateTime.UtcNow;
+                    await itemStore.UpsertAsync(stored, cancellationToken);
+                }
+                return new PlexRefreshResult(PlexRefreshStatus.PlexItemMissing, stored);
+            }
+
+            // A refresh keeps the link as it was made (auto stays auto, manual stays manual)
+            var data = PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
+            await itemStore.UpsertAsync(data, cancellationToken);
+            return new PlexRefreshResult(PlexRefreshStatus.Refreshed, data);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    private PlexSyncRun? ActiveRun(string entityType)
+    {
+        lock (_gate)
+        {
+            return (_active.TryGetValue(entityType, out var current) ? current : _active.Values.FirstOrDefault())?.Clone();
+        }
+    }
+
+    /// <summary>The Plex item with the rating key when it exists and is of the entity type's Plex type.</summary>
+    private static async Task<PlexItem?> FetchLinkedItemAsync(IPlexClient client, string entityType, string ratingKey, CancellationToken token)
+    {
+        var item = await client.GetItemAsync(ratingKey, true, token);
+        return item != null && string.Equals(item.Type, PlexEntityTypes.LibraryType(entityType), StringComparison.OrdinalIgnoreCase) ? item : null;
     }
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -233,6 +301,7 @@ public sealed class PlexSyncService(
             try
             {
                 var stored = await itemStore.GetAsync(movie.Id!, token);
+                var manual = stored is { LinkSource: PlexLinkSources.Manual };
 
                 // The stored Plex item id wins; the ExternalId is only used until the movie is linked
                 PlexItem? item = null;
@@ -240,19 +309,31 @@ public sealed class PlexSyncService(
                 {
                     item = linked;
                 }
-                if (item == null && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey && byGuid.TryGetValue(externalKey, out var byId))
+                if (item == null && manual)
+                {
+                    // A manual link may point outside the scanned libraries: ask Plex for that item itself
+                    item = await FetchLinkedItemAsync(client, entityType, stored!.PlexItemId, token);
+                }
+                if (item == null && !manual && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey && byGuid.TryGetValue(externalKey, out var byId))
                 {
                     item = byId;
                 }
 
                 if (item != null)
                 {
-                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt), token);
+                    // A manual link may have been made since the read above; it must never be replaced
+                    if (!manual && await itemStore.GetAsync(movie.Id!, token) is { LinkSource: PlexLinkSources.Manual })
+                    {
+                        matched++;
+                        continue;
+                    }
+
+                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, manual ? PlexLinkSources.Manual : PlexLinkSources.Auto), token);
                     matched++;
                 }
                 else if (stored is { OnPlex: true })
                 {
-                    // Linked earlier but gone from Plex now: keep the last data, flag it
+                    // Linked earlier but gone from Plex now: keep the last data (and a manual link), flag it
                     stored.OnPlex = false;
                     stored.LastSyncedAt = syncedAt;
                     await itemStore.UpsertAsync(stored, token);
@@ -266,7 +347,8 @@ public sealed class PlexSyncService(
             }
         }
 
-        // Purge the Plex data of movies deleted since the last run
+        // Purge the Plex data of movies deleted since the last run. Only a missing movie qualifies, so a
+        // manual link is never purged for being unmatched or gone from Plex.
         try
         {
             var live = movies.Select(m => m.Id!).ToHashSet(StringComparer.Ordinal);
