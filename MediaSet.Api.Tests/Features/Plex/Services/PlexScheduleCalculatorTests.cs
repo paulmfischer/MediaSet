@@ -69,4 +69,47 @@ public class PlexScheduleCalculatorTests
         Assert.That(result.NextRun, Is.Null);
         Assert.That(result.Warning, Does.Contain("no next occurrence"));
     }
+
+    private static TimeZoneInfo NewYork()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            Assert.Ignore("The America/New_York time zone is not available on this platform; the DST cases cannot run.");
+            throw;
+        }
+    }
+
+    [Test]
+    public void GetNextRun_SpringForwardGap_ReturnsAValidLocalTimeOnTheSameDay()
+    {
+        var ny = NewYork();
+        // 02:30 does not exist on 2026-03-08 (clocks jump 02:00 to 03:00); from 2026-03-07 12:00 EST
+        var now = new DateTimeOffset(2026, 3, 7, 12, 0, 0, TimeSpan.FromHours(-5));
+
+        var result = PlexScheduleCalculator.GetNextRun("30 2 * * *", now, ny);
+
+        Assert.That(result.Warning, Is.Null);
+        Assert.That(result.NextRun, Is.Not.Null);
+        Assert.That(ny.IsInvalidTime(result.NextRun!.Value.DateTime), Is.False);
+        Assert.That(result.NextRun.Value.Date, Is.EqualTo(new DateTime(2026, 3, 8)));
+        Assert.That(result.NextRun.Value.Offset, Is.EqualTo(TimeSpan.FromHours(-4)));
+    }
+
+    [Test]
+    public void GetNextRun_FallBackOverlap_RunsOncePerDayAtTheFirstOccurrence()
+    {
+        var ny = NewYork();
+        // 01:30 happens twice on 2026-11-01 (EDT then EST)
+        var before = new DateTimeOffset(2026, 10, 31, 12, 0, 0, TimeSpan.FromHours(-4));
+
+        var first = PlexScheduleCalculator.GetNextRun("30 1 * * *", before, ny);
+        var afterFirst = PlexScheduleCalculator.GetNextRun("30 1 * * *", first.NextRun!.Value.AddMinutes(1), ny);
+
+        Assert.That(first.NextRun, Is.EqualTo(new DateTimeOffset(2026, 11, 1, 1, 30, 0, TimeSpan.FromHours(-4))));
+        Assert.That(afterFirst.NextRun, Is.EqualTo(new DateTimeOffset(2026, 11, 2, 1, 30, 0, TimeSpan.FromHours(-5))));
+    }
 }

@@ -122,6 +122,11 @@ public sealed class PlexSyncScheduler(
         {
             throw;
         }
+        catch (InvalidOperationException) when (stoppingToken.IsCancellationRequested)
+        {
+            // The sync service refuses new runs while the application stops; expected at shutdown
+            logger.LogDebug("Scheduled Plex sync for '{EntityType}' not started: the application is stopping", entityType);
+        }
         catch (Exception ex)
         {
             // A failed start must not stop the schedule; the next occurrence tries again

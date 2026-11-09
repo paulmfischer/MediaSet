@@ -72,7 +72,7 @@ public class PlexSyncSchedulerTests
 
         public void Build(PlexConfiguration config, string[] enabledTypes, IPlexSyncService sync)
         {
-            var factory = LoggerFactory.Create(b => b.AddProvider(Logs));
+            var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Debug).AddProvider(Logs));
             Scheduler = new PlexSyncScheduler(
                 sync,
                 new PlexEnablement(enabledTypes),
@@ -214,6 +214,32 @@ public class PlexSyncSchedulerTests
         await h.Scheduler.StopAsync(CancellationToken.None);
 
         Assert.That(h.Logs.Lines, Has.Some.Contain("could not start").And.Contain("db down"));
+    }
+
+    [Test]
+    public async Task ExecuteAsync_StartRefusedWhileStopping_IsNotLoggedAsFailure()
+    {
+        var h = new Harness(Config(("movies", true, PlexConfiguration.DefaultSchedule)), ["movies"]);
+        var entered = new TaskCompletionSource();
+        var release = new TaskCompletionSource();
+        h.Sync.Setup(s => s.StartAsync("movies", PlexSyncTriggers.Scheduled, It.IsAny<CancellationToken>()))
+            .Returns(async () =>
+            {
+                entered.SetResult();
+                await release.Task;
+                throw new InvalidOperationException("The application is stopping; no new Plex sync can start.");
+            });
+
+        await h.Scheduler.StartAsync(CancellationToken.None);
+        await h.NextRunAsync("movies");
+        await h.Time.AdvanceToAsync(FirstRun);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var stopping = h.Scheduler.StopAsync(CancellationToken.None);
+        release.SetResult();
+        await stopping;
+
+        Assert.That(h.Logs.Lines, Has.None.Contain("could not start"));
+        Assert.That(h.Logs.Lines, Has.Some.Contain("application is stopping"));
     }
 
     [Test]

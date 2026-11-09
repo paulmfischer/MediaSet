@@ -87,7 +87,8 @@ and starts when the lock frees; it never runs in parallel. If that entity type a
 is skipped and a log line says so. `/plex/status` and `/plex/{entityType}/status` return `nextRun` (the next occurrence as a
 `DateTimeOffset` in the server's local offset, `null` when nothing is scheduled) and `schedulePolicy`. An invalid cron expression
 (or one with no future occurrence) disables only that entity type: startup validation logs a warning and leaves it out of
-`PlexEnablement`, and the scheduler also refuses to schedule it. A disabled type, or an absent Plex section, schedules nothing.
+`PlexEnablement`, and the scheduler also refuses to schedule it. A disabled type, or an absent Plex section, schedules nothing. A run missed because the app was down is not caught up; the next
+occurrence runs.
 `PlexScheduleCalculator` holds the cron logic and never throws.
 
 ### Plex matching and stored data
