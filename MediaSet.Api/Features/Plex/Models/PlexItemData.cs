@@ -33,6 +33,12 @@ public class PlexItemData
     /// <summary>False when the linked item was not found in Plex on the last run (the data is then stale).</summary>
     public bool OnPlex { get; set; }
 
+    /// <summary>Consecutive full syncs that found the linked item gone from Plex. Reset by a match.</summary>
+    public int MissCount { get; set; }
+
+    /// <summary>A manual link whose item is gone from Plex. Never dropped automatically; reset by a match.</summary>
+    public bool Broken { get; set; }
+
     public string? Library { get; set; }
     public string? Resolution { get; set; }
     public bool Hdr { get; set; }
@@ -72,6 +78,8 @@ public record PlexItemDataDto(
     string PlexItemId,
     bool OnPlex,
     string LinkSource,
+    int MissCount,
+    bool Broken,
     string? Library,
     string? Resolution,
     bool Hdr,
@@ -96,6 +104,8 @@ public record PlexItemDataDto(
         d.PlexItemId,
         d.OnPlex,
         d.LinkSource,
+        d.MissCount,
+        d.Broken,
         d.Library,
         d.Resolution,
         d.Hdr,

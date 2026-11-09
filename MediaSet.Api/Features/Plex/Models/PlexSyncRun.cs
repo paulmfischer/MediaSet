@@ -48,8 +48,8 @@ public class PlexSyncRun
     /// <summary>Movies with no Plex item. Null until the run finishes successfully.</summary>
     public int? UnmatchedCount { get; set; }
 
-    /// <summary>Movies that could not be stored and were skipped. Null until the run finishes successfully.</summary>
-    public int? FailedCount { get; set; }
+    /// <summary>Movies that errored while being processed and were skipped. Null until the run finishes successfully.</summary>
+    public int? ErroredCount { get; set; }
 
     /// <summary>Failure or interruption reason. Never contains the Plex token.</summary>
     public string? Message { get; set; }
@@ -67,7 +67,7 @@ public record PlexSyncRunDto(
     int? ItemsScanned,
     int? MatchedCount,
     int? UnmatchedCount,
-    int? FailedCount,
+    int? ErroredCount,
     string? Message)
 {
     public static PlexSyncRunDto From(PlexSyncRun run) => new(
@@ -80,6 +80,6 @@ public record PlexSyncRunDto(
         run.ItemsScanned,
         run.MatchedCount,
         run.UnmatchedCount,
-        run.FailedCount,
+        run.ErroredCount,
         run.Message);
 }
