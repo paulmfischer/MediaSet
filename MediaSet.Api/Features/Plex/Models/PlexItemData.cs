@@ -13,8 +13,84 @@ public static class PlexLinkSources
 public record PlexAudioTrackData(string? Codec, int? Channels, string? Language);
 
 /// <summary>
+/// Rollup of the episodes of a TV entry or one of its seasons. Computed by <see cref="Services.PlexRollups"/> from the
+/// episodes that are on Plex only. Watched is true only when every present episode is watched and there is at least one.
+/// </summary>
+public class PlexRollup
+{
+    public int EpisodesPresent { get; set; }
+
+    /// <summary>The episode count Plex reports (summed over the seasons for the entry rollup).</summary>
+    public int EpisodesExpected { get; set; }
+
+    public int WatchedCount { get; set; }
+    public bool Watched { get; set; }
+
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? LastWatchedAt { get; set; }
+
+    /// <summary>The most common resolution (a tie goes to the higher one).</summary>
+    public string? Resolution { get; set; }
+
+    /// <summary>True when the present episodes do not all share one resolution.</summary>
+    public bool ResolutionMixed { get; set; }
+
+    /// <summary>True when any present episode has HDR.</summary>
+    public bool Hdr { get; set; }
+
+    public List<string> AudioLanguages { get; set; } = [];
+
+    /// <summary>True when the present episodes do not all have the same audio languages.</summary>
+    public bool AudioLanguagesDiffer { get; set; }
+
+    public List<string> SubtitleLanguages { get; set; } = [];
+
+    /// <summary>True when the present episodes do not all have the same subtitle languages.</summary>
+    public bool SubtitleLanguagesDiffer { get; set; }
+}
+
+/// <summary>One stored episode of a linked TV entry, in a season the entry's scope covers.</summary>
+public class PlexEpisodeData
+{
+    public int SeasonNumber { get; set; }
+    public int EpisodeNumber { get; set; }
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>The Plex rating key of the episode.</summary>
+    public string PlexEpisodeId { get; set; } = string.Empty;
+
+    public bool Watched { get; set; }
+
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? LastWatchedAt { get; set; }
+
+    public string? Resolution { get; set; }
+    public bool Hdr { get; set; }
+    public string? VideoCodec { get; set; }
+    public PlexAudioTrackData? BestAudioTrack { get; set; }
+    public List<string> AudioLanguages { get; set; } = [];
+    public List<string> SubtitleLanguages { get; set; } = [];
+
+    /// <summary>Duration in seconds.</summary>
+    public long? DurationSeconds { get; set; }
+
+    public string? Container { get; set; }
+
+    /// <summary>Server file path. Exposed only by the single-item Plex responses.</summary>
+    public string? FilePath { get; set; }
+
+    public long? SizeBytes { get; set; }
+
+    /// <summary>False when Plex no longer returned the episode on the last run (the data is then stale).</summary>
+    public bool OnPlex { get; set; } = true;
+
+    /// <summary>Consecutive full syncs that did not find the episode. Reset when it is found.</summary>
+    public int MissCount { get; set; }
+}
+
+/// <summary>
 /// One Plex season of a linked TV entry, as reported by Plex. Only the seasons the entry's scope covers are stored.
-/// Episodes are not stored here.
+/// Its episodes are in <see cref="PlexItemData.Episodes"/>.
 /// </summary>
 public class PlexSeasonData
 {
@@ -31,6 +107,9 @@ public class PlexSeasonData
     public DateTime? DateAdded { get; set; }
 
     public string? DeepLink { get; set; }
+
+    /// <summary>Rollup of this season's episodes that are on Plex, against the episode count Plex reports for it.</summary>
+    public PlexRollup? Rollup { get; set; }
 }
 
 /// <summary>
@@ -68,6 +147,12 @@ public class PlexItemData
 
     /// <summary>TV entries only: the Plex seasons the scope covers, with Plex's episode count per season.</summary>
     public List<PlexSeasonData> Seasons { get; set; } = [];
+
+    /// <summary>TV entries only: every stored episode of the covered seasons, including ones Plex no longer returns (OnPlex false).</summary>
+    public List<PlexEpisodeData> Episodes { get; set; } = [];
+
+    /// <summary>TV entries only: rollup over all episodes on Plex, against the sum of the seasons' Plex episode counts.</summary>
+    public PlexRollup? Rollup { get; set; }
 
     public string? Library { get; set; }
     public string? Resolution { get; set; }
@@ -127,7 +212,9 @@ public record PlexItemDataDto(
     long? SizeBytes,
     DateTimeOffset LastSyncedAt,
     PlexScope? Scope = null,
-    IReadOnlyList<PlexSeasonDto>? Seasons = null)
+    IReadOnlyList<PlexSeasonDto>? Seasons = null,
+    IReadOnlyList<PlexEpisodeDto>? Episodes = null,
+    PlexRollup? Rollup = null)
 {
     private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 
@@ -156,7 +243,51 @@ public record PlexItemDataDto(
         Utc(d.LastSyncedAt),
         d.Scope,
         d.Scope == null ? null : [.. d.Seasons.OrderBy(x => x.Index).Select(x => new PlexSeasonDto(
-            x.Index, x.PlexSeasonId, x.EpisodeCount, x.DateAdded.HasValue ? Utc(x.DateAdded.Value) : null, x.DeepLink))]);
+            x.Index, x.PlexSeasonId, x.EpisodeCount, x.DateAdded.HasValue ? Utc(x.DateAdded.Value) : null, x.DeepLink, x.Rollup))],
+        d.Scope == null ? null : [.. d.Episodes.OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber).Select(PlexEpisodeDto.From)],
+        d.Scope == null ? null : d.Rollup);
 }
 
-public record PlexSeasonDto(int Index, string PlexSeasonId, int EpisodeCount, DateTimeOffset? DateAdded, string? DeepLink);
+public record PlexSeasonDto(int Index, string PlexSeasonId, int EpisodeCount, DateTimeOffset? DateAdded, string? DeepLink, PlexRollup? Rollup = null);
+
+/// <summary>An episode with its file path, as the single-item Plex responses return it.</summary>
+public record PlexEpisodeDto(
+    int SeasonNumber,
+    int EpisodeNumber,
+    string Title,
+    string PlexEpisodeId,
+    bool Watched,
+    DateTimeOffset? LastWatchedAt,
+    string? Resolution,
+    bool Hdr,
+    string? VideoCodec,
+    PlexAudioTrackData? BestAudioTrack,
+    IReadOnlyList<string> AudioLanguages,
+    IReadOnlyList<string> SubtitleLanguages,
+    long? DurationSeconds,
+    string? Container,
+    string? FilePath,
+    long? SizeBytes,
+    bool OnPlex,
+    int MissCount)
+{
+    public static PlexEpisodeDto From(PlexEpisodeData e) => new(
+        e.SeasonNumber,
+        e.EpisodeNumber,
+        e.Title,
+        e.PlexEpisodeId,
+        e.Watched,
+        e.LastWatchedAt.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(e.LastWatchedAt.Value, DateTimeKind.Utc)) : null,
+        e.Resolution,
+        e.Hdr,
+        e.VideoCodec,
+        e.BestAudioTrack,
+        e.AudioLanguages,
+        e.SubtitleLanguages,
+        e.DurationSeconds,
+        e.Container,
+        e.FilePath,
+        e.SizeBytes,
+        e.OnPlex,
+        e.MissCount);
+}

@@ -1,0 +1,4 @@
+{"MediaContainer":{"size":1,"Metadata":[
+ {"ratingKey":"4002","type":"episode","title":"Second","index":2,"parentIndex":2,
+  "Media":[{"duration":2640000,"videoResolution":"720","videoCodec":"h264","container":"mkv",
+    "Part":[{"file":"/data/tv/Show/S02E02.mkv","size":500,"container":"mkv","Stream":[{"streamType":1,"codec":"h264","colorTrc":"bt709"},{"streamType":2,"codec":"aac","channels":2,"languageTag":"en"}]}]}]}]}}

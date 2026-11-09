@@ -92,7 +92,13 @@ public class PlexLinkApiTests
 
     private static FakePlexHandler ServerWithShow() => Server()
         .Route("/library/metadata/2001", "show.json")
-        .Route("/library/metadata/2001/children", "seasons.json");
+        .Route("/library/metadata/2001/children", "seasons.json")
+        .Route("/library/metadata/2100/children", "seasons_none.json")
+        .Route("/library/metadata/2101/children", "seasons_none.json")
+        .Route("/library/metadata/2102/children", "episodes_2102.json")
+        .Route("/library/metadata/2103/children", "seasons_none.json")
+        .Route("/library/metadata/4001", "metadata_4001.json")
+        .Route("/library/metadata/4002", "metadata_4002.json");
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
     {
@@ -387,6 +393,53 @@ public class PlexLinkApiTests
         Assert.That(seasons[0].GetProperty("index").GetInt32(), Is.EqualTo(2));
         Assert.That(seasons[0].GetProperty("episodeCount").GetInt32(), Is.EqualTo(13));
         Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
+    }
+
+    [Test]
+    public async Task Link_TvEntrySingleSeasonScope_ReturnsEpisodesWithFilePathAndRollups()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
+        var json = await ReadJsonAsync(response);
+
+        var episodes = json.GetProperty("episodes").EnumerateArray().ToList();
+        Assert.That(episodes.Select(e => e.GetProperty("episodeNumber").GetInt32()), Is.EqualTo([1, 2, 3]));
+        Assert.That(episodes[0].GetProperty("filePath").GetString(), Is.EqualTo("/data/tv/Show/S02E01.mkv"));
+        Assert.That(episodes[0].GetProperty("watched").GetBoolean(), Is.True);
+        Assert.That(json.GetProperty("rollup").GetProperty("episodesPresent").GetInt32(), Is.EqualTo(3));
+        Assert.That(json.GetProperty("rollup").GetProperty("episodesExpected").GetInt32(), Is.EqualTo(13));
+        Assert.That(json.GetProperty("seasons")[0].GetProperty("rollup").GetProperty("watchedCount").GetInt32(), Is.EqualTo(1));
+        Assert.That(items.Items[TvId].Episodes, Has.Count.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Link_TvEntrySingleSeasonScope_RequestsOnlyEpisodesOfThatSeason()
+    {
+        var handler = ServerWithShow();
+        using var client = CreateClient(handler, new InMemoryPlexItemStore());
+
+        await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
+
+        var episodeReads = handler.Requests.Select(r => r.Uri.AbsolutePath)
+            .Where(p => p.StartsWith("/library/metadata/21") && p.EndsWith("/children")).Distinct().ToList();
+        Assert.That(episodeReads, Is.EqualTo(["/library/metadata/2102/children"]));
+    }
+
+    [Test]
+    public async Task Link_TvEntryEpisodesUnreachable_ReturnsBadGatewayAndStoresNothing()
+    {
+        var items = new InMemoryPlexItemStore();
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/metadata/2001", "show.json")
+            .Route("/library/metadata/2001/children", "seasons.json");
+        using var client = CreateClient(handler, items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadGateway));
+        Assert.That(items.Items, Is.Empty);
     }
 
     [Test]

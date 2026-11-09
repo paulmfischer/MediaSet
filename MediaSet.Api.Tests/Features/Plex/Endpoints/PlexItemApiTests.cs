@@ -151,6 +151,68 @@ public class PlexItemApiTests
         Assert.That(json.GetProperty("lastSyncedAt").ValueKind, Is.EqualTo(JsonValueKind.String));
     }
 
+    private const string TvId = "65a000000000000000000002";
+
+    [Test]
+    public async Task GetItem_LinkedTvEntry_ReturnsEpisodesWithFilePathsAndRollups()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = TvId,
+            PlexItemId = "2001",
+            OnPlex = true,
+            Scope = PlexScope.Single(1),
+            Seasons = [new PlexSeasonData { Index = 1, PlexSeasonId = "2101", EpisodeCount = 2 }],
+            Episodes =
+            [
+                new PlexEpisodeData { SeasonNumber = 1, EpisodeNumber = 2, Title = "Two", FilePath = "/data/tv/Secret Show/S01E02.mkv", Watched = true },
+                new PlexEpisodeData { SeasonNumber = 1, EpisodeNumber = 1, Title = "One", FilePath = "/data/tv/Secret Show/S01E01.mkv" }
+            ],
+            LastSyncedAt = new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Utc)
+        }, CancellationToken.None);
+        using var client = CreateClient(items, MovieService());
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvId}");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var json = doc.RootElement;
+
+        var episodes = json.GetProperty("episodes").EnumerateArray().ToList();
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(episodes.Select(e => e.GetProperty("title").GetString()), Is.EqualTo(["One", "Two"]));
+        Assert.That(episodes[0].GetProperty("filePath").GetString(), Is.EqualTo("/data/tv/Secret Show/S01E01.mkv"));
+        Assert.That(episodes[1].GetProperty("watched").GetBoolean(), Is.True);
+    }
+
+    [Test]
+    public async Task OtherResponses_WithStoredTvEpisodes_NeverContainTheEpisodeFilePath()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = TvId,
+            PlexItemId = "2001",
+            OnPlex = true,
+            Scope = PlexScope.Single(1),
+            Episodes = [new PlexEpisodeData { SeasonNumber = 1, EpisodeNumber = 1, FilePath = "/data/tv/Secret Show/S01E01.mkv" }],
+            LastSyncedAt = DateTime.UtcNow
+        }, CancellationToken.None);
+        var tv = new Movie { Id = TvId, Title = "Show: Season 1", IsTvSeries = true };
+        var movies = InMemoryPlexItemStore.MovieService(tv);
+        movies.Setup(s => s.GetAsync(TvId, It.IsAny<CancellationToken>())).ReturnsAsync(tv);
+        using var client = CreateClient(items, movies);
+
+        var bodies = new List<string>
+        {
+            await (await client.GetAsync("/plex/status")).Content.ReadAsStringAsync(),
+            await (await client.GetAsync("/plex/movies/status")).Content.ReadAsStringAsync(),
+            await (await client.GetAsync($"/Movies/{TvId}")).Content.ReadAsStringAsync(),
+            await (await client.GetAsync("/Movies")).Content.ReadAsStringAsync()
+        };
+
+        Assert.That(bodies, Has.All.Not.Contain("Secret Show"));
+    }
+
     [Test]
     public async Task GetItem_UnlinkedMovie_ReturnsNotFound()
     {
