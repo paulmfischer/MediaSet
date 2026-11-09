@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -161,7 +162,7 @@ public class PlexApiTests
     }
 
     [Test]
-    public async Task GetPlexStatus_PlexConfigured_ReturnsEntryPerEntityTypeWithEmptyRuns()
+    public async Task GetPlexStatus_PlexConfigured_ReturnsEntryPerEntityTypeWithNextRunAndNoRuns()
     {
         using var client = CreateClient(PlexSettings());
 
@@ -174,8 +175,82 @@ public class PlexApiTests
         Assert.That(entries[0].GetProperty("entityType").GetString(), Is.EqualTo("movies"));
         Assert.That(entries[0].GetProperty("enabled").GetBoolean(), Is.True);
         Assert.That(entries[0].GetProperty("lastRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
-        Assert.That(entries[0].GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
+        Assert.That(entries[0].GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.String));
+        Assert.That(entries[0].GetProperty("schedulePolicy").GetString(), Is.EqualTo("queue"));
         Assert.That(body, Does.Not.Contain(Token));
+    }
+
+    [Test]
+    public async Task GetPlexStatus_DefaultSchedule_NextRunIsSundayThreeLocalInTheFuture()
+    {
+        using var client = CreateClient(PlexSettings());
+
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single();
+        var next = entry.GetProperty("nextRun").GetDateTimeOffset();
+
+        Assert.That(next, Is.GreaterThan(DateTimeOffset.UtcNow));
+        Assert.That(next.DayOfWeek, Is.EqualTo(DayOfWeek.Sunday));
+        Assert.That(next.Hour, Is.EqualTo(3));
+        Assert.That(next.Offset, Is.EqualTo(TimeZoneInfo.Local.GetUtcOffset(next)));
+    }
+
+    [Test]
+    public async Task GetEntityStatus_CustomSchedule_ReportsNextRunAndPolicy()
+    {
+        using var client = CreateClient(PlexSettings(schedule: "30 5 * * *"));
+
+        var status = await ReadJsonAsync(await client.GetAsync("/plex/movies/status"));
+        var next = status.GetProperty("nextRun").GetDateTimeOffset();
+
+        Assert.That(next.Hour, Is.EqualTo(5));
+        Assert.That(next.Minute, Is.EqualTo(30));
+        Assert.That(next, Is.LessThanOrEqualTo(DateTimeOffset.UtcNow.AddDays(1).AddHours(1)));
+        Assert.That(status.GetProperty("schedulePolicy").GetString(), Is.EqualTo("queue"));
+    }
+
+    [Test]
+    public async Task GetPlexStatus_InvalidSchedule_DisablesTypeWithNoNextRunAndAppStillServes()
+    {
+        using var client = CreateClient(PlexSettings(schedule: "not a cron"));
+
+        var response = await client.GetAsync("/plex/status");
+        var entry = (await ReadJsonAsync(response)).EnumerateArray().Single();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(entry.GetProperty("enabled").GetBoolean(), Is.False);
+        Assert.That(entry.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
+    }
+
+    [Test]
+    public async Task GetPlexStatus_DisabledEntityType_HasNoNextRun()
+    {
+        using var client = CreateClient(PlexSettings(moviesEnabled: "false"));
+
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single();
+
+        Assert.That(entry.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
+    }
+
+    [Test]
+    public void Services_NoPlexSection_NoSchedulerRegistered()
+    {
+        CreateClient();
+        var factory = _factories.Single();
+
+        var hosted = factory.Services.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
+
+        Assert.That(hosted.OfType<MediaSet.Api.Features.Plex.Services.PlexSyncScheduler>(), Is.Empty);
+    }
+
+    [Test]
+    public void Services_PlexConfigured_SchedulerRegistered()
+    {
+        CreateClient(PlexSettings());
+        var factory = _factories.Single();
+
+        var hosted = factory.Services.GetServices<Microsoft.Extensions.Hosting.IHostedService>();
+
+        Assert.That(hosted.OfType<MediaSet.Api.Features.Plex.Services.PlexSyncScheduler>(), Has.Exactly(1).Items);
     }
 
     [Test]

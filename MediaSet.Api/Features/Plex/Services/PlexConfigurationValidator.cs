@@ -1,4 +1,3 @@
-using Cronos;
 using MediaSet.Api.Infrastructure.Plex;
 
 namespace MediaSet.Api.Features.Plex.Services;
@@ -94,22 +93,9 @@ public static class PlexConfigurationValidator
             return false;
         }
 
-        try
-        {
-            var cron = CronExpression.Parse(schedule);
-            if (cron.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc) == null)
-            {
-                error = $"cron expression '{schedule}' has no next occurrence";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-        catch (CronFormatException)
-        {
-            error = $"'{schedule}' is not a valid cron expression";
-            return false;
-        }
+        // Same rules and server local time zone as the scheduler
+        var result = PlexScheduleCalculator.GetNextRun(schedule, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
+        error = result.Warning ?? string.Empty;
+        return result.NextRun != null;
     }
 }

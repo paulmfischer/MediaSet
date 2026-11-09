@@ -20,6 +20,7 @@ public static class PlexSyncRunStates
 public static class PlexSyncTriggers
 {
     public const string Manual = "manual";
+    public const string Scheduled = "scheduled";
 }
 
 /// <summary>One sync run, stored in the PlexSyncRuns collection.</summary>

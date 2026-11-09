@@ -14,14 +14,14 @@ internal static class PlexApi
         group.WithTags("Plex");
 
         // GET /plex/status: one entry per supported entity type
-        group.MapGet("/status", async (PlexEnablement enablement, IPlexSyncRunStore runs, CancellationToken cancellationToken) =>
+        group.MapGet("/status", async (PlexEnablement enablement, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>
         {
             var statuses = new List<PlexEntityStatusDto>();
             foreach (var type in PlexEntityTypes.Supported)
             {
                 var enabled = enablement.IsEnabled(type);
                 var last = enabled ? await runs.GetLastAsync(type, cancellationToken) : null;
-                statuses.Add(new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), null));
+                statuses.Add(new PlexEntityStatusDto(type, enabled, last == null ? null : PlexSyncRunDto.From(last), enabled ? schedule.GetNextRun(type) : null));
             }
 
             return Results.Ok(statuses);
@@ -31,11 +31,11 @@ internal static class PlexApi
         var entity = group.MapGroup("/{entityType}").AddEndpointFilter<PlexEntityTypeFilter>();
 
         // GET /plex/{entityType}/status
-        entity.MapGet("/status", async (HttpContext context, IPlexSyncRunStore runs, CancellationToken cancellationToken) =>
+        entity.MapGet("/status", async (HttpContext context, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>
         {
             var entityType = PlexEntityTypeFilter.GetEntityType(context);
             var last = await runs.GetLastAsync(entityType, cancellationToken);
-            return Results.Ok(new PlexEntityStatusDto(entityType, true, last == null ? null : PlexSyncRunDto.From(last), null));
+            return Results.Ok(new PlexEntityStatusDto(entityType, true, last == null ? null : PlexSyncRunDto.From(last), schedule.GetNextRun(entityType)));
         });
 
         // POST /plex/{entityType}/sync: starts a run in the background (202), or 409 with the current run
