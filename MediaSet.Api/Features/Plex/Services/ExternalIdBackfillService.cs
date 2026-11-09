@@ -21,10 +21,12 @@ public interface IExternalIdBackfillService
 /// Looks up movies without an ExternalId on TMDB by title and year. A wrong id is worse than a missing one,
 /// so an id is saved only when exactly one result has the same title (case-insensitive) and release year.
 /// A movie that already has an ExternalId is never selected. Throttled by <see cref="PlexBackfillConfiguration"/>,
-/// not by the background image lookup settings. ITmdbClient is registered only when TMDB is configured.
+/// not by the background image lookup settings. Movies without a parseable year are never candidates. The last search time
+/// of each movie is kept in <see cref="IExternalIdBackfillStore"/> so unresolved movies rotate behind untried ones. ITmdbClient is registered only when TMDB is configured.
 /// </summary>
 public sealed partial class ExternalIdBackfillService(
     IEntityService<Movie> movies,
+    IExternalIdBackfillStore attempts,
     IOptions<PlexConfiguration> options,
     ILogger<ExternalIdBackfillService> logger,
     ITmdbClient? tmdb = null,
@@ -42,8 +44,20 @@ public sealed partial class ExternalIdBackfillService(
 
         var config = options.Value.Backfill;
         var interval = TimeSpan.FromSeconds(60d / Math.Max(1, config.RequestsPerMinute));
-        var candidates = (await movies.GetListAsync(cancellationToken))
-            .Where(m => !string.IsNullOrEmpty(m.Id) && string.IsNullOrWhiteSpace(m.ExternalId) && !string.IsNullOrWhiteSpace(m.Title))
+
+        // Movies without a parseable year are not candidates: they cost no search and are not counted
+        var eligible = (await movies.GetListAsync(cancellationToken))
+            .Where(m => !string.IsNullOrEmpty(m.Id) && string.IsNullOrWhiteSpace(m.ExternalId) && !string.IsNullOrWhiteSpace(m.Title)
+                && ParseYear(m.ReleaseDate) != null)
+            .ToList();
+
+        // Never or least recently searched first (stable), so movies that never resolve rotate to the back
+        // and cannot starve the rest. Entries of movies no longer eligible (deleted, got an id) are purged.
+        var lastAttempts = await attempts.GetAttemptsAsync(cancellationToken);
+        var eligibleIds = eligible.Select(m => m.Id!).ToHashSet(StringComparer.Ordinal);
+        await attempts.DeleteAsync([.. lastAttempts.Keys.Where(id => !eligibleIds.Contains(id))], cancellationToken);
+        var candidates = eligible
+            .OrderBy(m => lastAttempts.TryGetValue(m.Id!, out var at) ? at : DateTime.MinValue)
             .Take(Math.Max(1, config.BatchSize))
             .ToList();
 
@@ -55,11 +69,6 @@ public sealed partial class ExternalIdBackfillService(
             cancellationToken.ThrowIfCancellationRequested();
 
             var year = ParseYear(movie.ReleaseDate);
-            if (year == null)
-            {
-                skipped++;
-                continue;
-            }
 
             if (lastRequest != null)
             {
@@ -74,6 +83,7 @@ public sealed partial class ExternalIdBackfillService(
             try
             {
                 var response = await tmdb.SearchMovieAsync(movie.Title.Trim(), cancellationToken);
+                await RecordAttemptAsync(movie.Id!, cancellationToken);
                 var matches = (response?.Results ?? [])
                     .Where(r => string.Equals(r.Title?.Trim(), movie.Title.Trim(), StringComparison.OrdinalIgnoreCase)
                         && ParseYear(r.ReleaseDate) == year)
@@ -105,12 +115,26 @@ public sealed partial class ExternalIdBackfillService(
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 skipped++;
+                await RecordAttemptAsync(movie.Id!, cancellationToken);
                 logger.LogWarning("ExternalId backfill could not process movie {MovieId} ({ExceptionType})", movie.Id, ex.GetType().Name);
             }
         }
 
         logger.LogInformation("ExternalId backfill finished: {Filled} filled, {Skipped} skipped", filled, skipped);
         return new ExternalIdBackfillResult(filled, skipped);
+    }
+
+    /// <summary>Remembers the search so the movie goes behind untried ones next run. A store failure never fails the backfill.</summary>
+    private async Task RecordAttemptAsync(string movieId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await attempts.RecordAttemptAsync(movieId, _time.GetUtcNow().UtcDateTime, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("Could not record the ExternalId backfill attempt for movie {MovieId} ({ExceptionType})", movieId, ex.GetType().Name);
+        }
     }
 
     private static int? ParseYear(string? date)

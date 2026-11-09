@@ -38,6 +38,6 @@ public class PlexBackfillConfiguration
     /// <summary>Most TMDB searches per minute; requests are spaced at least 60/RequestsPerMinute seconds apart.</summary>
     public int RequestsPerMinute { get; set; } = 30;
 
-    /// <summary>Most movies searched per sync run.</summary>
+    /// <summary>Most movies searched per sync run. Movies never searched or searched longest ago go first.</summary>
     public int BatchSize { get; set; } = 50;
 }

@@ -76,12 +76,12 @@ to every Plex call; there is no cancel endpoint. `/plex/status` and `/plex/{enti
 ### Plex ExternalId backfill
 
 The first step of every run is `ExternalIdBackfillService` (`Features/Plex/Services`), so ids it fills can match Plex in the same
-run. It selects movies whose `ExternalId` is empty (a set id, even one entered by hand, is never selected or changed), searches TMDB
+run. It selects movies whose `ExternalId` is empty and whose release date has a parseable year (a set id, even one entered by hand, is never selected or changed; a movie without a year is not a candidate and is not counted), searches TMDB
 through `ITmdbClient.SearchMovieAsync` by title, and saves `tmdbid:<id>` only when exactly one result has the same title
 (case-insensitive) and the same release year as the movie. A lone result that differs in title or year, several matching results,
-no results or a movie with no parseable year leave the field blank and count as `BackfillSkipped`. Only `ExternalId` is written.
+or no results leave the field blank and count as `BackfillSkipped`. Only `ExternalId` is written. The time of each movie's last search is kept in the `PlexBackfillAttempts` collection (`_id` = movie id, written through `IExternalIdBackfillStore`, purged for deleted movies and movies that got an id), so movies that never resolve rotate behind untried ones instead of using every batch.
 It is throttled by `PlexConfiguration__Backfill__RequestsPerMinute` (default 30, requests at least 60/N seconds apart) and
-`PlexConfiguration__Backfill__BatchSize` (default 50 movies searched per run), both validated at startup (at least 1), and never
+`PlexConfiguration__Backfill__BatchSize` (default 50 movies searched per run, never searched or least recently searched first), both validated at startup (at least 1), and never
 reads the background image lookup configuration. `ITmdbClient` exists only when the TMDB section is configured; without it the step
 is skipped with a log line and the sync continues. A TMDB error on one movie counts as skipped, a 429 stops the backfill early,
 and neither fails the run.

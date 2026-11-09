@@ -55,6 +55,7 @@ public class PlexSyncServiceTests
             var collection = new ServiceCollection().AddSingleton(Client.Object).AddSingleton<IPlexItemStore>(Items).AddScoped(_ => Movies.Object)
                 .AddSingleton(Options.Create(new PlexConfiguration { Backfill = new PlexBackfillConfiguration { RequestsPerMinute = 6000 } }))
                 .AddLogging()
+                .AddSingleton<IExternalIdBackfillStore>(new InMemoryExternalIdBackfillStore())
                 .AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
             if (tmdbConfigured)
             {
@@ -308,6 +309,28 @@ public class PlexSyncServiceTests
         Assert.That(run.ExternalIdsBackfilled, Is.EqualTo(0));
         Assert.That(run.BackfillSkipped, Is.EqualTo(0));
         h.Movies.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Sync_ShutdownDuringBackfill_EndsInterruptedWithoutReadingPlex()
+    {
+        var h = new Harness(tmdbConfigured: true);
+        SetMovies(h, new Movie { Id = "a", Title = "Slow", ReleaseDate = "1999-03-31" });
+        var started = false;
+        h.Tmdb.Setup(t => t.SearchMovieAsync("Slow", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                started = true;
+                await Task.Delay(Timeout.Infinite, ct);
+                return null;
+            });
+
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+        await WaitUntilAsync(() => started);
+        h.Shutdown.Cancel();
+        await WaitUntilAsync(() => h.Store.Runs.Single().State == PlexSyncRunStates.Interrupted);
+
+        h.Client.Verify(c => c.GetLibrariesForEntityTypeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]

@@ -27,6 +27,7 @@ public class ExternalIdBackfillServiceTests
         public List<Movie> Movies { get; }
         public Mock<IEntityService<Movie>> Service { get; } = new();
         public Mock<ITmdbClient> Tmdb { get; } = new();
+        public InMemoryExternalIdBackfillStore Attempts { get; } = new();
         public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         public PlexBackfillConfiguration Config { get; } = new() { RequestsPerMinute = 30, BatchSize = 50 };
         public List<(string Title, DateTimeOffset At)> Calls { get; } = [];
@@ -46,7 +47,7 @@ public class ExternalIdBackfillServiceTests
         }
 
         public ExternalIdBackfillService Build(bool tmdbConfigured = true) =>
-            new(Service.Object, Options.Create(new PlexConfiguration { Backfill = Config }), NullLogger<ExternalIdBackfillService>.Instance,
+            new(Service.Object, Attempts, Options.Create(new PlexConfiguration { Backfill = Config }), NullLogger<ExternalIdBackfillService>.Instance,
                 tmdbConfigured ? Tmdb.Object : null, Time);
 
         public void Returns(string title, params TmdbMovieSearchResult[] results) =>
@@ -151,13 +152,13 @@ public class ExternalIdBackfillServiceTests
     }
 
     [Test]
-    public async Task RunAsync_MovieWithoutParseableYear_IsSkippedWithoutSearching()
+    public async Task RunAsync_MovieWithoutParseableYear_IsNeverSearchedOrCounted()
     {
         var h = new Harness(NoId("a", "The Matrix", null));
 
         var result = await h.Build().RunAsync(CancellationToken.None);
 
-        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 0)));
         h.Tmdb.Verify(t => t.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -291,5 +292,98 @@ public class ExternalIdBackfillServiceTests
             .Returns(() => { cts.Cancel(); throw new OperationCanceledException(cts.Token); });
 
         Assert.That(() => h.Build().RunAsync(cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task RunAsync_YearlessMoviesAheadOfBatch_DoNotUseBatchSlots()
+    {
+        var h = new Harness(NoId("y1", "Yearless 1", null), NoId("y2", "Yearless 2", null), NoId("a", "Real"));
+        h.Config.BatchSize = 1;
+        h.Returns("Real", Hit(5, "Real", "1999-03-31"));
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Movies[2].ExternalId, Is.EqualTo("tmdbid:5"));
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(1, 0)));
+    }
+
+    [Test]
+    public async Task RunAsync_MoreUnresolvableMoviesThanBatchSize_LaterMovieIsSearchedOnFollowingRun()
+    {
+        var h = new Harness(NoId("m1", "Miss 1"), NoId("m2", "Miss 2"), NoId("m3", "Hit"));
+        h.Config.BatchSize = 2;
+        h.Returns("Miss 1");
+        h.Returns("Miss 2");
+        h.Returns("Hit", Hit(9, "Hit", "1999-03-31"));
+        var service = h.Build();
+
+        var first = await RunToCompletionAsync(h, service);
+        var second = await RunToCompletionAsync(h, service);
+
+        Assert.That(first, Is.EqualTo(new ExternalIdBackfillResult(0, 2)));
+        Assert.That(h.Calls.Select(c => c.Title), Is.EqualTo(new List<string> { "Miss 1", "Miss 2", "Hit", "Miss 1" }));
+        Assert.That(h.Movies[2].ExternalId, Is.EqualTo("tmdbid:9"));
+        Assert.That(second.Filled, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RunAsync_AttemptsOfMoviesNoLongerEligible_ArePurged()
+    {
+        var h = new Harness(NoId("a", "Kept"), NoId("b", "Got Id"));
+        h.Movies[1].ExternalId = "tmdbid:1";
+        await h.Attempts.RecordAttemptAsync("b", DateTime.UtcNow, CancellationToken.None);
+        await h.Attempts.RecordAttemptAsync("gone", DateTime.UtcNow, CancellationToken.None);
+
+        await RunToCompletionAsync(h, h.Build());
+
+        Assert.That(h.Attempts.Attempts.Keys, Is.EqualTo(new List<string> { "a" }));
+    }
+
+    [Test]
+    public async Task RunAsync_CancelledDuringThrottleDelay_PropagatesCancellation()
+    {
+        var h = new Harness(NoId("a", "A"), NoId("b", "B"));
+        using var cts = new CancellationTokenSource();
+
+        var run = h.Build().RunAsync(cts.Token);
+        await h.Time.WaitForTimerAsync();
+        cts.Cancel();
+
+        Assert.That(async () => await run, Throws.InstanceOf<OperationCanceledException>());
+        Assert.That(h.Calls, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RunAsync_CancelledDuringTmdbCall_PropagatesCancellationAndDoesNotCountSkipped()
+    {
+        var h = new Harness(NoId("a", "A"));
+        using var cts = new CancellationTokenSource();
+        var started = new TaskCompletionSource();
+        h.Tmdb.Setup(t => t.SearchMovieAsync("A", It.IsAny<CancellationToken>()))
+            .Returns(async (string _, CancellationToken ct) =>
+            {
+                started.SetResult();
+                await Task.Delay(Timeout.Infinite, ct);
+                return null;
+            });
+
+        var run = h.Build().RunAsync(cts.Token);
+        await started.Task;
+        cts.Cancel();
+
+        Assert.That(async () => await run, Throws.InstanceOf<OperationCanceledException>());
+        Assert.That(h.Attempts.Attempts, Is.Empty);
+    }
+
+    private static async Task<ExternalIdBackfillResult> RunToCompletionAsync(Harness h, ExternalIdBackfillService service)
+    {
+        h.Config.RequestsPerMinute = 6000;
+        var run = service.RunAsync(CancellationToken.None);
+        while (!run.IsCompleted)
+        {
+            h.Time.Advance(TimeSpan.FromSeconds(1));
+            await Task.Delay(5);
+        }
+        return await run;
     }
 }

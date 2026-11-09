@@ -239,6 +239,7 @@ if (plexSection.Exists())
         builder.Services.AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
         builder.Services.AddSingleton<IPlexSyncRunStore, PlexSyncRunStore>();
         builder.Services.AddSingleton<IPlexItemStore, PlexItemStore>();
+        builder.Services.AddSingleton<IExternalIdBackfillStore, ExternalIdBackfillStore>();
         builder.Services.AddSingleton<IPlexDataCleanup, PlexDataCleanup>();
         builder.Services.AddSingleton<PlexSyncService>();
         builder.Services.AddSingleton<IPlexSyncService>(sp => sp.GetRequiredService<PlexSyncService>());
