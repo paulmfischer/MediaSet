@@ -320,7 +320,7 @@ public class PlexSyncServiceTests
     public async Task Sync_ManualLinkWithConflictingExternalId_KeepsManualLinkAndRefreshesItsOwnItem()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
         Serve(h,
             Item("10", new PlexGuids("603", null, null), Version("1080")),
             Item("20", new PlexGuids("999", null, null), Version("720")));
@@ -337,7 +337,7 @@ public class PlexSyncServiceTests
     public async Task Sync_ManualLinkItemGoneFromPlex_IsFlaggedNotOnPlexAndNeverReplacedOrDeleted()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "720" }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "720" }, CancellationToken.None);
         Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
         SetMovies(h, MovieWith("a", "tmdbid:603"));
 
@@ -353,7 +353,7 @@ public class PlexSyncServiceTests
     public async Task Sync_ManualLinkOutsideScannedLibraries_IsRefreshedByRatingKey()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "30", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "30", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
         Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
         h.Client.Setup(c => c.GetItemAsync("30", true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Item("30", new PlexGuids(null, null, null), Version("2160")));
@@ -366,29 +366,35 @@ public class PlexSyncServiceTests
     }
 
     [Test]
-    public async Task Sync_AutoLinkedMovieWithManualLinkMadeMidRun_IsNotReplaced()
+    public async Task Sync_ManualLinkMadeAfterStoredReadBeforeAutoWrite_IsNotReplaced()
     {
         var h = new Harness();
         Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
         SetMovies(h, MovieWith("a", "tmdbid:603"));
-        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
-            .Returns(async () =>
+        var gets = 0;
+        // The first read finds nothing; the user links the movie right after it, before the auto match is written
+        h.Items.AfterGet = async id =>
+        {
+            if (id == "a" && ++gets == 1)
             {
-                // The user links the movie while the scan is reading Plex
-                await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
-                return [new PlexLibrary("1", "Movies", "movie")];
-            });
+                await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "720" }, CancellationToken.None);
+            }
+        };
 
-        await RunAsync(h);
+        var run = await RunAsync(h);
 
+        Assert.That(gets, Is.EqualTo(2));
         Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("20"));
+        Assert.That(h.Items.Items["a"].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(h.Items.Items["a"].Resolution, Is.EqualTo("720"));
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
     }
 
     [Test]
     public async Task Sync_ManualLinkOfDeletedMovie_IsPurged()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "gone", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "gone", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
         Serve(h);
         SetMovies(h, MovieWith("a", null));
 
@@ -401,7 +407,7 @@ public class PlexSyncServiceTests
     public async Task RefreshItemAsync_LinkedMovie_ReloadsFromItsRatingKeyIgnoringExternalId()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, LinkSource = PlexLinkSources.Manual }, CancellationToken.None);
         h.Client.Setup(c => c.GetItemAsync("20", true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Item("20", new PlexGuids("999", null, null), Version("720")));
 
@@ -428,7 +434,7 @@ public class PlexSyncServiceTests
     public async Task RefreshItemAsync_PlexItemGone_FlagsNotOnPlexAndKeepsData()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, Resolution = "720" }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true, Resolution = "720" }, CancellationToken.None);
 
         var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
 
@@ -441,7 +447,7 @@ public class PlexSyncServiceTests
     public async Task RefreshItemAsync_SyncRunning_ReturnsBusyWithRunImmediately()
     {
         var h = new Harness();
-        h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true }, CancellationToken.None).Wait();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "20", OnPlex = true }, CancellationToken.None);
         var release = new TaskCompletionSource();
         h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
             .Returns(async (string _, CancellationToken ct) =>

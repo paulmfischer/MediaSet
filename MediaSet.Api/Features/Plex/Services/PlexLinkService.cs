@@ -19,7 +19,10 @@ public interface IPlexLinkService
 /// Manual link and unlink. These deliberately do not take the sync lock: they are short, user-driven and
 /// touch one document, and blocking them behind a long full sync would make linking unusable while it runs.
 /// The sync re-checks for a manual link right before it writes an automatic match, so a link made mid-run
-/// is not replaced. An unlink made mid-run may be re-matched automatically by that run.
+/// is not replaced. An unlink made mid-run may be re-matched automatically by that run. The sync's re-check
+/// is still check-then-act (read, then replace), so a link landing in the instant between them can be
+/// overwritten once; closing that would need a conditional store write. Two movies may link to the same Plex
+/// item: the link does not enforce uniqueness of the Plex item id.
 /// </summary>
 public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLinkService
 {

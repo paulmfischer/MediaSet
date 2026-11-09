@@ -84,6 +84,14 @@ the document (404 when unlinked) and is the only response with the server file p
 through `IPlexDataCleanup` (registered only when Plex is enabled; a failure is logged, not surfaced), and each run purges documents
 of movies that no longer exist. Plex is only ever read.
 
+Manual links: `PlexItemData.LinkSource` is `auto` (set by a run; a missing value reads as auto) or `manual`.
+`PUT /plex/{entityType}/items/{movieId}/link` (body `{ "plexItemId": "..." }`) reads that Plex item and stores it as a manual
+link (404 for a missing movie or Plex item); `DELETE .../link` removes the link and its data (204, 404 when unlinked);
+`POST .../refresh` re-reads one linked movie under the same lock as runs (400 unlinked, 404 when the Plex item is gone, 409 with
+the current run while a sync runs, never queued). A run refreshes a manual link from its own rating key, never re-matches it by
+ExternalId or replaces it, flags it `OnPlex = false` if the item is gone, and never purges it unless the movie is deleted.
+Link and unlink do not take the lock. Two movies may link to the same Plex item.
+
 ## Local development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md). The API and frontend run on the host; only MongoDB runs in a container.
