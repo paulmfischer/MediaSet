@@ -42,6 +42,12 @@ public class PlexSyncRun
     /// <summary>Plex items read by the run. Null until the run finishes successfully.</summary>
     public int? ItemsScanned { get; set; }
 
+    /// <summary>Movies linked to a Plex item by the run. Null until the run finishes successfully.</summary>
+    public int? MatchedCount { get; set; }
+
+    /// <summary>Movies with no Plex item. Null until the run finishes successfully.</summary>
+    public int? UnmatchedCount { get; set; }
+
     /// <summary>Failure or interruption reason. Never contains the Plex token.</summary>
     public string? Message { get; set; }
 
@@ -56,6 +62,8 @@ public record PlexSyncRunDto(
     DateTimeOffset StartedAt,
     DateTimeOffset? EndedAt,
     int? ItemsScanned,
+    int? MatchedCount,
+    int? UnmatchedCount,
     string? Message)
 {
     public static PlexSyncRunDto From(PlexSyncRun run) => new(
@@ -66,5 +74,7 @@ public record PlexSyncRunDto(
         new DateTimeOffset(DateTime.SpecifyKind(run.StartedAt, DateTimeKind.Utc)),
         run.EndedAt.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(run.EndedAt.Value, DateTimeKind.Utc)) : null,
         run.ItemsScanned,
+        run.MatchedCount,
+        run.UnmatchedCount,
         run.Message);
 }

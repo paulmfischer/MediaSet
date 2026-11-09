@@ -3,11 +3,11 @@ using MediaSet.Api.Features.Plex.Models;
 namespace MediaSet.Api.Features.Plex.Services;
 
 /// <summary>
-/// Runs before the app serves requests: creates the PlexSyncRuns collection and index, and closes
+/// Runs before the app serves requests: creates the PlexSyncRuns and PlexItems collections and indexes, and closes
 /// runs a restart left in progress as interrupted. A failure is logged and does not stop the app,
 /// because MongoDB may only be briefly unavailable.
 /// </summary>
-public class PlexSyncInitializer(IPlexSyncRunStore store, ILogger<PlexSyncInitializer> logger) : IHostedService
+public class PlexSyncInitializer(IPlexSyncRunStore store, IPlexItemStore items, ILogger<PlexSyncInitializer> logger) : IHostedService
 {
     public const string InterruptedMessage = "The application restarted while the run was in progress.";
 
@@ -25,6 +25,15 @@ public class PlexSyncInitializer(IPlexSyncRunStore store, ILogger<PlexSyncInitia
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Could not prepare the PlexSyncRuns collection at startup");
+        }
+
+        try
+        {
+            await items.EnsureCreatedAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not prepare the PlexItems collection at startup");
         }
     }
 

@@ -83,6 +83,19 @@ internal static class PlexApi
             }
         });
 
+        // GET /plex/{entityType}/items/{movieId}: the Plex data of one linked movie, 404 when unlinked.
+        // The only response that carries the file path.
+        entity.MapGet("/items/{id}", async (string id, IPlexItemStore items, CancellationToken cancellationToken) =>
+        {
+            var data = await items.GetAsync(id, cancellationToken);
+            return data == null
+                ? Results.Problem(
+                    title: "Not linked to Plex",
+                    detail: "This item has no Plex data.",
+                    statusCode: StatusCodes.Status404NotFound)
+                : Results.Ok(PlexItemDataDto.From(data));
+        });
+
         return group;
     }
 }

@@ -1,6 +1,7 @@
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.VisualBasic.FileIO;
@@ -87,7 +88,7 @@ internal static class EntityApi
                 {
                     // Parse multipart form data once
                     multipartForm = await context.Request.ReadFormAsync(cancellationToken);
-                    
+
                     // Deserialize entity from JSON
                     if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
                     {
@@ -96,8 +97,8 @@ internal static class EntityApi
                     }
 
                     var entityJsonString = entityJson[0]!;
-                    var options = new System.Text.Json.JsonSerializerOptions 
-                    { 
+                    var options = new System.Text.Json.JsonSerializerOptions
+                    {
                         PropertyNameCaseInsensitive = true,
                         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
                     };
@@ -119,7 +120,7 @@ internal static class EntityApi
                         logger.LogError("Failed to deserialize entity from request body for {entityType}", entityType);
                         return TypedResults.BadRequest("Entity is required and must have some data");
                     }
-                    
+
                     newEntity = deserializedEntity;
                 }
 
@@ -162,7 +163,7 @@ internal static class EntityApi
                             logger.LogWarning("Image validation failed: {error}", ex.Message);
                             // Continue anyway - entity was already created successfully
                         }
-                        
+
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
                         var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
                         imageUrlProp?.SetValue(newEntity, null);
@@ -200,7 +201,7 @@ internal static class EntityApi
                     // Check if imageUrl is provided for download
                     var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
                     var imageUrl = imageUrlProp?.GetValue(newEntity) as string;
-                    
+
                     if (!string.IsNullOrWhiteSpace(imageUrl))
                     {
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
@@ -252,7 +253,7 @@ internal static class EntityApi
                 {
                     // Parse multipart form data once
                     multipartForm = await context.Request.ReadFormAsync(cancellationToken);
-                    
+
                     // Deserialize entity from JSON
                     if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
                     {
@@ -261,8 +262,8 @@ internal static class EntityApi
                     }
 
                     var entityJsonString = entityJson[0]!;
-                    var options = new System.Text.Json.JsonSerializerOptions 
-                    { 
+                    var options = new System.Text.Json.JsonSerializerOptions
+                    {
                         PropertyNameCaseInsensitive = true,
                         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
                     };
@@ -316,7 +317,7 @@ internal static class EntityApi
                     if (imageFile is not null && imageFile.Length > 0)
                     {
                         logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, id);
-                        
+
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
@@ -331,7 +332,7 @@ internal static class EntityApi
                             logger.LogWarning("Image validation failed: {error}", ex.Message);
                             // Continue anyway - entity update should succeed even if image fails
                         }
-                        
+
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
                         var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
                         imageUrlProp?.SetValue(updatedEntity, null);
@@ -341,7 +342,7 @@ internal static class EntityApi
                         // No file provided, check for imageUrl
                         var imageUrl = imageUrlValue.ToString();
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
-                        
+
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
@@ -376,11 +377,11 @@ internal static class EntityApi
                     var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
                     var imageUrl = imageUrlProp?.GetValue(updatedEntity) as string;
                     var existingImageUrl = imageUrlProp?.GetValue(existingEntity) as string;
-                    
+
                     if (!string.IsNullOrWhiteSpace(imageUrl) && imageUrl != existingImageUrl)
                     {
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
-                        
+
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
@@ -424,6 +425,7 @@ internal static class EntityApi
         group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (
             IEntityService<TEntity> entityService,
             [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            HttpContext httpContext,
             string id,
             CancellationToken cancellationToken) =>
         {
@@ -450,6 +452,13 @@ internal static class EntityApi
 
             var result = await entityService.RemoveAsync(id, cancellationToken);
             logger.LogInformation("Deleted {entityType} {entityId}: {deleted}", entityType, id, result.DeletedCount > 0);
+
+            // The movie is deleted first; its Plex data goes after, and a failure there never fails the delete
+            if (typeof(TEntity) == typeof(Movie))
+            {
+                await DeletePlexDataAsync(httpContext.RequestServices, id, logger, cancellationToken);
+            }
+
             return TypedResults.Ok();
         });
 
@@ -579,7 +588,7 @@ internal static class EntityApi
             if (imageFile is not null && imageFile.Length > 0)
             {
                 logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, entityId);
-                
+
                 // Delete old image if it exists
                 DeleteOldImage(existingEntity, imageService, logger);
 
@@ -591,7 +600,7 @@ internal static class EntityApi
             {
                 var imageUrl = imageUrlValue.ToString();
                 logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, entityId, imageUrl);
-                
+
                 // Delete old image if it exists
                 DeleteOldImage(existingEntity, imageService, logger);
 
@@ -668,6 +677,25 @@ internal static class EntityApi
         {
             logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
             // Continue anyway - don't fail the operation
+        }
+    }
+
+    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, ILogger logger, CancellationToken cancellationToken)
+    {
+        // Registered only when the Plex integration is configured and valid
+        var cleanup = services.GetService<IPlexDataCleanup>();
+        if (cleanup == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await cleanup.DeleteMovieDataAsync(id, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Failed to delete Plex data for movie {entityId}; the next Plex sync purges it", id);
         }
     }
 }

@@ -15,4 +15,6 @@ public class DatabaseService : IDatabaseService
     }
 
     public virtual IMongoCollection<TEntity> GetCollection<TEntity>() => mongoDatabase.GetCollection<TEntity>($"{typeof(TEntity).Name}s");
+
+    public virtual IMongoCollection<TEntity> GetCollection<TEntity>(string collectionName) => mongoDatabase.GetCollection<TEntity>(collectionName);
 }

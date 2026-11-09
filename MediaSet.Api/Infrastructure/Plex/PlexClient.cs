@@ -130,6 +130,8 @@ public class PlexClient : IPlexClient
             Title = listed.Title,
             Year = listed.Year,
             AddedAt = listed.AddedAt,
+            ViewCount = listed.ViewCount ?? detailed.ViewCount,
+            LastViewedAt = listed.LastViewedAt ?? detailed.LastViewedAt,
             Guid = listed.Guid is { Count: > 0 } ? listed.Guid : detailed.Guid,
             Media = detailed.Media
         };
@@ -204,7 +206,9 @@ public class PlexClient : IPlexClient
         m.AddedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.AddedAt.Value) : null,
         DeepLink(linkBase, m.RatingKey),
         ParseGuids(m.Guid),
-        (m.Media ?? []).Select(MapVersion).ToList());
+        (m.Media ?? []).Select(MapVersion).ToList(),
+        m.ViewCount is > 0 ? m.ViewCount.Value : 0,
+        m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null);
 
     private string? DeepLinkBase(string? serverId) =>
         string.IsNullOrEmpty(serverId) || _httpClient.BaseAddress == null
@@ -275,6 +279,8 @@ public class PlexClient : IPlexClient
         public string? Title { get; set; }
         public int? Year { get; set; }
         public long? AddedAt { get; set; }
+        public int? ViewCount { get; set; }
+        public long? LastViewedAt { get; set; }
         [JsonPropertyName("Guid")] public List<RawGuid>? Guid { get; set; }
         [JsonPropertyName("Media")] public List<RawMedia>? Media { get; set; }
     }
