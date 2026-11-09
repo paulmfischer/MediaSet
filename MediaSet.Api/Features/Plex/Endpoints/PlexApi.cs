@@ -237,10 +237,10 @@ internal static class PlexApi
                 return (PlexScope.Single(request.Season!.Value), null);
             case PlexScopeKinds.Season:
                 return (null, $"Scope kind 'season' needs a 'season' from 0 to {MaxSeason}.");
-            case PlexScopeKinds.Range when Valid(request.From) && Valid(request.To) && request.From < request.To:
+            case PlexScopeKinds.Range when Valid(request.From) && Valid(request.To) && request.From <= request.To:
                 return (PlexScope.Between(request.From!.Value, request.To!.Value), null);
             case PlexScopeKinds.Range:
-                return (null, $"Scope kind 'range' needs 'from' below 'to', both from 0 to {MaxSeason}.");
+                return (null, $"Scope kind 'range' needs 'from' up to 'to' (use kind 'season' for one season), both from 0 to {MaxSeason}.");
             default:
                 return (null, "Scope 'kind' must be 'season', 'range' or 'all'.");
         }
@@ -275,6 +275,6 @@ public record PlexLinkRequest(string? PlexItemId, PlexLinkScopeRequest? Scope = 
 
 /// <summary>
 /// The seasons a TV entry covers. <c>Kind</c> is "season" (with <c>Season</c>), "range" (with <c>From</c> and
-/// <c>To</c>, From below To) or "all". Season numbers are 0 (specials) to 99.
+/// <c>To</c>, From not above To; equal means one season) or "all". Season numbers are 0 (specials) to 99.
 /// </summary>
 public record PlexLinkScopeRequest(string? Kind, int? Season = null, int? From = null, int? To = null);

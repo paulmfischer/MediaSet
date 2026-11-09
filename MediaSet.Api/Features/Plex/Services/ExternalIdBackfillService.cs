@@ -143,17 +143,12 @@ public sealed partial class ExternalIdBackfillService(
     }
 
     /// <summary>
-    /// The confident TMDB show for a cleaned title, or null. A lone result is taken. Otherwise results whose name equals
-    /// the title (case-insensitive) are the candidates: one is taken; several are narrowed by first air year, when the
-    /// entry has one, and taken only if exactly one is left.
+    /// The confident TMDB show for a cleaned title, or null. Only results whose name equals the title (case-insensitive)
+    /// are candidates, so a fuzzy hit on an unrelated show is never saved. One candidate is taken; several are narrowed
+    /// by first air year, when the entry has one, and taken only if exactly one is left.
     /// </summary>
     private static int? PickShow(IReadOnlyList<TmdbTvSearchResult> results, string cleanedTitle, int? year)
     {
-        if (results.Count == 1)
-        {
-            return results[0].Id;
-        }
-
         var named = results
             .Where(r => string.Equals(r.Name?.Trim(), cleanedTitle.Trim(), StringComparison.OrdinalIgnoreCase))
             .ToList();

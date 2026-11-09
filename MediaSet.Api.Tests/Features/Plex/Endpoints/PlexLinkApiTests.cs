@@ -472,7 +472,6 @@ public class PlexLinkApiTests
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"season\",\"season\":-1}}")]
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"season\",\"season\":100}}")]
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":3,\"to\":1}}")]
-    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":2,\"to\":2}}")]
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":1}}")]
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"everything\"}}")]
     [TestCase("{\"plexItemId\":\"2001\",\"scope\":{}}")]
@@ -485,6 +484,18 @@ public class PlexLinkApiTests
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         Assert.That(items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Link_TvEntryRangeWithEqualEnds_StoresASingleSeason()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "range", from = 2, to = 2 } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
     }
 
     [Test]

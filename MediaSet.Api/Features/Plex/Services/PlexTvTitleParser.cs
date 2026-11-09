@@ -19,7 +19,8 @@ namespace MediaSet.Api.Features.Plex.Services;
 /// more than one season phrase ("Season 1 Season 2", "Complete Series (Seasons 1-5)"), a reversed or
 /// non-consecutive list ("Seasons 3-1", "Seasons 1 &amp; 3"), season 0 or numbers above 99, and a season
 /// phrase joined to something else ("Seasons 1-3 + Movie", "Season 2 and the Specials") or followed by another number ("Season Twenty One"). A season keyword is
-/// required for numbers, so digits in a title ("24: Season 3") are never read as a season.
+/// required for numbers, so digits in a title ("24: Season 3") are never read as a season. Known limit of the heuristic: a real
+/// title that itself contains "Series 7" or "Season 2" ("Series 7: The Contenders") is read as that season.
 /// </summary>
 public static partial class PlexTvTitleParser
 {
@@ -89,18 +90,17 @@ public static partial class PlexTvTitleParser
             return PlexScope.Unreadable;
         }
 
-        var phrase = found[0];
-        var before = text[..phrase.Index];
-        var after = text[(phrase.Index + phrase.Length)..];
-        return LeadingConnector().IsMatch(after) || TrailingConnector().IsMatch(before)
-            ? PlexScope.Unreadable
-            : phrase.Scope;
+        return IsJoinedToOtherContent(text, found[0]) ? PlexScope.Unreadable : found[0].Scope;
     }
+
+    private static bool IsJoinedToOtherContent(string text, Found phrase) =>
+        LeadingConnector().IsMatch(text[(phrase.Index + phrase.Length)..]) || TrailingConnector().IsMatch(text[..phrase.Index]);
 
     /// <summary>
     /// The title with the season phrase(s) removed, for searching a metadata source: "Breaking Bad: Season 2"
     /// gives "Breaking Bad". Separators left at the seam, and year or format notes in brackets ("(2008)",
-    /// "[Blu-ray]"), are dropped too. A title with no season text comes back trimmed.
+    /// "[Blu-ray]"), are dropped too. A title with no season text comes back trimmed. A title whose season text is joined to other content ("Seasons 1-3 + Movie") gives
+    /// an empty string: there is no clean show title to search for.
     /// </summary>
     public static string CleanTitle(string? title)
     {
@@ -110,7 +110,13 @@ public static partial class PlexTvTitleParser
         }
 
         var text = Spaces().Replace(title.Trim(), " ");
-        foreach (var phrase in FindPhrases(text).OrderByDescending(p => p.Index))
+        var phrases = FindPhrases(text);
+        if (phrases.Any(p => IsJoinedToOtherContent(text, p)))
+        {
+            return string.Empty;
+        }
+
+        foreach (var phrase in phrases.OrderByDescending(p => p.Index))
         {
             text = text.Remove(phrase.Index, phrase.Length).Insert(phrase.Index, " ");
         }

@@ -741,6 +741,7 @@ public class PlexSyncServiceTests
 
         Assert.That(PlexMatching.BestAudio(tracks)!.Codec, Is.EqualTo("truehd"));
     }
+
     private static PlexItem Show(string key, PlexGuids guids) =>
         new(key, "show", $"Show {key}", 2005, "2", "TV Shows", DateTimeOffset.FromUnixTimeSeconds(1700000000), $"link-{key}", guids, []);
 
@@ -983,6 +984,35 @@ public class PlexSyncServiceTests
         Assert.That(run.ExternalIdsBackfilled, Is.EqualTo(1));
         Assert.That(run.MatchedCount, Is.EqualTo(1));
         Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+    }
+    [Test]
+    public async Task RefreshItemAsync_AutoLinkedTvEntryWhoseTitleChanged_RereadsScopeFromTitle()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, Scope = PlexScope.Single(1) }, CancellationToken.None);
+        h.Client.Setup(c => c.GetItemAsync("90", true, It.IsAny<CancellationToken>())).ReturnsAsync(Show("90", new PlexGuids("1399", null, null)));
+        h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ReturnsAsync([Season("90", 1, 7), Season("90", 2, 13)]);
+        h.Movies.Setup(s => s.GetAsync("a", It.IsAny<CancellationToken>())).ReturnsAsync(Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var result = await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.Refreshed));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(h.Items.Items["a"].Seasons.Select(x => x.Index), Is.EqualTo([2]));
+    }
+
+    [Test]
+    public async Task RefreshItemAsync_ManualLinkedTvEntry_KeepsItsScopeDespiteTitle()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "90", OnPlex = true, LinkSource = PlexLinkSources.Manual, Scope = PlexScope.Single(1) }, CancellationToken.None);
+        h.Client.Setup(c => c.GetItemAsync("90", true, It.IsAny<CancellationToken>())).ReturnsAsync(Show("90", new PlexGuids("1399", null, null)));
+        h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ReturnsAsync([Season("90", 1, 7), Season("90", 2, 13)]);
+        h.Movies.Setup(s => s.GetAsync("a", It.IsAny<CancellationToken>())).ReturnsAsync(Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None);
+
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(1)));
     }
 }
 

@@ -141,6 +141,13 @@ public class PlexTvTitleParserTests
     }
 
     [Test]
+    public void ParseScope_RealTitleContainingSeriesNumber_IsReadAsThatSeason()
+    {
+        // Known limit of the heuristic, pinned so a change is deliberate
+        Assert.That(PlexTvTitleParser.ParseScope("Series 7: The Contenders"), Is.EqualTo(PlexScope.Single(7)));
+    }
+
+    [Test]
     public void ParseScope_RangeOfOneSeason_IsASingleSeason()
     {
         Assert.That(PlexTvTitleParser.ParseScope("Show: Seasons 2-2"), Is.EqualTo(PlexScope.Single(2)));
@@ -167,6 +174,8 @@ public class PlexTvTitleParserTests
     [TestCase("Law & Order: Season 3", "Law & Order")]
     [TestCase("Show: Season 2: The Dark Years", "Show: The Dark Years")]
     [TestCase("Season 2", "")]
+    [TestCase("Show: Seasons 1-3 + Movie", "")]
+    [TestCase("Show: Season 2 and Specials", "")]
     [TestCase("", "")]
     public void CleanTitle_Title_RemovesSeasonTextAndSeams(string title, string expected)
     {

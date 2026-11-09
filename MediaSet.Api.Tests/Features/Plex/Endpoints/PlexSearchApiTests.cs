@@ -125,6 +125,7 @@ public class PlexSearchApiTests
 
         var results = (await ReadJsonAsync(await client.GetAsync("/plex/movies/search?query=matrix"))).EnumerateArray().ToList();
 
+        Assert.That(results.Select(r => r.GetProperty("title").GetString()), Does.Contain("The Matrix"));
         Assert.That(results.Select(r => r.GetProperty("title").GetString()), Does.Not.Contain("Pilot"));
     }
 

@@ -147,9 +147,25 @@ public sealed class PlexSyncService(
             }
 
             // A refresh keeps the link as it was made (auto stays auto, manual stays manual)
-            var data = stored.Scope is { } scope
-                ? PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, stored.LinkSource)
-                : PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
+            PlexItemData data;
+            if (stored.Scope is { } storedScope)
+            {
+                // As in a full sync: an automatic link re-reads the scope from the title (keeping the stored one when the
+                // title no longer says); a manual link keeps its scope
+                var scope = storedScope;
+                if (stored.LinkSource != PlexLinkSources.Manual)
+                {
+                    using var movieScope = services.CreateScope();
+                    var movie = await movieScope.ServiceProvider.GetRequiredService<IEntityService<Movie>>().GetAsync(movieId, cancellationToken);
+                    var parsed = PlexTvTitleParser.ParseScope(movie?.Title);
+                    scope = parsed.IsReadable ? parsed : storedScope;
+                }
+                data = PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, stored.LinkSource);
+            }
+            else
+            {
+                data = PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
+            }
             await itemStore.UpsertAsync(data, cancellationToken);
             return new PlexRefreshResult(PlexRefreshStatus.Refreshed, data);
         }
@@ -370,8 +386,8 @@ public sealed class PlexSyncService(
                 IReadOnlyList<PlexSeason>? seasons = null;
                 if (isTv)
                 {
-                    // A manual link keeps its entryScope. An automatic one reads it from the title, and keeps its stored entryScope
-                    // when the title no longer says. No readable entryScope means no match (and no guessing).
+                    // A manual link keeps its scope. An automatic one reads it from the title, and keeps its stored scope
+                    // when the title no longer says. No readable scope means no match (and no guessing).
                     var parsed = PlexTvTitleParser.ParseScope(movie.Title);
                     entryScope = manual && storedUsable ? stored!.Scope : parsed.IsReadable ? parsed : storedUsable ? stored!.Scope : null;
                     if (entryScope == null || item == null)
