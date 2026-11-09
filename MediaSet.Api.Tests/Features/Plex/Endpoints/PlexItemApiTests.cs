@@ -162,6 +162,16 @@ public class PlexItemApiTests
     }
 
     [Test]
+    public async Task GetItem_MalformedMovieId_ReturnsNotFound()
+    {
+        using var client = CreateClient(new InMemoryPlexItemStore(), MovieService());
+
+        var response = await client.GetAsync("/plex/movies/items/not-an-object-id");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+    }
+
+    [Test]
     public async Task OtherResponses_WithStoredPlexData_NeverContainTheFilePath()
     {
         var items = new InMemoryPlexItemStore();

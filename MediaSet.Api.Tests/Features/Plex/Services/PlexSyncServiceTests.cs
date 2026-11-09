@@ -372,6 +372,20 @@ public class PlexSyncServiceTests
         Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
         Assert.That(h.Items.Items.Keys, Is.EqualTo(["b"]));
         Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(run.FailedCount, Is.EqualTo(1));
+        Assert.That(run.UnmatchedCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Sync_SharedGuid_FirstScannedItemWins()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")), Item("11", new PlexGuids("603", null, null), Version("4k")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("10"));
     }
 
     [Test]
@@ -458,6 +472,15 @@ public class PlexSyncServiceTests
         Assert.That(PlexMatching.BestVersion([sdr, hdrSmall, hdrLarge]), Is.SameAs(hdrLarge));
         Assert.That(PlexMatching.BestVersion([Version("720", true, 100), Version("1080", false, 1)])!.Resolution, Is.EqualTo("1080"));
         Assert.That(PlexMatching.BestVersion([Version("1080", true, 100), Version("4k", false, 1)])!.Resolution, Is.EqualTo("4k"));
+    }
+
+    [Test]
+    public void BestVersion_HigherResolutionWithoutHdr_BeatsLowerResolutionWithHdr()
+    {
+        var best = PlexMatching.BestVersion([Version("1080", hdr: true, size: 100), Version("4k", hdr: false, size: 1)]);
+
+        Assert.That(best!.Resolution, Is.EqualTo("4k"));
+        Assert.That(best.Hdr, Is.False);
     }
 
     [Test]

@@ -8,30 +8,41 @@ namespace MediaSet.Api.Features.Plex.Services;
 public static class PlexMatching
 {
     /// <summary>
-    /// Whether a movie ExternalId (<c>source:value</c>, e.g. tmdbid:603) appears among the item's GUIDs.
-    /// Sources are tmdb, imdb and tvdb, with or without an "id" suffix.
+    /// The lookup key of a movie ExternalId (<c>source:value</c>, e.g. tmdbid:603): the canonical source
+    /// (tmdb, imdb or tvdb, with or without an "id" suffix) and the lowercased value. Null when unsupported.
     /// </summary>
-    public static bool MatchesExternalId(string? externalId, PlexGuids guids)
+    public static (string Source, string Value)? ExternalIdKey(string? externalId)
     {
         if (string.IsNullOrEmpty(externalId))
         {
-            return false;
+            return null;
         }
 
         var parts = externalId.Split(':');
         if (parts.Length != 2 || parts[1].Length == 0)
         {
-            return false;
+            return null;
         }
 
-        var plexValue = parts[0].ToLowerInvariant() switch
+        var source = parts[0].ToLowerInvariant() switch
         {
-            "tmdb" or "tmdbid" => guids.Tmdb,
-            "imdb" or "imdbid" => guids.Imdb,
-            "tvdb" or "tvdbid" => guids.Tvdb,
+            "tmdb" or "tmdbid" => "tmdb",
+            "imdb" or "imdbid" => "imdb",
+            "tvdb" or "tvdbid" => "tvdb",
             _ => null
         };
-        return plexValue != null && string.Equals(plexValue, parts[1], StringComparison.OrdinalIgnoreCase);
+        return source == null ? null : (source, parts[1].ToLowerInvariant());
+    }
+
+    /// <summary>The lookup keys of an item's GUIDs, in the same form as <see cref="ExternalIdKey"/>.</summary>
+    public static IEnumerable<(string Source, string Value)> GuidKeys(PlexGuids guids)
+    {
+        if (guids.Tmdb != null)
+        { yield return ("tmdb", guids.Tmdb.ToLowerInvariant()); }
+        if (guids.Imdb != null)
+        { yield return ("imdb", guids.Imdb.ToLowerInvariant()); }
+        if (guids.Tvdb != null)
+        { yield return ("tvdb", guids.Tvdb.ToLowerInvariant()); }
     }
 
     /// <summary>Highest resolution, then HDR, then larger file size. Null when the item has no versions.</summary>

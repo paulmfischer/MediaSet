@@ -149,6 +149,7 @@ public sealed class PlexSyncService(
                     r.ItemsScanned = scan.Scanned;
                     r.MatchedCount = scan.Matched;
                     r.UnmatchedCount = scan.Unmatched;
+                    r.FailedCount = scan.Failed;
                     r.EndedAt = DateTime.UtcNow;
                 });
             }
@@ -186,7 +187,7 @@ public sealed class PlexSyncService(
         }
     }
 
-    private sealed record ScanResult(int Scanned, int Matched, int Unmatched);
+    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Failed);
 
     /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
     private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
@@ -213,7 +214,18 @@ public sealed class PlexSyncService(
             byRatingKey.TryAdd(item.RatingKey, item);
         }
 
+        // GUID lookup, first scanned item wins for a shared GUID
+        var byGuid = new Dictionary<(string Source, string Value), PlexItem>();
+        foreach (var item in items)
+        {
+            foreach (var key in PlexMatching.GuidKeys(item.Guids))
+            {
+                byGuid.TryAdd(key, item);
+            }
+        }
+
         var matched = 0;
+        var failed = 0;
         var syncedAt = DateTime.UtcNow;
         foreach (var movie in movies)
         {
@@ -228,7 +240,10 @@ public sealed class PlexSyncService(
                 {
                     item = linked;
                 }
-                item ??= items.FirstOrDefault(i => PlexMatching.MatchesExternalId(movie.ExternalId, i.Guids));
+                if (item == null && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey && byGuid.TryGetValue(externalKey, out var byId))
+                {
+                    item = byId;
+                }
 
                 if (item != null)
                 {
@@ -246,6 +261,7 @@ public sealed class PlexSyncService(
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // One failing movie must not fail the run
+                failed++;
                 logger.LogWarning(ex, "Plex sync skipped movie {MovieId}", movie.Id);
             }
         }
@@ -267,7 +283,7 @@ public sealed class PlexSyncService(
             logger.LogWarning(ex, "Plex sync could not purge Plex data of deleted movies");
         }
 
-        return new ScanResult(items.Count, matched, movies.Count - matched);
+        return new ScanResult(items.Count, matched, movies.Count - matched - failed, failed);
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>

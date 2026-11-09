@@ -87,7 +87,8 @@ internal static class PlexApi
         // The only response that carries the file path.
         entity.MapGet("/items/{id}", async (string id, IPlexItemStore items, CancellationToken cancellationToken) =>
         {
-            var data = await items.GetAsync(id, cancellationToken);
+            // Plex documents are keyed by ObjectId; any other id cannot be linked
+            var data = MongoDB.Bson.ObjectId.TryParse(id, out _) ? await items.GetAsync(id, cancellationToken) : null;
             return data == null
                 ? Results.Problem(
                     title: "Not linked to Plex",
