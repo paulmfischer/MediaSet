@@ -32,6 +32,13 @@ public class ExternalIdBackfillServiceTests
         public PlexBackfillConfiguration Config { get; } = new() { RequestsPerMinute = 30, BatchSize = 50 };
         public List<(string Title, DateTimeOffset At)> Calls { get; } = [];
 
+        /// <summary>When set before Build, every throttle wait completes at once and moves the clock forward by the wait. No real sleeping.</summary>
+        public bool AutoAdvance { get; set; }
+
+        private AutoAdvanceTimeProvider? _auto;
+
+        public TimeProvider Clock => AutoAdvance ? _auto ??= new AutoAdvanceTimeProvider(Time.GetUtcNow()) : Time;
+
         public Harness(params Movie[] movies)
         {
             Movies = [.. movies];
@@ -42,17 +49,17 @@ public class ExternalIdBackfillServiceTests
                 .Callback((string id, Movie m, CancellationToken _) => Movies[Movies.FindIndex(x => x.Id == id)] = m)
                 .ReturnsAsync(default(ReplaceOneResult)!);
             Tmdb.Setup(t => t.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Callback((string title, CancellationToken _) => Calls.Add((title, Time.GetUtcNow())))
+                .Callback((string title, CancellationToken _) => Calls.Add((title, Clock.GetUtcNow())))
                 .ReturnsAsync(Results());
         }
 
         public ExternalIdBackfillService Build(bool tmdbConfigured = true) =>
             new(Service.Object, Attempts, Options.Create(new PlexConfiguration { Backfill = Config }), NullLogger<ExternalIdBackfillService>.Instance,
-                tmdbConfigured ? Tmdb.Object : null, Time);
+                tmdbConfigured ? Tmdb.Object : null, Clock);
 
         public void Returns(string title, params TmdbMovieSearchResult[] results) =>
             Tmdb.Setup(t => t.SearchMovieAsync(title, It.IsAny<CancellationToken>()))
-                .Callback((string t, CancellationToken _) => Calls.Add((t, Time.GetUtcNow())))
+                .Callback((string t, CancellationToken _) => Calls.Add((t, Clock.GetUtcNow())))
                 .ReturnsAsync(Results(results));
 
         private static Movie Copy(Movie m) => new() { Id = m.Id, Title = m.Title, ReleaseDate = m.ReleaseDate, ExternalId = m.ExternalId, Format = m.Format, Plot = m.Plot };
@@ -220,13 +227,8 @@ public class ExternalIdBackfillServiceTests
         h.Config.BatchSize = 2;
         h.Config.RequestsPerMinute = 6000;
 
-        var run = h.Build().RunAsync(CancellationToken.None);
-        while (!run.IsCompleted)
-        {
-            h.Time.Advance(TimeSpan.FromSeconds(1));
-            await Task.Delay(5);
-        }
-        var result = await run;
+        h.AutoAdvance = true;
+        var result = await h.Build().RunAsync(CancellationToken.None);
 
         Assert.That(h.Calls.Select(c => c.Title), Is.EqualTo(new List<string> { "Movie 1", "Movie 2" }));
         Assert.That(result.Skipped, Is.EqualTo(2));
@@ -251,13 +253,8 @@ public class ExternalIdBackfillServiceTests
         h.Tmdb.Setup(t => t.SearchMovieAsync("Bad", It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException("boom", null, HttpStatusCode.InternalServerError));
         h.Returns("Good", Hit(7, "Good", "1999-03-31"));
 
-        var run = h.Build().RunAsync(CancellationToken.None);
-        while (!run.IsCompleted)
-        {
-            h.Time.Advance(TimeSpan.FromSeconds(1));
-            await Task.Delay(5);
-        }
-        var result = await run;
+        h.AutoAdvance = true;
+        var result = await h.Build().RunAsync(CancellationToken.None);
 
         Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(1, 1)));
         Assert.That(h.Movies[1].ExternalId, Is.EqualTo("tmdbid:7"));
@@ -271,13 +268,8 @@ public class ExternalIdBackfillServiceTests
         h.Returns("First", Hit(1, "First", "1999-03-31"));
         h.Tmdb.Setup(t => t.SearchMovieAsync("Limited", It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException("limit", null, HttpStatusCode.TooManyRequests));
 
-        var run = h.Build().RunAsync(CancellationToken.None);
-        while (!run.IsCompleted)
-        {
-            h.Time.Advance(TimeSpan.FromSeconds(1));
-            await Task.Delay(5);
-        }
-        var result = await run;
+        h.AutoAdvance = true;
+        var result = await h.Build().RunAsync(CancellationToken.None);
 
         Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(1, 0)));
         h.Tmdb.Verify(t => t.SearchMovieAsync("Never", It.IsAny<CancellationToken>()), Times.Never);
@@ -315,6 +307,7 @@ public class ExternalIdBackfillServiceTests
         h.Returns("Miss 1");
         h.Returns("Miss 2");
         h.Returns("Hit", Hit(9, "Hit", "1999-03-31"));
+        h.AutoAdvance = true;
         var service = h.Build();
 
         var first = await RunToCompletionAsync(h, service);
@@ -334,6 +327,7 @@ public class ExternalIdBackfillServiceTests
         await h.Attempts.RecordAttemptAsync("b", DateTime.UtcNow, CancellationToken.None);
         await h.Attempts.RecordAttemptAsync("gone", DateTime.UtcNow, CancellationToken.None);
 
+        h.AutoAdvance = true;
         await RunToCompletionAsync(h, h.Build());
 
         Assert.That(h.Attempts.Attempts.Keys, Is.EqualTo(new List<string> { "a" }));
@@ -378,12 +372,41 @@ public class ExternalIdBackfillServiceTests
     private static async Task<ExternalIdBackfillResult> RunToCompletionAsync(Harness h, ExternalIdBackfillService service)
     {
         h.Config.RequestsPerMinute = 6000;
-        var run = service.RunAsync(CancellationToken.None);
-        while (!run.IsCompleted)
+        return await service.RunAsync(CancellationToken.None);
+    }
+
+    /// <summary>Completes each timer at once and moves its clock forward by the due time, so throttle waits need no real time.</summary>
+    private sealed class AutoAdvanceTimeProvider(DateTimeOffset start) : TimeProvider
+    {
+        private readonly object _gate = new();
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow()
         {
-            h.Time.Advance(TimeSpan.FromSeconds(1));
-            await Task.Delay(5);
+            lock (_gate)
+            {
+                return _now;
+            }
         }
-        return await run;
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            if (dueTime != Timeout.InfiniteTimeSpan)
+            {
+                lock (_gate)
+                {
+                    _now += dueTime;
+                }
+                ThreadPool.QueueUserWorkItem(_ => callback(state));
+            }
+            return new NoopTimer();
+        }
+
+        private sealed class NoopTimer : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+            public void Dispose() { }
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
     }
 }
