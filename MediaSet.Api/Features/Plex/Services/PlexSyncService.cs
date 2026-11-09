@@ -220,6 +220,8 @@ public sealed class PlexSyncService(
                     r.MatchedCount = scan.Matched;
                     r.UnmatchedCount = scan.Unmatched;
                     r.ErroredCount = scan.Errored;
+                    r.ExternalIdsBackfilled = scan.Backfilled;
+                    r.BackfillSkipped = scan.BackfillSkipped;
                     r.EndedAt = DateTime.UtcNow;
                 });
             }
@@ -257,7 +259,7 @@ public sealed class PlexSyncService(
         }
     }
 
-    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored);
+    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
 
     private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item);
 
@@ -267,6 +269,19 @@ public sealed class PlexSyncService(
     /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
     private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
     {
+        // First step: fill missing ExternalIds from TMDB so the movies can match in this same run. It never
+        // fails the run (only shutdown cancels it).
+        var backfill = new ExternalIdBackfillResult(0, 0);
+        try
+        {
+            using var backfillScope = services.CreateScope();
+            backfill = await backfillScope.ServiceProvider.GetRequiredService<IExternalIdBackfillService>().RunAsync(token);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("Plex sync ExternalId backfill failed ({ExceptionType}); continuing the sync", ex.GetType().Name);
+        }
+
         // The typed client is transient: resolve one per run so its handler is not held for the app's lifetime
         var client = services.GetRequiredService<IPlexClient>();
         var itemType = PlexEntityTypes.LibraryType(entityType);
@@ -420,7 +435,7 @@ public sealed class PlexSyncService(
             logger.LogWarning("Plex sync could not purge Plex data of deleted movies ({ExceptionType})", ex.GetType().Name);
         }
 
-        return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored);
+        return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>

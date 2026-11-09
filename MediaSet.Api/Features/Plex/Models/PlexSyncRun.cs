@@ -52,6 +52,12 @@ public class PlexSyncRun
     /// <summary>Movies that errored while being processed and were skipped. Null until the run finishes successfully.</summary>
     public int? ErroredCount { get; set; }
 
+    /// <summary>Movies that got an ExternalId from TMDB at the start of the run. Null until the run finishes successfully.</summary>
+    public int? ExternalIdsBackfilled { get; set; }
+
+    /// <summary>Movies the backfill searched but left blank (no confident match, or a TMDB error). Null until the run finishes successfully.</summary>
+    public int? BackfillSkipped { get; set; }
+
     /// <summary>Failure or interruption reason. Never contains the Plex token.</summary>
     public string? Message { get; set; }
 
@@ -69,6 +75,8 @@ public record PlexSyncRunDto(
     int? MatchedCount,
     int? UnmatchedCount,
     int? ErroredCount,
+    int? ExternalIdsBackfilled,
+    int? BackfillSkipped,
     string? Message)
 {
     public static PlexSyncRunDto From(PlexSyncRun run) => new(
@@ -82,5 +90,7 @@ public record PlexSyncRunDto(
         run.MatchedCount,
         run.UnmatchedCount,
         run.ErroredCount,
+        run.ExternalIdsBackfilled,
+        run.BackfillSkipped,
         run.Message);
 }

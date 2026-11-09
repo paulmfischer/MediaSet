@@ -61,17 +61,30 @@ guides are in `Setup/`.
 | IGDB | Game metadata | `IgdbConfiguration__` (`ClientId`, `ClientSecret`) | `IIgdbClient` |
 | MusicBrainz | Music album metadata | `MusicBrainzConfiguration__` (`UserAgent`) | `IMusicBrainzClient` |
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
-| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
+| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
 ### Plex sync runs
 
 `POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another
 run holds the lock), starts it in the background and returns 202 with the run, or 409 with the current run when that entity
 type is already in progress. One lock in the singleton `PlexSyncService` serializes runs across all entity types and triggers.
-Each run reads the Plex libraries for the type, matches movies to Plex items and records `succeeded` with `ItemsScanned`, `MatchedCount` and `UnmatchedCount`, `failed` with a message that never
+Each run first backfills missing movie ExternalIds from TMDB (below), then reads the Plex libraries for the type, matches movies to Plex items and records `succeeded` with `ItemsScanned`, `MatchedCount` and `UnmatchedCount`, `ExternalIdsBackfilled` and `BackfillSkipped`, `failed` with a message that never
 holds the token, or `interrupted` (application shutdown, or a restart: `PlexSyncInitializer` closes leftover runs and creates
 the `(EntityType, StartedAt desc)` index at startup). The run's cancellation token is linked to application shutdown and passed
 to every Plex call; there is no cancel endpoint. `/plex/status` and `/plex/{entityType}/status` report the last run per type.
+
+### Plex ExternalId backfill
+
+The first step of every run is `ExternalIdBackfillService` (`Features/Plex/Services`), so ids it fills can match Plex in the same
+run. It selects movies whose `ExternalId` is empty and whose release date has a parseable year (a set id, even one entered by hand, is never selected or changed; a movie without a year is not a candidate and is not counted), searches TMDB
+through `ITmdbClient.SearchMovieAsync` by title, and saves `tmdbid:<id>` only when exactly one result has the same title
+(case-insensitive) and the same release year as the movie. A lone result that differs in title or year, several matching results,
+or no results leave the field blank and count as `BackfillSkipped`. Only `ExternalId` is written. The time of each movie's last search is kept in the `PlexBackfillAttempts` collection (`_id` = movie id, written through `IExternalIdBackfillStore`, purged for deleted movies and movies that got an id), so movies that never resolve rotate behind untried ones instead of using every batch.
+It is throttled by `PlexConfiguration__Backfill__RequestsPerMinute` (default 30, requests at least 60/N seconds apart) and
+`PlexConfiguration__Backfill__BatchSize` (default 50 movies searched per run, never searched or least recently searched first), both validated at startup (at least 1), and never
+reads the background image lookup configuration. `ITmdbClient` exists only when the TMDB section is configured; without it the step
+is skipped with a log line and the sync continues. A TMDB error on one movie counts as skipped, a 429 stops the backfill early,
+and neither fails the run.
 
 ### Plex sync schedule
 
