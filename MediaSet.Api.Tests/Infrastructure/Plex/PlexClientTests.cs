@@ -34,6 +34,28 @@ public class PlexClientTests
             .Route("/library/metadata/1003", "metadata_1003.json");
 
     [Test]
+    public async Task GetItemsAsync_WatchedMovie_ParsesViewCountAndLastViewedAt()
+    {
+        var client = Client(Serving("movie.json"));
+
+        var item = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single();
+
+        Assert.That(item.ViewCount, Is.EqualTo(3));
+        Assert.That(item.LastViewedAt, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(1710000000)));
+    }
+
+    [Test]
+    public async Task GetItemsAsync_UnwatchedMovie_HasNoViewsOrLastViewed()
+    {
+        var client = Client(Serving("multiple_versions.json"));
+
+        var item = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single();
+
+        Assert.That(item.ViewCount, Is.EqualTo(0));
+        Assert.That(item.LastViewedAt, Is.Null);
+    }
+
+    [Test]
     public async Task GetLibrariesAsync_LibrariesFixture_ReturnsAllSections()
     {
         var client = Client(FakePlexHandler.WithServer());
@@ -112,11 +134,11 @@ public class PlexClientTests
         var versions = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions;
 
         Assert.That(versions, Has.Count.EqualTo(2));
-        Assert.That(versions.Select(v => v.Resolution), Is.EqualTo([ "1080", "4k" ]));
+        Assert.That(versions.Select(v => v.Resolution), Is.EqualTo(["1080", "4k"]));
         Assert.That(versions.Select(v => v.FilePath), Is.EqualTo([
             "/data/movies/Dune (2021)/Dune - 1080p.mp4", "/data/movies/Dune (2021)/Dune - 2160p.mkv"
         ]));
-        Assert.That(versions.Select(v => v.SizeBytes), Is.EqualTo([ 3000000000, 42000000000 ]));
+        Assert.That(versions.Select(v => v.SizeBytes), Is.EqualTo([3000000000, 42000000000]));
     }
 
     [Test]
@@ -126,7 +148,7 @@ public class PlexClientTests
 
         var versions = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions;
 
-        Assert.That(versions.Select(v => v.Hdr), Is.EqualTo([ false, true ]));
+        Assert.That(versions.Select(v => v.Hdr), Is.EqualTo([false, true]));
         Assert.That(versions[1].VideoCodec, Is.EqualTo("hevc"));
     }
 
@@ -137,7 +159,7 @@ public class PlexClientTests
 
         var subtitles = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().Subtitles;
 
-        Assert.That(subtitles, Is.EqualTo([ new PlexSubtitle("en", false), new PlexSubtitle("de", true) ]));
+        Assert.That(subtitles, Is.EqualTo([new PlexSubtitle("en", false), new PlexSubtitle("de", true)]));
     }
 
     [Test]
@@ -147,7 +169,7 @@ public class PlexClientTests
 
         var audio = (await client.GetItemsAsync(Movies, null, true, CancellationToken.None)).Single().Versions.Single().AudioTracks;
 
-        Assert.That(audio, Is.EqualTo([ new PlexAudioTrack("dca", 6, "fr"), new PlexAudioTrack("aac", 2, "en") ]));
+        Assert.That(audio, Is.EqualTo([new PlexAudioTrack("dca", 6, "fr"), new PlexAudioTrack("aac", 2, "en")]));
     }
 
     [Test]
@@ -161,8 +183,8 @@ public class PlexClientTests
         var items = await client.GetItemsAsync(Movies, null, true, CancellationToken.None);
 
         var pages = handler.Requests.Where(r => r.Uri.AbsolutePath.EndsWith("/all")).ToList();
-        Assert.That(items.Select(i => i.Title), Is.EqualTo([ "Alpha", "Beta", "Gamma" ]));
-        Assert.That(pages.Select(p => p.Headers["X-Plex-Container-Start"]), Is.EqualTo([ "0", "2" ]));
+        Assert.That(items.Select(i => i.Title), Is.EqualTo(["Alpha", "Beta", "Gamma"]));
+        Assert.That(pages.Select(p => p.Headers["X-Plex-Container-Start"]), Is.EqualTo(["0", "2"]));
         Assert.That(pages.Select(p => p.Headers["X-Plex-Container-Size"]), Is.All.EqualTo("2"));
     }
 
@@ -185,7 +207,7 @@ public class PlexClientTests
 
         var libraries = await client.GetLibrariesForEntityTypeAsync("movies", CancellationToken.None);
 
-        Assert.That(libraries.Select(l => l.Id), Is.EqualTo([ "1", "3" ]));
+        Assert.That(libraries.Select(l => l.Id), Is.EqualTo(["1", "3"]));
     }
 
     [Test]
@@ -197,7 +219,7 @@ public class PlexClientTests
 
         var libraries = await client.GetLibrariesForEntityTypeAsync("movies", CancellationToken.None);
 
-        Assert.That(libraries.Select(l => l.Id), Is.EqualTo([ "3" ]));
+        Assert.That(libraries.Select(l => l.Id), Is.EqualTo(["3"]));
     }
 
     [Test]

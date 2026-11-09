@@ -1,5 +1,7 @@
 using MediaSet.Api.Features.Plex.Models;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
+using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Features.Plex.Services;
@@ -140,11 +142,14 @@ public sealed class PlexSyncService(
                     await Transition(run, r => r.State = PlexSyncRunStates.Running);
                 }
 
-                var scanned = await ScanAsync(run.EntityType, token);
+                var scan = await ScanAsync(run.EntityType, token);
                 await Transition(run, r =>
                 {
                     r.State = PlexSyncRunStates.Succeeded;
-                    r.ItemsScanned = scanned;
+                    r.ItemsScanned = scan.Scanned;
+                    r.MatchedCount = scan.Matched;
+                    r.UnmatchedCount = scan.Unmatched;
+                    r.FailedCount = scan.Failed;
                     r.EndedAt = DateTime.UtcNow;
                 });
             }
@@ -182,19 +187,103 @@ public sealed class PlexSyncService(
         }
     }
 
-    private async Task<int> ScanAsync(string entityType, CancellationToken token)
+    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Failed);
+
+    /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
+    private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
     {
         // The typed client is transient: resolve one per run so its handler is not held for the app's lifetime
         var client = services.GetRequiredService<IPlexClient>();
         var itemType = PlexEntityTypes.LibraryType(entityType);
-        var scanned = 0;
+        var items = new List<PlexItem>();
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, token))
         {
-            var items = await client.GetItemsAsync(library, null, false, token);
-            scanned += items.Count(i => string.Equals(i.Type, itemType, StringComparison.OrdinalIgnoreCase));
+            var libraryItems = await client.GetItemsAsync(library, null, true, token);
+            items.AddRange(libraryItems.Where(i => string.Equals(i.Type, itemType, StringComparison.OrdinalIgnoreCase)));
         }
 
-        return scanned;
+        var itemStore = services.GetRequiredService<IPlexItemStore>();
+        using var scope = services.CreateScope();
+        var movies = (await scope.ServiceProvider.GetRequiredService<IEntityService<Movie>>().GetListAsync(token))
+            .Where(m => !string.IsNullOrEmpty(m.Id))
+            .ToList();
+
+        var byRatingKey = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
+        foreach (var item in items)
+        {
+            byRatingKey.TryAdd(item.RatingKey, item);
+        }
+
+        // GUID lookup, first scanned item wins for a shared GUID
+        var byGuid = new Dictionary<(string Source, string Value), PlexItem>();
+        foreach (var item in items)
+        {
+            foreach (var key in PlexMatching.GuidKeys(item.Guids))
+            {
+                byGuid.TryAdd(key, item);
+            }
+        }
+
+        var matched = 0;
+        var failed = 0;
+        var syncedAt = DateTime.UtcNow;
+        foreach (var movie in movies)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                var stored = await itemStore.GetAsync(movie.Id!, token);
+
+                // The stored Plex item id wins; the ExternalId is only used until the movie is linked
+                PlexItem? item = null;
+                if (stored != null && byRatingKey.TryGetValue(stored.PlexItemId, out var linked))
+                {
+                    item = linked;
+                }
+                if (item == null && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey && byGuid.TryGetValue(externalKey, out var byId))
+                {
+                    item = byId;
+                }
+
+                if (item != null)
+                {
+                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt), token);
+                    matched++;
+                }
+                else if (stored is { OnPlex: true })
+                {
+                    // Linked earlier but gone from Plex now: keep the last data, flag it
+                    stored.OnPlex = false;
+                    stored.LastSyncedAt = syncedAt;
+                    await itemStore.UpsertAsync(stored, token);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // One failing movie must not fail the run
+                failed++;
+                logger.LogWarning(ex, "Plex sync skipped movie {MovieId}", movie.Id);
+            }
+        }
+
+        // Purge the Plex data of movies deleted since the last run
+        try
+        {
+            var live = movies.Select(m => m.Id!).ToHashSet(StringComparer.Ordinal);
+            foreach (var id in await itemStore.ListIdsAsync(token))
+            {
+                if (!live.Contains(id))
+                {
+                    await itemStore.DeleteAsync(id, token);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Plex sync could not purge Plex data of deleted movies");
+        }
+
+        return new ScanResult(items.Count, matched, movies.Count - matched - failed, failed);
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>

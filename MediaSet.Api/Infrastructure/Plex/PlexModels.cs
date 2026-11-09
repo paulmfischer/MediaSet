@@ -32,4 +32,6 @@ public record PlexItem(
     DateTimeOffset? AddedAt,
     string? DeepLink,
     PlexGuids Guids,
-    IReadOnlyList<PlexVersion> Versions);
+    IReadOnlyList<PlexVersion> Versions,
+    int ViewCount = 0,
+    DateTimeOffset? LastViewedAt = null);

@@ -7,7 +7,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Features.Plex.Models;
+using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Database;
+using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Plex;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -38,7 +40,7 @@ public class PlexSyncApiTests
         _factories.Clear();
     }
 
-    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexSyncRunStore store)
+    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexSyncRunStore store, InMemoryPlexItemStore? items = null, params Movie[] movies)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -65,6 +67,12 @@ public class PlexSyncApiTests
                 }
                 services.AddSingleton(new Mock<IDatabaseService>().Object);
                 InMemoryPlexSyncRunStore.Replace(services, store);
+                InMemoryPlexItemStore.Replace(services, items ?? new InMemoryPlexItemStore());
+                foreach (var d in services.Where(d => d.ServiceType == typeof(IEntityService<Movie>)).ToList())
+                {
+                    services.Remove(d);
+                }
+                services.AddScoped(_ => InMemoryPlexItemStore.MovieService(movies).Object);
                 services.AddHttpClient(nameof(IPlexClient)).ConfigurePrimaryHttpMessageHandler(() => handler);
             });
         });

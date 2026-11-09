@@ -68,10 +68,21 @@ guides are in `Setup/`.
 `POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another
 run holds the lock), starts it in the background and returns 202 with the run, or 409 with the current run when that entity
 type is already in progress. One lock in the singleton `PlexSyncService` serializes runs across all entity types and triggers.
-Each run reads the Plex libraries for the type and records `succeeded` with `ItemsScanned`, `failed` with a message that never
+Each run reads the Plex libraries for the type, matches movies to Plex items and records `succeeded` with `ItemsScanned`, `MatchedCount` and `UnmatchedCount`, `failed` with a message that never
 holds the token, or `interrupted` (application shutdown, or a restart: `PlexSyncInitializer` closes leftover runs and creates
 the `(EntityType, StartedAt desc)` index at startup). The run's cancellation token is linked to application shutdown and passed
 to every Plex call; there is no cancel endpoint. `/plex/status` and `/plex/{entityType}/status` report the last run per type.
+
+### Plex matching and stored data
+
+A run matches each movie to a Plex item first by the stored Plex item id (rating key) from an earlier run, then by
+`Movie.ExternalId` (`tmdbid:`, `imdbid:` or `tvdbid:` values) against the item's tmdb, imdb and tvdb GUIDs. There is no title
+fallback; unmatched movies stay unmatched. The Plex data lives in the separate `PlexItems` collection (`PlexItemData`, `_id` =
+movie id, plus an index on the Plex item id, created at startup), so editing a movie never touches it. For an item with several
+versions the best one is stored: highest resolution, then HDR, then larger file. `GET /plex/{entityType}/items/{movieId}` returns
+the document (404 when unlinked) and is the only response with the server file path. Deleting a movie deletes its Plex document
+through `IPlexDataCleanup` (registered only when Plex is enabled; a failure is logged, not surfaced), and each run purges documents
+of movies that no longer exist. Plex is only ever read.
 
 ## Local development
 
