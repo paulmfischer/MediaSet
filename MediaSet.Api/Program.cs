@@ -243,6 +243,8 @@ if (plexSection.Exists())
         builder.Services.AddSingleton<IPlexSyncService>(sp => sp.GetRequiredService<PlexSyncService>());
         builder.Services.AddHostedService(sp => sp.GetRequiredService<PlexSyncService>());
         builder.Services.AddHostedService<PlexSyncInitializer>();
+        builder.Services.AddSingleton<IPlexScheduleInfo, PlexScheduleInfo>();
+        builder.Services.AddHostedService<PlexSyncScheduler>();
     }
 }
 
