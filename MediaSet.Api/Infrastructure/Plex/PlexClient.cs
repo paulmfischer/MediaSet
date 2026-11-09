@@ -156,7 +156,17 @@ public class PlexClient : IPlexClient
         var start = 0;
         for (var page = 0; page < MaxPages; page++)
         {
-            var root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken);
+            ItemsRoot root;
+            try
+            {
+                root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken, allowNotFound: true);
+            }
+            catch (PlexNotFoundException)
+            {
+                // Plex no longer has the season: it has no episodes (the caller treats them as missing)
+                return [];
+            }
+
             var container = root.MediaContainer;
             var metadata = container?.Metadata ?? [];
             foreach (var listed in metadata)
@@ -175,7 +185,8 @@ public class PlexClient : IPlexClient
                     m.Title ?? string.Empty,
                     m.ViewCount is > 0 ? m.ViewCount.Value : 0,
                     m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
-                    (m.Media ?? []).Select(MapVersion).ToList()));
+                    (m.Media ?? []).Select(MapVersion).ToList(),
+                    !m.StreamLookupFailed));
             }
 
             start += metadata.Count;
@@ -215,6 +226,7 @@ public class PlexClient : IPlexClient
                 listed.RatingKey,
                 ex.StatusCode,
                 ex.GetType().Name);
+            listed.StreamLookupFailed = true;
             return listed;
         }
 
@@ -390,6 +402,7 @@ public class PlexClient : IPlexClient
         public int? Year { get; set; }
         public int? Index { get; set; }
         public int? ParentIndex { get; set; }
+        [JsonIgnore] public bool StreamLookupFailed { get; set; }
         public int? LeafCount { get; set; }
         public long? AddedAt { get; set; }
         [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }

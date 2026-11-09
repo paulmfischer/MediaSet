@@ -265,9 +265,30 @@ public class PlexClientTests
     [Test]
     public void GetEpisodesAsync_PlexUnreachable_ThrowsPlexClientException()
     {
-        var client = Client(FakePlexHandler.WithServer());
+        var client = Client(FakePlexHandler.WithServer().Route("/library/metadata/2102/children", _ => FakePlexHandler.Json("{}", HttpStatusCode.InternalServerError)));
 
         Assert.That(async () => await client.GetEpisodesAsync("2102", CancellationToken.None), Throws.TypeOf<PlexClientException>());
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_SeasonUnknownToPlex_ReturnsNoEpisodes()
+    {
+        var client = Client(FakePlexHandler.WithServer());
+
+        Assert.That(await client.GetEpisodesAsync("2102", CancellationToken.None), Is.Empty);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_StreamLookupFails_KeepsListingDataAndFlagsStreamsUnavailable()
+    {
+        var handler = ServingEpisodes().Route("/library/metadata/4002", _ => FakePlexHandler.Json("{}", HttpStatusCode.InternalServerError));
+        var client = Client(handler);
+
+        var episodes = await client.GetEpisodesAsync("2102", CancellationToken.None);
+
+        Assert.That(episodes.Select(e => e.StreamsAvailable), Is.EqualTo([true, false, true]));
+        Assert.That(episodes[1].Versions.Single().Resolution, Is.EqualTo("720"));
+        Assert.That(episodes[1].Versions.Single().AudioTracks, Is.Empty);
     }
 
     [Test]

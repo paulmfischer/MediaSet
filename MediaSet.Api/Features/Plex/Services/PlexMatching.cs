@@ -189,12 +189,23 @@ public static class PlexMatching
         bool manual,
         bool countMisses)
     {
+        var storedByKey = stored.GroupBy(e => (e.SeasonNumber, e.EpisodeNumber)).ToDictionary(g => g.Key, g => g.First());
         var merged = new Dictionary<(int Season, int Episode), PlexEpisodeData>();
         foreach (var (seasonIndex, episodes) in fetched)
         {
             foreach (var episode in episodes)
             {
-                merged.TryAdd((seasonIndex, episode.EpisodeIndex), BuildEpisode(seasonIndex, episode));
+                var built = BuildEpisode(seasonIndex, episode);
+                if (!episode.StreamsAvailable && storedByKey.TryGetValue((seasonIndex, episode.EpisodeIndex), out var previous))
+                {
+                    // The stream lookup failed this time: keep what was known rather than overwrite it with nothing
+                    built.Hdr = previous.Hdr;
+                    built.VideoCodec ??= previous.VideoCodec;
+                    built.BestAudioTrack = previous.BestAudioTrack;
+                    built.AudioLanguages = previous.AudioLanguages;
+                    built.SubtitleLanguages = previous.SubtitleLanguages;
+                }
+                merged.TryAdd((seasonIndex, episode.EpisodeIndex), built);
             }
         }
 

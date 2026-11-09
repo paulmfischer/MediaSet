@@ -163,7 +163,8 @@ public class PlexItemApiTests
             PlexItemId = "2001",
             OnPlex = true,
             Scope = PlexScope.Single(1),
-            Seasons = [new PlexSeasonData { Index = 1, PlexSeasonId = "2101", EpisodeCount = 2 }],
+            Seasons = [new PlexSeasonData { Index = 1, PlexSeasonId = "2101", EpisodeCount = 2, Rollup = new PlexRollup { EpisodesPresent = 2, EpisodesExpected = 2 } }],
+            Rollup = new PlexRollup { EpisodesPresent = 0, EpisodesExpected = 2, LastWatchedAt = new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Utc) },
             Episodes =
             [
                 new PlexEpisodeData { SeasonNumber = 1, EpisodeNumber = 2, Title = "Two", FilePath = "/data/tv/Secret Show/S01E02.mkv", Watched = true },
@@ -182,6 +183,8 @@ public class PlexItemApiTests
         Assert.That(episodes.Select(e => e.GetProperty("title").GetString()), Is.EqualTo(["One", "Two"]));
         Assert.That(episodes[0].GetProperty("filePath").GetString(), Is.EqualTo("/data/tv/Secret Show/S01E01.mkv"));
         Assert.That(episodes[1].GetProperty("watched").GetBoolean(), Is.True);
+        Assert.That(json.GetProperty("rollup").GetProperty("episodesPresent").GetInt32(), Is.EqualTo(0));
+        Assert.That(json.GetProperty("seasons")[0].GetProperty("rollup").GetProperty("episodesExpected").GetInt32(), Is.EqualTo(2));
     }
 
     [Test]

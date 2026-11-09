@@ -47,7 +47,8 @@ public record PlexSeason(
 
 /// <summary>
 /// An episode of a Plex season. The versions are the episode's media files (best one chosen by the caller).
-/// SeasonIndex is what Plex reports for the parent season (0 for specials).
+/// StreamsAvailable is false when the per-episode stream lookup failed, so audio, subtitle and HDR data are missing
+/// (not absent). SeasonIndex is what Plex reports for the parent season (0 for specials).
 /// </summary>
 public record PlexEpisode(
     string RatingKey,
@@ -56,4 +57,5 @@ public record PlexEpisode(
     string Title,
     int ViewCount,
     DateTimeOffset? LastViewedAt,
-    IReadOnlyList<PlexVersion> Versions);
+    IReadOnlyList<PlexVersion> Versions,
+    bool StreamsAvailable = true);

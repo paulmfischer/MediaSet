@@ -214,7 +214,7 @@ public record PlexItemDataDto(
     PlexScope? Scope = null,
     IReadOnlyList<PlexSeasonDto>? Seasons = null,
     IReadOnlyList<PlexEpisodeDto>? Episodes = null,
-    PlexRollup? Rollup = null)
+    PlexRollupDto? Rollup = null)
 {
     private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 
@@ -243,12 +243,42 @@ public record PlexItemDataDto(
         Utc(d.LastSyncedAt),
         d.Scope,
         d.Scope == null ? null : [.. d.Seasons.OrderBy(x => x.Index).Select(x => new PlexSeasonDto(
-            x.Index, x.PlexSeasonId, x.EpisodeCount, x.DateAdded.HasValue ? Utc(x.DateAdded.Value) : null, x.DeepLink, x.Rollup))],
+            x.Index, x.PlexSeasonId, x.EpisodeCount, x.DateAdded.HasValue ? Utc(x.DateAdded.Value) : null, x.DeepLink, PlexRollupDto.From(x.Rollup)))],
         d.Scope == null ? null : [.. d.Episodes.OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber).Select(PlexEpisodeDto.From)],
-        d.Scope == null ? null : d.Rollup);
+        d.Scope == null ? null : PlexRollupDto.From(d.Rollup));
 }
 
-public record PlexSeasonDto(int Index, string PlexSeasonId, int EpisodeCount, DateTimeOffset? DateAdded, string? DeepLink, PlexRollup? Rollup = null);
+public record PlexSeasonDto(int Index, string PlexSeasonId, int EpisodeCount, DateTimeOffset? DateAdded, string? DeepLink, PlexRollupDto? Rollup = null);
+
+/// <summary>The rollup of a TV entry or season as the API returns it.</summary>
+public record PlexRollupDto(
+    int EpisodesPresent,
+    int EpisodesExpected,
+    int WatchedCount,
+    bool Watched,
+    DateTimeOffset? LastWatchedAt,
+    string? Resolution,
+    bool ResolutionMixed,
+    bool Hdr,
+    IReadOnlyList<string> AudioLanguages,
+    bool AudioLanguagesDiffer,
+    IReadOnlyList<string> SubtitleLanguages,
+    bool SubtitleLanguagesDiffer)
+{
+    public static PlexRollupDto? From(PlexRollup? r) => r == null ? null : new(
+        r.EpisodesPresent,
+        r.EpisodesExpected,
+        r.WatchedCount,
+        r.Watched,
+        r.LastWatchedAt.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(r.LastWatchedAt.Value, DateTimeKind.Utc)) : null,
+        r.Resolution,
+        r.ResolutionMixed,
+        r.Hdr,
+        r.AudioLanguages,
+        r.AudioLanguagesDiffer,
+        r.SubtitleLanguages,
+        r.SubtitleLanguagesDiffer);
+}
 
 /// <summary>An episode with its file path, as the single-item Plex responses return it.</summary>
 public record PlexEpisodeDto(

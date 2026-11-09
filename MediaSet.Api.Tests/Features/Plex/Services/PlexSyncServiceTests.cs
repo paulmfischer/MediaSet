@@ -1243,6 +1243,32 @@ public class PlexSyncServiceTests
     }
 
     [Test]
+    public async Task Sync_EpisodeStreamLookupFailed_KeepsPreviouslyStoredStreamFields()
+    {
+        var h = new Harness();
+        var old = Stored(2, 1);
+        old.Hdr = true;
+        old.BestAudioTrack = new PlexAudioTrackData("truehd", 8, "eng");
+        old.AudioLanguages = ["eng", "jpn"];
+        old.SubtitleLanguages = ["eng"];
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), old), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(episode.FilePath, Is.EqualTo("/p/new.mkv"));
+        Assert.That(episode.Hdr, Is.True);
+        Assert.That(episode.BestAudioTrack, Is.EqualTo(new PlexAudioTrackData("truehd", 8, "eng")));
+        Assert.That(episode.AudioLanguages, Is.EqualTo(["eng", "jpn"]));
+        Assert.That(episode.SubtitleLanguages, Is.EqualTo(["eng"]));
+    }
+
+    [Test]
     public async Task Sync_SeasonInScopeGoneFromPlex_TreatsItsEpisodesAsMissing()
     {
         var h = new Harness();

@@ -433,7 +433,8 @@ public class PlexLinkApiTests
         var items = new InMemoryPlexItemStore();
         var handler = FakePlexHandler.WithServer()
             .Route("/library/metadata/2001", "show.json")
-            .Route("/library/metadata/2001/children", "seasons.json");
+            .Route("/library/metadata/2001/children", "seasons.json")
+            .Route("/library/metadata/2102/children", _ => FakePlexHandler.Json("{}", HttpStatusCode.InternalServerError));
         using var client = CreateClient(handler, items);
 
         var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
