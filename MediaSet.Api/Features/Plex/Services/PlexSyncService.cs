@@ -131,7 +131,9 @@ public sealed class PlexSyncService(
             }
 
             var client = services.GetRequiredService<IPlexClient>();
-            var item = await FetchLinkedItemAsync(client, entityType, stored.PlexItemId, cancellationToken);
+            // A stored scope marks a TV entry, linked to a show
+            var itemType = PlexEntityTypes.ItemType(stored.Scope != null);
+            var item = await FetchLinkedItemAsync(client, itemType, stored.PlexItemId, cancellationToken);
             if (item == null)
             {
                 // Keep the last data, flag it, as a full sync does
@@ -145,7 +147,9 @@ public sealed class PlexSyncService(
             }
 
             // A refresh keeps the link as it was made (auto stays auto, manual stays manual)
-            var data = PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
+            var data = stored.Scope is { } scope
+                ? PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, stored.LinkSource)
+                : PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
             await itemStore.UpsertAsync(data, cancellationToken);
             return new PlexRefreshResult(PlexRefreshStatus.Refreshed, data);
         }
@@ -163,11 +167,11 @@ public sealed class PlexSyncService(
         }
     }
 
-    /// <summary>The Plex item with the rating key when it exists and is of the entity type's Plex type.</summary>
-    private static async Task<PlexItem?> FetchLinkedItemAsync(IPlexClient client, string entityType, string ratingKey, CancellationToken token)
+    /// <summary>The Plex item with the rating key when it exists and is of the wanted Plex type (movie or show).</summary>
+    private static async Task<PlexItem?> FetchLinkedItemAsync(IPlexClient client, string itemType, string ratingKey, CancellationToken token)
     {
         var item = await client.GetItemAsync(ratingKey, true, token);
-        return item != null && string.Equals(item.Type, PlexEntityTypes.LibraryType(entityType), StringComparison.OrdinalIgnoreCase) ? item : null;
+        return item != null && string.Equals(item.Type, itemType, StringComparison.OrdinalIgnoreCase) ? item : null;
     }
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -261,7 +265,7 @@ public sealed class PlexSyncService(
 
     private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
 
-    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item);
+    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null);
 
     /// <summary>Consecutive runs an auto-linked item may be missing before its link is dropped.</summary>
     private const int AutoLinkDropMisses = 2;
@@ -284,12 +288,12 @@ public sealed class PlexSyncService(
 
         // The typed client is transient: resolve one per run so its handler is not held for the app's lifetime
         var client = services.GetRequiredService<IPlexClient>();
-        var itemType = PlexEntityTypes.LibraryType(entityType);
+        var itemTypes = PlexEntityTypes.LibraryTypes(entityType);
         var items = new List<PlexItem>();
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, token))
         {
             var libraryItems = await client.GetItemsAsync(library, null, true, token);
-            items.AddRange(libraryItems.Where(i => string.Equals(i.Type, itemType, StringComparison.OrdinalIgnoreCase)));
+            items.AddRange(libraryItems.Where(i => itemTypes.Contains(i.Type, StringComparer.OrdinalIgnoreCase)));
         }
 
         var itemStore = services.GetRequiredService<IPlexItemStore>();
@@ -304,14 +308,26 @@ public sealed class PlexSyncService(
             byRatingKey.TryAdd(item.RatingKey, item);
         }
 
-        // GUID lookup, first scanned item wins for a shared GUID
-        var byGuid = new Dictionary<(string Source, string Value), PlexItem>();
+        // GUID lookup per Plex type (a movie and a show may share an id number), first scanned item wins for a shared GUID
+        var byGuid = new Dictionary<(string Type, string Source, string Value), PlexItem>();
         foreach (var item in items)
         {
-            foreach (var key in PlexMatching.GuidKeys(item.Guids))
+            foreach (var (source, value) in PlexMatching.GuidKeys(item.Guids))
             {
-                byGuid.TryAdd(key, item);
+                byGuid.TryAdd((item.Type.ToLowerInvariant(), source, value), item);
             }
+        }
+
+        // Seasons of a show are read once per run, however many entries link to it
+        var seasonsByShow = new Dictionary<string, IReadOnlyList<PlexSeason>>(StringComparer.Ordinal);
+        async Task<IReadOnlyList<PlexSeason>> SeasonsOfAsync(string showKey)
+        {
+            if (!seasonsByShow.TryGetValue(showKey, out var seasons))
+            {
+                seasons = await client.GetSeasonsAsync(showKey, token);
+                seasonsByShow[showKey] = seasons;
+            }
+            return seasons;
         }
 
         // Phase 1 reads only: decide each movie's Plex item. A PlexClientException (outage, rejected token,
@@ -326,23 +342,54 @@ public sealed class PlexSyncService(
                 var stored = await itemStore.GetAsync(movie.Id!, token);
                 var manual = stored is { LinkSource: PlexLinkSources.Manual };
 
-                // The stored Plex item id wins; the ExternalId is only used until the movie is linked
+                // A TV series entry links to a Plex show, anything else to a movie. A stored link of the other kind is ignored.
+                var isTv = movie.IsTvSeries;
+                var wantedType = PlexEntityTypes.ItemType(isTv);
+                var storedIsTv = stored?.Scope != null;
+                var storedUsable = stored != null && storedIsTv == isTv;
+
+                // The stored Plex item id wins; the ExternalId is only used until the entry is linked
                 PlexItem? item = null;
-                if (stored != null && byRatingKey.TryGetValue(stored.PlexItemId, out var linked))
+                if (storedUsable && byRatingKey.TryGetValue(stored!.PlexItemId, out var linked)
+                    && string.Equals(linked.Type, wantedType, StringComparison.OrdinalIgnoreCase))
                 {
                     item = linked;
                 }
-                if (item == null && manual)
+                if (item == null && manual && storedUsable)
                 {
                     // A manual link may point outside the scanned libraries: ask Plex for that item itself
-                    item = await FetchLinkedItemAsync(client, entityType, stored!.PlexItemId, token);
+                    item = await FetchLinkedItemAsync(client, wantedType, stored!.PlexItemId, token);
                 }
-                if (item == null && !manual && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey && byGuid.TryGetValue(externalKey, out var byId))
+                if (item == null && !manual && PlexMatching.ExternalIdKey(movie.ExternalId) is { } externalKey
+                    && byGuid.TryGetValue((wantedType, externalKey.Source, externalKey.Value), out var byId))
                 {
                     item = byId;
                 }
 
-                plans.Add(new MoviePlan(movie, stored, manual, item));
+                PlexScope? entryScope = null;
+                IReadOnlyList<PlexSeason>? seasons = null;
+                if (isTv)
+                {
+                    // A manual link keeps its entryScope. An automatic one reads it from the title, and keeps its stored entryScope
+                    // when the title no longer says. No readable entryScope means no match (and no guessing).
+                    var parsed = PlexTvTitleParser.ParseScope(movie.Title);
+                    entryScope = manual && storedUsable ? stored!.Scope : parsed.IsReadable ? parsed : storedUsable ? stored!.Scope : null;
+                    if (entryScope == null || item == null)
+                    {
+                        item = null;
+                    }
+                    else
+                    {
+                        seasons = await SeasonsOfAsync(item.RatingKey);
+                        // Automatic only: a show that has none of the entry's seasons is not a match
+                        if (!manual && !PlexMatching.ScopeAvailable(seasons, entryScope))
+                        {
+                            item = null;
+                        }
+                    }
+                }
+
+                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
             {
@@ -373,14 +420,24 @@ public sealed class PlexSyncService(
                         continue;
                     }
 
-                    if (!linkedBy.TryAdd(item.RatingKey, movie.Id!))
+                    var source = plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto;
+                    if (plan.Scope != null)
                     {
-                        // Duplicates are allowed; the owner may want to know
-                        logger.LogWarning("Plex item {RatingKey} is linked by movies {FirstMovieId} and {MovieId}", item.RatingKey, linkedBy[item.RatingKey], movie.Id);
+                        // Several TV entries may link to one show, each with its own scope: expected, not logged.
+                        // Build resets MissCount and Broken: a found show recovers the link.
+                        await itemStore.UpsertAsync(PlexMatching.BuildShow(movie.Id!, item, plan.Seasons ?? [], plan.Scope, syncedAt, source), token);
                     }
+                    else
+                    {
+                        if (!linkedBy.TryAdd(item.RatingKey, movie.Id!))
+                        {
+                            // Duplicates are allowed; the owner may want to know
+                            logger.LogWarning("Plex item {RatingKey} is linked by movies {FirstMovieId} and {MovieId}", item.RatingKey, linkedBy[item.RatingKey], movie.Id);
+                        }
 
-                    // Build resets MissCount and Broken: a found item recovers the link
-                    await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto), token);
+                        // Build resets MissCount and Broken: a found item recovers the link
+                        await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source), token);
+                    }
                     matched++;
                 }
                 else if (stored != null)

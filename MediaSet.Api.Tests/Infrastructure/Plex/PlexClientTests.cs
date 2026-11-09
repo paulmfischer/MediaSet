@@ -177,6 +177,36 @@ public class PlexClientTests
     }
 
     [Test]
+    public async Task GetSeasonsAsync_ShowWithSeasons_ReturnsIndexEpisodeCountAndDeepLinkInIndexOrder()
+    {
+        var client = Client(FakePlexHandler.WithServer().Route("/library/metadata/2001/children", "seasons.json"));
+
+        var seasons = await client.GetSeasonsAsync("2001", CancellationToken.None);
+
+        Assert.That(seasons.Select(s => s.Index), Is.EqualTo([0, 1, 2, 3]));
+        Assert.That(seasons.Select(s => s.EpisodeCount), Is.EqualTo([2, 7, 13, 13]));
+        Assert.That(seasons[2].RatingKey, Is.EqualTo("2102"));
+        Assert.That(seasons[2].AddedAt, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(1710000300)));
+        Assert.That(seasons[2].DeepLink, Does.Contain("details?key=").And.Contain("2102"));
+    }
+
+    [Test]
+    public async Task GetSeasonsAsync_ShowWithoutSeasons_ReturnsEmpty()
+    {
+        var client = Client(FakePlexHandler.WithServer().Route("/library/metadata/2001/children", "seasons_none.json"));
+
+        Assert.That(await client.GetSeasonsAsync("2001", CancellationToken.None), Is.Empty);
+    }
+
+    [Test]
+    public void GetSeasonsAsync_PlexUnreachable_ThrowsPlexClientException()
+    {
+        var client = Client(FakePlexHandler.WithServer());
+
+        Assert.That(async () => await client.GetSeasonsAsync("2001", CancellationToken.None), Throws.TypeOf<PlexClientException>());
+    }
+
+    [Test]
     public async Task GetItemsAsync_MultipleVersionsFixture_ExposesEveryVersion()
     {
         var client = Client(Serving("multiple_versions.json"));
@@ -251,13 +281,13 @@ public class PlexClientTests
     }
 
     [Test]
-    public async Task GetLibrariesForEntityTypeAsync_NoSectionIds_ReturnsAllMovieLibrariesOnly()
+    public async Task GetLibrariesForEntityTypeAsync_NoSectionIds_ReturnsAllMovieAndShowLibraries()
     {
         var client = Client(FakePlexHandler.WithServer());
 
         var libraries = await client.GetLibrariesForEntityTypeAsync("movies", CancellationToken.None);
 
-        Assert.That(libraries.Select(l => l.Id), Is.EqualTo(["1", "3"]));
+        Assert.That(libraries.Select(l => l.Id), Is.EqualTo(["1", "2", "3"]));
     }
 
     [Test]
@@ -273,7 +303,7 @@ public class PlexClientTests
     }
 
     [Test]
-    public async Task GetLibrariesForEntityTypeAsync_SectionIdOfShowLibrary_IsNotReadForMovies()
+    public async Task GetLibrariesForEntityTypeAsync_SectionIdOfShowLibrary_ReturnsTheShowLibrary()
     {
         var config = new PlexConfiguration { Token = Token };
         config.Entities["movies"] = new PlexEntityConfiguration { Enabled = true, LibrarySectionIds = ["2"] };
@@ -281,7 +311,7 @@ public class PlexClientTests
 
         var libraries = await client.GetLibrariesForEntityTypeAsync("movies", CancellationToken.None);
 
-        Assert.That(libraries, Is.Empty);
+        Assert.That(libraries.Select(l => l.Id), Is.EqualTo(["2"]));
     }
 
     [Test]

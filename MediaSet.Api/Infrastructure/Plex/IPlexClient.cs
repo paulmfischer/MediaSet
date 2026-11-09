@@ -8,7 +8,8 @@ public interface IPlexClient
 
     /// <summary>
     /// The libraries to read for an entity type: its configured section ids when set, otherwise all
-    /// video libraries of the matching kind (movies read only "movie" libraries).
+    /// video libraries of the matching kinds (movies read "movie" libraries and, for TV series entries,
+    /// "show" libraries).
     /// </summary>
     Task<IReadOnlyList<PlexLibrary>> GetLibrariesForEntityTypeAsync(string entityType, CancellationToken cancellationToken);
 
@@ -25,4 +26,7 @@ public interface IPlexClient
     /// Plex has no such item.
     /// </summary>
     Task<PlexItem?> GetItemAsync(string ratingKey, bool includeDetails, CancellationToken cancellationToken);
+
+    /// <summary>The seasons of a show by its rating key (one request), with the episode count Plex reports. Empty when Plex has none.</summary>
+    Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken);
 }

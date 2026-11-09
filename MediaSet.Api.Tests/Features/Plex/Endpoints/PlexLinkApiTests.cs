@@ -27,6 +27,8 @@ public class PlexLinkApiTests
 {
     private const string Token = "super-secret-token-value";
     private const string MovieId = "65a000000000000000000001";
+    private const string TvId = "65a000000000000000000002";
+    private const string TvNoScopeId = "65a000000000000000000003";
     private const string MissingMovieId = "65a0000000000000000000ff";
     private readonly List<WebApplicationFactory<Program>> _factories = [];
 
@@ -67,8 +69,12 @@ public class PlexLinkApiTests
                 }
                 services.AddSingleton(new Mock<IDatabaseService>().Object);
                 var movie = new Movie { Id = MovieId, Title = "Dune", ExternalId = "tmdbid:1" };
-                var movies = InMemoryPlexItemStore.MovieService(movie);
+                var tv = new Movie { Id = TvId, Title = "The Matrix Show: Season 2", IsTvSeries = true };
+                var tvNoScope = new Movie { Id = TvNoScopeId, Title = "The Matrix Show", IsTvSeries = true };
+                var movies = InMemoryPlexItemStore.MovieService(movie, tv, tvNoScope);
                 movies.Setup(s => s.GetAsync(MovieId, It.IsAny<CancellationToken>())).ReturnsAsync(movie);
+                movies.Setup(s => s.GetAsync(TvId, It.IsAny<CancellationToken>())).ReturnsAsync(tv);
+                movies.Setup(s => s.GetAsync(TvNoScopeId, It.IsAny<CancellationToken>())).ReturnsAsync(tvNoScope);
                 services.AddScoped(_ => movies.Object);
                 InMemoryPlexSyncRunStore.Replace(services);
                 InMemoryPlexItemStore.Replace(services, items);
@@ -83,6 +89,10 @@ public class PlexLinkApiTests
         .Route("/library/metadata/1001", "metadata_1001.json")
         .Route("/library/sections/1/all", "movie.json")
         .Route("/library/sections/3/all", "subtitles_audio.json");
+
+    private static FakePlexHandler ServerWithShow() => Server()
+        .Route("/library/metadata/2001", "show.json")
+        .Route("/library/metadata/2001/children", "seasons.json");
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
     {
@@ -356,5 +366,171 @@ public class PlexLinkApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
         Assert.That(body.GetProperty("run").GetProperty("id").GetString(), Is.EqualTo(run.GetProperty("id").GetString()));
         Assert.That(items.Items[MovieId].Resolution, Is.EqualTo("old"));
+    }
+
+    [Test]
+    public async Task Link_TvEntrySingleSeasonScope_StoresShowScopeAndSelectedSeasonOnly()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
+        var json = await ReadJsonAsync(response);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(json.GetProperty("linkSource").GetString(), Is.EqualTo("manual"));
+        Assert.That(json.GetProperty("plexItemId").GetString(), Is.EqualTo("2001"));
+        Assert.That(json.GetProperty("scope").GetProperty("kind").GetString(), Is.EqualTo("season"));
+        Assert.That(json.GetProperty("scope").GetProperty("from").GetInt32(), Is.EqualTo(2));
+        var seasons = json.GetProperty("seasons").EnumerateArray().ToList();
+        Assert.That(seasons, Has.Count.EqualTo(1));
+        Assert.That(seasons[0].GetProperty("index").GetInt32(), Is.EqualTo(2));
+        Assert.That(seasons[0].GetProperty("episodeCount").GetInt32(), Is.EqualTo(13));
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
+    }
+
+    [Test]
+    public async Task Link_TvEntryRangeScope_StoresTheSeasonsInTheRange()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "range", from = 1, to = 2 } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(new PlexScope(PlexScopeKinds.Range, 1, 2)));
+        Assert.That(items.Items[TvId].Seasons.Select(s => s.Index), Is.EqualTo([1, 2]));
+    }
+
+    [Test]
+    public async Task Link_TvEntryAllScope_StoresEverySeasonIncludingSpecials()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvNoScopeId, new { plexItemId = "2001", scope = new { kind = "all" } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvNoScopeId].Scope, Is.EqualTo(PlexScope.AllSeasons));
+        Assert.That(items.Items[TvNoScopeId].Seasons.Select(s => s.Index), Is.EqualTo([0, 1, 2, 3]));
+    }
+
+    [Test]
+    public async Task Link_TvEntryWithoutScopeAndReadableTitle_UsesTheTitleScope()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001" });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
+    }
+
+    [Test]
+    public async Task Link_TvEntryWithoutScopeAndUnreadableTitle_ReturnsBadRequestAndStoresNothing()
+    {
+        var items = new InMemoryPlexItemStore();
+        var handler = ServerWithShow();
+        using var client = CreateClient(handler, items);
+
+        var response = await LinkAsync(client, TvNoScopeId, new { plexItemId = "2001" });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(items.Items, Is.Empty);
+        Assert.That(handler.Requests, Is.Empty);
+    }
+
+    [Test]
+    public async Task Link_TvEntryScopeSeasonNotOnPlex_StillLinksWithNoSeasons()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 9 } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvId].Seasons, Is.Empty);
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(9)));
+    }
+
+    [Test]
+    public async Task Link_TwoTvEntriesToOneShow_EachKeepsItsOwnScope()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "season", season = 2 } });
+        await LinkAsync(client, TvNoScopeId, new { plexItemId = "2001", scope = new { kind = "range", from = 1, to = 3 } });
+
+        Assert.That(items.Items[TvId].PlexItemId, Is.EqualTo(items.Items[TvNoScopeId].PlexItemId));
+        Assert.That(items.Items[TvId].Seasons.Select(s => s.Index), Is.EqualTo([2]));
+        Assert.That(items.Items[TvNoScopeId].Seasons.Select(s => s.Index), Is.EqualTo([1, 2, 3]));
+    }
+
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"season\"}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"season\",\"season\":-1}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"season\",\"season\":100}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":3,\"to\":1}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":2,\"to\":2}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"range\",\"from\":1}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{\"kind\":\"everything\"}}")]
+    [TestCase("{\"plexItemId\":\"2001\",\"scope\":{}}")]
+    public async Task Link_TvEntryInvalidScope_ReturnsBadRequest(string body)
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await client.PutAsync($"/plex/movies/items/{TvId}/link", new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Link_MovieWithScope_ReturnsBadRequest()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, MovieId, new { plexItemId = "1001", scope = new { kind = "all" } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Link_TvEntryToAMovieItem_ReturnsNotFound()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "1001", scope = new { kind = "all" } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Refresh_LinkedTvEntry_RereadsSeasonsKeepingScopeAndLink()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = TvId,
+            PlexItemId = "2001",
+            OnPlex = true,
+            LinkSource = PlexLinkSources.Manual,
+            Scope = PlexScope.Single(2),
+            Seasons = [new PlexSeasonData { Index = 2, PlexSeasonId = "2102", EpisodeCount = 1 }]
+        }, CancellationToken.None);
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await client.PostAsync($"/plex/movies/items/{TvId}/refresh", null);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(items.Items[TvId].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
+        Assert.That(items.Items[TvId].Seasons.Single().EpisodeCount, Is.EqualTo(13));
     }
 }

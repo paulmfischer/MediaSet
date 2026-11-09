@@ -6,10 +6,11 @@ namespace MediaSet.Api.Features.Plex.Services;
 public interface IPlexLinkService
 {
     /// <summary>
-    /// Links a movie to a Plex item by hand and stores that item's data. Replaces any existing link. Null when
-    /// Plex has no such item for the entity type.
+    /// Links an entry to a Plex item by hand and stores that item's data. Replaces any existing link. Without a
+    /// scope the item must be a movie. With a scope (a TV series entry) it must be a show, and the Plex seasons the
+    /// scope covers are stored; the scope must be readable. Null when Plex has no such item of that type.
     /// </summary>
-    Task<PlexItemData?> LinkAsync(string entityType, string movieId, string plexItemId, CancellationToken cancellationToken);
+    Task<PlexItemData?> LinkAsync(string entityType, string movieId, string plexItemId, CancellationToken cancellationToken, PlexScope? scope = null);
 
     /// <summary>Removes the link and its stored Plex data. False when the movie was not linked.</summary>
     Task<bool> UnlinkAsync(string movieId, CancellationToken cancellationToken);
@@ -21,20 +22,27 @@ public interface IPlexLinkService
 /// The sync re-checks for a manual link right before it writes an automatic match, so a link made mid-run
 /// is not replaced. An unlink made mid-run may be re-matched automatically by that run. The sync's re-check
 /// is still check-then-act (read, then replace), so a link landing in the instant between them can be
-/// overwritten once; closing that would need a conditional store write. Two movies may link to the same Plex
+/// overwritten once; closing that would need a conditional store write. Two entries may link to the same Plex
 /// item: the link does not enforce uniqueness of the Plex item id.
 /// </summary>
 public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLinkService
 {
-    public async Task<PlexItemData?> LinkAsync(string entityType, string movieId, string plexItemId, CancellationToken cancellationToken)
+    public async Task<PlexItemData?> LinkAsync(string entityType, string movieId, string plexItemId, CancellationToken cancellationToken, PlexScope? scope = null)
     {
-        var item = await client.GetItemAsync(plexItemId, true, cancellationToken);
-        if (item == null || !string.Equals(item.Type, PlexEntityTypes.LibraryType(entityType), StringComparison.OrdinalIgnoreCase))
+        if (PlexEntityTypes.Normalize(entityType) == null || scope is { IsReadable: false })
         {
             return null;
         }
 
-        var data = PlexMatching.Build(movieId, item, DateTime.UtcNow, PlexLinkSources.Manual);
+        var item = await client.GetItemAsync(plexItemId, true, cancellationToken);
+        if (item == null || !string.Equals(item.Type, PlexEntityTypes.ItemType(scope != null), StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var data = scope == null
+            ? PlexMatching.Build(movieId, item, DateTime.UtcNow, PlexLinkSources.Manual)
+            : PlexMatching.BuildShow(movieId, item, await client.GetSeasonsAsync(item.RatingKey, cancellationToken), scope, DateTime.UtcNow, PlexLinkSources.Manual);
         await store.UpsertAsync(data, cancellationToken);
         return data;
     }

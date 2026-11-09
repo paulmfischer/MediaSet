@@ -116,15 +116,35 @@ internal static class PlexApi
                     statusCode: StatusCodes.Status400BadRequest);
             }
 
-            if (await MovieMissingAsync(id, movies, cancellationToken))
+            var movie = MongoDB.Bson.ObjectId.TryParse(id, out _) ? await movies.GetAsync(id, cancellationToken) : null;
+            if (movie == null)
             {
                 return MovieNotFound();
             }
 
+            // A TV series entry links to a show with a scope; any other entry links to a movie and takes none
+            PlexScope? scope = null;
+            if (movie.IsTvSeries)
+            {
+                var (parsed, error) = ResolveScope(body.Scope, movie.Title);
+                if (error != null)
+                {
+                    return Results.Problem(title: "Scope required", detail: error, statusCode: StatusCodes.Status400BadRequest);
+                }
+                scope = parsed;
+            }
+            else if (body.Scope != null)
+            {
+                return Results.Problem(
+                    title: "Scope not allowed",
+                    detail: "A scope applies only to TV series entries.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
+
             try
             {
-                var data = await links.LinkAsync(PlexEntityTypeFilter.GetEntityType(context), id, body.PlexItemId.Trim(), cancellationToken);
-                return data == null ? PlexItemNotFound(body.PlexItemId.Trim()) : Results.Ok(PlexItemDataDto.From(data));
+                var data = await links.LinkAsync(PlexEntityTypeFilter.GetEntityType(context), id, body.PlexItemId.Trim(), cancellationToken, scope);
+                return data == null ? PlexItemNotFound(body.PlexItemId.Trim(), scope != null) : Results.Ok(PlexItemDataDto.From(data));
             }
             catch (PlexClientException ex)
             {
@@ -176,7 +196,7 @@ internal static class PlexApi
                         title: "Not linked to Plex",
                         detail: "This item has no Plex link to refresh. Link it first.",
                         statusCode: StatusCodes.Status400BadRequest),
-                    PlexRefreshStatus.PlexItemMissing => PlexItemNotFound(result.Data!.PlexItemId),
+                    PlexRefreshStatus.PlexItemMissing => PlexItemNotFound(result.Data!.PlexItemId, result.Data.Scope != null),
                     _ => Results.Problem(
                         title: "Plex sync already in progress",
                         detail: result.Run is { } run
@@ -195,6 +215,37 @@ internal static class PlexApi
         return group;
     }
 
+    private const int MaxSeason = 99;
+
+    /// <summary>The scope for a manual TV link: the explicit one, validated, or else the one the title says. An error message when neither is usable.</summary>
+    private static (PlexScope? Scope, string? Error) ResolveScope(PlexLinkScopeRequest? request, string title)
+    {
+        if (request == null)
+        {
+            var parsed = PlexTvTitleParser.ParseScope(title);
+            return parsed.IsReadable
+                ? (parsed, null)
+                : (null, "The season scope cannot be read from the title. Send a 'scope' of kind 'season', 'range' or 'all'.");
+        }
+
+        static bool Valid(int? n) => n is >= 0 and <= MaxSeason;
+        switch (request.Kind?.Trim().ToLowerInvariant())
+        {
+            case PlexScopeKinds.All:
+                return (PlexScope.AllSeasons, null);
+            case PlexScopeKinds.Season when Valid(request.Season):
+                return (PlexScope.Single(request.Season!.Value), null);
+            case PlexScopeKinds.Season:
+                return (null, $"Scope kind 'season' needs a 'season' from 0 to {MaxSeason}.");
+            case PlexScopeKinds.Range when Valid(request.From) && Valid(request.To) && request.From < request.To:
+                return (PlexScope.Between(request.From!.Value, request.To!.Value), null);
+            case PlexScopeKinds.Range:
+                return (null, $"Scope kind 'range' needs 'from' below 'to', both from 0 to {MaxSeason}.");
+            default:
+                return (null, "Scope 'kind' must be 'season', 'range' or 'all'.");
+        }
+    }
+
     // Movie ids are ObjectIds; any other id cannot belong to a movie
     private static async Task<bool> MovieMissingAsync(string id, IEntityService<Movie> movies, CancellationToken cancellationToken) =>
         !MongoDB.Bson.ObjectId.TryParse(id, out _) || await movies.GetAsync(id, cancellationToken) == null;
@@ -204,9 +255,9 @@ internal static class PlexApi
         detail: "No movie exists with this id.",
         statusCode: StatusCodes.Status404NotFound);
 
-    private static IResult PlexItemNotFound(string plexItemId) => Results.Problem(
+    private static IResult PlexItemNotFound(string plexItemId, bool show = false) => Results.Problem(
         title: "Plex item not found",
-        detail: $"Plex has no movie with item id '{plexItemId}'.",
+        detail: $"Plex has no {(show ? "show" : "movie")} with item id '{plexItemId}'.",
         statusCode: StatusCodes.Status404NotFound);
 
     // The exception message holds no URL or token
@@ -216,4 +267,14 @@ internal static class PlexApi
         statusCode: StatusCodes.Status502BadGateway);
 }
 
-public record PlexLinkRequest(string? PlexItemId);
+/// <summary>
+/// Body of the manual link call. <c>Scope</c> is for TV series entries only: when omitted it is read from the
+/// entry title, and the call fails when the title does not say.
+/// </summary>
+public record PlexLinkRequest(string? PlexItemId, PlexLinkScopeRequest? Scope = null);
+
+/// <summary>
+/// The seasons a TV entry covers. <c>Kind</c> is "season" (with <c>Season</c>), "range" (with <c>From</c> and
+/// <c>To</c>, From below To) or "all". Season numbers are 0 (specials) to 99.
+/// </summary>
+public record PlexLinkScopeRequest(string? Kind, int? Season = null, int? From = null, int? To = null);

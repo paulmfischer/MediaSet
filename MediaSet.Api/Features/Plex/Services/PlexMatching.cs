@@ -127,4 +127,42 @@ public static class PlexMatching
             LastSyncedAt = syncedAt
         };
     }
+
+    /// <summary>
+    /// Builds the stored document for a TV entry linked to a Plex show: show-level fields (library, date added,
+    /// deep link) plus the Plex seasons the scope covers, selected by their index. The show has no file of its
+    /// own, so the movie file fields stay empty; episode detail is not read here.
+    /// </summary>
+    public static PlexItemData BuildShow(string entryId, PlexItem show, IReadOnlyList<PlexSeason> seasons, PlexScope scope, DateTime syncedAt, string linkSource = PlexLinkSources.Auto) =>
+        new()
+        {
+            Id = entryId,
+            PlexItemId = show.RatingKey,
+            OnPlex = true,
+            LinkSource = linkSource,
+            Scope = scope,
+            Seasons = [.. SeasonsInScope(seasons, scope).Select(s => new PlexSeasonData
+            {
+                Index = s.Index,
+                PlexSeasonId = s.RatingKey,
+                EpisodeCount = s.EpisodeCount,
+                DateAdded = s.AddedAt?.UtcDateTime,
+                DeepLink = s.DeepLink
+            })],
+            Library = show.LibraryTitle,
+            DateAdded = show.AddedAt?.UtcDateTime,
+            DeepLink = show.DeepLink,
+            LastSyncedAt = syncedAt
+        };
+
+    /// <summary>The seasons the scope covers, picked by season index, in index order. A season Plex lacks is simply absent.</summary>
+    public static IEnumerable<PlexSeason> SeasonsInScope(IReadOnlyList<PlexSeason> seasons, PlexScope scope) =>
+        seasons.Where(s => scope.Covers(s.Index)).OrderBy(s => s.Index);
+
+    /// <summary>
+    /// True when a show can be matched automatically with this scope: "all" always, a season or range when Plex
+    /// has at least one season of it. Otherwise the entry stays unmatched rather than linking to nothing.
+    /// </summary>
+    public static bool ScopeAvailable(IReadOnlyList<PlexSeason> seasons, PlexScope scope) =>
+        scope.Kind == PlexScopeKinds.All || SeasonsInScope(seasons, scope).Any();
 }

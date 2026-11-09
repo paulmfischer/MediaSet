@@ -35,3 +35,12 @@ public record PlexItem(
     IReadOnlyList<PlexVersion> Versions,
     int ViewCount = 0,
     DateTimeOffset? LastViewedAt = null);
+
+/// <summary>A season of a Plex show. Index 0 is the specials season. EpisodeCount is what Plex reports.</summary>
+public record PlexSeason(
+    string RatingKey,
+    int Index,
+    string Title,
+    int EpisodeCount,
+    DateTimeOffset? AddedAt,
+    string? DeepLink);

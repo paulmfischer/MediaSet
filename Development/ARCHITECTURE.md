@@ -123,6 +123,27 @@ the current run while a sync runs, never queued). A run refreshes a manual link 
 ExternalId or replaces it, flags it `OnPlex = false` if the item is gone, and never purges it unless the movie is deleted.
 Link and unlink do not take the lock. Two movies may link to the same Plex item.
 
+### Plex TV series entries
+
+A TV series entry (`Movie.IsTvSeries`) links to a Plex show (item type `show`), never to a movie, and movie entries never link
+to shows; runs read both movie and show libraries (search returns both, each result with a `type`). The entry usually covers one
+season, a range or the complete series, read from its title by `PlexTvTitleParser` (pure): "Season 2", "Series 2", "S2",
+"Season Two", "Second Season", "Seasons 1-3", "Seasons 1 & 2" (consecutive only), "Complete Series" and "All Seasons". No season
+text, several phrases, reversed or non-consecutive lists, season 0 or above 99, or a phrase joined to other content ("Seasons 1-3
++ Movie") is unreadable, so the entry stays unmatched until linked by hand; digits in a title ("24: Season 3") are never a season.
+A run matches the show by `ExternalId` against the show GUIDs, reads the show's seasons (`GetSeasonsAsync`, once per show per run)
+and stores in the entry's `PlexItems` document the show id, the `Scope` (`season`, `range` or `all`, with `From` and `To`),
+the show-level fields (library, date added, deep link, last sync time) and, for each season the scope covers, selected by its
+index: season rating key, episode count as Plex reports it, date added and deep link. Plex seasons carry no GUIDs. An automatic
+match needs at least one covered season on Plex; the scope is re-read from the title each run (the stored one is kept when the
+title no longer says). A manual link keeps its scope. Episode detail and rollups are not stored yet. Several entries may link to
+one show, each with its own document and scope. `PUT .../link` for a TV entry takes an optional
+`scope`: `{ "kind": "season", "season": 2 }`, `{ "kind": "range", "from": 1, "to": 3 }` or `{ "kind": "all" }` (seasons 0 to 99);
+without it the title is parsed and an unreadable title answers 400. A scope on a non-TV entry is a 400, and a TV entry only links
+to a show (404 for a movie item). The backfill also covers TV entries: it searches TMDB TV on `PlexTvTitleParser.CleanTitle`
+(season text removed), needs no year, takes a lone result or the single result named like the cleaned title, uses the first air year
+only to break a tie between same-named shows, and otherwise leaves the field blank. It shares the batch, throttle and rotation.
+
 ## Local development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md). The API and frontend run on the host; only MongoDB runs in a container.
