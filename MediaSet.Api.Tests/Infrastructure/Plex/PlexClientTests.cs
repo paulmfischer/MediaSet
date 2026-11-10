@@ -863,6 +863,46 @@ public class PlexClientTests
     }
 
     [Test]
+    public async Task GetItemListingAsync_ManyMovies_MakesNoPerItemRequestsButKeepsDeepLinksAndGuids()
+    {
+        var handler = ServingMany(5);
+
+        var items = await Client(handler).GetItemListingAsync(Movies, CancellationToken.None);
+
+        var paths = handler.Requests.Select(r => r.Uri.AbsolutePath).ToList();
+        Assert.That(paths, Has.None.StartsWith("/library/metadata/"));
+        Assert.That(paths, Does.Contain("/identity"));
+        Assert.That(items, Has.Count.EqualTo(5));
+        Assert.That(items.Select(i => i.DeepLink), Has.All.Contain(Uri.EscapeDataString("/library/metadata/")));
+        Assert.That(items.All(i => i.Versions.Single().AudioTracks.Count == 0 && i.StreamsAvailable && !i.StreamsReused), Is.True);
+        Assert.That(handler.Requests.Where(r => r.Uri.AbsolutePath == "/library/sections/1/all").Select(r => r.Uri.Query), Has.All.Contain("includeGuids=1"));
+    }
+
+    [Test]
+    public async Task GetItemListingAsync_MovieFixture_ParsesGuidsWithoutPerItemRequest()
+    {
+        var handler = Serving("movie.json");
+
+        var item = (await Client(handler).GetItemListingAsync(Movies, CancellationToken.None)).Single();
+
+        Assert.That(item.Guids.Tmdb, Is.Not.Null);
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata/"));
+    }
+
+    [Test]
+    public async Task GetItemListingAsync_KnownItemsUnchanged_FlagsReusedWithoutRequests()
+    {
+        var handler = ServingMany(3);
+        var updated = DateTimeOffset.FromUnixTimeSeconds(1700000000);
+        var known = new Dictionary<string, PlexKnownMedia> { ["1"] = new(updated, 1), ["2"] = new(updated, 999) };
+
+        var items = await Client(handler).GetItemListingAsync(Movies, CancellationToken.None, known);
+
+        Assert.That(items.Select(i => i.StreamsReused), Is.EqualTo([true, false, false]));
+        Assert.That(handler.Requests.Select(r => r.Uri.AbsolutePath), Has.None.StartsWith("/library/metadata/"));
+    }
+
+    [Test]
     public async Task GetItemsAsync_ShowWithKnownEntry_IsNotFlaggedReusedAndNeedsNoDetail()
     {
         var handler = FakePlexHandler.WithServer().Route("/library/sections/2/all", "show.json");

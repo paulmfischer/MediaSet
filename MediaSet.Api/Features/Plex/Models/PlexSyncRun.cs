@@ -40,7 +40,7 @@ public class PlexSyncRun
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime? EndedAt { get; set; }
 
-    /// <summary>Plex items read by the run. Null until the run finishes successfully.</summary>
+    /// <summary>MediaSet entries the run processed. Null until the run finishes successfully.</summary>
     public int? ItemsScanned { get; set; }
 
     /// <summary>Movies linked to a Plex item by the run. Null until the run finishes successfully.</summary>

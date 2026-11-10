@@ -143,7 +143,9 @@ public class PlexSyncApiTests
     public async Task StartSync_RunSucceeds_StatusShowsLastRunWithOutcomeAndItemsScanned()
     {
         var store = new InMemoryPlexSyncRunStore();
-        using var client = CreateClient(ServerWithMovies(), store);
+        // Three entries against the fixture library's items: the count follows the entries, not the Plex items
+        using var client = CreateClient(ServerWithMovies(), store, null,
+            new Movie { Id = "a", Title = "A" }, new Movie { Id = "b", Title = "B" }, new Movie { Id = "c", Title = "C" });
 
         await client.PostAsync("/plex/movies/sync", null);
         var last = await WaitForFinishedRunAsync(client);

@@ -68,7 +68,7 @@ guides are in `Setup/`.
 `POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another
 run holds the lock), starts it in the background and returns 202 with the run, or 409 with the current run when that entity
 type is already in progress. One lock in the singleton `PlexSyncService` serializes runs across all entity types and triggers.
-Each run first backfills missing movie ExternalIds from TMDB (below), then reads the Plex libraries for the type, matches movies to Plex items and records `succeeded` with `ItemsScanned`, `MatchedCount` and `UnmatchedCount`, `ExternalIdsBackfilled` and `BackfillSkipped`, `failed` with a message that never
+Each run first backfills missing movie ExternalIds from TMDB (below), then lists the Plex libraries for the type (no per-item detail requests), matches movies to Plex items, reads stream detail only for the items entries link to (movies unchanged since the last run reuse their stored streams) and records `succeeded` with `ItemsScanned` (the MediaSet entries processed), `MatchedCount` and `UnmatchedCount`, `ExternalIdsBackfilled` and `BackfillSkipped`, `failed` with a message that never
 holds the token, or `interrupted` (application shutdown, or a restart: `PlexSyncInitializer` closes leftover runs and creates
 the `(EntityType, StartedAt desc)` index at startup). The run's cancellation token is linked to application shutdown and passed
 to every Plex call; there is no cancel endpoint. `/plex/status` and `/plex/{entityType}/status` report the last run per type.

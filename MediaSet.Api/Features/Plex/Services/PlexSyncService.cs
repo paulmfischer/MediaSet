@@ -239,7 +239,7 @@ public sealed class PlexSyncService(
                 logger.LogInformation("Plex sync for {EntityType} started ({Trigger}, run {RunId})", run.EntityType, run.Trigger, run.Id);
                 var scan = await ScanAsync(run.EntityType, token);
                 logger.LogInformation(
-                    "Plex sync for {EntityType} finished: {Scanned} Plex items read, {Matched} matched, {Unmatched} unmatched, {Errored} errored, {Backfilled} ExternalIds backfilled",
+                    "Plex sync for {EntityType} finished: {Scanned} entries processed, {Matched} matched, {Unmatched} unmatched, {Errored} errored, {Backfilled} ExternalIds backfilled",
                     run.EntityType, scan.Scanned, scan.Matched, scan.Unmatched, scan.Errored, scan.Backfilled);
                 await TransitionAsync(run, r =>
                 {
@@ -315,11 +315,12 @@ public sealed class PlexSyncService(
         var itemTypes = PlexEntityTypes.LibraryTypes(entityType);
         var items = new List<PlexItem>();
         var itemStore = services.GetRequiredService<IPlexItemStore>();
-        // Movies unchanged since the last run skip their detail requests; legacy or failed ones are read in full
+        // The listing makes no per-item detail request. Movies unchanged since the last run are flagged so they keep their
+        // stored streams; the others are read in full only if an entry links to them (after matching).
         var knownMovies = PlexMatching.KnownMovies(await itemStore.ListMoviesAsync(token));
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, token))
         {
-            var libraryItems = await client.GetItemsAsync(library, null, true, token, knownMovies);
+            var libraryItems = await client.GetItemListingAsync(library, token, knownMovies);
             items.AddRange(libraryItems.Where(i => itemTypes.Contains(i.Type, StringComparer.OrdinalIgnoreCase)));
         }
 
@@ -359,28 +360,8 @@ public sealed class PlexSyncService(
         // Episodes are read per season, once per run however many entries cover it, and only for linked shows
         var episodesBySeason = new Dictionary<string, IReadOnlyList<PlexEpisode>>(StringComparer.Ordinal);
 
-        // Full reads of items the listing marked as unchanged, for movies whose own stored data cannot supply the streams
-        var fullByKey = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
-        async Task<PlexItem> ReadInFullAsync(PlexItem reused)
-        {
-            if (!fullByKey.TryGetValue(reused.RatingKey, out var full))
-            {
-                try
-                {
-                    var read = await client.GetItemAsync(reused.RatingKey, true, token);
-                    full = read != null && read.Versions.Count > 0
-                        ? reused with { Versions = read.Versions, StreamsReused = false, StreamsAvailable = true }
-                        : reused with { StreamsReused = false, StreamsAvailable = false };
-                }
-                catch (PlexClientException)
-                {
-                    // Like a failed per-item lookup: keep the listing data and read it again next sync
-                    full = reused with { StreamsReused = false, StreamsAvailable = false };
-                }
-                fullByKey[reused.RatingKey] = full;
-            }
-            return full;
-        }
+        // Items the listing came from, to tell them apart from an item fetched by id (already read in full)
+        var listedItems = new HashSet<PlexItem>(items, ReferenceEqualityComparer.Instance);
 
         // Phase 1 reads only: decide each movie's Plex item. A PlexClientException (outage, rejected token,
         // timeout) is rethrown so the run fails before anything is written, and nothing is marked gone.
@@ -449,13 +430,6 @@ public sealed class PlexSyncService(
                     }
                 }
 
-                if (!isTv && item is { StreamsReused: true } && !PlexMatching.CanReuseStreams(item, storedUsable ? stored : null))
-                {
-                    // Several movies may link to one Plex item and the client skipped its detail read because another one has
-                    // it stored. This movie has nothing to reuse (new, legacy or relinked), so read the item in full.
-                    item = await ReadInFullAsync(item);
-                }
-
                 plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes, stored != null && !storedUsable ? stored : null));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
@@ -466,6 +440,9 @@ public sealed class PlexSyncService(
                 logger.LogWarning("Plex sync could not process movie {MovieId} ({ExceptionType})", movie.Id, ex.GetType().Name);
             }
         }
+
+        // Still phase 1 (reads only): the listing has no streams, so read the detail of the linked movies now, and only those
+        plans = await ReadLinkedDetailsAsync(client, plans, listedItems, token);
 
         // Phase 2 writes
         var matched = 0;
@@ -580,8 +557,56 @@ public sealed class PlexSyncService(
             logger.LogWarning("Plex sync could not purge Plex data of deleted movies ({ExceptionType})", ex.GetType().Name);
         }
 
-        return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
+        return new ScanResult(movies.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
     }
+
+    /// <summary>
+    /// Reads, with at most DetailConcurrency requests at once, the streams of the Plex movies the plans link to, one read per
+    /// rating key however many movies link to it. A listed item needs it unless it was flagged unchanged and the movie's own
+    /// stored data can supply its streams. A failed read keeps the listing data, flags the streams unavailable and is retried
+    /// next sync. Items with no files and items already read in full need none.
+    /// </summary>
+    private async Task<List<MoviePlan>> ReadLinkedDetailsAsync(IPlexClient client, List<MoviePlan> plans, HashSet<PlexItem> listedItems, CancellationToken token)
+    {
+        var needed = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
+        foreach (var plan in plans)
+        {
+            if (NeedsDetail(plan, listedItems))
+            {
+                needed.TryAdd(plan.Item!.RatingKey, plan.Item);
+            }
+        }
+        if (needed.Count == 0)
+        {
+            return plans;
+        }
+
+        var full = new System.Collections.Concurrent.ConcurrentDictionary<string, PlexItem>(StringComparer.Ordinal);
+        var parallel = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, options.Value.DetailConcurrency), CancellationToken = token };
+        await Parallel.ForEachAsync(needed.Values, parallel, async (listed, ct) =>
+        {
+            try
+            {
+                var read = await client.GetItemAsync(listed.RatingKey, true, ct);
+                full[listed.RatingKey] = read != null && read.Versions.Count > 0
+                    ? listed with { Versions = read.Versions, StreamsReused = false, StreamsAvailable = true }
+                    : listed with { StreamsReused = false, StreamsAvailable = false };
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Like a failed per-item lookup: keep the listing data and read it again next sync
+                full[listed.RatingKey] = listed with { StreamsReused = false, StreamsAvailable = false };
+            }
+        });
+
+        return [.. plans.Select(p => NeedsDetail(p, listedItems) ? p with { Item = full[p.Item!.RatingKey] } : p)];
+    }
+
+    private static bool NeedsDetail(MoviePlan plan, HashSet<PlexItem> listedItems) =>
+        plan.Scope == null
+        && plan.Item is { Versions.Count: > 0 } item
+        && listedItems.Contains(item)
+        && (!item.StreamsReused || !PlexMatching.CanReuseStreams(item, plan.Stored));
 
     /// <summary>Keeps a manual link's last data and flags it off Plex and broken.</summary>
     private static Task FlagManualBrokenAsync(IPlexItemStore itemStore, PlexItemData link, int misses, DateTime syncedAt, CancellationToken token)
