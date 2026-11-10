@@ -232,11 +232,11 @@ public sealed class PlexSyncService(
                 {
                     await _lock.WaitAsync(token);
                     holdsLock = true;
-                    await Transition(run, r => r.State = PlexSyncRunStates.Running);
+                    await TransitionAsync(run, r => r.State = PlexSyncRunStates.Running);
                 }
 
                 var scan = await ScanAsync(run.EntityType, token);
-                await Transition(run, r =>
+                await TransitionAsync(run, r =>
                 {
                     r.State = PlexSyncRunStates.Succeeded;
                     r.ItemsScanned = scan.Scanned;
@@ -543,14 +543,14 @@ public sealed class PlexSyncService(
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>
-        Transition(run, r =>
+        TransitionAsync(run, r =>
         {
             r.State = state;
             r.Message = message;
             r.EndedAt = DateTime.UtcNow;
         });
 
-    private async Task Transition(PlexSyncRun run, Action<PlexSyncRun> change)
+    private async Task TransitionAsync(PlexSyncRun run, Action<PlexSyncRun> change)
     {
         PlexSyncRun copy;
         lock (_gate)
