@@ -884,6 +884,84 @@ public class PlexSyncServiceTests
     }
 
     [Test]
+    public async Task Sync_TvEntryWithStaleAutoMovieLinkAndNoMatch_DropsTheLink()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "10", OnPlex = true, LinkSource = PlexLinkSources.Auto }, CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, Tv("a", "Show: Season 1", null));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_TvEntryWithStaleAutoMovieLinkAndShowMatch_ReplacesItWithTheShowLink()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "10", OnPlex = true, LinkSource = PlexLinkSources.Auto }, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7));
+        SetMovies(h, Tv("a", "Show: Season 1", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("90"));
+        Assert.That(h.Items.Items["a"].Scope, Is.EqualTo(PlexScope.Single(1)));
+    }
+
+    [Test]
+    public async Task Sync_MovieEntryWithStaleAutoShowLinkAndNoMatch_DropsTheLink()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(1)), CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", null));
+
+        await RunAsync(h);
+
+        Assert.That(h.Items.Items, Is.Empty);
+    }
+
+    [Test]
+    public async Task Sync_TvEntryWithStaleManualMovieLink_IsFlaggedBrokenAndNeverOverwritten()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "10", OnPlex = true, LinkSource = PlexLinkSources.Manual, Resolution = "1080" }, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7));
+        SetMovies(h, Tv("a", "Show: Season 1", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var stored = h.Items.Items["a"];
+        Assert.That(stored.PlexItemId, Is.EqualTo("10"));
+        Assert.That(stored.LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+        Assert.That(stored.Broken, Is.True);
+        Assert.That(stored.OnPlex, Is.False);
+        Assert.That(stored.MissCount, Is.EqualTo(1));
+        Assert.That(stored.Resolution, Is.EqualTo("1080"));
+    }
+
+    [Test]
+    public async Task Sync_MovieEntryWithStaleManualShowLink_IsFlaggedBrokenAndNeverOverwritten()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Manual, PlexScope.Single(1)), CancellationToken.None);
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        var stored = h.Items.Items["a"];
+        Assert.That(stored.PlexItemId, Is.EqualTo("90"));
+        Assert.That(stored.Scope, Is.EqualTo(PlexScope.Single(1)));
+        Assert.That(stored.Broken, Is.True);
+        Assert.That(stored.OnPlex, Is.False);
+        Assert.That(stored.MissCount, Is.EqualTo(1));
+        Assert.That(stored.LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+    }
+
+    [Test]
     public async Task Sync_ManualTvLink_KeepsItsScopeEvenWhenTitleSaysOtherwise()
     {
         var h = new Harness();

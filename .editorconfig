@@ -247,3 +247,7 @@ dotnet_diagnostic.AD0001.severity = none  # Analyzer exceptions
 # IDE diagnostic severity levels
 dotnet_diagnostic.IDE0005.severity = error  # Using directive is unnecessary
 dotnet_diagnostic.IDE0270.severity = silent  # Null check can be simplified - prefer explicit null checks
+
+# Test methods are named MethodName_Scenario_ExpectedResult, so they do not take the Async suffix
+[MediaSet.Api.Tests/**.cs]
+dotnet_naming_rule.async_methods_end_in_async.severity = none

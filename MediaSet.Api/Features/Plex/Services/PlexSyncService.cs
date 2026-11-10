@@ -232,11 +232,11 @@ public sealed class PlexSyncService(
                 {
                     await _lock.WaitAsync(token);
                     holdsLock = true;
-                    await Transition(run, r => r.State = PlexSyncRunStates.Running);
+                    await TransitionAsync(run, r => r.State = PlexSyncRunStates.Running);
                 }
 
                 var scan = await ScanAsync(run.EntityType, token);
-                await Transition(run, r =>
+                await TransitionAsync(run, r =>
                 {
                     r.State = PlexSyncRunStates.Succeeded;
                     r.ItemsScanned = scan.Scanned;
@@ -284,7 +284,7 @@ public sealed class PlexSyncService(
 
     private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
 
-    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null);
+    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null, PlexItemData? Stale = null);
 
     /// <summary>Consecutive runs an auto-linked item may be missing before its link is dropped.</summary>
     private const int AutoLinkDropMisses = PlexMatching.AutoLinkDropMisses;
@@ -364,7 +364,8 @@ public sealed class PlexSyncService(
                 var stored = await itemStore.GetAsync(movie.Id!, token);
                 var manual = stored is { LinkSource: PlexLinkSources.Manual };
 
-                // A TV series entry links to a Plex show, anything else to a movie. A stored link of the other kind is ignored.
+                // A TV series entry links to a Plex show, anything else to a movie. A stored link of the other kind (after IsTvSeries was toggled) is stale:
+                // an automatic one is replaced by a match or dropped, a manual one is flagged broken and never overwritten.
                 var isTv = movie.IsTvSeries;
                 var wantedType = PlexEntityTypes.ItemType(isTv);
                 var storedIsTv = stored?.Scope != null;
@@ -417,7 +418,7 @@ public sealed class PlexSyncService(
                     }
                 }
 
-                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes));
+                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes, stored != null && !storedUsable ? stored : null));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
             {
@@ -469,6 +470,21 @@ public sealed class PlexSyncService(
                     }
                     matched++;
                 }
+                else if (plan.Stale is { } stale)
+                {
+                    // A link of the other kind than the entry has no match to replace it
+                    if (stale.LinkSource == PlexLinkSources.Manual)
+                    {
+                        // Never dropped or overwritten: flag it for the user
+                        await FlagManualBrokenAsync(itemStore, stale, stale.MissCount + 1, syncedAt, token);
+                    }
+                    else
+                    {
+                        // Dropped at once, not after AutoLinkDropMisses: the data describes the wrong kind of item,
+                        // so keeping it as "last known" would show it for the wrong entry
+                        await itemStore.DeleteAsync(movie.Id!, token);
+                    }
+                }
                 else if (stored != null)
                 {
                     // Linked earlier but gone from Plex while the library is reachable
@@ -476,11 +492,7 @@ public sealed class PlexSyncService(
                     if (plan.Manual)
                     {
                         // A manual link is never dropped; flag it for the user
-                        stored.OnPlex = false;
-                        stored.Broken = true;
-                        stored.MissCount = misses;
-                        stored.LastSyncedAt = syncedAt;
-                        await itemStore.UpsertAsync(stored, token);
+                        await FlagManualBrokenAsync(itemStore, stored, misses, syncedAt, token);
                     }
                     else if (misses >= AutoLinkDropMisses)
                     {
@@ -524,15 +536,25 @@ public sealed class PlexSyncService(
         return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
     }
 
+    /// <summary>Keeps a manual link's last data and flags it off Plex and broken.</summary>
+    private static Task FlagManualBrokenAsync(IPlexItemStore itemStore, PlexItemData link, int misses, DateTime syncedAt, CancellationToken token)
+    {
+        link.OnPlex = false;
+        link.Broken = true;
+        link.MissCount = misses;
+        link.LastSyncedAt = syncedAt;
+        return itemStore.UpsertAsync(link, token);
+    }
+
     private Task Finish(PlexSyncRun run, string state, string message) =>
-        Transition(run, r =>
+        TransitionAsync(run, r =>
         {
             r.State = state;
             r.Message = message;
             r.EndedAt = DateTime.UtcNow;
         });
 
-    private async Task Transition(PlexSyncRun run, Action<PlexSyncRun> change)
+    private async Task TransitionAsync(PlexSyncRun run, Action<PlexSyncRun> change)
     {
         PlexSyncRun copy;
         lock (_gate)

@@ -482,6 +482,19 @@ public class PlexLinkApiTests
     }
 
     [Test]
+    public async Task Link_TvEntryWithInvalidExplicitScope_ReturnsInvalidScopeProblem()
+    {
+        var items = new InMemoryPlexItemStore();
+        using var client = CreateClient(ServerWithShow(), items);
+
+        var response = await LinkAsync(client, TvId, new { plexItemId = "2001", scope = new { kind = "bogus" } });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("title").GetString(), Is.EqualTo("Invalid scope"));
+        Assert.That(items.Items, Is.Empty);
+    }
+
+    [Test]
     public async Task Link_TvEntryWithoutScopeAndUnreadableTitle_ReturnsBadRequestAndStoresNothing()
     {
         var items = new InMemoryPlexItemStore();
@@ -491,6 +504,7 @@ public class PlexLinkApiTests
         var response = await LinkAsync(client, TvNoScopeId, new { plexItemId = "2001" });
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("title").GetString(), Is.EqualTo("Scope required"));
         Assert.That(items.Items, Is.Empty);
         Assert.That(handler.Requests, Is.Empty);
     }
