@@ -67,11 +67,11 @@ public static class LoggingExtensions
                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
 
-            // The console is for people: drop per-command Mongo spans and per-request HTTP client logs (a Plex sync
-            // makes about a thousand requests). Seq keeps them, since the filter applies to this sink only.
-            cfg.WriteTo.Logger(lc => lc.Filter.ByExcluding(IsConsoleNoise).WriteTo.Console());
+            // Drop per-command Mongo spans, HTTP client request logs and connection spans (a Plex sync makes about a thousand
+            // requests) for every sink, so the console and Seq show the same thing. Client call spans stay for tracing.
+            cfg.Filter.ByExcluding(IsLogNoise);
 
-            // Conditionally add Seq sink with filtering for excluded paths (console still logs everything)
+            // Conditionally add Seq sink with filtering for excluded paths
             if (externalLoggingEnabled)
             {
                 var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl")
@@ -98,13 +98,13 @@ public static class LoggingExtensions
         return builder;
     }
 
-    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net", "Microsoft.Extensions.Http"];
+    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net.Http.HttpClient", "Microsoft.Extensions.Http"];
 
     // Connection-level spans of the HTTP client: they carry no source context, so they are matched by their message
     private static readonly string[] _noisySpanPrefixes = ["DNS lookup", "socket connect", "TLS client handshake", "HTTP connection_setup", "HTTP wait_for_connection"];
 
     /// <summary>Events below Warning from the Mongo driver and the HTTP client stack.</summary>
-    internal static bool IsConsoleNoise(LogEvent logEvent) =>
+    internal static bool IsLogNoise(LogEvent logEvent) =>
         logEvent.Level < LogEventLevel.Warning
         && ((logEvent.Properties.TryGetValue("SourceContext", out var source)
                 && source is ScalarValue { Value: string context }
