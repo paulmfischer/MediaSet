@@ -391,6 +391,41 @@ public class PlexSyncServiceTests
             Assert.That(d.SubtitleLanguages, Is.Not.Empty, id);
             Assert.That(d.PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime), id);
         }
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Sync_SharedItemFullReadFails_MovieStoredWithoutPlexUpdatedAtAndRetriedNextSync(bool throws)
+    {
+        var h = new Harness();
+        var item = Item("10", new PlexGuids("603", null, null), Version("1080", hdr: true, size: 5)) with { UpdatedAt = _movieUpdated };
+        ServeMovieLikeClient(h, item);
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+        await RunAsync(h);
+
+        var setup = h.Client.Setup(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()));
+        if (throws)
+        {
+            setup.ThrowsAsync(new PlexClientException(500, "Plex request failed"));
+        }
+        else
+        {
+            setup.ReturnsAsync(item with { Versions = [] });
+        }
+        SetMovies(h, MovieWith("a", "tmdbid:603"), MovieWith("b", "tmdbid:603"));
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+        await WaitUntilAsync(() => h.Store.Runs.Count == 2 && !PlexSyncRunStates.IsInProgress(h.Store.Runs[1].State));
+        var afterSecond = h.Items.Items["b"];
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+        await WaitUntilAsync(() => h.Store.Runs.Count == 3 && !PlexSyncRunStates.IsInProgress(h.Store.Runs[2].State));
+
+        Assert.That(h.Store.Runs[1].State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(afterSecond.PlexUpdatedAt, Is.Null);
+        Assert.That(h.Items.Items["b"].PlexUpdatedAt, Is.Null);
+        Assert.That(h.Items.Items["a"].PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime));
+        // Read again on the next sync rather than left permanently without streams
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Test]
