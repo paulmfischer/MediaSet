@@ -442,7 +442,9 @@ public sealed class PlexSyncService(
         }
 
         // Still phase 1 (reads only): the listing has no streams, so read the detail of the linked movies now, and only those
-        plans = await ReadLinkedDetailsAsync(client, plans, listedItems, token);
+        var (detailed, detailFailed) = await ReadLinkedDetailsAsync(client, plans, listedItems, token);
+        plans = detailed;
+        errored += detailFailed;
 
         // Phase 2 writes
         var matched = 0;
@@ -566,7 +568,7 @@ public sealed class PlexSyncService(
     /// stored data can supply its streams. A failed read keeps the listing data, flags the streams unavailable and is retried
     /// next sync. Items with no files and items already read in full need none.
     /// </summary>
-    private async Task<List<MoviePlan>> ReadLinkedDetailsAsync(IPlexClient client, List<MoviePlan> plans, HashSet<PlexItem> listedItems, CancellationToken token)
+    private async Task<(List<MoviePlan> Plans, int Errored)> ReadLinkedDetailsAsync(IPlexClient client, List<MoviePlan> plans, HashSet<PlexItem> listedItems, CancellationToken token)
     {
         var needed = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
         foreach (var plan in plans)
@@ -578,10 +580,11 @@ public sealed class PlexSyncService(
         }
         if (needed.Count == 0)
         {
-            return plans;
+            return (plans, 0);
         }
 
         var full = new System.Collections.Concurrent.ConcurrentDictionary<string, PlexItem>(StringComparer.Ordinal);
+        var failed = new System.Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.Ordinal);
         var parallel = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, options.Value.DetailConcurrency), CancellationToken = token };
         await Parallel.ForEachAsync(needed.Values, parallel, async (listed, ct) =>
         {
@@ -592,14 +595,37 @@ public sealed class PlexSyncService(
                     ? listed with { Versions = read.Versions, StreamsReused = false, StreamsAvailable = true }
                     : listed with { StreamsReused = false, StreamsAvailable = false };
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (PlexClientException)
             {
                 // Like a failed per-item lookup: keep the listing data and read it again next sync
                 full[listed.RatingKey] = listed with { StreamsReused = false, StreamsAvailable = false };
             }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Not a Plex failure: the movies linked to this item count as errored, the run goes on
+                failed[listed.RatingKey] = ex.GetType().Name;
+            }
         });
 
-        return [.. plans.Select(p => NeedsDetail(p, listedItems) ? p with { Item = full[p.Item!.RatingKey] } : p)];
+        var result = new List<MoviePlan>();
+        var erroredCount = 0;
+        foreach (var plan in plans)
+        {
+            if (!NeedsDetail(plan, listedItems))
+            {
+                result.Add(plan);
+            }
+            else if (failed.TryGetValue(plan.Item!.RatingKey, out var exceptionType))
+            {
+                erroredCount++;
+                logger.LogWarning("Plex sync could not process movie {MovieId} ({ExceptionType})", plan.Movie.Id, exceptionType);
+            }
+            else
+            {
+                result.Add(plan with { Item = full[plan.Item.RatingKey] });
+            }
+        }
+        return (result, erroredCount);
     }
 
     private static bool NeedsDetail(MoviePlan plan, HashSet<PlexItem> listedItems) =>
