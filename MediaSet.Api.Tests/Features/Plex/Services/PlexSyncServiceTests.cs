@@ -938,6 +938,7 @@ public class PlexSyncServiceTests
         Assert.That(stored.LinkSource, Is.EqualTo(PlexLinkSources.Manual));
         Assert.That(stored.Broken, Is.True);
         Assert.That(stored.OnPlex, Is.False);
+        Assert.That(stored.MissCount, Is.EqualTo(1));
         Assert.That(stored.Resolution, Is.EqualTo("1080"));
     }
 
@@ -955,6 +956,8 @@ public class PlexSyncServiceTests
         Assert.That(stored.PlexItemId, Is.EqualTo("90"));
         Assert.That(stored.Scope, Is.EqualTo(PlexScope.Single(1)));
         Assert.That(stored.Broken, Is.True);
+        Assert.That(stored.OnPlex, Is.False);
+        Assert.That(stored.MissCount, Is.EqualTo(1));
         Assert.That(stored.LinkSource, Is.EqualTo(PlexLinkSources.Manual));
     }
 

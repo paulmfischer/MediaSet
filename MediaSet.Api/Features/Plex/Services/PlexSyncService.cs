@@ -476,14 +476,12 @@ public sealed class PlexSyncService(
                     if (stale.LinkSource == PlexLinkSources.Manual)
                     {
                         // Never dropped or overwritten: flag it for the user
-                        stale.OnPlex = false;
-                        stale.Broken = true;
-                        stale.MissCount++;
-                        stale.LastSyncedAt = syncedAt;
-                        await itemStore.UpsertAsync(stale, token);
+                        await FlagManualBrokenAsync(itemStore, stale, stale.MissCount + 1, syncedAt, token);
                     }
                     else
                     {
+                        // Dropped at once, not after AutoLinkDropMisses: the data describes the wrong kind of item,
+                        // so keeping it as "last known" would show it for the wrong entry
                         await itemStore.DeleteAsync(movie.Id!, token);
                     }
                 }
@@ -494,11 +492,7 @@ public sealed class PlexSyncService(
                     if (plan.Manual)
                     {
                         // A manual link is never dropped; flag it for the user
-                        stored.OnPlex = false;
-                        stored.Broken = true;
-                        stored.MissCount = misses;
-                        stored.LastSyncedAt = syncedAt;
-                        await itemStore.UpsertAsync(stored, token);
+                        await FlagManualBrokenAsync(itemStore, stored, misses, syncedAt, token);
                     }
                     else if (misses >= AutoLinkDropMisses)
                     {
@@ -540,6 +534,16 @@ public sealed class PlexSyncService(
         }
 
         return new ScanResult(items.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
+    }
+
+    /// <summary>Keeps a manual link's last data and flags it off Plex and broken.</summary>
+    private static Task FlagManualBrokenAsync(IPlexItemStore itemStore, PlexItemData link, int misses, DateTime syncedAt, CancellationToken token)
+    {
+        link.OnPlex = false;
+        link.Broken = true;
+        link.MissCount = misses;
+        link.LastSyncedAt = syncedAt;
+        return itemStore.UpsertAsync(link, token);
     }
 
     private Task Finish(PlexSyncRun run, string state, string message) =>
