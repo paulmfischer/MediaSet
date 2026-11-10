@@ -111,7 +111,11 @@ A run matches each movie to a Plex item first by the stored Plex item id (rating
 fallback; unmatched movies stay unmatched. The Plex data lives in the separate `PlexItems` collection (`PlexItemData`, `_id` =
 movie id, plus an index on the Plex item id, created at startup), so editing a movie never touches it. For an item with several
 versions the best one is stored: highest resolution, then HDR, then larger file. `GET /plex/{entityType}/items/{movieId}` returns
-the document (404 when unlinked) and is the only response with the server file path. Deleting a movie deletes its Plex document
+the document (404 when unlinked) and is the only response with the server file path.
+`GET /movies/{id}` (the single lookup only, not lists, search, POST or PUT) adds the same data as a `plex` property without
+any file path (item or episodes) for a linked movie, through `IPlexLookup` (registered only when Plex is enabled; otherwise,
+or when movies are not enabled, the response is unchanged, and a failed read is logged and skipped). `Movie.Plex` is never
+stored (`[BsonIgnore]`) and is cleared on POST and PUT input. Deleting a movie deletes its Plex document
 through `IPlexDataCleanup` (registered only when Plex is enabled; a failure is logged, not surfaced), and each run purges documents
 of movies that no longer exist. Plex is only ever read.
 
