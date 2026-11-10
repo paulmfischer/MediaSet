@@ -230,6 +230,13 @@ public record PlexItemDataDto(
     IReadOnlyList<PlexEpisodeDto>? Episodes = null,
     PlexRollupDto? Rollup = null)
 {
+    /// <summary>A copy without the server file path, on the item and on every episode.</summary>
+    public PlexItemDataDto WithoutFilePath() => this with
+    {
+        FilePath = null,
+        Episodes = Episodes == null ? null : [.. Episodes.Select(e => e with { FilePath = null })]
+    };
+
     private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 
     public static PlexItemDataDto From(PlexItemData d) => new(

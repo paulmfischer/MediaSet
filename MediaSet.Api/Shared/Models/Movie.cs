@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using MediaSet.Api.Shared.Attributes;
 using MediaSet.Api.Infrastructure.Serialization;
+using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -58,6 +59,14 @@ public class Movie : IEntity
     public Image? CoverImage { get; set; }
 
     public ImageLookup? ImageLookup { get; set; }
+
+    /// <summary>
+    /// Stored Plex data (a Plex item DTO without file paths; typed object so Shared does not depend on the Plex feature), filled only by the single movie lookup when the movie is linked to Plex.
+    /// Never stored on the movie and ignored on input, so edits never touch the Plex data.
+    /// </summary>
+    [BsonIgnore]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Plex { get; set; }
 
     public bool IsEmpty()
     {

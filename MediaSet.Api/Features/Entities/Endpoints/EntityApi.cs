@@ -59,12 +59,17 @@ internal static class EntityApi
             }
         });
 
-        group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (IEntityService<TEntity> entityService, string id, CancellationToken cancellationToken) =>
+        group.MapGet("/{id}", async Task<Results<Ok<TEntity>, NotFound>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IPlexLookup? plexLookup,
+            string id,
+            CancellationToken cancellationToken) =>
         {
             logger.LogInformation("Fetching {entityType} by id {id}", entityType, id);
             var entity = await entityService.GetAsync(id, cancellationToken);
             if (entity is not null)
             {
+                await AttachPlexAsync(entity, plexLookup, cancellationToken);
                 return TypedResults.Ok(entity);
             }
 
@@ -123,6 +128,8 @@ internal static class EntityApi
 
                     newEntity = deserializedEntity;
                 }
+
+                ClearPlex(newEntity);
 
                 if (ValidateExternalId(newEntity) is { } externalIdProblem)
                 {
@@ -288,6 +295,8 @@ internal static class EntityApi
 
                     updatedEntity = deserializedEntity;
                 }
+
+                ClearPlex(updatedEntity);
 
                 if (id != updatedEntity.Id)
                 {
@@ -696,6 +705,25 @@ internal static class EntityApi
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Failed to delete Plex data for movie {entityId}; the next Plex sync purges it", id);
+        }
+    }
+
+    // Plex data is read-only and lives in its own collection: whatever a client sends in `plex` is dropped.
+    private static void ClearPlex(IEntity entity)
+    {
+        if (entity is Movie movie)
+        {
+            movie.Plex = null;
+        }
+    }
+
+    // Single lookup only: adds the stored Plex data (without file paths) to a linked movie. Plex not configured,
+    // not enabled for movies, or no document for the id leaves the movie unchanged.
+    private static async Task AttachPlexAsync(IEntity entity, IPlexLookup? plexLookup, CancellationToken cancellationToken)
+    {
+        if (entity is Movie { Id: not null } movie && plexLookup is not null)
+        {
+            movie.Plex = await plexLookup.GetMovieDataAsync(movie.Id, cancellationToken);
         }
     }
 }

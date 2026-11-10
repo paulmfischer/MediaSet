@@ -123,6 +123,23 @@ describe('toMovieUpdate', () => {
     assert.equal('externalId' in wire(toMovieUpdate(existing, parsed)), false);
   });
 
+  it('should not send the read-only Plex data back when saving an edit', () => {
+    const plex = {
+      movieId: 'm1',
+      plexItemId: '1001',
+      onPlex: true,
+      linkSource: 'auto',
+      missCount: 0,
+      broken: false,
+      hdr: false,
+      subtitleLanguages: [],
+      watched: false,
+      viewCount: 0,
+      lastSyncedAt: '2024-04-01T00:00:00Z',
+    };
+    assert.equal('plex' in wire(toMovieUpdate({ ...existing, plex }, parsed)), false);
+  });
+
   it('should drop the cover image and an unchanged image URL when removing the image', () => {
     const update = wire(toMovieUpdate(existing, parsed, true));
     assert.equal('coverImage' in update, false);
