@@ -281,8 +281,14 @@ public class PlexSyncServiceTests
         var library = new PlexLibrary("1", "Movies", "movie");
         h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>()))
             .ReturnsAsync([library]);
-        h.Client.Setup(c => c.GetItemsAsync(library, null, true, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()))
-            .ReturnsAsync(items);
+        // A real listing carries no streams; the detail read does
+        h.Client.Setup(c => c.GetItemListingAsync(library, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()))
+            .ReturnsAsync([.. items.Select(i => i with { Versions = [.. i.Versions.Select(NoStreams)] })]);
+        // The detail read of an item an entry links to returns the same item (the fixtures already carry their streams)
+        foreach (var item in items)
+        {
+            h.Client.Setup(c => c.GetItemAsync(item.RatingKey, true, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        }
     }
 
     private static async Task<PlexSyncRun> RunAsync(Harness h)
@@ -303,13 +309,14 @@ public class PlexSyncServiceTests
         var received = new List<IReadOnlyDictionary<string, PlexKnownMedia>?>();
         var library = new PlexLibrary("1", "Movies", "movie");
         h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>())).ReturnsAsync([library]);
-        h.Client.Setup(c => c.GetItemsAsync(library, null, true, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()))
-            .ReturnsAsync((PlexLibrary _, string? _, bool _, CancellationToken _, IReadOnlyDictionary<string, PlexKnownMedia>? known) =>
+        h.Client.Setup(c => c.GetItemAsync(item.RatingKey, true, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        h.Client.Setup(c => c.GetItemListingAsync(library, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()))
+            .ReturnsAsync((PlexLibrary _, CancellationToken _, IReadOnlyDictionary<string, PlexKnownMedia>? known) =>
             {
                 received.Add(known);
                 IReadOnlyList<PlexItem> result = [known != null && known.TryGetValue(item.RatingKey, out var k) && k.Matches(item.UpdatedAt, item.Versions)
                     ? item with { Versions = [.. item.Versions.Select(NoStreams)], StreamsReused = true }
-                    : item];
+                    : item with { Versions = [.. item.Versions.Select(NoStreams)] }];
                 return result;
             });
         return received;
@@ -325,18 +332,24 @@ public class PlexSyncServiceTests
         await RunAsync(h);
 
         Assert.That(h.Items.Items["a"].PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime));
+        // The streams come from the detail read: the listing carried none
+        Assert.That(h.Items.Items["a"].Hdr, Is.True);
+        Assert.That(h.Items.Items["a"].BestAudioTrack, Is.Not.Null);
+        Assert.That(h.Items.Items["a"].SubtitleLanguages, Is.Not.Empty);
     }
 
     [Test]
     public async Task Sync_MovieStreamLookupFailed_StoresNoPlexUpdatedAtSoItIsReadAgain()
     {
         var h = new Harness();
-        ServeMovieLikeClient(h, Item("10", new PlexGuids("603", null, null), Version("1080", size: 5)) with { UpdatedAt = _movieUpdated, StreamsAvailable = false });
+        ServeMovieLikeClient(h, Item("10", new PlexGuids("603", null, null), Version("1080", size: 5)) with { UpdatedAt = _movieUpdated });
+        h.Client.Setup(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>())).ThrowsAsync(new PlexClientException(500, "Plex request failed"));
         SetMovies(h, MovieWith("a", "tmdbid:603"));
 
         await RunAsync(h);
 
         Assert.That(h.Items.Items["a"].PlexUpdatedAt, Is.Null);
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("10"));
     }
 
     [Test]
@@ -365,6 +378,8 @@ public class PlexSyncServiceTests
         Assert.That(second.SubtitleLanguages, Is.Not.Empty);
         Assert.That(second.PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime));
         Assert.That(second.SizeBytes, Is.EqualTo(5));
+        // Only the first run read the item's detail; the unchanged movie reused its stored streams
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -391,7 +406,8 @@ public class PlexSyncServiceTests
             Assert.That(d.SubtitleLanguages, Is.Not.Empty, id);
             Assert.That(d.PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime), id);
         }
-        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Once);
+        // One read in the first run, one in the second for the movies that cannot reuse streams
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [TestCase(false)]
@@ -425,7 +441,7 @@ public class PlexSyncServiceTests
         Assert.That(h.Items.Items["b"].PlexUpdatedAt, Is.Null);
         Assert.That(h.Items.Items["a"].PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime));
         // Read again on the next sync rather than left permanently without streams
-        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Exactly(3));
     }
 
     [Test]
@@ -747,9 +763,99 @@ public class PlexSyncServiceTests
 
         var run = await RunAsync(h);
 
-        Assert.That(run.ItemsScanned, Is.EqualTo(2));
+        Assert.That(run.ItemsScanned, Is.EqualTo(3));
         Assert.That(run.MatchedCount, Is.EqualTo(1));
         Assert.That(run.UnmatchedCount, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Sync_ManyPlexItemsFewEntries_ItemsScannedIsTheEntryCount()
+    {
+        var h = new Harness();
+        Serve(h, [.. Enumerable.Range(1, 8).Select(i => Item($"{i}", new PlexGuids($"{i}", null, null), Version("1080")))]);
+        SetMovies(h, MovieWith("a", "tmdbid:1"), MovieWith("b", "tmdbid:2"), MovieWith("c", null));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.ItemsScanned, Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Sync_ByStoredIdByExternalIdAndUnmatched_ReadsDetailOnlyForLinkedItems()
+    {
+        var h = new Harness();
+        Serve(h,
+            Item("10", new PlexGuids("603", null, null), Version("1080")),
+            Item("11", new PlexGuids("1", null, null), Version("720")),
+            Item("12", new PlexGuids("2", null, null), Version("720")),
+            Item("13", new PlexGuids("3", null, null), Version("720")));
+        // "a" links by its stored Plex id (no ExternalId), "b" by ExternalId, "c" matches nothing
+        await h.Items.UpsertAsync(new PlexItemData { Id = "a", PlexItemId = "11", LinkSource = PlexLinkSources.Auto, OnPlex = true }, CancellationToken.None);
+        SetMovies(h, MovieWith("a", null), MovieWith("b", "tmdbid:603"), MovieWith("c", "tmdbid:999"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.MatchedCount, Is.EqualTo(2));
+        Assert.That(run.UnmatchedCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items["a"].PlexItemId, Is.EqualTo("11"));
+        Assert.That(h.Items.Items["b"].PlexItemId, Is.EqualTo("10"));
+        Assert.That(h.Items.Items["b"].BestAudioTrack, Is.Not.Null);
+        Assert.That(h.Items.Items["a"].BestAudioTrack, Is.Not.Null);
+        Assert.That(h.Items.Items, Does.Not.ContainKey("c"));
+        h.Client.Verify(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>()), Times.Once);
+        h.Client.Verify(c => c.GetItemAsync("11", true, It.IsAny<CancellationToken>()), Times.Once);
+        h.Client.Verify(c => c.GetItemAsync("12", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetItemAsync("13", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Sync_ListingThrowsPlexClientException_FailsRunWithoutAnyWrite()
+    {
+        var h = new Harness();
+        var library = new PlexLibrary("1", "Movies", "movie");
+        h.Client.Setup(c => c.GetLibrariesForEntityTypeAsync("movies", It.IsAny<CancellationToken>())).ReturnsAsync([library]);
+        h.Client.Setup(c => c.GetItemListingAsync(library, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()))
+            .ThrowsAsync(new PlexClientException(500, "Plex request failed"));
+        var stored = new PlexItemData { Id = "a", PlexItemId = "10", OnPlex = true, MissCount = 0 };
+        await h.Items.UpsertAsync(stored, CancellationToken.None);
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Failed));
+        Assert.That(h.Items.Items.Keys, Is.EqualTo(["a"]));
+        Assert.That(h.Items.Items["a"].OnPlex, Is.True);
+        Assert.That(h.Items.Items["a"].MissCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Sync_DetailReadThrowsNonPlexException_CountsLinkedMovieAsErroredAndRunSucceeds()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")), Item("11", new PlexGuids("604", null, null), Version("1080")));
+        h.Client.Setup(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("boom"));
+        SetMovies(h, MovieWith("a", "tmdbid:603"), MovieWith("b", "tmdbid:604"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(run.ErroredCount, Is.EqualTo(1));
+        Assert.That(run.MatchedCount, Is.EqualTo(1));
+        Assert.That(h.Items.Items.Keys, Is.EqualTo(["b"]));
+    }
+
+    [Test]
+    public async Task Sync_NoEntryMatches_MakesNoDetailRequests()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")), Item("11", new PlexGuids("1", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:5"), MovieWith("b", null));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.UnmatchedCount, Is.EqualTo(2));
+        h.Client.Verify(c => c.GetItemAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetItemsAsync(It.IsAny<PlexLibrary>(), It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownMedia>?>()), Times.Never);
     }
 
     [Test]

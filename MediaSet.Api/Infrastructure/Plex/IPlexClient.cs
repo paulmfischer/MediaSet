@@ -30,6 +30,18 @@ public interface IPlexClient
         IReadOnlyDictionary<string, PlexKnownMedia>? known = null);
 
     /// <summary>
+    /// Reads every item of a library in pages for matching: deep links (one identity request) and guids, but no
+    /// per-item metadata request, so items with files come back with the listed versions and no audio, subtitle or HDR
+    /// data. The caller reads the detail of the items it links to with <see cref="GetItemAsync"/>. An item in
+    /// <paramref name="known"/> (by rating key) whose listed updatedAt and file size still match comes back with
+    /// StreamsReused true, as in <see cref="GetItemsAsync"/>. Throws PlexClientException when Plex cannot be read.
+    /// </summary>
+    Task<IReadOnlyList<PlexItem>> GetItemListingAsync(
+        PlexLibrary library,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null);
+
+    /// <summary>
     /// Reads one item by rating key, with its streams and deep link when details are requested. Null when
     /// Plex has no such item.
     /// </summary>

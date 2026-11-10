@@ -59,12 +59,31 @@ public class PlexClient : IPlexClient
         return libraries.ToList();
     }
 
-    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(
+    public Task<IReadOnlyList<PlexItem>> GetItemsAsync(
         PlexLibrary library,
         string? titleContains,
         bool includeDetails,
         CancellationToken cancellationToken,
-        IReadOnlyDictionary<string, PlexKnownMedia>? known = null)
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null) =>
+        ReadItemsAsync(library, titleContains, includeDetails, includeDetails, cancellationToken, known);
+
+    public Task<IReadOnlyList<PlexItem>> GetItemListingAsync(
+        PlexLibrary library,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null) =>
+        ReadItemsAsync(library, null, true, false, cancellationToken, known);
+
+    /// <summary>
+    /// Shared paged read. <paramref name="deepLinks"/> adds the server identity request for deep links;
+    /// <paramref name="readDetails"/> adds the per-item metadata request that carries streams.
+    /// </summary>
+    private async Task<IReadOnlyList<PlexItem>> ReadItemsAsync(
+        PlexLibrary library,
+        string? titleContains,
+        bool deepLinks,
+        bool readDetails,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known)
     {
         var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
         var options = new ParallelOptions
@@ -72,8 +91,8 @@ public class PlexClient : IPlexClient
             MaxDegreeOfParallelism = Math.Max(1, _configuration.DetailConcurrency),
             CancellationToken = cancellationToken
         };
-        // The server identity (deep links) and per-item stream detail are only needed when details are requested
-        var serverId = includeDetails ? await GetMachineIdentifierAsync(cancellationToken) : null;
+        // The server identity (deep links) is only needed for deep links, per-item stream detail only for readDetails
+        var serverId = deepLinks ? await GetMachineIdentifierAsync(cancellationToken) : null;
         // Plex omits the Guid entries from section listings unless includeGuids=1 is sent
         var path = $"library/sections/{Uri.EscapeDataString(library.Id)}/all?includeGuids=1";
         if (!string.IsNullOrWhiteSpace(titleContains))
@@ -96,10 +115,10 @@ public class PlexClient : IPlexClient
                 var listed = metadata[i];
                 // Show items have no media, so they never match known and need no detail request either way. Movies
                 // unchanged since they were stored skip it.
-                var reuse = includeDetails && known != null && !string.IsNullOrEmpty(listed.RatingKey)
+                var reuse = deepLinks && known != null && !string.IsNullOrEmpty(listed.RatingKey)
                     && known.TryGetValue(listed.RatingKey, out var knownItem)
                     && knownItem.Matches(UpdatedAtOf(listed), (listed.Media ?? []).Select(MapVersion).ToList());
-                var m = includeDetails && !reuse ? await WithStreamsAsync(listed, ct) : listed;
+                var m = readDetails && !reuse ? await WithStreamsAsync(listed, ct) : listed;
                 mapped[i] = MapItem(m, library, DeepLinkBase(serverId)) with { StreamsReused = reuse };
             });
             items.AddRange(mapped);
