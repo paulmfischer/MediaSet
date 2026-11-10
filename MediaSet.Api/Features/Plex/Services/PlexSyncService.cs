@@ -236,7 +236,11 @@ public sealed class PlexSyncService(
                     await TransitionAsync(run, r => r.State = PlexSyncRunStates.Running);
                 }
 
+                logger.LogInformation("Plex sync for {EntityType} started ({Trigger}, run {RunId})", run.EntityType, run.Trigger, run.Id);
                 var scan = await ScanAsync(run.EntityType, token);
+                logger.LogInformation(
+                    "Plex sync for {EntityType} finished: {Scanned} Plex items read, {Matched} matched, {Unmatched} unmatched, {Errored} errored, {Backfilled} ExternalIds backfilled",
+                    run.EntityType, scan.Scanned, scan.Matched, scan.Unmatched, scan.Errored, scan.Backfilled);
                 await TransitionAsync(run, r =>
                 {
                     r.State = PlexSyncRunStates.Succeeded;
@@ -474,6 +478,15 @@ public sealed class PlexSyncService(
             var stored = plan.Stored;
             try
             {
+                if (plan.Item == null && logger.IsEnabled(LogLevel.Debug))
+                {
+                    var reason = movie.IsTvSeries && plan.Scope == null ? "no season scope can be read from the title"
+                        : !plan.Manual && string.IsNullOrWhiteSpace(movie.ExternalId) ? "it has no ExternalId"
+                        : movie.IsTvSeries ? "no Plex show with that id has the entry's seasons"
+                        : "no Plex movie in the scanned libraries has that id";
+                    logger.LogDebug("Plex sync found no match for {MovieId} ({Title}): {Reason}", movie.Id, movie.Title, reason);
+                }
+
                 if (plan.Item is { } item)
                 {
                     // A manual link may have been made since the read above; it must never be replaced
