@@ -16,10 +16,18 @@ public interface IPlexClient
     /// <summary>
     /// Reads every item of a library in pages, optionally filtered by a title contains match. With details
     /// the result has deep links (one identity request) and audio, subtitle and HDR data from one extra
-    /// metadata request per item with files, because section listings carry no streams. Pass false
-    /// when they are not needed (search).
+    /// metadata request per item with files, because section listings carry no streams; at most
+    /// PlexConfiguration.DetailConcurrency of those run at once. Pass false when they are not needed (search).
+    /// An item in <paramref name="known"/> (by rating key) whose listed updatedAt and file size still match skips the
+    /// detail request and comes back with StreamsReused true and no stream data; the caller keeps what it stored.
+    /// Items without files (shows) ignore it, as they never need a detail request.
     /// </summary>
-    Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDetails, CancellationToken cancellationToken);
+    Task<IReadOnlyList<PlexItem>> GetItemsAsync(
+        PlexLibrary library,
+        string? titleContains,
+        bool includeDetails,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null);
 
     /// <summary>
     /// Reads one item by rating key, with its streams and deep link when details are requested. Null when
@@ -40,5 +48,5 @@ public interface IPlexClient
     Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(
         string seasonRatingKey,
         CancellationToken cancellationToken,
-        IReadOnlyDictionary<string, PlexKnownEpisode>? known = null);
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null);
 }

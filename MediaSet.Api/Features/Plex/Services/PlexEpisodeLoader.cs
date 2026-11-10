@@ -23,7 +23,7 @@ public static class PlexEpisodeLoader
         IReadOnlyList<PlexSeason> seasons,
         PlexScope scope,
         IDictionary<string, IReadOnlyList<PlexEpisode>>? cache,
-        IReadOnlyDictionary<string, PlexKnownEpisode>? known,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known,
         CancellationToken cancellationToken)
     {
         var result = new Dictionary<int, IReadOnlyList<PlexEpisode>>();
@@ -41,7 +41,7 @@ public static class PlexEpisodeLoader
         return result;
     }
 
-    private static bool UsableFor(IReadOnlyList<PlexEpisode> episodes, IReadOnlyDictionary<string, PlexKnownEpisode>? known) =>
+    private static bool UsableFor(IReadOnlyList<PlexEpisode> episodes, IReadOnlyDictionary<string, PlexKnownMedia>? known) =>
         episodes.All(e => !e.StreamsReused
             || (known != null && known.TryGetValue(e.RatingKey, out var k) && k.Matches(e.UpdatedAt, e.Versions)));
 }

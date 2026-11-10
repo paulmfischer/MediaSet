@@ -20,6 +20,9 @@ public class PlexClient : IPlexClient
     private readonly ILogger<PlexClient> _logger;
     private string? _machineIdentifier;
 
+    /// <summary>Page cap per read; tests lower it so the cap can be reached without thousands of requests.</summary>
+    internal int MaxPagesPerRead { get; init; } = MaxPages;
+
     public PlexClient(HttpClient httpClient, IOptions<PlexConfiguration> configuration, ILogger<PlexClient> logger)
     {
         _httpClient = httpClient;
@@ -56,9 +59,19 @@ public class PlexClient : IPlexClient
         return libraries.ToList();
     }
 
-    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(PlexLibrary library, string? titleContains, bool includeDetails, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlexItem>> GetItemsAsync(
+        PlexLibrary library,
+        string? titleContains,
+        bool includeDetails,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null)
     {
         var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(1, _configuration.DetailConcurrency),
+            CancellationToken = cancellationToken
+        };
         // The server identity (deep links) and per-item stream detail are only needed when details are requested
         var serverId = includeDetails ? await GetMachineIdentifierAsync(cancellationToken) : null;
         // Plex omits the Guid entries from section listings unless includeGuids=1 is sent
@@ -70,15 +83,26 @@ public class PlexClient : IPlexClient
 
         var items = new List<PlexItem>();
         var start = 0;
-        for (var page = 0; page < MaxPages; page++)
+        for (var page = 0; page < MaxPagesPerRead; page++)
         {
             var root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken);
             var container = root.MediaContainer;
             var metadata = container?.Metadata ?? [];
-            foreach (var m in metadata)
+
+            // Detail requests of a page run with bounded concurrency; results keep the listing order
+            var mapped = new PlexItem[metadata.Count];
+            await Parallel.ForEachAsync(Enumerable.Range(0, metadata.Count), options, async (i, ct) =>
             {
-                items.Add(MapItem(includeDetails ? await WithStreamsAsync(m, cancellationToken) : m, library, DeepLinkBase(serverId)));
-            }
+                var listed = metadata[i];
+                // Show items have no media, so they never match known and need no detail request either way. Movies
+                // unchanged since they were stored skip it.
+                var reuse = includeDetails && known != null && !string.IsNullOrEmpty(listed.RatingKey)
+                    && known.TryGetValue(listed.RatingKey, out var knownItem)
+                    && knownItem.Matches(UpdatedAtOf(listed), (listed.Media ?? []).Select(MapVersion).ToList());
+                var m = includeDetails && !reuse ? await WithStreamsAsync(listed, ct) : listed;
+                mapped[i] = MapItem(m, library, DeepLinkBase(serverId)) with { StreamsReused = reuse };
+            });
+            items.AddRange(mapped);
 
             start += metadata.Count;
             if (metadata.Count < pageSize || (container?.TotalSize.HasValue == true && start >= container.TotalSize))
@@ -87,7 +111,7 @@ public class PlexClient : IPlexClient
             }
         }
 
-        _logger.LogWarning("Plex library paging exceeded {MaxPages} pages", MaxPages);
+        _logger.LogWarning("Plex library paging exceeded {MaxPages} pages", MaxPagesPerRead);
         throw new PlexClientException(null, "Plex returned too many pages");
     }
 
@@ -146,7 +170,7 @@ public class PlexClient : IPlexClient
     public async Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(
         string seasonRatingKey,
         CancellationToken cancellationToken,
-        IReadOnlyDictionary<string, PlexKnownEpisode>? known = null)
+        IReadOnlyDictionary<string, PlexKnownMedia>? known = null)
     {
         if (string.IsNullOrWhiteSpace(seasonRatingKey))
         {
@@ -157,7 +181,7 @@ public class PlexClient : IPlexClient
         var path = $"library/metadata/{Uri.EscapeDataString(seasonRatingKey.Trim())}/children";
         var episodes = new List<PlexEpisode>();
         var start = 0;
-        for (var page = 0; page < MaxPages; page++)
+        for (var page = 0; page < MaxPagesPerRead; page++)
         {
             ItemsRoot root;
             try
@@ -180,7 +204,7 @@ public class PlexClient : IPlexClient
                     continue;
                 }
 
-                var listedUpdatedAt = listed.UpdatedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.UpdatedAt.Value) : (DateTimeOffset?)null;
+                var listedUpdatedAt = UpdatedAtOf(listed);
                 var reuse = known != null && known.TryGetValue(listed.RatingKey, out var knownEpisode)
                     && knownEpisode.Matches(listedUpdatedAt, (listed.Media ?? []).Select(MapVersion).ToList());
 
@@ -206,7 +230,7 @@ public class PlexClient : IPlexClient
             }
         }
 
-        _logger.LogWarning("Plex season paging exceeded {MaxPages} pages", MaxPages);
+        _logger.LogWarning("Plex season paging exceeded {MaxPages} pages", MaxPagesPerRead);
         throw new PlexClientException(null, "Plex returned too many pages");
     }
 
@@ -341,7 +365,12 @@ public class PlexClient : IPlexClient
         ParseGuids(m.Guid),
         (m.Media ?? []).Select(MapVersion).ToList(),
         m.ViewCount is > 0 ? m.ViewCount.Value : 0,
-        m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null);
+        m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
+        !m.StreamLookupFailed,
+        UpdatedAtOf(m));
+
+    private static DateTimeOffset? UpdatedAtOf(RawMetadata m) =>
+        m.UpdatedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.UpdatedAt.Value) : null;
 
     private string? DeepLinkBase(string? serverId) =>
         string.IsNullOrEmpty(serverId) || _httpClient.BaseAddress == null

@@ -13,6 +13,11 @@ public class PlexConfiguration
 
     public int PageSize { get; set; } = 100;
 
+    /// <summary>
+    /// Most per-item detail (stream) requests in flight at once during a library read. Values below 1 are treated as 1.
+    /// </summary>
+    public int DetailConcurrency { get; set; } = 4;
+
     public bool AcceptInvalidCertificate { get; set; }
 
     /// <summary>Throttling of the TMDB ExternalId backfill that starts each sync. Independent of the image lookup configuration.</summary>

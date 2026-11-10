@@ -83,6 +83,14 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         return Task.CompletedTask;
     }
 
+    public Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.Scope == null).ToList());
+        }
+    }
+
     public Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken)
     {
         lock (_sync)

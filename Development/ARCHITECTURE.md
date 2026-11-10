@@ -61,7 +61,7 @@ guides are in `Setup/`.
 | IGDB | Game metadata | `IgdbConfiguration__` (`ClientId`, `ClientSecret`) | `IIgdbClient` |
 | MusicBrainz | Music album metadata | `MusicBrainzConfiguration__` (`UserAgent`) | `IMusicBrainzClient` |
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
-| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
+| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `DetailConcurrency`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
 ### Plex sync runs
 
@@ -114,6 +114,8 @@ versions the best one is stored: highest resolution, then HDR, then larger file.
 the document (404 when unlinked) and is the only response with the server file path. Deleting a movie deletes its Plex document
 through `IPlexDataCleanup` (registered only when Plex is enabled; a failure is logged, not surfaced), and each run purges documents
 of movies that no longer exist. Plex is only ever read.
+
+Per-item stream reads (section listings carry no streams) run with bounded concurrency (`PlexConfiguration__DetailConcurrency`, default 4, minimum 1). A movie whose listed `updatedAt` and a listed file size equal the stored `PlexUpdatedAt` and `SizeBytes` skips its detail request and keeps its stored stream fields; new, changed and legacy (no `PlexUpdatedAt`) movies, and ones whose lookup failed, are read in full. Shows and seasons have no media and never need the request.
 
 Manual links: `PlexItemData.LinkSource` is `auto` (set by a run; a missing value reads as auto) or `manual`.
 `PUT /plex/{entityType}/items/{movieId}/link` (body `{ "plexItemId": "..." }`) reads that Plex item and stores it as a manual

@@ -41,10 +41,15 @@ public sealed class FakePlexHandler : HttpMessageHandler
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        Requests.Add(new RecordedRequest(
+        var recorded = new RecordedRequest(
             request.Method,
             request.RequestUri!,
-            request.Headers.ToDictionary(h => h.Key, h => string.Join(",", h.Value), StringComparer.OrdinalIgnoreCase)));
+            request.Headers.ToDictionary(h => h.Key, h => string.Join(",", h.Value), StringComparer.OrdinalIgnoreCase));
+        // Requests can arrive concurrently
+        lock (Requests)
+        {
+            Requests.Add(recorded);
+        }
 
         return _routes.TryGetValue(request.RequestUri!.AbsolutePath, out var respond)
             ? respond(request, cancellationToken)

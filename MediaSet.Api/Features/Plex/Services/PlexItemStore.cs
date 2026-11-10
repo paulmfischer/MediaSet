@@ -13,6 +13,12 @@ public interface IPlexItemStore
     Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken);
     Task DeleteAsync(string movieId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Every stored movie document (TV entries are excluded), with only the fields needed to decide whether a Plex item
+    /// changed: id, Plex item id, file size and PlexUpdatedAt.
+    /// </summary>
+    Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken);
+
     /// <summary>Ids of every stored document, used to purge documents of movies that no longer exist.</summary>
     Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken);
 }
@@ -43,6 +49,14 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
 
     public Task DeleteAsync(string movieId, CancellationToken cancellationToken) =>
         Collection.DeleteOneAsync(d => d.Id == movieId, cancellationToken);
+
+    public async Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken) =>
+        await Collection.Find(d => d.Scope == null)
+            .Project<PlexItemData>(Builders<PlexItemData>.Projection
+                .Include(d => d.PlexItemId)
+                .Include(d => d.SizeBytes)
+                .Include(d => d.PlexUpdatedAt))
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken) =>
         await Collection.Find(FilterDefinition<PlexItemData>.Empty)

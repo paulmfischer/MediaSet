@@ -167,6 +167,7 @@ public sealed class PlexSyncService(
             }
             else
             {
+                // PlexUpdatedAt comes from the single-item endpoint here; a mismatch with the listing only costs a full read next sync
                 data = PlexMatching.Build(movieId, item, DateTime.UtcNow, stored.LinkSource);
             }
             await itemStore.UpsertAsync(data, cancellationToken);
@@ -309,13 +310,15 @@ public sealed class PlexSyncService(
         var client = services.GetRequiredService<IPlexClient>();
         var itemTypes = PlexEntityTypes.LibraryTypes(entityType);
         var items = new List<PlexItem>();
+        var itemStore = services.GetRequiredService<IPlexItemStore>();
+        // Movies unchanged since the last run skip their detail requests; legacy or failed ones are read in full
+        var knownMovies = PlexMatching.KnownMovies(await itemStore.ListMoviesAsync(token));
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, token))
         {
-            var libraryItems = await client.GetItemsAsync(library, null, true, token);
+            var libraryItems = await client.GetItemsAsync(library, null, true, token, knownMovies);
             items.AddRange(libraryItems.Where(i => itemTypes.Contains(i.Type, StringComparer.OrdinalIgnoreCase)));
         }
 
-        var itemStore = services.GetRequiredService<IPlexItemStore>();
         using var scope = services.CreateScope();
         var movies = (await scope.ServiceProvider.GetRequiredService<IEntityService<Movie>>().GetListAsync(token))
             .Where(m => !string.IsNullOrEmpty(m.Id))
@@ -351,6 +354,29 @@ public sealed class PlexSyncService(
 
         // Episodes are read per season, once per run however many entries cover it, and only for linked shows
         var episodesBySeason = new Dictionary<string, IReadOnlyList<PlexEpisode>>(StringComparer.Ordinal);
+
+        // Full reads of items the listing marked as unchanged, for movies whose own stored data cannot supply the streams
+        var fullByKey = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
+        async Task<PlexItem> ReadInFullAsync(PlexItem reused)
+        {
+            if (!fullByKey.TryGetValue(reused.RatingKey, out var full))
+            {
+                try
+                {
+                    var read = await client.GetItemAsync(reused.RatingKey, true, token);
+                    full = read != null && read.Versions.Count > 0
+                        ? reused with { Versions = read.Versions, StreamsReused = false, StreamsAvailable = true }
+                        : reused with { StreamsReused = false, StreamsAvailable = false };
+                }
+                catch (PlexClientException)
+                {
+                    // Like a failed per-item lookup: keep the listing data and read it again next sync
+                    full = reused with { StreamsReused = false, StreamsAvailable = false };
+                }
+                fullByKey[reused.RatingKey] = full;
+            }
+            return full;
+        }
 
         // Phase 1 reads only: decide each movie's Plex item. A PlexClientException (outage, rejected token,
         // timeout) is rethrown so the run fails before anything is written, and nothing is marked gone.
@@ -419,6 +445,13 @@ public sealed class PlexSyncService(
                     }
                 }
 
+                if (!isTv && item is { StreamsReused: true } && !PlexMatching.CanReuseStreams(item, storedUsable ? stored : null))
+                {
+                    // Several movies may link to one Plex item and the client skipped its detail read because another one has
+                    // it stored. This movie has nothing to reuse (new, legacy or relinked), so read the item in full.
+                    item = await ReadInFullAsync(item);
+                }
+
                 plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes, stored != null && !storedUsable ? stored : null));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
@@ -467,7 +500,7 @@ public sealed class PlexSyncService(
                         }
 
                         // Build resets MissCount and Broken: a found item recovers the link
-                        await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source), token);
+                        await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source, stored), token);
                     }
                     matched++;
                 }

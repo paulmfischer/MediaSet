@@ -43,6 +43,8 @@ public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLi
         PlexItemData data;
         if (scope == null)
         {
+            // The single-item endpoint's updatedAt is stored as PlexUpdatedAt. If it ever differs from the listing's, the next sync
+            // just fails the skip check and reads the item in full: no correctness risk, only a lost skip.
             data = PlexMatching.Build(movieId, item, DateTime.UtcNow, PlexLinkSources.Manual);
         }
         else
