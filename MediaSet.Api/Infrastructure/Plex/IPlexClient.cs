@@ -34,6 +34,11 @@ public interface IPlexClient
     /// The episodes of one season by the season's rating key, read in pages, with audio, subtitle and HDR data from one
     /// extra metadata request per episode with files (listings carry no streams). Empty when the season has none.
     /// Throws PlexClientException when Plex cannot be reached or does not know the season.
+    /// An episode in <paramref name="known"/> (by rating key) whose listed updatedAt and file size still match skips the
+    /// stream lookup and comes back with StreamsReused true and no stream data; the caller keeps what it stored.
     /// </summary>
-    Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(string seasonRatingKey, CancellationToken cancellationToken);
+    Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(
+        string seasonRatingKey,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownEpisode>? known = null);
 }

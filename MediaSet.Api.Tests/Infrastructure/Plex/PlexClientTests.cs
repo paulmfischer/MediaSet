@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -289,6 +290,80 @@ public class PlexClientTests
         Assert.That(episodes.Select(e => e.StreamsAvailable), Is.EqualTo([true, false, true]));
         Assert.That(episodes[1].Versions.Single().Resolution, Is.EqualTo("720"));
         Assert.That(episodes[1].Versions.Single().AudioTracks, Is.Empty);
+    }
+
+    private static readonly DateTimeOffset PilotUpdatedAt = DateTimeOffset.FromUnixTimeSeconds(1700000001);
+    private static readonly DateTimeOffset SecondUpdatedAt = DateTimeOffset.FromUnixTimeSeconds(1700000002);
+
+    private static int DetailRequests(FakePlexHandler handler, string ratingKey) =>
+        handler.Requests.Count(r => r.Uri.AbsolutePath == $"/library/metadata/{ratingKey}");
+
+    [Test]
+    public async Task GetEpisodesAsync_UnchangedKnownEpisode_SkipsStreamLookupAndFlagsReuse()
+    {
+        var handler = ServingEpisodes();
+        var known = new Dictionary<string, PlexKnownEpisode> { ["4001"] = new(PilotUpdatedAt, 1000) };
+
+        var episodes = await Client(handler).GetEpisodesAsync("2102", CancellationToken.None, known);
+
+        Assert.That(DetailRequests(handler, "4001"), Is.EqualTo(0));
+        Assert.That(episodes[0].StreamsReused, Is.True);
+        Assert.That(episodes[0].StreamsAvailable, Is.True);
+        Assert.That(episodes[0].UpdatedAt, Is.EqualTo(PilotUpdatedAt));
+        Assert.That(episodes[0].Versions.Single().SizeBytes, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_KnownEpisodeWithNewUpdatedAt_FetchesStreams()
+    {
+        var handler = ServingEpisodes();
+        var known = new Dictionary<string, PlexKnownEpisode> { ["4001"] = new(PilotUpdatedAt.AddDays(-1), 1000) };
+
+        var episodes = await Client(handler).GetEpisodesAsync("2102", CancellationToken.None, known);
+
+        Assert.That(DetailRequests(handler, "4001"), Is.EqualTo(1));
+        Assert.That(episodes[0].StreamsReused, Is.False);
+        Assert.That(episodes[0].Versions.Any(v => v.AudioTracks.Count > 0), Is.True);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_KnownEpisodeWithChangedSize_FetchesStreams()
+    {
+        var handler = ServingEpisodes();
+        var known = new Dictionary<string, PlexKnownEpisode> { ["4001"] = new(PilotUpdatedAt, 999) };
+
+        var episodes = await Client(handler).GetEpisodesAsync("2102", CancellationToken.None, known);
+
+        Assert.That(DetailRequests(handler, "4001"), Is.EqualTo(1));
+        Assert.That(episodes[0].StreamsReused, Is.False);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_EpisodeNotKnown_FetchesStreamsWhileKnownOnesAreSkipped()
+    {
+        var handler = ServingEpisodes();
+        var known = new Dictionary<string, PlexKnownEpisode> { ["4001"] = new(PilotUpdatedAt, 1000) };
+
+        var episodes = await Client(handler).GetEpisodesAsync("2102", CancellationToken.None, known);
+
+        Assert.That(DetailRequests(handler, "4001"), Is.EqualTo(0));
+        Assert.That(DetailRequests(handler, "4002"), Is.EqualTo(1));
+        Assert.That(episodes[1].StreamsReused, Is.False);
+    }
+
+    [Test]
+    public async Task GetEpisodesAsync_ListingWithoutUpdatedAt_FetchesStreams()
+    {
+        var handler = FakePlexHandler.WithServer()
+            .Route("/library/metadata/2102/children", _ => FakePlexHandler.Json(
+                """{"MediaContainer":{"Metadata":[{"ratingKey":"4001","type":"episode","title":"Pilot","index":1,"parentIndex":2,"Media":[{"videoResolution":"1080","Part":[{"size":1000}]}]}]}}"""))
+            .Route("/library/metadata/4001", "metadata_4001.json");
+        var known = new Dictionary<string, PlexKnownEpisode> { ["4001"] = new(PilotUpdatedAt, 1000) };
+
+        var episodes = await Client(handler).GetEpisodesAsync("2102", CancellationToken.None, known);
+
+        Assert.That(DetailRequests(handler, "4001"), Is.EqualTo(1));
+        Assert.That(episodes.Single().StreamsReused, Is.False);
     }
 
     [Test]

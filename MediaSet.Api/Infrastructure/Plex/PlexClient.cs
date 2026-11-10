@@ -143,7 +143,10 @@ public class PlexClient : IPlexClient
             .ToList();
     }
 
-    public async Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(string seasonRatingKey, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlexEpisode>> GetEpisodesAsync(
+        string seasonRatingKey,
+        CancellationToken cancellationToken,
+        IReadOnlyDictionary<string, PlexKnownEpisode>? known = null)
     {
         if (string.IsNullOrWhiteSpace(seasonRatingKey))
         {
@@ -177,6 +180,25 @@ public class PlexClient : IPlexClient
                     continue;
                 }
 
+                var listedUpdatedAt = listed.UpdatedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.UpdatedAt.Value) : (DateTimeOffset?)null;
+                if (known != null && known.TryGetValue(listed.RatingKey, out var knownEpisode)
+                    && knownEpisode.Matches(listedUpdatedAt, (listed.Media ?? []).Select(MapVersion).ToList()))
+                {
+                    // Unchanged since it was stored: its streams are too, so skip the metadata request
+                    episodes.Add(new PlexEpisode(
+                        listed.RatingKey,
+                        listed.ParentIndex ?? 0,
+                        listed.Index!.Value,
+                        listed.Title ?? string.Empty,
+                        listed.ViewCount is > 0 ? listed.ViewCount.Value : 0,
+                        listed.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.LastViewedAt.Value) : null,
+                        (listed.Media ?? []).Select(MapVersion).ToList(),
+                        true,
+                        listedUpdatedAt,
+                        true));
+                    continue;
+                }
+
                 var m = await WithStreamsAsync(listed, cancellationToken);
                 episodes.Add(new PlexEpisode(
                     m.RatingKey!,
@@ -186,7 +208,8 @@ public class PlexClient : IPlexClient
                     m.ViewCount is > 0 ? m.ViewCount.Value : 0,
                     m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
                     (m.Media ?? []).Select(MapVersion).ToList(),
-                    !m.StreamLookupFailed));
+                    !m.StreamLookupFailed,
+                    listedUpdatedAt));
             }
 
             start += metadata.Count;
@@ -245,6 +268,7 @@ public class PlexClient : IPlexClient
             Index = listed.Index,
             ParentIndex = listed.ParentIndex,
             AddedAt = listed.AddedAt,
+            UpdatedAt = listed.UpdatedAt,
             ViewCount = listed.ViewCount ?? detailed.ViewCount,
             LastViewedAt = listed.LastViewedAt ?? detailed.LastViewedAt,
             Guid = listed.Guid is { Count: > 0 } ? listed.Guid : detailed.Guid,
@@ -405,6 +429,7 @@ public class PlexClient : IPlexClient
         [JsonIgnore] public bool StreamLookupFailed { get; set; }
         public int? LeafCount { get; set; }
         public long? AddedAt { get; set; }
+        public long? UpdatedAt { get; set; }
         [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }
         [JsonPropertyName("librarySectionTitle")] public string? LibrarySectionTitle { get; set; }
         public int? ViewCount { get; set; }

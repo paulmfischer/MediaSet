@@ -1098,7 +1098,7 @@ public class PlexSyncServiceTests
             views > 0 ? DateTimeOffset.FromUnixTimeSeconds(1710000000 + number) : null, versions);
 
     private static void ServeEpisodes(Harness h, string seasonKey, params PlexEpisode[] episodes) =>
-        h.Client.Setup(c => c.GetEpisodesAsync(seasonKey, It.IsAny<CancellationToken>())).ReturnsAsync(episodes);
+        h.Client.Setup(c => c.GetEpisodesAsync(seasonKey, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>())).ReturnsAsync(episodes);
 
     private static PlexEpisodeData Stored(int season, int number, bool onPlex = true, int misses = 0) =>
         new() { SeasonNumber = season, EpisodeNumber = number, Title = $"Old {season}x{number}", PlexEpisodeId = $"old{season}{number}", OnPlex = onPlex, MissCount = misses, FilePath = "/old.mkv" };
@@ -1178,8 +1178,8 @@ public class PlexSyncServiceTests
 
         await RunAsync(h);
 
-        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()), Times.Once);
-        h.Client.Verify(c => c.GetEpisodesAsync(It.Is<string>(k => k != "9002"), It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Once);
+        h.Client.Verify(c => c.GetEpisodesAsync(It.Is<string>(k => k != "9002"), It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Never);
     }
 
     [Test]
@@ -1191,9 +1191,9 @@ public class PlexSyncServiceTests
 
         await RunAsync(h);
 
-        h.Client.Verify(c => c.GetEpisodesAsync("9001", It.IsAny<CancellationToken>()), Times.Once);
-        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()), Times.Once);
-        h.Client.Verify(c => c.GetEpisodesAsync(It.Is<string>(k => k != "9001" && k != "9002"), It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetEpisodesAsync("9001", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Once);
+        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Once);
+        h.Client.Verify(c => c.GetEpisodesAsync(It.Is<string>(k => k != "9001" && k != "9002"), It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Never);
     }
 
     [Test]
@@ -1206,7 +1206,7 @@ public class PlexSyncServiceTests
 
         await RunAsync(h);
 
-        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()), Times.Once);
+        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Once);
         Assert.That(h.Items.Items["a"].Episodes, Has.Count.EqualTo(1));
         Assert.That(h.Items.Items["b"].Episodes, Has.Count.EqualTo(1));
     }
@@ -1264,7 +1264,7 @@ public class PlexSyncServiceTests
         await RunAsync(h);
 
         Assert.That(h.Items.Items["a"].Episodes.Select(e => e.PlexEpisodeId), Is.EqualTo(["90101"]));
-        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Never);
     }
 
     [Test]
@@ -1320,6 +1320,208 @@ public class PlexSyncServiceTests
         Assert.That(episode.FilePath, Is.EqualTo("/new.mkv"));
     }
 
+    private static readonly DateTime EpisodeUpdated = new(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+
+    private static PlexVersion NoStreams(PlexVersion v) => v with { AudioTracks = [], Subtitles = [], Hdr = false, VideoCodec = null };
+
+    /// <summary>Behaves like the client: an episode whose key is in the known map and matches is returned without streams.</summary>
+    private static List<IReadOnlyDictionary<string, PlexKnownEpisode>?> ServeEpisodesLikeClient(Harness h, string seasonKey, params PlexEpisode[] episodes)
+    {
+        var received = new List<IReadOnlyDictionary<string, PlexKnownEpisode>?>();
+        h.Client.Setup(c => c.GetEpisodesAsync(seasonKey, It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()))
+            .ReturnsAsync((string _, CancellationToken _, IReadOnlyDictionary<string, PlexKnownEpisode>? known) =>
+            {
+                received.Add(known);
+                IReadOnlyList<PlexEpisode> result = [.. episodes.Select(e => known != null && known.TryGetValue(e.RatingKey, out var k) && k.Matches(e.UpdatedAt, e.Versions)
+                    ? e with { Versions = [.. e.Versions.Select(NoStreams)], StreamsReused = true }
+                    : e)];
+                return result;
+            });
+        return received;
+    }
+
+    private static PlexEpisode Listed(int number, int views, string path, long size, DateTime updated) =>
+        Episode("90", 2, number, views, Version("1080", hdr: true, size: size, path: path)) with { UpdatedAt = new DateTimeOffset(updated) };
+
+    private static PlexEpisodeData StoredWithStreams(int number, DateTime? updated, long size)
+    {
+        var e = Stored(2, number);
+        e.PlexEpisodeId = $"902{number:00}";
+        e.PlexUpdatedAt = updated;
+        e.SizeBytes = size;
+        e.Hdr = true;
+        e.VideoCodec = "hevc";
+        e.BestAudioTrack = new PlexAudioTrackData("truehd", 8, "eng");
+        e.AudioLanguages = ["eng", "jpn"];
+        e.SubtitleLanguages = ["eng"];
+        return e;
+    }
+
+    [Test]
+    public async Task Sync_UnchangedStoredEpisode_PassedAsKnownAndKeepsStoredStreamsWhileRewritingTheRest()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var received = ServeEpisodesLikeClient(h, "9002", Listed(1, 2, "/p/s02e01.mkv", 9, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(received.Single()!.Keys, Is.EqualTo(["90201"]));
+        Assert.That(episode.Hdr, Is.True);
+        Assert.That(episode.VideoCodec, Is.EqualTo("hevc"));
+        Assert.That(episode.BestAudioTrack, Is.EqualTo(new PlexAudioTrackData("truehd", 8, "eng")));
+        Assert.That(episode.AudioLanguages, Is.EqualTo(["eng", "jpn"]));
+        Assert.That(episode.SubtitleLanguages, Is.EqualTo(["eng"]));
+        Assert.That(episode.Title, Is.EqualTo("Episode 2x1"));
+        Assert.That(episode.Watched, Is.True);
+        Assert.That(episode.FilePath, Is.EqualTo("/p/s02e01.mkv"));
+        Assert.That(episode.PlexUpdatedAt, Is.EqualTo(EpisodeUpdated));
+        Assert.That(episode.OnPlex, Is.True);
+    }
+
+    [Test]
+    public async Task Sync_UnchangedStoredEpisodes_RollupsStayCorrect()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        ServeEpisodesLikeClient(h, "9002", Listed(1, 1, "/p/s02e01.mkv", 9, EpisodeUpdated), Listed(2, 1, "/p/s02e02.mkv", 5, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var data = h.Items.Items["a"];
+        Assert.That(data.Rollup!.EpisodesPresent, Is.EqualTo(2));
+        Assert.That(data.Rollup.Hdr, Is.True);
+        Assert.That(data.Rollup.AudioLanguages, Is.EquivalentTo(["eng", "jpn"]));
+        Assert.That(data.Watched, Is.True);
+        Assert.That(data.SubtitleLanguages, Does.Contain("eng"));
+    }
+
+    [Test]
+    public async Task Sync_ChangedStoredEpisode_NotKnownSoFetchedAndStoredDetailUpdated()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var newer = EpisodeUpdated.AddDays(3);
+        ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/new.mkv", 9, newer));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(episode.PlexUpdatedAt, Is.EqualTo(newer));
+        Assert.That(episode.FilePath, Is.EqualTo("/p/new.mkv"));
+        Assert.That(episode.BestAudioTrack, Is.EqualTo(new PlexAudioTrackData("ac3", 6, "eng")));
+        Assert.That(episode.AudioLanguages, Is.EqualTo(["eng"]));
+    }
+
+    [Test]
+    public async Task Sync_SizeChangedStoredEpisode_FetchedAndStoredDetailUpdated()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/new.mkv", 12, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(episode.SizeBytes, Is.EqualTo(12));
+        Assert.That(episode.AudioLanguages, Is.EqualTo(["eng"]));
+    }
+
+    [Test]
+    public async Task Sync_NewEpisodeNextToStoredOne_IsFetchedWithStreams()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/s02e01.mkv", 9, EpisodeUpdated), Listed(2, 0, "/p/s02e02.mkv", 5, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episodes = h.Items.Items["a"].Episodes;
+        Assert.That(episodes.Single(e => e.EpisodeNumber == 1).AudioLanguages, Is.EqualTo(["eng", "jpn"]));
+        Assert.That(episodes.Single(e => e.EpisodeNumber == 2).AudioLanguages, Is.EqualTo(["eng"]));
+        Assert.That(episodes.Single(e => e.EpisodeNumber == 2).PlexUpdatedAt, Is.EqualTo(EpisodeUpdated));
+    }
+
+    [Test]
+    public async Task Sync_LegacyStoredEpisodeWithoutUpdatedAt_IsFetchedOnceAndStoredWithIt()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, null, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var received = ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/s02e01.mkv", 9, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(received.Single(), Is.Empty);
+        Assert.That(episode.PlexUpdatedAt, Is.EqualTo(EpisodeUpdated));
+        Assert.That(episode.BestAudioTrack, Is.EqualTo(new PlexAudioTrackData("ac3", 6, "eng")));
+    }
+
+    [Test]
+    public async Task Sync_ReusedEpisodeWithNoStoredRecord_StoresWithoutStreamsAndWithoutUpdatedAtSoItIsRetried()
+    {
+        var h = new Harness();
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
+        var reused = Listed(1, 0, "/p/s02e01.mkv", 9, EpisodeUpdated);
+        ServeEpisodes(h, "9002", (reused with { Versions = [.. reused.Versions.Select(NoStreams)], StreamsReused = true }));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
+
+        var run = await RunAsync(h);
+
+        var episode = h.Items.Items["a"].Episodes.Single();
+        Assert.That(run.State, Is.EqualTo(PlexSyncRunStates.Succeeded));
+        Assert.That(episode.AudioLanguages, Is.Empty);
+        Assert.That(episode.FilePath, Is.EqualTo("/p/s02e01.mkv"));
+    }
+
+    [Test]
+    public async Task Sync_SeasonSharedByEntryWithStoredEpisodeAndOneWithout_SecondEntryGetsFullStreams()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        var received = ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/s02e01.mkv", 9, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"), Tv("b", "Show: Complete Series", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(received, Has.Count.EqualTo(2));
+        Assert.That(h.Items.Items["a"].Episodes.Single().AudioLanguages, Is.EqualTo(["eng", "jpn"]));
+        Assert.That(h.Items.Items["b"].Episodes.Single().AudioLanguages, Is.EqualTo(["eng"]));
+        Assert.That(h.Items.Items["b"].Episodes.Single().Hdr, Is.True);
+    }
+
+    [Test]
+    public async Task Sync_SeasonSharedByEntriesThatBothStoreTheEpisode_IsReadOnce()
+    {
+        var h = new Harness();
+        await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), StoredWithStreams(1, EpisodeUpdated, 9)), CancellationToken.None);
+        var other = StoredShow(PlexLinkSources.Auto, new PlexScope(PlexScopeKinds.Range, 1, 2), StoredWithStreams(1, EpisodeUpdated, 9));
+        other.Id = "b";
+        await h.Items.UpsertAsync(other, CancellationToken.None);
+        ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 1, 7), Season("90", 2, 13));
+        var received = ServeEpisodesLikeClient(h, "9002", Listed(1, 0, "/p/s02e01.mkv", 9, EpisodeUpdated));
+        SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"), Tv("b", "Show: Seasons 1-2", "tmdbid:1399"));
+
+        await RunAsync(h);
+
+        Assert.That(received, Has.Count.EqualTo(1));
+        Assert.That(h.Items.Items["b"].Episodes.Single(e => e.SeasonNumber == 2).AudioLanguages, Is.EqualTo(["eng", "jpn"]));
+    }
+
     [Test]
     public async Task Sync_EpisodeStreamLookupFailed_KeepsPreviouslyStoredStreamFields()
     {
@@ -1332,7 +1534,7 @@ public class PlexSyncServiceTests
         await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), old), CancellationToken.None);
         ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
         var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
-        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()))
             .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
         SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
 
@@ -1357,7 +1559,7 @@ public class PlexSyncServiceTests
         await h.Items.UpsertAsync(StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), old), CancellationToken.None);
         ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
         var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
-        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()))
             .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
         SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
 
@@ -1377,7 +1579,7 @@ public class PlexSyncServiceTests
         var h = new Harness();
         ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
         var noStreams = new PlexVersion("1080", false, null, [], [], TimeSpan.FromMinutes(40), "mkv", "/p/new.mkv", 3);
-        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()))
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()))
             .ReturnsAsync([Episode("90", 2, 1, 0, noStreams) with { StreamsAvailable = false }]);
         SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
 
@@ -1405,7 +1607,7 @@ public class PlexSyncServiceTests
 
         var episodes = h.Items.Items["a"].Episodes;
         Assert.That(episodes.Select(e => (e.SeasonNumber, e.EpisodeNumber, e.OnPlex, e.MissCount)), Is.EqualTo([(1, 1, true, 0), (2, 1, false, 1)]));
-        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Never);
     }
 
     [Test]
@@ -1432,7 +1634,7 @@ public class PlexSyncServiceTests
         var stored = StoredShow(PlexLinkSources.Auto, PlexScope.Single(2), Stored(2, 1, misses: 1));
         await h.Items.UpsertAsync(stored, CancellationToken.None);
         ServeShow(h, "90", new PlexGuids("1399", null, null), Season("90", 2, 13));
-        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>())).ThrowsAsync(new PlexClientException(500, "Plex request failed"));
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>())).ThrowsAsync(new PlexClientException(500, "Plex request failed"));
         SetMovies(h, Tv("a", "Show: Season 2", "tmdbid:1399"));
 
         var run = await RunAsync(h);
@@ -1457,7 +1659,7 @@ public class PlexSyncServiceTests
         var episodes = h.Items.Items["a"].Episodes;
         Assert.That(result.Status, Is.EqualTo(PlexRefreshStatus.Refreshed));
         Assert.That(episodes.Select(e => (e.EpisodeNumber, e.OnPlex, e.MissCount)), Is.EqualTo([(1, true, 0), (9, false, 0)]));
-        h.Client.Verify(c => c.GetEpisodesAsync("9001", It.IsAny<CancellationToken>()), Times.Never);
+        h.Client.Verify(c => c.GetEpisodesAsync("9001", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>()), Times.Never);
     }
 
     [Test]
@@ -1468,7 +1670,7 @@ public class PlexSyncServiceTests
         await h.Items.UpsertAsync(stored, CancellationToken.None);
         h.Client.Setup(c => c.GetItemAsync("90", true, It.IsAny<CancellationToken>())).ReturnsAsync(Show("90", new PlexGuids("1399", null, null)));
         h.Client.Setup(c => c.GetSeasonsAsync("90", It.IsAny<CancellationToken>())).ReturnsAsync([Season("90", 2, 13)]);
-        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>())).ThrowsAsync(new PlexClientException(null, "Plex server could not be reached"));
+        h.Client.Setup(c => c.GetEpisodesAsync("9002", It.IsAny<CancellationToken>(), It.IsAny<IReadOnlyDictionary<string, PlexKnownEpisode>?>())).ThrowsAsync(new PlexClientException(null, "Plex server could not be reached"));
 
         Assert.That(async () => await h.Service.RefreshItemAsync("movies", "a", CancellationToken.None), Throws.TypeOf<PlexClientException>());
         Assert.That(h.Items.Items["a"], Is.SameAs(stored));

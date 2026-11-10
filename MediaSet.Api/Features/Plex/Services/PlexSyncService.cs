@@ -162,7 +162,7 @@ public sealed class PlexSyncService(
                 }
                 // Reads first (seasons, then the episodes of the covered seasons), so an outage fails before the write
                 var seasons = await client.GetSeasonsAsync(item.RatingKey, cancellationToken);
-                var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, cancellationToken);
+                var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, PlexMatching.KnownEpisodes(stored), cancellationToken);
                 data = PlexMatching.BuildShow(movieId, item, seasons, scope, DateTime.UtcNow, stored.LinkSource, episodes, stored);
             }
             else
@@ -413,7 +413,7 @@ public sealed class PlexSyncService(
                         else
                         {
                             // Linked: read the episodes of the covered seasons now, so an outage fails the run before any write
-                            episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, entryScope, episodesBySeason, token);
+                            episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, entryScope, episodesBySeason, PlexMatching.KnownEpisodes(storedUsable ? stored : null), token);
                         }
                     }
                 }

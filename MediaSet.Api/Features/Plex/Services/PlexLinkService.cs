@@ -49,7 +49,7 @@ public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLi
         {
             // All Plex reads (seasons, then the episodes of the covered seasons) happen before the write
             var seasons = await client.GetSeasonsAsync(item.RatingKey, cancellationToken);
-            var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, cancellationToken);
+            var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, null, cancellationToken);
             data = PlexMatching.BuildShow(movieId, item, seasons, scope, DateTime.UtcNow, PlexLinkSources.Manual, episodes);
         }
         await store.UpsertAsync(data, cancellationToken);

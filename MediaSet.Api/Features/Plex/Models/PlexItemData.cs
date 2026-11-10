@@ -81,6 +81,13 @@ public class PlexEpisodeData
 
     public long? SizeBytes { get; set; }
 
+    /// <summary>
+    /// Plex's updatedAt for the episode when its streams were last read. Null for episodes stored before this was kept
+    /// and when the stream lookup failed, so the next sync reads them again.
+    /// </summary>
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? PlexUpdatedAt { get; set; }
+
     /// <summary>False when Plex no longer returned the episode on the last run (the data is then stale).</summary>
     public bool OnPlex { get; set; } = true;
 

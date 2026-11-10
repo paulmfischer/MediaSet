@@ -196,7 +196,14 @@ public static class PlexMatching
             foreach (var episode in episodes)
             {
                 var built = BuildEpisode(seasonIndex, episode);
-                if (!episode.StreamsAvailable && storedByKey.TryGetValue((seasonIndex, episode.EpisodeIndex), out var previous))
+                storedByKey.TryGetValue((seasonIndex, episode.EpisodeIndex), out var previous);
+                if (episode.StreamsReused && previous != null && previous.PlexEpisodeId == episode.RatingKey)
+                {
+                    // Unchanged in Plex: the streams were not read, keep the stored ones (the rest comes from the listing)
+                    CopyStreams(built, previous);
+                    built.PlexUpdatedAt = previous.PlexUpdatedAt;
+                }
+                else if (!episode.StreamsAvailable && previous != null)
                 {
                     // The stream lookup failed this time: keep what was known rather than overwrite it with nothing
                     built.Hdr = previous.Hdr;
@@ -204,6 +211,7 @@ public static class PlexMatching
                     built.BestAudioTrack = previous.BestAudioTrack;
                     built.AudioLanguages = previous.AudioLanguages;
                     built.SubtitleLanguages = previous.SubtitleLanguages;
+                    built.PlexUpdatedAt = previous.PlexUpdatedAt;
                 }
                 merged.TryAdd((seasonIndex, episode.EpisodeIndex), built);
             }
@@ -228,6 +236,32 @@ public static class PlexMatching
         }
 
         return [.. merged.Values.OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber)];
+    }
+
+    private static void CopyStreams(PlexEpisodeData to, PlexEpisodeData from)
+    {
+        to.Hdr = from.Hdr;
+        to.VideoCodec = from.VideoCodec;
+        to.BestAudioTrack = from.BestAudioTrack;
+        to.AudioLanguages = from.AudioLanguages;
+        to.SubtitleLanguages = from.SubtitleLanguages;
+    }
+
+    /// <summary>
+    /// The stored episodes a client may skip the stream lookup for (by Plex rating key). Only episodes whose streams were
+    /// read (they have a PlexUpdatedAt) and that have a file size qualify. Empty for an entry with nothing stored.
+    /// </summary>
+    public static Dictionary<string, PlexKnownEpisode> KnownEpisodes(PlexItemData? stored)
+    {
+        var known = new Dictionary<string, PlexKnownEpisode>(StringComparer.Ordinal);
+        foreach (var e in stored?.Episodes ?? [])
+        {
+            if (e.PlexUpdatedAt is { } updated && e.SizeBytes is { } size && !string.IsNullOrEmpty(e.PlexEpisodeId))
+            {
+                known[e.PlexEpisodeId] = new PlexKnownEpisode(new DateTimeOffset(DateTime.SpecifyKind(updated, DateTimeKind.Utc)), size);
+            }
+        }
+        return known;
     }
 
     /// <summary>Consecutive runs an auto-linked item or episode may be missing before it is dropped.</summary>
@@ -256,6 +290,8 @@ public static class PlexMatching
             Container = best?.Container,
             FilePath = best?.FilePath,
             SizeBytes = best?.SizeBytes,
+            // Only when the streams were read, so a failed lookup is retried next sync
+            PlexUpdatedAt = episode.StreamsAvailable ? episode.UpdatedAt?.UtcDateTime : null,
             OnPlex = true,
             MissCount = 0
         };
