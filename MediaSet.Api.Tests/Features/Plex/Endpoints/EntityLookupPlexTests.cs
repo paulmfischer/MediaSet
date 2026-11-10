@@ -45,7 +45,7 @@ public class EntityLookupPlexTests
         _factories.Clear();
     }
 
-    private HttpClient CreateClient(InMemoryPlexItemStore items, Mock<IEntityService<Movie>> movies, Mock<IEntityService<Book>>? books = null, bool plexEnabled = true)
+    private HttpClient CreateClient(InMemoryPlexItemStore items, Mock<IEntityService<Movie>> movies, Mock<IEntityService<Book>>? books = null, bool plexEnabled = true, bool moviesEnabled = true)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -65,7 +65,7 @@ public class EntityLookupPlexTests
             {
                 builder.UseSetting("PlexConfiguration:BaseUrl", "http://plex.local:32400");
                 builder.UseSetting("PlexConfiguration:Token", "token");
-                builder.UseSetting("PlexConfiguration:Entities:Movies:Enabled", "true");
+                builder.UseSetting("PlexConfiguration:Entities:Movies:Enabled", moviesEnabled ? "true" : "false");
             }
             builder.ConfigureServices(services =>
             {
@@ -256,5 +256,71 @@ public class EntityLookupPlexTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(saved, Is.Not.Null);
         Assert.That(saved!.Plex, Is.Null);
+    }
+
+    [Test]
+    public async Task GetMovie_PlexNotEnabledForMovies_HasNoPlexProperty()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(MovieData(), CancellationToken.None);
+        using var client = CreateClient(items, MovieService(), moviesEnabled: false);
+
+        var (status, _, json) = await GetAsync(client, $"/movies/{MovieId}");
+
+        Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(json.TryGetProperty("plex", out _), Is.False);
+    }
+
+    [Test]
+    public async Task GetMovie_PlexStoreThrows_ReturnsMovieWithoutPlex()
+    {
+        var items = new InMemoryPlexItemStore { AfterGet = _ => throw new InvalidOperationException("store down") };
+        using var client = CreateClient(items, MovieService());
+
+        var (status, _, json) = await GetAsync(client, $"/movies/{MovieId}");
+
+        Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(json.GetProperty("title").GetString(), Is.EqualTo("Title " + MovieId));
+        Assert.That(json.TryGetProperty("plex", out _), Is.False);
+    }
+
+    [Test]
+    public async Task ListAndSearchMovies_LinkedMovie_OmitPlex()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(MovieData(), CancellationToken.None);
+        var movies = MovieService();
+        var movie = new Movie { Id = MovieId, Title = "Dune" };
+        movies.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync([movie]);
+        movies.Setup(s => s.SearchAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync([movie]);
+        using var client = CreateClient(items, movies);
+
+        var list = await client.GetStringAsync("/movies");
+        var search = await client.GetStringAsync("/movies/search?searchText=dune&orderBy=title");
+
+        Assert.That(list, Does.Contain("Dune").And.Not.Contain("plex"));
+        Assert.That(search, Does.Contain("Dune").And.Not.Contain("plex"));
+    }
+
+    [Test]
+    public async Task CreateMovie_BodyWithPlex_DropsPlexBeforeSaving()
+    {
+        var movies = MovieService();
+        Movie? saved = null;
+        movies.Setup(s => s.CreateAsync(It.IsAny<Movie>(), It.IsAny<CancellationToken>()))
+            .Callback<Movie, CancellationToken>((m, _) => saved = m)
+            .Returns(Task.CompletedTask);
+        using var client = CreateClient(new InMemoryPlexItemStore(), movies);
+
+        var response = await client.PostAsJsonAsync("/movies", new
+        {
+            title = "Dune",
+            plex = new { movieId = MovieId, plexItemId = "evil" }
+        });
+
+        Assert.That(response.IsSuccessStatusCode, Is.True);
+        Assert.That(saved, Is.Not.Null);
+        Assert.That(saved!.Plex, Is.Null);
+        Assert.That(await response.Content.ReadAsStringAsync(), Does.Not.Contain("evil"));
     }
 }

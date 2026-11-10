@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using MediaSet.Api.Shared.Attributes;
-using MediaSet.Api.Infrastructure.Serialization;
 using System.Text.Json.Serialization;
+using MediaSet.Api.Infrastructure.Serialization;
+using MediaSet.Api.Shared.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 

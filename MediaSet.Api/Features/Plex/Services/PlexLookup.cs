@@ -3,7 +3,7 @@ using MediaSet.Api.Infrastructure.Plex;
 
 namespace MediaSet.Api.Features.Plex.Services;
 
-public class PlexLookup(PlexEnablement enablement, IPlexItemStore items) : IPlexLookup
+public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger<PlexLookup> logger) : IPlexLookup
 {
     public async Task<object?> GetMovieDataAsync(string movieId, CancellationToken cancellationToken)
     {
@@ -13,7 +13,16 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items) : IPlex
             return null;
         }
 
-        var data = await items.GetAsync(movieId, cancellationToken);
-        return data == null ? null : PlexItemDataDto.From(data).WithoutFilePath();
+        // Plex data is a bonus on the lookup: a store failure must not fail the movie request
+        try
+        {
+            var data = await items.GetAsync(movieId, cancellationToken);
+            return data == null ? null : PlexItemDataDto.From(data).WithoutFilePath();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not read the Plex data of movie {MovieId}; returning the movie without it", movieId);
+            return null;
+        }
     }
 }
