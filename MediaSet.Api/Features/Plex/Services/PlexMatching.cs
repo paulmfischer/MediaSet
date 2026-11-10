@@ -90,9 +90,16 @@ public static class PlexMatching
     };
 
     /// <summary>Builds the stored document for a movie from a Plex item.</summary>
-    public static PlexItemData Build(string movieId, PlexItem item, DateTime syncedAt, string linkSource = PlexLinkSources.Auto)
+    /// <summary>
+    /// Builds the stored document for a movie from a Plex item. An item whose streams were not read (StreamsReused) keeps the
+    /// stream fields and PlexUpdatedAt of <paramref name="stored"/> when it is the same Plex item, and otherwise has none and
+    /// no PlexUpdatedAt so the next sync reads it.
+    /// </summary>
+    public static PlexItemData Build(string movieId, PlexItem item, DateTime syncedAt, string linkSource = PlexLinkSources.Auto, PlexItemData? stored = null)
     {
-        var best = BestVersion(item.Versions);
+        var reuse = item.StreamsReused && stored != null && stored.PlexItemId == item.RatingKey && stored.PlexUpdatedAt != null;
+        // The stored streams belong to the stored best version: the listing has no HDR flag to rank by, so pick it by file size
+        var best = (reuse ? item.Versions.FirstOrDefault(v => v.SizeBytes == stored!.SizeBytes) : null) ?? BestVersion(item.Versions);
         var audio = best == null ? null : BestAudio(best.AudioTracks);
         var subtitleLanguages = new List<string>();
         foreach (var language in (best?.Subtitles ?? (IReadOnlyList<PlexSubtitle>)[]).Select(x => x.Language))
@@ -103,7 +110,7 @@ public static class PlexMatching
             }
         }
 
-        return new PlexItemData
+        var data = new PlexItemData
         {
             Id = movieId,
             PlexItemId = item.RatingKey,
@@ -124,8 +131,39 @@ public static class PlexMatching
             Container = best?.Container,
             FilePath = best?.FilePath,
             SizeBytes = best?.SizeBytes,
+            // Only when the streams were read, so a failed lookup is retried next sync
+            PlexUpdatedAt = item.StreamsAvailable && !item.StreamsReused ? item.UpdatedAt?.UtcDateTime : null,
             LastSyncedAt = syncedAt
         };
+
+        if (reuse)
+        {
+            // Unchanged in Plex: the streams were not read, keep the stored ones (the rest comes from the listing)
+            data.Hdr = stored!.Hdr;
+            data.VideoCodec = stored.VideoCodec;
+            data.BestAudioTrack = stored.BestAudioTrack;
+            data.SubtitleLanguages = stored.SubtitleLanguages;
+            data.PlexUpdatedAt = stored.PlexUpdatedAt;
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// The stored movies a client may skip the detail request for (by Plex rating key). Only movies whose streams were read
+    /// (they have a PlexUpdatedAt) and that have a file size qualify; TV entries are ignored.
+    /// </summary>
+    public static Dictionary<string, PlexKnownMedia> KnownMovies(IEnumerable<PlexItemData> stored)
+    {
+        var known = new Dictionary<string, PlexKnownMedia>(StringComparer.Ordinal);
+        foreach (var d in stored)
+        {
+            if (d.Scope == null && d.PlexUpdatedAt is { } updated && d.SizeBytes is { } size && !string.IsNullOrEmpty(d.PlexItemId))
+            {
+                known.TryAdd(d.PlexItemId, new PlexKnownMedia(new DateTimeOffset(DateTime.SpecifyKind(updated, DateTimeKind.Utc)), size));
+            }
+        }
+        return known;
     }
 
     /// <summary>
@@ -256,14 +294,14 @@ public static class PlexMatching
     /// The stored episodes a client may skip the stream lookup for (by Plex rating key). Only episodes whose streams were
     /// read (they have a PlexUpdatedAt) and that have a file size qualify. Empty for an entry with nothing stored.
     /// </summary>
-    public static Dictionary<string, PlexKnownEpisode> KnownEpisodes(PlexItemData? stored)
+    public static Dictionary<string, PlexKnownMedia> KnownEpisodes(PlexItemData? stored)
     {
-        var known = new Dictionary<string, PlexKnownEpisode>(StringComparer.Ordinal);
+        var known = new Dictionary<string, PlexKnownMedia>(StringComparer.Ordinal);
         foreach (var e in stored?.Episodes ?? [])
         {
             if (e.PlexUpdatedAt is { } updated && e.SizeBytes is { } size && !string.IsNullOrEmpty(e.PlexEpisodeId))
             {
-                known[e.PlexEpisodeId] = new PlexKnownEpisode(new DateTimeOffset(DateTime.SpecifyKind(updated, DateTimeKind.Utc)), size);
+                known[e.PlexEpisodeId] = new PlexKnownMedia(new DateTimeOffset(DateTime.SpecifyKind(updated, DateTimeKind.Utc)), size);
             }
         }
         return known;

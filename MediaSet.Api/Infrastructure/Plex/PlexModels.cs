@@ -34,7 +34,10 @@ public record PlexItem(
     PlexGuids Guids,
     IReadOnlyList<PlexVersion> Versions,
     int ViewCount = 0,
-    DateTimeOffset? LastViewedAt = null);
+    DateTimeOffset? LastViewedAt = null,
+    bool StreamsAvailable = true,
+    DateTimeOffset? UpdatedAt = null,
+    bool StreamsReused = false);
 
 /// <summary>A season of a Plex show. Index 0 is the specials season. EpisodeCount is what Plex reports.</summary>
 public record PlexSeason(
@@ -63,14 +66,14 @@ public record PlexEpisode(
     bool StreamsReused = false);
 
 /// <summary>
-/// What a caller already stores about an episode: when Plex last updated it and its file size. An episode whose listing
-/// still matches both has unchanged streams, so the per-episode stream lookup is skipped for it.
+/// What a caller already stores about a movie or episode: when Plex last updated it and its file size. An item whose listing
+/// still matches both has unchanged streams, so the per-item stream lookup is skipped for it.
 /// </summary>
-public record PlexKnownEpisode(DateTimeOffset UpdatedAt, long SizeBytes)
+public record PlexKnownMedia(DateTimeOffset UpdatedAt, long SizeBytes)
 {
     /// <summary>
-    /// True when a listed episode (its updatedAt and the file sizes of its listed versions) matches what is stored. This relies
-    /// on Plex bumping updatedAt when an episode's media changes: the stored streams belong to the best version, and the size
+    /// True when a listed item (its updatedAt and the file sizes of its listed versions) matches what is stored. This relies
+    /// on Plex bumping updatedAt when an item's media changes: the stored streams belong to the best version, and the size
     /// check accepts any listed version.
     /// </summary>
     public bool Matches(DateTimeOffset? listedUpdatedAt, IReadOnlyList<PlexVersion> listedVersions) =>

@@ -309,13 +309,15 @@ public sealed class PlexSyncService(
         var client = services.GetRequiredService<IPlexClient>();
         var itemTypes = PlexEntityTypes.LibraryTypes(entityType);
         var items = new List<PlexItem>();
+        var itemStore = services.GetRequiredService<IPlexItemStore>();
+        // Movies unchanged since the last run skip their detail requests; legacy or failed ones are read in full
+        var knownMovies = PlexMatching.KnownMovies(await itemStore.ListMoviesAsync(token));
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, token))
         {
-            var libraryItems = await client.GetItemsAsync(library, null, true, token);
+            var libraryItems = await client.GetItemsAsync(library, null, true, token, knownMovies);
             items.AddRange(libraryItems.Where(i => itemTypes.Contains(i.Type, StringComparer.OrdinalIgnoreCase)));
         }
 
-        var itemStore = services.GetRequiredService<IPlexItemStore>();
         using var scope = services.CreateScope();
         var movies = (await scope.ServiceProvider.GetRequiredService<IEntityService<Movie>>().GetListAsync(token))
             .Where(m => !string.IsNullOrEmpty(m.Id))
@@ -467,7 +469,7 @@ public sealed class PlexSyncService(
                         }
 
                         // Build resets MissCount and Broken: a found item recovers the link
-                        await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source), token);
+                        await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source, stored), token);
                     }
                     matched++;
                 }

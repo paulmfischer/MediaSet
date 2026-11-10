@@ -80,6 +80,7 @@ services:
       # PlexConfiguration__BaseUrl: "http://plex.local:32400"
       # PlexConfiguration__Token: "[ReplaceThis]"
       # PlexConfiguration__Timeout: "30"
+      # PlexConfiguration__DetailConcurrency: "4"  # most per-item detail requests in flight at once during a sync (minimum 1)
       # PlexConfiguration__AcceptInvalidCertificate: "false"
       # PlexConfiguration__Backfill__RequestsPerMinute: "30"  # TMDB ExternalId backfill at the start of each sync (needs TmdbConfiguration)
       # PlexConfiguration__Backfill__BatchSize: "50"

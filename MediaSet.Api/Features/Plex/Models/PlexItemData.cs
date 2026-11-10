@@ -191,6 +191,13 @@ public class PlexItemData
 
     public long? SizeBytes { get; set; }
 
+    /// <summary>
+    /// Movies only: Plex's updatedAt for the item when its streams were last read. Null for movies stored before this was
+    /// kept and when the stream lookup failed, so the next sync reads them again.
+    /// </summary>
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? PlexUpdatedAt { get; set; }
+
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime LastSyncedAt { get; set; }
 }
