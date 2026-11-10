@@ -59,43 +59,6 @@ export interface BookEntity extends BaseEntity {
 export type Book = Override<BookEntity, { authors: string; genres: string }>;
 
 // Backend model
-/** A Plex item's audio track. */
-export interface PlexAudioTrack {
-  codec?: string | null;
-  channels?: number | null;
-  language?: string | null;
-}
-
-/** The Plex data of a linked movie as `GET /movies/{id}` returns it. The API never includes file paths here. */
-export interface PlexItem {
-  movieId: string;
-  plexItemId: string;
-  onPlex: boolean;
-  linkSource: string;
-  missCount: number;
-  broken: boolean;
-  library?: string | null;
-  resolution?: string | null;
-  hdr: boolean;
-  videoCodec?: string | null;
-  bestAudioTrack?: PlexAudioTrack | null;
-  subtitleLanguages: string[];
-  watched: boolean;
-  lastWatchedAt?: string | null;
-  viewCount: number;
-  dateAdded?: string | null;
-  deepLink?: string | null;
-  durationSeconds?: number | null;
-  container?: string | null;
-  sizeBytes?: number | null;
-  lastSyncedAt: string;
-  /** TV entries only; shape not typed here yet. */
-  scope?: unknown;
-  seasons?: unknown[] | null;
-  episodes?: unknown[] | null;
-  rollup?: unknown;
-}
-
 export interface MovieEntity extends BaseEntity {
   type: Entity.Movies;
   barcode?: string;
@@ -108,8 +71,6 @@ export interface MovieEntity extends BaseEntity {
   isTvSeries?: boolean;
   /** `source:value`, e.g. `tmdbid:1234`. Carried through saves; not shown or edited in the UI. */
   externalId?: string;
-  /** Plex data of a linked movie, sent by `GET /movies/{id}` only. Read-only: never sent back on save. */
-  plex?: PlexItem;
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string }>;

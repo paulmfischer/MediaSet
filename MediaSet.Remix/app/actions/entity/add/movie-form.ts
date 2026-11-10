@@ -103,8 +103,6 @@ export function toMovieUpdate(existing: MovieEntity, parsed: ParsedMovie, remove
   return {
     ...existing,
     ...entity,
-    // Read-only Plex data from the lookup is never sent back
-    plex: undefined,
     coverImage: removeImage ? undefined : existing.coverImage,
     imageUrl: removeImage && entity.imageUrl === existing.imageUrl ? undefined : entity.imageUrl,
   };
