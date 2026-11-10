@@ -820,10 +820,17 @@ public class PlexClientTests
         Assert.That(new PlexConfiguration().DetailConcurrency, Is.EqualTo(4));
         var inFlight = 0;
         var peak = 0;
+        var twoInFlight = new TaskCompletionSource();
+        // Requests wait until two are in flight at once (no timing), so peak > 1 is deterministic
         var handler = ServingMany(12, async _ =>
         {
-            InterlockedMax(ref peak, Interlocked.Increment(ref inFlight));
-            await Task.Delay(25);
+            var now = Interlocked.Increment(ref inFlight);
+            InterlockedMax(ref peak, now);
+            if (now >= 2)
+            {
+                twoInFlight.TrySetResult();
+            }
+            await twoInFlight.Task.WaitAsync(TimeSpan.FromSeconds(10));
             Interlocked.Decrement(ref inFlight);
         });
 

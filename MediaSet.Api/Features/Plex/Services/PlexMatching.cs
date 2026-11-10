@@ -89,7 +89,6 @@ public static class PlexMatching
         _ => 0
     };
 
-    /// <summary>Builds the stored document for a movie from a Plex item.</summary>
     /// <summary>
     /// Builds the stored document for a movie from a Plex item. An item whose streams were not read (StreamsReused) keeps the
     /// stream fields and PlexUpdatedAt of <paramref name="stored"/> when it is the same Plex item, and otherwise has none and
@@ -97,7 +96,7 @@ public static class PlexMatching
     /// </summary>
     public static PlexItemData Build(string movieId, PlexItem item, DateTime syncedAt, string linkSource = PlexLinkSources.Auto, PlexItemData? stored = null)
     {
-        var reuse = item.StreamsReused && stored != null && stored.PlexItemId == item.RatingKey && stored.PlexUpdatedAt != null;
+        var reuse = CanReuseStreams(item, stored);
         // The stored streams belong to the stored best version: the listing has no HDR flag to rank by, so pick it by file size
         var best = (reuse ? item.Versions.FirstOrDefault(v => v.SizeBytes == stored!.SizeBytes) : null) ?? BestVersion(item.Versions);
         var audio = best == null ? null : BestAudio(best.AudioTracks);
@@ -148,6 +147,14 @@ public static class PlexMatching
 
         return data;
     }
+
+    /// <summary>
+    /// True when the item's streams were not read (StreamsReused) and this movie's own stored document can supply them: it
+    /// is linked to the same Plex item and has a PlexUpdatedAt. Several movies may link to one item, so the client's reuse
+    /// decision (made per Plex item) is not enough on its own.
+    /// </summary>
+    public static bool CanReuseStreams(PlexItem item, PlexItemData? stored) =>
+        item.StreamsReused && stored != null && stored.PlexItemId == item.RatingKey && stored.PlexUpdatedAt != null;
 
     /// <summary>
     /// The stored movies a client may skip the detail request for (by Plex rating key). Only movies whose streams were read

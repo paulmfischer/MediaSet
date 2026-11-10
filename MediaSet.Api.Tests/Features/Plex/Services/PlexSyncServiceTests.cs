@@ -368,6 +368,32 @@ public class PlexSyncServiceTests
     }
 
     [Test]
+    public async Task Sync_TwoMoviesOnOneUnchangedItem_SecondWithoutStoredDataGetsStreamsAndPlexUpdatedAt()
+    {
+        var h = new Harness();
+        var item = Item("10", new PlexGuids("603", null, null), Version("1080", hdr: true, size: 5)) with { UpdatedAt = _movieUpdated };
+        ServeMovieLikeClient(h, item);
+        h.Client.Setup(c => c.GetItemAsync("10", true, It.IsAny<CancellationToken>())).ReturnsAsync(item);
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+        await RunAsync(h);
+
+        // A second movie (new, no stored data) and a third with a legacy document now link to the same, unchanged item
+        await h.Items.UpsertAsync(new PlexItemData { Id = "c", PlexItemId = "10", SizeBytes = 5, OnPlex = true }, CancellationToken.None);
+        SetMovies(h, MovieWith("a", "tmdbid:603"), MovieWith("b", "tmdbid:603"), MovieWith("c", "tmdbid:603"));
+        await h.Service.StartAsync("movies", PlexSyncTriggers.Manual, CancellationToken.None);
+        await WaitUntilAsync(() => h.Store.Runs.Count == 2 && !PlexSyncRunStates.IsInProgress(h.Store.Runs[1].State));
+
+        foreach (var id in new[] { "a", "b", "c" })
+        {
+            var d = h.Items.Items[id];
+            Assert.That(d.Hdr, Is.True, id);
+            Assert.That(d.BestAudioTrack, Is.Not.Null, id);
+            Assert.That(d.SubtitleLanguages, Is.Not.Empty, id);
+            Assert.That(d.PlexUpdatedAt, Is.EqualTo(_movieUpdated.UtcDateTime), id);
+        }
+    }
+
+    [Test]
     public async Task Sync_MovieStoredBeforePlexUpdatedAtWasKept_IsNotKnownSoItIsReadInFull()
     {
         var h = new Harness();
