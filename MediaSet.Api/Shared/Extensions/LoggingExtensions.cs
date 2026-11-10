@@ -67,7 +67,11 @@ public static class LoggingExtensions
                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
 
-            // Conditionally add Seq sink with filtering for excluded paths (console still logs everything)
+            // Drop per-command Mongo spans, HTTP client request logs and connection spans (a Plex sync makes about a thousand
+            // requests) for every sink, so the console and Seq show the same thing. Client call spans stay for tracing.
+            cfg.Filter.ByExcluding(IsLogNoise);
+
+            // Conditionally add Seq sink with filtering for excluded paths
             if (externalLoggingEnabled)
             {
                 var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl")
@@ -93,6 +97,19 @@ public static class LoggingExtensions
 
         return builder;
     }
+
+    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net.Http.HttpClient", "Microsoft.Extensions.Http"];
+
+    // Connection-level spans of the HTTP client: they carry no source context, so they are matched by their message
+    private static readonly string[] _noisySpanPrefixes = ["DNS lookup", "socket connect", "TLS client handshake", "HTTP connection_setup", "HTTP wait_for_connection"];
+
+    /// <summary>Events below Warning from the Mongo driver and the HTTP client stack.</summary>
+    internal static bool IsLogNoise(LogEvent logEvent) =>
+        logEvent.Level < LogEventLevel.Warning
+        && ((logEvent.Properties.TryGetValue("SourceContext", out var source)
+                && source is ScalarValue { Value: string context }
+                && _noisySourcePrefixes.Any(p => context.StartsWith(p, StringComparison.Ordinal)))
+            || _noisySpanPrefixes.Any(p => logEvent.MessageTemplate.Text.StartsWith(p, StringComparison.Ordinal)));
 
     /// <summary>
     /// Configures activity tracking for trace propagation across distributed systems.
@@ -135,7 +152,7 @@ public static class LoggingExtensions
 
     /// <summary>
     /// Configures OpenTelemetry for distributed tracing across the application.
-    /// Instruments ASP.NET Core and HTTP client requests, exporting to console.
+    /// Instruments ASP.NET Core and HTTP client requests. Spans are written through SerilogTracing, so no console exporter is added (it printed a multi-line dump per outgoing HTTP request).
     /// </summary>
     public static WebApplicationBuilder ConfigureOpenTelemetry(this WebApplicationBuilder builder)
     {
@@ -147,8 +164,7 @@ public static class LoggingExtensions
             {
                 tracing
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddConsoleExporter();
+                    .AddHttpClientInstrumentation();
             });
 
         return builder;

@@ -138,7 +138,7 @@ public sealed partial class ExternalIdBackfillService(
             }
         }
 
-        logger.LogInformation("ExternalId backfill finished: {Filled} filled, {Skipped} skipped", filled, skipped);
+        logger.LogDebug("ExternalId backfill finished: {Filled} filled, {Skipped} skipped", filled, skipped);
         return new ExternalIdBackfillResult(filled, skipped);
     }
 
