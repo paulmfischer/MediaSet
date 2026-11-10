@@ -6,9 +6,15 @@ matches your movie entries (including TV series entries, which MediaSet stores a
 stores Plex data about them: whether the item is on Plex, resolution, HDR, codecs, audio and subtitle
 languages, watched state, date added and a deep link.
 
-For native local development, set the values with .NET User Secrets as described in the
-[development guide](../Development/DEVELOPMENT.md#configuration). The Compose instructions below apply to
-production deployments. For the design behind the integration see the
+For native local development, Plex movies are already enabled in `MediaSet.Api/appsettings.Development.json`, so
+you only need to set the base URL and token with .NET User Secrets (placeholders shown):
+
+```bash
+dotnet user-secrets set "PlexConfiguration:BaseUrl" "http://plex.local:32400" --project MediaSet.Api
+dotnet user-secrets set "PlexConfiguration:Token" "YOUR_PLEX_TOKEN" --project MediaSet.Api
+```
+
+The Compose instructions below apply to production deployments. For the design behind the integration see the
 [architecture notes](../Development/ARCHITECTURE.md#external-api-integrations).
 
 Only the `movies` entity type is supported. If the `PlexConfiguration` section is absent, nothing Plex-related
@@ -123,7 +129,8 @@ is registered and the `/plex` routes do not exist.
     recognised; matching ignores case.
 
     **Backfill.** To get entries matched without typing ids, each sync first searches TMDB for movies whose
-    `ExternalId` is empty and that have a release year. It saves `tmdbid:<id>` only when exactly one result
+    `ExternalId` is empty and that have a release year. (TV series entries are backfilled too, through TMDB TV
+    by their title with the season text removed; they need no year, which only breaks a tie.) It saves `tmdbid:<id>` only when exactly one result
     has the same title (ignoring case) and the same release year. Anything unclear is left blank and counted
     as skipped. It needs `TmdbConfiguration` (see [TMDB_SETUP.md](TMDB_SETUP.md)); without TMDB the step is
     skipped and the sync continues. It is throttled by the two `Backfill__` settings above, and movies that
@@ -147,16 +154,21 @@ is registered and the `/plex` routes do not exist.
 
     | Symptom | Likely cause and fix |
     | --- | --- |
-    | `/plex/...` returns 404 | The Plex section is missing or invalid, or the type is not enabled. Check the startup warnings in the API log and that `Entities__Movies__Enabled` is `true` |
+    | Every `/plex/...` route returns 404 | The Plex section is missing or invalid, so the routes are not registered. Check the startup warnings in the API log |
+    | `/plex/xyz/...` returns 404 | Unknown entity type; only `movies` is supported |
+    | `/plex/movies/...` returns 400 "entity type disabled" | `Entities__Movies__Enabled` is not `true`, or its schedule is invalid (startup warning). Only the status routes work for a disabled type |
     | Run `failed` with "Plex request failed (status code 401)" | Wrong or expired token. Get a new token (step 1) |
     | Run `failed` with "Plex server could not be reached" | Wrong `BaseUrl`, server down, firewall, or `localhost` used inside a container. This message also covers TLS errors |
     | Same message and the URL is `https` | Certificate not trusted by the container. Use a trusted certificate or `AcceptInvalidCertificate` (step 4) |
     | "Plex request timed out" | Raise `Timeout`, lower `PageSize` or `DetailConcurrency` |
     | Many entries unmatched | They have no `ExternalId` and no link. Add a `tmdbid:`, `imdbid:` or `tvdbid:` value, configure TMDB for the backfill, or link by hand. Set the log level to Debug to see the reason per entry |
     | Entry matched the wrong item | Link the right item by hand; a manual link wins over `ExternalId` |
-    | Backfill leaves entries blank | No unique TMDB result with the same title and year, or the entry has no release year. Set `ExternalId` yourself |
+    | Backfill leaves entries blank | No unique TMDB result with the same title and year (movies), or no clear TMDB TV match (TV entries), or a movie has no release year. Set `ExternalId` yourself |
     | Nothing is synced from a library | `LibrarySectionIds` does not include it, or it is not a movie or show library |
     | `POST .../sync` returns 409 | A sync for that type is already queued or running. Wait for it; check `/plex/movies/status` |
     | Run `interrupted` | The application stopped or restarted mid-run. Start another sync |
     | Scheduled sync never runs | Invalid cron expression (startup warning), the type is disabled, or `TZ` is not what you expect |
     | Search or link returns 502 | Plex was unreachable or returned an error; the message is the same fixed text as above |
+    | Link returns 404 | No movie with that id, or Plex has no movie (or, for a TV entry, show) with that `plexItemId` |
+    | Link returns 400 | Missing `plexItemId`; for a TV entry a scope that cannot be read from the title ("Scope required") or is invalid (kind must be `season`, `range` or `all`, seasons 0 to 99, `from` not above `to`); or a `scope` sent for a non-TV entry |
+    | Refresh returns 400 | The entry is not linked yet; link it first. A 404 means the movie or its Plex item is gone |

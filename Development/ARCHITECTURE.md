@@ -65,15 +65,8 @@ guides are in `Setup/`.
 
 ### Plex overview
 
-Setup and operation are covered in the [Plex setup guide](../Setup/PLEX_SETUP.md); the subsections below hold the detail.
-Four rules hold throughout:
-
-- **Separate collections.** Plex data never lives on the movie document: it is in `PlexItems`, with run records in
-  `PlexSyncRuns` and backfill bookkeeping in `PlexBackfillAttempts`. `Movie.Plex` is a computed, never-stored response property.
-- **One sync lock.** A single lock in `PlexSyncService` serializes every run, manual or scheduled, across entity types.
-- **Read-only.** `IPlexClient` only issues GET requests; MediaSet never writes to Plex.
-- **Matching order.** Stored Plex item id (earlier run or manual link), then `Movie.ExternalId` against Plex tmdb, imdb and
-  tvdb GUIDs; never by title. A TMDB backfill that fills empty ExternalIds runs first and never overwrites a set one.
+Plex data is stored apart from movies, one lock serializes every sync, and Plex is only ever read (GET). Matching order and
+stored data are described in the sections below; setup and operation are in the [Plex setup guide](../Setup/PLEX_SETUP.md).
 
 ### Plex sync runs
 
