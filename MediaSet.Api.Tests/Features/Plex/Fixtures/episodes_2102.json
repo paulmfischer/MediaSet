@@ -1,6 +1,6 @@
 {"MediaContainer":{"size":3,"totalSize":3,"Metadata":[
- {"ratingKey":"4001","key":"/library/metadata/4001","type":"episode","title":"Pilot","index":1,"parentIndex":2,"viewCount":2,"lastViewedAt":1710000500,
+ {"ratingKey":"4001","key":"/library/metadata/4001","type":"episode","title":"Pilot","index":1,"parentIndex":2,"viewCount":2,"lastViewedAt":1710000500,"updatedAt":1700000001,
   "Media":[{"videoResolution":"1080","Part":[{"file":"/data/tv/Show/S02E01.mkv","size":1000}]}]},
- {"ratingKey":"4002","key":"/library/metadata/4002","type":"episode","title":"Second","index":2,"parentIndex":2,
+ {"ratingKey":"4002","key":"/library/metadata/4002","type":"episode","title":"Second","index":2,"parentIndex":2,"updatedAt":1700000002,
   "Media":[{"videoResolution":"720","Part":[{"file":"/data/tv/Show/S02E02.mkv","size":500}]}]},
  {"ratingKey":"4003","key":"/library/metadata/4003","type":"episode","title":"No Files","index":3,"parentIndex":2}]}}
