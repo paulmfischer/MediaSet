@@ -181,25 +181,11 @@ public class PlexClient : IPlexClient
                 }
 
                 var listedUpdatedAt = listed.UpdatedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.UpdatedAt.Value) : (DateTimeOffset?)null;
-                if (known != null && known.TryGetValue(listed.RatingKey, out var knownEpisode)
-                    && knownEpisode.Matches(listedUpdatedAt, (listed.Media ?? []).Select(MapVersion).ToList()))
-                {
-                    // Unchanged since it was stored: its streams are too, so skip the metadata request
-                    episodes.Add(new PlexEpisode(
-                        listed.RatingKey,
-                        listed.ParentIndex ?? 0,
-                        listed.Index!.Value,
-                        listed.Title ?? string.Empty,
-                        listed.ViewCount is > 0 ? listed.ViewCount.Value : 0,
-                        listed.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.LastViewedAt.Value) : null,
-                        (listed.Media ?? []).Select(MapVersion).ToList(),
-                        true,
-                        listedUpdatedAt,
-                        true));
-                    continue;
-                }
+                var reuse = known != null && known.TryGetValue(listed.RatingKey, out var knownEpisode)
+                    && knownEpisode.Matches(listedUpdatedAt, (listed.Media ?? []).Select(MapVersion).ToList());
 
-                var m = await WithStreamsAsync(listed, cancellationToken);
+                // Unchanged since it was stored: its streams are too, so skip the metadata request
+                var m = reuse ? listed : await WithStreamsAsync(listed, cancellationToken);
                 episodes.Add(new PlexEpisode(
                     m.RatingKey!,
                     m.ParentIndex ?? 0,
@@ -209,7 +195,8 @@ public class PlexClient : IPlexClient
                     m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
                     (m.Media ?? []).Select(MapVersion).ToList(),
                     !m.StreamLookupFailed,
-                    listedUpdatedAt));
+                    listedUpdatedAt,
+                    reuse));
             }
 
             start += metadata.Count;

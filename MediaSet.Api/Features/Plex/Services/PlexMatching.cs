@@ -203,6 +203,11 @@ public static class PlexMatching
                     CopyStreams(built, previous);
                     built.PlexUpdatedAt = previous.PlexUpdatedAt;
                 }
+                else if (episode.StreamsReused)
+                {
+                    // Nothing stored to reuse: no streams, and no PlexUpdatedAt so the next sync reads them
+                    built.PlexUpdatedAt = null;
+                }
                 else if (!episode.StreamsAvailable && previous != null)
                 {
                     // The stream lookup failed this time: keep what was known rather than overwrite it with nothing

@@ -412,8 +412,9 @@ public sealed class PlexSyncService(
                         }
                         else
                         {
+                            var known = PlexMatching.KnownEpisodes(storedUsable ? stored : null);
                             // Linked: read the episodes of the covered seasons now, so an outage fails the run before any write
-                            episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, entryScope, episodesBySeason, PlexMatching.KnownEpisodes(storedUsable ? stored : null), token);
+                            episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, entryScope, episodesBySeason, known, token);
                         }
                     }
                 }

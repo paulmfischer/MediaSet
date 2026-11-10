@@ -68,7 +68,11 @@ public record PlexEpisode(
 /// </summary>
 public record PlexKnownEpisode(DateTimeOffset UpdatedAt, long SizeBytes)
 {
-    /// <summary>True when a listed episode (its updatedAt and the file sizes of its listed versions) matches what is stored.</summary>
+    /// <summary>
+    /// True when a listed episode (its updatedAt and the file sizes of its listed versions) matches what is stored. This relies
+    /// on Plex bumping updatedAt when an episode's media changes: the stored streams belong to the best version, and the size
+    /// check accepts any listed version.
+    /// </summary>
     public bool Matches(DateTimeOffset? listedUpdatedAt, IReadOnlyList<PlexVersion> listedVersions) =>
         listedUpdatedAt == UpdatedAt && listedVersions.Any(v => v.SizeBytes == SizeBytes);
 }
