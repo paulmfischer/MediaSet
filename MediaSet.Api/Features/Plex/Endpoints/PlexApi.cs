@@ -90,7 +90,7 @@ internal static class PlexApi
         entity.MapGet("/items/{id}", async (string entityType, string id, IPlexItemStore items, CancellationToken cancellationToken) =>
         {
             // Plex documents are keyed by ObjectId; any other id cannot be linked
-            var data = MongoDB.Bson.ObjectId.TryParse(id, out _) ? await items.GetAsync(id, cancellationToken) : null;
+            var data = IsObjectId(id) ? await items.GetAsync(id, cancellationToken) : null;
             return data == null
                 ? Results.Problem(
                     title: "Not linked to Plex",
@@ -117,7 +117,7 @@ internal static class PlexApi
                     statusCode: StatusCodes.Status400BadRequest);
             }
 
-            var movie = MongoDB.Bson.ObjectId.TryParse(id, out _) ? await movies.GetAsync(id, cancellationToken) : null;
+            var movie = IsObjectId(id) ? await movies.GetAsync(id, cancellationToken) : null;
             if (movie == null)
             {
                 return MovieNotFound();
@@ -130,7 +130,7 @@ internal static class PlexApi
                 var (parsed, error) = ResolveScope(body.Scope, movie.Title);
                 if (error != null)
                 {
-                    return Results.Problem(title: "Scope required", detail: error, statusCode: StatusCodes.Status400BadRequest);
+                    return Results.Problem(title: body.Scope == null ? "Scope required" : "Invalid scope", detail: error, statusCode: StatusCodes.Status400BadRequest);
                 }
                 scope = parsed;
             }
@@ -258,9 +258,11 @@ internal static class PlexApi
         }
     }
 
-    // Movie ids are ObjectIds; any other id cannot belong to a movie
+    // Movie and Plex document ids are ObjectIds; any other id cannot belong to either
+    private static bool IsObjectId(string id) => MongoDB.Bson.ObjectId.TryParse(id, out _);
+
     private static async Task<bool> MovieMissingAsync(string id, IEntityService<Movie> movies, CancellationToken cancellationToken) =>
-        !MongoDB.Bson.ObjectId.TryParse(id, out _) || await movies.GetAsync(id, cancellationToken) == null;
+        !IsObjectId(id) || await movies.GetAsync(id, cancellationToken) == null;
 
     private static IResult MovieNotFound() => Results.Problem(
         title: "Movie not found",

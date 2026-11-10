@@ -284,7 +284,7 @@ public sealed class PlexSyncService(
 
     private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
 
-    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null);
+    private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null, PlexItemData? Stale = null);
 
     /// <summary>Consecutive runs an auto-linked item may be missing before its link is dropped.</summary>
     private const int AutoLinkDropMisses = PlexMatching.AutoLinkDropMisses;
@@ -364,7 +364,8 @@ public sealed class PlexSyncService(
                 var stored = await itemStore.GetAsync(movie.Id!, token);
                 var manual = stored is { LinkSource: PlexLinkSources.Manual };
 
-                // A TV series entry links to a Plex show, anything else to a movie. A stored link of the other kind is ignored.
+                // A TV series entry links to a Plex show, anything else to a movie. A stored link of the other kind (after IsTvSeries was toggled) is stale:
+                // an automatic one is replaced by a match or dropped, a manual one is flagged broken and never overwritten.
                 var isTv = movie.IsTvSeries;
                 var wantedType = PlexEntityTypes.ItemType(isTv);
                 var storedIsTv = stored?.Scope != null;
@@ -417,7 +418,7 @@ public sealed class PlexSyncService(
                     }
                 }
 
-                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes));
+                plans.Add(new MoviePlan(movie, storedUsable ? stored : null, manual && storedUsable, item, entryScope, seasons, episodes, stored != null && !storedUsable ? stored : null));
             }
             catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
             {
@@ -468,6 +469,23 @@ public sealed class PlexSyncService(
                         await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source), token);
                     }
                     matched++;
+                }
+                else if (plan.Stale is { } stale)
+                {
+                    // A link of the other kind than the entry has no match to replace it
+                    if (stale.LinkSource == PlexLinkSources.Manual)
+                    {
+                        // Never dropped or overwritten: flag it for the user
+                        stale.OnPlex = false;
+                        stale.Broken = true;
+                        stale.MissCount++;
+                        stale.LastSyncedAt = syncedAt;
+                        await itemStore.UpsertAsync(stale, token);
+                    }
+                    else
+                    {
+                        await itemStore.DeleteAsync(movie.Id!, token);
+                    }
                 }
                 else if (stored != null)
                 {
