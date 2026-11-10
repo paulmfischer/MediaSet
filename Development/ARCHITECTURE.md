@@ -63,6 +63,18 @@ guides are in `Setup/`.
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
 | Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `DetailConcurrency`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
+### Plex overview
+
+Setup and operation are covered in the [Plex setup guide](../Setup/PLEX_SETUP.md); the subsections below hold the detail.
+Four rules hold throughout:
+
+- **Separate collections.** Plex data never lives on the movie document: it is in `PlexItems`, with run records in
+  `PlexSyncRuns` and backfill bookkeeping in `PlexBackfillAttempts`. `Movie.Plex` is a computed, never-stored response property.
+- **One sync lock.** A single lock in `PlexSyncService` serializes every run, manual or scheduled, across entity types.
+- **Read-only.** `IPlexClient` only issues GET requests; MediaSet never writes to Plex.
+- **Matching order.** Stored Plex item id (earlier run or manual link), then `Movie.ExternalId` against Plex tmdb, imdb and
+  tvdb GUIDs; never by title. A TMDB backfill that fills empty ExternalIds runs first and never overwrites a set one.
+
 ### Plex sync runs
 
 `POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another
