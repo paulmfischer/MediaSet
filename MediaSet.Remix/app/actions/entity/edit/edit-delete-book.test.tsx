@@ -399,7 +399,10 @@ describe('delete book', () => {
     const html = await response.text();
     assert.match(html, /<form method="post" action="\/books\/b1\/delete"/);
     assert.match(html, /<strong>Dune<\/strong>/);
-    assert.match(html, /<button[^>]*formaction="\/books\/b1"[^>]*class="secondary"[^>]*>\s*Cancel/);
+    const cancel = html.match(/<button[^>]*>\s*Cancel/)?.[0] ?? '';
+    assert.match(cancel, /class="secondary"/);
+    assert.match(cancel, /formaction="\/books\/b1"/);
+    assert.match(cancel, /formmethod="get"/);
     assert.doesNotMatch(html, /<a [^>]*>\s*Cancel/);
   });
 
