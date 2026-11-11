@@ -63,6 +63,11 @@ guides are in `Setup/`.
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
 | Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `DetailConcurrency`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
+### Plex overview
+
+Plex data is stored apart from movies, one lock serializes every sync, and Plex is only ever read (GET). Matching order and
+stored data are described in the sections below; setup and operation are in the [Plex setup guide](../Setup/PLEX_SETUP.md).
+
 ### Plex sync runs
 
 `POST /plex/{entityType}/sync` records a run in the `PlexSyncRuns` collection (state `running`, or `queued` while another

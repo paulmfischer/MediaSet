@@ -241,6 +241,7 @@ For detailed configuration instructions, see [Setup/CONTAINER_SETUP.md](Setup/CO
 - **[Setup/IGDB_SETUP.md](Setup/IGDB_SETUP.md)** - IGDB API configuration for game metadata
 - **[Setup/MUSICBRAINZ_SETUP.md](Setup/MUSICBRAINZ_SETUP.md)** - MusicBrainz API configuration for music metadata
 - **[Setup/UPCITEMDB_SETUP.md](Setup/UPCITEMDB_SETUP.md)** - UPCItemDB API configuration for barcode lookup
+- **[Setup/PLEX_SETUP.md](Setup/PLEX_SETUP.md)** - Optional read-only Plex library sync
 
 ## 👨‍💻 Developer Getting Started
 
