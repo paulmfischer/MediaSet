@@ -4,11 +4,23 @@ import { apiFetch } from '../utils/apiFetch.server.ts';
 
 export type NameCount = { name: string; count: number };
 
+/** Plex counts for the movie collection; the API sends them only when Plex is enabled for movies. */
+export type PlexStats = {
+  onPlex: number;
+  notOnPlex: number;
+  watched: number;
+  unwatched: number;
+  /** On-Plex movies by resolution; those without one are counted as "unknown". */
+  resolutionBreakdown: Record<string, number>;
+  needsLinking: number;
+};
+
 type Stats = {
   bookStats: BookStats;
   movieStats: MovieStats;
   gameStats: GameStats;
   musicStats: MusicStats;
+  plexStats?: PlexStats | null;
 };
 
 type BookStats = {

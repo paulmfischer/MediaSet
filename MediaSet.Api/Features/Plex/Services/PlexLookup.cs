@@ -60,4 +60,38 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger
         var ids = await items.ListIdsByFilterAsync(normalized, cancellationToken);
         return new IdFilter(ids, Exclude: normalized == PlexListFilters.NotOnPlex);
     }
+
+    public async Task<PlexStats?> GetMovieStatsAsync(int totalMovies, CancellationToken cancellationToken)
+    {
+        if (!enablement.IsEnabled(PlexEntityTypes.Movies))
+        {
+            return null;
+        }
+
+        // Plex statistics are a bonus on the dashboard: a store failure must not fail the request
+        try
+        {
+            var docs = await items.ListStatsAsync(cancellationToken);
+            var onPlex = docs.Where(d => d.OnPlex).ToList();
+            var watched = onPlex.Count(d => d.Watched);
+            var resolutions = onPlex
+                .GroupBy(d => string.IsNullOrWhiteSpace(d.Resolution) ? "unknown" : d.Resolution!.Trim())
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            return new PlexStats(
+                onPlex.Count,
+                Math.Max(0, totalMovies - onPlex.Count),
+                watched,
+                onPlex.Count - watched,
+                resolutions,
+                Math.Max(0, totalMovies - docs.Count) + docs.Count(d => d.Broken));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not read the Plex statistics; returning the statistics without them");
+            return null;
+        }
+    }
 }

@@ -25,4 +25,10 @@ public interface IPlexLookup
     /// not enabled for movies. Throws <see cref="ArgumentException"/> for an unknown filter value.
     /// </summary>
     Task<IdFilter?> GetMovieFilterAsync(string filter, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The Plex statistics of the movie collection of <paramref name="totalMovies"/> movies, read per call, or null when
+    /// Plex is not enabled for movies or the read fails.
+    /// </summary>
+    Task<PlexStats?> GetMovieStatsAsync(int totalMovies, CancellationToken cancellationToken);
 }

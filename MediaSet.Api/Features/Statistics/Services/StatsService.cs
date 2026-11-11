@@ -1,4 +1,5 @@
 using MediaSet.Api.Features.Statistics.Models;
+using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Shared.Models;
 
 using MediaSet.Api.Infrastructure.Caching;
@@ -19,6 +20,7 @@ public class StatsService : IStatsService
     private readonly ICacheService cacheService;
     private readonly CacheSettings cacheSettings;
     private readonly ILogger<StatsService> logger;
+    private readonly IPlexLookup? plexLookup;
 
     public StatsService(
         IEntityService<Book> _bookService,
@@ -27,7 +29,8 @@ public class StatsService : IStatsService
         IEntityService<Music> _musicService,
         ICacheService _cacheService,
         IOptions<CacheSettings> _cacheSettings,
-        ILogger<StatsService> _logger)
+        ILogger<StatsService> _logger,
+        IPlexLookup? _plexLookup = null)
     {
         bookService = _bookService;
         movieService = _movieService;
@@ -36,6 +39,7 @@ public class StatsService : IStatsService
         cacheService = _cacheService;
         cacheSettings = _cacheSettings.Value;
         logger = _logger;
+        plexLookup = _plexLookup;
     }
 
     private static int? ParseYear(string? dateStr)
@@ -71,6 +75,15 @@ public class StatsService : IStatsService
     }
 
     public async Task<Stats> GetMediaStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var stats = await GetCollectionStatsAsync(cancellationToken);
+
+        // Plex data changes with every sync (not only with an edit), so it is read per request and never cached with the rest
+        var plexStats = plexLookup is null ? null : await plexLookup.GetMovieStatsAsync(stats.MovieStats.Total, cancellationToken);
+        return plexStats is null ? stats : stats with { PlexStats = plexStats };
+    }
+
+    private async Task<Stats> GetCollectionStatsAsync(CancellationToken cancellationToken)
     {
         using var activity = Log.Logger.StartActivity("GetMediaStats");
 

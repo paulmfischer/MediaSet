@@ -124,6 +124,16 @@ logged and skipped), and accepts an optional `plex` filter: `onPlex` (`OnPlex` t
 400. The filter is resolved to the ids in the `PlexItems` collection and passed to the movie service as an `IdFilter`, so
 paging, the total and sorting stay correct. Both are absent (and the filter ignored) when Plex is not enabled for movies, and
 other entity types are unaffected.
+`GET /stats` gains a `plexStats` object (`onPlex`, `notOnPlex`, `watched`, `unwatched`, `resolutionBreakdown`, `needsLinking`;
+counts only, no file path) through `IPlexLookup.GetMovieStatsAsync`, read from the `PlexItems` collection on every request and
+added to the cached collection stats after the cache lookup, because a sync changes Plex data without touching any movie (the
+cache is cleared only by entity edits). `onPlex` counts documents with `OnPlex` true, `notOnPlex` is the movie total minus that
+(the `notOnPlex` list filter's set), `watched` and `unwatched` split the on-Plex ones, `resolutionBreakdown` groups them by
+resolution (`unknown` when none stored) and `needsLinking` is the movies with no document plus broken links. It is null (omitted
+from the dashboard) when Plex is not enabled for movies or the read fails (logged and skipped). The dashboard controller
+(`app/actions/controller.tsx`) drops `plexStats` unless the request-scoped gate is true, and `PlexSection`
+(`app/ui/dashboard/plex-section.tsx`, in the Movies panel) renders the stat cards, the resolution `PieChart` and a Needs linking
+card linking to `/movies?plex=notOnPlex`.
 `GET /movies/{id}` (the single lookup) adds the same data as a `plex` property without
 any file path (item or episodes) for a linked movie, through `IPlexLookup` (registered only when Plex is enabled; otherwise,
 or when movies are not enabled, the response is unchanged, and a failed read is logged and skipped). `Movie.Plex` is never
