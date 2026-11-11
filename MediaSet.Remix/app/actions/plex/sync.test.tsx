@@ -212,6 +212,18 @@ describe('plex sync now', () => {
     assert.match(html, /Running since <!-- rmx:h:[a-z0-9]+ --><time datetime="2026-03-02T10:00:00Z"/);
   });
 
+  it('should not show the running notice when no run is active', async (t) => {
+    stubApi(t, { plex: enabled });
+    const html = await (await get('/plex?notice=running')).text();
+    assert.doesNotMatch(html, /already in progress/);
+  });
+
+  it('should list only enabled types a sync can be started for', async (t) => {
+    stubApi(t, { plex: enabled, statuses: [[status(), status({ entityType: 'music' })]] });
+    const html = await (await get('/plex')).text();
+    assert.doesNotMatch(html, /data-entity-type="music"/);
+  });
+
   it('should reject an entity type that cannot be synced without calling the API', async (t) => {
     const calls = stubApi(t, { plex: enabled });
     const response = await post('/plex', { entityType: 'music' });

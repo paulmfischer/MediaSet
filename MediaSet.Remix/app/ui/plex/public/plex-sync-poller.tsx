@@ -16,6 +16,8 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export const PlexSyncPoller = clientEntry(
   import.meta.url,
   function PlexSyncPoller(handle: Handle<PlexSyncPollerProps>) {
+    let stale = false;
+
     handle.queueTask(() => {
       const { signal } = handle;
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -39,13 +41,20 @@ export const PlexSyncPoller = clientEntry(
         }
         failures = outcome === 'failed' ? failures + 1 : 0;
         const delay = nextDelay(failures);
-        if (delay !== null && !signal.aborted) timer = setTimeout(() => void poll(), delay);
+        if (delay === null) {
+          stale = true;
+          handle.update();
+        } else if (!signal.aborted) timer = setTimeout(() => void poll(), delay);
       }
 
       timer = setTimeout(() => void poll(), POLL_MS);
       signal.addEventListener('abort', () => clearTimeout(timer));
     });
 
-    return () => <span hidden data-testid="plex-sync-poller"></span>;
+    return () => (
+      <span role="status" class="text-sm text-amber-400" data-testid="plex-sync-poller">
+        {stale ? 'Status may be out of date. Reload the page to refresh it.' : ''}
+      </span>
+    );
   }
 );

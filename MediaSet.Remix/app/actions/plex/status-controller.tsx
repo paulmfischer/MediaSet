@@ -3,6 +3,7 @@ import { createController } from 'remix/router';
 import { getPlexStatuses } from '../../api/plex-data.ts';
 import { routes } from '../../routes.ts';
 import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { isListedStatus } from '../../utils/plex-sync.ts';
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
@@ -14,10 +15,7 @@ export default createController(routes.plexStatus, {
       if (!(await isPlexEnabledForRequest())) return Response.json({}, { status: 404, headers: NO_STORE });
       try {
         const statuses = await getPlexStatuses();
-        return Response.json(
-          statuses.filter((status) => status.enabled),
-          { headers: NO_STORE }
-        );
+        return Response.json(statuses.filter(isListedStatus), { headers: NO_STORE });
       } catch {
         return Response.json({}, { status: 502, headers: NO_STORE });
       }

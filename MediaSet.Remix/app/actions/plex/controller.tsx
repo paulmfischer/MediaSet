@@ -6,14 +6,13 @@ import type { PlexEntityStatus } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
 import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { hasActiveRun, isListedStatus, SYNCABLE_ENTITY_TYPES } from '../../utils/plex-sync.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexSyncPage } from '../../ui/plex/sync-page.tsx';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
 
 const TITLE = 'Plex sync | MediaSet';
-// The entity types a sync can be started for from this page (the gate is for movies).
-const SYNCABLE = ['movies'];
 const RUNNING_NOTICE = 'notice=running';
 const RUNNING_MESSAGE = 'A sync was already in progress, so no new one was started. This is the current run.';
 const back = { backHref: routes.home.href(), backLabel: 'Back to Home' };
@@ -39,11 +38,11 @@ function failure(context: AppContext, error: unknown) {
 async function index(context: AppContext) {
   if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   try {
-    return renderPage(
-      context,
-      (await getPlexStatuses()).filter((status) => status.enabled),
-      context.url.searchParams.get('notice') === 'running' ? RUNNING_MESSAGE : undefined
-    );
+    const statuses = (await getPlexStatuses()).filter(isListedStatus);
+    // The notice only makes sense while a run is active; a stale link shows the plain page.
+    const notice =
+      context.url.searchParams.get('notice') === 'running' && hasActiveRun(statuses) ? RUNNING_MESSAGE : undefined;
+    return renderPage(context, statuses, notice);
   } catch (error) {
     return failure(context, error);
   }
@@ -54,7 +53,7 @@ async function index(context: AppContext) {
 async function action(context: AppContext) {
   if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   const entityType = context.formData?.get('entityType');
-  if (typeof entityType !== 'string' || !SYNCABLE.includes(entityType)) {
+  if (typeof entityType !== 'string' || !SYNCABLE_ENTITY_TYPES.includes(entityType)) {
     return renderError(context, 400, undefined, {
       heading: 'Unknown entity type',
       message: 'Pick one of the listed Plex entity types.',
