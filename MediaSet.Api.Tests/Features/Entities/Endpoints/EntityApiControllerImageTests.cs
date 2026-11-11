@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -518,6 +519,216 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+    }
+
+    #endregion
+
+    #region Image Error Reporting Tests
+
+    private const string GameId = "507f1f77bcf86cd799439011";
+    private const string ImageUrl = "https://example.com/cover.jpg";
+
+    private static Exception UploadFailure(ImageFailureReason? reason) => reason is { } r
+        ? ImageFailure.Create(r, "failure")
+        : new ArgumentException("unclassified");
+
+    private static IEnumerable<TestCaseData> UploadFailureCases()
+    {
+        yield return new TestCaseData(ImageFailureReason.UnsupportedFormat, "unsupported_type");
+        yield return new TestCaseData(ImageFailureReason.TooLarge, "upload_too_large");
+        yield return new TestCaseData(ImageFailureReason.PixelLimit, "pixel_limit_exceeded");
+        yield return new TestCaseData(ImageFailureReason.Unreachable, "url_unreachable");
+        yield return new TestCaseData(null, "unknown");
+    }
+
+    private static IEnumerable<TestCaseData> UrlFailureCases()
+    {
+        yield return new TestCaseData(ImageFailureReason.Unreachable, "url_unreachable");
+        yield return new TestCaseData(ImageFailureReason.UnsupportedFormat, "not_an_image");
+        yield return new TestCaseData(ImageFailureReason.TooLarge, "download_too_large");
+        yield return new TestCaseData(ImageFailureReason.PixelLimit, "pixel_limit_exceeded");
+        yield return new TestCaseData(null, "unknown");
+    }
+
+    private static async Task<string?> ReadImageErrorAsync(HttpResponseMessage response)
+    {
+        var text = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        using var doc = JsonDocument.Parse(text);
+        return doc.RootElement.TryGetProperty("imageError", out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+    }
+
+    private Game ArrangeCreate(Game? game = null)
+    {
+        var entity = game ?? _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _gameServiceMock.Setup(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<ReplaceOneResult>());
+        return entity;
+    }
+
+    private Game ArrangeUpdate()
+    {
+        var existing = _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
+        _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<ReplaceOneResult>());
+        return _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
+    }
+
+    [TestCaseSource(nameof(UploadFailureCases))]
+    public async Task CreateGame_UploadFails_ReturnsCreatedWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestCaseSource(nameof(UrlFailureCases))]
+    public async Task CreateGame_MultipartImageUrlFails_ReturnsCreatedWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+    }
+
+    [TestCaseSource(nameof(UrlFailureCases))]
+    public async Task CreateGame_JsonImageUrlFails_ReturnsCreatedWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        var game = ArrangeCreate(_gameFaker.Clone().RuleFor(g => g.Id, GameId).RuleFor(g => g.ImageUrl, ImageUrl).Generate());
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PostAsJsonAsync("/Games", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+    }
+
+    [Test]
+    public async Task CreateGame_ImageUrlReturnsHttpError_ReturnsUrlUnreachable()
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("404"));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("url_unreachable"));
+    }
+
+    [Test]
+    public async Task CreateGame_ImageStored_ReturnsEntityWithoutImageError()
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Image { Id = "guid", FileName = "f.jpg", FilePath = "games/f.jpg", ContentType = "image/jpeg", FileSize = 1 });
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var text = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(text);
+        Assert.That(doc.RootElement.TryGetProperty("imageError", out _), Is.False);
+        Assert.That(doc.RootElement.GetProperty("id").GetString(), Is.EqualTo(GameId));
+    }
+
+    [Test]
+    public async Task CreateGame_ImageErrorWithEntity_KeepsEntityFieldsInBody()
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(ImageFailureReason.TooLarge));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(doc.RootElement.GetProperty("id").GetString(), Is.EqualTo(GameId));
+        Assert.That(doc.RootElement.GetProperty("title").GetString(), Is.EqualTo(game.Title));
+    }
+
+    [TestCaseSource(nameof(UploadFailureCases))]
+    public async Task UpdateGame_UploadFails_ReturnsOkWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        var game = ArrangeUpdate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+        _gameServiceMock.Verify(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestCaseSource(nameof(UrlFailureCases))]
+    public async Task UpdateGame_MultipartImageUrlFails_ReturnsOkWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        var game = ArrangeUpdate();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+        _gameServiceMock.Verify(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [TestCaseSource(nameof(UrlFailureCases))]
+    public async Task UpdateGame_JsonImageUrlFails_ReturnsOkWithImageErrorCode(ImageFailureReason? reason, string expectedCode)
+    {
+        ArrangeUpdate();
+        var game = _gameFaker.Clone().RuleFor(g => g.Id, GameId).RuleFor(g => g.ImageUrl, ImageUrl).Generate();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(UploadFailure(reason));
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo(expectedCode));
+    }
+
+    [Test]
+    public async Task UpdateGame_ImageUrlReturnsHttpError_ReturnsUrlUnreachable()
+    {
+        var game = ArrangeUpdate();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("500"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("url_unreachable"));
+    }
+
+    [Test]
+    public async Task UpdateGame_ImageStored_ReturnsOkWithoutImageError()
+    {
+        var game = ArrangeUpdate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Image { Id = "guid", FileName = "f.jpg", FilePath = "games/f.jpg", ContentType = "image/jpeg", FileSize = 1 });
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.Null);
     }
 
     #endregion

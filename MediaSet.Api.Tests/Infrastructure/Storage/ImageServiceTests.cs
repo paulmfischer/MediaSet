@@ -180,6 +180,7 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(formFile, entityType, entityId, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("Unsupported file type"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.UnsupportedFormat));
     }
 
     [Test]
@@ -197,6 +198,7 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.SaveImageAsync(formFile, entityType, entityId, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.TooLarge));
     }
 
     [Test]
@@ -282,6 +284,7 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(invalidUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("valid HTTP or HTTPS URL"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 
     [Test]
