@@ -17,6 +17,7 @@ import {
 import { Icon } from '../icon.tsx';
 import { AlertTriangle, ExternalLink, Settings } from '../icons.ts';
 import { PlexSeasonList } from './plex-tv-section.tsx';
+import { PlexMenuBehavior } from './public/plex-menu-behavior.tsx';
 import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
 import { PlexUnlinkDialog } from './public/plex-unlink-dialog.tsx';
 
@@ -29,6 +30,8 @@ interface PlexCardProps {
   linkHref: string;
   /** The unlink confirmation page (the Unlink button opens it, or a dialog). */
   unlinkHref: string;
+  /** The movie's detail page, where a finished link lands. */
+  detailHref: string;
   /** The movie's title, named in the unlink dialog. */
   title: string;
   /** The reference time for "Synced ...", so tests are stable; defaults to now. */
@@ -80,6 +83,7 @@ interface PlexMenuProps {
   refreshHref: string;
   linkHref: string;
   unlinkHref: string;
+  detailHref: string;
   title: string;
 }
 
@@ -87,25 +91,26 @@ interface PlexMenuProps {
 // JavaScript; the three actions keep their own no-JavaScript targets and dialogs.
 function PlexMenu(handle: Handle<PlexMenuProps>) {
   return () => {
-    const { refreshHref, linkHref, unlinkHref, title } = handle.props;
+    const { refreshHref, linkHref, unlinkHref, detailHref, title } = handle.props;
     return (
       <details class="relative" data-testid="plex-menu">
         <summary
-          class="flex cursor-pointer list-none items-center rounded-md p-1 hover:bg-zinc-700 [&::-webkit-details-marker]:hidden"
+          class="flex cursor-pointer list-none items-center rounded-md p-1 hover:bg-zinc-300 dark:hover:bg-zinc-700 [&::-webkit-details-marker]:hidden"
           aria-label="Plex actions"
           title="Plex actions"
         >
           <Icon icon={Settings} size={18} />
         </summary>
-        <div class="absolute left-0 top-full z-20 mt-1 flex w-36 flex-col [&>form>button]:w-full gap-2 rounded-lg border border-zinc-600 bg-zinc-800 p-2 shadow-lg">
+        <div class="absolute left-0 top-full z-20 mt-1 flex w-36 flex-col [&>form>button]:w-full gap-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 p-2 shadow-lg">
           <form method="post" action={refreshHref}>
             <button type="submit" class="secondary">
               Refresh
             </button>
           </form>
-          <PlexLinkDialog href={linkHref} label="Relink" />
+          <PlexLinkDialog href={linkHref} detailHref={detailHref} label="Relink" />
           <PlexUnlinkDialog title={title} href={unlinkHref} />
         </div>
+        <PlexMenuBehavior />
       </details>
     );
   };
@@ -113,13 +118,13 @@ function PlexMenu(handle: Handle<PlexMenuProps>) {
 
 export function PlexCard(handle: Handle<PlexCardProps>) {
   return () => {
-    const { plex, refreshHref, linkHref, unlinkHref, title, now } = handle.props;
+    const { plex, refreshHref, linkHref, unlinkHref, detailHref, title, now } = handle.props;
 
     // Unlinked: only the button, with no "Not on Plex" text.
     if (!plex) {
       return (
         <section class="mt-6" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
-          <PlexLinkDialog href={linkHref} label="Link to Plex" />
+          <PlexLinkDialog href={linkHref} detailHref={detailHref} label="Link to Plex" auto />
         </section>
       );
     }
@@ -129,14 +134,20 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
 
     return (
       <section
-        class={`mt-6 flex flex-col gap-3 rounded-lg bg-zinc-800 p-4 shadow-md ${state === 'onPlex' ? '' : 'opacity-70'}`}
+        class={`mt-6 flex flex-col gap-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 p-4 shadow-md ${state === 'onPlex' ? '' : 'opacity-70'}`}
         aria-label="Plex"
         data-testid="plex-card"
         data-plex-state={state}
       >
         <div class="flex items-center gap-2">
           <h2 class="text-lg">Plex</h2>
-          <PlexMenu refreshHref={refreshHref} linkHref={linkHref} unlinkHref={unlinkHref} title={title} />
+          <PlexMenu
+            refreshHref={refreshHref}
+            linkHref={linkHref}
+            unlinkHref={unlinkHref}
+            detailHref={detailHref}
+            title={title}
+          />
         </div>
         {state === 'offPlex' ? (
           <p class="text-sm text-amber-400" role="status" data-testid="plex-notice">

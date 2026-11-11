@@ -148,6 +148,53 @@ function renderFlow(context: AppContext, id: string, movie: MovieEntity, state: 
   );
 }
 
+// A movie entry links to movies and a TV entry to shows; the other kind would be refused
+async function searchEntryKind(movie: MovieEntity, query: string): Promise<PlexSearchResult[]> {
+  const wanted = movie.isTvSeries ? 'show' : 'movie';
+  return (await searchPlex(query)).filter((result) => (result.type || 'movie') === wanted);
+}
+
+// The first "Link to Plex" of an unlinked entry (a POST, so nothing changes on a GET): searches by the title and, when
+// exactly one match of the right kind comes back, links it at once. Anything else goes to the normal search flow, which
+// shows the results; a TV entry still chooses its seasons. Relink never comes here, so a wrong match can be corrected.
+async function autoLink(context: AppContext, id: string, movie: MovieEntity) {
+  const fragment = context.url.searchParams.get('fragment') === '1';
+  const title = (movie.title ?? '').trim();
+  const searchPage = routes.entityPlexLink.movies.index.href({ id });
+  if (movie.plex || title.length < MIN_QUERY_LENGTH) return redirect(searchPage, 303);
+
+  let results: PlexSearchResult[];
+  try {
+    results = await searchEntryKind(movie, title);
+  } catch (error) {
+    return failurePage(context, id, error, 'search');
+  }
+  const only = results.length === 1 ? results[0] : undefined;
+  if (!only) {
+    // The dialog shows the results in place; without JavaScript the browser goes to the search page
+    return fragment
+      ? renderFlow(context, id, movie, { fragment, step: 'search', query: title, results })
+      : redirect(searchPage, 303);
+  }
+  if (movie.isTvSeries) {
+    if (!fragment) {
+      const params = new URLSearchParams({ plexItemId: only.plexItemId, plexTitle: resultLabel(only), query: title });
+      return redirect(`${searchPage}?${params}`, 303);
+    }
+    return scopeStep(context, id, movie, {
+      fragment,
+      query: title,
+      selected: { plexItemId: only.plexItemId, title: resultLabel(only) },
+    });
+  }
+  try {
+    await linkPlexItem(id, { plexItemId: only.plexItemId });
+  } catch (error) {
+    return failurePage(context, id, error, 'link');
+  }
+  return redirect(routes.entityDetail.movies.href({ id }), 303);
+}
+
 // The scope step for a picked show, prefilled from the entry's title.
 async function scopeStep(
   context: AppContext,
@@ -190,31 +237,10 @@ async function index(context: AppContext) {
   let results: PlexSearchResult[] | undefined;
   if (query.length >= MIN_QUERY_LENGTH) {
     try {
-      // A movie entry links to movies and a TV entry to shows; the other kind would be refused
-      const wanted = movie.isTvSeries ? 'show' : 'movie';
-      results = (await searchPlex(query)).filter((result) => (result.type || 'movie') === wanted);
+      results = await searchEntryKind(movie, query);
     } catch (error) {
       return failurePage(context, id, error, 'search');
     }
-  }
-
-  // The first search, prefilled with the title (no `query` given), that finds exactly one match applies it
-  // without asking; Relink fixes a wrong match. A TV entry still asks for its seasons, which cannot be inferred.
-  const only = results?.length === 1 ? results[0] : undefined;
-  if (only && !params.has('query')) {
-    if (movie.isTvSeries) {
-      return scopeStep(context, id, movie, {
-        fragment,
-        query,
-        selected: { plexItemId: only.plexItemId, title: resultLabel(only) },
-      });
-    }
-    try {
-      await linkPlexItem(id, { plexItemId: only.plexItemId });
-    } catch (error) {
-      return failurePage(context, id, error, 'link');
-    }
-    return redirect(routes.entityDetail.movies.href({ id }), 303);
   }
   return renderFlow(context, id, movie, { fragment, step: 'search', query, results });
 }
@@ -232,6 +258,7 @@ async function action(context: AppContext) {
     string
   >;
   const plexItemId = submitted.plexItemId.trim();
+  if (!plexItemId && asText(context.formData.get('intent')) === 'auto') return autoLink(context, id, movie);
   if (!plexItemId) {
     return renderError(context, 400, undefined, {
       heading: 'Choose a Plex item',

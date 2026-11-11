@@ -95,6 +95,37 @@ describe('Plex menu on the detail page (e2e)', () => {
   });
 });
 
+describe('Plex gear menu behaviour (e2e)', () => {
+  it('closes on Escape, on an outside press and after a dialog closes', async (t) => {
+    stubApi(t, { title: 'Heat', isTvSeries: false, plex: linkedPlex });
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+    const menu = page.getByTestId('plex-menu');
+    const summary = page.locator('summary[aria-label="Plex actions"]');
+    const isOpen = () => menu.evaluate((node) => (node as HTMLDetailsElement).open);
+
+    await summary.click();
+    assert.equal(await isOpen(), true);
+    await page.keyboard.press('Escape');
+    assert.equal(await isOpen(), false);
+
+    await summary.click();
+    await page.getByRole('heading', { name: 'Plex' }).click({ position: { x: 1, y: 1 } });
+    await page.locator('h1').click();
+    assert.equal(await isOpen(), false);
+
+    await summary.click();
+    await page.getByRole('button', { name: 'Unlink' }).click();
+    const dialog = page.getByRole('dialog', { name: /Unlink/ });
+    await dialog.waitFor();
+    assert.equal(await isOpen(), true);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => !document.querySelector<HTMLDetailsElement>('[data-testid="plex-menu"]')?.open);
+  });
+});
+
 describe('link a movie to Plex (e2e)', () => {
   it('links a single match straight away without showing the result list', async (t) => {
     const requests = stubApi(t, { title: 'Heat', isTvSeries: false }, undefined, false);
@@ -121,12 +152,31 @@ describe('link a movie to Plex (e2e)', () => {
     assert.deepEqual(requests, []);
   });
 
-  it('links a single match without JavaScript through the server redirect', async (t) => {
+  it('links a single match from a plain form post, and a GET of the link page never links', async (t) => {
     const requests = stubApi(t, { title: 'Heat', isTvSeries: false }, undefined, false);
     const page = await t.serve(await createTestServer(router.fetch));
     await page.goto('/movies/m1/plex/link');
-    assert.equal(new URL(page.url()).pathname, '/movies/m1');
+    await page.getByRole('heading', { name: 'Link to Plex: Heat' }).waitFor();
+    assert.deepEqual(requests, []);
+
+    const response = await page.request.post('/movies/m1/plex/link', { form: { intent: 'auto' }, maxRedirects: 0 });
+    assert.equal(response.status(), 303);
+    assert.equal(response.headers()['location'], '/movies/m1');
     assert.equal(requests.length, 1);
+  });
+
+  it('never auto-applies a relink: the search and its lone result are shown', async (t) => {
+    const requests = stubApi(t, { title: 'Heat', isTvSeries: false, plex: linkedPlex }, undefined, false);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('summary[aria-label="Plex actions"]').click();
+    await page.getByRole('button', { name: 'Relink' }).click();
+    const dialog = page.getByRole('dialog', { name: /Relink/ });
+    await dialog.getByRole('button', { name: 'Link to Heat (1995)' }).waitFor();
+    await dialog.getByLabel('Search Plex for a movie').waitFor();
+    assert.deepEqual(requests, []);
   });
 
   it('shows the error page when the automatic link is refused', async (t) => {

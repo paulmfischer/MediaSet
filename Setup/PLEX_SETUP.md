@@ -191,8 +191,10 @@ linked to Plex shows. Only movies are supported.
     - **Broken link:** a warning notice appears; use the gear menu to Relink or Unlink.
     - **Not linked:** the movie shows only a **Link to Plex** button. There is no "Not on Plex" text.
     - **Link to Plex** (and **Relink**, also shown on a linked movie) opens a search prefilled with the movie's title. Each
-      result shows its title, year and library; pick one to link it, and you return to the movie page with the new data. When
-      that first search finds exactly one match it is linked at once without showing the list (use Relink if it is wrong).
+      result shows its title, year and library; pick one to link it, and you return to the movie page with the new data. The
+      first **Link to Plex** of an unlinked movie searches by its title and, when that finds exactly one match, links it at
+      once without showing the list (nothing is linked by just opening a page; use Relink if it is wrong). **Relink** always
+      shows the search and its results.
       For a TV series entry you pick a show (skipped when there is one match), then the seasons it covers (one season, a
       range or the complete series), prefilled from the entry's title; the complete series is the default when the title does
       not say. With JavaScript this opens in a

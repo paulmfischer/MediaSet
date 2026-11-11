@@ -124,6 +124,7 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   refreshHref={`${basePath}/${itemId}/plex/refresh`}
                   linkHref={`${basePath}/${itemId}/plex/link`}
                   unlinkHref={`${basePath}/${itemId}/plex/unlink`}
+                  detailHref={`${basePath}/${itemId}`}
                   now={now}
                 />
               ) : null}

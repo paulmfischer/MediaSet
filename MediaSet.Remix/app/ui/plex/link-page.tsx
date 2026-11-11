@@ -114,7 +114,7 @@ function SearchStep(handle: Handle<PlexLinkPageProps>) {
             {results.map((result) => (
               <li
                 key={result.plexItemId}
-                class="flex items-center justify-between gap-3 rounded-md border border-zinc-500 bg-zinc-700 p-3"
+                class="flex items-center justify-between gap-3 rounded-md border border-zinc-300 bg-zinc-100 dark:border-zinc-500 dark:bg-zinc-700 p-3"
               >
                 <span class="min-w-0 wrap-break-word">
                   <span class="font-medium">{resultLabel(result)}</span>

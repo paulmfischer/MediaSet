@@ -114,7 +114,10 @@ describe('plex link controls on the detail page', () => {
   it('should offer a working Link to Plex form for an unlinked movie', async (t) => {
     stubApi(t, { plex: enabled });
     const html = await (await get('/movies/m1')).text();
-    assert.match(html, /<form method="get" action="\/movies\/m1\/plex\/link">/);
+    assert.match(
+      html,
+      /<form method="post" action="\/movies\/m1\/plex\/link"><input type="hidden" name="intent" value="auto"/
+    );
     assert.match(html, /Link to Plex/);
     assert.doesNotMatch(html, /aria-disabled|not available yet/);
   });
@@ -123,6 +126,7 @@ describe('plex link controls on the detail page', () => {
     stubApi(t, { plex: enabled, movie: { plex: {} } });
     const html = await (await get('/movies/m1')).text();
     assert.match(html, /<form method="get" action="\/movies\/m1\/plex\/link">/);
+    assert.doesNotMatch(html, /name="intent" value="auto"/);
     assert.match(html, /<form method="get" action="\/movies\/m1\/plex\/unlink">/);
     assert.match(html, />\s*Relink\s*</);
     assert.match(html, />\s*Unlink\s*</);
@@ -241,50 +245,86 @@ describe('plex link search step', () => {
   });
 });
 
-describe('plex link automatic link on a single match', () => {
+describe('plex automatic link on the first Link', () => {
   const tv = { title: 'Show: Season 2', isTvSeries: true };
   const linkCalls = (calls: Call[]) => apiCalls(calls, 'PUT', '/plex/movies/items/m1/link');
+  const auto = (query = '') => post(`/movies/m1/plex/link${query}`, { intent: 'auto' });
+
+  it('should never link on a GET, however many matches there are', async (t) => {
+    const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11')] });
+    for (const path of ['/movies/m1/plex/link', '/movies/m1/plex/link?query=Heat', '/movies/m1/plex/link?fragment=1']) {
+      assert.equal((await get(path)).status, 200);
+    }
+    assert.equal(linkCalls(calls).length, 0);
+  });
 
   it('should link the only match and redirect 303 to the detail page', async (t) => {
     const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11')] });
-    const response = await get('/movies/m1/plex/link');
+    const response = await auto();
     assert.equal(response.status, 303);
     assert.equal(response.headers.get('Location'), '/movies/m1');
+    assert.equal(apiCalls(calls, 'GET', '/search')[0]?.search, '?query=Heat');
     assert.deepEqual(
       linkCalls(calls).map((call) => call.body),
       [{ plexItemId: '11' }]
     );
   });
 
-  it('should also redirect from the dialog form and for a relink', async (t) => {
-    const calls = stubApi(t, { plex: enabled, movie: { plex: {} }, results: [result('Heat', '11')] });
-    const response = await get('/movies/m1/plex/link?fragment=1');
+  it('should answer the dialog form with the same redirect', async (t) => {
+    const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11')] });
+    const response = await auto('?fragment=1');
     assert.equal(response.status, 303);
     assert.equal(linkCalls(calls).length, 1);
   });
 
   it('should count only matches of the entry kind', async (t) => {
     const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11'), result('Heat Show', '12', 'show')] });
-    assert.equal((await get('/movies/m1/plex/link')).status, 303);
+    assert.equal((await auto()).status, 303);
     assert.deepEqual(
       linkCalls(calls).map((call) => call.body),
       [{ plexItemId: '11' }]
     );
   });
 
-  it('should show the list when the search was typed, even with one match', async (t) => {
-    const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11')] });
-    const response = await get('/movies/m1/plex/link?query=Heat');
+  it('should redirect to the search page and link nothing for no match or several', async (t) => {
+    for (const results of [[], [result('Heat', '11'), result('Heat 2', '12')]]) {
+      const calls = stubApi(t, { plex: enabled, results });
+      const response = await auto();
+      assert.equal(response.status, 303);
+      assert.equal(response.headers.get('Location'), '/movies/m1/plex/link');
+      assert.equal(linkCalls(calls).length, 0);
+    }
+  });
+
+  it('should show the results in place for the dialog when there is no single match', async (t) => {
+    const calls = stubApi(t, { plex: enabled, results: [result('Heat', '11'), result('Heat 2', '12')] });
+    const response = await auto('?fragment=1');
+    const html = await response.text();
     assert.equal(response.status, 200);
-    assert.match(await response.text(), /Heat \(1995\)/);
+    assert.match(html, /data-plex-link="fragment"/);
+    assert.match(html, /Heat 2 \(1995\)/);
     assert.equal(linkCalls(calls).length, 0);
   });
 
-  it('should show the list for no match and for several', async (t) => {
-    const calls = stubApi(t, { plex: enabled, results: [] });
-    assert.equal((await get('/movies/m1/plex/link')).status, 200);
-    stubApi(t, { plex: enabled, results: [result('Heat', '11'), result('Heat 2', '12')] });
-    assert.equal((await get('/movies/m1/plex/link')).status, 200);
+  it('should never auto-apply a relink of an already linked movie', async (t) => {
+    const calls = stubApi(t, { plex: enabled, movie: { plex: {} }, results: [result('Heat', '11')] });
+    const response = await auto();
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('Location'), '/movies/m1/plex/link');
+    assert.equal(linkCalls(calls).length, 0);
+    assert.equal(apiCalls(calls, 'GET', '/search').length, 0);
+    // The relink page itself shows the search box and the lone result
+    const html = await (await get('/movies/m1/plex/link')).text();
+    assert.match(html, /id="plex-query"/);
+    assert.match(html, /Heat \(1995\)/);
+  });
+
+  it('should not search when the movie has no usable title', async (t) => {
+    const calls = stubApi(t, { plex: enabled, movie: { title: ' ' }, results: [result('Heat', '11')] });
+    const response = await auto();
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('Location'), '/movies/m1/plex/link');
+    assert.equal(apiCalls(calls, 'GET', '/search').length, 0);
     assert.equal(linkCalls(calls).length, 0);
   });
 
@@ -295,12 +335,17 @@ describe('plex link automatic link on a single match', () => {
       results: [result('Show', '2001', 'show', 2010)],
       scope: { kind: 'season', from: 2, to: 2 },
     });
-    const response = await get('/movies/m1/plex/link');
-    const html = await response.text();
-    assert.equal(response.status, 200);
-    assert.match(html, /Linking to <strong>Show \(2010\)<\/strong>/);
-    assert.match(html, /name="plexItemId" value="2001"/);
-    assert.match(html, /id="season"[^>]*value="2"/);
+    const response = await auto();
+    assert.equal(response.status, 303);
+    assert.equal(
+      response.headers.get('Location'),
+      '/movies/m1/plex/link?plexItemId=2001&plexTitle=Show+%282010%29&query=Show%3A+Season+2'
+    );
+    assert.equal(linkCalls(calls).length, 0);
+
+    const fragment = await (await auto('?fragment=1')).text();
+    assert.match(fragment, /Linking to <strong>Show \(2010\)<\/strong>/);
+    assert.match(fragment, /id="season"[^>]*value="2"/);
     assert.equal(linkCalls(calls).length, 0);
   });
 
@@ -310,11 +355,16 @@ describe('plex link automatic link on a single match', () => {
   ] as const) {
     it(`should render the standard error page when ${name}`, async (t) => {
       stubApi(t, { plex: enabled, results: [result('Heat', '11')], link: response });
-      const result_ = await get('/movies/m1/plex/link');
+      const result_ = await auto();
       assert.equal(result_.status, status);
       assert.match(await result_.text(), message);
     });
   }
+
+  it('should render the error page when the search fails', async (t) => {
+    stubApi(t, { plex: enabled, search: problem(502, 'Plex request failed') });
+    assert.equal((await auto()).status, 502);
+  });
 });
 
 describe('plex link scope step for a TV entry', () => {
