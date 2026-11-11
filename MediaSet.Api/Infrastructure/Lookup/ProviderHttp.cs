@@ -6,7 +6,7 @@ namespace MediaSet.Api.Infrastructure.Lookup;
 /// <summary>Preserves provider status and reset headers before legacy clients consume responses.</summary>
 public static class ProviderHttp
 {
-    private static readonly ConcurrentDictionary<string, DateTime> resets = new();
+    private static readonly ConcurrentDictionary<string, DateTime> _resets = new();
 
     public static async Task<HttpResponseMessage> SendProviderAsync(this HttpClient client, HttpRequestMessage request,
         CancellationToken cancellationToken)
@@ -14,7 +14,7 @@ public static class ProviderHttp
         var uri = request.RequestUri!.IsAbsoluteUri ? request.RequestUri : new Uri(client.BaseAddress!, request.RequestUri);
         var provider = uri.Host;
         LookupFailureScope.Attempt(provider);
-        if (LookupFailureScope.IsActive && resets.TryGetValue(provider, out var reset) && reset > DateTime.UtcNow)
+        if (LookupFailureScope.IsActive && _resets.TryGetValue(provider, out var reset) && reset > DateTime.UtcNow)
         {
             var error = new ProviderLookupException(provider, Shared.Models.ImageLookupOutcome.QuotaLimited,
                 "Provider quota deferred until reset", reset);
@@ -24,13 +24,13 @@ public static class ProviderHttp
         var response = await client.SendAsync(request, cancellationToken);
         if (LookupFailureScope.IsActive && response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
-            resets[provider] = LookupFailureScope.RetryAt(response) ?? DateTime.UtcNow.AddMinutes(5);
+            _resets[provider] = LookupFailureScope.RetryAt(response) ?? DateTime.UtcNow.AddMinutes(5);
         }
         if (!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.NotFound)
         {
             LookupFailureScope.Record(new ProviderLookupException(provider, LookupFailureScope.Classify(response.StatusCode),
                 "Lookup provider request failed", response.StatusCode == System.Net.HttpStatusCode.TooManyRequests
-                    ? resets.GetValueOrDefault(provider) : LookupFailureScope.RetryAt(response)));
+                    ? _resets.GetValueOrDefault(provider) : LookupFailureScope.RetryAt(response)));
         }
         return response;
     }

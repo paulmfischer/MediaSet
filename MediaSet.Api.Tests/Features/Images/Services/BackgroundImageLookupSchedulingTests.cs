@@ -17,7 +17,7 @@ namespace MediaSet.Api.Tests.Features.Images.Services;
 [TestFixture]
 public class BackgroundImageLookupSchedulingTests
 {
-    private static readonly TimeZoneInfo NewYork = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+    private static readonly TimeZoneInfo _newYork = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
 
     private static DateTimeOffset Utc(int y, int m, int d, int h = 0, int min = 0) =>
         new(y, m, d, h, min, 0, TimeSpan.Zero);
@@ -49,7 +49,7 @@ public class BackgroundImageLookupSchedulingTests
     {
         var cron = CronExpression.Parse("0 2 * * *");
 
-        var next = cron.GetNextOccurrence(Utc(2026, 7, 1, 12), NewYork);
+        var next = cron.GetNextOccurrence(Utc(2026, 7, 1, 12), _newYork);
 
         Assert.That(next, Is.EqualTo(Utc(2026, 7, 2, 6)));
         Assert.That(next!.Value.Offset, Is.EqualTo(TimeSpan.FromHours(-4)));
@@ -60,7 +60,7 @@ public class BackgroundImageLookupSchedulingTests
     {
         var cron = CronExpression.Parse("0 2 * * *");
 
-        var next = cron.GetNextOccurrence(Utc(2026, 1, 15, 12), NewYork);
+        var next = cron.GetNextOccurrence(Utc(2026, 1, 15, 12), _newYork);
 
         Assert.That(next, Is.EqualTo(Utc(2026, 1, 16, 7)));
     }
@@ -71,7 +71,7 @@ public class BackgroundImageLookupSchedulingTests
         // 2026-03-08 02:30 America/New_York does not exist (clocks jump 02:00 -> 03:00).
         var cron = CronExpression.Parse("30 2 * * *");
 
-        var next = cron.GetNextOccurrence(Utc(2026, 3, 8, 5), NewYork);
+        var next = cron.GetNextOccurrence(Utc(2026, 3, 8, 5), _newYork);
 
         Assert.That(next, Is.EqualTo(Utc(2026, 3, 8, 7)));
     }
@@ -82,8 +82,8 @@ public class BackgroundImageLookupSchedulingTests
         // 2026-11-01 01:30 America/New_York occurs twice (05:30Z EDT and 06:30Z EST).
         var cron = CronExpression.Parse("30 1 * * *");
 
-        var first = cron.GetNextOccurrence(Utc(2026, 11, 1, 4), NewYork);
-        var second = cron.GetNextOccurrence(first!.Value, NewYork);
+        var first = cron.GetNextOccurrence(Utc(2026, 11, 1, 4), _newYork);
+        var second = cron.GetNextOccurrence(first!.Value, _newYork);
 
         Assert.That(first, Is.EqualTo(Utc(2026, 11, 1, 5, 30)));
         Assert.That(second, Is.EqualTo(Utc(2026, 11, 2, 6, 30)));
@@ -144,7 +144,7 @@ public class BackgroundImageLookupSchedulingTests
     [Test]
     public async Task ExecuteAsync_ScheduleInLocalTimeZone_UsesProviderTimeZoneForRunTime()
     {
-        var time = new FakeTimeProvider(Utc(2026, 7, 1, 12), NewYork);
+        var time = new FakeTimeProvider(Utc(2026, 7, 1, 12), _newYork);
         var (service, runs, cts) = CreateService("0 2 * * *", time, stopAfterRuns: 1);
         using var _ = cts;
 
@@ -159,7 +159,7 @@ public class BackgroundImageLookupSchedulingTests
     [Test]
     public async Task ExecuteAsync_TimeSkippedBySpringForward_RunsOnceAtEndOfGap()
     {
-        var time = new FakeTimeProvider(Utc(2026, 3, 8, 5), NewYork);
+        var time = new FakeTimeProvider(Utc(2026, 3, 8, 5), _newYork);
         var (service, runs, cts) = CreateService("30 2 * * *", time, stopAfterRuns: 1);
         using var _ = cts;
 
@@ -176,7 +176,7 @@ public class BackgroundImageLookupSchedulingTests
     [Test]
     public async Task ExecuteAsync_TimeRepeatedByFallBack_RunsOncePerDayAtFirstOccurrence()
     {
-        var time = new FakeTimeProvider(Utc(2026, 11, 1, 4), NewYork);
+        var time = new FakeTimeProvider(Utc(2026, 11, 1, 4), _newYork);
         var (service, runs, cts) = CreateService("30 1 * * *", time, stopAfterRuns: 2);
         using var _ = cts;
 

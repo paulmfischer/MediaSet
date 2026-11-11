@@ -28,7 +28,7 @@ public class UpcItemDbClient : IUpcItemDbClient
     // Burst limit cooldown
     private static DateTime? _burstLimitResetTime = null;
     // Shared across transient typed clients; isolate accounts/endpoints.
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> quotaResets = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _quotaResets = new();
     private string QuotaKey => $"{_httpClient.BaseAddress}|{_configuration.Plan}|{_configuration.ApiKey}";
 
     public UpcItemDbClient(
@@ -48,7 +48,7 @@ public class UpcItemDbClient : IUpcItemDbClient
         try
         {
             using var activity = Log.Logger.StartActivity("UpcItemDb.GetItemByCode", new { code });
-            if (quotaResets.TryGetValue(QuotaKey, out var reset) && reset > DateTime.UtcNow)
+            if (_quotaResets.TryGetValue(QuotaKey, out var reset) && reset > DateTime.UtcNow)
             {
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(new ProviderLookupException(
                     "UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited, "UPCitemdb quota deferred until reset", reset));
@@ -146,7 +146,7 @@ public class UpcItemDbClient : IUpcItemDbClient
             _logger.LogError("Daily rate limit of {Limit} requests reached, cannot make more requests today",
                 _configuration.MaxRequestsPerDay);
             var reset = DateTime.UtcNow.Date.AddDays(1);
-            quotaResets[QuotaKey] = reset;
+            _quotaResets[QuotaKey] = reset;
             throw new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
                 $"UpcItemDb local daily rate limit of {_configuration.MaxRequestsPerDay} requests exceeded", reset);
         }
@@ -243,7 +243,7 @@ public class UpcItemDbClient : IUpcItemDbClient
                 if (retryResponse.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     var retryAt = LookupFailureScope.RetryAt(retryResponse) ?? DateTime.UtcNow.AddMinutes(5);
-                    quotaResets[QuotaKey] = retryAt;
+                    _quotaResets[QuotaKey] = retryAt;
                     LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
                         "UPCitemdb quota exhausted after burst retry", retryAt));
                 }
@@ -274,7 +274,7 @@ public class UpcItemDbClient : IUpcItemDbClient
         }
 
         // Daily limit exceeded - don't retry
-        quotaResets[QuotaKey] = resetTime;
+        _quotaResets[QuotaKey] = resetTime;
         LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
             "UPCitemdb quota exhausted", resetTime));
         var hoursUntilReset = pauseDuration.TotalHours;

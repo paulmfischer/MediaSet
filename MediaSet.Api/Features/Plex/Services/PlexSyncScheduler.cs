@@ -21,7 +21,7 @@ public sealed class PlexSyncScheduler(
     TimeProvider? timeProvider = null) : BackgroundService
 {
     // Task.Delay cannot wait longer than about 49 days, so long waits are split
-    private static readonly TimeSpan MaxWait = TimeSpan.FromDays(1);
+    private static readonly TimeSpan _maxWait = TimeSpan.FromDays(1);
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -71,7 +71,7 @@ public sealed class PlexSyncScheduler(
                 while (_time.GetUtcNow() < next)
                 {
                     var remaining = next - _time.GetUtcNow();
-                    await Task.Delay(remaining > MaxWait ? MaxWait : remaining, _time, stoppingToken);
+                    await Task.Delay(remaining > _maxWait ? _maxWait : remaining, _time, stoppingToken);
                 }
 
                 await StartScheduledAsync(entityType, stoppingToken);

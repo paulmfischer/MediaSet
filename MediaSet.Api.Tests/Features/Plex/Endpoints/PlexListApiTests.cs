@@ -85,7 +85,7 @@ public class PlexListApiTests
         return factory.CreateClient();
     }
 
-    private static readonly string[] AllIds = [OnPlexId, WatchedId, BrokenId, GoneId, UnlinkedId];
+    private static readonly string[] _allIds = [OnPlexId, WatchedId, BrokenId, GoneId, UnlinkedId];
 
     /// <summary>A movie service whose paged search applies the id filter like the real one does.</summary>
     private static Mock<IEntityService<Movie>> MovieService()
@@ -94,7 +94,7 @@ public class PlexListApiTests
         mock.Setup(s => s.PagedSearchAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<IdFilter?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string _, string _, int page, int pageSize, IdFilter? filter, CancellationToken _) =>
             {
-                var movies = AllIds
+                var movies = _allIds
                     .Where(id => filter == null || filter.Ids.Contains(id) != filter.Exclude)
                     .Select(id => new Movie { Id = id, Title = "Title " + id })
                     .ToList();
@@ -200,7 +200,7 @@ public class PlexListApiTests
         var (status, _, json) = await GetAsync(client, "");
 
         Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(Ids(json), Has.Length.EqualTo(AllIds.Length));
+        Assert.That(Ids(json), Has.Length.EqualTo(_allIds.Length));
         Assert.That(json.GetProperty("items").EnumerateArray().Any(i => i.TryGetProperty("plex", out _)), Is.False);
     }
 
@@ -250,6 +250,6 @@ public class PlexListApiTests
         var (status, _, json) = await GetAsync(client, "&plex=onPlex");
 
         Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(Ids(json), Has.Length.EqualTo(AllIds.Length));
+        Assert.That(Ids(json), Has.Length.EqualTo(_allIds.Length));
     }
 }

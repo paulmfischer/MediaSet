@@ -5,8 +5,8 @@ public interface IParameter
 
 public class Parameter<T> : IParameter
 {
-    private string? stringValue;
-    private T value = default!;
+    private string? _stringValue;
+    private T _value = default!;
 
     public bool IsValid { get; private set; }
 
@@ -19,7 +19,7 @@ public class Parameter<T> : IParameter
     {
         result = new Parameter<T>
         {
-            stringValue = value
+            _stringValue = value
         };
 
         var success = TryParseParameter(value, provider, out var resultValue);
@@ -28,7 +28,7 @@ public class Parameter<T> : IParameter
             return true;
         }
 
-        result.value = resultValue;
+        result._value = resultValue;
         result.IsValid = true;
         return true;
     }
@@ -69,11 +69,11 @@ public class Parameter<T> : IParameter
 
     public static implicit operator T(Parameter<T> p)
     {
-        return p.value;
+        return p._value;
     }
 
     public override string? ToString()
     {
-        return stringValue;
+        return _stringValue;
     }
 }

@@ -7,7 +7,7 @@ namespace MediaSet.Api.Tests.Features.Plex.Services;
 [TestFixture]
 public class PlexTvTitleParserTests
 {
-    private static readonly PlexScope Unreadable = PlexScope.Unreadable;
+    private static readonly PlexScope _unreadable = PlexScope.Unreadable;
 
     [TestCase("Breaking Bad: Season 2", 2)]
     [TestCase("Breaking Bad Season 2", 2)]
@@ -109,7 +109,7 @@ public class PlexTvTitleParserTests
     [Test]
     public void ParseScope_Null_IsUnreadable()
     {
-        Assert.That(PlexTvTitleParser.ParseScope(null), Is.EqualTo(Unreadable));
+        Assert.That(PlexTvTitleParser.ParseScope(null), Is.EqualTo(_unreadable));
     }
 
     [TestCase("Show: Seasons 1-3 + Movie")]

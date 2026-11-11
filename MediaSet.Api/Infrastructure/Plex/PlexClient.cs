@@ -6,7 +6,7 @@ namespace MediaSet.Api.Infrastructure.Plex;
 
 public class PlexClient : IPlexClient
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         NumberHandling = JsonNumberHandling.AllowReadingFromString
@@ -342,7 +342,7 @@ public class PlexClient : IPlexClient
                 throw new PlexClientException((int)response.StatusCode, "Plex request failed");
             }
 
-            return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken)
+            return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken)
                 ?? throw new PlexClientException(null, "Plex returned an empty response");
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)

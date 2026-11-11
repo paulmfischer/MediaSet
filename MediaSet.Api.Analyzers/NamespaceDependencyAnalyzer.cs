@@ -19,7 +19,7 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
     public const string DiagnosticId = "ARCH001";
     private const string Category = "Architecture";
 
-    private static readonly DiagnosticDescriptor Rule = new(
+    private static readonly DiagnosticDescriptor _rule = new(
         DiagnosticId,
         "Namespace dependency violation",
         "{0}",
@@ -29,7 +29,7 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
         description: "Enforces namespace dependency rules to maintain clean architecture.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        => [Rule];
+        => [_rule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -160,7 +160,7 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
                 symbol.ToDisplayString(),
                 referencedNamespace);
 
-            var diagnostic = Diagnostic.Create(Rule, node.GetLocation(), message);
+            var diagnostic = Diagnostic.Create(_rule, node.GetLocation(), message);
             context.ReportDiagnostic(diagnostic);
             return; // Report only first violation per node
         }

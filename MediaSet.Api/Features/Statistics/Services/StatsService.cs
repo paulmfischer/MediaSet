@@ -13,14 +13,14 @@ namespace MediaSet.Api.Features.Statistics.Services;
 
 public class StatsService : IStatsService
 {
-    private readonly IEntityService<Book> bookService;
-    private readonly IEntityService<Movie> movieService;
-    private readonly IEntityService<Game> gameService;
-    private readonly IEntityService<Music> musicService;
-    private readonly ICacheService cacheService;
-    private readonly CacheSettings cacheSettings;
-    private readonly ILogger<StatsService> logger;
-    private readonly IPlexLookup? plexLookup;
+    private readonly IEntityService<Book> _bookService;
+    private readonly IEntityService<Movie> _movieService;
+    private readonly IEntityService<Game> _gameService;
+    private readonly IEntityService<Music> _musicService;
+    private readonly ICacheService _cacheService;
+    private readonly CacheSettings _cacheSettings;
+    private readonly ILogger<StatsService> _logger;
+    private readonly IPlexLookup? _plexLookup;
 
     public StatsService(
         IEntityService<Book> _bookService,
@@ -32,14 +32,14 @@ public class StatsService : IStatsService
         ILogger<StatsService> _logger,
         IPlexLookup? _plexLookup = null)
     {
-        bookService = _bookService;
-        movieService = _movieService;
-        gameService = _gameService;
-        musicService = _musicService;
-        cacheService = _cacheService;
-        cacheSettings = _cacheSettings.Value;
-        logger = _logger;
-        plexLookup = _plexLookup;
+        this._bookService = _bookService;
+        this._movieService = _movieService;
+        this._gameService = _gameService;
+        this._musicService = _musicService;
+        this._cacheService = _cacheService;
+        this._cacheSettings = _cacheSettings.Value;
+        this._logger = _logger;
+        this._plexLookup = _plexLookup;
     }
 
     private static int? ParseYear(string? dateStr)
@@ -79,7 +79,7 @@ public class StatsService : IStatsService
         var stats = await GetCollectionStatsAsync(cancellationToken);
 
         // Plex data changes with every sync (not only with an edit), so it is read per request and never cached with the rest
-        var plexStats = plexLookup is null ? null : await plexLookup.GetMovieStatsAsync(stats.MovieStats.Total, cancellationToken);
+        var plexStats = _plexLookup is null ? null : await _plexLookup.GetMovieStatsAsync(stats.MovieStats.Total, cancellationToken);
         return plexStats is null ? stats : stats with { PlexStats = plexStats };
     }
 
@@ -89,19 +89,19 @@ public class StatsService : IStatsService
 
         const string cacheKey = "stats";
 
-        var cachedStats = await cacheService.GetAsync<Stats>(cacheKey);
+        var cachedStats = await _cacheService.GetAsync<Stats>(cacheKey);
         if (cachedStats != null)
         {
-            logger.LogDebug("Returning cached statistics");
+            _logger.LogDebug("Returning cached statistics");
             return cachedStats;
         }
 
-        logger.LogDebug("Cache miss for statistics, calculating from database");
+        _logger.LogDebug("Cache miss for statistics, calculating from database");
 
-        var bookTask = bookService.GetListAsync(cancellationToken);
-        var movieTask = movieService.GetListAsync(cancellationToken);
-        var gameTask = gameService.GetListAsync(cancellationToken);
-        var musicTask = musicService.GetListAsync(cancellationToken);
+        var bookTask = _bookService.GetListAsync(cancellationToken);
+        var movieTask = _movieService.GetListAsync(cancellationToken);
+        var gameTask = _gameService.GetListAsync(cancellationToken);
+        var musicTask = _musicService.GetListAsync(cancellationToken);
         await Task.WhenAll(bookTask, movieTask, gameTask, musicTask);
 
         var books = bookTask.Result;
@@ -302,8 +302,8 @@ public class StatsService : IStatsService
 
         var stats = new Stats(bookStats, movieStats, gameStats, musicStats);
 
-        await cacheService.SetAsync(cacheKey, stats);
-        logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}, music={musicCount}",
+        await _cacheService.SetAsync(cacheKey, stats);
+        _logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}, music={musicCount}",
             bookStats.Total, movieStats.Total, gameStats.Total, musicStats.Total);
 
         return stats;

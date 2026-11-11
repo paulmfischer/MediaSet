@@ -10,10 +10,10 @@ namespace MediaSet.Api.Features.Metadata.Services;
 
 public class MetadataService : IMetadataService
 {
-    private readonly IServiceProvider serviceProvider;
-    private readonly ICacheService cacheService;
-    private readonly CacheSettings cacheSettings;
-    private readonly ILogger<MetadataService> logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ICacheService _cacheService;
+    private readonly CacheSettings _cacheSettings;
+    private readonly ILogger<MetadataService> _logger;
 
     public MetadataService(
         IServiceProvider _serviceProvider,
@@ -21,10 +21,10 @@ public class MetadataService : IMetadataService
         IOptions<CacheSettings> _cacheSettings,
         ILogger<MetadataService> _logger)
     {
-        serviceProvider = _serviceProvider;
-        cacheService = _cacheService;
-        cacheSettings = _cacheSettings.Value;
-        logger = _logger;
+        this._serviceProvider = _serviceProvider;
+        this._cacheService = _cacheService;
+        this._cacheSettings = _cacheSettings.Value;
+        this._logger = _logger;
     }
 
     public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName, CancellationToken cancellationToken = default)
@@ -34,18 +34,18 @@ public class MetadataService : IMetadataService
         var cacheKey = $"metadata:{mediaType}:{propertyName}";
 
         // Try to get from cache
-        var cachedResult = await cacheService.GetAsync<List<string>>(cacheKey);
+        var cachedResult = await _cacheService.GetAsync<List<string>>(cacheKey);
         if (cachedResult != null)
         {
-            logger.LogDebug("Returning cached metadata for {mediaType}:{propertyName}", mediaType, propertyName);
+            _logger.LogDebug("Returning cached metadata for {mediaType}:{propertyName}", mediaType, propertyName);
             return cachedResult;
         }
 
-        logger.LogDebug("Cache miss for metadata {mediaType}:{propertyName}, fetching from database", mediaType, propertyName);
+        _logger.LogDebug("Cache miss for metadata {mediaType}:{propertyName}, fetching from database", mediaType, propertyName);
 
         var entityType = GetEntityType(mediaType);
         var serviceType = typeof(IEntityService<>).MakeGenericType(entityType);
-        var service = serviceProvider.GetService(serviceType);
+        var service = _serviceProvider.GetService(serviceType);
 
         if (service == null)
         {
@@ -89,8 +89,8 @@ public class MetadataService : IMetadataService
         var distinctResults = results.Distinct().Order().ToList();
 
         // Cache the results
-        await cacheService.SetAsync(cacheKey, distinctResults);
-        logger.LogInformation("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);
+        await _cacheService.SetAsync(cacheKey, distinctResults);
+        _logger.LogInformation("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);
 
         return distinctResults;
     }

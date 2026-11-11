@@ -224,9 +224,9 @@ public class NamespaceDependencyAnalyzerTests
         private readonly Options _global = new(values);
         public override AnalyzerConfigOptions GlobalOptions => _global;
         // Rules are global-only (build_metadata keys from .globalconfig); per-file lookups carry no extra keys.
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Empty;
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Empty;
-        private static readonly Options Empty = new(new Dictionary<string, string>());
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => _empty;
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => _empty;
+        private static readonly Options _empty = new(new Dictionary<string, string>());
     }
 
     private sealed class Options(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions

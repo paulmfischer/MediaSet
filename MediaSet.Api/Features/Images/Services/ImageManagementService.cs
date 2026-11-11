@@ -11,13 +11,13 @@ public class ImageManagementService : IImageManagementService
 {
     private const string ImageStatsCacheKey = "image-stats";
 
-    private readonly IImageStorageProvider storageProvider;
-    private readonly IEntityService<Book> bookService;
-    private readonly IEntityService<Movie> movieService;
-    private readonly IEntityService<Game> gameService;
-    private readonly IEntityService<Music> musicService;
-    private readonly ICacheService cacheService;
-    private readonly ILogger<ImageManagementService> logger;
+    private readonly IImageStorageProvider _storageProvider;
+    private readonly IEntityService<Book> _bookService;
+    private readonly IEntityService<Movie> _movieService;
+    private readonly IEntityService<Game> _gameService;
+    private readonly IEntityService<Music> _musicService;
+    private readonly ICacheService _cacheService;
+    private readonly ILogger<ImageManagementService> _logger;
 
     public ImageManagementService(
         IImageStorageProvider _storageProvider,
@@ -28,25 +28,25 @@ public class ImageManagementService : IImageManagementService
         ICacheService _cacheService,
         ILogger<ImageManagementService> _logger)
     {
-        storageProvider = _storageProvider;
-        bookService = _bookService;
-        movieService = _movieService;
-        gameService = _gameService;
-        musicService = _musicService;
-        cacheService = _cacheService;
-        logger = _logger;
+        this._storageProvider = _storageProvider;
+        this._bookService = _bookService;
+        this._movieService = _movieService;
+        this._gameService = _gameService;
+        this._musicService = _musicService;
+        this._cacheService = _cacheService;
+        this._logger = _logger;
     }
 
     public async Task<int> DeleteOrphanedImagesAsync(CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("DeleteOrphanedImages");
 
-        var allFiles = storageProvider.ListFiles().ToList();
+        var allFiles = _storageProvider.ListFiles().ToList();
 
-        var bookTask = bookService.GetListAsync(cancellationToken);
-        var movieTask = movieService.GetListAsync(cancellationToken);
-        var gameTask = gameService.GetListAsync(cancellationToken);
-        var musicTask = musicService.GetListAsync(cancellationToken);
+        var bookTask = _bookService.GetListAsync(cancellationToken);
+        var movieTask = _movieService.GetListAsync(cancellationToken);
+        var gameTask = _gameService.GetListAsync(cancellationToken);
+        var musicTask = _musicService.GetListAsync(cancellationToken);
         await Task.WhenAll(bookTask, movieTask, gameTask, musicTask);
 
         var referencedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -69,13 +69,13 @@ public class ImageManagementService : IImageManagementService
 
         foreach (var (relativePath, _) in orphanedFiles)
         {
-            logger.LogInformation("Deleting orphaned image file: {FilePath}", relativePath);
-            storageProvider.DeleteImage(relativePath);
+            _logger.LogInformation("Deleting orphaned image file: {FilePath}", relativePath);
+            _storageProvider.DeleteImage(relativePath);
         }
 
-        await cacheService.RemoveAsync(ImageStatsCacheKey);
+        await _cacheService.RemoveAsync(ImageStatsCacheKey);
 
-        logger.LogInformation("Deleted {Count} orphaned image files and invalidated image stats cache", orphanedFiles.Count);
+        _logger.LogInformation("Deleted {Count} orphaned image files and invalidated image stats cache", orphanedFiles.Count);
 
         return orphanedFiles.Count;
     }
@@ -90,42 +90,42 @@ public class ImageManagementService : IImageManagementService
         switch (entityType.ToLowerInvariant())
         {
             case "books":
-                var books = (await bookService.GetListAsync(cancellationToken))
+                var books = (await _bookService.GetListAsync(cancellationToken))
                     .Where(e => e.Id != null && idSet.Contains(e.Id));
                 foreach (var book in books)
                 {
                     book.ImageLookup = null;
-                    await bookService.UpdateAsync(book.Id!, book, cancellationToken);
+                    await _bookService.UpdateAsync(book.Id!, book, cancellationToken);
                     count++;
                 }
                 break;
             case "movies":
-                var movies = (await movieService.GetListAsync(cancellationToken))
+                var movies = (await _movieService.GetListAsync(cancellationToken))
                     .Where(e => e.Id != null && idSet.Contains(e.Id));
                 foreach (var movie in movies)
                 {
                     movie.ImageLookup = null;
-                    await movieService.UpdateAsync(movie.Id!, movie, cancellationToken);
+                    await _movieService.UpdateAsync(movie.Id!, movie, cancellationToken);
                     count++;
                 }
                 break;
             case "games":
-                var games = (await gameService.GetListAsync(cancellationToken))
+                var games = (await _gameService.GetListAsync(cancellationToken))
                     .Where(e => e.Id != null && idSet.Contains(e.Id));
                 foreach (var game in games)
                 {
                     game.ImageLookup = null;
-                    await gameService.UpdateAsync(game.Id!, game, cancellationToken);
+                    await _gameService.UpdateAsync(game.Id!, game, cancellationToken);
                     count++;
                 }
                 break;
             case "musics":
-                var musics = (await musicService.GetListAsync(cancellationToken))
+                var musics = (await _musicService.GetListAsync(cancellationToken))
                     .Where(e => e.Id != null && idSet.Contains(e.Id));
                 foreach (var music in musics)
                 {
                     music.ImageLookup = null;
-                    await musicService.UpdateAsync(music.Id!, music, cancellationToken);
+                    await _musicService.UpdateAsync(music.Id!, music, cancellationToken);
                     count++;
                 }
                 break;
@@ -133,9 +133,9 @@ public class ImageManagementService : IImageManagementService
                 throw new ArgumentException($"Unknown entity type: {entityType}");
         }
 
-        await cacheService.RemoveAsync(ImageStatsCacheKey);
+        await _cacheService.RemoveAsync(ImageStatsCacheKey);
 
-        logger.LogInformation("Reset ImageLookup for {Count} entities of type {EntityType}", count, entityType);
+        _logger.LogInformation("Reset ImageLookup for {Count} entities of type {EntityType}", count, entityType);
 
         return count;
     }
