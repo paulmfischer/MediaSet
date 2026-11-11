@@ -1,45 +1,45 @@
 import { clientEntry, type Handle } from 'remix/component';
 
+import { classifyPoll, nextDelay, POLL_MS } from './plex-sync-poll.ts';
+
 interface PlexSyncPollerProps {
-  /** The same-origin route that answers with every entity type's status as JSON. */
+  /** The same-origin route that answers with every enabled entity type's status as JSON. */
   statusHref: string;
 }
 
-const POLL_MS = 3000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
-type PolledStatus = { lastRun?: { state?: string } | null };
-
-const isActive = (status: PolledStatus): boolean =>
-  status.lastRun?.state === 'running' || status.lastRun?.state === 'queued';
-
-// Rendered only while a run is active. It polls the status route, and reloads the page once no run is active so the
-// finished run's counts show; the reloaded page does not render it, so polling stops. Without JavaScript the page
-// is simply reloaded by hand. A failed poll is retried on the next tick.
+// Rendered only while a run is active. It polls the status route, and reloads the page once no run is active (or
+// Plex was switched off) so the page shows the result; the reloaded page does not render it, so polling stops. A
+// failed poll is retried with a growing delay and abandoned after a few in a row. Without JavaScript the page is
+// reloaded by hand.
 export const PlexSyncPoller = clientEntry(
   import.meta.url,
   function PlexSyncPoller(handle: Handle<PlexSyncPollerProps>) {
     handle.queueTask(() => {
       const { signal } = handle;
       let timer: ReturnType<typeof setTimeout> | undefined;
+      let failures = 0;
 
       async function poll() {
+        let outcome: ReturnType<typeof classifyPoll> = 'failed';
         try {
           const response = await fetch(handle.props.statusHref, {
-            signal,
+            signal: AbortSignal.any([signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]),
             headers: { Accept: 'application/json' },
             cache: 'no-store',
           });
-          if (response.ok) {
-            const statuses = (await response.json()) as PolledStatus[];
-            if (Array.isArray(statuses) && !statuses.some(isActive)) {
-              window.location.reload();
-              return;
-            }
-          }
+          outcome = classifyPoll(response.status, await response.json().catch(() => null));
         } catch {
           if (signal.aborted) return;
         }
-        if (!signal.aborted) timer = setTimeout(() => void poll(), POLL_MS);
+        if (outcome === 'finished' || outcome === 'gone') {
+          window.location.reload();
+          return;
+        }
+        failures = outcome === 'failed' ? failures + 1 : 0;
+        const delay = nextDelay(failures);
+        if (delay !== null && !signal.aborted) timer = setTimeout(() => void poll(), delay);
       }
 
       timer = setTimeout(() => void poll(), POLL_MS);

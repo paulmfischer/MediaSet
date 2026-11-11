@@ -149,7 +149,7 @@ counts, `nextRun`); the Sync now form posts to the same route, which calls `POST
 button is disabled ("Running since <time>") and the `PlexSyncPoller` island polls `/plex/status` (a same-origin route that
 forwards the API status uncached, so the browser never calls the API), reloading the page once no run is active. The gear
 menu's Plex link is decided per request by `plexNavGate` (`app/utils/plex-nav.server.ts`), which stores the gate result in
-async request context for the synchronous header; asset and `config.json` requests skip the lookup.
+async request context for the synchronous header and the Plex handlers (one lookup per page request; it runs after the static files, and asset and `config.json` requests skip it). A 409 from Sync now redirects to `/plex?notice=running`, and the poller stops on a 404, backs off on failures and ignores disabled types.
 
 ### Plex TV series entries
 

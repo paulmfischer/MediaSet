@@ -57,10 +57,11 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
       // First, so static files and error pages get the headers and every API call a trace context.
       securityHeaders(options),
       requestContext(),
-      plexNavGate(),
       compression(),
       staticFiles('./public', { index: false }),
       render({ assets }),
+      // After the static files, so only requests that reach the app pay for the lookup.
+      plexNavGate(),
       errorPages,
       boundedFormData(),
     ],

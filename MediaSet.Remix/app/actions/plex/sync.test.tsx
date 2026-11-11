@@ -148,7 +148,10 @@ describe('plex sync page', () => {
       statuses: [[status({ lastRun: run({ state: 'running', startedAt: '2026-03-02T10:00:00Z', endedAt: null }) })]],
     });
     const html = await (await get('/plex')).text();
-    assert.match(html, /<button type="button" disabled data-testid="plex-sync-now">/);
+    assert.match(
+      html,
+      /<button type="button" disabled aria-disabled="true" aria-describedby="plex-movies-running" data-testid="plex-sync-now">/
+    );
     assert.match(html, /Running since <!-- rmx:h:[a-z0-9]+ --><time datetime="2026-03-02T10:00:00Z"/);
     assert.match(html, /data-testid="plex-sync-poller"/);
     assert.doesNotMatch(html, /<form method="post" action="\/plex"/);
@@ -187,30 +190,34 @@ describe('plex sync now', () => {
     const response = await post('/plex', { entityType: 'movies' });
     assert.equal(response.status, 303);
     assert.equal(response.headers.get('Location'), '/plex');
+    assert.equal(calls.filter((call) => call.endsWith('/config/integrations')).length, 1);
     assert.ok(calls.includes('POST /plex/movies/sync'));
   });
 
-  it('should re-render the page with the current run, not an error, on a conflict', async (t) => {
+  it('should redirect to the page with a notice, not an error, on a conflict, and show the current run there', async (t) => {
     const active = run({ state: 'running', startedAt: '2026-03-02T10:00:00Z', endedAt: null });
     const calls = stubApi(t, {
       plex: enabled,
-      statuses: [[status()], [status({ lastRun: active })]],
+      statuses: [[status({ lastRun: active })]],
       sync: Response.json({ title: 'Plex sync already in progress', run: active }, { status: 409 }),
     });
     const response = await post('/plex', { entityType: 'movies' });
-    const html = await response.text();
-
-    assert.equal(response.status, 200);
-    assert.match(html, /Movies sync is already in progress/);
-    assert.match(html, /Running since <!-- rmx:h:[a-z0-9]+ --><time datetime="2026-03-02T10:00:00Z"/);
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('Location'), '/plex?notice=running');
     assert.ok(calls.includes('POST /plex/movies/sync'));
+    assert.equal(calls.includes('GET /plex/status'), false);
+
+    const html = await (await get('/plex?notice=running')).text();
+    assert.match(html, /A sync was already in progress/);
+    assert.match(html, /Running since <!-- rmx:h:[a-z0-9]+ --><time datetime="2026-03-02T10:00:00Z"/);
   });
 
-  it('should reject an entity type that is not listed without starting a sync', async (t) => {
+  it('should reject an entity type that cannot be synced without calling the API', async (t) => {
     const calls = stubApi(t, { plex: enabled });
     const response = await post('/plex', { entityType: 'music' });
     assert.equal(response.status, 400);
     assert.equal(calls.includes('POST /plex/music/sync'), false);
+    assert.equal(calls.includes('GET /plex/status'), false);
   });
 
   it('should render the failure page when Plex cannot be reached', async (t) => {
@@ -222,13 +229,23 @@ describe('plex sync now', () => {
 });
 
 describe('plex status route', () => {
-  it('should forward the per-type status uncached for the page script', async (t) => {
-    stubApi(t, { plex: enabled });
+  it('should forward the enabled types status uncached for the page script', async (t) => {
+    stubApi(t, { plex: enabled, statuses: [[status(), status({ entityType: 'music', enabled: false })]] });
     const response = await get('/plex/status');
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
     const body = (await response.json()) as PlexEntityStatus[];
+    assert.deepEqual(
+      body.map((entry) => entry.entityType),
+      ['movies']
+    );
     assert.equal(body[0].lastRun?.state, 'succeeded');
+  });
+
+  it('should look the gate up once per poll', async (t) => {
+    const calls = stubApi(t, { plex: enabled });
+    await get('/plex/status');
+    assert.equal(calls.filter((call) => call.endsWith('/config/integrations')).length, 1);
   });
 
   it('should answer 502 when the API fails', async (t) => {

@@ -1,7 +1,7 @@
 import { baseUrl } from '../constants.server.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
-import type { PlexEntityStatus, PlexScope, PlexSearchResult, PlexSyncRun } from '../models.ts';
+import type { PlexEntityStatus, PlexScope, PlexSearchResult } from '../models.ts';
 import { getIntegrations } from './integrations-data.ts';
 
 /**
@@ -148,14 +148,11 @@ export async function getPlexStatuses(): Promise<PlexEntityStatus[]> {
   return Array.isArray(statuses) ? statuses : [];
 }
 
-/** What starting a sync answers: it started, or another run is already active and is returned instead. */
-export type PlexSyncStart = { started: boolean; run: PlexSyncRun | null };
-
 /**
- * Starts a sync for one entity type (POST; only ever called from a server action). A 409 is not a failure: it
- * means a run is already queued or running, and the current run is returned with `started: false`.
+ * Starts a sync for one entity type (POST; only ever called from a server action). Returns true when it started and
+ * false on a 409, which is not a failure: a run is already queued or running.
  */
-export async function startPlexSync(entityType: string): Promise<PlexSyncStart> {
+export async function startPlexSync(entityType: string): Promise<boolean> {
   let response: Response;
   try {
     response = await apiFetch(`${baseUrl}/plex/${encodeURIComponent(entityType)}/sync`, { method: 'POST' });
@@ -163,15 +160,7 @@ export async function startPlexSync(entityType: string): Promise<PlexSyncStart> 
     serverLogger.error('Could not reach the API to start a Plex sync', error, { operation: 'startPlexSync' });
     throw new PlexActionError('other', 0);
   }
-  if (response.status === 409) {
-    let run: PlexSyncRun | null = null;
-    try {
-      run = ((await response.json()) as { run?: PlexSyncRun }).run ?? null;
-    } catch {
-      // The current run is also on the status; the page reads it from there.
-    }
-    return { started: false, run };
-  }
+  if (response.status === 409) return false;
   if (!response.ok) await failFrom(response, 'startPlexSync', entityType);
-  return { started: true, run: (await response.json()) as PlexSyncRun };
+  return true;
 }

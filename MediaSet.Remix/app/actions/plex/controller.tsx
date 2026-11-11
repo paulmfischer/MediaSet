@@ -1,17 +1,21 @@
 import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
-import { getPlexStatuses, isPlexEnabledForMovies, startPlexSync } from '../../api/plex-data.ts';
+import { getPlexStatuses, startPlexSync } from '../../api/plex-data.ts';
 import type { PlexEntityStatus } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { entityTypeLabel } from '../../utils/plex-sync.ts';
+import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexSyncPage } from '../../ui/plex/sync-page.tsx';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
 
 const TITLE = 'Plex sync | MediaSet';
+// The entity types a sync can be started for from this page (the gate is for movies).
+const SYNCABLE = ['movies'];
+const RUNNING_NOTICE = 'notice=running';
+const RUNNING_MESSAGE = 'A sync was already in progress, so no new one was started. This is the current run.';
 const back = { backHref: routes.home.href(), backLabel: 'Back to Home' };
 
 function renderPage(context: AppContext, statuses: PlexEntityStatus[], notice?: string) {
@@ -33,39 +37,33 @@ function failure(context: AppContext, error: unknown) {
 }
 
 async function index(context: AppContext) {
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   try {
     return renderPage(
       context,
-      (await getPlexStatuses()).filter((status) => status.enabled)
+      (await getPlexStatuses()).filter((status) => status.enabled),
+      context.url.searchParams.get('notice') === 'running' ? RUNNING_MESSAGE : undefined
     );
   } catch (error) {
     return failure(context, error);
   }
 }
 
-// Starts a sync, then returns to the page (303). A request that finds a run already active is not an error: the page
-// is rendered again showing that run.
+// Starts a sync, then returns to the page (303). A request that finds a run already active is not an error: it goes
+// back to the page with a notice, which shows that run, so a refresh does not submit the form again.
 async function action(context: AppContext) {
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   const entityType = context.formData?.get('entityType');
+  if (typeof entityType !== 'string' || !SYNCABLE.includes(entityType)) {
+    return renderError(context, 400, undefined, {
+      heading: 'Unknown entity type',
+      message: 'Pick one of the listed Plex entity types.',
+      ...back,
+    });
+  }
   try {
-    const statuses = (await getPlexStatuses()).filter((status) => status.enabled);
-    const target = statuses.find((status) => typeof entityType === 'string' && status.entityType === entityType);
-    if (!target)
-      return renderError(context, 400, undefined, {
-        heading: 'Unknown entity type',
-        message: 'Pick one of the listed Plex entity types.',
-        ...back,
-      });
-    const result = await startPlexSync(target.entityType);
-    if (result.started) return redirect(routes.plex.index.href(), 303);
-    // Read the status again so the page shows the run that is active now.
-    return renderPage(
-      context,
-      (await getPlexStatuses()).filter((status) => status.enabled),
-      `A ${entityTypeLabel(target.entityType)} sync is already in progress, so no new one was started.`
-    );
+    const started = await startPlexSync(entityType);
+    return redirect(started ? routes.plex.index.href() : `${routes.plex.index.href()}?${RUNNING_NOTICE}`, 303);
   } catch (error) {
     return failure(context, error);
   }

@@ -78,25 +78,35 @@ function EntityStatus(handle: Handle<{ status: PlexEntityStatus; action: string 
     return (
       <section
         class="flex flex-col gap-3 rounded-lg border border-slate-600 p-4"
-        aria-label={`${label} sync`}
+        aria-labelledby={`plex-${status.entityType}-heading`}
         data-testid="plex-entity-status"
         data-entity-type={status.entityType}
       >
-        <h2 class="text-lg">{label}</h2>
-        <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
-          <span>Last run</span>
-          <LastRun run={status.lastRun} />
-          <span>Next run</span>
-          <div data-testid="plex-next-run">
+        <h2 id={`plex-${status.entityType}-heading`} class="text-lg">
+          {label}
+        </h2>
+        <dl class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
+          <dt>Last run</dt>
+          <dd>
+            <LastRun run={status.lastRun} />
+          </dd>
+          <dt>Next run</dt>
+          <dd data-testid="plex-next-run">
             {status.nextRun ? <LocalDateTime value={status.nextRun} /> : 'Not scheduled'}
-          </div>
-        </div>
+          </dd>
+        </dl>
         {active ? (
           <div class="flex flex-wrap items-center gap-3">
-            <button type="button" disabled data-testid="plex-sync-now">
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              aria-describedby={`plex-${status.entityType}-running`}
+              data-testid="plex-sync-now"
+            >
               Sync now
             </button>
-            <span role="status" data-testid="plex-running-since">
+            <span id={`plex-${status.entityType}-running`} data-testid="plex-running-since">
               {active.state === 'queued' ? 'Queued since ' : 'Running since '}
               <LocalDateTime value={active.startedAt} />
             </span>
@@ -123,7 +133,7 @@ export function PlexSyncPage(handle: Handle<SyncPageProps>) {
       <div class="flex flex-col gap-4 px-2 max-w-3xl mx-auto">
         <h1 class="text-2xl">Plex sync</h1>
         {notice ? (
-          <p role="status" class="text-sm text-amber-400" data-testid="plex-notice">
+          <p class="text-sm text-amber-400" data-testid="plex-notice">
             {notice}
           </p>
         ) : null}

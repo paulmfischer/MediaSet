@@ -87,7 +87,7 @@ describe('Plex sync page (e2e)', () => {
     await page.goto('/plex');
     await page.waitForLoadState('networkidle');
 
-    const section = page.getByRole('region', { name: 'Movies sync' });
+    const section = page.getByRole('region', { name: 'Movies' });
     await section.getByText('Succeeded').waitFor();
     await section.getByText('Items scanned').waitFor();
 
