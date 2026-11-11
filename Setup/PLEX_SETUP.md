@@ -198,6 +198,11 @@ linked to Plex shows. Only movies are supported.
       need no confirmation.
     - If linking or unlinking fails you see a message saying why: Plex could not be reached, a sync is running, or the item
       is missing on Plex.
+    - **Movie list.** Each row of a linked movie shows the same Plex icon next to its title, in the mobile list and the
+      table. A filter beside the search box limits the list to **On Plex**, **Not on Plex**, **Unwatched on Plex** (on Plex
+      and not watched) or **Broken link**; choosing a value applies it at once, or with the Search button without JavaScript.
+      The filter is kept in the address (`?plex=unwatched`) together with the search, sort and page, so a filtered list can
+      be bookmarked. Unlinked movies show no icon. With Plex off the filter and icons are absent.
     - **Plex sync page.** Open the gear (Tools) menu and choose **Plex** to reach `/plex`. For each enabled entity type it
       shows the last run (its state, when it ended and the counts it recorded, or the failure message), and the next
       scheduled run. **Sync now** starts a run. While a run is queued or running the button is disabled and reads

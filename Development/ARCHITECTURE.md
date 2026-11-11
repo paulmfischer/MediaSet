@@ -117,7 +117,14 @@ fallback; unmatched movies stay unmatched. The Plex data lives in the separate `
 movie id, plus an index on the Plex item id, created at startup), so editing a movie never touches it. For an item with several
 versions the best one is stored: highest resolution, then HDR, then larger file. `GET /plex/{entityType}/items/{movieId}` returns
 the document (404 when unlinked) and is the only response with the server file path.
-`GET /movies/{id}` (the single lookup only, not lists, search, POST or PUT) adds the same data as a `plex` property without
+`GET /movies/pagedsearch` attaches a small `plex` summary (`onPlex`, `resolution`, `watched`, `broken`; never a file path) to each
+linked movie of the page, read for the page's ids in one query through `IPlexLookup.GetMovieSummariesAsync` (a failed read is
+logged and skipped), and accepts an optional `plex` filter: `onPlex` (`OnPlex` true), `notOnPlex` (everything not `onPlex`),
+`unwatched` (on Plex and not watched) or `broken` (a manual link whose item is gone), case-insensitive. An unknown value is a
+400. The filter is resolved to the ids in the `PlexItems` collection and passed to the movie service as an `IdFilter`, so
+paging, the total and sorting stay correct. Both are absent (and the filter ignored) when Plex is not enabled for movies, and
+other entity types are unaffected.
+`GET /movies/{id}` (the single lookup) adds the same data as a `plex` property without
 any file path (item or episodes) for a linked movie, through `IPlexLookup` (registered only when Plex is enabled; otherwise,
 or when movies are not enabled, the response is unchanged, and a failed read is logged and skipped). `Movie.Plex` is never
 stored (`[BsonIgnore]`) and is cleared on POST and PUT input. Deleting a movie deletes its Plex document
@@ -141,6 +148,12 @@ The web UI drives these calls from server actions only (`app/api/plex-data.ts`):
 flow (GET search, then for a TV entry the scope step, POST links and redirects 303) that a dialog enhances by loading the
 same route with `fragment=1`; `/movies/:id/plex/unlink` is a confirmation page matching the delete pattern. Failures render
 the entity error page with a message per cause (`app/actions/plex/failures.ts`).
+
+The movie list (`app/actions/entity/controller.tsx`) reads the request-scoped gate (`isPlexEnabledForRequest`) and, when it is true,
+passes the validated `plex` query value to the paged search, shows the Plex icon on each row (mobile and table) from the
+`plex` summary and renders the filter select (`PlexFilterSelect`, a named select in the search form that navigates on change
+with JavaScript). `plex` is part of `listHref` and `parseListParams`, so the search, sort, paging and clear-search links keep it.
+When the gate is false the param is dropped and no icon or control renders.
 
 The sync page is `/plex` (`app/actions/plex/controller.tsx`, `app/ui/plex/sync-page.tsx`), shown only when the gate
 (`isPlexEnabledForMovies`) is true, otherwise 404. It lists each enabled entity type from `GET /plex/status` (last run,

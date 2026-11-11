@@ -43,12 +43,25 @@ internal static class EntityApi
             }
         });
 
-        group.MapGet("/pagedsearch", async Task<Results<Ok<PagedResult<TEntity>>, BadRequest<string>>> (IEntityService<TEntity> entityService, string searchText, string orderBy, int page = 1, int pageSize = 75, CancellationToken cancellationToken = default) =>
+        group.MapGet("/pagedsearch", async Task<Results<Ok<PagedResult<TEntity>>, BadRequest<string>>> (
+            IEntityService<TEntity> entityService,
+            [Microsoft.AspNetCore.Mvc.FromServices] IPlexLookup? plexLookup,
+            string searchText,
+            string orderBy,
+            string? plex = null,
+            int page = 1,
+            int pageSize = 75,
+            CancellationToken cancellationToken = default) =>
         {
             try
             {
-                logger.LogInformation("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, page, pageSize);
-                var result = await entityService.PagedSearchAsync(searchText, orderBy, page, pageSize, cancellationToken);
+                logger.LogInformation("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, plex {plex}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, plex, page, pageSize);
+                // Movies only; absent (and ignored) when Plex is not configured for movies
+                var idFilter = typeof(TEntity) == typeof(Movie) && plexLookup is not null && !string.IsNullOrWhiteSpace(plex)
+                    ? await plexLookup.GetMovieFilterAsync(plex, cancellationToken)
+                    : null;
+                var result = await entityService.PagedSearchAsync(searchText, orderBy, page, pageSize, idFilter, cancellationToken);
+                await AttachPlexSummariesAsync(result.Items, plexLookup, cancellationToken);
                 logger.LogInformation("Paged search returned {count}/{total} {entityType}", result.Items.Count(), result.TotalCount, entityType);
                 return TypedResults.Ok(result);
             }
@@ -714,6 +727,27 @@ internal static class EntityApi
         if (entity is Movie movie)
         {
             movie.Plex = null;
+        }
+    }
+
+    // Paged search: adds the small Plex summary (no file paths) to each linked movie of the page, joined in one query.
+    private static async Task AttachPlexSummariesAsync<TEntity>(IEnumerable<TEntity> entities, IPlexLookup? plexLookup, CancellationToken cancellationToken)
+    {
+        if (plexLookup is null)
+        {
+            return;
+        }
+
+        var movies = entities.OfType<Movie>().Where(m => m.Id is not null).ToList();
+        if (movies.Count == 0)
+        {
+            return;
+        }
+
+        var summaries = await plexLookup.GetMovieSummariesAsync([.. movies.Select(m => m.Id!)], cancellationToken);
+        foreach (var movie in movies)
+        {
+            movie.Plex = summaries.GetValueOrDefault(movie.Id!);
         }
     }
 

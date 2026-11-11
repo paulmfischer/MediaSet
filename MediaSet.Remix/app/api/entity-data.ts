@@ -1,6 +1,6 @@
 import { baseUrl } from '../constants.server.ts';
 import { singular } from '../utils/helpers.ts';
-import { type BaseEntity, type Entity } from '../models.ts';
+import { type BaseEntity, type Entity, type PlexFilter } from '../models.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
 
@@ -58,7 +58,8 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
   searchText: string | null,
   orderBy: string = '',
   page: number = 1,
-  pageSize: number = 75
+  pageSize: number = 75,
+  plex: PlexFilter | null = null
 ): Promise<PagedResult<TEntity>> {
   serverLogger.info(
     `Paged searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}, page: ${page}`,
@@ -69,12 +70,14 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
       orderBy,
       page,
       pageSize,
+      plex,
     }
   );
   try {
     const searchParams = new URLSearchParams();
     searchParams.set('searchText', searchText ?? '');
     searchParams.set('orderBy', orderBy);
+    if (plex) searchParams.set('plex', plex);
     searchParams.set('page', String(page));
     searchParams.set('pageSize', String(pageSize));
     const response = await apiFetch(`${baseUrl}/${entityType}/pagedsearch?${searchParams.toString()}`);

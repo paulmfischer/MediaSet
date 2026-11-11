@@ -2,8 +2,11 @@ import type { Handle } from 'remix/component';
 
 import { DEFAULT_ORDER_BY, listHref } from '../../actions/entity/list-params.ts';
 import type { PagedResult } from '../../api/entity-data.ts';
-import type { BaseEntity } from '../../models.ts';
+import { PLEX_FILTERS, type BaseEntity, type PlexFilter, type PlexListSummary } from '../../models.ts';
+import { PLEX_FILTER_LABELS } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
+import { PlexIcon } from '../plex/plex-icon.tsx';
+import { PlexFilterSelect } from '../plex/public/plex-filter.tsx';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, Trash2, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
 import { PageSelect } from './public/page-select.tsx';
@@ -16,6 +19,10 @@ interface ListPageProps<T extends BaseEntity> {
   result: PagedResult<T>;
   searchText: string | null;
   orderBy: string;
+  /** The Plex gate: when false, no Plex icon or filter renders. Only ever true for movies. */
+  plexEnabled?: boolean;
+  /** The active Plex filter (movies only). */
+  plex?: PlexFilter | null;
   /** Browser-reachable API origin, used for cover images. */
   apiUrl: string;
 }
@@ -24,10 +31,24 @@ const cell = 'pl-2 p-1 border-r border-slate-800';
 
 export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>) {
   return () => {
-    const { config, basePath, result, searchText, orderBy, apiUrl } = handle.props;
+    const { config, basePath, result, searchText, orderBy, apiUrl, plexEnabled = false, plex = null } = handle.props;
     const { items, page, totalPages, totalCount } = result;
     const name = config.entity;
     const [sortField, sortDirection] = orderBy.split(':');
+
+    // The linked movie's Plex summary; undefined when unlinked or the gate is off, so nothing renders.
+    const plexOf = (item: T) => (plexEnabled ? (item as { plex?: PlexListSummary }).plex : undefined);
+    const plexIcon = (item: T) => {
+      const summary = plexOf(item);
+      return summary ? <PlexIcon plex={summary} size={20} /> : null;
+    };
+    const plexFilterOptions = [
+      { value: '', label: 'All movies' },
+      ...PLEX_FILTERS.map((filter) => ({ value: filter as string, label: PLEX_FILTER_LABELS[filter] })),
+    ].map((option) => ({
+      ...option,
+      href: listHref(basePath, { searchText, orderBy, plex: option.value ? (option.value as PlexFilter) : null }),
+    }));
 
     const cover = (item: T) =>
       item.coverImage ? (
@@ -49,7 +70,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
           aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
         >
           <a
-            href={listHref(basePath, { searchText, orderBy: `${field}:${next}` })}
+            href={listHref(basePath, { searchText, orderBy: `${field}:${next}`, plex })}
             class="flex items-center gap-1"
             data-rmx-reset-scroll="manual"
           >
@@ -89,7 +110,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
       );
       const enabled = target >= 1 && target <= totalPages;
       return enabled ? (
-        <a href={listHref(basePath, { searchText, orderBy, page: target })} class="flex items-center gap-1">
+        <a href={listHref(basePath, { searchText, orderBy, page: target, plex })} class="flex items-center gap-1">
           {content}
         </a>
       ) : (
@@ -112,10 +133,11 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
               role="search"
               method="get"
               action={basePath}
-              class="flex flex-1 sm:flex-none gap-2"
-              data-rmx-key={`${basePath}:${searchText ?? ''}`}
+              class="flex flex-1 flex-wrap sm:flex-nowrap sm:flex-none gap-2"
+              data-rmx-key={`${basePath}:${searchText ?? ''}:${plex ?? ''}`}
             >
               {orderBy !== DEFAULT_ORDER_BY ? <input type="hidden" name="orderBy" value={orderBy} /> : null}
+              {plexEnabled ? <PlexFilterSelect value={plex ?? ''} options={plexFilterOptions} /> : null}
               <div class="flex flex-1 gap-0 z-20">
                 <input
                   id="search"
@@ -128,7 +150,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                 />
                 {searchText ? (
                   <a
-                    href={basePath}
+                    href={listHref(basePath, { plex })}
                     class="text-icon rounded-r-md flex items-center"
                     aria-label="Clear search"
                     title="Clear search"
@@ -147,9 +169,11 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
         <div class="h-full mt-4">
           {totalCount === 0 ? (
             <div class="flex justify-center text-center">
-              {searchText ? (
+              {searchText || plex ? (
                 <p>
-                  No {name} match &quot;{searchText}&quot;.
+                  No {name} match
+                  {searchText ? <> &quot;{searchText}&quot;</> : null}
+                  {plex ? ' this Plex filter' : null}.
                 </p>
               ) : (
                 <p>
@@ -165,9 +189,12 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                   <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
                     {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
                     <div class="flex-1 min-w-0">
-                      <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
-                        {config.titleOf(item)}
-                      </a>
+                      <div class="flex items-center gap-2">
+                        <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
+                          {config.titleOf(item)}
+                        </a>
+                        {plexIcon(item)}
+                      </div>
                       <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
                     </div>
                     <div class="flex flex-row gap-3 shrink-0">
@@ -191,7 +218,10 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                     <tr key={item.id} class="border-b border-slate-700 dark:hover:bg-zinc-800">
                       <td class={`hidden md:table-cell w-16 ${cell}`}>{cover(item)}</td>
                       <td class={cell}>
-                        <a href={`${basePath}/${item.id}`}>{config.titleOf(item)}</a>
+                        <div class="flex items-center gap-2">
+                          <a href={`${basePath}/${item.id}`}>{config.titleOf(item)}</a>
+                          {plexIcon(item)}
+                        </div>
                       </td>
                       {config.columns.map((column) => (
                         <td class={`${column.class} ${cell}`}>
@@ -228,7 +258,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
               page={page}
               totalPages={totalPages}
               hrefs={Array.from({ length: totalPages }, (_, index) =>
-                listHref(basePath, { searchText, orderBy, page: index + 1 })
+                listHref(basePath, { searchText, orderBy, page: index + 1, plex })
               )}
             />
             {pageLink(page + 1, 'Next', ChevronRight, false)}

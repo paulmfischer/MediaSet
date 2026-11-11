@@ -68,7 +68,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         return await cursor.ToListAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<TEntity>> PagedSearchAsync(string searchText, string orderBy, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<TEntity>> PagedSearchAsync(string searchText, string orderBy, int page, int pageSize, IdFilter? idFilter = null, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("PagedSearch {EntityType}", new { EntityType = entityTypeName, searchText, orderBy, page, pageSize });
 
@@ -98,6 +98,15 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
 
         var searchPattern = Regex.Escape(searchText);
         var filter = Builders<TEntity>.Filter.Regex(entity => entity.Title, new BsonRegularExpression(searchPattern, "i"));
+        if (idFilter != null)
+        {
+            var ids = idFilter.Ids.ToList();
+            filter = Builders<TEntity>.Filter.And(
+                filter,
+                idFilter.Exclude
+                    ? Builders<TEntity>.Filter.Nin(entity => entity.Id, ids)
+                    : Builders<TEntity>.Filter.In(entity => entity.Id, ids));
+        }
         var sort = orderByAscending
             ? Builders<TEntity>.Sort.Ascending(orderByField)
             : Builders<TEntity>.Sort.Descending(orderByField);
