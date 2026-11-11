@@ -165,7 +165,7 @@ public class MetadataApiNewTests : IntegrationTestBase
             var response = await _client.GetAsync($"/metadata/{mediaType}/formats");
 
             // Assert
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), 
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                 $"Failed for media type: {mediaType}");
         }
     }
@@ -186,7 +186,7 @@ public class MetadataApiNewTests : IntegrationTestBase
             var response = await _client.GetAsync($"/metadata/{mediaType}/genres");
 
             // Assert
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), 
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                 $"Failed for media type: {mediaType}");
         }
     }

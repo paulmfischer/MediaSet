@@ -15,12 +15,12 @@ public class VersionService : IVersionService
     {
         var assembly = Assembly.GetExecutingAssembly();
         var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0-local";
-        
+
         // MinVer sets InformationalVersion in the format: version+commitSha
         var parts = informationalVersion.Split('+');
         _version = parts[0];
         _commitSha = parts.Length > 1 ? parts[1] : "unknown";
-        
+
         // Use the build time from the assembly (or current time as fallback)
         var buildTimeAttr = assembly.GetCustomAttribute<AssemblyMetadataAttribute>();
         _buildTime = buildTimeAttr?.Value ?? DateTime.UtcNow.ToString("o");

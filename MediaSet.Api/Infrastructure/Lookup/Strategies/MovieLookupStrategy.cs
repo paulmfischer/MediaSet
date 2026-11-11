@@ -95,7 +95,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             var collections = (await SearchCollectionAsync(title, cancellationToken)).ToList();
             // "Complete Collection" can also identify a TV series. Verify both catalogs,
             // but never downgrade a collection release to an individual film.
-            if (video.IsSeries) { collections.AddRange(await SearchTvAsync(video, cancellationToken)); }
+            if (video.IsSeries)
+            { collections.AddRange(await SearchTvAsync(video, cancellationToken)); }
             return collections;
         }
         var results = new List<MovieResponse>();
@@ -156,7 +157,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 
     private static bool CollectionMatches(TmdbCollectionResponse collection, string title)
     {
-        if (RetailVideoTitle.CollectionKey(collection.Name) != RetailVideoTitle.CollectionKey(title)) { return false; }
+        if (RetailVideoTitle.CollectionKey(collection.Name) != RetailVideoTitle.CollectionKey(title))
+        { return false; }
         var expectedCount = System.Text.RegularExpressions.Regex.IsMatch(title, @"\btrilogy\b",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase) ? 3
             : System.Text.RegularExpressions.Regex.IsMatch(title, @"\bquadrilogy\b",
@@ -172,12 +174,14 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         foreach (var match in shows?.Results.Where(r => SameTitle(r.Name, video.SeriesTitle)).Take(10) ?? [])
         {
             var series = await _tmdbClient.GetTvDetailsAsync(match.Id, cancellationToken);
-            if (series == null || !SameTitle(series.Name, video.SeriesTitle)) { continue; }
+            if (series == null || !SameTitle(series.Name, video.SeriesTitle))
+            { continue; }
             var seasonNumber = video.Special != null ? 0 : video.Season;
             var season = seasonNumber.HasValue
                 ? await _tmdbClient.GetSeasonDetailsAsync(series.Id, seasonNumber.Value, cancellationToken) : null;
             // A missing season is not evidence that this is the requested release.
-            if (seasonNumber.HasValue && season?.SeasonNumber != seasonNumber.Value) { continue; }
+            if (seasonNumber.HasValue && season?.SeasonNumber != seasonNumber.Value)
+            { continue; }
             if (video.Special != null)
             {
                 foreach (var episode in season?.Episodes?.Where(e => SameTitle(e.Name, video.Special)) ?? [])
@@ -185,7 +189,8 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                     results.Add(MapTvResponse(series, video.Title, season, episode));
                 }
             }
-            else { results.Add(MapTvResponse(series, video.Title, season, null)); }
+            else
+            { results.Add(MapTvResponse(series, video.Title, season, null)); }
         }
         return results;
     }
@@ -197,32 +202,40 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         string providerId, string? storedTitle, CancellationToken cancellationToken)
     {
         var parts = providerId.Split(':');
-        if (parts.Length is < 2 or > 4 || !int.TryParse(parts[1], out var seriesId)) { return []; }
+        if (parts.Length is < 2 or > 4 || !int.TryParse(parts[1], out var seriesId))
+        { return []; }
         var series = await _tmdbClient.GetTvDetailsAsync(seriesId, cancellationToken);
-        if (series == null) { return []; }
+        if (series == null)
+        { return []; }
         TmdbSeasonResponse? season = null;
         TmdbEpisode? episode = null;
         if (parts.Length >= 3)
         {
-            if (!int.TryParse(parts[2], out var number)) { return []; }
+            if (!int.TryParse(parts[2], out var number))
+            { return []; }
             season = await _tmdbClient.GetSeasonDetailsAsync(seriesId, number, cancellationToken);
-            if (season?.SeasonNumber != number) { return []; }
+            if (season?.SeasonNumber != number)
+            { return []; }
         }
         if (parts.Length == 4)
         {
-            if (!int.TryParse(parts[3], out var number)) { return []; }
+            if (!int.TryParse(parts[3], out var number))
+            { return []; }
             episode = season?.Episodes?.SingleOrDefault(e => e.EpisodeNumber == number);
-            if (episode == null) { return []; }
+            if (episode == null)
+            { return []; }
         }
         var title = episode != null ? $"{series.Name}: {episode.Name}"
             : season != null ? $"{series.Name}: Season {season.SeasonNumber}" : series.Name;
         if (!string.IsNullOrWhiteSpace(storedTitle))
         {
             var video = VideoTitle.Parse(storedTitle);
-            if (season == null && SameTitle(storedTitle, series.Name)) { title = storedTitle; }
+            if (season == null && SameTitle(storedTitle, series.Name))
+            { title = storedTitle; }
             else if (!SameTitle(video.SeriesTitle, series.Name)
                 || (episode != null ? !SameTitle(video.Special ?? string.Empty, episode.Name)
-                    : video.Season != season?.SeasonNumber)) { return []; }
+                    : video.Season != season?.SeasonNumber))
+            { return []; }
             title = storedTitle;
         }
         return [MapTvResponse(series, title, season, episode)];
@@ -293,7 +306,7 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         var genres = tmdbMovie.Genres.Select(g => g.Name).ToList();
         var studios = tmdbMovie.ProductionCompanies.Select(c => c.Name).ToList();
         var rating = tmdbMovie.VoteAverage > 0 ? $"{tmdbMovie.VoteAverage:F1}/10" : string.Empty;
-        var imageUrl = !string.IsNullOrEmpty(tmdbMovie.PosterPath) 
+        var imageUrl = !string.IsNullOrEmpty(tmdbMovie.PosterPath)
             ? $"https://image.tmdb.org/t/p/w500{tmdbMovie.PosterPath}"
             : null;
 

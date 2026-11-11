@@ -136,13 +136,13 @@ public class StatsService : IStatsService
         var booksWithPages = books.Where(b => b.Pages.HasValue).ToList();
         var pageCountBuckets = new Dictionary<string, int>
         {
-            ["0-100"]    = booksWithPages.Count(b => b.Pages <= 100),
-            ["101-200"]  = booksWithPages.Count(b => b.Pages > 100 && b.Pages <= 200),
-            ["201-300"]  = booksWithPages.Count(b => b.Pages > 200 && b.Pages <= 300),
-            ["301-500"]  = booksWithPages.Count(b => b.Pages > 300 && b.Pages <= 500),
-            ["501-750"]  = booksWithPages.Count(b => b.Pages > 500 && b.Pages <= 750),
+            ["0-100"] = booksWithPages.Count(b => b.Pages <= 100),
+            ["101-200"] = booksWithPages.Count(b => b.Pages > 100 && b.Pages <= 200),
+            ["201-300"] = booksWithPages.Count(b => b.Pages > 200 && b.Pages <= 300),
+            ["301-500"] = booksWithPages.Count(b => b.Pages > 300 && b.Pages <= 500),
+            ["501-750"] = booksWithPages.Count(b => b.Pages > 500 && b.Pages <= 750),
             ["751-1000"] = booksWithPages.Count(b => b.Pages > 750 && b.Pages <= 1000),
-            ["1000+"]    = booksWithPages.Count(b => b.Pages > 1000),
+            ["1000+"] = booksWithPages.Count(b => b.Pages > 1000),
         };
         var pageCountBucketsFiltered = pageCountBuckets
             .Where(kv => kv.Value > 0)

@@ -112,7 +112,7 @@ public class SsrfGuardTests
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
-        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {
@@ -151,7 +151,7 @@ public class SsrfGuardTests
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
-        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {

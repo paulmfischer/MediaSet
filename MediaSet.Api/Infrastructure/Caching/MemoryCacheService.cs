@@ -48,7 +48,7 @@ public class MemoryCacheService : ICacheService
         }
 
         var cacheExpiration = expiration ?? TimeSpan.FromMinutes(cacheSettings.DefaultCacheDurationMinutes);
-        
+
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(cacheExpiration)
             .RegisterPostEvictionCallback((evictedKey, evictedValue, reason, state) =>
@@ -63,9 +63,9 @@ public class MemoryCacheService : ICacheService
 
         memoryCache.Set(key, value, cacheEntryOptions);
         cacheKeys.TryAdd(key, 0);
-        
+
         logger.LogDebug("Cached value for key: {key} with expiration: {expiration}", key, cacheExpiration);
-        
+
         return Task.CompletedTask;
     }
 
@@ -92,7 +92,7 @@ public class MemoryCacheService : ICacheService
         }
 
         logger.LogInformation("Removed {count} cache entries matching pattern: {pattern}", keysToRemove.Count, pattern);
-        
+
         return Task.CompletedTask;
     }
 }

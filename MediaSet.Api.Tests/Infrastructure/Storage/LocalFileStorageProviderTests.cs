@@ -22,7 +22,7 @@ public class LocalFileStorageProviderTests
     {
         _loggerMock = new Mock<ILogger<LocalFileStorageProvider>>();
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"mediaset-test-{Guid.NewGuid()}");
-        
+
         if (!Directory.Exists(_testStoragePath))
         {
             Directory.CreateDirectory(_testStoragePath);
@@ -85,7 +85,7 @@ public class LocalFileStorageProviderTests
         var expectedData = Encoding.UTF8.GetBytes("test image data");
         var relativePath = "books/123-abc.jpg";
         var fullPath = Path.Combine(_testStoragePath!, relativePath);
-        
+
         // Create the file
         var directory = Path.GetDirectoryName(fullPath);
         if (directory != null)
@@ -134,7 +134,7 @@ public class LocalFileStorageProviderTests
         var imageData = Encoding.UTF8.GetBytes("test image data");
         var relativePath = "books/123-abc.jpg";
         var fullPath = Path.Combine(_testStoragePath!, relativePath);
-        
+
         // Create the file
         var directory = Path.GetDirectoryName(fullPath);
         if (directory != null)
@@ -174,7 +174,7 @@ public class LocalFileStorageProviderTests
         var imageData = Encoding.UTF8.GetBytes("test");
         var relativePath = "books/123-abc.jpg";
         var fullPath = Path.Combine(_testStoragePath!, relativePath);
-        
+
         var directory = Path.GetDirectoryName(fullPath);
         if (directory != null)
         {

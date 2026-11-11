@@ -33,7 +33,7 @@ public class ImageProviderFailureTests
     public async Task LookupAndSaveImageAsync_ProviderHttpFailure_IsRetryable(HttpStatusCode status, ImageLookupOutcome outcome)
     {
         using var http = new HttpClient(new Handler((_, _) => Task.FromResult(new HttpResponseMessage(status))))
-            { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
+        { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var result = await LookupAsync(http);
         Assert.That(result.Success, Is.False);
         Assert.That(result.PermanentFailure, Is.False);
@@ -64,7 +64,8 @@ public class ImageProviderFailureTests
                         """)
                 },
                 _ => new HttpResponseMessage(HttpStatusCode.InternalServerError)
-            }))) { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
+            })))
+        { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var client = new TmdbClient(http, Options.Create(new TmdbConfiguration()), NullLogger<TmdbClient>.Instance);
         using var services = new ServiceCollection().AddSingleton<ILookupStrategy<MovieResponse>>(
             new MovieLookupStrategy(Mock.Of<IUpcItemDbClient>(), client,
@@ -86,7 +87,7 @@ public class ImageProviderFailureTests
     public async Task LookupAndSaveImageAsync_ProviderTimeout_IsRetryable()
     {
         using var http = new HttpClient(new Handler((_, _) => throw new TaskCanceledException("timeout")))
-            { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
+        { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var result = await LookupAsync(http);
         Assert.That(result.Success, Is.False);
         Assert.That(result.PermanentFailure, Is.False);
@@ -123,10 +124,16 @@ public class ImageProviderFailureTests
                 response.Content = new StringContent("""{"code":"OK","items":[{"title":"Movie"}]}""");
             }
             return Task.FromResult(response);
-        })) { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
+        }))
+        { BaseAddress = new Uri($"https://{Guid.NewGuid():N}.test/") };
         var upc = new MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient(http,
-            Options.Create(new UpcItemDbConfiguration { MinDelayBetweenRequestsMs = 0,
-                MaxRequestsPerMinute = 10000, MaxRequestsPerDay = 10000, MaxRetryPauseSeconds = 5 }),
+            Options.Create(new UpcItemDbConfiguration
+            {
+                MinDelayBetweenRequestsMs = 0,
+                MaxRequestsPerMinute = 10000,
+                MaxRequestsPerDay = 10000,
+                MaxRetryPauseSeconds = 5
+            }),
             NullLogger<MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient>.Instance);
         var tmdb = new Mock<ITmdbClient>();
         tmdb.Setup(t => t.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

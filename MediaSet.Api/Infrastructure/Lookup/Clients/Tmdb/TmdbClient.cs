@@ -38,14 +38,14 @@ public class TmdbClient : ITmdbClient
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
-                _logger.LogWarning("TMDB search returned status code {StatusCode} for movie: {Title}", 
+                _logger.LogWarning("TMDB search returned status code {StatusCode} for movie: {Title}",
                     response.StatusCode, title);
                 return null;
             }
 
             var result = await response.Content.ReadFromJsonAsync<TmdbSearchResponse>(cancellationToken);
 
-            _logger.LogInformation("TMDB search found {Count} results for movie: {Title}", 
+            _logger.LogInformation("TMDB search found {Count} results for movie: {Title}",
                 result?.Results.Count ?? 0, title);
 
             return result;
@@ -130,7 +130,7 @@ public class TmdbClient : ITmdbClient
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
-                _logger.LogWarning("TMDB movie details returned status code {StatusCode} for ID: {MovieId}", 
+                _logger.LogWarning("TMDB movie details returned status code {StatusCode} for ID: {MovieId}",
                     response.StatusCode, movieId);
                 return null;
             }

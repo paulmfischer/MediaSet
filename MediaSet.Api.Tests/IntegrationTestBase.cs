@@ -15,7 +15,7 @@ namespace MediaSet.Api.Tests;
 public abstract class IntegrationTestBase
 {
     protected const string TestImageDirectory = "./test-images";
-    
+
     [OneTimeSetUp]
     public virtual void OneTimeSetUp()
     {
@@ -55,7 +55,7 @@ public abstract class IntegrationTestBase
     protected static WebApplicationFactory<Program> CreateWebApplicationFactory()
     {
         // Get the test project directory (where appsettings.Testing.json is located)
-        var testProjectDir = Path.GetDirectoryName(typeof(IntegrationTestBase).Assembly.Location) 
+        var testProjectDir = Path.GetDirectoryName(typeof(IntegrationTestBase).Assembly.Location)
             ?? throw new InvalidOperationException("Cannot determine test project directory");
 
         return new WebApplicationFactory<Program>()
@@ -64,7 +64,7 @@ public abstract class IntegrationTestBase
                 // Set the content root to the test project directory so it finds appsettings.Testing.json
                 builder.UseContentRoot(testProjectDir);
                 builder.UseEnvironment("Testing");
-                
+
                 // Suppress all logging output during tests
                 builder.ConfigureLogging(logging =>
                 {

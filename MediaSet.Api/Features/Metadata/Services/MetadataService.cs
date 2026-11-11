@@ -30,9 +30,9 @@ public class MetadataService : IMetadataService
     public async Task<IEnumerable<string>> GetMetadata(MediaTypes mediaType, string propertyName, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("GetMetadata {MediaType}", new { MediaType = mediaType, propertyName });
-        
+
         var cacheKey = $"metadata:{mediaType}:{propertyName}";
-        
+
         // Try to get from cache
         var cachedResult = await cacheService.GetAsync<List<string>>(cacheKey);
         if (cachedResult != null)
@@ -75,7 +75,7 @@ public class MetadataService : IMetadataService
         foreach (var entity in entities)
         {
             var value = property.GetValue(entity);
-            
+
             if (value is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
             {
                 results.Add(stringValue.Trim());
@@ -87,7 +87,7 @@ public class MetadataService : IMetadataService
         }
 
         var distinctResults = results.Distinct().Order().ToList();
-        
+
         // Cache the results
         await cacheService.SetAsync(cacheKey, distinctResults);
         logger.LogInformation("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);

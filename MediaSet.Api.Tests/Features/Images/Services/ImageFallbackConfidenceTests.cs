@@ -86,8 +86,13 @@ public class ImageFallbackConfidenceTests
             GameResult(434, "Red Dead Redemption", 2010, "PlayStation 3") with { Cover = null },
             GameResult(25076, "Red Dead Redemption 2", 2018, "PlayStation 4")]);
         using var services = setup.Services;
-        var result = await setup.Service.LookupAndSaveImageAsync(new Game { Id = "1", Title = "Red Dead Redemption 2",
-            Platform = "PS4", ReleaseDate = "2018" }, MediaTypes.Games, CancellationToken.None);
+        var result = await setup.Service.LookupAndSaveImageAsync(new Game
+        {
+            Id = "1",
+            Title = "Red Dead Redemption 2",
+            Platform = "PS4",
+            ReleaseDate = "2018"
+        }, MediaTypes.Games, CancellationToken.None);
         Assert.That(result.Success, Is.True);
         Assert.That(result.ConfirmedMatch!.ProviderId, Is.EqualTo("25076"));
     }
@@ -112,8 +117,12 @@ public class ImageFallbackConfidenceTests
         setup.Images.Setup(c => c.DownloadAndSaveImageAsync(It.Is<string>(s => s.Contains("22301.jpg")),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Rejected artwork"));
-        var result = await setup.Service.LookupAndSaveImageAsync(new Game { Id = "1", Title = first.Name,
-            Platform = "Nintendo DS" }, MediaTypes.Games, CancellationToken.None);
+        var result = await setup.Service.LookupAndSaveImageAsync(new Game
+        {
+            Id = "1",
+            Title = first.Name,
+            Platform = "Nintendo DS"
+        }, MediaTypes.Games, CancellationToken.None);
         Assert.That(result.Success, Is.True);
         Assert.That(result.ImageUrl, Does.Contain("alternate.jpg"));
     }
@@ -176,16 +185,27 @@ public class ImageFallbackConfidenceTests
         using var services = setup.Services;
         setup.Images.Setup(c => c.DownloadAndSaveImageAsync("https://old.test/cover.jpg", It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<CancellationToken>())).ThrowsAsync(new ArgumentException("Invalid artwork"));
-        var result = await setup.Service.LookupAndSaveImageAsync(new Game { Id = "1", Title = "Super Mario 64 DS",
-            Platform = "Nintendo DS", ImageUrl = "https://old.test/cover.jpg" }, MediaTypes.Games, CancellationToken.None);
+        var result = await setup.Service.LookupAndSaveImageAsync(new Game
+        {
+            Id = "1",
+            Title = "Super Mario 64 DS",
+            Platform = "Nintendo DS",
+            ImageUrl = "https://old.test/cover.jpg"
+        }, MediaTypes.Games, CancellationToken.None);
         Assert.That(result.Success, Is.True);
     }
 
     [Test]
     public void SearchContext_ContainsAvailableIdentityMetadata()
     {
-        var context = ImageCandidateMatcher.SearchContext(new Book { Title = "Title", Authors = ["Author"],
-            Publisher = "Publisher", PublicationDate = "2001", Subtitle = "Edition" });
+        var context = ImageCandidateMatcher.SearchContext(new Book
+        {
+            Title = "Title",
+            Authors = ["Author"],
+            Publisher = "Publisher",
+            PublicationDate = "2001",
+            Subtitle = "Edition"
+        });
         Assert.That(context.Keys, Is.EquivalentTo(new[] { "title", "author", "publisher", "publicationdate", "subtitle" }));
     }
 }

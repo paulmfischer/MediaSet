@@ -29,7 +29,7 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
         description: "Enforces namespace dependency rules to maintain clean architecture.");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        => ImmutableArray.Create(Rule);
+        => [Rule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -67,7 +67,9 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
         {
             var identityKey = $"build_metadata.NamespaceDependencyRule.Identity_{ruleIndex}";
             if (!globalOptions.TryGetValue(identityKey, out var identity))
+            {
                 break;
+            }
 
             var sourceKey = $"build_metadata.NamespaceDependencyRule.SourceNamespace_{ruleIndex}";
             var forbiddenKey = $"build_metadata.NamespaceDependencyRule.ForbiddenNamespace_{ruleIndex}";
@@ -114,31 +116,43 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
         // Get the containing namespace
         var containingNamespace = GetContainingNamespace(node);
         if (containingNamespace == null)
+        {
             return;
+        }
 
         // Check what's being referenced
         var symbolInfo = semanticModel.GetSymbolInfo(node);
         var symbol = symbolInfo.Symbol;
 
         if (symbol == null)
+        {
             return;
+        }
 
         var referencedNamespace = symbol.ContainingNamespace?.ToDisplayString();
         if (referencedNamespace == null)
+        {
             return;
+        }
 
         // Check against all rules
         foreach (var rule in rules)
         {
             if (!containingNamespace.StartsWith(rule.SourceNamespace))
+            {
                 continue;
+            }
 
             if (!referencedNamespace.StartsWith(rule.ForbiddenNamespace))
+            {
                 continue;
+            }
 
             // If AllowSelf is true, check if they're in the same feature slice
             if (rule.AllowSelf && AreInSameFeatureSlice(containingNamespace, referencedNamespace, rule.SelfDepth))
+            {
                 continue;
+            }
 
             var message = string.Format(rule.Message,
                 symbol.Name,
@@ -170,7 +184,9 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
     private static bool AreInSameFeatureSlice(string namespace1, string namespace2, int depth)
     {
         if (namespace1 == namespace2)
+        {
             return true;
+        }
 
         var parts1 = namespace1.Split('.');
         var parts2 = namespace2.Split('.');
@@ -181,7 +197,9 @@ public class NamespaceDependencyAnalyzer : DiagnosticAnalyzer
         for (int i = 0; i < compareDepth; i++)
         {
             if (parts1[i] != parts2[i])
+            {
                 return false;
+            }
         }
 
         return true;

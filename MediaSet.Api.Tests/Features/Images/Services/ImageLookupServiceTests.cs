@@ -165,9 +165,13 @@ public class ImageLookupServiceTests
     [TestCase(false)]
     public async Task LookupAndSaveImageAsync_SuccessOrManualImage_DoesNotDownload(bool manual)
     {
-        var book = new Book { Id = "1", ImageUrl = "https://example.com/image.jpg",
+        var book = new Book
+        {
+            Id = "1",
+            ImageUrl = "https://example.com/image.jpg",
             CoverImage = manual ? new Image() : null,
-            ImageLookup = manual ? null : new ImageLookup { LastOutcome = ImageLookupOutcome.Success } };
+            ImageLookup = manual ? null : new ImageLookup { LastOutcome = ImageLookupOutcome.Success }
+        };
         var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
         Assert.That(result.Success, Is.True);
         _imageServiceMock.Verify(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(),
@@ -480,8 +484,12 @@ public class ImageLookupServiceTests
         const string verifiedUrl = "https://covers.openlibrary.org/b/isbn/123-L.jpg?default=false";
         _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(verifiedUrl, "Books", "1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(_savedImage);
-        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune",
-            ImageUrl = "https://covers.openlibrary.org/b/isbn/123-L.jpg" }, MediaTypes.Books, CancellationToken.None);
+        var result = await _service.LookupAndSaveImageAsync(new Book
+        {
+            Id = "1",
+            Title = "Dune",
+            ImageUrl = "https://covers.openlibrary.org/b/isbn/123-L.jpg"
+        }, MediaTypes.Books, CancellationToken.None);
         Assert.That(result.Success, Is.True);
         Assert.That(result.ImageUrl, Is.EqualTo(verifiedUrl));
     }

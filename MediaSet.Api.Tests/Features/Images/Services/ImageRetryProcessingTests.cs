@@ -61,10 +61,18 @@ public class ImageRetryProcessingTests
     [Test]
     public async Task RequeueAsync_SelectivePages_ResumesAndRetainsAttemptHistory()
     {
-        var first = new Book { Id = "000000000000000000000001", Title = "First",
-            ImageLookup = new() { FailureReason = "old permanent", PermanentFailure = true } };
-        var second = new Book { Id = "000000000000000000000002", Title = "Second",
-            ImageLookup = new() { FailureReason = "network" } };
+        var first = new Book
+        {
+            Id = "000000000000000000000001",
+            Title = "First",
+            ImageLookup = new() { FailureReason = "old permanent", PermanentFailure = true }
+        };
+        var second = new Book
+        {
+            Id = "000000000000000000000002",
+            Title = "Second",
+            ImageLookup = new() { FailureReason = "network" }
+        };
         collection.SetupSequence(c => c.FindAsync(It.IsAny<FilterDefinition<Book>>(),
                 It.IsAny<FindOptions<Book, Book>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Cursor([first])).ReturnsAsync(Cursor([second])).ReturnsAsync(Cursor([]));

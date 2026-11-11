@@ -163,7 +163,7 @@ public class TvArtworkLookupTests
         Series("Community", 5);
         var result = await Lookup("Community: Season 5");
         var matches = ImageCandidateMatcher.Select(new Movie
-            { Title = "Community: Season 5", IsTvSeries = true, ReleaseDate = year },
+        { Title = "Community: Season 5", IsTvSeries = true, ReleaseDate = year },
             result.Select(m => new ImageCandidate(m.Title, m.ImageUrl, m.ReleaseDate, Provenance: m.Provenance)));
         Assert.That(matches.Count, Is.EqualTo(accepted ? 1 : 0));
     }
@@ -173,7 +173,7 @@ public class TvArtworkLookupTests
     {
         Series("Community", 6);
         var result = await strategy.LookupAsync(IdentifierType.Entity, new Dictionary<string, string>
-            { ["confirmedProviderId"] = "tv:1:6", ["title"] = "Community: The Complete Sixth Season" },
+        { ["confirmedProviderId"] = "tv:1:6", ["title"] = "Community: The Complete Sixth Season" },
             CancellationToken.None);
         Assert.That(result.Single().Provenance?.Title, Is.EqualTo("Community: The Complete Sixth Season"));
         Assert.That(result.Single().ImageUrl, Does.EndWith("/season.jpg"));

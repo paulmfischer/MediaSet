@@ -129,7 +129,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task<IEnumerable<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("GetList {EntityType}", new { EntityType = entityTypeName });
-        
+
         var findOptions = new FindOptions<TEntity>
         {
             Sort = Builders<TEntity>.Sort.Ascending(entity => entity.Title)
@@ -147,7 +147,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task CreateAsync(TEntity newEntity, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("Create {EntityType}", new { EntityType = entityTypeName, entityId = newEntity.Id });
-        
+
         await entityCollection.InsertOneAsync(newEntity, null, cancellationToken);
         await InvalidateCachesAsync();
     }
@@ -155,7 +155,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task<ReplaceOneResult> UpdateAsync(string id, TEntity updatedEntity, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("Update {EntityType}", new { EntityType = entityTypeName, id });
-        
+
         var result = await entityCollection.ReplaceOneAsync(x => x.Id == id, updatedEntity, cancellationToken: cancellationToken);
         await InvalidateCachesAsync();
         return result;
@@ -164,7 +164,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task<DeleteResult> RemoveAsync(string id, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("Remove {EntityType}", new { EntityType = entityTypeName, id });
-        
+
         var result = await entityCollection.DeleteOneAsync(x => x.Id == id, cancellationToken);
         await InvalidateCachesAsync();
         return result;
@@ -173,7 +173,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     public async Task BulkCreateAsync(IEnumerable<TEntity> newEntities, CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("BulkCreate {EntityType}", new { EntityType = entityTypeName, count = newEntities.Count() });
-        
+
         await entityCollection.InsertManyAsync(newEntities, null, cancellationToken);
         await InvalidateCachesAsync();
     }
@@ -186,14 +186,14 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
     {
         // Determine the media type for cache key pattern
         var mediaType = GetMediaType();
-        
+
         // Invalidate all metadata caches for this entity type
         var metadataPattern = $"metadata:{mediaType}:*";
         await cacheService.RemoveByPatternAsync(metadataPattern);
-        
+
         // Invalidate stats cache
         await cacheService.RemoveAsync("stats");
-        
+
         logger.LogInformation("Invalidated caches for entity type: {entityType}", entityTypeName);
     }
 
