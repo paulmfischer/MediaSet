@@ -100,3 +100,8 @@ export function seasonLabel(index: number): string {
 export function episodeCode(season: number, episode: number): string {
   return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
 }
+
+/** True for the Plex data of a TV entry: the API sends a scope only for those, never for a movie. */
+export function isTvEntry(plex: PlexItem): boolean {
+  return plex.scope != null;
+}

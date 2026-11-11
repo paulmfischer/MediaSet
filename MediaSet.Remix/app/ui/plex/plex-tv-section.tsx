@@ -18,15 +18,11 @@ interface PlexSeasonListProps {
 
 // The rollup facts of one season, shown when it is expanded.
 function rollupFacts(rollup: PlexRollup): string[] {
-  return [
-    describeRollupResolution(rollup),
-    describeLanguages(rollup.audioLanguages, rollup.audioLanguagesDiffer)
-      ? `Audio: ${describeLanguages(rollup.audioLanguages, rollup.audioLanguagesDiffer)}`
-      : '',
-    describeLanguages(rollup.subtitleLanguages, rollup.subtitleLanguagesDiffer)
-      ? `Subtitles: ${describeLanguages(rollup.subtitleLanguages, rollup.subtitleLanguagesDiffer)}`
-      : '',
-  ].filter(Boolean);
+  const audio = describeLanguages(rollup.audioLanguages, rollup.audioLanguagesDiffer);
+  const subtitles = describeLanguages(rollup.subtitleLanguages, rollup.subtitleLanguagesDiffer);
+  return [describeRollupResolution(rollup), audio && `Audio: ${audio}`, subtitles && `Subtitles: ${subtitles}`].filter(
+    Boolean
+  );
 }
 
 function EpisodeRow(handle: Handle<{ episode: PlexEpisode }>) {
@@ -48,11 +44,13 @@ function EpisodeRow(handle: Handle<{ episode: PlexEpisode }>) {
             Missing from Plex
           </span>
         )}
-        {episode.watched ? (
-          <span role="img" aria-label="Watched" title="Watched">
-            <Icon icon={Check} size={16} />
-          </span>
-        ) : null}
+        <span class="w-4 shrink-0">
+          {episode.watched ? (
+            <span role="img" aria-label="Watched" title="Watched">
+              <Icon icon={Check} size={16} />
+            </span>
+          ) : null}
+        </span>
         <span class="w-20 text-right">{quality}</span>
         <span class="w-20 text-right">{formatSize(episode.sizeBytes)}</span>
       </li>
@@ -96,13 +94,29 @@ function SeasonItem(handle: Handle<{ season: PlexSeason; episodes: PlexEpisode[]
   };
 }
 
+// Episodes whose season is not in the seasons list (not expected from the API) still show.
+function OtherEpisodes(handle: Handle<{ episodes: PlexEpisode[] }>) {
+  return () => (
+    <details class="rounded border border-slate-600 px-3 py-2" data-plex-season="other">
+      <summary class="cursor-pointer text-sm font-semibold">Other episodes</summary>
+      <ul class="mt-2 flex flex-col gap-1">
+        {handle.props.episodes.map((episode) => (
+          <EpisodeRow key={`${episode.seasonNumber}-${episode.episodeNumber}`} episode={episode} />
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 /** The native collapsible per-season list of a TV entry; works without JavaScript. */
 export function PlexSeasonList(handle: Handle<PlexSeasonListProps>) {
   return () => {
     const { plex } = handle.props;
     const seasons = plex.seasons ?? [];
     const episodes = plex.episodes ?? [];
-    if (seasons.length === 0) return null;
+    const known = new Set(seasons.map((season) => season.index));
+    const others = episodes.filter((episode) => !known.has(episode.seasonNumber));
+    if (seasons.length === 0 && others.length === 0) return null;
     return (
       <div class="flex flex-col gap-2" data-testid="plex-seasons">
         {seasons.map((season) => (
@@ -112,6 +126,7 @@ export function PlexSeasonList(handle: Handle<PlexSeasonListProps>) {
             episodes={episodes.filter((e) => e.seasonNumber === season.index)}
           />
         ))}
+        {others.length > 0 ? <OtherEpisodes episodes={others} /> : null}
       </div>
     );
   };

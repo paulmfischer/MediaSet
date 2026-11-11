@@ -328,8 +328,10 @@ describe('plex card for a TV entry', () => {
     stubApi(t, { plex: enabled, item: tv });
     const html = await (await get('/movies/m1')).text();
     assert.equal((html.match(/<details[^>]*data-plex-season/g) ?? []).length, 2);
-    assert.match(html, /<summary[^>]*>[\s\S]*Season 1[\s\S]*8\/8 episodes \| 8 watched/);
-    assert.match(html, /<summary[^>]*>[\s\S]*Season 2[\s\S]*6\/8 episodes \| 4 watched/);
+    const summary = (n: number) =>
+      html.match(new RegExp(`data-plex-season="${n}"[^>]*>\\s*<summary[^>]*>([\\s\\S]*?)</summary>`))?.[1] ?? '';
+    assert.match(summary(1), /Season 1.*8\/8 episodes \| 8 watched/);
+    assert.match(summary(2), /Season 2.*6\/8 episodes \| 4 watched/);
     assert.doesNotMatch(html, /<details[^>]* open/);
   });
 
@@ -365,6 +367,15 @@ describe('plex card for a TV entry', () => {
     assert.match(missing, /data-plex-episode-state="missing"/);
     assert.match(missing, /Missing from Plex/);
     assert.equal((html.match(/Missing from Plex/g) ?? []).length, 1);
+  });
+
+  it('should show episodes of a season missing from the seasons list under Other episodes', async (t) => {
+    stubApi(t, { plex: enabled, item: { ...tv, episodes: [...(tv.episodes ?? []), episode(5, 1)] } });
+    const html = await (await get('/movies/m1')).text();
+    const other = html.match(/data-plex-season="other"[\s\S]*?<\/details>/)?.[0] ?? '';
+    assert.match(other, /Other episodes/);
+    assert.match(other, /data-plex-episode="S05E01"/);
+    assert.doesNotMatch(other, /S01E01|S02E01/);
   });
 
   it('should not render season lists for a movie', async (t) => {

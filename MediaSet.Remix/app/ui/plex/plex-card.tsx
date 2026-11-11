@@ -10,6 +10,7 @@ import {
   formatDuration,
   formatPlexDate,
   formatSize,
+  isTvEntry,
   plexLinkState,
   relativeTime,
 } from '../../utils/plex.ts';
@@ -117,7 +118,7 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
           </div>
         ) : null}
         <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
-          {(plex.scope ? tvFacts(plex) : facts(plex)).map(([name, value]) => (
+          {(isTvEntry(plex) ? tvFacts(plex) : facts(plex)).map(([name, value]) => (
             <div key={name} class="contents">
               <span class="dark:text-slate-300">{name}</span>
               <div class="min-w-0 wrap-break-word" data-plex-field={name}>
@@ -126,7 +127,7 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
             </div>
           ))}
         </div>
-        {plex.scope ? <PlexSeasonList plex={plex} /> : null}
+        {isTvEntry(plex) ? <PlexSeasonList plex={plex} /> : null}
         <p class="text-xs dark:text-slate-300" data-testid="plex-synced">
           Synced {relativeTime(plex.lastSyncedAt, now)}
         </p>
