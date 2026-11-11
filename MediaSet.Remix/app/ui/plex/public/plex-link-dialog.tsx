@@ -7,6 +7,13 @@ interface PlexLinkDialogProps {
   href: string;
   /** "Link to Plex" or "Relink". */
   label: string;
+  /** The movie's detail page, where a finished link lands. */
+  detailHref: string;
+  /**
+   * The first link of an unlinked movie: the button POSTs to the link action, which links a lone title match at once
+   * and otherwise shows the results. Relink never sets it, so its search is always shown.
+   */
+  auto?: boolean;
 }
 
 const fragmentUrl = (url: URL): URL => {
@@ -29,16 +36,41 @@ export const PlexLinkDialog = clientEntry(
 
     // Loads one step of the flow into the dialog. A failure answer (Plex unreachable, ...) is an error page, so
     // the browser goes to the full page for it instead.
-    async function load(url: URL) {
+    async function load(url: URL, form?: HTMLFormElement) {
       if (!dialog || !content) return;
       controller?.abort();
       controller = new AbortController();
       loading = true;
       handle.update();
       try {
-        const response = await fetch(fragmentUrl(url), { signal: controller.signal, headers: { Accept: 'text/html' } });
+        const response = await fetch(fragmentUrl(url), {
+          method: form ? 'POST' : 'GET',
+          body: form ? new URLSearchParams({ intent: 'auto' }) : null,
+          signal: controller.signal,
+          headers: { Accept: 'text/html' },
+        });
+        // A search with exactly one match is linked by the server, which redirects to the detail page. The redirect is
+        // followed so its target can be told apart: only the detail page means "linked"; any other redirect is just
+        // navigated to.
+        if (response.redirected) {
+          const target = new URL(response.url);
+          if (target.pathname === new URL(handle.props.detailHref, window.location.href).pathname) {
+            await finishLinked();
+          } else {
+            window.location.assign(target);
+          }
+          return;
+        }
         if (!response.ok) {
-          window.location.assign(url);
+          // The server refused (Plex unreachable, a failed link, ...). Sending the form for real shows the standard
+          // error page; that repeats the search and, if it found one match, the link attempt. Nothing was linked by
+          // the refused attempt, so repeating it is safe.
+          if (form) {
+            form.setAttribute('data-rmx-document', '');
+            form.submit();
+          } else {
+            window.location.assign(url);
+          }
           return;
         }
         content.innerHTML = await response.text();
@@ -48,6 +80,17 @@ export const PlexLinkDialog = clientEntry(
       } finally {
         loading = false;
         handle.update();
+      }
+    }
+
+    // The link was applied (the server redirected): show the detail page's new state and close. If the reload
+    // fails the outcome is unknown, so go to the detail page rather than repeating anything.
+    async function finishLinked() {
+      try {
+        await handle.frames.top.reload();
+        dialog?.close();
+      } catch {
+        window.location.assign(handle.props.detailHref);
       }
     }
 
@@ -74,7 +117,7 @@ export const PlexLinkDialog = clientEntry(
       if (!dialog || !content) return;
       const url = new URL(form.action);
       url.searchParams.set('fragment', '1');
-      const detailHref = new URL(handle.props.href, window.location.href).pathname.replace(/\/plex\/link$/, '');
+      const { detailHref } = handle.props;
       loading = true;
       handle.update();
       let refused = false;
@@ -88,8 +131,7 @@ export const PlexLinkDialog = clientEntry(
           headers: { Accept: 'text/html' },
         });
         if (response.type === 'opaqueredirect') {
-          await handle.frames.top.reload();
-          dialog.close();
+          await finishLinked();
           return;
         }
         const html = await response.text();
@@ -144,19 +186,24 @@ export const PlexLinkDialog = clientEntry(
     });
 
     return () => {
-      const { href, label } = handle.props;
+      const { href, label, auto } = handle.props;
       return (
         <>
           <form
-            method="get"
+            method={auto ? 'post' : 'get'}
             action={href}
             mix={on('submit', (event) => {
               if (!dialog) return;
               event.preventDefault();
               dialog.showModal();
-              void load(new URL(href, window.location.href));
+              if (auto) {
+                void load(new URL(href, window.location.href), event.currentTarget as HTMLFormElement);
+              } else {
+                void load(new URL(href, window.location.href));
+              }
             })}
           >
+            {auto ? <input type="hidden" name="intent" value="auto" /> : null}
             <button type="submit" class="secondary">
               {label}
             </button>

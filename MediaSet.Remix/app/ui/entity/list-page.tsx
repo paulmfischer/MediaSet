@@ -187,15 +187,13 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                   <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
                     {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
                     <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2">
-                        <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
-                          {config.titleOf(item)}
-                        </a>
-                        {plexIcon(item)}
-                      </div>
+                      <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
+                        {config.titleOf(item)}
+                      </a>
                       <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
                     </div>
-                    <div class="flex flex-row gap-3 shrink-0">
+                    <div class="flex flex-row items-center gap-3 shrink-0">
+                      {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}
                       {editLink(item)}
                       {deleteLink(item)}
                     </div>
@@ -208,6 +206,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                     <th class={`hidden md:table-cell ${cell}`}>Cover</th>
                     {sortableHeader('Title', 'title')}
                     {config.columns.map((column) => sortableHeader(column.label, column.field, column.class))}
+                    {plexEnabled ? <th class={cell}>On Plex</th> : null}
                     <th class="w-1"></th>
                   </tr>
                 </thead>
@@ -216,10 +215,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                     <tr key={item.id} class="border-b border-slate-700 dark:hover:bg-zinc-800">
                       <td class={`hidden md:table-cell w-16 ${cell}`}>{cover(item)}</td>
                       <td class={cell}>
-                        <div class="flex items-center gap-2">
-                          <a href={`${basePath}/${item.id}`}>{config.titleOf(item)}</a>
-                          {plexIcon(item)}
-                        </div>
+                        <a href={`${basePath}/${item.id}`}>{config.titleOf(item)}</a>
                       </td>
                       {config.columns.map((column) => (
                         <td class={`${column.class} ${cell}`}>
@@ -232,6 +228,11 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                           )}
                         </td>
                       ))}
+                      {plexEnabled ? (
+                        <td class={cell} data-plex-cell>
+                          <div class="flex justify-center">{plexIcon(item)}</div>
+                        </td>
+                      ) : null}
                       <td class="flex flex-row gap-3 p-1 pt-2">
                         {editLink(item)}
                         {deleteLink(item)}

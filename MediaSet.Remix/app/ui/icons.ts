@@ -14,6 +14,7 @@ export { default as ChevronRight } from 'lucide/dist/esm/icons/chevron-right.mjs
 export { default as ChevronUp } from 'lucide/dist/esm/icons/chevron-up.mjs';
 export { default as Clapperboard } from 'lucide/dist/esm/icons/clapperboard.mjs';
 export { default as Disc } from 'lucide/dist/esm/icons/disc.mjs';
+export { default as ExternalLink } from 'lucide/dist/esm/icons/external-link.mjs';
 export { default as Files } from 'lucide/dist/esm/icons/files.mjs';
 export { default as FileText } from 'lucide/dist/esm/icons/file-text.mjs';
 export { default as Gamepad2 } from 'lucide/dist/esm/icons/gamepad-2.mjs';

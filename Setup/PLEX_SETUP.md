@@ -177,29 +177,34 @@ linked to Plex shows. Only movies are supported.
 
     The Plex parts of the UI appear only when Plex is enabled for movies. With Plex off, nothing Plex-related is shown.
 
-    - **Plex icon beside the title** of a movie linked to Plex. It looks normal when the movie is on Plex, muted (faded and
+    - **Plex icon** beside the title on the movie's page, and in the **On Plex** column of the movie list, for a movie linked to Plex. It looks normal when the movie is on Plex, muted (faded and
       gray) when it is no longer on Plex, carries a small amber dot when a hand-made link is broken, and a green check when
       you have watched it. Hover it for a short description. A movie that is not linked shows no icon.
     - **Plex card** below the movie's details: resolution (with an HDR tag), video codec, best audio track, subtitle
       languages, whether you watched it, when, how many times, the date added, duration, container, size, and when the data
       was last synced ("Synced 3 hours ago"). It never shows the file path.
-    - **Open in Plex** opens the item in Plex. **Refresh** re-reads only this movie from Plex and returns to the page; the
-      page never refreshes from Plex by itself. If a refresh fails you see a message saying why: Plex could not be
+    - **Open in Plex** (marked with an external-link icon) opens the item in Plex in a new tab. The gear beside the **Plex**
+      heading holds **Refresh**, **Relink** and **Unlink**. **Refresh** re-reads only this movie from Plex and returns to the
+      page; the page never refreshes from Plex by itself. If a refresh fails you see a message saying why: Plex could not be
       reached, a sync is running, or the item is missing on Plex.
     - **No longer on Plex:** the card is dimmed with a notice and keeps the last data it had.
-    - **Broken link:** a warning notice appears with Relink and Unlink buttons.
+    - **Broken link:** a warning notice appears; use the gear menu to Relink or Unlink.
     - **Not linked:** the movie shows only a **Link to Plex** button. There is no "Not on Plex" text.
     - **Link to Plex** (and **Relink**, also shown on a linked movie) opens a search prefilled with the movie's title. Each
-      result shows its title, year and library; pick one to link it, and you return to the movie page with the new data. For
-      a TV series entry you pick a show, then the seasons it covers (one season, a range or the complete series), prefilled
-      from the entry's title; the complete series is the default when the title does not say. With JavaScript this opens in a
+      result shows its title, year and library; pick one to link it, and you return to the movie page with the new data. The
+      first **Link to Plex** of an unlinked movie searches by its title and, when that finds exactly one match, links it at
+      once without showing the list (nothing is linked by just opening a page; use Relink if it is wrong). **Relink** always
+      shows the search and its results.
+      For a TV series entry you pick a show (skipped when there is one match), then the seasons it covers (one season, a
+      range or the complete series), prefilled from the entry's title; the complete series is the default when the title does
+      not say. With JavaScript this opens in a
       dialog; without it the same steps are pages of their own. Plex is only contacted when you open the search.
     - **Unlink** asks for confirmation first (it deletes the stored Plex data; the movie itself is kept). Refresh and link
       need no confirmation.
     - If linking or unlinking fails you see a message saying why: Plex could not be reached, a sync is running, or the item
       is missing on Plex.
-    - **Movie list.** Each row of a linked movie shows the same Plex icon next to its title, in the mobile list and the
-      table. A filter beside the search box limits the list to **On Plex**, **Not on Plex**, **Unwatched on Plex** (on Plex
+    - **Movie list.** Each row of a linked movie shows the same Plex icon, in an **On Plex** column of the table and beside
+      the row's buttons in the mobile list. A filter beside the search box limits the list to **On Plex**, **Not on Plex**, **Unwatched on Plex** (on Plex
       and not watched) or **Broken link**; choosing a value applies it at once, or with the Search button without JavaScript.
       The filter is kept in the address (`?plex=unwatched`) together with the search, sort and page, so a filtered list can
       be bookmarked. Unlinked movies show no icon. With Plex off the filter and icons are absent.

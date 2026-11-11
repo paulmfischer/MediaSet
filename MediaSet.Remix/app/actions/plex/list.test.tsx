@@ -84,6 +84,26 @@ describe('movie list with Plex', () => {
     assert.match(html, /data-plex-badge="warning"/);
   });
 
+  it('should show the icon in an On Plex column of the table, not beside the title', async (t) => {
+    stubApi(t, { plex: enabled });
+    const html = await (await get('/movies')).text();
+    const table = html.match(/<table[\s\S]*<\/table>/)?.[0] ?? '';
+
+    assert.match(table, /<th[^>]*>On Plex<\/th>/);
+    const cells = table.match(/<td[^>]*data-plex-cell[^>]*>/g) ?? [];
+    assert.equal(cells.length, movies.length);
+    assert.equal((table.match(/<td[^>]*data-plex-cell[^>]*>(?:(?!<\/td>)[\s\S])*data-plex-icon=/g) ?? []).length, 4);
+    // The title cell holds only the link
+    assert.doesNotMatch(table, /<a href="\/movies\/[^"]*">[^<]*<\/a><span[^>]*data-plex-icon/);
+  });
+
+  it('should have no On Plex column when Plex is off', async (t) => {
+    stubApi(t, { plex: { enabled: false, entityTypes: ['movies'] } });
+    const html = await (await get('/movies')).text();
+    assert.doesNotMatch(html, /On Plex/);
+    assert.doesNotMatch(html, /data-plex-cell/);
+  });
+
   it('should render no icon for an unlinked movie', async (t) => {
     stubApi(t, { plex: enabled, items: [movies[4]] });
     const html = await (await get('/movies')).text();
