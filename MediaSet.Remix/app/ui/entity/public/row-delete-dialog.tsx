@@ -76,7 +76,7 @@ export const RowDeleteDialog = clientEntry(import.meta.url, function RowDeleteDi
           </p>
         ) : null}
         <div class="flex gap-2 justify-end">
-          <button type="button" mix={on('click', () => dialog?.close())}>
+          <button type="button" class="secondary" mix={on('click', () => dialog?.close())}>
             Cancel
           </button>
           <button type="submit" disabled={pending} aria-disabled={pending ? 'true' : undefined}>
