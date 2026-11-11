@@ -48,6 +48,10 @@ jobs:
         if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
         run: dotnet build MediaSet.sln --no-restore
 
+      - name: Check API formatting
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        run: dotnet format MediaSet.sln --no-restore --verify-no-changes
+
       - name: Test API
         if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
         run: dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
