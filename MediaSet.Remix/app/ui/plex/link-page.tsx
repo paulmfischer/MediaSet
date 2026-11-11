@@ -2,6 +2,7 @@ import type { Handle, RemixNode } from 'remix/component';
 
 import type { PlexSearchResult } from '../../models.ts';
 import { Field, errorProps, inputClasses } from '../forms/field.tsx';
+import { PLEX_LINK_FRAGMENT } from './public/plex-link-fragment.ts';
 
 /** The scope fields as submitted (or prefilled), kept as text so a failed submit can show them again. */
 export interface PlexScopeValues {
@@ -48,7 +49,7 @@ function Shell(handle: Handle<{ fragment: boolean; title: string; cancelHref: st
   return () => {
     const { fragment, title, cancelHref, children } = handle.props;
     return (
-      <div class="flex flex-col gap-4 px-2 max-w-3xl mx-auto" data-plex-link={fragment ? 'fragment' : 'page'}>
+      <div class="flex flex-col gap-4 px-2 max-w-3xl mx-auto" data-plex-link={fragment ? PLEX_LINK_FRAGMENT : 'page'}>
         {fragment ? (
           <h2 id={HEADING_ID} class="text-xl">
             {title}

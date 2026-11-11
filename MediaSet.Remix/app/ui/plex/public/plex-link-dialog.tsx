@@ -1,5 +1,7 @@
 import { clientEntry, on, ref, type Handle } from 'remix/component';
 
+import { PLEX_LINK_FRAGMENT } from './plex-link-fragment.ts';
+
 interface PlexLinkDialogProps {
   /** The link page URL: the no-JavaScript target of the button and the flow the dialog loads. */
   href: string;
@@ -63,18 +65,19 @@ export const PlexLinkDialog = clientEntry(
       }
     }
 
-    // Set while a failed in-dialog post is handed to the browser, so that submit is not intercepted again
-    let nativeSubmit = false;
-
     // Posts the link from the dialog. A validation error comes back as the scope step (fragment=1) and replaces the
     // dialog's content, so the dialog stays open with the error; success is a redirect, so the page reloads in
-    // place; anything else is an error page, which the browser shows by submitting the form for real.
+    // place. Only an answer that clearly refused the link (an error page) is shown by submitting the form for real.
+    // When the outcome is unknown (the request or the reload failed after the server may have linked) the form is
+    // never sent again: the browser goes to the detail page, which shows whatever state resulted.
     async function post(form: HTMLFormElement) {
       if (!dialog || !content) return;
       const url = new URL(form.action);
       url.searchParams.set('fragment', '1');
+      const detailHref = handle.props.href.replace(/\/plex\/link$/, '');
       loading = true;
       handle.update();
+      let refused = false;
       try {
         const body = new URLSearchParams();
         for (const [name, value] of new FormData(form)) if (typeof value === 'string') body.append(name, value);
@@ -90,25 +93,30 @@ export const PlexLinkDialog = clientEntry(
           return;
         }
         const html = await response.text();
-        if (response.status === 400 && html.includes('data-plex-link="fragment"')) {
+        if (response.status === 400 && html.includes(`data-plex-link="${PLEX_LINK_FRAGMENT}"`)) {
           content.innerHTML = html;
           content.querySelector<HTMLElement>('[aria-invalid="true"], input:not([type="hidden"])')?.focus();
           return;
         }
+        refused = response.status >= 400;
       } catch {
-        // Fall through to the native submit
+        // Unknown outcome: handled below
       } finally {
         loading = false;
         handle.update();
       }
-      nativeSubmit = true;
-      form.requestSubmit();
-      nativeSubmit = false;
+      if (!refused) {
+        window.location.assign(detailHref);
+        return;
+      }
+      // Opt out of the frame runtime (it keeps the page when a response is a server error) so the browser shows
+      // the error page itself
+      form.setAttribute('data-rmx-document', '');
+      form.submit();
     }
 
     function onDialogSubmit(event: Event) {
       const form = event.target as HTMLFormElement;
-      if (nativeSubmit) return;
       event.preventDefault();
       if (form.method.toLowerCase() === 'get') {
         const url = new URL(form.action);

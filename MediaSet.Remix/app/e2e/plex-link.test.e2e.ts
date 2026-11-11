@@ -11,7 +11,11 @@ interface Request_ {
 }
 
 // Serves one unlinked entry, Plex search results and the scope, and records the link calls.
-function stubApi(t: { after: (fn: () => void) => void }, entry: { title: string; isTvSeries: boolean }) {
+function stubApi(
+  t: { after: (fn: () => void) => void },
+  entry: { title: string; isTvSeries: boolean },
+  linkFailure?: Response
+) {
   const original = globalThis.fetch;
   const requests: Request_[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -29,7 +33,7 @@ function stubApi(t: { after: (fn: () => void) => void }, entry: { title: string;
     if (url.pathname.endsWith('/scope')) return Response.json({ kind: 'season', from: 2, to: 2 });
     if (url.pathname.endsWith('/link') && request.method === 'PUT') {
       requests.push({ method: 'PUT', path: url.pathname, body: await request.json() });
-      return Response.json({});
+      return linkFailure?.clone() ?? Response.json({});
     }
     if (url.pathname.endsWith('/Movies/m1')) return Response.json({ id: 'm1', type: 'Movies', ...entry });
     return Response.json([]);
@@ -127,6 +131,22 @@ describe('link a movie to Plex (e2e)', () => {
     await page.getByRole('button', { name: 'Link to Plex' }).click();
     await dialog.getByRole('button', { name: 'Choose Show (2010)' }).waitFor();
     assert.equal(await dialog.getByText('Which seasons does this entry cover?').count(), 0);
+  });
+
+  it('shows the error page when Plex refuses the link from the dialog', async (t) => {
+    const requests = stubApi(
+      t,
+      { title: 'Heat', isTvSeries: false },
+      new Response(JSON.stringify({ title: 'Plex request failed' }), { status: 502 })
+    );
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Link to Heat (1995)' }).click();
+    await page.getByRole('heading', { name: "Couldn't reach Plex" }).waitFor();
+    assert.ok(requests.length >= 1);
   });
 
   it('closes the dialog on Cancel without linking', async (t) => {
