@@ -610,68 +610,6 @@ internal static class EntityApi
     }
 
     /// <summary>
-    /// Helper method to process image upload or download from a multipart form.
-    /// </summary>
-    /// <returns>Tuple of (success, errorMessage, processedImage)</returns>
-    private static async Task<(bool Success, string? ErrorMessage, Image? ProcessedImage)> TryProcessImageAsync(
-        IFormCollection form,
-        IImageService imageService,
-        IEntity? existingEntity,
-        string entityType,
-        string entityId,
-        ILogger logger,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            // Check for image file in multipart form
-            var imageFile = form.Files["coverImage"];
-            if (imageFile is not null && imageFile.Length > 0)
-            {
-                logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, entityId);
-
-                // Delete old image if it exists
-                DeleteOldImage(existingEntity, imageService, logger);
-
-                var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), entityId, cancellationToken);
-                return (true, null, image);
-            }
-            // Check for imageUrl field if no file was provided
-            else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-            {
-                var imageUrl = imageUrlValue.ToString();
-                logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, entityId, imageUrl);
-
-                // Delete old image if it exists
-                DeleteOldImage(existingEntity, imageService, logger);
-
-                try
-                {
-                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, cancellationToken);
-                    return (true, null, image);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                    return (false, $"Failed to download image: {ex.Message}", null);
-                }
-                catch (HttpRequestException ex)
-                {
-                    logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                    return (false, $"Failed to download image from URL: {ex.Message}", null);
-                }
-            }
-
-            return (true, null, null);
-        }
-        catch (ArgumentException ex)
-        {
-            logger.LogWarning("Image validation failed: {error}", ex.Message);
-            return (false, $"Image validation failed: {ex.Message}", null);
-        }
-    }
-
-    /// <summary>
     /// Validates and normalizes a Movie's ExternalId in place (source lowercased, value untouched).
     /// Returns a 400 problem-details result when the value is malformed; other entity types are ignored.
     /// </summary>

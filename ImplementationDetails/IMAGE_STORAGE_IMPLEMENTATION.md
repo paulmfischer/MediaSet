@@ -90,7 +90,7 @@ The value to users is the ability to maintain a visual catalog of their media co
    - Downloaded image is validated (file type, file size limits)
    - Image path is stored in entity database record alongside the URL reference
    - Handle HTTP redirects, timeouts, and errors gracefully
-   - If download fails, entity operation fails with validation error
+   - If the download fails, the entity is still saved and the failure is reported as an `imageError` code (see Cover image failures)
 
 3. **Image URL from Barcode Lookups**
    - When performing barcode lookups (ISBN, UPC, EAN), extract cover image URL from lookup response if available
@@ -124,7 +124,7 @@ The value to users is the ability to maintain a visual catalog of their media co
 - **Reliability**: Graceful handling of missing image files, corrupted files, API timeouts
 - **Security**: Validate file types, prevent path traversal attacks, sanitize filenames
 - **Accessibility**: Images have alt text describing the media item
-- **Data Integrity**: Atomic operations for image operations (upload and record, or both fail)
+- **Data Integrity**: A failed image never loses the entity; the failure is reported to the caller as an `imageError` code
 - **Testing**: Unit tests for image service, integration tests for upload/display flow
 - **Documentation**: Clear error messages, API documentation, setup instructions
 
@@ -229,10 +229,10 @@ The value to users is the ability to maintain a visual catalog of their media co
 - Entity `POST` (create) and `PUT/PATCH` (update) endpoints accept multipart/form-data requests
 - Include optional `coverImage` file field in multipart form data
 - Image is processed and embedded in the entity document as part of the same request
-- Both entity and image are persisted atomically in a single operation
+- The entity is saved first; the image is then stored and attached. If the image cannot be stored the entity is kept (see Cover image failures)
 - When entity is deleted (via `DELETE /api/{entityType}/{entityId}`), the embedded image is automatically deleted with the entity
 - Image is optional; entity can be created/updated without image
-- If image file is invalid, the entire request returns 400 Bad Request with validation errors
+- If the image file is invalid, the entity is still saved and the response reports an `imageError` code (see Cover image failures)
 
 #### Configuration Changes
 
@@ -365,8 +365,15 @@ The value to users is the ability to maintain a visual catalog of their media co
   - Return entity with `coverImage` populated from URL download
 - If old image exists and is being replaced:
   - Delete the old image file from storage
-- If download from URL fails:
-  - Return 400 Bad Request with validation error describing the URL download failure
+- If the image (upload or URL download) cannot be stored:
+  - The entity is still saved and the failure is reported with an `imageError` code (see Cover image failures)
+
+**Cover image failures**
+- When the cover image (file upload or `imageUrl`) cannot be stored, the entity is still saved and the failure is reported with a stable code instead of being swallowed. Failures are logged.
+- `POST /{type}` returns 201 with the entity plus `imageError`; `PUT /{type}/{id}` returns 200 with `{ "imageError": "<code>" }`. On success `imageError` is absent (PUT keeps its empty body).
+- Codes: `url_unreachable` (invalid, blocked or unreachable URL, or HTTP error), `not_an_image` (URL data is not a valid JPEG/PNG), `download_too_large`, `unsupported_type` (uploaded file is not a valid JPEG/PNG), `upload_too_large`, `pixel_limit_exceeded`, and `unknown` (any other failure, including storage errors).
+- The image pipeline tags its `ArgumentException`s with an `ImageFailureReason` (`ImageFailure`), and the endpoint maps reason plus source (upload or URL) to a code, so messages are never parsed.
+- UI: `addEntity` returns `{ entity, imageError? }` and `updateEntity` returns `{ imageError? }`. Add and edit redirect (303) to the detail page with `?imageError=<code>`. The detail page maps only known codes to fixed messages and shows "Saved, but the cover image could not be stored: <message>"; unknown codes get the generic message and query text is never rendered.
 
 **New: deleteImage function** (`MediaSet.Remix/app/image-data.ts`)
 - `async deleteImage(entityType: Entity, entityId: string): Promise<void>`
@@ -493,7 +500,7 @@ All entity types (Book, Movie, Game, Music) that extend `BaseEntity` automatical
 - User flow tests:
   - Add entity with image: uploads image first, then creates entity
   - Edit entity and change image: uploads new image, updates entity
-  - Upload fails: shows error, doesn't save entity changes
+  - Cover image fails: the entity is saved and the detail page shows a fixed-message notice
   - Image optional: can add entity without image
 
 **Test File**: `Entity Detail Route** (updates)
