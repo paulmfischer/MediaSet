@@ -74,7 +74,7 @@ export const PlexLinkDialog = clientEntry(
       if (!dialog || !content) return;
       const url = new URL(form.action);
       url.searchParams.set('fragment', '1');
-      const detailHref = handle.props.href.replace(/\/plex\/link$/, '');
+      const detailHref = new URL(handle.props.href, window.location.href).pathname.replace(/\/plex\/link$/, '');
       loading = true;
       handle.update();
       let refused = false;
@@ -109,8 +109,10 @@ export const PlexLinkDialog = clientEntry(
         window.location.assign(detailHref);
         return;
       }
-      // Opt out of the frame runtime (it keeps the page when a response is a server error) so the browser shows
-      // the error page itself
+      // The server refused the link, so nothing was linked and sending it again cannot link twice: this replay
+      // exists only so the browser renders the standard error page for the refusal. The frame runtime would keep
+      // the current page for a server error, so `data-rmx-document` opts this form out and the browser navigates
+      // itself. (`submit()` fires no submit event, so the dialog's own handler is not involved.)
       form.setAttribute('data-rmx-document', '');
       form.submit();
     }

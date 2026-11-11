@@ -146,7 +146,8 @@ describe('link a movie to Plex (e2e)', () => {
     await page.getByRole('button', { name: 'Link to Plex' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Link to Heat (1995)' }).click();
     await page.getByRole('heading', { name: "Couldn't reach Plex" }).waitFor();
-    assert.ok(requests.length >= 1);
+    // The dialog's post, then the refused request replayed as a page navigation to show the error page
+    assert.equal(requests.length, 2);
   });
 
   it('closes the dialog on Cancel without linking', async (t) => {
