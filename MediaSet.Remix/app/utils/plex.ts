@@ -1,4 +1,4 @@
-import type { PlexItem } from '../models.ts';
+import type { PlexItem, PlexRollup, PlexScope } from '../models.ts';
 
 /** How the Plex icon and card present a movie's link, decided from the stored data. */
 export type PlexLinkState = 'onPlex' | 'offPlex' | 'broken';
@@ -62,4 +62,41 @@ export function describeAudioTrack(track: PlexItem['bestAudioTrack']): string {
   const channels =
     track.channels === 6 ? '5.1' : track.channels === 8 ? '7.1' : track.channels ? `${track.channels}.0` : '';
   return [channels, track.codec?.toUpperCase(), track.language].filter(Boolean).join(' ');
+}
+
+/** "Season 2", "Seasons 1-3", "Complete series"; empty when there is no scope. */
+export function describeScope(scope: PlexScope | null | undefined): string {
+  if (!scope) return '';
+  if (scope.kind === 'all') return 'Complete series';
+  const from = scope.from ?? scope.to;
+  const to = scope.to ?? scope.from;
+  if (from == null || to == null) return '';
+  return from === to ? `Season ${from}` : `Seasons ${from}-${to}`;
+}
+
+/** "14/16 episodes | 12 watched". */
+export function describeProgress(rollup: PlexRollup): string {
+  return `${rollup.episodesPresent}/${rollup.episodesExpected} episodes | ${rollup.watchedCount} watched`;
+}
+
+/** The rollup's resolution: "Mixed" when episodes differ, plus " HDR" when any episode has it. */
+export function describeRollupResolution(rollup: PlexRollup): string {
+  const resolution = rollup.resolutionMixed ? 'Mixed' : (rollup.resolution ?? '');
+  return rollup.hdr ? [resolution, 'HDR'].filter(Boolean).join(' ') : resolution;
+}
+
+/** A language list with "(differs per episode)" when the rollup flags it; empty without languages. */
+export function describeLanguages(languages: string[], differ: boolean): string {
+  if (languages.length === 0) return '';
+  return `${languages.join(', ')}${differ ? ' (differs per episode)' : ''}`;
+}
+
+/** "Specials" for season 0, otherwise "Season N". */
+export function seasonLabel(index: number): string {
+  return index === 0 ? 'Specials' : `Season ${index}`;
+}
+
+/** "S02E03". */
+export function episodeCode(season: number, episode: number): string {
+  return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
 }

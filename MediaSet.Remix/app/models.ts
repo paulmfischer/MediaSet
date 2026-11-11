@@ -194,6 +194,29 @@ export type PlexRollup = {
 
 export type PlexScope = { kind: string; from?: number | null; to?: number | null };
 
+export type PlexSeason = {
+  index: number;
+  plexSeasonId: string;
+  episodeCount: number;
+  dateAdded?: string | null;
+  deepLink?: string | null;
+  rollup?: PlexRollup | null;
+};
+
+export type PlexEpisode = {
+  seasonNumber: number;
+  episodeNumber: number;
+  title: string;
+  plexEpisodeId: string;
+  watched: boolean;
+  lastWatchedAt?: string | null;
+  resolution?: string | null;
+  hdr: boolean;
+  sizeBytes?: number | null;
+  /** False when Plex no longer returns the episode (its data is the last synced). */
+  onPlex: boolean;
+};
+
 /** The Plex data the movie lookup returns (the API's `PlexItemDataDto` without its file path). */
 export type PlexItem = {
   movieId: string;
@@ -219,4 +242,7 @@ export type PlexItem = {
   lastSyncedAt: string;
   scope?: PlexScope | null;
   rollup?: PlexRollup | null;
+  /** TV entries only: the covered seasons and every stored episode. */
+  seasons?: PlexSeason[] | null;
+  episodes?: PlexEpisode[] | null;
 };

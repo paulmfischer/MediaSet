@@ -1,7 +1,15 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { describeAudioTrack, formatDuration, formatSize, relativeTime } from './plex.ts';
+import {
+  describeAudioTrack,
+  describeScope,
+  episodeCode,
+  formatDuration,
+  formatSize,
+  relativeTime,
+  seasonLabel,
+} from './plex.ts';
 
 describe('plex helpers', () => {
   const now = new Date('2025-06-01T12:00:00Z');
@@ -26,5 +34,20 @@ describe('plex helpers', () => {
     assert.equal(formatSize(null), '');
     assert.equal(describeAudioTrack({ codec: 'dts', channels: 8, language: 'English' }), '7.1 DTS English');
     assert.equal(describeAudioTrack(undefined), '');
+  });
+});
+
+describe('plex TV helpers', () => {
+  it('should describe scope', () => {
+    assert.equal(describeScope({ kind: 'season', from: 2, to: 2 }), 'Season 2');
+    assert.equal(describeScope({ kind: 'range', from: 1, to: 3 }), 'Seasons 1-3');
+    assert.equal(describeScope({ kind: 'all' }), 'Complete series');
+    assert.equal(describeScope(null), '');
+  });
+
+  it('should label seasons and episodes', () => {
+    assert.equal(seasonLabel(0), 'Specials');
+    assert.equal(seasonLabel(3), 'Season 3');
+    assert.equal(episodeCode(2, 5), 'S02E05');
   });
 });
