@@ -7,6 +7,7 @@ import { BarChart } from './bar-chart.tsx';
 import { ChartCard } from './chart-card.tsx';
 import { CHART_HEX, FORMAT_PALETTES, MOVIE_TYPE_COLORS, STAT_CARD_COLOR } from './config.ts';
 import { PieChart } from './pie-chart.tsx';
+import { PlexSection } from './plex-section.tsx';
 import { StatCard } from './stat-card.tsx';
 
 interface PanelProps {
@@ -117,6 +118,7 @@ export function MoviesPanel(handle: Handle<PanelProps>) {
             </ChartCard>
           )}
         </div>
+        {handle.props.stats.plexStats && <PlexSection plex={handle.props.stats.plexStats} />}
       </div>
     );
   };

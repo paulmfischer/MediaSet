@@ -209,3 +209,9 @@ linked to Plex shows. Only movies are supported.
       "Running since <time>"; the page then checks the status every few seconds and reloads itself when the run ends.
       If you press **Sync now** while a run is already active (for example from another tab), you see the current run
       with a note rather than an error.
+    - **Dashboard.** The Movies & TV tab gains a **Plex** section with cards for **On Plex**, **Not on Plex**, **Watched** and
+      **Unwatched** (watched and unwatched count only what is on Plex), a **Plex Resolution** pie chart of what is on Plex
+      (movies with no stored resolution show as "Unknown"), and a **Needs linking** card. Needs linking counts the movies
+      with no Plex link plus those whose hand-made link is broken; selecting it opens the movie list filtered to **Not on
+      Plex**. The same numbers are in the `plexStats` part of `GET /stats`, which is present only when Plex is enabled for
+      movies and holds counts only, never a file path. With Plex off the section is absent.

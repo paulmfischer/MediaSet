@@ -1,6 +1,8 @@
+using MediaSet.Api.Shared.Models;
+
 namespace MediaSet.Api.Features.Statistics.Models;
 
-public record Stats(BookStats BookStats, MovieStats MovieStats, GameStats GameStats, MusicStats MusicStats);
+public record Stats(BookStats BookStats, MovieStats MovieStats, GameStats GameStats, MusicStats MusicStats, PlexStats? PlexStats = null);
 
 public record NameCount(string Name, int Count);
 

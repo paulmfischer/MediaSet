@@ -104,6 +104,21 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
     }
 
+    public Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken)
+    {
+        if (StatsFailure != null)
+        {
+            throw StatsFailure;
+        }
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.ToList());
+        }
+    }
+
+    /// <summary>When set, statistics reads throw it.</summary>
+    public Exception? StatsFailure { get; set; }
+
     /// <summary>How many times the page summaries were read (the list join must be one query).</summary>
     public int SummaryReads { get; private set; }
 
