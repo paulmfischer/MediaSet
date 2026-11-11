@@ -1,8 +1,9 @@
 import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
+import { isPlexEnabledForMovies } from '../../api/plex-data.ts';
 import { clientApiUrl } from '../../constants.server.ts';
-import type { BaseEntity } from '../../models.ts';
+import { Entity, type BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
 import { serverLogger } from '../../utils/serverLogger.ts';
@@ -45,6 +46,8 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
     );
   }
 
+  // Only movies have a Plex layer; the gate is read once per page and decides whether any of it renders.
+  const plexEnabled = config.entity === Entity.Movies && (await isPlexEnabledForMovies());
   const title = config.titleOf(entity) || config.singular;
   return context.render(
     <Document
@@ -52,7 +55,7 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
       title={`${title} | MediaSet`}
       description={`${config.singular} Detail: ${title}`}
     >
-      <DetailPage config={config} entity={entity} basePath={basePath} apiUrl={clientApiUrl} />
+      <DetailPage config={config} entity={entity} basePath={basePath} apiUrl={clientApiUrl} plexEnabled={plexEnabled} />
     </Document>
   );
 }

@@ -8,6 +8,8 @@ export type Integration = {
   attributionUrl?: string | null;
   attributionText?: string | null;
   logoPath?: string | null;
+  /** Enabled entity types for integrations that are enabled per type (Plex); absent otherwise. */
+  entityTypes?: string[] | null;
 };
 
 export async function getIntegrations(): Promise<Integration[]> {

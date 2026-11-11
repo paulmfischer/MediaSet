@@ -1,10 +1,12 @@
 import type { Handle } from 'remix/component';
 
-import type { BaseEntity } from '../../models.ts';
+import type { BaseEntity, PlexItem } from '../../models.ts';
 import { Icon } from '../icon.tsx';
 import { Check, ImageOff, Pencil } from '../icons.ts';
 import { millisecondsToMinutesSeconds } from '../../utils/helpers.ts';
 import type { DetailConfig } from './detail-config.ts';
+import { PlexCard } from '../plex/plex-card.tsx';
+import { PlexIcon } from '../plex/plex-icon.tsx';
 import { ConfirmDelete } from './public/confirm-delete.tsx';
 
 interface DetailPageProps<T extends BaseEntity> {
@@ -14,6 +16,10 @@ interface DetailPageProps<T extends BaseEntity> {
   basePath: string;
   /** Browser-reachable API origin, used for the cover image. */
   apiUrl: string;
+  /** The Plex gate: when false, no Plex icon or card renders. Only ever true for movies. */
+  plexEnabled?: boolean;
+  /** Fixed "now" for the card's relative sync time (tests); defaults to the current time. */
+  now?: Date;
 }
 
 // "Jan 5, 2025"; falls back to the raw text when it is not a parseable date.
@@ -31,7 +37,8 @@ const value = 'min-w-0 wrap-break-word';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
-    const { config, entity, basePath, apiUrl } = handle.props;
+    const { config, entity, basePath, apiUrl, plexEnabled = false, now } = handle.props;
+    const plex = plexEnabled ? (entity as { plex?: PlexItem }).plex : undefined;
     const itemId = encodeURIComponent(entity.id ?? '');
     const title = config.titleOf(entity);
     const subtitle = config.subtitleOf?.(entity);
@@ -44,7 +51,10 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
       <div class={`entity-${config.entity.toLowerCase()} flex flex-col`}>
         <div class="flex flex-row items-center justify-between border-b-2 border-slate-600 pb-2">
           <div class="flex flex-col gap-2 items-baseline">
-            <h1 class="text-2xl">{title}</h1>
+            <div class="flex flex-row items-center gap-2">
+              <h1 class="text-2xl">{title}</h1>
+              {plexEnabled ? <PlexIcon plex={plex} /> : null}
+            </div>
             {subtitle ? <h2 class="text-sm">{subtitle}</h2> : null}
           </div>
           <div class="flex flex-row gap-3">
@@ -107,6 +117,9 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   </>
                 ) : null}
               </div>
+              {plexEnabled ? (
+                <PlexCard plex={plex} refreshHref={`${basePath}/${itemId}/plex/refresh`} now={now} />
+              ) : null}
               {lookupFailed ? (
                 <div
                   class="mt-4 flex flex-col items-start gap-2 text-sm text-amber-400"

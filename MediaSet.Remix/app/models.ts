@@ -71,6 +71,8 @@ export interface MovieEntity extends BaseEntity {
   isTvSeries?: boolean;
   /** `source:value`, e.g. `tmdbid:1234`. Carried through saves; not shown or edited in the UI. */
   externalId?: string;
+  /** Stored Plex data, present only for a linked movie when Plex is enabled; the API never sends the file path. */
+  plex?: PlexItem;
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string }>;
@@ -172,3 +174,49 @@ export interface LookupError {
 }
 
 export type LookupResult<T> = T | LookupError;
+
+export type PlexAudioTrack = { codec?: string | null; channels?: number | null; language?: string | null };
+
+export type PlexRollup = {
+  episodesPresent: number;
+  episodesExpected: number;
+  watchedCount: number;
+  watched: boolean;
+  lastWatchedAt?: string | null;
+  resolution?: string | null;
+  resolutionMixed: boolean;
+  hdr: boolean;
+  audioLanguages: string[];
+  audioLanguagesDiffer: boolean;
+  subtitleLanguages: string[];
+  subtitleLanguagesDiffer: boolean;
+};
+
+export type PlexScope = { kind: string; from?: number | null; to?: number | null };
+
+/** The Plex data the movie lookup returns (the API's `PlexItemDataDto` without its file path). */
+export type PlexItem = {
+  movieId: string;
+  plexItemId: string;
+  onPlex: boolean;
+  /** `auto` (set by a sync) or `manual` (linked by hand). */
+  linkSource: string;
+  broken: boolean;
+  library?: string | null;
+  resolution?: string | null;
+  hdr: boolean;
+  videoCodec?: string | null;
+  bestAudioTrack?: PlexAudioTrack | null;
+  subtitleLanguages: string[];
+  watched: boolean;
+  lastWatchedAt?: string | null;
+  viewCount: number;
+  dateAdded?: string | null;
+  deepLink?: string | null;
+  durationSeconds?: number | null;
+  container?: string | null;
+  sizeBytes?: number | null;
+  lastSyncedAt: string;
+  scope?: PlexScope | null;
+  rollup?: PlexRollup | null;
+};

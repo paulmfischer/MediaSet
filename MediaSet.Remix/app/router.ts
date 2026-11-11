@@ -20,6 +20,7 @@ import entityEditGameController from './actions/entity/edit/game-controller.tsx'
 import entityEditMovieController from './actions/entity/edit/movie-controller.tsx';
 import entityEditMusicController from './actions/entity/edit/music-controller.tsx';
 import entityListsController from './actions/entity/controller.tsx';
+import entityPlexRefreshController from './actions/plex/refresh-controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
 import { renderError, type ErrorContext } from './actions/render-error.tsx';
 import { assets } from './assets.ts';
@@ -65,6 +66,7 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
   router.map(routes.entityLists, entityListsController);
   router.map(routes.entityDetail, entityDetailController);
   router.map(routes.entityClearImageLookup, entityClearImageLookupController);
+  router.map(routes.entityPlexRefresh, entityPlexRefreshController);
   router.map(routes.entityAdd.books, entityAddController);
   router.map(routes.entityEdit.books, entityEditController);
   router.map(routes.entityDelete.books, entityDeleteController);

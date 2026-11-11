@@ -40,6 +40,10 @@ export const routes = route({
     games: form('/games/:id/delete'),
     musics: form('/musics/:id/delete'),
   }),
+  // Re-read one movie from Plex; a POST that redirects back to the detail page. Never called on page load.
+  entityPlexRefresh: route({
+    movies: post('/movies/:id/plex/refresh'),
+  }),
   // Clear an item's failed image lookup so it is retried; a POST that redirects back to the detail page.
   entityClearImageLookup: route({
     books: post('/books/:id/clear-image-lookup'),
