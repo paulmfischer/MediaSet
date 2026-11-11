@@ -277,9 +277,10 @@ export async function addEntity<TEntity extends BaseEntity>(
         status: rejected ? response.status : 500,
       });
     }
-    const { imageError: reported, ...rest } = (await response.json()) as TEntity & { imageError?: unknown };
-    const newEntity = rest as unknown as TEntity;
-    const imageError = readImageError({ imageError: reported });
+    const newEntity = (await response.json()) as TEntity & { imageError?: unknown };
+    const imageError =
+      typeof newEntity.imageError === 'string' && newEntity.imageError ? newEntity.imageError : undefined;
+    delete newEntity.imageError;
     serverLogger.info(`Successfully created new ${singular(entityType)} with id ${(newEntity as { id?: string }).id}`, {
       operation: 'addEntity',
       entityType,

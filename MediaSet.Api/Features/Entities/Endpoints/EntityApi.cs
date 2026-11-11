@@ -194,7 +194,6 @@ internal static class EntityApi
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, newEntity.Id);
                         }
 
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
@@ -217,7 +216,6 @@ internal static class EntityApi
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, newEntity.Id);
                         }
                     }
                 }
@@ -241,7 +239,6 @@ internal static class EntityApi
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, newEntity.Id);
                         }
                     }
                 }
@@ -602,8 +599,9 @@ internal static class EntityApi
             logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, entityId);
             return (image, null);
         }
-        catch (Exception ex) when (ex is ArgumentException or HttpRequestException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            // Validation, download and storage failures (e.g. IOException) all leave the saved entity in place.
             var code = ImageErrorMapper.ToCode(ex, source);
             logger.LogWarning("Cover image from {source} not stored for {entityType}/{id} ({code}): {error}",
                 source, entityType, entityId, code, ex.Message);

@@ -85,7 +85,8 @@ public class ImageIngestionTests
         }
         else
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            var failure = await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            Assert.That(ImageFailure.GetReason(failure!), Is.EqualTo(ImageFailureReason.PixelLimit));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -101,7 +102,8 @@ public class ImageIngestionTests
         var storage = CreateStorage();
         using var client = CreateClient(bytes);
         var service = CreateService(storage, new ImageConfiguration { AllowedImageExtensions = allowed }, client);
-        await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        var failure = await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        Assert.That(ImageFailure.GetReason(failure!), Is.EqualTo(ImageFailureReason.UnsupportedFormat));
         storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -137,9 +139,10 @@ public class ImageIngestionTests
             var file = new Mock<IFormFile>();
             file.SetupGet(f => f.Length).Returns(1);
             file.Setup(f => f.OpenReadStream()).Returns(stream);
-            await Assert.ThrowsAsync<ArgumentException>(() => download
+            var failure = await Assert.ThrowsAsync<ArgumentException>(() => download
                 ? Ingest(service, bytes, true)
                 : service.SaveImageAsync(file.Object, "books", "123", CancellationToken.None));
+            Assert.That(ImageFailure.GetReason(failure!), Is.EqualTo(ImageFailureReason.TooLarge));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -166,7 +169,8 @@ public class ImageIngestionTests
             var storage = CreateStorage();
             using var client = CreateClient(bytes);
             var service = CreateService(storage, new ImageConfiguration { StripExifData = strip }, client);
-            await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            var failure = await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+            Assert.That(ImageFailure.GetReason(failure!), Is.EqualTo(ImageFailureReason.UnsupportedFormat));
             storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -234,7 +238,8 @@ public class ImageIngestionTests
         var storage = CreateStorage();
         using var client = CreateClient(bytes);
         var service = CreateService(storage, new ImageConfiguration { MaxPixelCount = int.MaxValue }, client);
-        await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        var failure = await Assert.ThrowsAsync<ArgumentException>(() => Ingest(service, bytes, download));
+        Assert.That(ImageFailure.GetReason(failure!), Is.EqualTo(ImageFailureReason.PixelLimit));
         storage.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }

@@ -67,7 +67,11 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
           </div>
         </div>
         {imageNotice ? (
-          <p class="mt-4 text-sm text-amber-400" role="status" data-testid="image-error-notice">
+          <p
+            class="mt-4 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 text-yellow-200"
+            role="status"
+            data-testid="image-error-notice"
+          >
             {imageNotice}
           </p>
         ) : null}

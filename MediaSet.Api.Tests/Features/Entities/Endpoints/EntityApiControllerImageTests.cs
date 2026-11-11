@@ -635,6 +635,32 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     }
 
     [Test]
+    public async Task CreateGame_StorageFails_ReturnsCreatedWithUnknownImageError()
+    {
+        var game = ArrangeCreate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
+    }
+
+    [Test]
+    public async Task UpdateGame_StorageFails_ReturnsOkWithUnknownImageError()
+    {
+        var game = ArrangeUpdate();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
+    }
+
+    [Test]
     public async Task CreateGame_ImageStored_ReturnsEntityWithoutImageError()
     {
         var game = ArrangeCreate();

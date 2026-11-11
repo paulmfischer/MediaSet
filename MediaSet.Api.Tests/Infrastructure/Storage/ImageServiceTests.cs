@@ -334,6 +334,7 @@ public class ImageServiceTests : IDisposable
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("Unsupported file type"));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.UnsupportedFormat));
         }
     }
 
@@ -373,6 +374,7 @@ public class ImageServiceTests : IDisposable
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("exceeds maximum allowed size"));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.TooLarge));
         }
     }
 
@@ -391,6 +393,7 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _imageService!.DownloadAndSaveImageAsync(imageUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 
     [Test]
@@ -476,6 +479,7 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 
     [Test]
@@ -512,6 +516,42 @@ public class ImageServiceTests : IDisposable
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await imageService.DownloadAndSaveImageAsync(initialUrl, "movies", "456", CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("redirect limit"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+    }
+
+    [Test]
+    public async Task DownloadAndSaveImageAsync_WithHttpErrorStatus_ThrowsUnreachable()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(_storageProviderMock!.Object, Options.Create(_imageConfig!), httpClient, _loggerMock!.Object);
+
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await imageService.DownloadAndSaveImageAsync("http://1.2.3.4/missing.jpg", "movies", "456", CancellationToken.None));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+    }
+
+    [Test]
+    public async Task DownloadAndSaveImageAsync_WithRedirectMissingLocation_ThrowsUnreachable()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.Found));
+
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(_storageProviderMock!.Object, Options.Create(_imageConfig!), httpClient, _loggerMock!.Object);
+
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await imageService.DownloadAndSaveImageAsync("http://1.2.3.4/redirect", "movies", "456", CancellationToken.None));
+        Assert.That(ex?.Message, Does.Contain("Location"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 
     #endregion
