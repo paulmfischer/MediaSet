@@ -167,3 +167,20 @@ linked to Plex shows. Only movies are supported.
     | Scheduled sync never runs | The movie sync is not enabled, the cron expression is invalid (see the startup log), or the time zone is not what you expect (set `TZ`) |
     | Linking fails | The movie id or Plex item id does not exist, `plexItemId` is missing, or a TV entry needs a `scope` (a movie entry must not send one) |
     | Refresh fails | The entry is not linked yet, or its Plex item is gone from Plex |
+
+11) What you will see in the UI
+
+    The Plex parts of the UI appear only when Plex is enabled for movies. With Plex off, nothing Plex-related is shown.
+
+    - **Plex icon beside the title** of a movie linked to Plex. It looks normal when the movie is on Plex, muted (faded and
+      gray) when it is no longer on Plex, carries a small amber dot when a hand-made link is broken, and a green check when
+      you have watched it. Hover it for a short description. A movie that is not linked shows no icon.
+    - **Plex card** below the movie's details: resolution (with an HDR tag), video codec, best audio track, subtitle
+      languages, whether you watched it, when, how many times, the date added, duration, container, size, and when the data
+      was last synced ("Synced 3 hours ago"). It never shows the file path.
+    - **Open in Plex** opens the item in Plex. **Refresh** re-reads only this movie from Plex and returns to the page; the
+      page never refreshes from Plex by itself. If a refresh fails you see a message saying why: Plex could not be
+      reached, a sync is running, or the item is missing on Plex.
+    - **No longer on Plex:** the card is dimmed with a notice and keeps the last data it had.
+    - **Broken link:** a warning notice appears with Relink and Unlink buttons. They do nothing yet.
+    - **Not linked:** the movie shows only a **Link to Plex** button, which does nothing yet. There is no "Not on Plex" text.
