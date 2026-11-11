@@ -41,6 +41,7 @@ export function PlexIcon(handle: Handle<PlexIconProps>) {
     const label = plexIconLabel(plex);
     const muted = state === 'offPlex' || state === 'broken';
     const badge = Math.max(10, Math.round(size * 0.45));
+    const dot = Math.round(badge * 0.7);
 
     return (
       <span
@@ -62,7 +63,7 @@ export function PlexIcon(handle: Handle<PlexIconProps>) {
           <span
             data-plex-badge="warning"
             class="absolute -right-1 -top-1 rounded-full bg-amber-500 ring-2 ring-white dark:ring-zinc-800"
-            style={`width:${badge * 0.7}px;height:${badge * 0.7}px`}
+            style={`width:${dot}px;height:${dot}px`}
           />
         ) : null}
         {state === 'onPlex' && plex.watched ? (

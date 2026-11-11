@@ -55,9 +55,10 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
     if (!plex) {
       return (
         <section class="mt-6" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
-          <button type="button" class="secondary" disabled title="Linking to Plex is not available yet">
+          <button type="button" class="secondary" aria-disabled="true">
             Link to Plex
           </button>
+          <p class="mt-1 text-xs dark:text-slate-300">Linking to Plex is not available yet.</p>
         </section>
       );
     }
@@ -85,23 +86,24 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
               The Plex link for this movie is broken: the linked item is gone from Plex.
             </p>
             <div class="flex gap-2">
-              <button type="button" class="secondary" disabled title="Relinking is not available yet">
+              <button type="button" class="secondary" aria-disabled="true">
                 Relink
               </button>
-              <button type="button" class="secondary" disabled title="Unlinking is not available yet">
+              <button type="button" class="secondary" aria-disabled="true">
                 Unlink
               </button>
             </div>
+            <p class="text-xs dark:text-slate-300">Relinking and unlinking are not available yet.</p>
           </div>
         ) : null}
         <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
           {facts(plex).map(([name, value]) => (
-            <>
+            <div key={name} class="contents">
               <span class="dark:text-slate-300">{name}</span>
               <div class="min-w-0 wrap-break-word" data-plex-field={name}>
                 {value}
               </div>
-            </>
+            </div>
           ))}
         </div>
         <p class="text-xs dark:text-slate-300" data-testid="plex-synced">

@@ -22,8 +22,9 @@ export function relativeTime(value: string, now: Date = new Date()): string {
   if (seconds < HOUR) return plural(Math.floor(seconds / MINUTE), 'minute');
   if (seconds < DAY) return plural(Math.floor(seconds / HOUR), 'hour');
   if (seconds < 30 * DAY) return plural(Math.floor(seconds / DAY), 'day');
-  if (seconds < 365 * DAY) return plural(Math.floor(seconds / (30 * DAY)), 'month');
-  return plural(Math.floor(seconds / (365 * DAY)), 'year');
+  const months = Math.floor(seconds / (30 * DAY));
+  if (months < 12) return plural(months, 'month');
+  return plural(Math.max(1, Math.floor(seconds / (365 * DAY))), 'year');
 }
 
 /** "1h 52m", "45m"; empty when there is no duration. */

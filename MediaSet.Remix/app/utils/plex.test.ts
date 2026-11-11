@@ -12,6 +12,8 @@ describe('plex helpers', () => {
     assert.equal(relativeTime('2025-06-01T09:00:00Z', now), '3 hours ago');
     assert.equal(relativeTime('2025-05-30T12:00:00Z', now), '2 days ago');
     assert.equal(relativeTime('2025-03-01T12:00:00Z', now), '3 months ago');
+    assert.equal(relativeTime('2024-06-07T12:00:00Z', now), '11 months ago');
+    assert.equal(relativeTime('2024-06-02T12:00:00Z', now), '1 year ago');
     assert.equal(relativeTime('2023-06-01T12:00:00Z', now), '2 years ago');
     assert.equal(relativeTime('not a date', now), 'not a date');
   });
