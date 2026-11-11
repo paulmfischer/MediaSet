@@ -127,8 +127,9 @@ linked to Plex shows. Only movies are supported.
 
 9) Link and unlink by hand
 
-    There is no screen for this yet, so use these calls. Use them when an entry was not matched or was matched
-    to the wrong item. A hand-made link is never replaced by a sync. Ids shown as `<...>` are placeholders.
+    The movie page has buttons for this (step 11). The same actions are available as API calls. Use them when an entry
+    was not matched or was matched to the wrong item. A hand-made link is never replaced by a sync. Ids shown as `<...>`
+    are placeholders.
 
     ```bash
     # Find the Plex item id by title (at least 2 characters)
@@ -143,6 +144,10 @@ linked to Plex shows. Only movies are supported.
 
     # Remove the link and the stored Plex data
     curl -X DELETE http://localhost:8080/plex/movies/items/<movie-id>/link
+
+    # The seasons a TV entry's title says (200 with kind "season", "range", "all" or "unreadable"; 400 for a
+    # non-TV entry). It works whether or not the entry is linked and never calls Plex.
+    curl http://localhost:8080/plex/movies/items/<movie-id>/scope
     ```
 
     - For a TV series entry whose title does not say which seasons it covers, add a `scope` to the link body:
@@ -182,5 +187,14 @@ linked to Plex shows. Only movies are supported.
       page never refreshes from Plex by itself. If a refresh fails you see a message saying why: Plex could not be
       reached, a sync is running, or the item is missing on Plex.
     - **No longer on Plex:** the card is dimmed with a notice and keeps the last data it had.
-    - **Broken link:** a warning notice appears with Relink and Unlink buttons. They do nothing yet.
-    - **Not linked:** the movie shows only a **Link to Plex** button, which does nothing yet. There is no "Not on Plex" text.
+    - **Broken link:** a warning notice appears with Relink and Unlink buttons.
+    - **Not linked:** the movie shows only a **Link to Plex** button. There is no "Not on Plex" text.
+    - **Link to Plex** (and **Relink**, also shown on a linked movie) opens a search prefilled with the movie's title. Each
+      result shows its title, year and library; pick one to link it, and you return to the movie page with the new data. For
+      a TV series entry you pick a show, then the seasons it covers (one season, a range or the complete series), prefilled
+      from the entry's title; the complete series is the default when the title does not say. With JavaScript this opens in a
+      dialog; without it the same steps are pages of their own. Plex is only contacted when you open the search.
+    - **Unlink** asks for confirmation first (it deletes the stored Plex data; the movie itself is kept). Refresh and link
+      need no confirmation.
+    - If linking or unlinking fails you see a message saying why: Plex could not be reached, a sync is running, or the item
+      is missing on Plex.

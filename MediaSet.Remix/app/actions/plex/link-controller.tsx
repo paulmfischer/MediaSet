@@ -1,0 +1,235 @@
+import * as s from 'remix/data-schema';
+import * as f from 'remix/data-schema/form-data';
+import { redirect } from 'remix/response/redirect';
+import { createController } from 'remix/router';
+
+import { getEntity } from '../../api/entity-data.ts';
+import {
+  getPlexScope,
+  isPlexEnabledForMovies,
+  linkPlexItem,
+  PlexActionError,
+  searchPlex,
+  type PlexLinkScope,
+} from '../../api/plex-data.ts';
+import { Entity, type MovieEntity, type PlexScope, type PlexSearchResult } from '../../models.ts';
+import type { AppContext } from '../../router.ts';
+import { routes } from '../../routes.ts';
+import { Document } from '../../ui/document.tsx';
+import { PlexLinkPage, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
+import { serverLogger } from '../../utils/serverLogger.ts';
+import { fieldErrors, optionalWholeNumber, text } from '../forms/form-schema.ts';
+import { renderError } from '../render-error.tsx';
+import { plexFailurePage } from './failures.ts';
+
+const MIN_QUERY_LENGTH = 2;
+const SEASON_ERROR = 'Enter a season from 0 to 99';
+
+const linkForm = f.object({
+  plexItemId: f.field(text()),
+  plexTitle: f.field(text()),
+  query: f.field(text()),
+  scopeKind: f.field(text()),
+  season: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
+  from: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
+  to: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
+});
+
+const FORM_FIELDS = ['plexItemId', 'plexTitle', 'query', 'scopeKind', 'season', 'from', 'to'] as const;
+
+const asText = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
+
+/** The scope step's form values from a title-parsed scope; an unreadable title falls back to the complete series. */
+export function scopeToValues(scope: PlexScope | undefined): PlexScopeValues {
+  const from = scope?.from ?? undefined;
+  const to = scope?.to ?? undefined;
+  if (scope?.kind === 'season' && from != null) return { scopeKind: 'season', season: String(from), from: '', to: '' };
+  if (scope?.kind === 'range' && from != null && to != null) {
+    return { scopeKind: 'range', season: '', from: String(from), to: String(to) };
+  }
+  return { scopeKind: 'all', season: '', from: '', to: '' };
+}
+
+// Reads the submitted scope; errors are keyed by field name.
+function readScope(
+  kind: string,
+  parsed: { season: number | undefined; from: number | undefined; to: number | undefined }
+): { scope: PlexLinkScope } | { errors: Record<string, string> } {
+  if (kind === 'all') return { scope: { kind: 'all' } };
+  if (kind === 'season') {
+    return parsed.season === undefined
+      ? { errors: { season: 'Enter the season number' } }
+      : { scope: { kind: 'season', season: parsed.season } };
+  }
+  if (kind === 'range') {
+    const errors: Record<string, string> = {};
+    if (parsed.from === undefined) errors.from = 'Enter the first season';
+    if (parsed.to === undefined) errors.to = 'Enter the last season';
+    if (parsed.from === undefined || parsed.to === undefined) return { errors };
+    if (parsed.from > parsed.to) return { errors: { to: 'The last season must not be before the first' } };
+    // A range of one season is a single season
+    return parsed.from === parsed.to
+      ? { scope: { kind: 'season', season: parsed.from } }
+      : { scope: { kind: 'range', from: parsed.from, to: parsed.to } };
+  }
+  return { errors: { scopeKind: 'Choose which seasons this entry covers' } };
+}
+
+function failurePage(context: AppContext, id: string, error: unknown, action: 'link' | 'search') {
+  const failure = plexFailurePage(error, action);
+  if (!(error instanceof PlexActionError))
+    serverLogger.error('Plex link flow failed', error, { operation: 'plexLink', id });
+  return renderError(context, failure.status, error, {
+    heading: failure.heading,
+    message: failure.message,
+    backHref: routes.entityDetail.movies.href({ id }),
+    backLabel: 'Back to Movie',
+  });
+}
+
+async function loadMovie(context: AppContext, id: string): Promise<MovieEntity | Response> {
+  try {
+    return await getEntity<MovieEntity>(Entity.Movies, id);
+  } catch (error) {
+    const missing = error instanceof Response && error.status === 404;
+    if (!missing) serverLogger.error('Failed to load movie for Plex link', error, { operation: 'plexLink', id });
+    return renderError(context, missing ? 404 : 500, error, {
+      heading: missing ? 'Movie not found' : "Couldn't load this movie",
+      message: missing ? "We couldn't find that movie." : 'Something went wrong while loading it. Please try again.',
+      backHref: routes.entityLists.movies.href(),
+      backLabel: 'Back to Movies',
+    });
+  }
+}
+
+interface RenderState {
+  fragment?: boolean;
+  step: 'search' | 'scope';
+  query: string;
+  results?: PlexSearchResult[] | undefined;
+  selected?: { plexItemId: string; title: string };
+  scope?: PlexScopeValues;
+  errors?: Record<string, string>;
+  status?: number;
+}
+
+function renderFlow(context: AppContext, id: string, movie: MovieEntity, state: RenderState) {
+  const page = (
+    <PlexLinkPage
+      fragment={state.fragment ?? false}
+      movieTitle={movie.title ?? 'this movie'}
+      relink={Boolean(movie.plex)}
+      isTv={Boolean(movie.isTvSeries)}
+      step={state.step}
+      searchHref={routes.entityPlexLink.movies.index.href({ id })}
+      actionHref={routes.entityPlexLink.movies.action.href({ id })}
+      cancelHref={routes.entityDetail.movies.href({ id })}
+      query={state.query}
+      results={state.results}
+      selected={state.selected}
+      scope={state.scope}
+      errors={state.errors}
+    />
+  );
+  const init = { status: state.status ?? 200 };
+  // The dialog asks for the bare flow; the page wraps it in the site layout.
+  if (state.fragment) return context.render(page, init);
+  return context.render(
+    <Document path={context.url.pathname} title={`${movie.plex ? 'Relink' : 'Link'} to Plex | MediaSet`}>
+      {page}
+    </Document>,
+    init
+  );
+}
+
+// Plex is contacted only here, when the flow is opened or searched, never when the detail page loads.
+async function index(context: AppContext) {
+  const { id } = context.params as { id: string };
+  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  const loaded = await loadMovie(context, id);
+  if (loaded instanceof Response) return loaded;
+  const movie = loaded;
+
+  const params = context.url.searchParams;
+  const fragment = params.get('fragment') === '1';
+  const query = (params.get('query') ?? movie.title ?? '').trim();
+  const plexItemId = (params.get('plexItemId') ?? '').trim();
+
+  if (plexItemId && movie.isTvSeries) {
+    let scope: PlexScope | undefined;
+    try {
+      scope = await getPlexScope(id);
+    } catch (error) {
+      if (error instanceof PlexActionError && error.failure === 'movieMissing')
+        return failurePage(context, id, error, 'link');
+      // The title only prefills; without it the entry covers the complete series
+    }
+    return renderFlow(context, id, movie, {
+      fragment,
+      step: 'scope',
+      query,
+      selected: { plexItemId, title: (params.get('plexTitle') ?? '').trim() || plexItemId },
+      scope: scopeToValues(scope),
+    });
+  }
+
+  let results: PlexSearchResult[] | undefined;
+  if (query.length >= MIN_QUERY_LENGTH) {
+    try {
+      // A movie entry links to movies and a TV entry to shows; the other kind would be refused
+      const wanted = movie.isTvSeries ? 'show' : 'movie';
+      results = (await searchPlex(query)).filter((result) => (result.type || 'movie') === wanted);
+    } catch (error) {
+      return failurePage(context, id, error, 'search');
+    }
+  }
+  return renderFlow(context, id, movie, { fragment, step: 'search', query, results });
+}
+
+async function action(context: AppContext) {
+  const { id } = context.params as { id: string };
+  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  const loaded = await loadMovie(context, id);
+  if (loaded instanceof Response) return loaded;
+  const movie = loaded;
+
+  const parsed = s.parseSafe(linkForm, context.formData);
+  const submitted = Object.fromEntries(FORM_FIELDS.map((name) => [name, asText(context.formData.get(name))])) as Record<
+    (typeof FORM_FIELDS)[number],
+    string
+  >;
+  const plexItemId = submitted.plexItemId.trim();
+  if (!plexItemId) {
+    return renderError(context, 400, undefined, {
+      heading: 'Choose a Plex item',
+      message: 'No Plex item was chosen. Search again and pick a result.',
+      backHref: routes.entityPlexLink.movies.index.href({ id }),
+      backLabel: 'Back to the search',
+    });
+  }
+
+  let request: { plexItemId: string; scope?: PlexLinkScope } = { plexItemId };
+  if (movie.isTvSeries) {
+    const scope = parsed.success ? readScope(parsed.value.scopeKind, parsed.value) : undefined;
+    if (!parsed.success || !scope || 'errors' in scope) {
+      return renderFlow(context, id, movie, {
+        step: 'scope',
+        query: submitted.query.trim(),
+        selected: { plexItemId, title: submitted.plexTitle.trim() || plexItemId },
+        scope: { scopeKind: submitted.scopeKind, season: submitted.season, from: submitted.from, to: submitted.to },
+        errors: !parsed.success ? fieldErrors(parsed.issues) : scope && 'errors' in scope ? scope.errors : {},
+        status: 400,
+      });
+    }
+    request = { plexItemId, scope: scope.scope };
+  }
+
+  try {
+    await linkPlexItem(id, request);
+  } catch (error) {
+    return failurePage(context, id, error, 'link');
+  }
+  return redirect(routes.entityDetail.movies.href({ id }), 303);
+}
+
+export default createController(routes.entityPlexLink.movies, { actions: { index, action } });
