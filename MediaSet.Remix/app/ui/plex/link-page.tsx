@@ -42,6 +42,10 @@ export const SCOPE_KINDS = [
   { value: 'all', label: 'Complete series' },
 ] as const;
 
+export function resultLabel(result: PlexSearchResult): string {
+  return result.year ? `${result.title} (${result.year})` : result.title;
+}
+
 const HEADING_ID = 'plex-link-heading';
 
 // Fragment mode keeps the heading id the dialog is labelled by, and Cancel closes the dialog.
@@ -60,22 +64,21 @@ function Shell(handle: Handle<{ fragment: boolean; title: string; cancelHref: st
         {children}
         <div class="flex justify-end">
           {fragment ? (
-            <button type="button" data-plex-close>
+            <button type="button" class="secondary" data-plex-close>
               Cancel
             </button>
           ) : (
-            <a href={cancelHref} class="px-3 py-1">
-              Cancel
-            </a>
+            // A GET form, so the no-JavaScript Cancel is a real button with the same style
+            <form method="get" action={cancelHref}>
+              <button type="submit" class="secondary">
+                Cancel
+              </button>
+            </form>
           )}
         </div>
       </div>
     );
   };
-}
-
-function resultLabel(result: PlexSearchResult): string {
-  return result.year ? `${result.title} (${result.year})` : result.title;
 }
 
 function SearchStep(handle: Handle<PlexLinkPageProps>) {
@@ -109,7 +112,10 @@ function SearchStep(handle: Handle<PlexLinkPageProps>) {
         ) : (
           <ul class="flex flex-col gap-2" aria-label="Plex results" data-testid="plex-results">
             {results.map((result) => (
-              <li key={result.plexItemId} class="flex items-center justify-between gap-3">
+              <li
+                key={result.plexItemId}
+                class="flex items-center justify-between gap-3 rounded-md border border-zinc-500 bg-zinc-700 p-3"
+              >
                 <span class="min-w-0 wrap-break-word">
                   <span class="font-medium">{resultLabel(result)}</span>
                   <span class="block text-sm dark:text-slate-300">{result.library}</span>

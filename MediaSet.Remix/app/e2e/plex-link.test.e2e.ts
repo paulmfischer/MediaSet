@@ -13,8 +13,10 @@ interface Request_ {
 // Serves one unlinked entry, Plex search results and the scope, and records the link calls.
 function stubApi(
   t: { after: (fn: () => void) => void },
-  entry: { title: string; isTvSeries: boolean },
-  linkFailure?: Response
+  entry: { title: string; isTvSeries: boolean; plex?: Record<string, unknown> },
+  linkFailure?: Response,
+  /** True: Plex has a second movie for the title, so the search is not a single match. */
+  ambiguous = true
 ) {
   const original = globalThis.fetch;
   const requests: Request_[] = [];
@@ -28,6 +30,17 @@ function stubApi(
       return Response.json([
         { title: entry.title.split(':')[0], plexItemId: '2001', year: 2010, library: 'TV Shows', type: 'show' },
         { title: entry.title, plexItemId: '1001', year: 1995, library: 'Movies', type: 'movie' },
+        ...(ambiguous
+          ? [
+              {
+                title: `${entry.title} Remastered`,
+                plexItemId: entry.isTvSeries ? '2002' : '1002',
+                year: 2020,
+                library: entry.isTvSeries ? 'TV Shows' : 'Movies',
+                type: entry.isTvSeries ? 'show' : 'movie',
+              },
+            ]
+          : []),
       ]);
     }
     if (url.pathname.endsWith('/scope')) return Response.json({ kind: 'season', from: 2, to: 2 });
@@ -44,7 +57,94 @@ function stubApi(
   return requests;
 }
 
+const linkedPlex = {
+  movieId: 'm1',
+  plexItemId: '1001',
+  onPlex: true,
+  linkSource: 'manual',
+  broken: false,
+  subtitleLanguages: [],
+  watched: false,
+  viewCount: 0,
+  lastSyncedAt: new Date().toISOString(),
+  library: 'Movies',
+  deepLink: 'https://app.plex.tv/desktop/#!/server/x/details?key=%2Flibrary%2Fmetadata%2F1001',
+};
+
+describe('Plex menu on the detail page (e2e)', () => {
+  it('opens the gear menu and relinks through the dialog it holds', async (t) => {
+    const requests = stubApi(t, { title: 'Heat', isTvSeries: false, plex: linkedPlex });
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    const link = page.getByRole('link', { name: 'Open in Plex' });
+    assert.equal(await link.getAttribute('target'), '_blank');
+    assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+
+    assert.equal(await page.getByRole('button', { name: 'Relink' }).isVisible(), false);
+    await page.locator('summary[aria-label="Plex actions"]').click();
+    await page.getByRole('button', { name: 'Relink' }).click();
+    const dialog = page.getByRole('dialog', { name: /Relink/ });
+    await dialog.getByRole('button', { name: 'Link to Heat Remastered (2020)' }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    assert.deepEqual(
+      requests.map((request) => request.body),
+      [{ plexItemId: '1002' }]
+    );
+  });
+});
+
 describe('link a movie to Plex (e2e)', () => {
+  it('links a single match straight away without showing the result list', async (t) => {
+    const requests = stubApi(t, { title: 'Heat', isTvSeries: false }, undefined, false);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    assert.equal(new URL(page.url()).pathname, '/movies/m1');
+    assert.deepEqual(requests, [{ method: 'PUT', path: '/plex/movies/items/m1/link', body: { plexItemId: '1001' } }]);
+  });
+
+  it('goes straight to the seasons step for a single show match', async (t) => {
+    const requests = stubApi(t, { title: 'Show: Season 2', isTvSeries: true }, undefined, false);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByText('Which seasons does this entry cover?').waitFor();
+    assert.equal(await dialog.getByLabel('Season number').inputValue(), '2');
+    assert.deepEqual(requests, []);
+  });
+
+  it('links a single match without JavaScript through the server redirect', async (t) => {
+    const requests = stubApi(t, { title: 'Heat', isTvSeries: false }, undefined, false);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1/plex/link');
+    assert.equal(new URL(page.url()).pathname, '/movies/m1');
+    assert.equal(requests.length, 1);
+  });
+
+  it('shows the error page when the automatic link is refused', async (t) => {
+    const requests = stubApi(
+      t,
+      { title: 'Heat', isTvSeries: false },
+      new Response(JSON.stringify({ title: 'Plex request failed' }), { status: 502 }),
+      false
+    );
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    await page.getByRole('heading', { name: "Couldn't reach Plex" }).waitFor();
+    assert.ok(requests.length >= 1);
+  });
+
   it('searches in the dialog, picks a result and lands on the detail page', async (t) => {
     const requests = stubApi(t, { title: 'Heat', isTvSeries: false });
     const page = await t.serve(await createTestServer(router.fetch));

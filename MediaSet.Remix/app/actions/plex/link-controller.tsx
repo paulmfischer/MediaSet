@@ -10,7 +10,7 @@ import type { AppContext } from '../../router.ts';
 import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
-import { PlexLinkPage, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
+import { PlexLinkPage, resultLabel, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
 import { fieldErrors, text } from '../forms/form-schema.ts';
 import { renderError } from '../render-error.tsx';
@@ -148,6 +148,24 @@ function renderFlow(context: AppContext, id: string, movie: MovieEntity, state: 
   );
 }
 
+// The scope step for a picked show, prefilled from the entry's title.
+async function scopeStep(
+  context: AppContext,
+  id: string,
+  movie: MovieEntity,
+  picked: { fragment: boolean; query: string; selected: { plexItemId: string; title: string } }
+) {
+  let scope: PlexScope | undefined;
+  try {
+    scope = await getPlexScope(id);
+  } catch (error) {
+    if (error instanceof PlexActionError && error.failure === 'movieMissing')
+      return failurePage(context, id, error, 'link');
+    // The title only prefills; without it the entry covers the complete series
+  }
+  return renderFlow(context, id, movie, { ...picked, step: 'scope', scope: scopeToValues(scope) });
+}
+
 // Plex is contacted only here, when the flow is opened or searched, never when the detail page loads.
 async function index(context: AppContext) {
   const { id } = context.params as { id: string };
@@ -162,20 +180,10 @@ async function index(context: AppContext) {
   const plexItemId = (params.get('plexItemId') ?? '').trim();
 
   if (plexItemId && movie.isTvSeries) {
-    let scope: PlexScope | undefined;
-    try {
-      scope = await getPlexScope(id);
-    } catch (error) {
-      if (error instanceof PlexActionError && error.failure === 'movieMissing')
-        return failurePage(context, id, error, 'link');
-      // The title only prefills; without it the entry covers the complete series
-    }
-    return renderFlow(context, id, movie, {
+    return scopeStep(context, id, movie, {
       fragment,
-      step: 'scope',
       query,
       selected: { plexItemId, title: (params.get('plexTitle') ?? '').trim() || plexItemId },
-      scope: scopeToValues(scope),
     });
   }
 
@@ -188,6 +196,25 @@ async function index(context: AppContext) {
     } catch (error) {
       return failurePage(context, id, error, 'search');
     }
+  }
+
+  // The first search, prefilled with the title (no `query` given), that finds exactly one match applies it
+  // without asking; Relink fixes a wrong match. A TV entry still asks for its seasons, which cannot be inferred.
+  const only = results?.length === 1 ? results[0] : undefined;
+  if (only && !params.has('query')) {
+    if (movie.isTvSeries) {
+      return scopeStep(context, id, movie, {
+        fragment,
+        query,
+        selected: { plexItemId: only.plexItemId, title: resultLabel(only) },
+      });
+    }
+    try {
+      await linkPlexItem(id, { plexItemId: only.plexItemId });
+    } catch (error) {
+      return failurePage(context, id, error, 'link');
+    }
+    return redirect(routes.entityDetail.movies.href({ id }), 303);
   }
   return renderFlow(context, id, movie, { fragment, step: 'search', query, results });
 }

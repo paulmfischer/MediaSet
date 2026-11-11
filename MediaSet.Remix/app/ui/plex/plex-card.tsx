@@ -15,7 +15,7 @@ import {
   relativeTime,
 } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
-import { AlertTriangle } from '../icons.ts';
+import { AlertTriangle, ExternalLink, Settings } from '../icons.ts';
 import { PlexSeasonList } from './plex-tv-section.tsx';
 import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
 import { PlexUnlinkDialog } from './public/plex-unlink-dialog.tsx';
@@ -76,6 +76,41 @@ function tvFacts(plex: PlexItem): Array<[string, string]> {
   return rows.filter(([, value]) => value !== '');
 }
 
+interface PlexMenuProps {
+  refreshHref: string;
+  linkHref: string;
+  unlinkHref: string;
+  title: string;
+}
+
+// The gear menu beside the heading: Refresh, Relink and Unlink. A native <details>, so it opens and closes without
+// JavaScript; the three actions keep their own no-JavaScript targets and dialogs.
+function PlexMenu(handle: Handle<PlexMenuProps>) {
+  return () => {
+    const { refreshHref, linkHref, unlinkHref, title } = handle.props;
+    return (
+      <details class="relative" data-testid="plex-menu">
+        <summary
+          class="flex cursor-pointer list-none items-center rounded-md p-1 hover:bg-zinc-700 [&::-webkit-details-marker]:hidden"
+          aria-label="Plex actions"
+          title="Plex actions"
+        >
+          <Icon icon={Settings} size={18} />
+        </summary>
+        <div class="absolute left-0 top-full z-20 mt-1 flex w-36 flex-col [&>form>button]:w-full gap-2 rounded-lg border border-zinc-600 bg-zinc-800 p-2 shadow-lg">
+          <form method="post" action={refreshHref}>
+            <button type="submit" class="secondary">
+              Refresh
+            </button>
+          </form>
+          <PlexLinkDialog href={linkHref} label="Relink" />
+          <PlexUnlinkDialog title={title} href={unlinkHref} />
+        </div>
+      </details>
+    );
+  };
+}
+
 export function PlexCard(handle: Handle<PlexCardProps>) {
   return () => {
     const { plex, refreshHref, linkHref, unlinkHref, title, now } = handle.props;
@@ -94,12 +129,15 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
 
     return (
       <section
-        class={`mt-6 flex flex-col gap-3 rounded-lg border border-slate-600 p-4 ${state === 'onPlex' ? '' : 'opacity-70'}`}
+        class={`mt-6 flex flex-col gap-3 rounded-lg bg-zinc-800 p-4 shadow-md ${state === 'onPlex' ? '' : 'opacity-70'}`}
         aria-label="Plex"
         data-testid="plex-card"
         data-plex-state={state}
       >
-        <h2 class="text-lg">Plex</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-lg">Plex</h2>
+          <PlexMenu refreshHref={refreshHref} linkHref={linkHref} unlinkHref={unlinkHref} title={title} />
+        </div>
         {state === 'offPlex' ? (
           <p class="text-sm text-amber-400" role="status" data-testid="plex-notice">
             No longer on Plex. This is the last data MediaSet synced.
@@ -111,10 +149,6 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
               <Icon icon={AlertTriangle} size={18} />
               The Plex link for this movie is broken: the linked item is gone from Plex.
             </p>
-            <div class="flex gap-2">
-              <PlexLinkDialog href={linkHref} label="Relink" />
-              <PlexUnlinkDialog title={title} href={unlinkHref} />
-            </div>
           </div>
         ) : null}
         <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
@@ -133,15 +167,12 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
         </p>
         <div class="flex flex-wrap items-center gap-3">
           {href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer">
+            <a href={href} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1">
               Open in Plex
+              <Icon icon={ExternalLink} size={14} />
+              <span class="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
-          <form method="post" action={refreshHref}>
-            <button type="submit">Refresh</button>
-          </form>
-          {state === 'broken' ? null : <PlexLinkDialog href={linkHref} label="Relink" />}
-          {state === 'broken' ? null : <PlexUnlinkDialog title={title} href={unlinkHref} />}
         </div>
       </section>
     );

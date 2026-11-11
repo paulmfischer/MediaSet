@@ -36,7 +36,16 @@ export const PlexLinkDialog = clientEntry(
       loading = true;
       handle.update();
       try {
-        const response = await fetch(fragmentUrl(url), { signal: controller.signal, headers: { Accept: 'text/html' } });
+        const response = await fetch(fragmentUrl(url), {
+          signal: controller.signal,
+          redirect: 'manual',
+          headers: { Accept: 'text/html' },
+        });
+        // A search with exactly one match is linked by the server, which answers with a redirect to the detail page
+        if (response.type === 'opaqueredirect') {
+          await finishLinked();
+          return;
+        }
         if (!response.ok) {
           window.location.assign(url);
           return;
@@ -48,6 +57,17 @@ export const PlexLinkDialog = clientEntry(
       } finally {
         loading = false;
         handle.update();
+      }
+    }
+
+    // The link was applied (the server redirected): show the detail page's new state and close. If the reload
+    // fails the outcome is unknown, so go to the detail page rather than repeating anything.
+    async function finishLinked() {
+      try {
+        await handle.frames.top.reload();
+        dialog?.close();
+      } catch {
+        window.location.assign(new URL(handle.props.href, window.location.href).pathname.replace(/\/plex\/link$/, ''));
       }
     }
 
@@ -88,8 +108,7 @@ export const PlexLinkDialog = clientEntry(
           headers: { Accept: 'text/html' },
         });
         if (response.type === 'opaqueredirect') {
-          await handle.frames.top.reload();
-          dialog.close();
+          await finishLinked();
           return;
         }
         const html = await response.text();

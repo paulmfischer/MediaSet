@@ -162,7 +162,11 @@ describe('plex card', () => {
     assert.equal(field(html, 'Container'), 'mkv');
     assert.equal(field(html, 'Size'), '4.7 GB');
     assert.match(html, /Synced 3 hours ago/);
-    assert.match(html, /<a href="https:\/\/app\.plex\.tv\/[^"]*"[^>]*>Open in Plex<\/a>/);
+    const open = html.match(/<a href="https:\/\/app\.plex\.tv\/[^"]*"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+    assert.match(open, /target="_blank" rel="noopener noreferrer"/);
+    assert.match(open, /Open in Plex/);
+    assert.match(open, /<svg[^>]*aria-hidden="true"/);
+    assert.match(open, /\(opens in a new tab\)/);
     assert.match(html, /<form method="post" action="\/movies\/m1\/plex\/refresh">/);
     // Loading the page reads the movie and the config only; it never refreshes or asks for file paths.
     assert.deepEqual(
