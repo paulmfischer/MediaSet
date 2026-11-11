@@ -1,11 +1,24 @@
-import type { PlexItem, PlexRollup, PlexScope } from '../models.ts';
+import { PLEX_FILTERS, type PlexFilter, type PlexItem, type PlexRollup, type PlexScope } from '../models.ts';
 
 /** How the Plex icon and card present a movie's link, decided from the stored data. */
 export type PlexLinkState = 'onPlex' | 'offPlex' | 'broken';
 
-export function plexLinkState(plex: PlexItem): PlexLinkState {
+export function plexLinkState(plex: Pick<PlexItem, 'onPlex' | 'broken'>): PlexLinkState {
   if (plex.broken) return 'broken';
   return plex.onPlex ? 'onPlex' : 'offPlex';
+}
+
+/** The labels of the movie list's Plex filter, in menu order. */
+export const PLEX_FILTER_LABELS: Record<PlexFilter, string> = {
+  onPlex: 'On Plex',
+  notOnPlex: 'Not on Plex',
+  unwatched: 'Unwatched on Plex',
+  broken: 'Broken link',
+};
+
+/** The filter named by a query value, or null when it is missing or not one of the four. */
+export function parsePlexFilter(value: string | null | undefined): PlexFilter | null {
+  return (PLEX_FILTERS as readonly string[]).includes(value ?? '') ? (value as PlexFilter) : null;
 }
 
 const MINUTE = 60;

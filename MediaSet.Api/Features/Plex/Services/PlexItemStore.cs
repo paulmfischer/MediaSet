@@ -19,6 +19,12 @@ public interface IPlexItemStore
     /// </summary>
     Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken);
 
+    /// <summary>The documents of the given movie ids in one query, with only the fields the list summary needs.</summary>
+    Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken);
+
+    /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
+    Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
+
     /// <summary>Ids of every stored document, used to purge documents of movies that no longer exist.</summary>
     Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken);
 }
@@ -57,6 +63,29 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.SizeBytes)
                 .Include(d => d.PlexUpdatedAt))
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken) =>
+        await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, movieIds))
+            .Project<PlexItemData>(Builders<PlexItemData>.Projection
+                .Include(d => d.OnPlex)
+                .Include(d => d.Broken)
+                .Include(d => d.Watched)
+                .Include(d => d.Resolution))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
+    {
+        var f = Builders<PlexItemData>.Filter;
+        // notOnPlex lists the ids that ARE on Plex; the caller excludes them
+        var query = PlexListFilters.Normalize(filter) switch
+        {
+            PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => f.Eq(d => d.OnPlex, true),
+            PlexListFilters.Unwatched => f.And(f.Eq(d => d.OnPlex, true), f.Eq(d => d.Watched, false)),
+            PlexListFilters.Broken => f.Eq(d => d.Broken, true),
+            _ => throw new ArgumentException($"Invalid plex filter '{filter}'.")
+        };
+        return await Collection.Find(query).Project(d => d.Id).ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken) =>
         await Collection.Find(FilterDefinition<PlexItemData>.Empty)

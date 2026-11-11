@@ -44,6 +44,7 @@ describe('list params', () => {
       searchText: null,
       orderBy: 'title:asc',
       page: 1,
+      plex: null,
     });
     assert.equal(parseListParams(new URL('http://x/books?page=abc')).page, 1);
     assert.equal(parseListParams(new URL('http://x/books?page=-3')).page, 1);
@@ -51,6 +52,7 @@ describe('list params', () => {
       searchText: 'dune',
       orderBy: 'pages:desc',
       page: 3,
+      plex: null,
     });
   });
 

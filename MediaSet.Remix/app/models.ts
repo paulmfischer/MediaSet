@@ -227,6 +227,13 @@ export type PlexEpisode = {
   onPlex: boolean;
 };
 
+/** The small Plex summary the paged movie search attaches to a linked movie (no file path); absent when unlinked. */
+export type PlexListSummary = Pick<PlexItem, 'onPlex' | 'broken' | 'watched'> & { resolution?: string | null };
+
+/** The movie list's `plex` filter values. */
+export const PLEX_FILTERS = ['onPlex', 'notOnPlex', 'unwatched', 'broken'] as const;
+export type PlexFilter = (typeof PLEX_FILTERS)[number];
+
 /** The Plex data the movie lookup returns (the API's `PlexItemDataDto` without its file path). */
 export type PlexItem = {
   movieId: string;

@@ -91,6 +91,40 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
     }
 
+    public Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken)
+    {
+        SummaryReads++;
+        if (SummariesFailure != null)
+        {
+            throw SummariesFailure;
+        }
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => movieIds.Contains(d.Id)).ToList());
+        }
+    }
+
+    /// <summary>How many times the page summaries were read (the list join must be one query).</summary>
+    public int SummaryReads { get; private set; }
+
+    /// <summary>When set, summary reads throw it.</summary>
+    public Exception? SummariesFailure { get; set; }
+
+    public Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            var matching = PlexListFilters.Normalize(filter) switch
+            {
+                PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => _items.Values.Where(d => d.OnPlex),
+                PlexListFilters.Unwatched => _items.Values.Where(d => d.OnPlex && !d.Watched),
+                PlexListFilters.Broken => _items.Values.Where(d => d.Broken),
+                _ => throw new ArgumentException("bad filter")
+            };
+            return Task.FromResult<IReadOnlyList<string>>(matching.Select(d => d.Id).ToList());
+        }
+    }
+
     public Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken)
     {
         lock (_sync)

@@ -1,6 +1,6 @@
 import type { Handle } from 'remix/component';
 
-import type { PlexItem } from '../../models.ts';
+import type { PlexItem, PlexListSummary } from '../../models.ts';
 import { plexLinkState } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { Check } from '../icons.ts';
@@ -11,14 +11,14 @@ export const PLEX_ICON_VARIANT: 'light' | 'dark' = 'light';
 export const PLEX_ICON_SRC = `/integrations/plex-${PLEX_ICON_VARIANT}.svg`;
 
 interface PlexIconProps {
-  /** The movie's stored Plex data; an unlinked movie (undefined) shows nothing. */
-  plex: PlexItem | undefined;
+  /** The movie's stored Plex data or list summary; an unlinked movie (undefined) shows nothing. */
+  plex: Pick<PlexItem, 'onPlex' | 'broken' | 'watched'> | PlexListSummary | undefined;
   /** Width and height in pixels. */
   size?: number;
 }
 
 /** The tooltip and accessible label for a movie's Plex state. */
-export function plexIconLabel(plex: PlexItem): string {
+export function plexIconLabel(plex: Pick<PlexItem, 'onPlex' | 'broken' | 'watched'>): string {
   switch (plexLinkState(plex)) {
     case 'broken':
       return 'Plex link is broken';
