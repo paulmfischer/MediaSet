@@ -1,7 +1,7 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import type { PlexItem } from '../../models.ts';
+import type { PlexEpisode, PlexItem, PlexRollup } from '../../models.ts';
 import { router } from '../../router.ts';
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
@@ -237,4 +237,150 @@ describe('plex refresh', () => {
       assert.match(html, /href="\/movies\/m1"/);
     });
   }
+});
+
+describe('plex card for a TV entry', () => {
+  const field = (html: string, name: string) =>
+    html.match(new RegExp(`data-plex-field="${name}"[^>]*>([\\s\\S]*?)</div>`))?.[1]?.trim() ?? null;
+
+  const rollup = (overrides: Partial<PlexRollup> = {}): PlexRollup => ({
+    episodesPresent: 14,
+    episodesExpected: 16,
+    watchedCount: 12,
+    watched: false,
+    lastWatchedAt: '2025-03-01T00:00:00Z',
+    resolution: '1080p',
+    resolutionMixed: false,
+    hdr: false,
+    audioLanguages: ['English'],
+    audioLanguagesDiffer: false,
+    subtitleLanguages: ['English', 'French'],
+    subtitleLanguagesDiffer: false,
+    ...overrides,
+  });
+
+  const episode = (season: number, number: number, overrides: Partial<PlexEpisode> = {}): PlexEpisode => ({
+    seasonNumber: season,
+    episodeNumber: number,
+    title: `Episode ${season}.${number}`,
+    plexEpisodeId: `e${season}${number}`,
+    watched: false,
+    resolution: '1080p',
+    hdr: false,
+    sizeBytes: 1024 * 1024 * 1024,
+    onPlex: true,
+    ...overrides,
+  });
+
+  const tv: Partial<PlexItem> = {
+    scope: { kind: 'range', from: 1, to: 2 },
+    rollup: rollup(),
+    seasons: [
+      {
+        index: 1,
+        plexSeasonId: 's1',
+        episodeCount: 8,
+        rollup: rollup({ episodesPresent: 8, episodesExpected: 8, watchedCount: 8 }),
+      },
+      {
+        index: 2,
+        plexSeasonId: 's2',
+        episodeCount: 8,
+        rollup: rollup({
+          episodesPresent: 6,
+          episodesExpected: 8,
+          watchedCount: 4,
+          resolution: '1080p',
+          resolutionMixed: true,
+          audioLanguages: ['English', 'German'],
+          audioLanguagesDiffer: true,
+        }),
+      },
+    ],
+    episodes: [
+      episode(1, 1, { watched: true }),
+      episode(2, 1, { resolution: '720p', sizeBytes: 500 * 1024 * 1024 }),
+      episode(2, 2, { onPlex: false, watched: true }),
+    ],
+  };
+
+  it('should show progress, scope and rollup facts in the details, not beside the title', async (t) => {
+    stubApi(t, { plex: enabled, item: tv });
+    const html = await (await get('/movies/m1')).text();
+    assert.equal(field(html, 'Episodes'), '14/16 episodes | 12 watched');
+    assert.equal(field(html, 'Scope'), 'Seasons 1-2');
+    assert.equal(field(html, 'Resolution'), '1080p');
+    assert.equal(field(html, 'Audio'), 'English');
+    assert.equal(field(html, 'Subtitles'), 'English, French');
+    assert.doesNotMatch(html, /Video codec|data-plex-field="Size"/);
+    // The title icon never carries the episode line.
+    assert.doesNotMatch(html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? '', /episodes/);
+  });
+
+  it('should describe a single season and the complete series', async (t) => {
+    stubApi(t, { plex: enabled, item: { ...tv, scope: { kind: 'season', from: 2, to: 2 } } });
+    assert.equal(field(await (await get('/movies/m1')).text(), 'Scope'), 'Season 2');
+    stubApi(t, { plex: enabled, item: { ...tv, scope: { kind: 'all' } } });
+    assert.equal(field(await (await get('/movies/m1')).text(), 'Scope'), 'Complete series');
+  });
+
+  it('should list each season in a native details element with its own rollup', async (t) => {
+    stubApi(t, { plex: enabled, item: tv });
+    const html = await (await get('/movies/m1')).text();
+    assert.equal((html.match(/<details[^>]*data-plex-season/g) ?? []).length, 2);
+    const summary = (n: number) =>
+      html.match(new RegExp(`data-plex-season="${n}"[^>]*>\\s*<summary[^>]*>([\\s\\S]*?)</summary>`))?.[1] ?? '';
+    assert.match(summary(1), /Season 1.*8\/8 episodes \| 8 watched/);
+    assert.match(summary(2), /Season 2.*6\/8 episodes \| 4 watched/);
+    assert.doesNotMatch(html, /<details[^>]* open/);
+  });
+
+  it('should show a mixed-quality season and the differs note', async (t) => {
+    stubApi(t, { plex: enabled, item: tv });
+    const html = await (await get('/movies/m1')).text();
+    assert.match(html, /Mixed \| Audio: English, German \(differs per episode\) \| Subtitles: English, French/);
+  });
+
+  it('should show Mixed and HDR in the entry rollup', async (t) => {
+    stubApi(t, { plex: enabled, item: { ...tv, rollup: rollup({ resolutionMixed: true, hdr: true }) } });
+    assert.equal(field(await (await get('/movies/m1')).text(), 'Resolution'), 'Mixed HDR');
+  });
+
+  it('should list episodes with title, watched tick, resolution and size', async (t) => {
+    stubApi(t, { plex: enabled, item: tv });
+    const html = await (await get('/movies/m1')).text();
+    const first = html.match(/data-plex-episode="S01E01"[\s\S]*?<\/li>/)?.[0] ?? '';
+    assert.match(first, /Episode 1\.1/);
+    assert.match(first, /aria-label="Watched"/);
+    assert.match(first, /1080p/);
+    assert.match(first, /1\.0 GB/);
+    const second = html.match(/data-plex-episode="S02E01"[\s\S]*?<\/li>/)?.[0] ?? '';
+    assert.doesNotMatch(second, /aria-label="Watched"/);
+    assert.match(second, /720p/);
+    assert.match(second, /500 MB/);
+  });
+
+  it('should mark an episode that is no longer on Plex as missing', async (t) => {
+    stubApi(t, { plex: enabled, item: tv });
+    const html = await (await get('/movies/m1')).text();
+    const missing = html.match(/data-plex-episode="S02E02"[\s\S]*?<\/li>/)?.[0] ?? '';
+    assert.match(missing, /data-plex-episode-state="missing"/);
+    assert.match(missing, /Missing from Plex/);
+    assert.equal((html.match(/Missing from Plex/g) ?? []).length, 1);
+  });
+
+  it('should show episodes of a season missing from the seasons list under Other episodes', async (t) => {
+    stubApi(t, { plex: enabled, item: { ...tv, episodes: [...(tv.episodes ?? []), episode(5, 1)] } });
+    const html = await (await get('/movies/m1')).text();
+    const other = html.match(/data-plex-season="other"[\s\S]*?<\/details>/)?.[0] ?? '';
+    assert.match(other, /Other episodes/);
+    assert.match(other, /data-plex-episode="S05E01"/);
+    assert.doesNotMatch(other, /S01E01|S02E01/);
+  });
+
+  it('should not render season lists for a movie', async (t) => {
+    stubApi(t, { plex: enabled, item: {} });
+    const html = await (await get('/movies/m1')).text();
+    assert.doesNotMatch(html, /data-plex-season|plex-seasons/);
+  });
 });

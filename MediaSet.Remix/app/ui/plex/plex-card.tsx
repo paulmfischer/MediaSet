@@ -3,14 +3,20 @@ import type { Handle } from 'remix/component';
 import type { PlexItem } from '../../models.ts';
 import {
   describeAudioTrack,
+  describeLanguages,
+  describeProgress,
+  describeRollupResolution,
+  describeScope,
   formatDuration,
   formatPlexDate,
   formatSize,
+  isTvEntry,
   plexLinkState,
   relativeTime,
 } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { AlertTriangle } from '../icons.ts';
+import { PlexSeasonList } from './plex-tv-section.tsx';
 
 interface PlexCardProps {
   /** The movie's stored Plex data; undefined for an unlinked movie. */
@@ -43,6 +49,21 @@ function facts(plex: PlexItem): Array<[string, string]> {
     ['Duration', formatDuration(plex.durationSeconds)],
     ['Container', plex.container ?? ''],
     ['Size', formatSize(plex.sizeBytes)],
+  ];
+  return rows.filter(([, value]) => value !== '');
+}
+
+// A TV entry shows progress, scope and the rollup instead of the single-file facts.
+function tvFacts(plex: PlexItem): Array<[string, string]> {
+  const rollup = plex.rollup;
+  const rows: Array<[string, string]> = [
+    ['Episodes', rollup ? describeProgress(rollup) : ''],
+    ['Scope', describeScope(plex.scope)],
+    ['Resolution', rollup ? describeRollupResolution(rollup) : ''],
+    ['Audio', rollup ? describeLanguages(rollup.audioLanguages, rollup.audioLanguagesDiffer) : ''],
+    ['Subtitles', rollup ? describeLanguages(rollup.subtitleLanguages, rollup.subtitleLanguagesDiffer) : ''],
+    ['Last watched', formatPlexDate(rollup?.lastWatchedAt)],
+    ['Date added', formatPlexDate(plex.dateAdded)],
   ];
   return rows.filter(([, value]) => value !== '');
 }
@@ -97,7 +118,7 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
           </div>
         ) : null}
         <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
-          {facts(plex).map(([name, value]) => (
+          {(isTvEntry(plex) ? tvFacts(plex) : facts(plex)).map(([name, value]) => (
             <div key={name} class="contents">
               <span class="dark:text-slate-300">{name}</span>
               <div class="min-w-0 wrap-break-word" data-plex-field={name}>
@@ -106,6 +127,7 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
             </div>
           ))}
         </div>
+        {isTvEntry(plex) ? <PlexSeasonList plex={plex} /> : null}
         <p class="text-xs dark:text-slate-300" data-testid="plex-synced">
           Synced {relativeTime(plex.lastSyncedAt, now)}
         </p>
