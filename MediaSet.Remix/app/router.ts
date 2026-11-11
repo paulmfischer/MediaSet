@@ -23,12 +23,15 @@ import entityListsController from './actions/entity/controller.tsx';
 import entityPlexLinkController from './actions/plex/link-controller.tsx';
 import entityPlexRefreshController from './actions/plex/refresh-controller.tsx';
 import entityPlexUnlinkController from './actions/plex/unlink-controller.tsx';
+import plexController from './actions/plex/controller.tsx';
+import plexStatusController from './actions/plex/status-controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
 import { renderError, type ErrorContext } from './actions/render-error.tsx';
 import { assets } from './assets.ts';
 import { requestContext } from './middleware/request-context.ts';
 import { securityHeaders, type SecurityHeadersOptions } from './middleware/security-headers.ts';
 import { routes } from './routes.ts';
+import { plexNavGate } from './utils/plex-nav.server.ts';
 import { serverLogger } from './utils/serverLogger.ts';
 
 // Turns anything an action throws into a rendered error page: a thrown 404 Response is the shared
@@ -57,6 +60,8 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
       compression(),
       staticFiles('./public', { index: false }),
       render({ assets }),
+      // After the static files, so only requests that reach the app pay for the lookup.
+      plexNavGate(),
       errorPages,
       boundedFormData(),
     ],
@@ -84,6 +89,8 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
   router.map(routes.entityEdit.musics, entityEditMusicController);
   router.map(routes.entityDelete.musics, entityDeleteMusicController);
   router.map(routes.imageStats, imageStatsController);
+  router.map(routes.plex, plexController);
+  router.map(routes.plexStatus, plexStatusController);
 
   return router;
 }

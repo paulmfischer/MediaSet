@@ -19,12 +19,15 @@ function paged(items: unknown[], overrides: Record<string, unknown> = {}) {
   return { items, totalCount: items.length, page: 1, pageSize: 75, totalPages: 1, ...overrides };
 }
 
-// Stubs the API and records the URLs the page asked for.
+// Stubs the API and records the URLs the page asked for, except the integrations lookup.
 function stubApi(t: { after: (fn: () => void) => void }, body: unknown) {
   const original = globalThis.fetch;
   const urls: URL[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL) => {
-    urls.push(new URL(input instanceof Request ? input.url : String(input)));
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    // Every page asks for the integrations to decide on the gear menu's Plex link; that is not what these tests cover.
+    if (url.pathname === '/config/integrations') return Response.json([]);
+    urls.push(url);
     return Response.json(body);
   }) as typeof fetch;
   t.after(() => {

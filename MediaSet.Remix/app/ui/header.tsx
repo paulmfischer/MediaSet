@@ -1,7 +1,8 @@
 import type { Handle } from 'remix/component';
 
 import { Icon } from './icon.tsx';
-import { isActivePath, mainNav, toolsNav, type NavItem } from './nav.ts';
+import { isPlexNavEnabled } from '../utils/plex-nav.server.ts';
+import { isActivePath, mainNav, plexNavItem, toolsNav, type NavItem } from './nav.ts';
 import { MobileMenu } from './public/mobile-menu.tsx';
 import { ToolsMenu } from './public/tools-menu.tsx';
 
@@ -31,6 +32,7 @@ function NavLink(handle: Handle<NavLinkProps>) {
 export function Header(handle: Handle<{ path: string }>) {
   return () => {
     const { path } = handle.props;
+    const tools = isPlexNavEnabled() ? [...toolsNav, plexNavItem] : toolsNav;
     const links = (className: string, items: NavItem[]) =>
       items.map((item) => (
         <NavLink key={item.href} item={item} active={isActivePath(path, item.href)} class={className} />
@@ -45,8 +47,8 @@ export function Header(handle: Handle<{ path: string }>) {
 
           <nav aria-label="Main" class="hidden md:flex flex-row gap-4 items-center">
             {links('p-3 flex gap-2 items-center rounded-lg', mainNav)}
-            <ToolsMenu active={toolsNav.some((item) => isActivePath(path, item.href))}>
-              {toolsNav.map((item) => (
+            <ToolsMenu active={tools.some((item) => isActivePath(path, item.href))}>
+              {tools.map((item) => (
                 <NavLink
                   key={item.href}
                   item={item}
@@ -60,7 +62,7 @@ export function Header(handle: Handle<{ path: string }>) {
           <MobileMenu>
             {links('p-3 rounded-lg flex gap-2 items-center', mainNav)}
             <hr class="border-zinc-600 mx-3" />
-            {links('p-3 rounded-lg flex gap-2 items-center', toolsNav)}
+            {links('p-3 rounded-lg flex gap-2 items-center', tools)}
           </MobileMenu>
         </div>
       </header>

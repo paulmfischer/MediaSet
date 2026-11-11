@@ -1,7 +1,7 @@
 import { baseUrl } from '../constants.server.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
-import type { PlexScope, PlexSearchResult } from '../models.ts';
+import type { PlexEntityStatus, PlexScope, PlexSearchResult } from '../models.ts';
 import { getIntegrations } from './integrations-data.ts';
 
 /**
@@ -129,4 +129,38 @@ export async function linkPlexItem(movieId: string, request: PlexLinkRequest): P
 /** Removes a movie's Plex link and its stored Plex data (DELETE). */
 export async function unlinkPlexItem(movieId: string): Promise<void> {
   await plexCall('unlinkPlexItem', movieId, `${itemPath(movieId)}/link`, { method: 'DELETE' });
+}
+
+/**
+ * The sync status of every Plex entity type (GET `/plex/status`), disabled ones included. Throws a
+ * `PlexActionError` when the API cannot be reached or answers with an error.
+ */
+export async function getPlexStatuses(): Promise<PlexEntityStatus[]> {
+  let response: Response;
+  try {
+    response = await apiFetch(`${baseUrl}/plex/status`);
+  } catch (error) {
+    serverLogger.error('Could not reach the API for the Plex status', error, { operation: 'getPlexStatuses' });
+    throw new PlexActionError('other', 0);
+  }
+  if (!response.ok) await failFrom(response, 'getPlexStatuses', undefined);
+  const statuses = (await response.json()) as PlexEntityStatus[];
+  return Array.isArray(statuses) ? statuses : [];
+}
+
+/**
+ * Starts a sync for one entity type (POST; only ever called from a server action). Returns true when it started and
+ * false on a 409, which is not a failure: a run is already queued or running.
+ */
+export async function startPlexSync(entityType: string): Promise<boolean> {
+  let response: Response;
+  try {
+    response = await apiFetch(`${baseUrl}/plex/${encodeURIComponent(entityType)}/sync`, { method: 'POST' });
+  } catch (error) {
+    serverLogger.error('Could not reach the API to start a Plex sync', error, { operation: 'startPlexSync' });
+    throw new PlexActionError('other', 0);
+  }
+  if (response.status === 409) return false;
+  if (!response.ok) await failFrom(response, 'startPlexSync', entityType);
+  return true;
 }

@@ -28,7 +28,7 @@ interface Call {
   body: string | null;
 }
 
-// Stubs the API; `respond` answers each call. Records every request.
+// Stubs the API; `respond` answers each call. Records every request except the integrations lookup.
 function stubApi(t: { after: (fn: () => void) => void }, respond: (call: Call) => Response) {
   const original = globalThis.fetch;
   const calls: Call[] = [];
@@ -39,6 +39,8 @@ function stubApi(t: { after: (fn: () => void) => void }, respond: (call: Call) =
       pathname: new URL(request.url).pathname,
       body: init?.body ? String(init.body) : null,
     };
+    // Every page asks for the integrations to decide on the gear menu's Plex link; that is not what these tests cover.
+    if (call.pathname === '/config/integrations') return Response.json([]);
     calls.push(call);
     return respond(call);
   }) as typeof fetch;

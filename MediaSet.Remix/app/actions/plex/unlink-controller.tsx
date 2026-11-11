@@ -2,9 +2,10 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
-import { isPlexEnabledForMovies, PlexActionError, unlinkPlexItem } from '../../api/plex-data.ts';
+import { PlexActionError, unlinkPlexItem } from '../../api/plex-data.ts';
 import { Entity, type MovieEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
+import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { UnlinkPage } from '../../ui/plex/unlink-page.tsx';
@@ -27,7 +28,7 @@ function unlinkFailure(context: AppContext, id: string, error: unknown) {
 // The confirmation page matches the delete pattern: GET shows it, POST unlinks and redirects (303).
 async function index(context: AppContext) {
   const { id } = context.params as { id: string };
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   try {
     const movie = await getEntity<MovieEntity>(Entity.Movies, id);
     // Nothing to confirm for an unlinked movie: the same answer the unlink itself gives
@@ -59,7 +60,7 @@ async function index(context: AppContext) {
 async function action(context: AppContext) {
   const { id } = context.params as { id: string };
   const detailHref = routes.entityDetail.movies.href({ id });
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   try {
     await unlinkPlexItem(id);
   } catch (error) {

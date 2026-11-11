@@ -256,3 +256,30 @@ export type PlexItem = {
   seasons?: PlexSeason[] | null;
   episodes?: PlexEpisode[] | null;
 };
+
+/** One Plex sync run, as the status and sync endpoints return it. */
+export type PlexSyncRun = {
+  id?: string | null;
+  entityType: string;
+  trigger: string;
+  /** `queued`, `running`, `succeeded`, `failed` or `interrupted`. */
+  state: string;
+  startedAt: string;
+  endedAt?: string | null;
+  itemsScanned?: number | null;
+  matchedCount?: number | null;
+  unmatchedCount?: number | null;
+  erroredCount?: number | null;
+  externalIdsBackfilled?: number | null;
+  backfillSkipped?: number | null;
+  message?: string | null;
+};
+
+/** Sync status of one entity type (`GET /plex/status`). */
+export type PlexEntityStatus = {
+  entityType: string;
+  enabled: boolean;
+  lastRun?: PlexSyncRun | null;
+  nextRun?: string | null;
+  schedulePolicy: string;
+};

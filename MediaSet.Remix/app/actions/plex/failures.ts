@@ -1,7 +1,7 @@
 import { PlexActionError, type PlexFailure } from '../../api/plex-data.ts';
 
 /** The Plex actions that can fail with the shared messages. */
-export type PlexAction = 'refresh' | 'link' | 'unlink' | 'search';
+export type PlexAction = 'refresh' | 'link' | 'unlink' | 'search' | 'sync';
 
 export interface PlexFailurePage {
   status: number;
@@ -14,6 +14,7 @@ const ACTION_VERB: Record<PlexAction, string> = {
   link: 'linking to Plex',
   unlink: 'removing the Plex link',
   search: 'searching Plex',
+  sync: 'starting the Plex sync',
 };
 
 const RETRY: Record<PlexAction, string> = {
@@ -21,6 +22,7 @@ const RETRY: Record<PlexAction, string> = {
   link: 'link again',
   unlink: 'unlink again',
   search: 'search again',
+  sync: 'start the sync again',
 };
 
 const OTHER_HEADING: Record<PlexAction, string> = {
@@ -28,6 +30,7 @@ const OTHER_HEADING: Record<PlexAction, string> = {
   link: "Couldn't link to Plex",
   unlink: "Couldn't unlink from Plex",
   search: "Couldn't search Plex",
+  sync: "Couldn't start the Plex sync",
 };
 
 /** The heading, message and status of the entity error page for a failed Plex action. */

@@ -92,13 +92,16 @@ describe('plex gate on the movie detail page', () => {
     assert.match(html, /data-testid="plex-card"/);
   });
 
-  it('should not show Plex UI on other entity types', async (t) => {
-    const calls = stubApi(t, { plex: enabled });
-    await get('/books/b1');
-    assert.equal(
-      calls.some((call) => call.includes('/config/integrations')),
-      false
-    );
+  it('should look the gate up once for the movie detail page', async (t) => {
+    const calls = stubApi(t, { plex: enabled, item: {} });
+    await get('/movies/m1');
+    assert.equal(calls.filter((call) => call.endsWith('/config/integrations')).length, 1);
+  });
+
+  it('should not show the Plex card or icon on other entity types', async (t) => {
+    stubApi(t, { plex: enabled });
+    const html = await (await get('/books/b1')).text();
+    assert.equal(hasPlexUi(html), false);
   });
 });
 

@@ -4,16 +4,10 @@ import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
-import {
-  getPlexScope,
-  isPlexEnabledForMovies,
-  linkPlexItem,
-  PlexActionError,
-  searchPlex,
-  type PlexLinkScope,
-} from '../../api/plex-data.ts';
+import { getPlexScope, linkPlexItem, PlexActionError, searchPlex, type PlexLinkScope } from '../../api/plex-data.ts';
 import { Entity, type MovieEntity, type PlexScope, type PlexSearchResult } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
+import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexLinkPage, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
@@ -157,7 +151,7 @@ function renderFlow(context: AppContext, id: string, movie: MovieEntity, state: 
 // Plex is contacted only here, when the flow is opened or searched, never when the detail page loads.
 async function index(context: AppContext) {
   const { id } = context.params as { id: string };
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   const loaded = await loadMovie(context, id);
   if (loaded instanceof Response) return loaded;
   const movie = loaded;
@@ -200,7 +194,7 @@ async function index(context: AppContext) {
 
 async function action(context: AppContext) {
   const { id } = context.params as { id: string };
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   const loaded = await loadMovie(context, id);
   if (loaded instanceof Response) return loaded;
   const movie = loaded;

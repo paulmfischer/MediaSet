@@ -5,6 +5,10 @@ export const routes = route({
   config: get('/config.json'),
   home: get('/'),
   imageStats: form('/image-stats'),
+  // Plex sync page: a GET page with each entity type's status, and a POST that starts a sync and redirects back.
+  plex: form('/plex'),
+  // The same-origin status the sync page's script polls while a run is active (the browser never calls the API).
+  plexStatus: route({ index: get('/plex/status') }),
   // Collection list pages for each media type.
   entityLists: route({
     books: get('/books'),

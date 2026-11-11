@@ -1,8 +1,9 @@
 import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
-import { isPlexEnabledForMovies, refreshPlexItem } from '../../api/plex-data.ts';
+import { refreshPlexItem } from '../../api/plex-data.ts';
 import type { AppContext } from '../../router.ts';
+import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
@@ -13,7 +14,7 @@ async function refreshMovie(context: AppContext) {
   const detailHref = routes.entityDetail.movies.href({ id });
   const back = { backHref: detailHref, backLabel: 'Back to Movie' };
 
-  if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
+  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
 
   try {
     await refreshPlexItem(id);
