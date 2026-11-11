@@ -161,7 +161,10 @@ async function autoLink(context: AppContext, id: string, movie: MovieEntity) {
   const fragment = context.url.searchParams.get('fragment') === '1';
   const title = (movie.title ?? '').trim();
   const searchPage = routes.entityPlexLink.movies.index.href({ id });
-  if (movie.plex || title.length < MIN_QUERY_LENGTH) return redirect(searchPage, 303);
+  if (movie.plex || title.length < MIN_QUERY_LENGTH) {
+    // The dialog gets the search step itself (never a redirect, which it would read as a finished link)
+    return fragment ? index(context) : redirect(searchPage, 303);
+  }
 
   let results: PlexSearchResult[];
   try {

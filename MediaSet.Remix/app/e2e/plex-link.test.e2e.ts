@@ -111,6 +111,11 @@ describe('Plex gear menu behaviour (e2e)', () => {
     assert.equal(await isOpen(), false);
 
     await summary.click();
+    await page.getByRole('button', { name: 'Unlink' }).focus();
+    await page.getByRole('link', { name: 'Open in Plex' }).focus();
+    await page.waitForFunction(() => !document.querySelector<HTMLDetailsElement>('[data-testid="plex-menu"]')?.open);
+
+    await summary.click();
     await page.getByRole('heading', { name: 'Plex' }).click({ position: { x: 1, y: 1 } });
     await page.locator('h1').click();
     assert.equal(await isOpen(), false);
@@ -163,6 +168,18 @@ describe('link a movie to Plex (e2e)', () => {
     assert.equal(response.status(), 303);
     assert.equal(response.headers()['location'], '/movies/m1');
     assert.equal(requests.length, 1);
+  });
+
+  it('shows the search in the dialog, without closing, for a too-short title', async (t) => {
+    const requests = stubApi(t, { title: 'A', isTvSeries: false }, undefined, false);
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByText('Enter at least 2 characters to search Plex.').waitFor();
+    assert.deepEqual(requests, []);
   });
 
   it('never auto-applies a relink: the search and its lone result are shown', async (t) => {

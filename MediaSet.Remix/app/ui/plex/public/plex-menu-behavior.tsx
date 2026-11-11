@@ -26,6 +26,15 @@ export const PlexMenuBehavior = clientEntry(import.meta.url, function PlexMenuBe
           },
           { signal }
         );
+        // Tabbing out of the menu closes it; focus leaving the window (no related target) does not
+        menu.addEventListener(
+          'focusout',
+          (event) => {
+            const next = event.relatedTarget;
+            if (next instanceof Node && !menu.contains(next) && !menu.querySelector('dialog[open]')) close();
+          },
+          { signal }
+        );
         // `close` does not bubble, so listen in the capture phase
         menu.addEventListener('close', (event) => (event.target instanceof HTMLDialogElement ? close() : null), {
           capture: true,

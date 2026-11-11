@@ -47,16 +47,24 @@ export const PlexLinkDialog = clientEntry(
           method: form ? 'POST' : 'GET',
           body: form ? new URLSearchParams({ intent: 'auto' }) : null,
           signal: controller.signal,
-          redirect: 'manual',
           headers: { Accept: 'text/html' },
         });
-        // A search with exactly one match is linked by the server, which answers with a redirect to the detail page
-        if (response.type === 'opaqueredirect') {
-          await finishLinked();
+        // A search with exactly one match is linked by the server, which redirects to the detail page. The redirect is
+        // followed so its target can be told apart: only the detail page means "linked"; any other redirect is just
+        // navigated to.
+        if (response.redirected) {
+          const target = new URL(response.url);
+          if (target.pathname === new URL(handle.props.detailHref, window.location.href).pathname) {
+            await finishLinked();
+          } else {
+            window.location.assign(target);
+          }
           return;
         }
         if (!response.ok) {
-          // A refused automatic link is shown as the standard error page by sending the form for real
+          // The server refused (Plex unreachable, a failed link, ...). Sending the form for real shows the standard
+          // error page; that repeats the search and, if it found one match, the link attempt. Nothing was linked by
+          // the refused attempt, so repeating it is safe.
           if (form) {
             form.setAttribute('data-rmx-document', '');
             form.submit();

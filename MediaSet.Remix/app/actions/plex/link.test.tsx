@@ -328,6 +328,26 @@ describe('plex automatic link on the first Link', () => {
     assert.equal(linkCalls(calls).length, 0);
   });
 
+  it('should show the search step to the dialog, not redirect, for a blank title', async (t) => {
+    const calls = stubApi(t, { plex: enabled, movie: { title: 'A' }, results: [result('A', '11')] });
+    const response = await auto('?fragment=1');
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /data-plex-link="fragment"/);
+    assert.match(html, /at least 2 characters/);
+    assert.equal(linkCalls(calls).length, 0);
+  });
+
+  it('should show the search step to the dialog for a movie already linked elsewhere', async (t) => {
+    const calls = stubApi(t, { plex: enabled, movie: { plex: {} }, results: [result('Heat', '11')] });
+    const response = await auto('?fragment=1');
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /Relink to Plex: Heat/);
+    assert.match(html, /Heat \(1995\)/);
+    assert.equal(linkCalls(calls).length, 0);
+  });
+
   it('should skip the pick step but still ask for the seasons of a TV entry', async (t) => {
     const calls = stubApi(t, {
       plex: enabled,
