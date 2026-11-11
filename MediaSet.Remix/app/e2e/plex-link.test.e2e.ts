@@ -85,6 +85,50 @@ describe('link a movie to Plex (e2e)', () => {
     ]);
   });
 
+  it('keeps the dialog open with the error when the scope is invalid, then links after a fix', async (t) => {
+    const requests = stubApi(t, { title: 'Show: Season 2', isTvSeries: true });
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Choose Show (2010)' }).click();
+    await dialog.getByLabel('Season number').fill('');
+    await dialog.getByRole('button', { name: 'Link', exact: true }).click();
+
+    await dialog.getByText('Enter the season number').waitFor();
+    assert.equal(await dialog.isVisible(), true);
+    assert.equal(new URL(page.url()).pathname, '/movies/m1');
+    assert.equal(requests.length, 0);
+
+    await dialog.getByLabel('Season number').fill('3');
+    await dialog.getByRole('button', { name: 'Link', exact: true }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    assert.deepEqual(
+      requests.map((request) => request.body),
+      [{ plexItemId: '2001', scope: { kind: 'season', season: 3 } }]
+    );
+  });
+
+  it('starts fresh after the dialog is dismissed with Escape', async (t) => {
+    stubApi(t, { title: 'Show: Season 2', isTvSeries: true });
+    const page = await t.serve(await createTestServer(router.fetch));
+    await page.goto('/movies/m1');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Choose Show (2010)' }).click();
+    await dialog.getByText('Which seasons does this entry cover?').waitFor();
+    await page.keyboard.press('Escape');
+    await dialog.waitFor({ state: 'hidden' });
+
+    await page.getByRole('button', { name: 'Link to Plex' }).click();
+    await dialog.getByRole('button', { name: 'Choose Show (2010)' }).waitFor();
+    assert.equal(await dialog.getByText('Which seasons does this entry cover?').count(), 0);
+  });
+
   it('closes the dialog on Cancel without linking', async (t) => {
     const requests = stubApi(t, { title: 'Heat', isTvSeries: false });
     const page = await t.serve(await createTestServer(router.fetch));

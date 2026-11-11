@@ -63,15 +63,68 @@ export const PlexLinkDialog = clientEntry(
       }
     }
 
+    // Set while a failed in-dialog post is handed to the browser, so that submit is not intercepted again
+    let nativeSubmit = false;
+
+    // Posts the link from the dialog. A validation error comes back as the scope step (fragment=1) and replaces the
+    // dialog's content, so the dialog stays open with the error; success is a redirect, so the page reloads in
+    // place; anything else is an error page, which the browser shows by submitting the form for real.
+    async function post(form: HTMLFormElement) {
+      if (!dialog || !content) return;
+      const url = new URL(form.action);
+      url.searchParams.set('fragment', '1');
+      loading = true;
+      handle.update();
+      try {
+        const body = new URLSearchParams();
+        for (const [name, value] of new FormData(form)) if (typeof value === 'string') body.append(name, value);
+        const response = await fetch(url, {
+          method: 'POST',
+          body,
+          redirect: 'manual',
+          headers: { Accept: 'text/html' },
+        });
+        if (response.type === 'opaqueredirect') {
+          await handle.frames.top.reload();
+          dialog.close();
+          return;
+        }
+        const html = await response.text();
+        if (response.status === 400 && html.includes('data-plex-link="fragment"')) {
+          content.innerHTML = html;
+          content.querySelector<HTMLElement>('[aria-invalid="true"], input:not([type="hidden"])')?.focus();
+          return;
+        }
+      } catch {
+        // Fall through to the native submit
+      } finally {
+        loading = false;
+        handle.update();
+      }
+      nativeSubmit = true;
+      form.requestSubmit();
+      nativeSubmit = false;
+    }
+
     function onDialogSubmit(event: Event) {
       const form = event.target as HTMLFormElement;
-      if (form.method.toLowerCase() !== 'get') return;
+      if (nativeSubmit) return;
       event.preventDefault();
-      const url = new URL(form.action);
-      for (const [name, value] of new FormData(form)) {
-        if (typeof value === 'string') url.searchParams.set(name, value);
+      if (form.method.toLowerCase() === 'get') {
+        const url = new URL(form.action);
+        for (const [name, value] of new FormData(form)) {
+          if (typeof value === 'string') url.searchParams.set(name, value);
+        }
+        void load(url);
+      } else {
+        void post(form);
       }
-      void load(url);
+    }
+
+    // Closing (Cancel, Escape or a finished link) drops the loaded step, so the next open starts fresh
+    function onDialogClose() {
+      controller?.abort();
+      if (content) content.innerHTML = '';
     }
 
     // A link posts as a top-frame reload (the page is patched in place); close the dialog when it completes.
@@ -100,11 +153,13 @@ export const PlexLinkDialog = clientEntry(
           </form>
           <dialog
             aria-label={label}
+            aria-labelledby="plex-link-heading"
             class="m-auto w-full max-w-2xl rounded-md border border-gray-600 bg-gray-800 p-4 text-white backdrop:bg-black/60"
             mix={[
               ref((node) => (dialog = node as HTMLDialogElement)),
               on('click', (event) => onDialogClick(event)),
               on('submit', (event) => onDialogSubmit(event)),
+              on('close', onDialogClose),
             ]}
           >
             <p role="status" class={loading ? 'text-sm' : 'sr-only'}>

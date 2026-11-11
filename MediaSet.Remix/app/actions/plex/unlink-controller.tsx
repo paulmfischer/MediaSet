@@ -14,12 +14,24 @@ import { plexFailurePage } from './failures.ts';
 
 const renderUnavailable = entityErrorPage(routes.entityLists.movies.href(), 'Back to Movies');
 
+function unlinkFailure(context: AppContext, id: string, error: unknown) {
+  const failure = plexFailurePage(error, 'unlink');
+  return renderError(context, failure.status, error, {
+    heading: failure.heading,
+    message: failure.message,
+    backHref: routes.entityDetail.movies.href({ id }),
+    backLabel: 'Back to Movie',
+  });
+}
+
 // The confirmation page matches the delete pattern: GET shows it, POST unlinks and redirects (303).
 async function index(context: AppContext) {
   const { id } = context.params as { id: string };
   if (!(await isPlexEnabledForMovies())) return renderError(context, 404);
   try {
     const movie = await getEntity<MovieEntity>(Entity.Movies, id);
+    // Nothing to confirm for an unlinked movie: the same answer the unlink itself gives
+    if (!movie.plex) return unlinkFailure(context, id, new PlexActionError('notLinked', 404));
     return context.render(
       <Document path={context.url.pathname} title={`Unlink ${movie.title ?? 'Movie'} from Plex | MediaSet`}>
         <UnlinkPage
@@ -54,13 +66,7 @@ async function action(context: AppContext) {
     if (!(error instanceof PlexActionError)) {
       serverLogger.error('Failed to unlink movie from Plex', error, { operation: 'plexUnlink', id });
     }
-    const failure = plexFailurePage(error, 'unlink');
-    return renderError(context, failure.status, error, {
-      heading: failure.heading,
-      message: failure.message,
-      backHref: detailHref,
-      backLabel: 'Back to Movie',
-    });
+    return unlinkFailure(context, id, error);
   }
   return redirect(detailHref, 303);
 }

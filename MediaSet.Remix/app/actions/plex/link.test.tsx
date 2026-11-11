@@ -320,6 +320,31 @@ describe('plex link submit', () => {
     });
   }
 
+  it('should ignore a stale invalid season when another scope is chosen', async (t) => {
+    const calls = stubApi(t, { plex: enabled, movie: tv });
+    const response = await post('/movies/m1/plex/link', {
+      plexItemId: '2001',
+      scopeKind: 'all',
+      season: '150',
+      from: 'x',
+    });
+    assert.equal(response.status, 303);
+    assert.deepEqual(
+      linkCalls(calls).map((call) => call.body),
+      [{ plexItemId: '2001', scope: { kind: 'all' } }]
+    );
+  });
+
+  it('should render only the scope step, for the dialog, when a dialog post fails validation', async (t) => {
+    stubApi(t, { plex: enabled, movie: tv });
+    const response = await post('/movies/m1/plex/link?fragment=1', { plexItemId: '2001', scopeKind: 'season' });
+    const html = await response.text();
+    assert.equal(response.status, 400);
+    assert.doesNotMatch(html, /<html|<body/);
+    assert.match(html, /data-plex-link="fragment"/);
+    assert.match(html, /Enter the season number/);
+  });
+
   it('should answer 400 when no Plex item was chosen', async (t) => {
     const calls = stubApi(t, { plex: enabled });
     const response = await post('/movies/m1/plex/link', {});
@@ -365,6 +390,13 @@ describe('plex unlink', () => {
     assert.match(html, /<form method="post" action="\/movies\/m1\/plex\/unlink"/);
     assert.match(html, /href="\/movies\/m1"[^>]*>\s*Cancel/);
     assert.equal(deleteCalls(calls).length, 0);
+  });
+
+  it('should answer the not-linked error on the confirmation page for an unlinked movie', async (t) => {
+    stubApi(t, { plex: enabled });
+    const response = await get('/movies/m1/plex/unlink');
+    assert.equal(response.status, 404);
+    assert.match(await response.text(), /nothing to unlink/);
   });
 
   it('should unlink then redirect 303 to the detail page', async (t) => {

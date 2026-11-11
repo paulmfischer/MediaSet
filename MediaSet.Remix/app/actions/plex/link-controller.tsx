@@ -18,7 +18,7 @@ import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexLinkPage, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
 import { serverLogger } from '../../utils/serverLogger.ts';
-import { fieldErrors, optionalWholeNumber, text } from '../forms/form-schema.ts';
+import { fieldErrors, text } from '../forms/form-schema.ts';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
 
@@ -30,9 +30,10 @@ const linkForm = f.object({
   plexTitle: f.field(text()),
   query: f.field(text()),
   scopeKind: f.field(text()),
-  season: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
-  from: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
-  to: f.field(optionalWholeNumber(SEASON_ERROR, 2, 99)),
+  // Kept as text: only the fields the chosen scope uses are validated (see readScope)
+  season: f.field(text()),
+  from: f.field(text()),
+  to: f.field(text()),
 });
 
 const FORM_FIELDS = ['plexItemId', 'plexTitle', 'query', 'scopeKind', 'season', 'from', 'to'] as const;
@@ -50,27 +51,38 @@ export function scopeToValues(scope: PlexScope | undefined): PlexScopeValues {
   return { scopeKind: 'all', season: '', from: '', to: '' };
 }
 
-// Reads the submitted scope; errors are keyed by field name.
+// A season number from 0 to 99, or the error to show for the field
+function seasonNumber(value: string, blankMessage: string): { value: number } | { error: string } {
+  if (value === '') return { error: blankMessage };
+  return /^\d{1,2}$/.test(value) ? { value: Number(value) } : { error: SEASON_ERROR };
+}
+
+// Reads the submitted scope. Only the fields the chosen kind uses are checked, so a stale value left in
+// another field never blocks the link. Errors are keyed by field name.
 function readScope(
   kind: string,
-  parsed: { season: number | undefined; from: number | undefined; to: number | undefined }
+  fields: { season: string; from: string; to: string }
 ): { scope: PlexLinkScope } | { errors: Record<string, string> } {
   if (kind === 'all') return { scope: { kind: 'all' } };
   if (kind === 'season') {
-    return parsed.season === undefined
-      ? { errors: { season: 'Enter the season number' } }
-      : { scope: { kind: 'season', season: parsed.season } };
+    const season = seasonNumber(fields.season, 'Enter the season number');
+    return 'error' in season
+      ? { errors: { season: season.error } }
+      : { scope: { kind: 'season', season: season.value } };
   }
   if (kind === 'range') {
-    const errors: Record<string, string> = {};
-    if (parsed.from === undefined) errors.from = 'Enter the first season';
-    if (parsed.to === undefined) errors.to = 'Enter the last season';
-    if (parsed.from === undefined || parsed.to === undefined) return { errors };
-    if (parsed.from > parsed.to) return { errors: { to: 'The last season must not be before the first' } };
+    const from = seasonNumber(fields.from, 'Enter the first season');
+    const to = seasonNumber(fields.to, 'Enter the last season');
+    if ('error' in from || 'error' in to) {
+      return {
+        errors: { ...('error' in from ? { from: from.error } : {}), ...('error' in to ? { to: to.error } : {}) },
+      };
+    }
+    if (from.value > to.value) return { errors: { to: 'The last season must not be before the first' } };
     // A range of one season is a single season
-    return parsed.from === parsed.to
-      ? { scope: { kind: 'season', season: parsed.from } }
-      : { scope: { kind: 'range', from: parsed.from, to: parsed.to } };
+    return from.value === to.value
+      ? { scope: { kind: 'season', season: from.value } }
+      : { scope: { kind: 'range', from: from.value, to: to.value } };
   }
   return { errors: { scopeKind: 'Choose which seasons this entry covers' } };
 }
@@ -213,6 +225,8 @@ async function action(context: AppContext) {
     const scope = parsed.success ? readScope(parsed.value.scopeKind, parsed.value) : undefined;
     if (!parsed.success || !scope || 'errors' in scope) {
       return renderFlow(context, id, movie, {
+        // The dialog posts with fragment=1 and shows the answer in place
+        fragment: context.url.searchParams.get('fragment') === '1',
         step: 'scope',
         query: submitted.query.trim(),
         selected: { plexItemId, title: submitted.plexTitle.trim() || plexItemId },
