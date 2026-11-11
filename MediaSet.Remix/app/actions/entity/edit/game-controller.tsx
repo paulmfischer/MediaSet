@@ -11,7 +11,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { GameFormPage } from '../../../ui/entity/add/game-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
-import { entityWithImage, readCoverImage } from '../../forms/cover-image.ts';
+import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
 import { entityErrorPage } from '../../render-error.tsx';
@@ -131,14 +131,15 @@ export default createController(routes.entityEdit.games, {
         });
       }
 
+      let imageError: string | undefined;
       try {
         const update = toGameUpdate(game, parsed.value, removeImage);
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete update.imageUrl;
-          await updateEntity(id, update, entityWithImage(update, image.file));
+          ({ imageError } = await updateEntity(id, update, entityWithImage(update, image.file)));
         } else {
-          await updateEntity(id, update);
+          ({ imageError } = await updateEntity(id, update));
         }
       } catch (error) {
         serverLogger.error('Failed to update game', error, { operation: 'editGame', id });
@@ -157,7 +158,7 @@ export default createController(routes.entityEdit.games, {
           removeImage,
         });
       }
-      return redirect(routes.entityDetail.games.href({ id }), 303);
+      return redirect(withImageError(routes.entityDetail.games.href({ id }), imageError), 303);
     },
   },
 });

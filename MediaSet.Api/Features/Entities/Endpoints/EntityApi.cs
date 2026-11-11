@@ -4,7 +4,10 @@ using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic.FileIO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace MediaSet.Api.Features.Entities.Endpoints;
 
@@ -100,7 +103,7 @@ internal static class EntityApi
             return TypedResults.NotFound();
         });
 
-        group.MapPost("/", async Task<Results<Created<TEntity>, BadRequest<string>, ProblemHttpResult>> (
+        group.MapPost("/", async Task<Results<Created<TEntity>, Created<JsonObject>, BadRequest<string>, ProblemHttpResult>> (
             IEntityService<TEntity> entityService,
             [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
             HttpContext context,
@@ -170,6 +173,8 @@ internal static class EntityApi
                 await entityService.CreateAsync(newEntity, cancellationToken);
                 logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
 
+                string? imageError = null;
+
                 // Process image after entity is saved so we have an ID
                 // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
                 if (multipartForm is not null)
@@ -180,18 +185,15 @@ internal static class EntityApi
                     {
                         logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, newEntity.Id);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.SaveImageAsync(imageFile, entityType.ToLower(), newEntity.Id!, cancellationToken),
+                            ImageSource.Upload, logger, entityType, newEntity.Id!);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Updated {entityType} {id} with cover image", entityType, newEntity.Id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Image validation failed: {error}", ex.Message);
-                            // Continue anyway - entity was already created successfully
                         }
 
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
@@ -205,23 +207,15 @@ internal static class EntityApi
                         var imageUrl = imageUrlValue.ToString();
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken),
+                            ImageSource.Url, logger, entityType, newEntity.Id!);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, newEntity.Id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            // Continue anyway - entity was already created successfully
-                        }
-                        catch (HttpRequestException ex)
-                        {
-                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            // Continue anyway - entity was already created successfully
                         }
                     }
                 }
@@ -236,28 +230,31 @@ internal static class EntityApi
                     {
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken),
+                            ImageSource.Url, logger, entityType, newEntity.Id!);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken);
                             newEntity.CoverImage = image;
                             // Update entity with image
                             await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, newEntity.Id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            // Continue anyway - entity was already created successfully
-                        }
-                        catch (HttpRequestException ex)
-                        {
-                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            // Continue anyway - entity was already created successfully
                         }
                     }
                 }
 
-                return TypedResults.Created($"/{typeof(TEntity).Name}/{newEntity.Id}", newEntity);
+                var location = $"/{typeof(TEntity).Name}/{newEntity.Id}";
+                if (imageError is null)
+                {
+                    return TypedResults.Created(location, newEntity);
+                }
+
+                // The entity is saved; report the failed cover image alongside it.
+                var jsonOptions = context.RequestServices
+                    .GetRequiredService<IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>().Value.SerializerOptions;
+                var body = JsonSerializer.SerializeToNode(newEntity, jsonOptions) as JsonObject ?? [];
+                body["imageError"] = imageError;
+                return TypedResults.Created(location, body);
             }
             catch (Exception ex)
             {
@@ -266,7 +263,7 @@ internal static class EntityApi
             }
         }).DisableAntiforgery();
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>, ProblemHttpResult>> (
+        group.MapPut("/{id}", async Task<Results<Ok, Ok<ImageErrorResponse>, NotFound, BadRequest<string>, ProblemHttpResult>> (
             IEntityService<TEntity> entityService,
             [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
             string id,
@@ -341,6 +338,8 @@ internal static class EntityApi
                     return TypedResults.NotFound();
                 }
 
+                string? imageError = null;
+
                 // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
                 if (multipartForm is not null)
                 {
@@ -353,16 +352,13 @@ internal static class EntityApi
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.SaveImageAsync(imageFile, entityType.ToLower(), id, cancellationToken),
+                            ImageSource.Upload, logger, entityType, id);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), id, cancellationToken);
                             updatedEntity.CoverImage = image;
-                            logger.LogInformation("Image file processed successfully for {entityType}/{id}", entityType, id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Image validation failed: {error}", ex.Message);
-                            // Continue anyway - entity update should succeed even if image fails
                         }
 
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
@@ -378,21 +374,13 @@ internal static class EntityApi
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
+                            ImageSource.Url, logger, entityType, id);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken);
                             updatedEntity.CoverImage = image;
-                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            // Continue anyway - entity update should succeed even if image fails
-                        }
-                        catch (HttpRequestException ex)
-                        {
-                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            // Continue anyway - entity update should succeed even if image fails
                         }
                     }
                     else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
@@ -417,21 +405,13 @@ internal static class EntityApi
                         // Delete old image if it exists
                         DeleteOldImage(existingEntity, imageService, logger);
 
-                        try
+                        var (image, error) = await TryStoreImageAsync(
+                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
+                            ImageSource.Url, logger, entityType, id);
+                        imageError = error;
+                        if (image is not null)
                         {
-                            var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken);
                             updatedEntity.CoverImage = image;
-                            logger.LogInformation("Image downloaded and saved successfully for {entityType}/{id}", entityType, id);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                            // Continue anyway - entity update should succeed even if image fails
-                        }
-                        catch (HttpRequestException ex)
-                        {
-                            logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                            // Continue anyway - entity update should succeed even if image fails
                         }
                     }
                     // Check if image is being cleared (updatedEntity.CoverImage is null but existing had one)
@@ -445,7 +425,9 @@ internal static class EntityApi
 
                 var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
                 logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
-                return TypedResults.Ok();
+                return imageError is null
+                    ? TypedResults.Ok()
+                    : TypedResults.Ok(new ImageErrorResponse(imageError));
             }
             catch (Exception ex)
             {
@@ -601,64 +583,29 @@ internal static class EntityApi
     }
 
     /// <summary>
-    /// Helper method to process image upload or download from a multipart form.
+    /// Runs an image store operation. A validation or download failure is logged and mapped to a
+    /// stable <see cref="ImageErrorCodes"/> value so the entity can still be saved.
     /// </summary>
-    /// <returns>Tuple of (success, errorMessage, processedImage)</returns>
-    private static async Task<(bool Success, string? ErrorMessage, Image? ProcessedImage)> TryProcessImageAsync(
-        IFormCollection form,
-        IImageService imageService,
-        IEntity? existingEntity,
-        string entityType,
-        string entityId,
+    private static async Task<(Image? Image, string? Error)> TryStoreImageAsync(
+        Func<Task<Image>> store,
+        ImageSource source,
         ILogger logger,
-        CancellationToken cancellationToken)
+        string entityType,
+        string entityId)
     {
         try
         {
-            // Check for image file in multipart form
-            var imageFile = form.Files["coverImage"];
-            if (imageFile is not null && imageFile.Length > 0)
-            {
-                logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, entityId);
-
-                // Delete old image if it exists
-                DeleteOldImage(existingEntity, imageService, logger);
-
-                var image = await imageService.SaveImageAsync(imageFile, entityType.ToLower(), entityId, cancellationToken);
-                return (true, null, image);
-            }
-            // Check for imageUrl field if no file was provided
-            else if (form.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-            {
-                var imageUrl = imageUrlValue.ToString();
-                logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, entityId, imageUrl);
-
-                // Delete old image if it exists
-                DeleteOldImage(existingEntity, imageService, logger);
-
-                try
-                {
-                    var image = await imageService.DownloadAndSaveImageAsync(imageUrl, entityType, entityId, cancellationToken);
-                    return (true, null, image);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning("Failed to download image from URL: {error}", ex.Message);
-                    return (false, $"Failed to download image: {ex.Message}", null);
-                }
-                catch (HttpRequestException ex)
-                {
-                    logger.LogWarning("HTTP error downloading image: {error}", ex.Message);
-                    return (false, $"Failed to download image from URL: {ex.Message}", null);
-                }
-            }
-
-            return (true, null, null);
+            var image = await store();
+            logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, entityId);
+            return (image, null);
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogWarning("Image validation failed: {error}", ex.Message);
-            return (false, $"Image validation failed: {ex.Message}", null);
+            // Validation, download and storage failures (e.g. IOException) all leave the saved entity in place.
+            var code = ImageErrorMapper.ToCode(ex, source);
+            logger.LogWarning("Cover image from {source} not stored for {entityType}/{id} ({code}): {error}",
+                source, entityType, entityId, code, ex.Message);
+            return (null, code);
         }
     }
 

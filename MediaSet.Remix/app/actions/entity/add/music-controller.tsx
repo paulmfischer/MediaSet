@@ -9,7 +9,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MusicFormPage } from '../../../ui/entity/add/music-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
-import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
+import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
 import {
@@ -94,13 +94,14 @@ export default createController(routes.entityAdd.musics, {
 
       const album: MusicEntity = toMusicEntity(parsed.value, parsed.discList);
       let saved: MusicEntity;
+      let imageError: string | undefined;
       try {
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete album.imageUrl;
-          saved = await addEntity(album, entityWithImage(album, image.file));
+          ({ entity: saved, imageError } = await addEntity(album, entityWithImage(album, image.file)));
         } else {
-          saved = await addEntity(album);
+          ({ entity: saved, imageError } = await addEntity(album));
         }
       } catch (error) {
         serverLogger.error('Failed to add album', error, { operation: 'addMusic' });
@@ -125,7 +126,7 @@ export default createController(routes.entityAdd.musics, {
           status: 500,
         });
       }
-      return redirect(routes.entityDetail.musics.href({ id: saved.id }), 303);
+      return redirect(withImageError(routes.entityDetail.musics.href({ id: saved.id }), imageError), 303);
     },
   },
 });

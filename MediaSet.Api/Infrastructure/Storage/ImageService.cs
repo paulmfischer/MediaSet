@@ -64,7 +64,7 @@ public class ImageService : IImageService
             {
                 _logger.LogWarning("File size {FileSize} exceeds maximum {MaxSize} for {EntityType}/{EntityId}",
                     file.Length, maxSizeBytes, entityType, entityId);
-                throw new ArgumentException($"File size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
+                throw ImageFailure.Create(ImageFailureReason.TooLarge, $"File size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
             }
 
             await using var inputStream = file.OpenReadStream();
@@ -107,7 +107,7 @@ public class ImageService : IImageService
             {
                 _logger.LogWarning("Invalid image URL format: {ImageUrl} for {EntityType}/{EntityId}",
                     imageUrl, entityType, entityId);
-                throw new ArgumentException("Image URL must be a valid HTTP or HTTPS URL");
+                throw ImageFailure.Create(ImageFailureReason.Unreachable, "Image URL must be a valid HTTP or HTTPS URL");
             }
 
             // Validate the initial URL does not target a private/reserved address (SSRF protection)
@@ -126,7 +126,7 @@ public class ImageService : IImageService
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "HTTP error downloading image from {ImageUrl}", imageUrl);
-            throw new ArgumentException($"Failed to download image from URL: {ex.Message}", nameof(imageUrl), ex);
+            throw ImageFailure.Create(ImageFailureReason.Unreachable, $"Failed to download image from URL: {ex.Message}", ex, nameof(imageUrl));
         }
         catch (Exception ex)
         {
@@ -194,8 +194,8 @@ public class ImageService : IImageService
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
         {
-            throw new ArgumentException(
-                $"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
+            throw ImageFailure.Create(
+                ImageFailureReason.TooLarge, $"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
         }
 
         var imageData = buffer.ToArray();
@@ -204,30 +204,30 @@ public class ImageService : IImageService
         using var codec = SKCodec.Create(encodedData);
         if (codec == null)
         {
-            throw new ArgumentException("Unsupported file type or invalid image data. Only JPEG and PNG are supported.");
+            throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, "Unsupported file type or invalid image data. Only JPEG and PNG are supported.");
         }
 
         var mimeType = codec.EncodedFormat switch
         {
             SKEncodedImageFormat.Jpeg => "image/jpeg",
             SKEncodedImageFormat.Png => "image/png",
-            _ => throw new ArgumentException("Unsupported file type. Only JPEG and PNG are supported.")
+            _ => throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, "Unsupported file type. Only JPEG and PNG are supported.")
         };
         if (!_config.GetAllowedMimeTypes().Contains(mimeType))
         {
-            throw new ArgumentException($"Unsupported file type. Allowed types: {string.Join(", ", _config.GetAllowedMimeTypes())}");
+            throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, $"Unsupported file type. Allowed types: {string.Join(", ", _config.GetAllowedMimeTypes())}");
         }
 
         // Codecs may return successfully after decoding all scanlines even when the container is truncated.
         if (!HasCompleteContainer(imageData, codec.EncodedFormat))
         {
-            throw new ArgumentException("Image data is corrupt or incomplete");
+            throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, "Image data is corrupt or incomplete");
         }
 
         var info = codec.Info;
         if (info.Width <= 0 || info.Height <= 0 || (long)info.Width * info.Height > _config.MaxPixelCount)
         {
-            throw new ArgumentException($"Image dimensions exceed maximum allowed pixel count of {_config.MaxPixelCount}");
+            throw ImageFailure.Create(ImageFailureReason.PixelLimit, $"Image dimensions exceed maximum allowed pixel count of {_config.MaxPixelCount}");
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -237,7 +237,7 @@ public class ImageService : IImageService
         if (bitmap.GetPixels() == IntPtr.Zero ||
             codec.GetPixels(bitmapInfo, bitmap.GetPixels()) != SKCodecResult.Success)
         {
-            throw new ArgumentException("Image data is corrupt or incomplete");
+            throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, "Image data is corrupt or incomplete");
         }
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -247,7 +247,7 @@ public class ImageService : IImageService
             using var output = image.Encode(codec.EncodedFormat, 75);
             if (output == null)
             {
-                throw new ArgumentException("Failed to encode image");
+                throw ImageFailure.Create(ImageFailureReason.UnsupportedFormat, "Failed to encode image");
             }
             imageData = output.ToArray();
             cancellationToken.ThrowIfCancellationRequested();
@@ -322,13 +322,13 @@ public class ImageService : IImageService
                 {
                     if (redirectCount >= maxRedirects)
                     {
-                        throw new ArgumentException($"Image URL exceeded the maximum redirect limit of {maxRedirects}.");
+                        throw ImageFailure.Create(ImageFailureReason.Unreachable, $"Image URL exceeded the maximum redirect limit of {maxRedirects}.");
                     }
 
                     var location = response.Headers.Location;
                     if (location == null)
                     {
-                        throw new ArgumentException("Redirect response is missing a Location header.");
+                        throw ImageFailure.Create(ImageFailureReason.Unreachable, "Redirect response is missing a Location header.");
                     }
 
                     // Resolve relative redirect URIs against the current URL
@@ -355,7 +355,7 @@ public class ImageService : IImageService
                     {
                         _logger.LogWarning("Content-Length {ContentLength} exceeds maximum {MaxSize} for {ImageUrl}",
                             response.Content.Headers.ContentLength, maxSizeBytes, imageUrl);
-                        throw new ArgumentException($"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
+                        throw ImageFailure.Create(ImageFailureReason.TooLarge, $"Image size exceeds maximum allowed size of {_config.MaxFileSizeMb}MB");
                     }
                 }
 
@@ -372,7 +372,7 @@ public class ImageService : IImageService
                 catch (InvalidOperationException ex) when (ex.Message.Contains("size limit"))
                 {
                     _logger.LogWarning("Downloaded image exceeded size limit for {ImageUrl}", imageUrl);
-                    throw new ArgumentException($"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
+                    throw ImageFailure.Create(ImageFailureReason.TooLarge, $"Downloaded image exceeds maximum allowed size of {_config.MaxFileSizeMb}MB", ex);
                 }
 
                 return memoryStream.ToArray();

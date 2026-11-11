@@ -10,6 +10,7 @@ import { serverLogger } from '../../utils/serverLogger.ts';
 import { Document } from '../../ui/document.tsx';
 import { bookDetail, gameDetail, movieDetail, musicDetail, type DetailConfig } from '../../ui/entity/detail-config.ts';
 import { DetailPage } from '../../ui/entity/detail-page.tsx';
+import { coverImageNotice } from '../forms/cover-image.ts';
 import { renderError } from '../render-error.tsx';
 
 async function renderDetail<T extends BaseEntity>(context: AppContext, config: DetailConfig<T>, id: string) {
@@ -55,7 +56,14 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
       title={`${title} | MediaSet`}
       description={`${config.singular} Detail: ${title}`}
     >
-      <DetailPage config={config} entity={entity} basePath={basePath} apiUrl={clientApiUrl} plexEnabled={plexEnabled} />
+      <DetailPage
+        config={config}
+        entity={entity}
+        basePath={basePath}
+        apiUrl={clientApiUrl}
+        plexEnabled={plexEnabled}
+        imageNotice={coverImageNotice(context.url.searchParams.get('imageError'))}
+      />
     </Document>
   );
 }

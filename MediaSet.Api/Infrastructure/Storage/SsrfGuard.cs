@@ -58,7 +58,7 @@ internal static class SsrfGuard
         {
             if (IsPrivateOrReservedIp(literalIp))
             {
-                throw new ArgumentException("Image URL targets a private or reserved address and is not allowed.");
+                throw ImageFailure.Create(ImageFailureReason.Unreachable, "Image URL targets a private or reserved address and is not allowed.");
             }
 
             return;
@@ -71,12 +71,12 @@ internal static class SsrfGuard
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            throw new ArgumentException($"Unable to resolve hostname '{uri.Host}'.", ex);
+            throw ImageFailure.Create(ImageFailureReason.Unreachable, $"Unable to resolve hostname '{uri.Host}'.", ex);
         }
 
         if (addresses.Length == 0 || addresses.All(IsPrivateOrReservedIp))
         {
-            throw new ArgumentException("Image URL targets a private or reserved address and is not allowed.");
+            throw ImageFailure.Create(ImageFailureReason.Unreachable, "Image URL targets a private or reserved address and is not allowed.");
         }
     }
 }

@@ -87,6 +87,7 @@ public class SsrfGuardTests
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
         Assert.That(ex?.Message, Does.Contain("private or reserved"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 
     [TestCase("http://8.8.8.8/image.jpg")]
@@ -111,6 +112,7 @@ public class SsrfGuardTests
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {
@@ -149,6 +151,7 @@ public class SsrfGuardTests
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {
@@ -157,4 +160,23 @@ public class SsrfGuardTests
     }
 
     #endregion
+
+    [Test]
+    public async Task ValidateUrlAsync_WithHostnameThatCannotBeResolved_ThrowsUnreachable()
+    {
+        var originalResolver = SsrfGuard.DnsResolver;
+        try
+        {
+            SsrfGuard.DnsResolver = (_, _) => throw new InvalidOperationException("dns down");
+            var uri = new Uri("http://broken.example.com/image.jpg");
+
+            var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+        }
+        finally
+        {
+            SsrfGuard.DnsResolver = originalResolver;
+        }
+    }
 }

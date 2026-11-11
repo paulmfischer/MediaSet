@@ -345,6 +345,30 @@ describe('entity-data.ts', () => {
   });
 
   describe('updateEntity', () => {
+    it('should return the image error code when the API saved the entity without its cover image', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({ ok: true, status: 200, json: async () => ({ imageError: 'upload_too_large' }) });
+
+      const result = await updateEntity<BookEntity>('123', { type: Entity.Books, id: '123', title: 'B' });
+
+      expect(result).toEqual({ imageError: 'upload_too_large' });
+    });
+
+    it('should return no image error when the response body is empty or not JSON', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new SyntaxError('Unexpected end of JSON input');
+        },
+      });
+
+      const result = await updateEntity<BookEntity>('123', { type: Entity.Books, id: '123', title: 'B' });
+
+      expect(result.imageError).toBeUndefined();
+    });
+
     it('should update a book entity', async (t) => {
       const api = mockFetch(t);
       const bookToUpdate: BookEntity = {
@@ -535,6 +559,29 @@ describe('entity-data.ts', () => {
   });
 
   describe('addEntity', () => {
+    it('should return the image error code separately from the saved entity', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ id: 'new-1', type: Entity.Books, title: 'B', imageError: 'url_unreachable' }),
+      });
+
+      const { entity, imageError } = await addEntity<BookEntity>({ type: Entity.Books, title: 'B' });
+
+      expect(imageError).toBe('url_unreachable');
+      expect(entity).toEqual({ id: 'new-1', type: Entity.Books, title: 'B' });
+    });
+
+    it('should return no image error when the create response has none', async (t) => {
+      const api = mockFetch(t);
+      api.respondOnce({ ok: true, status: 201, json: async () => ({ id: 'new-1', type: Entity.Books, title: 'B' }) });
+
+      const result = await addEntity<BookEntity>({ type: Entity.Books, title: 'B' });
+
+      expect(result.imageError).toBeUndefined();
+    });
+
     it('should show the detail of a problem-details rejection of the create', async (t) => {
       const api = mockFetch(t);
       const problem = { title: 'Invalid ExternalId', status: 400, detail: "ExternalId must be 'source:value'." };
@@ -564,7 +611,7 @@ describe('entity-data.ts', () => {
         json: async () => responseBook,
       });
 
-      const result = await addEntity<BookEntity>(newBook);
+      const { entity: result } = await addEntity<BookEntity>(newBook);
 
       expect(result).toEqual(responseBook);
       expect(result.id).toBe('new-id-123');
@@ -596,7 +643,7 @@ describe('entity-data.ts', () => {
         json: async () => responseMovie,
       });
 
-      const result = await addEntity<MovieEntity>(newMovie);
+      const { entity: result } = await addEntity<MovieEntity>(newMovie);
 
       expect(result.id).toBe('movie-456');
       expect(result.type).toBe(Entity.Movies);
@@ -620,7 +667,7 @@ describe('entity-data.ts', () => {
         json: async () => responseGame,
       });
 
-      const result = await addEntity<GameEntity>(newGame);
+      const { entity: result } = await addEntity<GameEntity>(newGame);
 
       expect(result.id).toBe('game-789');
     });
@@ -643,7 +690,7 @@ describe('entity-data.ts', () => {
         json: async () => responseMusic,
       });
 
-      const result = await addEntity<MusicEntity>(newMusic);
+      const { entity: result } = await addEntity<MusicEntity>(newMusic);
 
       expect(result.id).toBe('music-101');
     });
@@ -724,7 +771,7 @@ describe('entity-data.ts', () => {
         json: async () => responseGame,
       });
 
-      const result = await addEntity<GameEntity>(complexGame);
+      const { entity: result } = await addEntity<GameEntity>(complexGame);
 
       expect(result.developers).toHaveLength(2);
       expect(result.genres).toHaveLength(2);
@@ -748,7 +795,7 @@ describe('entity-data.ts', () => {
         json: async () => responseBook,
       });
 
-      const result = await addEntity<BookEntity>(bookWithoutId);
+      const { entity: result } = await addEntity<BookEntity>(bookWithoutId);
 
       expect(result.id).toBe('assigned-id-12345');
       expect(result.title).toBe('Book');
@@ -982,7 +1029,7 @@ describe('entity-data.ts', () => {
         ok: true,
         json: async () => ({ ...newBook, id: '1' }),
       });
-      const created = await addEntity<BookEntity>(newBook);
+      const { entity: created } = await addEntity<BookEntity>(newBook);
       expect(created.id).toBe('1');
 
       // Read
