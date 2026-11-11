@@ -57,7 +57,7 @@ export const ConfirmDelete = clientEntry(import.meta.url, function ConfirmDelete
             </h2>
             <p>This can't be undone.</p>
             <div class="flex gap-2 justify-end">
-              <button type="button" mix={on('click', () => dialog?.close())}>
+              <button type="button" class="secondary" mix={on('click', () => dialog?.close())}>
                 Cancel
               </button>
               <button type="submit" disabled={pending} aria-disabled={pending ? 'true' : undefined}>

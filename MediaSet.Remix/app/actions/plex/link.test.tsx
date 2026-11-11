@@ -564,7 +564,8 @@ describe('plex unlink', () => {
     assert.match(html, /Unlink <strong>Heat<\/strong> from Plex\?/);
     assert.match(html, /deletes the Plex data stored for it/);
     assert.match(html, /<form method="post" action="\/movies\/m1\/plex\/unlink"/);
-    assert.match(html, /href="\/movies\/m1"[^>]*>\s*Cancel/);
+    assert.match(html, /<button[^>]*formaction="\/movies\/m1"[^>]*class="secondary"[^>]*>\s*Cancel/);
+    assert.doesNotMatch(html, /<a [^>]*>\s*Cancel/);
     assert.equal(deleteCalls(calls).length, 0);
   });
 

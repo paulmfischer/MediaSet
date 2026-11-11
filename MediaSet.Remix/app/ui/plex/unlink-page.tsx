@@ -20,9 +20,10 @@ export function UnlinkPage(handle: Handle<UnlinkPageProps>) {
           and you can link it again later.
         </p>
         <form method="post" action={action} class="flex gap-2 justify-end">
-          <a href={cancelHref} class="px-3 py-1">
+          {/* A GET submit button, since a form can't nest in this one: same style as the other Cancel buttons */}
+          <button type="submit" class="secondary" formmethod="get" formaction={cancelHref} formnovalidate>
             Cancel
-          </a>
+          </button>
           <SaveButton label="Unlink" pendingLabel="Unlinking…" />
         </form>
       </div>

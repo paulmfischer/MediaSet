@@ -399,6 +399,8 @@ describe('delete book', () => {
     const html = await response.text();
     assert.match(html, /<form method="post" action="\/books\/b1\/delete"/);
     assert.match(html, /<strong>Dune<\/strong>/);
+    assert.match(html, /<button[^>]*formaction="\/books\/b1"[^>]*class="secondary"[^>]*>\s*Cancel/);
+    assert.doesNotMatch(html, /<a [^>]*>\s*Cancel/);
   });
 
   it('returns 404 for a missing book on GET and POST', async (t) => {
