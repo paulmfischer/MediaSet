@@ -14,7 +14,7 @@ type Saved = {
 };
 
 // Stubs the API: books are loaded, POST /Books and PUT /Books/b1 are recorded as JSON or multipart.
-function stubApi(t: { after: (fn: () => void) => void }) {
+function stubApi(t: { after: (fn: () => void) => void }, imageError?: string) {
   const original = globalThis.fetch;
   const saved: Saved[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -39,9 +39,9 @@ function stubApi(t: { after: (fn: () => void) => void }) {
           json: (await request.json()) as Record<string, unknown>,
         });
       }
-      return request.method === 'POST'
-        ? Response.json({ id: 'new-id' }, { status: 201 })
-        : new Response(null, { status: 204 });
+      if (request.method === 'POST')
+        return Response.json({ id: 'new-id', ...(imageError ? { imageError } : {}) }, { status: 201 });
+      return imageError ? Response.json({ imageError }) : new Response(null, { status: 204 });
     }
     if (url.pathname.endsWith('/Books/b1')) return Response.json(existing);
     if (url.pathname.endsWith('/config/integrations')) {
@@ -174,6 +174,24 @@ describe('book cover image on add', () => {
 
     assert.equal(response.status, 413);
     assert.equal(saved.length, 0);
+  });
+});
+
+describe('book cover image error', () => {
+  it('redirects an add to the detail page with the code when the image was not stored', async (t) => {
+    stubApi(t, 'upload_too_large');
+    const response = await submit('/books/add', { title: 'Dune', coverImage: png() });
+
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('location'), '/books/new-id?imageError=upload_too_large');
+  });
+
+  it('redirects an edit to the detail page with the code when the image was not stored', async (t) => {
+    stubApi(t, 'url_unreachable');
+    const response = await submit('/books/b1/edit', { title: 'Dune', imageUrl: 'https://example.com/a.jpg' });
+
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('location'), '/books/b1?imageError=url_unreachable');
   });
 });
 

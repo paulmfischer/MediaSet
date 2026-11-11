@@ -10,7 +10,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { GameFormPage } from '../../../ui/entity/add/game-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
-import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
+import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadGameOptions } from '../game-options.ts';
@@ -96,13 +96,14 @@ export default createController(routes.entityAdd.games, {
 
       const game: GameEntity = toGameEntity(parsed.value);
       let saved: GameEntity;
+      let imageError: string | undefined;
       try {
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete game.imageUrl;
-          saved = await addEntity(game, entityWithImage(game, image.file));
+          ({ entity: saved, imageError } = await addEntity(game, entityWithImage(game, image.file)));
         } else {
-          saved = await addEntity(game);
+          ({ entity: saved, imageError } = await addEntity(game));
         }
       } catch (error) {
         serverLogger.error('Failed to add game', error, { operation: 'addGame' });
@@ -127,7 +128,7 @@ export default createController(routes.entityAdd.games, {
           status: 500,
         });
       }
-      return redirect(routes.entityDetail.games.href({ id: saved.id }), 303);
+      return redirect(withImageError(routes.entityDetail.games.href({ id: saved.id }), imageError), 303);
     },
   },
 });

@@ -10,7 +10,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MovieFormPage } from '../../../ui/entity/add/movie-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
-import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
+import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadMovieOptions } from '../movie-options.ts';
@@ -96,13 +96,14 @@ export default createController(routes.entityAdd.movies, {
 
       const movie: MovieEntity = toMovieEntity(parsed.value);
       let saved: MovieEntity;
+      let imageError: string | undefined;
       try {
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete movie.imageUrl;
-          saved = await addEntity(movie, entityWithImage(movie, image.file));
+          ({ entity: saved, imageError } = await addEntity(movie, entityWithImage(movie, image.file)));
         } else {
-          saved = await addEntity(movie);
+          ({ entity: saved, imageError } = await addEntity(movie));
         }
       } catch (error) {
         serverLogger.error('Failed to add movie', error, { operation: 'addMovie' });
@@ -127,7 +128,7 @@ export default createController(routes.entityAdd.movies, {
           status: 500,
         });
       }
-      return redirect(routes.entityDetail.movies.href({ id: saved.id }), 303);
+      return redirect(withImageError(routes.entityDetail.movies.href({ id: saved.id }), imageError), 303);
     },
   },
 });

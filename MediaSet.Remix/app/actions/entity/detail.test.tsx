@@ -298,4 +298,42 @@ describe('item detail pages', () => {
     assert.equal(response.status, 500);
     assert.match(await response.text(), /Please try again/);
   });
+
+  describe('cover image notice', () => {
+    it('shows the fixed message for a known image error code', async (t) => {
+      stubApi(t, () => Response.json(book));
+
+      const html = await (await get('/books/b1?imageError=upload_too_large')).text();
+
+      assert.match(
+        html,
+        /data-testid="image-error-notice"[^>]*>Saved, but the cover image could not be stored: The file is larger than the size limit\./
+      );
+    });
+
+    it('shows the generic message for an unknown code and never the query text', async (t) => {
+      stubApi(t, () => Response.json(book));
+
+      const html = await (await get('/books/b1?imageError=%3Cscript%3Ealert(1)%3C%2Fscript%3E')).text();
+
+      assert.match(html, /could not be stored: The image could not be processed\./);
+      assert.doesNotMatch(html, /alert\(1\)/);
+    });
+
+    it('shows no notice without an image error code', async (t) => {
+      stubApi(t, () => Response.json(book));
+
+      const html = await (await get('/books/b1')).text();
+
+      assert.doesNotMatch(html, /image-error-notice/);
+    });
+
+    it('ignores inherited object keys as codes', async (t) => {
+      stubApi(t, () => Response.json(book));
+
+      const html = await (await get('/books/b1?imageError=constructor')).text();
+
+      assert.match(html, /The image could not be processed\./);
+    });
+  });
 });

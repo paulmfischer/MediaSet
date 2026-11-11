@@ -10,7 +10,7 @@ import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
 import { serverLogger } from '../../../utils/serverLogger.ts';
-import { readCoverImage, entityWithImage } from '../../forms/cover-image.ts';
+import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadBookOptions } from '../book-options.ts';
@@ -96,13 +96,14 @@ export default createController(routes.entityAdd.books, {
 
       const book: BookEntity = toBookEntity(parsed.value);
       let saved: BookEntity;
+      let imageError: string | undefined;
       try {
         // An uploaded file takes precedence over a URL, so the URL isn't sent with it.
         if (image.file) {
           delete book.imageUrl;
-          saved = await addEntity(book, entityWithImage(book, image.file));
+          ({ entity: saved, imageError } = await addEntity(book, entityWithImage(book, image.file)));
         } else {
-          saved = await addEntity(book);
+          ({ entity: saved, imageError } = await addEntity(book));
         }
       } catch (error) {
         serverLogger.error('Failed to add book', error, { operation: 'addBook' });
@@ -127,7 +128,7 @@ export default createController(routes.entityAdd.books, {
           status: 500,
         });
       }
-      return redirect(routes.entityDetail.books.href({ id: saved.id }), 303);
+      return redirect(withImageError(routes.entityDetail.books.href({ id: saved.id }), imageError), 303);
     },
   },
 });

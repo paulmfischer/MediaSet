@@ -156,11 +156,34 @@ async function rejectionMessage(response: Response): Promise<string> {
   return text;
 }
 
+/**
+ * The API saves an entity even when its cover image can't be stored, and reports why with a stable code
+ * (`imageError`, absent on success). Callers map the code to a message; it is never shown as is.
+ */
+export interface SaveResult<TEntity> {
+  entity: TEntity;
+  imageError?: string;
+}
+
+function readImageError(body: unknown): string | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const code = (body as { imageError?: unknown }).imageError;
+  return typeof code === 'string' && code ? code : undefined;
+}
+
+async function readUpdateImageError(response: Response): Promise<string | undefined> {
+  try {
+    return readImageError(await response.json());
+  } catch {
+    return undefined;
+  }
+}
+
 export async function updateEntity<TEntity extends BaseEntity>(
   id: string,
   entity: TEntity,
   formData?: FormData
-): Promise<void> {
+): Promise<{ imageError?: string }> {
   const entityType = getEntityType(entity);
   serverLogger.info(`Updating ${singular(entityType)} with id ${id}`, {
     operation: 'updateEntity',
@@ -199,18 +222,25 @@ export async function updateEntity<TEntity extends BaseEntity>(
         status: rejected ? response.status : 500,
       });
     }
+    // A successful update may have an empty body; only a failed cover image comes with one.
+    const imageError = await readUpdateImageError(response);
     serverLogger.info(`Successfully updated ${singular(entityType)} with id ${id}`, {
       operation: 'updateEntity',
       entityType,
       id,
+      imageError,
     });
+    return { imageError };
   } catch (error) {
     serverLogger.error('Error updating entity', error, { operation: 'updateEntity', entityType, id });
     throw error;
   }
 }
 
-export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, formData?: FormData): Promise<TEntity> {
+export async function addEntity<TEntity extends BaseEntity>(
+  entity: TEntity,
+  formData?: FormData
+): Promise<SaveResult<TEntity>> {
   const entityType = getEntityType(entity);
   serverLogger.info(`Creating new ${singular(entityType)}`, {
     operation: 'addEntity',
@@ -247,13 +277,16 @@ export async function addEntity<TEntity extends BaseEntity>(entity: TEntity, for
         status: rejected ? response.status : 500,
       });
     }
-    const newEntity = (await response.json()) as TEntity;
+    const { imageError: reported, ...rest } = (await response.json()) as TEntity & { imageError?: unknown };
+    const newEntity = rest as unknown as TEntity;
+    const imageError = readImageError({ imageError: reported });
     serverLogger.info(`Successfully created new ${singular(entityType)} with id ${(newEntity as { id?: string }).id}`, {
       operation: 'addEntity',
       entityType,
       entityId: (newEntity as { id?: string }).id,
+      imageError,
     });
-    return newEntity;
+    return { entity: newEntity, imageError };
   } catch (error) {
     serverLogger.error('Error creating entity', error, { operation: 'addEntity', entityType });
     throw error;

@@ -18,6 +18,8 @@ interface DetailPageProps<T extends BaseEntity> {
   apiUrl: string;
   /** The Plex gate: when false, no Plex icon or card renders. Only ever true for movies. */
   plexEnabled?: boolean;
+  /** Set after a save whose cover image could not be stored; the entity itself was saved. */
+  imageNotice?: string;
   /** Fixed "now" for the card's relative sync time (tests); defaults to the current time. */
   now?: Date;
 }
@@ -37,7 +39,7 @@ const value = 'min-w-0 wrap-break-word';
 
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
-    const { config, entity, basePath, apiUrl, plexEnabled = false, now } = handle.props;
+    const { config, entity, basePath, apiUrl, plexEnabled = false, imageNotice, now } = handle.props;
     const plex = plexEnabled ? (entity as { plex?: PlexItem }).plex : undefined;
     const itemId = encodeURIComponent(entity.id ?? '');
     const title = config.titleOf(entity);
@@ -64,6 +66,11 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
             <ConfirmDelete title={title || config.singular} href={`${basePath}/${itemId}/delete`} />
           </div>
         </div>
+        {imageNotice ? (
+          <p class="mt-4 text-sm text-amber-400" role="status" data-testid="image-error-notice">
+            {imageNotice}
+          </p>
+        ) : null}
         <div class="h-full mt-4">
           <div class="flex flex-col lg:flex-row lg:gap-3">
             <div class="lg:basis-1/5 flex justify-center mb-4 lg:mb-0">
