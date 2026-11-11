@@ -9,7 +9,7 @@ namespace MediaSet.Api.Tests.Features.Plex.Services;
 public class PlexScheduleCalculatorTests
 {
     // UTC+5 without DST, so local-time expectations are the same on every machine
-    private static readonly TimeZoneInfo Plus5 = TimeZoneInfo.CreateCustomTimeZone("Test+5", TimeSpan.FromHours(5), "Test+5", "Test+5");
+    private static readonly TimeZoneInfo _plus5 = TimeZoneInfo.CreateCustomTimeZone("Test+5", TimeSpan.FromHours(5), "Test+5", "Test+5");
 
     [Test]
     public void GetNextRun_DefaultSchedule_IsNextSundayAtThreeLocal()
@@ -29,7 +29,7 @@ public class PlexScheduleCalculatorTests
     {
         var now = new DateTimeOffset(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
 
-        var result = PlexScheduleCalculator.GetNextRun(PlexConfiguration.DefaultSchedule, now, Plus5);
+        var result = PlexScheduleCalculator.GetNextRun(PlexConfiguration.DefaultSchedule, now, _plus5);
 
         // Sunday 03:00 at +05:00 is Saturday 22:00 UTC
         Assert.That(result.NextRun, Is.EqualTo(new DateTimeOffset(2026, 11, 14, 22, 0, 0, TimeSpan.Zero)));

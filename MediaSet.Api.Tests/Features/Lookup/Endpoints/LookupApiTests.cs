@@ -52,7 +52,7 @@ public class LookupApiTests : IntegrationTestBase
                     // Add mock clients FIRST
                     services.AddScoped<IOpenLibraryClient>(_ => _openLibraryClientMock.Object);
                     services.AddScoped<IUpcItemDbClient>(_ => _upcItemDbClientMock.Object);
-                    
+
                     // Ensure the BookLookupStrategy is registered with our mocks
                     // Remove existing strategy if it exists
                     var strategyDescriptor = services.SingleOrDefault(
@@ -96,7 +96,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -124,7 +124,7 @@ public class LookupApiTests : IntegrationTestBase
         var identifierValue = "0000000000000";
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync((BookResponse)null!);
 
         // Act
@@ -157,7 +157,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByLccnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByLccnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -191,7 +191,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByOclcAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByOclcAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -225,7 +225,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByOlidAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByOlidAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -282,7 +282,7 @@ public class LookupApiTests : IntegrationTestBase
         foreach (var identifierType in identifierTypes)
         {
             _openLibraryClientMock
-                .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+                .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResponse);
 
             // Act
@@ -316,7 +316,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -356,7 +356,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -396,7 +396,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -433,7 +433,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act
@@ -466,7 +466,7 @@ public class LookupApiTests : IntegrationTestBase
         );
 
         _openLibraryClientMock
-            .Setup(c  => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetReadableBookByIsbnAsync(identifierValue, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResponse);
 
         // Act

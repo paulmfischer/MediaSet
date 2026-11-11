@@ -35,8 +35,8 @@ public class VersionServiceTests
         // Assert
         Assert.That(result, Is.Not.Null);
         // Should either be a semantic version (x.y.z) or "0.0.0-local"
-        var isValidFormat = result == "0.0.0-local" || 
-                           result.Contains('.') || 
+        var isValidFormat = result == "0.0.0-local" ||
+                           result.Contains('.') ||
                            System.Text.RegularExpressions.Regex.IsMatch(result, @"^\d+\.\d+\.\d+");
         Assert.That(isValidFormat, Is.True, $"Version '{result}' should be in semantic version format or '0.0.0-local'");
     }
@@ -61,7 +61,7 @@ public class VersionServiceTests
         // Assert
         Assert.That(result, Is.Not.Null);
         // Should either be "unknown" or a hex string (commit SHA)
-        var isValidFormat = result == "unknown" || 
+        var isValidFormat = result == "unknown" ||
                            System.Text.RegularExpressions.Regex.IsMatch(result, @"^[0-9a-f]+$");
         Assert.That(isValidFormat, Is.True, $"Commit SHA '{result}' should be hex format or 'unknown'");
     }

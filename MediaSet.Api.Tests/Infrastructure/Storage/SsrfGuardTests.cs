@@ -103,30 +103,30 @@ public class SsrfGuardTests
     [Test]
     public async Task ValidateUrlAsync_WithHostnameThatResolvesToPrivateIp_ThrowsArgumentException()
     {
-        var originalResolver = SsrfGuard.DnsResolver;
+        var originalResolver = SsrfGuard._dnsResolver;
         try
         {
-            SsrfGuard.DnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("192.168.1.1") });
+            SsrfGuard._dnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("192.168.1.1") });
             var uri = new Uri("http://internal.example.com/image.jpg");
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
-        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {
-            SsrfGuard.DnsResolver = originalResolver;
+            SsrfGuard._dnsResolver = originalResolver;
         }
     }
 
     [Test]
     public async Task ValidateUrlAsync_WithHostnameThatResolvesToPublicIp_DoesNotThrow()
     {
-        var originalResolver = SsrfGuard.DnsResolver;
+        var originalResolver = SsrfGuard._dnsResolver;
         try
         {
-            SsrfGuard.DnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("93.184.216.34") });
+            SsrfGuard._dnsResolver = (_, _) => Task.FromResult(new[] { IPAddress.Parse("93.184.216.34") });
             var uri = new Uri("https://example.com/image.jpg");
 
             await Assert.DoesNotThrowAsync(async () =>
@@ -135,27 +135,27 @@ public class SsrfGuardTests
         }
         finally
         {
-            SsrfGuard.DnsResolver = originalResolver;
+            SsrfGuard._dnsResolver = originalResolver;
         }
     }
 
     [Test]
     public async Task ValidateUrlAsync_WithHostnameThatResolvesToNoAddresses_ThrowsArgumentException()
     {
-        var originalResolver = SsrfGuard.DnsResolver;
+        var originalResolver = SsrfGuard._dnsResolver;
         try
         {
-            SsrfGuard.DnsResolver = (_, _) => Task.FromResult(Array.Empty<IPAddress>());
+            SsrfGuard._dnsResolver = (_, _) => Task.FromResult(Array.Empty<IPAddress>());
             var uri = new Uri("http://nonexistent.example.com/image.jpg");
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await SsrfGuard.ValidateUrlAsync(uri, CancellationToken.None));
             Assert.That(ex?.Message, Does.Contain("private or reserved"));
-        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+            Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
         }
         finally
         {
-            SsrfGuard.DnsResolver = originalResolver;
+            SsrfGuard._dnsResolver = originalResolver;
         }
     }
 
@@ -164,10 +164,10 @@ public class SsrfGuardTests
     [Test]
     public async Task ValidateUrlAsync_WithHostnameThatCannotBeResolved_ThrowsUnreachable()
     {
-        var originalResolver = SsrfGuard.DnsResolver;
+        var originalResolver = SsrfGuard._dnsResolver;
         try
         {
-            SsrfGuard.DnsResolver = (_, _) => throw new InvalidOperationException("dns down");
+            SsrfGuard._dnsResolver = (_, _) => throw new InvalidOperationException("dns down");
             var uri = new Uri("http://broken.example.com/image.jpg");
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
@@ -176,7 +176,7 @@ public class SsrfGuardTests
         }
         finally
         {
-            SsrfGuard.DnsResolver = originalResolver;
+            SsrfGuard._dnsResolver = originalResolver;
         }
     }
 }

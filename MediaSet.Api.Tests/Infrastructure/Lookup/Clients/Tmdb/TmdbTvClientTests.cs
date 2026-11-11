@@ -36,13 +36,14 @@ public class TmdbTvClientTests
                 Assert.That(System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["query"],
                     Is.EqualTo("Back to the Future & Friends"));
             }
-            else { Assert.That(request.RequestUri?.AbsolutePath, Is.EqualTo("/3/collection/100")); }
+            else
+            { Assert.That(request.RequestUri?.AbsolutePath, Is.EqualTo("/3/collection/100")); }
             var collection = """
                 {"id":100,"name":"Back to the Future Collection","poster_path":"/collection.jpg",
                  "parts":[{"id":1,"title":"Back to the Future"}]}
                 """;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-                { Content = new StringContent(search ? "{\"results\":[" + collection + "]}" : collection) });
+            { Content = new StringContent(search ? "{\"results\":[" + collection + "]}" : collection) });
         });
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
         var search = await Client(http).SearchCollectionAsync("Back to the Future & Friends", CancellationToken.None);
@@ -61,7 +62,7 @@ public class TmdbTvClientTests
             Assert.That(System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["query"],
                 Is.EqualTo("Bob's Burgers & Friends"));
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-                { Content = new StringContent("{\"results\":[{\"id\":32726,\"name\":\"Bob's Burgers\"}]}") });
+            { Content = new StringContent("{\"results\":[{\"id\":32726,\"name\":\"Bob's Burgers\"}]}") });
         });
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
         var result = await Client(http).SearchTvAsync("Bob's Burgers & Friends", CancellationToken.None);

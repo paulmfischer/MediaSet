@@ -11,7 +11,7 @@ namespace MediaSet.Api.Tests.Features.Health.Services;
 [TestFixture]
 public class HealthCheckProbeTests
 {
-    private static readonly Uri Endpoint = new("http://localhost:8080/health");
+    private static readonly Uri _endpoint = new("http://localhost:8080/health");
 
     [Test]
     public async Task RunAsync_SuccessfulResponse_RequestsHealthAndReturnsZero()
@@ -20,13 +20,13 @@ public class HealthCheckProbeTests
         using var handler = new StubHandler((request, _) =>
         {
             Assert.That(request.Method, Is.EqualTo(HttpMethod.Get));
-            Assert.That(request.RequestUri, Is.EqualTo(Endpoint));
+            Assert.That(request.RequestUri, Is.EqualTo(_endpoint));
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         });
         using var client = new HttpClient(handler);
 
         // Act
-        var exitCode = await HealthCheckProbe.RunAsync(client, Endpoint);
+        var exitCode = await HealthCheckProbe.RunAsync(client, _endpoint);
 
         // Assert
         Assert.That(exitCode, Is.Zero);
@@ -44,7 +44,7 @@ public class HealthCheckProbeTests
         using var client = new HttpClient(handler);
 
         // Act
-        var exitCode = await HealthCheckProbe.RunAsync(client, Endpoint);
+        var exitCode = await HealthCheckProbe.RunAsync(client, _endpoint);
 
         // Assert
         Assert.That(exitCode, Is.EqualTo(1));
@@ -58,7 +58,7 @@ public class HealthCheckProbeTests
         using var client = new HttpClient(handler);
 
         // Act
-        var exitCode = await HealthCheckProbe.RunAsync(client, Endpoint);
+        var exitCode = await HealthCheckProbe.RunAsync(client, _endpoint);
 
         // Assert
         Assert.That(exitCode, Is.EqualTo(1));
@@ -76,7 +76,7 @@ public class HealthCheckProbeTests
         using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMilliseconds(50) };
 
         // Act
-        var exitCode = await HealthCheckProbe.RunAsync(client, Endpoint);
+        var exitCode = await HealthCheckProbe.RunAsync(client, _endpoint);
 
         // Assert
         Assert.That(exitCode, Is.EqualTo(1));

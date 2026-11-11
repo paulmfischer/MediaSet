@@ -18,11 +18,11 @@ namespace MediaSet.Api.Tests.Features.Plex.Services;
 [TestFixture]
 public class PlexSyncSchedulerTests
 {
-    private static readonly TimeZoneInfo Plus5 = TimeZoneInfo.CreateCustomTimeZone("Test+5", TimeSpan.FromHours(5), "Test+5", "Test+5");
+    private static readonly TimeZoneInfo _plus5 = TimeZoneInfo.CreateCustomTimeZone("Test+5", TimeSpan.FromHours(5), "Test+5", "Test+5");
 
     // Monday 2026-11-09 12:00 UTC; the next default run is Sunday 03:00 at +05:00 = 2026-11-14 22:00 UTC
-    private static readonly DateTimeOffset Start = new(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
-    private static readonly DateTimeOffset FirstRun = new(2026, 11, 14, 22, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset _start = new(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset _firstRun = new(2026, 11, 14, 22, 0, 0, TimeSpan.Zero);
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
@@ -49,7 +49,7 @@ public class PlexSyncSchedulerTests
 
     private sealed class Harness
     {
-        public FakeTimeProvider Time { get; } = new(Start, Plus5);
+        public FakeTimeProvider Time { get; } = new(_start, _plus5);
         public PlexScheduleInfo Info { get; } = new();
         public CapturingLoggerProvider Logs { get; } = new();
         public Mock<IPlexSyncService> Sync { get; } = new();
@@ -101,7 +101,7 @@ public class PlexSyncSchedulerTests
         var next = await h.NextRunAsync("movies");
         await h.Scheduler.StopAsync(CancellationToken.None);
 
-        Assert.That(next, Is.EqualTo(FirstRun));
+        Assert.That(next, Is.EqualTo(_firstRun));
         Assert.That(next.Offset, Is.EqualTo(TimeSpan.FromHours(5)));
         Assert.That(h.StartCount, Is.EqualTo(0));
     }
@@ -112,9 +112,9 @@ public class PlexSyncSchedulerTests
         var h = new Harness(Config(("movies", true, PlexConfiguration.DefaultSchedule)), ["movies"]);
 
         await h.Scheduler.StartAsync(CancellationToken.None);
-        await h.Time.AdvanceToAsync(FirstRun);
+        await h.Time.AdvanceToAsync(_firstRun);
         await WaitUntilAsync(() => h.StartCount == 1);
-        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == FirstRun.AddDays(7));
+        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == _firstRun.AddDays(7));
         await h.Scheduler.StopAsync(CancellationToken.None);
 
         Assert.That(h.Starts.Single(), Is.EqualTo(("movies", PlexSyncTriggers.Scheduled)));
@@ -153,7 +153,7 @@ public class PlexSyncSchedulerTests
 
         Assert.That(showsNext.DayOfWeek, Is.EqualTo(DayOfWeek.Wednesday));
         Assert.That(h.Starts.Single(), Is.EqualTo(("shows", PlexSyncTriggers.Scheduled)));
-        Assert.That(moviesNext, Is.EqualTo(FirstRun));
+        Assert.That(moviesNext, Is.EqualTo(_firstRun));
     }
 
     [Test]
@@ -165,7 +165,7 @@ public class PlexSyncSchedulerTests
 
         await h.Scheduler.StartAsync(CancellationToken.None);
         await h.NextRunAsync("shows");
-        await h.Time.AdvanceToAsync(FirstRun);
+        await h.Time.AdvanceToAsync(_firstRun);
         await WaitUntilAsync(() => h.StartCount == 1);
         await h.Scheduler.StopAsync(CancellationToken.None);
 
@@ -209,8 +209,8 @@ public class PlexSyncSchedulerTests
             .ThrowsAsync(new InvalidOperationException("db down"));
 
         await h.Scheduler.StartAsync(CancellationToken.None);
-        await h.Time.AdvanceToAsync(FirstRun);
-        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == FirstRun.AddDays(7));
+        await h.Time.AdvanceToAsync(_firstRun);
+        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == _firstRun.AddDays(7));
         await h.Scheduler.StopAsync(CancellationToken.None);
 
         Assert.That(h.Logs.Lines, Has.Some.Contain("could not start").And.Contain("db down"));
@@ -232,7 +232,7 @@ public class PlexSyncSchedulerTests
 
         await h.Scheduler.StartAsync(CancellationToken.None);
         await h.NextRunAsync("movies");
-        await h.Time.AdvanceToAsync(FirstRun);
+        await h.Time.AdvanceToAsync(_firstRun);
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var stopping = h.Scheduler.StopAsync(CancellationToken.None);
         release.SetResult();
@@ -263,8 +263,8 @@ public class PlexSyncSchedulerTests
             .ReturnsAsync(new PlexSyncStartResult(new PlexSyncRun { Id = "active", EntityType = "movies", State = PlexSyncRunStates.Running }, false));
 
         await h.Scheduler.StartAsync(CancellationToken.None);
-        await h.Time.AdvanceToAsync(FirstRun);
-        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == FirstRun.AddDays(7));
+        await h.Time.AdvanceToAsync(_firstRun);
+        await WaitUntilAsync(() => h.Info.GetNextRun("movies") == _firstRun.AddDays(7));
         await h.Scheduler.StopAsync(CancellationToken.None);
 
         Assert.That(h.Logs.Lines, Has.Some.Contain("skipped").And.Contain("already running"));
@@ -322,7 +322,7 @@ public class PlexSyncSchedulerTests
         await WaitUntilAsync(() => concurrent == 1);
         await h.Scheduler.StartAsync(CancellationToken.None);
         await h.NextRunAsync("shows");
-        await h.Time.AdvanceToAsync(FirstRun, timers: 2);
+        await h.Time.AdvanceToAsync(_firstRun, timers: 2);
         await WaitUntilAsync(() => real.Store.Runs.Count == 2);
         var whileHeld = real.Store.Runs.Select(r => (r.EntityType, r.Trigger, r.State)).ToList();
         gate.SetResult();

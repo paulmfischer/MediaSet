@@ -195,7 +195,7 @@ public class EntityApiTests : IntegrationTestBase
         var gameId = "507f1f77bcf86cd799439011";
         var updatedGame = _gameFaker.Clone().RuleFor(g => g.Id, gameId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-        
+
         // Mock GetAsync to return the existing entity
         _gameServiceMock.Setup(s => s.GetAsync(gameId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Game?>(updatedGame));
         _gameServiceMock.Setup(s => s.UpdateAsync(gameId, It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));
@@ -454,7 +454,7 @@ public class EntityApiTests : IntegrationTestBase
         var bookId = "507f1f77bcf86cd799439011";
         var updatedBook = _bookFaker.Clone().RuleFor(b => b.Id, bookId).Generate();
         var updateResult = Mock.Of<ReplaceOneResult>();
-        
+
         // Mock GetAsync to return the existing entity
         _bookServiceMock.Setup(s => s.GetAsync(bookId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Book?>(updatedBook));
         _bookServiceMock.Setup(s => s.UpdateAsync(bookId, It.IsAny<Book>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(updateResult));

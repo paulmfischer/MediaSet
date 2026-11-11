@@ -34,8 +34,8 @@ public static partial class PlexTvTitleParser
     private const string Edge = @"(?<![\p{L}\p{N}])";
     private const string EndEdge = @"(?![\p{L}\p{N}])";
 
-    private static readonly string[] OrdinalWords = [.. Ordinals.Split('|')];
-    private static readonly string[] NumberWords =
+    private static readonly string[] _ordinalWords = [.. Ordinals.Split('|')];
+    private static readonly string[] _numberWords =
         ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
 
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
@@ -146,7 +146,7 @@ public static partial class PlexTvTitleParser
         foreach (Match m in OrdinalPhrase().Matches(text))
         {
             var word = m.Groups["ordinal"].Value.ToLowerInvariant();
-            var n = Array.IndexOf(OrdinalWords, word) + 1;
+            var n = Array.IndexOf(_ordinalWords, word) + 1;
             if (n == 0)
             {
                 n = ToNumber(word.TrimEnd('s', 't', 'n', 'd', 'r', 'h'));
@@ -219,7 +219,7 @@ public static partial class PlexTvTitleParser
         {
             return n;
         }
-        var i = Array.IndexOf(NumberWords, token.ToLowerInvariant());
+        var i = Array.IndexOf(_numberWords, token.ToLowerInvariant());
         return i < 0 ? 0 : i + 1;
     }
 }

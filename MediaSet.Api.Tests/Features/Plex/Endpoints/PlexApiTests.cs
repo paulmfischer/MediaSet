@@ -21,7 +21,7 @@ namespace MediaSet.Api.Tests.Features.Plex.Endpoints;
 [TestFixture]
 public class PlexApiTests
 {
-    private static readonly string[] HttpMethods = ["get", "post", "put", "delete", "patch"];
+    private static readonly string[] _httpMethods = ["get", "post", "put", "delete", "patch"];
     private const string Token = "super-secret-token-value";
     private readonly List<WebApplicationFactory<Program>> _factories = [];
 
@@ -308,7 +308,7 @@ public class PlexApiTests
         Assert.That(paths, Is.Not.Empty);
         foreach (var path in paths)
         {
-            foreach (var operation in path.Value.EnumerateObject().Where(o => HttpMethods.Contains(o.Name)))
+            foreach (var operation in path.Value.EnumerateObject().Where(o => _httpMethods.Contains(o.Name)))
             {
                 var parameters = operation.Value.GetProperty("parameters").EnumerateArray();
                 var entityType = parameters.SingleOrDefault(p => p.GetProperty("name").GetString() == "entityType");

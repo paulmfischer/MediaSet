@@ -289,7 +289,8 @@ public class ImageIngestionTests
         using var stream = new MemoryStream(bytes);
         var file = new FormFile(stream, 0, bytes.Length, "file", "incorrect.txt")
         {
-            Headers = new HeaderDictionary(), ContentType = "application/octet-stream"
+            Headers = new HeaderDictionary(),
+            ContentType = "application/octet-stream"
         };
         return await service.SaveImageAsync(file, "books", "123", CancellationToken.None);
     }

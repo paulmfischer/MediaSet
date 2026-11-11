@@ -179,7 +179,7 @@ public class NoLookupProviderTests
     public async Task Lookup_MusicBrainzConfigured_DoesNotReturn503()
     {
         // Arrange
-        using var client = CreateClient(extraSettings: MusicBrainzSettings);
+        using var client = CreateClient(extraSettings: _musicBrainzSettings);
 
         // Act
         var response = await client.GetAsync("/lookup/Books/isbn/9780140328721");
@@ -228,7 +228,7 @@ public class NoLookupProviderTests
         await AssertLookupNotConfiguredProblemAsync(response);
     }
 
-    private static readonly Dictionary<string, string> MusicBrainzSettings = new()
+    private static readonly Dictionary<string, string> _musicBrainzSettings = new()
     {
         ["MusicBrainzConfiguration:BaseUrl"] = "https://musicbrainz.org/ws/2",
         ["MusicBrainzConfiguration:Timeout"] = "30",

@@ -61,7 +61,8 @@ public class OpenLibraryClient : IOpenLibraryClient
             _logger.LogInformation("Open Library readable lookup completed for {IdentifierType}", identifierType);
 
             var book = MapReadApiResponseToBookResponse(response);
-            if (book == null) { return null; }
+            if (book == null)
+            { return null; }
             var artwork = ExtractArtwork(response!, identifierType, identifierValue);
             return book with { ImageUrl = artwork.FirstOrDefault()?.Url, Artwork = artwork };
         }
@@ -192,8 +193,12 @@ public class OpenLibraryClient : IOpenLibraryClient
                     var artwork = (enriched.Artwork ?? []).Concat(search.Artwork ?? [])
                         .Select(a => a with { Scope = "Work or alternate-edition artwork; exact edition unverified" })
                         .DistinctBy(a => a.Url).ToList();
-                    return enriched with { ImageUrl = search.ImageUrl ?? enriched.ImageUrl, Artwork = artwork,
-                        Provenance = search.Provenance ?? enriched.Provenance };
+                    return enriched with
+                    {
+                        ImageUrl = search.ImageUrl ?? enriched.ImageUrl,
+                        Artwork = artwork,
+                        Provenance = search.Provenance ?? enriched.Provenance
+                    };
                 }
             }
             catch (Exception ex)
@@ -242,7 +247,8 @@ public class OpenLibraryClient : IOpenLibraryClient
 
         // Get the first record (usually there's only one)
         var firstRecord = readApiResponse.Records.Values.FirstOrDefault(r => r.Data != null);
-        if (firstRecord == null) { return null; }
+        if (firstRecord == null)
+        { return null; }
         var data = firstRecord.Data;
 
         if (data == null)
@@ -319,12 +325,14 @@ public class OpenLibraryClient : IOpenLibraryClient
         {
             // A read response can contain several records. Never borrow artwork
             // across conflicting titles/authors merely because it was returned nearby.
-            if (record.Data == null || primary?.Data == null) { continue; }
+            if (record.Data == null || primary?.Data == null)
+            { continue; }
             if (!ReferenceEquals(record, primary)
                 && (NormalizeSubjectKey(new Subject(record.Data.ExtractStringFromData("title"), ""))
                     != NormalizeSubjectKey(new Subject(primary.Data.ExtractStringFromData("title"), ""))
                 || !record.Data.ExtractAuthorsFromData().Select(a => a.Name).Order()
-                    .SequenceEqual(primary.Data.ExtractAuthorsFromData().Select(a => a.Name).Order()))) { continue; }
+                    .SequenceEqual(primary.Data.ExtractAuthorsFromData().Select(a => a.Name).Order())))
+            { continue; }
             var exact = identifierType == "isbn" && (record.Isbns?.Contains(identifierValue) ?? false)
                 || identifierType == "olid" && (record.Olids?.Contains(identifierValue) ?? false);
             var scope = exact ? "Exact-edition artwork" : "Related edition artwork; exact edition unverified";
@@ -334,38 +342,51 @@ public class OpenLibraryClient : IOpenLibraryClient
                 if (Uri.TryCreate(url, UriKind.Absolute, out var uri)
                     && uri.Host.Equals("covers.openlibrary.org", StringComparison.OrdinalIgnoreCase))
                 {
-                    var builder = new UriBuilder(uri) { Scheme = "https", Port = -1,
-                        Query = "default=false" };
+                    var builder = new UriBuilder(uri)
+                    {
+                        Scheme = "https",
+                        Port = -1,
+                        Query = "default=false"
+                    };
                     artwork.Add(new(builder.Uri.AbsoluteUri, scope, edition));
                 }
             }
             void Inspect(JsonElement element)
             {
-                if (element.ValueKind != JsonValueKind.Object) { return; }
+                if (element.ValueKind != JsonValueKind.Object)
+                { return; }
                 if (element.TryGetProperty("cover", out var cover) && cover.ValueKind == JsonValueKind.Object)
                 {
                     foreach (var size in new[] { "large", "medium", "small" })
                     {
-                        if (cover.TryGetProperty(size, out var url) && url.ValueKind == JsonValueKind.String) { Add(url.GetString()); }
+                        if (cover.TryGetProperty(size, out var url) && url.ValueKind == JsonValueKind.String)
+                        { Add(url.GetString()); }
                     }
                 }
                 if (element.TryGetProperty("covers", out var covers) && covers.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var id in covers.EnumerateArray())
                     {
-                        if (id.ValueKind == JsonValueKind.Number && id.TryGetInt64(out var value) && value > 0) { Add(CoverUrl("id", value.ToString())); }
+                        if (id.ValueKind == JsonValueKind.Number && id.TryGetInt64(out var value) && value > 0)
+                        { Add(CoverUrl("id", value.ToString())); }
                     }
                 }
-                if (element.TryGetProperty("details", out var details)) { Inspect(details); }
+                if (element.TryGetProperty("details", out var details))
+                { Inspect(details); }
             }
-            if (record.Data != null) { Inspect(JsonSerializer.SerializeToElement(record.Data)); }
-            if (record.Details != null) { Inspect(JsonSerializer.SerializeToElement(record.Details)); }
+            if (record.Data != null)
+            { Inspect(JsonSerializer.SerializeToElement(record.Data)); }
+            if (record.Details != null)
+            { Inspect(JsonSerializer.SerializeToElement(record.Details)); }
             foreach (var item in (response.Items ?? []).Where(i => i.FromRecord == record.RecordUrl
                 || !string.IsNullOrEmpty(edition) && i.OlEditionId == edition))
             {
-                Add(item.Cover?.Large); Add(item.Cover?.Medium); Add(item.Cover?.Small);
+                Add(item.Cover?.Large);
+                Add(item.Cover?.Medium);
+                Add(item.Cover?.Small);
             }
-            foreach (var olid in record.Olids ?? []) { Add(CoverUrl("olid", olid)); }
+            foreach (var olid in record.Olids ?? [])
+            { Add(CoverUrl("olid", olid)); }
         }
         if (identifierType is "isbn" or "olid")
         {

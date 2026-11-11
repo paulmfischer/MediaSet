@@ -18,14 +18,14 @@ namespace MediaSet.Api.Tests.Infrastructure.Lookup.Strategies;
 [TestFixture]
 public class TvArtworkLookupTests
 {
-    private Mock<ITmdbClient> client = null!;
-    private MovieLookupStrategy strategy = null!;
+    private Mock<ITmdbClient> _client = null!;
+    private MovieLookupStrategy _strategy = null!;
 
     [SetUp]
     public void SetUp()
     {
-        client = new Mock<ITmdbClient>();
-        strategy = new(new Mock<IUpcItemDbClient>().Object, client.Object,
+        _client = new Mock<ITmdbClient>();
+        _strategy = new(new Mock<IUpcItemDbClient>().Object, _client.Object,
             NullLogger<MovieLookupStrategy>.Instance);
     }
 
@@ -33,17 +33,17 @@ public class TvArtworkLookupTests
         string firstAirDate = "2009-09-17", string seasonAirDate = "2014-01-02",
         List<TmdbEpisode>? episodes = null)
     {
-        client.Setup(c => c.SearchTvAsync(It.Is<string>(q => VideoTitle.Normalize(q) == VideoTitle.Normalize(name)),
+        _client.Setup(c => c.SearchTvAsync(It.Is<string>(q => VideoTitle.Normalize(q) == VideoTitle.Normalize(name)),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbTvSearchResponse([new(id, name)]));
-        client.Setup(c => c.GetTvDetailsAsync(id, It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.GetTvDetailsAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbTvResponse(id, name, firstAirDate, "Plot", "/series.jpg"));
-        client.Setup(c => c.GetSeasonDetailsAsync(id, season, It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.GetSeasonDetailsAsync(id, season, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbSeasonResponse(season, seasonAirDate, poster, episodes));
     }
 
     private Task<IReadOnlyList<MovieResponse>> Lookup(string title, bool tv = false) =>
-        strategy.LookupAsync(IdentifierType.Entity,
+        _strategy.LookupAsync(IdentifierType.Entity,
             new Dictionary<string, string> { ["title"] = title, ["isTvSeries"] = tv.ToString().ToLowerInvariant() },
             CancellationToken.None);
 
@@ -58,7 +58,7 @@ public class TvArtworkLookupTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.That(result[0].ImageUrl, Does.EndWith("/season.jpg"));
         Assert.That(result[0].Provenance?.ProviderId, Is.EqualTo($"tv:1:{season}"));
-        client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class TvArtworkLookupTests
     public async Task LookupAsync_MissingSeason_DoesNotFallBackToSeries()
     {
         Series("Community", 6);
-        client.Setup(c => c.GetSeasonDetailsAsync(1, 6, It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.GetSeasonDetailsAsync(1, 6, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TmdbSeasonResponse?)null);
         Assert.That(await Lookup("Community: Season 6"), Is.Empty);
     }
@@ -84,7 +84,7 @@ public class TvArtworkLookupTests
         Series("Constantine", 1);
         var result = await Lookup("Constantine: The Complete Series");
         Assert.That(result.Single().ImageUrl, Does.EndWith("/series.jpg"));
-        client.Verify(c => c.GetSeasonDetailsAsync(It.IsAny<int>(), It.IsAny<int>(),
+        _client.Verify(c => c.GetSeasonDetailsAsync(It.IsAny<int>(), It.IsAny<int>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -127,10 +127,10 @@ public class TvArtworkLookupTests
     [Test]
     public async Task LookupAsync_IncorrectMovieTitle_IsRejectedBeforeDetails()
     {
-        client.Setup(c => c.SearchMovieAsync("Community", It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SearchMovieAsync("Community", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbSearchResponse(1, [new(2, "Community Service", "2010", "")], 1, 1));
         Assert.That(await Lookup("Community"), Is.Empty);
-        client.Verify(c => c.GetMovieDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.GetMovieDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -139,16 +139,16 @@ public class TvArtworkLookupTests
         Series("Clerks", 1);
         var result = await Lookup("Clerks", tv: true);
         Assert.That(result.Single().Provenance?.ProviderId, Is.EqualTo("tv:1"));
-        client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
     public async Task LookupAsync_BareFilmAndSeriesTitle_RemainsAmbiguous()
     {
         Series("Constantine", 1);
-        client.Setup(c => c.SearchMovieAsync("Constantine", It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.SearchMovieAsync("Constantine", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbSearchResponse(1, [new(2, "Constantine", "2005", "")], 1, 1));
-        client.Setup(c => c.GetMovieDetailsAsync(2, It.IsAny<CancellationToken>()))
+        _client.Setup(c => c.GetMovieDetailsAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TmdbMovieResponse(2, "Constantine", "", "2005", 120, [], [], 7, "/movie.jpg"));
         var result = await Lookup("Constantine");
         Assert.Throws<ProviderLookupException>(() => ImageCandidateMatcher.Select(new Movie { Title = "Constantine" },
@@ -163,7 +163,7 @@ public class TvArtworkLookupTests
         Series("Community", 5);
         var result = await Lookup("Community: Season 5");
         var matches = ImageCandidateMatcher.Select(new Movie
-            { Title = "Community: Season 5", IsTvSeries = true, ReleaseDate = year },
+        { Title = "Community: Season 5", IsTvSeries = true, ReleaseDate = year },
             result.Select(m => new ImageCandidate(m.Title, m.ImageUrl, m.ReleaseDate, Provenance: m.Provenance)));
         Assert.That(matches.Count, Is.EqualTo(accepted ? 1 : 0));
     }
@@ -172,12 +172,12 @@ public class TvArtworkLookupTests
     public async Task LookupAsync_ConfirmedTvIdentity_RefreshesSeasonWithoutMovieLookup()
     {
         Series("Community", 6);
-        var result = await strategy.LookupAsync(IdentifierType.Entity, new Dictionary<string, string>
-            { ["confirmedProviderId"] = "tv:1:6", ["title"] = "Community: The Complete Sixth Season" },
+        var result = await _strategy.LookupAsync(IdentifierType.Entity, new Dictionary<string, string>
+        { ["confirmedProviderId"] = "tv:1:6", ["title"] = "Community: The Complete Sixth Season" },
             CancellationToken.None);
         Assert.That(result.Single().Provenance?.Title, Is.EqualTo("Community: The Complete Sixth Season"));
         Assert.That(result.Single().ImageUrl, Does.EndWith("/season.jpg"));
-        client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -192,7 +192,7 @@ public class TvArtworkLookupTests
     public async Task LookupAsync_ConfirmedTv_ReturnsTmdbExternalIdOfSeries()
     {
         Series("Community", 6, id: 18347);
-        var result = await strategy.LookupAsync(IdentifierType.Entity,
+        var result = await _strategy.LookupAsync(IdentifierType.Entity,
             new Dictionary<string, string> { ["confirmedProviderId"] = "tv:18347:6", ["title"] = "Community: Season 6" },
             CancellationToken.None);
         Assert.That(result.Single().ExternalId, Is.EqualTo("tmdbid:18347"));

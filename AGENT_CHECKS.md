@@ -9,8 +9,13 @@ rerun after later edits.
 ```bash
 dotnet restore MediaSet.sln
 dotnet build MediaSet.sln --no-restore
+dotnet format MediaSet.sln --no-restore --verify-no-changes
 dotnet test MediaSet.Api.Tests/MediaSet.Api.Tests.csproj --no-restore
 ```
+
+`dotnet build` also fails on naming (IDE1006), formatting (IDE0055), braces (IDE0011)
+and collection-expression (IDE0303) violations; `dotnet format --verify-no-changes`
+is the full-solution check CI runs and never rewrites files.
 
 ## UI (`MediaSet.Remix`)
 

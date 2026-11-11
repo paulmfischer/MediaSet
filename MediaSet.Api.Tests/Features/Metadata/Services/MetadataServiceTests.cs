@@ -453,7 +453,7 @@ public class MetadataServiceNewTests
 
         // Assert
         Assert.That(result, Is.EqualTo(cachedFormats));
-    _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Never);
         _cacheServiceMock.Verify(c => c.GetAsync<List<string>>("metadata:Books:Format"), Times.Once);
     }
 
@@ -469,14 +469,14 @@ public class MetadataServiceNewTests
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
             .ReturnsAsync((List<string>?)null);
-    _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         var result = await _metadataService.GetMetadata(MediaTypes.Books, "Format");
 
         // Assert
         Assert.That(result.Count(), Is.EqualTo(2));
-    _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _bookServiceMock.Verify(s => s.GetListAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cacheServiceMock.Verify(c => c.SetAsync(
             "metadata:Books:Format",
             It.IsAny<List<string>>(),
@@ -496,7 +496,7 @@ public class MetadataServiceNewTests
 
         _cacheServiceMock.Setup(c => c.GetAsync<List<string>>(It.IsAny<string>()))
             .ReturnsAsync((List<string>?)null);
-    _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -515,8 +515,8 @@ public class MetadataServiceNewTests
         var books = new List<Book> { new() { Format = "Hardcover" } };
         var movies = new List<Movie> { new() { Format = "DVD" } };
 
-    _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
-    _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
+        _movieServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(movies);
 
         // Act
         await _metadataService.GetMetadata(MediaTypes.Books, "Format");
@@ -536,7 +536,7 @@ public class MetadataServiceNewTests
             new() { Format = "Hardcover", Genres = ["Fiction"] }
         };
 
-    _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
+        _bookServiceMock.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(books);
 
         // Act
         await _metadataService.GetMetadata(MediaTypes.Books, "Format");

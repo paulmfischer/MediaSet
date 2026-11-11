@@ -14,13 +14,13 @@ namespace MediaSet.Api.Tests.Observability;
 /// </summary>
 public sealed class InMemoryLogSink : ILogEventSink
 {
-    private static readonly ConcurrentQueue<LogEvent> Captured = new();
+    private static readonly ConcurrentQueue<LogEvent> _captured = new();
 
-    public static IReadOnlyList<LogEvent> Events => Captured.ToArray();
+    public static IReadOnlyList<LogEvent> Events => _captured.ToArray();
 
-    public static void Clear() => Captured.Clear();
+    public static void Clear() => _captured.Clear();
 
-    public void Emit(LogEvent logEvent) => Captured.Enqueue(logEvent);
+    public void Emit(LogEvent logEvent) => _captured.Enqueue(logEvent);
 }
 
 public static class InMemoryLogSinkExtensions

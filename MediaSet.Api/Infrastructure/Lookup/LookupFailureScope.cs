@@ -6,17 +6,17 @@ namespace MediaSet.Api.Infrastructure.Lookup;
 /// </summary>
 public sealed class LookupFailureScope : IDisposable
 {
-    private static readonly AsyncLocal<LookupFailureScope?> current = new();
-    private readonly LookupFailureScope? previous = current.Value;
-    private ProviderLookupException? failure;
-    private readonly object failureLock = new();
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> providers = new();
-    public string? AttemptedProviders => providers.IsEmpty ? null : string.Join(", ", providers.Keys.Order());
-    public static bool IsActive => current.Value != null;
+    private static readonly AsyncLocal<LookupFailureScope?> _current = new();
+    private readonly LookupFailureScope? _previous = _current.Value;
+    private ProviderLookupException? _failure;
+    private readonly object _failureLock = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _providers = new();
+    public string? AttemptedProviders => _providers.IsEmpty ? null : string.Join(", ", _providers.Keys.Order());
+    public static bool IsActive => _current.Value != null;
 
-    public LookupFailureScope() => current.Value = this;
+    public LookupFailureScope() => _current.Value = this;
 
-    public static void Attempt(string provider) => current.Value?.providers.TryAdd(provider, 0);
+    public static void Attempt(string provider) => _current.Value?._providers.TryAdd(provider, 0);
 
     public static void Record(Exception exception, [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
     {
@@ -24,19 +24,19 @@ public sealed class LookupFailureScope : IDisposable
         {
             return;
         }
-        if (current.Value is { } scope)
+        if (_current.Value is { } scope)
         {
             var typed = exception as ProviderLookupException ?? new ProviderLookupException(
                 Path.GetFileNameWithoutExtension(caller).Replace("Client", ""),
                 exception is HttpRequestException http ? Classify(http.StatusCode) : Shared.Models.ImageLookupOutcome.ProviderUnavailable,
                 exception.Message);
             Attempt(typed.Provider);
-            lock (scope.failureLock)
+            lock (scope._failureLock)
             {
-                if (scope.failure == null || typed.RetryAt > scope.failure.RetryAt ||
-                    (typed.Outcome == Shared.Models.ImageLookupOutcome.QuotaLimited && scope.failure.Outcome != typed.Outcome))
+                if (scope._failure == null || typed.RetryAt > scope._failure.RetryAt ||
+                    (typed.Outcome == Shared.Models.ImageLookupOutcome.QuotaLimited && scope._failure.Outcome != typed.Outcome))
                 {
-                    scope.failure = typed;
+                    scope._failure = typed;
                 }
             }
         }
@@ -53,13 +53,13 @@ public sealed class LookupFailureScope : IDisposable
 
     public void ThrowIfFailed()
     {
-        if (failure != null)
+        if (_failure != null)
         {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(_failure).Throw();
         }
     }
 
-    public void Dispose() => current.Value = previous;
+    public void Dispose() => _current.Value = _previous;
 
     public static Shared.Models.ImageLookupOutcome Classify(System.Net.HttpStatusCode? status) => status switch
     {

@@ -218,10 +218,10 @@ public class MemoryCacheServiceTests
     {
         // Arrange
         var pattern = "metadata:Books:*";
-        
+
         // Since we can't easily mock the concurrent dictionary behavior,
         // this test verifies the method completes without error
-        
+
         // Act
         await _cacheService.RemoveByPatternAsync(pattern);
 

@@ -25,18 +25,18 @@ public class HealthApiTests : IntegrationTestBase
     public void Setup()
     {
         _databaseServiceMock = new Mock<IDatabaseService>();
-        
+
         // Setup a mock MongoDB database for the ping command
         var mockDatabase = new Mock<IMongoDatabase>();
         var mockCollection = new Mock<IMongoCollection<BsonDocument>>();
-        
+
         mockCollection.Setup(c => c.Database).Returns(mockDatabase.Object);
         mockDatabase.Setup(d => d.RunCommandAsync<BsonDocument>(
             It.IsAny<Command<BsonDocument>>(),
             It.IsAny<ReadPreference>(),
             It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BsonDocument { { "ok", 1 } });
-            
+
         _databaseServiceMock.Setup(s => s.GetCollection<BsonDocument>())
             .Returns(mockCollection.Object);
 
@@ -89,19 +89,19 @@ public class HealthApiTests : IntegrationTestBase
 
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        
+
         // Check that version field exists
         Assert.That(root.TryGetProperty("version", out var versionElement), Is.True, "Response should contain 'version' field");
         var version = versionElement.GetString();
         Assert.That(version, Is.Not.Null);
         Assert.That(version, Is.Not.Empty);
-        
+
         // Check that commit field exists
         Assert.That(root.TryGetProperty("commit", out var commitElement), Is.True, "Response should contain 'commit' field");
         var commit = commitElement.GetString();
         Assert.That(commit, Is.Not.Null);
         Assert.That(commit, Is.Not.Empty);
-        
+
         // Check that buildTime field exists
         Assert.That(root.TryGetProperty("buildTime", out var buildTimeElement), Is.True, "Response should contain 'buildTime' field");
         var buildTime = buildTimeElement.GetString();
@@ -152,7 +152,7 @@ public class HealthApiTests : IntegrationTestBase
         // Assert
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(root.TryGetProperty("database", out var databaseElement), Is.True, "Response should contain 'database' field");
-        
+
         // Check database status field
         Assert.That(databaseElement.TryGetProperty("status", out var statusElement), Is.True, "Database should contain 'status' field");
         var status = statusElement.GetString();

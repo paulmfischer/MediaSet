@@ -138,7 +138,8 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                 cancellationToken.ThrowIfCancellationRequested();
                 // An unavailable resource can hide an equally matching film, series, or remake.
                 // Do not accept the surviving candidate from an incomplete provider search.
-                if (mediaType == MediaTypes.Movies) { failures.ThrowIfFailed(); }
+                if (mediaType == MediaTypes.Movies)
+                { failures.ThrowIfFailed(); }
                 var matching = ImageCandidateMatcher.Select(entity, candidates);
                 foreach (var candidate in matching)
                 {
@@ -167,8 +168,11 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                         "OpenLibrary", strategy);
                     if (direct?.Success == true)
                     {
-                        return direct with { ConfirmedMatch = new("OpenLibrary", identifier, entity.Title,
-                            direct.ImageUrl, fingerprint, "Cover resolved by stored edition identifier", "Exact-edition artwork") };
+                        return direct with
+                        {
+                            ConfirmedMatch = new("OpenLibrary", identifier, entity.Title,
+                            direct.ImageUrl, fingerprint, "Cover resolved by stored edition identifier", "Exact-edition artwork")
+                        };
                     }
                 }
                 Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",
@@ -203,7 +207,8 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
             }
         }
         return (failure ?? new ImageLookupResult(false, null, null, "Entity lacks required lookup identifier", true,
-            ImageLookupOutcome.MissingMetadata)) with { ConfirmedMatch = confirmed };
+            ImageLookupOutcome.MissingMetadata)) with
+        { ConfirmedMatch = confirmed };
     }
 
     private async Task<IEnumerable<ImageCandidate>> LookupCandidatesAsync(MediaTypes mediaType, IdentifierType type,
@@ -217,7 +222,8 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                     .Select(artwork => new ImageCandidate(b.Title, artwork.Url,
                     b.PublishDate, b.Authors.Select(a => a.Name).ToList(), Provenance: b.Provenance,
                     Format: b.Format ?? "", Subtitle: b.Subtitle, Publishers: b.Publishers.Select(p => p.Name).ToList())
-                    with { Provenance = b.Provenance == null ? null : b.Provenance with { ArtworkScope = artwork.Scope } })),
+                    with
+                    { Provenance = b.Provenance == null ? null : b.Provenance with { ArtworkScope = artwork.Scope } })),
             MediaTypes.Movies => (await strategyFactory.GetStrategy<MovieResponse>(mediaType, type)
                 .LookupAsync(type, parameters, cancellationToken)).Select(m => new ImageCandidate(m.Title, m.ImageUrl,
                     m.ReleaseDate, Provenance: m.Provenance)),

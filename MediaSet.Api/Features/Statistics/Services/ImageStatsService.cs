@@ -13,14 +13,14 @@ public class ImageStatsService : IImageStatsService
 {
     private const string CacheKey = "image-stats";
 
-    private readonly IImageStorageProvider storageProvider;
-    private readonly IEntityService<Book> bookService;
-    private readonly IEntityService<Movie> movieService;
-    private readonly IEntityService<Game> gameService;
-    private readonly IEntityService<Music> musicService;
-    private readonly ICacheService cacheService;
-    private readonly CacheSettings cacheSettings;
-    private readonly ILogger<ImageStatsService> logger;
+    private readonly IImageStorageProvider _storageProvider;
+    private readonly IEntityService<Book> _bookService;
+    private readonly IEntityService<Movie> _movieService;
+    private readonly IEntityService<Game> _gameService;
+    private readonly IEntityService<Music> _musicService;
+    private readonly ICacheService _cacheService;
+    private readonly CacheSettings _cacheSettings;
+    private readonly ILogger<ImageStatsService> _logger;
 
     public ImageStatsService(
         IImageStorageProvider _storageProvider,
@@ -32,31 +32,31 @@ public class ImageStatsService : IImageStatsService
         IOptions<CacheSettings> _cacheSettings,
         ILogger<ImageStatsService> _logger)
     {
-        storageProvider = _storageProvider;
-        bookService = _bookService;
-        movieService = _movieService;
-        gameService = _gameService;
-        musicService = _musicService;
-        cacheService = _cacheService;
-        cacheSettings = _cacheSettings.Value;
-        logger = _logger;
+        this._storageProvider = _storageProvider;
+        this._bookService = _bookService;
+        this._movieService = _movieService;
+        this._gameService = _gameService;
+        this._musicService = _musicService;
+        this._cacheService = _cacheService;
+        this._cacheSettings = _cacheSettings.Value;
+        this._logger = _logger;
     }
 
     public async Task<ImageStats?> GetImageStatsAsync(CancellationToken cancellationToken = default)
     {
         using var activity = Log.Logger.StartActivity("GetImageStats");
 
-        var cached = await cacheService.GetAsync<ImageStats>(CacheKey);
+        var cached = await _cacheService.GetAsync<ImageStats>(CacheKey);
         if (cached != null)
         {
-            logger.LogDebug("Returning cached image statistics");
+            _logger.LogDebug("Returning cached image statistics");
             return cached;
         }
 
-        logger.LogDebug("Cache miss for image statistics, computing");
+        _logger.LogDebug("Cache miss for image statistics, computing");
 
         // List all files in storage
-        var allFiles = storageProvider.ListFiles().ToList();
+        var allFiles = _storageProvider.ListFiles().ToList();
 
         // Group by first path segment (entity type directory)
         var filesByEntityType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -72,10 +72,10 @@ public class ImageStatsService : IImageStatsService
         }
 
         // Load all entities in parallel
-        var bookTask = bookService.GetListAsync(cancellationToken);
-        var movieTask = movieService.GetListAsync(cancellationToken);
-        var gameTask = gameService.GetListAsync(cancellationToken);
-        var musicTask = musicService.GetListAsync(cancellationToken);
+        var bookTask = _bookService.GetListAsync(cancellationToken);
+        var movieTask = _movieService.GetListAsync(cancellationToken);
+        var gameTask = _gameService.GetListAsync(cancellationToken);
+        var musicTask = _musicService.GetListAsync(cancellationToken);
         await Task.WhenAll(bookTask, movieTask, gameTask, musicTask);
 
         // Build entity type label map
@@ -121,7 +121,7 @@ public class ImageStatsService : IImageStatsService
 
                 referencedPaths.Add(entity.CoverImage.FilePath);
 
-                if (!storageProvider.Exists(entity.CoverImage.FilePath))
+                if (!_storageProvider.Exists(entity.CoverImage.FilePath))
                 {
                     brokenLinks.Add(new BrokenImageLink(
                         EntityId: entity.Id!,
@@ -150,10 +150,10 @@ public class ImageStatsService : IImageStatsService
             LastUpdated: DateTime.UtcNow
         );
 
-        await cacheService.SetAsync(CacheKey, stats,
-            TimeSpan.FromMinutes(cacheSettings.StatsCacheDurationMinutes));
+        await _cacheService.SetAsync(CacheKey, stats,
+            TimeSpan.FromMinutes(_cacheSettings.StatsCacheDurationMinutes));
 
-        logger.LogInformation(
+        _logger.LogInformation(
             "Image statistics computed: {TotalFiles} files, {TotalSizeBytes} bytes, {OrphanedFiles} orphaned, {BrokenLinks} broken links, {LookupFailures} lookup failures",
             stats.TotalFiles, stats.TotalSizeBytes, stats.OrphanedFiles.Count, stats.BrokenLinks.Count, stats.ImageLookupFailures.Count);
 

@@ -12,7 +12,7 @@ internal static class SsrfGuard
     /// <summary>
     /// DNS resolver function. Replaceable in tests to avoid real network calls.
     /// </summary>
-    internal static Func<string, CancellationToken, Task<IPAddress[]>> DnsResolver =
+    internal static Func<string, CancellationToken, Task<IPAddress[]>> _dnsResolver =
         (host, ct) => Dns.GetHostAddressesAsync(host, ct);
 
     /// <summary>
@@ -67,7 +67,7 @@ internal static class SsrfGuard
         IPAddress[] addresses;
         try
         {
-            addresses = await DnsResolver(uri.Host, cancellationToken);
+            addresses = await _dnsResolver(uri.Host, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

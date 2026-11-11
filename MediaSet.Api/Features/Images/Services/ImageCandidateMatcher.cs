@@ -41,7 +41,8 @@ public static class ImageCandidateMatcher
                 break;
             case Movie movie:
                 context["releasedate"] = movie.ReleaseDate;
-                if (movie.IsTvSeries) { context["isTvSeries"] = "true"; }
+                if (movie.IsTvSeries)
+                { context["isTvSeries"] = "true"; }
                 break;
             case Book book:
                 context["author"] = string.Join(" ", book.Authors);

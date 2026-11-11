@@ -6,7 +6,7 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
     bool IsSeries = false)
 {
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
-    private static readonly string[] Ordinals =
+    private static readonly string[] _ordinals =
         ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
          "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth",
          "eighteenth", "nineteenth", "twentieth"];
@@ -27,13 +27,13 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
         if (!match.Success)
         {
             match = Regex.Match(title,
-                @"^(.*?)\s*[:\-]?\s*(?:the\s+)?(?:complete\s+)?(" + string.Join("|", Ordinals)
+                @"^(.*?)\s*[:\-]?\s*(?:the\s+)?(?:complete\s+)?(" + string.Join("|", _ordinals)
                 + @")\s+(?:season|series)(?:\s*\([^)]*\))?\s*$", Options);
         }
         if (match.Success)
         {
             var number = int.TryParse(match.Groups[2].Value, out var numeric)
-                ? numeric : Array.IndexOf(Ordinals, match.Groups[2].Value.ToLowerInvariant()) + 1;
+                ? numeric : Array.IndexOf(_ordinals, match.Groups[2].Value.ToLowerInvariant()) + 1;
             return new(title, match.Groups[1].Value.Trim().TrimEnd(':', '-').Trim(), number, IsSeries: true);
         }
         match = Regex.Match(title, @"^(.*?)\s*[:\-]?\s*(?:the\s+)?complete\s+(?:series|collection)\s*$", Options);
