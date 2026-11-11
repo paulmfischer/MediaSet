@@ -111,6 +111,7 @@ describe('dashboard Plex section', () => {
     assert.match(movies, /On Plex<\/p><p class="[^"]*">0<\/p>/);
     assert.match(movies, /Not on Plex<\/p><p class="[^"]*">10<\/p>/);
     assert.doesNotMatch(movies, /Plex Resolution/);
+    assert.match(movies, /<a[^>]*data-plex-needs-linking[^>]*sm:col-span-2/);
     assert.match(movies, /Needs linking/);
   });
 });

@@ -104,7 +104,7 @@ public class PlexStatsApiTests
     };
 
     /// <summary>Ten movies: 4 on Plex (2 watched; 1080, 1080, 4k, no resolution), 1 gone, 1 broken link, 4 unlinked.</summary>
-    private static InMemoryPlexItemStore Store()
+    private static async Task<InMemoryPlexItemStore> StoreAsync()
     {
         var items = new InMemoryPlexItemStore();
         var docs = new[]
@@ -118,7 +118,7 @@ public class PlexStatsApiTests
         };
         foreach (var d in docs)
         {
-            items.UpsertAsync(d, CancellationToken.None).Wait();
+            await items.UpsertAsync(d, CancellationToken.None);
         }
         return items;
     }
@@ -134,7 +134,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexEnabled_ReturnsPlexCounts()
     {
-        using var client = CreateClient(Store(), movieCount: 10);
+        using var client = CreateClient(await StoreAsync(), movieCount: 10);
 
         var (status, _, json) = await GetStatsAsync(client);
 
@@ -151,7 +151,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexEnabled_ReturnsResolutionBreakdownOfOnPlexMovies()
     {
-        using var client = CreateClient(Store(), movieCount: 10);
+        using var client = CreateClient(await StoreAsync(), movieCount: 10);
 
         var (_, _, json) = await GetStatsAsync(client);
 
@@ -179,7 +179,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexEnabled_NeverReturnsFilePaths()
     {
-        using var client = CreateClient(Store(), movieCount: 10);
+        using var client = CreateClient(await StoreAsync(), movieCount: 10);
 
         var (_, body, _) = await GetStatsAsync(client);
 
@@ -202,7 +202,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexEnabledWithoutMovies_OmitsPlexStats()
     {
-        using var client = CreateClient(Store(), movieCount: 10, moviesEnabled: false);
+        using var client = CreateClient(await StoreAsync(), movieCount: 10, moviesEnabled: false);
 
         var (_, _, json) = await GetStatsAsync(client);
 
@@ -212,7 +212,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexStoreFails_StillReturnsStatsWithoutPlex()
     {
-        var items = Store();
+        var items = await StoreAsync();
         items.StatsFailure = new InvalidOperationException("mongo down");
         using var client = CreateClient(items, movieCount: 10);
 
@@ -226,7 +226,7 @@ public class PlexStatsApiTests
     [Test]
     public async Task GetStats_PlexDataChangesBetweenRequests_ReflectsNewDataDespiteCache()
     {
-        var items = Store();
+        var items = await StoreAsync();
         using var client = CreateClient(items, movieCount: 10);
         await GetStatsAsync(client);
 

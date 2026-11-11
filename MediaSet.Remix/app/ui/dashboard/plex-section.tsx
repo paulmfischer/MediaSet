@@ -3,12 +3,12 @@ import type { Handle } from 'remix/component';
 import type { PlexStats } from '../../api/stats-data.ts';
 import { listHref } from '../../actions/entity/list-params.ts';
 import { routes } from '../../routes.ts';
+import { Icon } from '../icon.tsx';
 import { Check, Files, Link2Off, Tv } from '../icons.ts';
 import { ChartCard } from './chart-card.tsx';
 import { PLEX_RESOLUTION_COLORS, STAT_CARD_COLOR } from './config.ts';
 import { PieChart } from './pie-chart.tsx';
 import { StatCard } from './stat-card.tsx';
-import { Icon } from '../icon.tsx';
 
 interface PlexSectionProps {
   plex: PlexStats;
@@ -42,7 +42,7 @@ export function PlexSection(handle: Handle<PlexSectionProps>) {
           <StatCard title="Watched" value={num(plex.watched)} icon={Check} colorClass={STAT_CARD_COLOR} />
           <StatCard title="Unwatched" value={num(plex.unwatched)} icon={Files} colorClass={STAT_CARD_COLOR} />
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {resolutions.length > 0 && (
             <ChartCard title="Plex Resolution">
               <PieChart title="Plex Resolution" data={resolutions} colors={PLEX_RESOLUTION_COLORS} size={140} />
@@ -51,14 +51,17 @@ export function PlexSection(handle: Handle<PlexSectionProps>) {
           <a
             href={notOnPlexHref}
             data-plex-needs-linking=""
-            class="block rounded-lg border border-zinc-700 no-underline bg-zinc-800/50 p-6 transition-colors hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
+            class={`block ${resolutions.length > 0 ? '' : 'sm:col-span-2'} rounded-lg border border-zinc-700 no-underline bg-zinc-800/50 p-6 transition-colors hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none`}
           >
             <p class="text-sm font-medium text-zinc-400">Needs linking</p>
             <p class="mt-2 flex items-center gap-2 text-3xl font-bold text-white">
               <Icon icon={Link2Off} class="text-entity" />
               {num(plex.needsLinking)}
             </p>
-            <p class="mt-2 text-xs text-zinc-400">Movies with no working Plex link. View movies not on Plex.</p>
+            <p class="mt-2 text-xs text-zinc-400">
+              Movies with no Plex link or a broken one. The Not on Plex list it opens also includes linked movies that
+              are gone from Plex.
+            </p>
           </a>
         </div>
       </section>
