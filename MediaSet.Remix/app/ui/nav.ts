@@ -1,7 +1,7 @@
 import type { IconNode } from 'lucide';
 
 import { routes } from '../routes.ts';
-import { Clapperboard, Gamepad2, HardDrive, Home, LibraryBig, Music } from './icons.ts';
+import { Clapperboard, Gamepad2, HardDrive, Home, LibraryBig, Music, RefreshCw } from './icons.ts';
 
 export type Accent = 'books' | 'movies' | 'games' | 'musics';
 
@@ -24,6 +24,9 @@ export const mainNav: NavItem[] = [
 export const toolsNav: NavItem[] = [
   { href: routes.imageStats.index.href(), label: 'Image Statistics', icon: HardDrive },
 ];
+
+/** The Plex sync page's link; the gear menu shows it only when Plex is enabled for movies. */
+export const plexNavItem: NavItem = { href: routes.plex.index.href(), label: 'Plex', icon: RefreshCw };
 
 /** A link is active on its own path and below it; Home only matches the root. */
 export function isActivePath(path: string, href: string): boolean {

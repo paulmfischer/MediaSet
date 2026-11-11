@@ -198,3 +198,9 @@ linked to Plex shows. Only movies are supported.
       need no confirmation.
     - If linking or unlinking fails you see a message saying why: Plex could not be reached, a sync is running, or the item
       is missing on Plex.
+    - **Plex sync page.** Open the gear (Tools) menu and choose **Plex** to reach `/plex`. For each enabled entity type it
+      shows the last run (its state, when it ended and the counts it recorded, or the failure message), and the next
+      scheduled run. **Sync now** starts a run. While a run is queued or running the button is disabled and reads
+      "Running since <time>"; the page then checks the status every few seconds and reloads itself when the run ends.
+      If you press **Sync now** while a run is already active (for example from another tab), you see the current run
+      with a note rather than an error.

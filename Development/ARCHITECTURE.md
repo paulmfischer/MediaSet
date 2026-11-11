@@ -142,6 +142,15 @@ flow (GET search, then for a TV entry the scope step, POST links and redirects 3
 same route with `fragment=1`; `/movies/:id/plex/unlink` is a confirmation page matching the delete pattern. Failures render
 the entity error page with a message per cause (`app/actions/plex/failures.ts`).
 
+The sync page is `/plex` (`app/actions/plex/controller.tsx`, `app/ui/plex/sync-page.tsx`), shown only when the gate
+(`isPlexEnabledForMovies`) is true, otherwise 404. It lists each enabled entity type from `GET /plex/status` (last run,
+counts, `nextRun`); the Sync now form posts to the same route, which calls `POST /plex/{entityType}/sync` and redirects
+303. A 409 is not an error: the page renders again with the current run and a notice. While a run is queued or running the
+button is disabled ("Running since <time>") and the `PlexSyncPoller` island polls `/plex/status` (a same-origin route that
+forwards the API status uncached, so the browser never calls the API), reloading the page once no run is active. The gear
+menu's Plex link is decided per request by `plexNavGate` (`app/utils/plex-nav.server.ts`), which stores the gate result in
+async request context for the synchronous header; asset and `config.json` requests skip the lookup.
+
 ### Plex TV series entries
 
 A TV series entry (`Movie.IsTvSeries`) links to a Plex show (item type `show`), never to a movie, and movie entries never link

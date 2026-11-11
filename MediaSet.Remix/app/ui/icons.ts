@@ -31,6 +31,7 @@ export { default as Monitor } from 'lucide/dist/esm/icons/monitor.mjs';
 export { default as Music } from 'lucide/dist/esm/icons/eighth-notes.mjs';
 export { default as Pencil } from 'lucide/dist/esm/icons/pencil.mjs';
 export { default as Plus } from 'lucide/dist/esm/icons/plus.mjs';
+export { default as RefreshCw } from 'lucide/dist/esm/icons/refresh-cw.mjs';
 export { default as Settings } from 'lucide/dist/esm/icons/settings.mjs';
 export { default as Shell } from 'lucide/dist/esm/icons/shell.mjs';
 export { default as Tag } from 'lucide/dist/esm/icons/tag.mjs';
