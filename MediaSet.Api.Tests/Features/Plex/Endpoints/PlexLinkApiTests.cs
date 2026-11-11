@@ -29,6 +29,7 @@ public class PlexLinkApiTests
     private const string MovieId = "65a000000000000000000001";
     private const string TvId = "65a000000000000000000002";
     private const string TvNoScopeId = "65a000000000000000000003";
+    private const string TvRangeId = "65a000000000000000000004";
     private const string MissingMovieId = "65a0000000000000000000ff";
     private readonly List<WebApplicationFactory<Program>> _factories = [];
 
@@ -71,10 +72,12 @@ public class PlexLinkApiTests
                 var movie = new Movie { Id = MovieId, Title = "Dune", ExternalId = "tmdbid:1" };
                 var tv = new Movie { Id = TvId, Title = "The Matrix Show: Season 2", IsTvSeries = true };
                 var tvNoScope = new Movie { Id = TvNoScopeId, Title = "The Matrix Show", IsTvSeries = true };
-                var movies = InMemoryPlexItemStore.MovieService(movie, tv, tvNoScope);
+                var tvRange = new Movie { Id = TvRangeId, Title = "The Matrix Show: Seasons 1-3", IsTvSeries = true };
+                var movies = InMemoryPlexItemStore.MovieService(movie, tv, tvNoScope, tvRange);
                 movies.Setup(s => s.GetAsync(MovieId, It.IsAny<CancellationToken>())).ReturnsAsync(movie);
                 movies.Setup(s => s.GetAsync(TvId, It.IsAny<CancellationToken>())).ReturnsAsync(tv);
                 movies.Setup(s => s.GetAsync(TvNoScopeId, It.IsAny<CancellationToken>())).ReturnsAsync(tvNoScope);
+                movies.Setup(s => s.GetAsync(TvRangeId, It.IsAny<CancellationToken>())).ReturnsAsync(tvRange);
                 services.AddScoped(_ => movies.Object);
                 InMemoryPlexSyncRunStore.Replace(services);
                 InMemoryPlexItemStore.Replace(services, items);
@@ -611,5 +614,97 @@ public class PlexLinkApiTests
         Assert.That(items.Items[TvId].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
         Assert.That(items.Items[TvId].Scope, Is.EqualTo(PlexScope.Single(2)));
         Assert.That(items.Items[TvId].Seasons.Single().EpisodeCount, Is.EqualTo(13));
+    }
+
+    [Test]
+    public async Task Scope_TvEntryWithSingleSeasonTitle_ReturnsSeasonScope()
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore());
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvId}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var body = await ReadJsonAsync(response);
+        Assert.That(body.GetProperty("kind").GetString(), Is.EqualTo("season"));
+        Assert.That(body.GetProperty("from").GetInt32(), Is.EqualTo(2));
+        Assert.That(body.GetProperty("to").GetInt32(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Scope_TvEntryWithRangeTitle_ReturnsRangeScope()
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore());
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvRangeId}/scope");
+
+        var body = await ReadJsonAsync(response);
+        Assert.That(body.GetProperty("kind").GetString(), Is.EqualTo("range"));
+        Assert.That(body.GetProperty("from").GetInt32(), Is.EqualTo(1));
+        Assert.That(body.GetProperty("to").GetInt32(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Scope_TvEntryTitleWithoutSeasonText_ReturnsUnreadable()
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore());
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvNoScopeId}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var body = await ReadJsonAsync(response);
+        Assert.That(body.GetProperty("kind").GetString(), Is.EqualTo("unreadable"));
+    }
+
+    [Test]
+    public async Task Scope_LinkedTvEntry_ReturnsTheTitleScopeNotTheStoredOne()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = TvId,
+            PlexItemId = "2001",
+            OnPlex = true,
+            LinkSource = PlexLinkSources.Manual,
+            Scope = PlexScope.AllSeasons
+        }, CancellationToken.None);
+        using var client = CreateClient(Server(), items);
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvId}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var body = await ReadJsonAsync(response);
+        Assert.That(body.GetProperty("kind").GetString(), Is.EqualTo("season"));
+        Assert.That(body.GetProperty("from").GetInt32(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Scope_NonTvEntry_ReturnsBadRequest()
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore());
+
+        var response = await client.GetAsync($"/plex/movies/items/{MovieId}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [TestCase(MissingMovieId)]
+    [TestCase("not-an-id")]
+    public async Task Scope_MovieDoesNotExist_ReturnsNotFound(string id)
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore());
+
+        var response = await client.GetAsync($"/plex/movies/items/{id}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+    }
+
+    [Test]
+    public async Task Scope_EntityTypeDisabled_ReturnsBadRequest()
+    {
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore(), moviesEnabled: false);
+
+        var response = await client.GetAsync($"/plex/movies/items/{TvId}/scope");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 }

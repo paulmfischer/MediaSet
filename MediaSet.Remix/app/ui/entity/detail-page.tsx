@@ -118,7 +118,14 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                 ) : null}
               </div>
               {plexEnabled ? (
-                <PlexCard plex={plex} refreshHref={`${basePath}/${itemId}/plex/refresh`} now={now} />
+                <PlexCard
+                  plex={plex}
+                  title={title || config.singular}
+                  refreshHref={`${basePath}/${itemId}/plex/refresh`}
+                  linkHref={`${basePath}/${itemId}/plex/link`}
+                  unlinkHref={`${basePath}/${itemId}/plex/unlink`}
+                  now={now}
+                />
               ) : null}
               {lookupFailed ? (
                 <div

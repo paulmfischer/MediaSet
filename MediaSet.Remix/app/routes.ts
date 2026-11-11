@@ -44,6 +44,15 @@ export const routes = route({
   entityPlexRefresh: route({
     movies: post('/movies/:id/plex/refresh'),
   }),
+  // Link or relink a movie to a Plex item by hand: a GET page (search, then the scope step for a TV entry) and a
+  // POST that links and redirects back to the detail page. Plex is contacted only when this page is opened.
+  entityPlexLink: route({
+    movies: form('/movies/:id/plex/link'),
+  }),
+  // Unlink confirmation page: the no-JavaScript fallback for the Plex card's confirm dialog.
+  entityPlexUnlink: route({
+    movies: form('/movies/:id/plex/unlink'),
+  }),
   // Clear an item's failed image lookup so it is retried; a POST that redirects back to the detail page.
   entityClearImageLookup: route({
     books: post('/books/:id/clear-image-lookup'),

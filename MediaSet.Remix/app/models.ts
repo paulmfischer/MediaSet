@@ -194,6 +194,16 @@ export type PlexRollup = {
 
 export type PlexScope = { kind: string; from?: number | null; to?: number | null };
 
+/** One title-search match from Plex: a movie or a show. */
+export type PlexSearchResult = {
+  title: string;
+  plexItemId: string;
+  year?: number | null;
+  library: string;
+  /** `movie` or `show`. */
+  type: string;
+};
+
 export type PlexSeason = {
   index: number;
   plexSeasonId: string;

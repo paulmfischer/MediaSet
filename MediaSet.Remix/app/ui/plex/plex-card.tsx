@@ -17,12 +17,20 @@ import {
 import { Icon } from '../icon.tsx';
 import { AlertTriangle } from '../icons.ts';
 import { PlexSeasonList } from './plex-tv-section.tsx';
+import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
+import { PlexUnlinkDialog } from './public/plex-unlink-dialog.tsx';
 
 interface PlexCardProps {
   /** The movie's stored Plex data; undefined for an unlinked movie. */
   plex: PlexItem | undefined;
   /** POST target of the Refresh button (the action redirects back to the detail page). */
   refreshHref: string;
+  /** The link flow's page (Link to Plex and Relink open it, or a dialog showing the same flow). */
+  linkHref: string;
+  /** The unlink confirmation page (the Unlink button opens it, or a dialog). */
+  unlinkHref: string;
+  /** The movie's title, named in the unlink dialog. */
+  title: string;
   /** The reference time for "Synced ...", so tests are stable; defaults to now. */
   now?: Date;
 }
@@ -70,16 +78,13 @@ function tvFacts(plex: PlexItem): Array<[string, string]> {
 
 export function PlexCard(handle: Handle<PlexCardProps>) {
   return () => {
-    const { plex, refreshHref, now } = handle.props;
+    const { plex, refreshHref, linkHref, unlinkHref, title, now } = handle.props;
 
-    // Unlinked: only the button, with no "Not on Plex" text. Inert until the link flow exists.
+    // Unlinked: only the button, with no "Not on Plex" text.
     if (!plex) {
       return (
         <section class="mt-6" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
-          <button type="button" class="secondary" aria-disabled="true">
-            Link to Plex
-          </button>
-          <p class="mt-1 text-xs dark:text-slate-300">Linking to Plex is not available yet.</p>
+          <PlexLinkDialog href={linkHref} label="Link to Plex" />
         </section>
       );
     }
@@ -107,14 +112,9 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
               The Plex link for this movie is broken: the linked item is gone from Plex.
             </p>
             <div class="flex gap-2">
-              <button type="button" class="secondary" aria-disabled="true">
-                Relink
-              </button>
-              <button type="button" class="secondary" aria-disabled="true">
-                Unlink
-              </button>
+              <PlexLinkDialog href={linkHref} label="Relink" />
+              <PlexUnlinkDialog title={title} href={unlinkHref} />
             </div>
-            <p class="text-xs dark:text-slate-300">Relinking and unlinking are not available yet.</p>
           </div>
         ) : null}
         <div class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
@@ -140,6 +140,8 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
           <form method="post" action={refreshHref}>
             <button type="submit">Refresh</button>
           </form>
+          {state === 'broken' ? null : <PlexLinkDialog href={linkHref} label="Relink" />}
+          {state === 'broken' ? null : <PlexUnlinkDialog title={title} href={unlinkHref} />}
         </div>
       </section>
     );

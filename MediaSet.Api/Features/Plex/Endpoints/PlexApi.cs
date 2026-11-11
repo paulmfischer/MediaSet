@@ -99,6 +99,28 @@ internal static class PlexApi
                 : Results.Ok(PlexItemDataDto.From(data));
         });
 
+        // GET /plex/{entityType}/items/{id}/scope: the seasons the TV entry's title says (kind "unreadable" when it does not say),
+        // for prefilling the link form. Reads only the entry, so it works whether or not it is linked; 400 for a non-TV entry.
+        entity.MapGet("/items/{id}/scope", async (
+            string entityType,
+            string id,
+            IEntityService<Movie> movies,
+            CancellationToken cancellationToken) =>
+        {
+            var movie = IsObjectId(id) ? await movies.GetAsync(id, cancellationToken) : null;
+            if (movie == null)
+            {
+                return MovieNotFound();
+            }
+
+            return movie.IsTvSeries
+                ? Results.Ok(PlexTvTitleParser.ParseScope(movie.Title))
+                : Results.Problem(
+                    title: "Not a TV series",
+                    detail: "A season scope applies only to TV series entries.",
+                    statusCode: StatusCodes.Status400BadRequest);
+        });
+
         // PUT /plex/{entityType}/items/{id}/link: links a movie to a Plex item by hand and loads its data now
         entity.MapPut("/items/{id}/link", async (
             string entityType,

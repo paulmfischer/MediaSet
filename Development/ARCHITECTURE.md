@@ -133,6 +133,14 @@ link (404 for a missing movie or Plex item); `DELETE .../link` removes the link 
 the current run while a sync runs, never queued). A run refreshes a manual link from its own rating key, never re-matches it by
 ExternalId or replaces it, flags it `OnPlex = false` if the item is gone, and never purges it unless the movie is deleted.
 Link and unlink do not take the lock. Two movies may link to the same Plex item.
+`GET .../items/{id}/scope` returns the scope `PlexTvTitleParser` reads from a TV entry's title (`{ kind, from, to }`, kind
+`unreadable` when it cannot tell; 404 for a missing entry, 400 for a non-TV entry). It reads only the entry, so it works
+linked or not, and never calls Plex; the UI uses it to prefill the link flow's scope step.
+
+The web UI drives these calls from server actions only (`app/api/plex-data.ts`): `/movies/:id/plex/link` is a server-rendered
+flow (GET search, then for a TV entry the scope step, POST links and redirects 303) that a dialog enhances by loading the
+same route with `fragment=1`; `/movies/:id/plex/unlink` is a confirmation page matching the delete pattern. Failures render
+the entity error page with a message per cause (`app/actions/plex/failures.ts`).
 
 ### Plex TV series entries
 
