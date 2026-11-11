@@ -166,6 +166,12 @@ describe('movie list with Plex', () => {
     assert.match(html, /No Movies match\s*this Plex filter\./);
   });
 
+  it('should say no movies match the search with the filter when both are set', async (t) => {
+    stubApi(t, { plex: enabled, items: [] });
+    const html = await (await get('/movies?plex=broken&searchText=zzz')).text();
+    assert.match(html, /No Movies match\s*"zzz"\s*with this Plex filter\./);
+  });
+
   it('should look the gate up once per request', async (t) => {
     const original = globalThis.fetch;
     let lookups = 0;

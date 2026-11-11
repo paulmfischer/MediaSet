@@ -57,9 +57,19 @@ internal static class EntityApi
             {
                 logger.LogInformation("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, plex {plex}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, plex, page, pageSize);
                 // Movies only; absent (and ignored) when Plex is not configured for movies
-                var idFilter = typeof(TEntity) == typeof(Movie) && plexLookup is not null && !string.IsNullOrWhiteSpace(plex)
-                    ? await plexLookup.GetMovieFilterAsync(plex, cancellationToken)
-                    : null;
+                IdFilter? idFilter = null;
+                if (typeof(TEntity) == typeof(Movie) && plexLookup is not null && !string.IsNullOrWhiteSpace(plex))
+                {
+                    try
+                    {
+                        idFilter = await plexLookup.GetMovieFilterAsync(plex, cancellationToken);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        logger.LogWarning("Invalid plex filter for {entityType}: {message}", entityType, ex.Message);
+                        return TypedResults.BadRequest(ex.Message);
+                    }
+                }
                 var result = await entityService.PagedSearchAsync(searchText, orderBy, page, pageSize, idFilter, cancellationToken);
                 await AttachPlexSummariesAsync(result.Items, plexLookup, cancellationToken);
                 logger.LogInformation("Paged search returned {count}/{total} {entityType}", result.Items.Count(), result.TotalCount, entityType);

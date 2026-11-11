@@ -72,7 +72,7 @@ export interface MovieEntity extends BaseEntity {
   /** `source:value`, e.g. `tmdbid:1234`. Carried through saves; not shown or edited in the UI. */
   externalId?: string;
   /** Stored Plex data, present only for a linked movie when Plex is enabled; the API never sends the file path. */
-  plex?: PlexItem | PlexListSummary;
+  plex?: PlexItem;
 }
 // UI model
 export type Movie = Override<MovieEntity, { studios: string; genres: string }>;

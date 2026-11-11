@@ -45,10 +45,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
     const plexFilterOptions = [
       { value: '', label: 'All movies' },
       ...PLEX_FILTERS.map((filter) => ({ value: filter as string, label: PLEX_FILTER_LABELS[filter] })),
-    ].map((option) => ({
-      ...option,
-      href: listHref(basePath, { searchText, orderBy, plex: option.value ? (option.value as PlexFilter) : null }),
-    }));
+    ];
 
     const cover = (item: T) =>
       item.coverImage ? (
@@ -173,6 +170,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                 <p>
                   No {name} match
                   {searchText ? <> &quot;{searchText}&quot;</> : null}
+                  {searchText && plex ? ' with' : null}
                   {plex ? ' this Plex filter' : null}.
                 </p>
               ) : (
