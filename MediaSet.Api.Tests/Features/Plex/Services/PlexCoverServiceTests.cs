@@ -133,7 +133,7 @@ public class PlexCoverServiceTests
     }
 
     [Test]
-    public async Task ApplyIfMissingAsync_UpdateFails_Deletes_savedFileAndReturnsFalse()
+    public async Task ApplyIfMissingAsync_UpdateFails_DeletesSavedFileAndReturnsFalse()
     {
         ServePoster(Poster(1000, 1500));
         _movies.Setup(m => m.UpdateAsync(It.IsAny<string>(), It.IsAny<Movie>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException());

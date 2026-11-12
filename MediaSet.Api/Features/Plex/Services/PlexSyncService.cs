@@ -496,13 +496,10 @@ public sealed class PlexSyncService(
                     }
                     matched++;
 
-                    // A paired entry without a cover takes the Plex poster; best effort, never fails the run
-                    if (movie.CoverImage == null)
+                    // A paired entry without a cover takes the Plex poster (the service checks); best effort, never fails the run
+                    if (scope.ServiceProvider.GetService<IPlexCoverService>() is { } covers)
                     {
-                        if (scope.ServiceProvider.GetService<IPlexCoverService>() is { } covers)
-                        {
-                            await covers.ApplyIfMissingAsync(movie.Id!, item.RatingKey, token);
-                        }
+                        await covers.ApplyIfMissingAsync(movie.Id!, item.RatingKey, token);
                     }
                 }
                 else if (plan.Stale is { } stale)

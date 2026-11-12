@@ -6,6 +6,10 @@ using SkiaSharp;
 
 namespace MediaSet.Api.Features.Plex.Services;
 
+/// <summary>
+/// Cover fallback from Plex. TV series entries are Movie entities too (<c>Movie.IsTvSeries</c>), so this covers
+/// movies and TV series alike.
+/// </summary>
 public interface IPlexCoverService
 {
     /// <summary>

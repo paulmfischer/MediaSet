@@ -353,20 +353,6 @@ public class PlexSyncServiceTests
     }
 
     [Test]
-    public async Task Sync_MatchedMovieWithCover_DoesNotAskForPlexPoster()
-    {
-        var h = new Harness();
-        ServeMovieLikeClient(h, Item("10", new PlexGuids("603", null, null), Version("1080", hdr: true, size: 5)));
-        var movie = MovieWith("a", "tmdbid:603");
-        movie.CoverImage = new Image { FilePath = "movies/a.jpg" };
-        SetMovies(h, movie);
-
-        await RunAsync(h);
-
-        h.Covers.Verify(c => c.ApplyIfMissingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Test]
     public async Task Sync_MovieStreamLookupFailed_StoresNoPlexUpdatedAtSoItIsReadAgain()
     {
         var h = new Harness();

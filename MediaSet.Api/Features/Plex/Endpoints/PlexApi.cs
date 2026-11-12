@@ -183,11 +183,8 @@ internal static class PlexApi
                     return PlexItemNotFound(body.PlexItemId.Trim(), scope != null);
                 }
 
-                // A paired entry without a cover takes the Plex poster. Best effort: it never fails the link.
-                if (movie.CoverImage == null)
-                {
-                    await covers.ApplyIfMissingAsync(id, data.PlexItemId, cancellationToken);
-                }
+                // A paired entry without a cover takes the Plex poster (the service checks). Best effort: it never fails the link.
+                await covers.ApplyIfMissingAsync(id, data.PlexItemId, cancellationToken);
                 return Results.Ok(PlexItemDataDto.From(data));
             }
             catch (PlexClientException ex)
