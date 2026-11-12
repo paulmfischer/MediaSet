@@ -35,8 +35,9 @@ review itself. Subagents never spawn subagents and follow Git and Commits. Small
 changes (a doc fix, a typo) are done directly, still on a branch with a PR.
 
 1. **Read** the issue in full: body, acceptance criteria (AC), comments, linked items. Ask
-   only about genuinely unresolved scope. For a feature or a change across several areas,
-   show the user a short plan and wait for approval before step 2.
+   only about genuinely unresolved scope. Do not wait for plan approval; go straight to
+   step 2. Pause first only for a new dependency or an architectural choice the issue
+   doesn't settle: give brief options with a recommendation and wait.
 2. **Implementer subagent** (fresh and self-contained: repo path, issue, base branch, these
    guidelines). It branches, implements within scope, updates tests, runs the full checks for
    the affected area ([AGENT_CHECKS.md](../../AGENT_CHECKS.md)) and inspects its diff. It
