@@ -121,6 +121,16 @@ describe('movie list with Plex', () => {
     }
   });
 
+  it('should leave the filter with only the native chevron', async (t) => {
+    stubApi(t, { plex: enabled });
+    const html = await (await get('/movies')).text();
+    const filter = html.match(/<select[^>]*name="plex"[\s\S]*?<\/select>(?:<svg[\s\S]*?<\/svg>)?/)?.[0] ?? '';
+
+    assert.ok(filter, 'filter select rendered');
+    assert.doesNotMatch(filter, /<svg/);
+    assert.doesNotMatch(filter, /appearance-none/);
+  });
+
   it('should pass the plex filter to the paged search and select it', async (t) => {
     const calls = stubApi(t, { plex: enabled });
     const html = await (await get('/movies?plex=unwatched')).text();
