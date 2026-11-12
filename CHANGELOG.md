@@ -1,5 +1,59 @@
 # Changelog
 
+## [5.0.0](https://github.com/paulmfischer/MediaSet/compare/v4.3.0...v5.0.0) (2026-11-12)
+
+
+### Features
+
+* **movies:** add ExternalId to Movie ([#793](https://github.com/paulmfischer/MediaSet/issues/793)) ([5feecef](https://github.com/paulmfischer/MediaSet/commit/5feecefeb0916a7a2c1617c6b54810d7ba068068)), closes [#760](https://github.com/paulmfischer/MediaSet/issues/760)
+* **plex:** add manual link, unlink and single-item refresh ([#800](https://github.com/paulmfischer/MediaSet/issues/800)) ([c42a035](https://github.com/paulmfischer/MediaSet/commit/c42a0352866c6de348ac4c1175a200c32c9e4e0a))
+* **plex:** add per-entity sync scheduler ([#766](https://github.com/paulmfischer/MediaSet/issues/766)) ([#802](https://github.com/paulmfischer/MediaSet/issues/802)) ([ada8d6b](https://github.com/paulmfischer/MediaSet/commit/ada8d6b8ba59435b9c5b892e7eb571fb0cda8e72))
+* **plex:** add Plex client and title search endpoint ([#795](https://github.com/paulmfischer/MediaSet/issues/795)) ([d4f16ac](https://github.com/paulmfischer/MediaSet/commit/d4f16ac05aa2c980a3cab17278f6bd1e8d925591)), closes [#761](https://github.com/paulmfischer/MediaSet/issues/761)
+* **plex:** add Plex configuration, enablement and status endpoint ([#791](https://github.com/paulmfischer/MediaSet/issues/791)) ([6a16a7c](https://github.com/paulmfischer/MediaSet/commit/6a16a7c0b9ee24a88016e5cb571763a260cfc55d)), closes [#759](https://github.com/paulmfischer/MediaSet/issues/759)
+* **plex:** add sync run lifecycle, shared lock and run records ([#798](https://github.com/paulmfischer/MediaSet/issues/798)) ([b263e92](https://github.com/paulmfischer/MediaSet/commit/b263e92ec0c10f3003dd8b8aa9ed8b16a1f777bc)), closes [#762](https://github.com/paulmfischer/MediaSet/issues/762)
+* **plex:** add the Plex sync page and gear-menu link ([#829](https://github.com/paulmfischer/MediaSet/issues/829)) ([0bb54c4](https://github.com/paulmfischer/MediaSet/commit/0bb54c44b9ac04e0dba6c7294adac8e3f45e6ee5)), closes [#823](https://github.com/paulmfischer/MediaSet/issues/823)
+* **plex:** backfill movie ExternalId from TMDB during sync ([#804](https://github.com/paulmfischer/MediaSet/issues/804)) ([e60a93d](https://github.com/paulmfischer/MediaSet/commit/e60a93de88b67c0a2c40c46f46cd657da32f4fc1)), closes [#767](https://github.com/paulmfischer/MediaSet/issues/767)
+* **plex:** include Plex data in the movie lookup response ([#816](https://github.com/paulmfischer/MediaSet/issues/816)) ([5ab2c09](https://github.com/paulmfischer/MediaSet/commit/5ab2c09d02d43101329e8463d77fae6d6c52cba5)), closes [#814](https://github.com/paulmfischer/MediaSet/issues/814)
+* **plex:** link, relink and unlink a movie from the detail page ([#828](https://github.com/paulmfischer/MediaSet/issues/828)) ([b1b89b2](https://github.com/paulmfischer/MediaSet/commit/b1b89b2ac0eb5e3d85759477947188c27d53d88d)), closes [#822](https://github.com/paulmfischer/MediaSet/issues/822)
+* **plex:** make sync resilient to outages and flag gone items ([#801](https://github.com/paulmfischer/MediaSet/issues/801)) ([d022f0c](https://github.com/paulmfischer/MediaSet/commit/d022f0c9508d84bbd2b762c811c9827a0655cfdd)), closes [#765](https://github.com/paulmfischer/MediaSet/issues/765)
+* **plex:** match movies to Plex and store item data ([#799](https://github.com/paulmfischer/MediaSet/issues/799)) ([57647d4](https://github.com/paulmfischer/MediaSet/commit/57647d4769a21379f21498c965cf4d4fd394cc85)), closes [#763](https://github.com/paulmfischer/MediaSet/issues/763)
+* **plex:** match TV entries to Plex shows and seasons ([#805](https://github.com/paulmfischer/MediaSet/issues/805)) ([d620778](https://github.com/paulmfischer/MediaSet/commit/d6207781f5fe249e507472766e100b8269bab263)), closes [#768](https://github.com/paulmfischer/MediaSet/issues/768)
+* **plex:** show Plex stats on the dashboard Movies tab ([#832](https://github.com/paulmfischer/MediaSet/issues/832)) ([ca13330](https://github.com/paulmfischer/MediaSet/commit/ca133308e287ad5076bc3c7b2e78b692b39fd75b)), closes [#825](https://github.com/paulmfischer/MediaSet/issues/825)
+* **plex:** show Plex status and a filter on the movie list ([#830](https://github.com/paulmfischer/MediaSet/issues/830)) ([8436f2d](https://github.com/paulmfischer/MediaSet/commit/8436f2d0d099e45cf2c6cfbe162f924083ae7783)), closes [#824](https://github.com/paulmfischer/MediaSet/issues/824)
+* **plex:** show Plex status on the movie detail page ([#826](https://github.com/paulmfischer/MediaSet/issues/826)) ([bb5d48f](https://github.com/paulmfischer/MediaSet/commit/bb5d48f0e9254d0e47c1d8fd32f700151307508e)), closes [#820](https://github.com/paulmfischer/MediaSet/issues/820)
+* **plex:** show TV progress, rollups and seasons on the detail page ([#827](https://github.com/paulmfischer/MediaSet/issues/827)) ([abb4d40](https://github.com/paulmfischer/MediaSet/commit/abb4d4082ebf3fdfd25bdf5a3b85ed41c0c16237)), closes [#821](https://github.com/paulmfischer/MediaSet/issues/821)
+* **plex:** store episode detail and rollups for TV entries ([#807](https://github.com/paulmfischer/MediaSet/issues/807)) ([b357525](https://github.com/paulmfischer/MediaSet/commit/b357525cea026b255fb6a1455585880971a0d876)), closes [#769](https://github.com/paulmfischer/MediaSet/issues/769)
+
+
+### Bug Fixes
+
+* **api:** store new cover image before deleting the old one ([#841](https://github.com/paulmfischer/MediaSet/issues/841)) ([b4c1f22](https://github.com/paulmfischer/MediaSet/commit/b4c1f22337e8a9e0f89dcf9071a46e9fa3cc9021)), closes [#838](https://github.com/paulmfischer/MediaSet/issues/838)
+* **api:** surface failed cover image downloads and uploads ([#837](https://github.com/paulmfischer/MediaSet/issues/837)) ([cb674bb](https://github.com/paulmfischer/MediaSet/commit/cb674bb884705c3fa0351f74e726f77c49bc8099)), closes [#717](https://github.com/paulmfischer/MediaSet/issues/717)
+* **plex:** clean up the Plex list, detail and link dialog UI ([#834](https://github.com/paulmfischer/MediaSet/issues/834)) ([eb0c036](https://github.com/paulmfischer/MediaSet/commit/eb0c03670b6bbb9432c8eeb6d54d99307bad7ecb)), closes [#833](https://github.com/paulmfischer/MediaSet/issues/833)
+* **plex:** declare entityType route param and report real status ([#809](https://github.com/paulmfischer/MediaSet/issues/809)) ([6e39a6c](https://github.com/paulmfischer/MediaSet/commit/6e39a6c9c3a99d8aee86a2d2853ad1c6654198c9)), closes [#803](https://github.com/paulmfischer/MediaSet/issues/803)
+* **plex:** handle stale cross-kind links and tidy scope errors ([#810](https://github.com/paulmfischer/MediaSet/issues/810)) ([fc90d64](https://github.com/paulmfischer/MediaSet/commit/fc90d64fdfbaa3a893559601708a36e5eaaa2b6f)), closes [#806](https://github.com/paulmfischer/MediaSet/issues/806)
+* **plex:** quiet logs, add a sync summary, enable Plex in dev ([#815](https://github.com/paulmfischer/MediaSet/issues/815)) ([2b1d5de](https://github.com/paulmfischer/MediaSet/commit/2b1d5de4335ed22d58dd3cdddd0da90ca6920433)), closes [#758](https://github.com/paulmfischer/MediaSet/issues/758)
+* **ui:** make Cancel buttons secondary style ([#839](https://github.com/paulmfischer/MediaSet/issues/839)) ([7402334](https://github.com/paulmfischer/MediaSet/commit/7402334986f2b46d55958615df617d9022190250)), closes [#835](https://github.com/paulmfischer/MediaSet/issues/835)
+
+
+### Documentation
+
+* **plex:** add setup guide and architecture overview ([#818](https://github.com/paulmfischer/MediaSet/issues/818)) ([b0d7622](https://github.com/paulmfischer/MediaSet/commit/b0d7622bbad170540d0bec99cf0772e43434afa6)), closes [#770](https://github.com/paulmfischer/MediaSet/issues/770)
+
+
+### Miscellaneous
+
+* **api:** fix dotnet format violations and enforce them in build ([#840](https://github.com/paulmfischer/MediaSet/issues/840)) ([07ce688](https://github.com/paulmfischer/MediaSet/commit/07ce688e5b6a6345c29f8cd2a89619801ac41220)), closes [#787](https://github.com/paulmfischer/MediaSet/issues/787) [#831](https://github.com/paulmfischer/MediaSet/issues/831)
+* **release:** release as 5.0.0 ([#842](https://github.com/paulmfischer/MediaSet/issues/842)) ([4bae479](https://github.com/paulmfischer/MediaSet/commit/4bae479092c9ad04d033838201e1ce3a6af4c7d1))
+* **repo:** enforce LF line endings ([#797](https://github.com/paulmfischer/MediaSet/issues/797)) ([55f05d6](https://github.com/paulmfischer/MediaSet/commit/55f05d6a9d9722d73b44b5a1ff1b111597e3452c)), closes [#794](https://github.com/paulmfischer/MediaSet/issues/794)
+
+
+### Performance
+
+* **plex:** bound and speed up per-item detail reads ([#812](https://github.com/paulmfischer/MediaSet/issues/812)) ([aa504cd](https://github.com/paulmfischer/MediaSet/commit/aa504cd765551bddb833a354ad6f765d565e012e)), closes [#796](https://github.com/paulmfischer/MediaSet/issues/796)
+* **plex:** read item detail only for matched movies ([#817](https://github.com/paulmfischer/MediaSet/issues/817)) ([2d1b39d](https://github.com/paulmfischer/MediaSet/commit/2d1b39dae2ba4b35560c45385d2ee6c52021c3c3))
+* **plex:** skip stream lookups for unchanged episodes ([#811](https://github.com/paulmfischer/MediaSet/issues/811)) ([7502b9e](https://github.com/paulmfischer/MediaSet/commit/7502b9e079faea0fb2327f355faa096424c37247))
+
 ## [4.3.0](https://github.com/paulmfischer/MediaSet/compare/v4.2.0...v4.3.0) (2026-11-08)
 
 
