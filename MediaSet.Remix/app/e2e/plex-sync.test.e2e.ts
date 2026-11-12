@@ -65,7 +65,7 @@ describe('Plex sync page (e2e)', () => {
     await on.getByRole('button', { name: 'Tools' }).click();
     await on.getByRole('link', { name: 'Plex' }).click();
     await on.waitForURL((url) => url.pathname === '/plex');
-    await on.getByRole('heading', { name: 'Plex sync' }).waitFor();
+    await on.getByRole('heading', { name: 'Plex Statistics' }).waitFor();
   });
 
   it('has no gear menu link and no /plex page when Plex is off', async (t) => {

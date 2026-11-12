@@ -12,7 +12,7 @@ import { PlexSyncPage } from '../../ui/plex/sync-page.tsx';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
 
-const TITLE = 'Plex sync | MediaSet';
+const TITLE = 'Plex Statistics | MediaSet';
 const RUNNING_NOTICE = 'notice=running';
 const RUNNING_MESSAGE = 'A sync was already in progress, so no new one was started. This is the current run.';
 const back = { backHref: routes.home.href(), backLabel: 'Back to Home' };
@@ -24,7 +24,7 @@ function renderPage(
   statistics?: PlexStatistics | null
 ) {
   return context.render(
-    <Document path={context.url.pathname} title={TITLE} description="Plex sync status">
+    <Document path={context.url.pathname} title={TITLE} description="Plex statistics and sync status">
       <PlexSyncPage
         statuses={statuses}
         action={routes.plex.action.href()}

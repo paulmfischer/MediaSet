@@ -154,10 +154,7 @@ export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistic
       { name: 'TV series', value: tv.coverage.onPlex },
     ];
     return (
-      <section aria-labelledby="plex-stats-heading" class="space-y-4" data-testid="plex-statistics">
-        <h2 id="plex-stats-heading" class="text-lg">
-          Statistics
-        </h2>
+      <section aria-labelledby="plex-page-heading" class="space-y-4" data-testid="plex-statistics">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ChartCard title="On Plex by entity">
             <BarChart data={byEntity} color={PLEX_BAR_COLOR} />

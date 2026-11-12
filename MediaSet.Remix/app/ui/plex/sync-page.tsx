@@ -133,8 +133,10 @@ export function PlexSyncPage(handle: Handle<SyncPageProps>) {
   return () => {
     const { statuses, action, statusHref, notice, statistics } = handle.props;
     return (
-      <div class="flex flex-col gap-4 px-2 max-w-5xl mx-auto">
-        <h1 class="text-2xl">Plex sync</h1>
+      <div class="flex flex-col gap-4 px-2">
+        <h1 id="plex-page-heading" class="text-3xl font-bold text-white">
+          Plex Statistics
+        </h1>
         {statistics ? <PlexStatisticsSection statistics={statistics} /> : null}
         <h2 class="text-lg">Sync</h2>
         {notice ? (

@@ -109,7 +109,7 @@ describe('plex sync page', () => {
     const html = await response.text();
 
     assert.equal(response.status, 200);
-    assert.match(html, /<title>Plex sync \| MediaSet<\/title>/);
+    assert.match(html, /<title>Plex Statistics \| MediaSet<\/title>/);
     assert.match(html, /data-entity-type="movies"/);
     assert.match(html, /data-testid="plex-run-state"[^>]*>Succeeded/);
     assert.match(html, /<time datetime="2026-03-01T03:04:00Z"/);
