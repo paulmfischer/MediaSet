@@ -197,7 +197,7 @@ internal static class EntityApi
                         }
 
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
-                        var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                        var imageUrlProp = GetImageUrlProperty(newEntity);
                         imageUrlProp?.SetValue(newEntity, null);
                         await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
                     }
@@ -223,7 +223,7 @@ internal static class EntityApi
                 else
                 {
                     // Check if imageUrl is provided for download
-                    var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                    var imageUrlProp = GetImageUrlProperty(newEntity);
                     var imageUrl = imageUrlProp?.GetValue(newEntity) as string;
 
                     if (!string.IsNullOrWhiteSpace(imageUrl))
@@ -339,6 +339,7 @@ internal static class EntityApi
                 }
 
                 string? imageError = null;
+                Image? replacedImage = null;
 
                 // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
                 if (multipartForm is not null)
@@ -349,21 +350,19 @@ internal static class EntityApi
                     {
                         logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, id);
 
-                        // Delete old image if it exists
-                        DeleteOldImage(existingEntity, imageService, logger);
-
                         var (image, error) = await TryStoreImageAsync(
                             () => imageService.SaveImageAsync(imageFile, entityType.ToLower(), id, cancellationToken),
                             ImageSource.Upload, logger, entityType, id);
                         imageError = error;
+                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
+
+                        // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence);
+                        // on failure ApplyStoredImage already restored the previous ImageUrl
                         if (image is not null)
                         {
-                            updatedEntity.CoverImage = image;
+                            var imageUrlProp = GetImageUrlProperty(updatedEntity);
+                            imageUrlProp?.SetValue(updatedEntity, null);
                         }
-
-                        // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
-                        var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
-                        imageUrlProp?.SetValue(updatedEntity, null);
                     }
                     else if (multipartForm.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
                     {
@@ -371,17 +370,11 @@ internal static class EntityApi
                         var imageUrl = imageUrlValue.ToString();
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
 
-                        // Delete old image if it exists
-                        DeleteOldImage(existingEntity, imageService, logger);
-
                         var (image, error) = await TryStoreImageAsync(
                             () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
                             ImageSource.Url, logger, entityType, id);
                         imageError = error;
-                        if (image is not null)
-                        {
-                            updatedEntity.CoverImage = image;
-                        }
+                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
                     }
                     else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
                     {
@@ -394,7 +387,7 @@ internal static class EntityApi
                 else
                 {
                     // Check if imageUrl is provided for download
-                    var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
+                    var imageUrlProp = GetImageUrlProperty(updatedEntity);
                     var imageUrl = imageUrlProp?.GetValue(updatedEntity) as string;
                     var existingImageUrl = imageUrlProp?.GetValue(existingEntity) as string;
 
@@ -402,17 +395,11 @@ internal static class EntityApi
                     {
                         logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
 
-                        // Delete old image if it exists
-                        DeleteOldImage(existingEntity, imageService, logger);
-
                         var (image, error) = await TryStoreImageAsync(
                             () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
                             ImageSource.Url, logger, entityType, id);
                         imageError = error;
-                        if (image is not null)
-                        {
-                            updatedEntity.CoverImage = image;
-                        }
+                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
                     }
                     // Check if image is being cleared (updatedEntity.CoverImage is null but existing had one)
                     else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
@@ -425,6 +412,9 @@ internal static class EntityApi
 
                 var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
                 logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
+
+                // Delete the replaced file only after the entity references the new image
+                DeleteImageFile(replacedImage, imageService, logger);
                 return imageError is null
                     ? TypedResults.Ok()
                     : TypedResults.Ok(new ImageErrorResponse(imageError));
@@ -630,6 +620,59 @@ internal static class EntityApi
 
         movie.ExternalId = normalized;
         return null;
+    }
+
+    /// <summary>
+    /// Returns the entity's ImageUrl property, or null when its type has none.
+    /// </summary>
+    private static System.Reflection.PropertyInfo? GetImageUrlProperty(IEntity entity) => entity.GetType().GetProperty("ImageUrl");
+
+    /// <summary>
+    /// Applies the outcome of storing a replacement image on an update. When the new image was stored
+    /// it is set on the entity and the replaced image is returned so the caller can delete it once the
+    /// entity is saved (null when unchanged or the same file). When storing failed the previous cover
+    /// and its ImageUrl are kept so the entity still references the old image.
+    /// </summary>
+    private static Image? ApplyStoredImage(IEntity updatedEntity, IEntity existingEntity, Image? newImage)
+    {
+        if (newImage is null)
+        {
+            updatedEntity.CoverImage = existingEntity.CoverImage;
+            var imageUrlProp = GetImageUrlProperty(updatedEntity);
+            if (imageUrlProp is { CanWrite: true })
+            {
+                imageUrlProp.SetValue(updatedEntity, imageUrlProp.GetValue(existingEntity));
+            }
+
+            return null;
+        }
+
+        updatedEntity.CoverImage = newImage;
+        return existingEntity.CoverImage is not null && existingEntity.CoverImage.FilePath != newImage.FilePath
+            ? existingEntity.CoverImage
+            : null;
+    }
+
+    private static void DeleteImageFile(Image? image, IImageService imageService, ILogger logger)
+    {
+        if (image is null)
+        {
+            return;
+        }
+
+        try
+        {
+            imageService.DeleteImageAsync(image.FilePath);
+            logger.LogInformation("Deleted old image: {imagePath}", image.FilePath);
+        }
+        catch (IOException ex)
+        {
+            logger.LogWarning("Failed to delete old image (IO error): {error}", ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
+        }
     }
 
     /// <summary>
