@@ -757,6 +757,130 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         Assert.That(await ReadImageErrorAsync(response), Is.Null);
     }
 
+    private static Image CreateStoredImage(string guid) => new()
+    {
+        Id = guid,
+        FileName = $"{GameId}-{guid}.jpg",
+        FilePath = $"games/{GameId}-{guid}.jpg",
+        ContentType = "image/jpeg",
+        FileSize = 1024
+    };
+
+    private Game ArrangeUpdateWithExistingCover(out Func<Game?> savedGame)
+    {
+        var existing = _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
+        existing.CoverImage = CreateStoredImage("old-guid");
+        existing.ImageUrl = "https://example.com/old.jpg";
+        Game? saved = null;
+        _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Game, CancellationToken>((_, g, _) => saved = g)
+            .ReturnsAsync(Mock.Of<ReplaceOneResult>());
+        savedGame = () => saved;
+        return _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
+    }
+
+    private void AssertPreviousCoverKept(Game? saved)
+    {
+        Assert.That(saved, Is.Not.Null);
+        Assert.That(saved!.CoverImage, Is.Not.Null);
+        Assert.That(saved.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("old-guid").FilePath));
+        Assert.That(saved.ImageUrl, Is.EqualTo("https://example.com/old.jpg"));
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateGame_UploadStoreFails_KeepsPreviousCoverAndImageUrl()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
+        AssertPreviousCoverKept(saved());
+    }
+
+    [Test]
+    public async Task UpdateGame_MultipartImageUrlStoreFails_KeepsPreviousCoverAndImageUrl()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
+        AssertPreviousCoverKept(saved());
+    }
+
+    [Test]
+    public async Task UpdateGame_JsonImageUrlStoreFails_KeepsPreviousCoverAndImageUrl()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        game.ImageUrl = ImageUrl;
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
+        AssertPreviousCoverKept(saved());
+    }
+
+    [Test]
+    public async Task UpdateGame_UploadStored_DeletesOldImageAfterStoringNew()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        List<string> order = [];
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("save"))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+        _imageServiceMock.Setup(s => s.DeleteImageAsync(It.IsAny<string>())).Callback<string>(_ => order.Add("delete"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(order, Is.EqualTo((string[])["save", "delete"]));
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(CreateStoredImage("old-guid").FilePath), Times.Once);
+        Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
+    }
+
+    [Test]
+    public async Task UpdateGame_JsonImageUrlStored_DeletesOldImageAfterStoringNew()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        game.ImageUrl = ImageUrl;
+        List<string> order = [];
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("save"))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+        _imageServiceMock.Setup(s => s.DeleteImageAsync(It.IsAny<string>())).Callback<string>(_ => order.Add("delete"));
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(order, Is.EqualTo((string[])["save", "delete"]));
+        Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
+    }
+
+    [Test]
+    public async Task UpdateGame_StoredImageHasSamePathAsOld_DoesNotDeleteIt()
+    {
+        var game = ArrangeUpdateWithExistingCover(out _);
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateStoredImage("old-guid"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
     #endregion
 
     #region Helper Methods
