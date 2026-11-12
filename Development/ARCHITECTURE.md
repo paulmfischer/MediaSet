@@ -91,6 +91,15 @@ reads the background image lookup configuration. `ITmdbClient` exists only when 
 is skipped with a log line and the sync continues. A TMDB error on one movie counts as skipped, a 429 stops the backfill early,
 and neither fails the run.
 
+### Plex cover fallback
+
+When an entry is paired with a Plex item (a sync match or a manual link) and has no cover, `PlexCoverService`
+(`Features/Plex/Services`) takes the item's poster: `IPlexClient.GetPosterAsync` reads `library/metadata/{ratingKey}/thumb`
+(the stored poster, not a resized copy; GET only, token in the header) and `IImageService.SaveImageBytesAsync` stores it like any
+other cover (the URL download is not used: it blocks private addresses such as the Plex server). A poster narrower than
+`PlexCoverService.MinWidth` (400 px), larger than 10 MB, not JPEG/PNG, or missing is skipped. A cover is never replaced, and
+any failure is logged (type only) and never fails the link or the sync run.
+
 ### Plex sync schedule
 
 `PlexSyncScheduler` (a hosted service registered only when Plex is enabled) runs one loop per enabled entity type, driven by

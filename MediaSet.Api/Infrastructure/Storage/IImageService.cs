@@ -33,6 +33,13 @@ public interface IImageService
     Task<Image> DownloadAndSaveImageAsync(string imageUrl, string entityType, string entityId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Validate and save image bytes a trusted caller already fetched (for example from the Plex server, which the URL
+    /// download would refuse as a private address), with the same checks and storage as any other image.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown if the data is not a supported, complete image or exceeds a limit</exception>
+    Task<Image> SaveImageBytesAsync(byte[] imageData, string entityType, string entityId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Retrieve image file stream for serving to clients.
     /// </summary>
     /// <param name="imagePath">The relative path to the image file (e.g., "books/book-id-guid.jpg")</param>

@@ -163,6 +163,57 @@ public class PlexClient : IPlexClient
         return MapItem(m, library, DeepLinkBase(serverId));
     }
 
+    public async Task<byte[]?> GetPosterAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(ratingKey))
+        {
+            return null;
+        }
+
+        // GET only, token in the client's header. The bare thumb path serves the stored poster, not a resized copy.
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"library/metadata/{Uri.EscapeDataString(ratingKey.Trim())}/thumb");
+        try
+        {
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                {
+                    LogFailure(null, (int)response.StatusCode);
+                }
+                return null;
+            }
+            if (response.Content.Headers.ContentLength > maxBytes)
+            {
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var buffer = new MemoryStream();
+            var chunk = new byte[81920];
+            int read;
+            while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
+            {
+                if (buffer.Length + read > maxBytes)
+                {
+                    return null;
+                }
+                buffer.Write(chunk, 0, read);
+            }
+            return buffer.Length == 0 ? null : buffer.ToArray();
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            LogFailure(ex, null);
+            return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            LogFailure(ex, null);
+            return null;
+        }
+    }
+
     public async Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(showRatingKey))

@@ -45,6 +45,7 @@ public class PlexSyncServiceTests
         public InMemoryPlexItemStore Items { get; } = new();
         public Mock<IEntityService<Movie>> Movies { get; } = InMemoryPlexItemStore.MovieService();
         public Mock<ITmdbClient> Tmdb { get; } = new();
+        public Mock<IPlexCoverService> Covers { get; } = new();
         public PlexSyncService Service { get; }
 
         /// <param name="tmdbConfigured">When false, ITmdbClient is not registered, as when the TMDB section is absent.</param>
@@ -56,7 +57,8 @@ public class PlexSyncServiceTests
                 .AddSingleton(Options.Create(new PlexConfiguration { Backfill = new PlexBackfillConfiguration { RequestsPerMinute = 6000 } }))
                 .AddLogging()
                 .AddSingleton<IExternalIdBackfillStore>(new InMemoryExternalIdBackfillStore())
-                .AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
+                .AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>()
+                .AddScoped(_ => Covers.Object);
             if (tmdbConfigured)
             {
                 collection.AddSingleton(Tmdb.Object);
@@ -336,6 +338,32 @@ public class PlexSyncServiceTests
         Assert.That(h.Items.Items["a"].Hdr, Is.True);
         Assert.That(h.Items.Items["a"].BestAudioTrack, Is.Not.Null);
         Assert.That(h.Items.Items["a"].SubtitleLanguages, Is.Not.Empty);
+    }
+
+    [Test]
+    public async Task Sync_MatchedMovieWithoutCover_AppliesPlexPoster()
+    {
+        var h = new Harness();
+        ServeMovieLikeClient(h, Item("10", new PlexGuids("603", null, null), Version("1080", hdr: true, size: 5)));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        await RunAsync(h);
+
+        h.Covers.Verify(c => c.ApplyIfMissingAsync("a", "10", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task Sync_MatchedMovieWithCover_DoesNotAskForPlexPoster()
+    {
+        var h = new Harness();
+        ServeMovieLikeClient(h, Item("10", new PlexGuids("603", null, null), Version("1080", hdr: true, size: 5)));
+        var movie = MovieWith("a", "tmdbid:603");
+        movie.CoverImage = new Image { FilePath = "movies/a.jpg" };
+        SetMovies(h, movie);
+
+        await RunAsync(h);
+
+        h.Covers.Verify(c => c.ApplyIfMissingAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]

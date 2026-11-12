@@ -64,6 +64,37 @@ public class ImageServiceTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    #region SaveImageBytesAsync Tests
+
+    [Test]
+    public async Task SaveImageBytesAsync_ValidJpeg_SavesUnderEntityFolderAndReturnsMetadata()
+    {
+        // Arrange
+        var imageData = CreateImage(SKEncodedImageFormat.Jpeg);
+
+        // Act
+        var result = await _imageService.SaveImageBytesAsync(imageData, "Movies", "movie-1", CancellationToken.None);
+
+        // Assert
+        Assert.That(result.ContentType, Is.EqualTo("image/jpeg"));
+        Assert.That(result.FilePath, Does.StartWith("movies"));
+        Assert.That(result.FileName, Does.StartWith("movie-1-"));
+        _storageProviderMock.Verify(s => s.SaveImageAsync(It.IsAny<byte[]>(), result.FilePath, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task SaveImageBytesAsync_NotAnImage_ThrowsUnsupportedFormat()
+    {
+        // Act
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _imageService.SaveImageBytesAsync([1, 2, 3], "movies", "movie-1", CancellationToken.None));
+
+        // Assert
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.UnsupportedFormat));
+    }
+
+    #endregion
+
     #region GetImageStreamAsync Tests
 
     [Test]
