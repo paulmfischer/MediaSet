@@ -766,7 +766,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         FileSize = 1024
     };
 
-    private Game ArrangeUpdateWithExistingCover(out Func<Game?> savedGame)
+    private Game ArrangeUpdateWithExistingCover(out Func<Game?> savedGame, List<string>? order = null)
     {
         var existing = _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
         existing.CoverImage = CreateStoredImage("old-guid");
@@ -774,7 +774,11 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         Game? saved = null;
         _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
         _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()))
-            .Callback<string, Game, CancellationToken>((_, g, _) => saved = g)
+            .Callback<string, Game, CancellationToken>((_, g, _) =>
+            {
+                saved = g;
+                order?.Add("update");
+            })
             .ReturnsAsync(Mock.Of<ReplaceOneResult>());
         savedGame = () => saved;
         return _gameFaker.Clone().RuleFor(g => g.Id, GameId).Generate();
@@ -835,8 +839,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     [Test]
     public async Task UpdateGame_UploadStored_DeletesOldImageAfterStoringNew()
     {
-        var game = ArrangeUpdateWithExistingCover(out var saved);
         List<string> order = [];
+        var game = ArrangeUpdateWithExistingCover(out var saved, order);
         _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
             .Callback(() => order.Add("save"))
             .ReturnsAsync(CreateStoredImage("new-guid"));
@@ -845,7 +849,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(order, Is.EqualTo((string[])["save", "delete"]));
+        Assert.That(order, Is.EqualTo((string[])["save", "update", "delete"]));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(CreateStoredImage("old-guid").FilePath), Times.Once);
         Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
         Assert.That(saved()!.ImageUrl, Is.Null);
@@ -854,9 +858,9 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     [Test]
     public async Task UpdateGame_JsonImageUrlStored_DeletesOldImageAfterStoringNew()
     {
-        var game = ArrangeUpdateWithExistingCover(out var saved);
-        game.ImageUrl = ImageUrl;
         List<string> order = [];
+        var game = ArrangeUpdateWithExistingCover(out var saved, order);
+        game.ImageUrl = ImageUrl;
         _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
             .Callback(() => order.Add("save"))
             .ReturnsAsync(CreateStoredImage("new-guid"));
@@ -865,7 +869,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(order, Is.EqualTo((string[])["save", "delete"]));
+        Assert.That(order, Is.EqualTo((string[])["save", "update", "delete"]));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(CreateStoredImage("old-guid").FilePath), Times.Once);
         Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
     }
@@ -873,8 +877,8 @@ public class EntityApiControllerImageTests : IntegrationTestBase
     [Test]
     public async Task UpdateGame_MultipartImageUrlStored_DeletesOldImageAfterStoringNew()
     {
-        var game = ArrangeUpdateWithExistingCover(out var saved);
         List<string> order = [];
+        var game = ArrangeUpdateWithExistingCover(out var saved, order);
         _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", GameId, It.IsAny<CancellationToken>()))
             .Callback(() => order.Add("save"))
             .ReturnsAsync(CreateStoredImage("new-guid"));
@@ -883,7 +887,7 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(order, Is.EqualTo((string[])["save", "delete"]));
+        Assert.That(order, Is.EqualTo((string[])["save", "update", "delete"]));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(CreateStoredImage("old-guid").FilePath), Times.Once);
         Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
     }
@@ -905,6 +909,21 @@ public class EntityApiControllerImageTests : IntegrationTestBase
         Assert.That(await ReadImageErrorAsync(response), Is.EqualTo("unknown"));
         Assert.That(saved, Is.Not.Null);
         Assert.That(saved!.CoverImage, Is.Null);
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateGame_UpdateAsyncThrows_KeepsOldImageFile()
+    {
+        var game = ArrangeUpdateWithExistingCover(out _);
+        _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("db down"));
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", GameId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+
+        var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
     }
 
