@@ -155,6 +155,24 @@ public class PlexStatisticsCalculatorTests
     }
 
     [Test]
+    public void Compute_Tv_MostWatchedWithoutRollupCountsWatchedOnPlexEpisodes()
+    {
+        var show = Doc("a");
+        show.Rollup = null;
+        show.Episodes =
+        [
+            new PlexEpisodeData { OnPlex = true, Watched = true },
+            new PlexEpisodeData { OnPlex = true, Watched = true },
+            new PlexEpisodeData { OnPlex = true, Watched = false },
+            new PlexEpisodeData { OnPlex = false, Watched = true }
+        ];
+
+        var top = PlexStatisticsCalculator.Compute([Entry("a", "Alpha", tv: true)], [show]).Tv.MostWatched;
+
+        Assert.That(top, Is.EqualTo(new List<PlexMostWatchedDto> { new("a", "Alpha", 2) }));
+    }
+
+    [Test]
     public void Compute_Tv_CountsEpisodesOnPlexAndCompleteness()
     {
         var show = Doc("t1");
