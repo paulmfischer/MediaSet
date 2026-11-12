@@ -197,7 +197,7 @@ internal static class EntityApi
                         }
 
                         // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
-                        var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                        var imageUrlProp = GetImageUrlProperty(newEntity);
                         imageUrlProp?.SetValue(newEntity, null);
                         await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
                     }
@@ -223,7 +223,7 @@ internal static class EntityApi
                 else
                 {
                     // Check if imageUrl is provided for download
-                    var imageUrlProp = newEntity.GetType().GetProperty("ImageUrl");
+                    var imageUrlProp = GetImageUrlProperty(newEntity);
                     var imageUrl = imageUrlProp?.GetValue(newEntity) as string;
 
                     if (!string.IsNullOrWhiteSpace(imageUrl))
@@ -359,7 +359,7 @@ internal static class EntityApi
                         // on failure ApplyStoredImage already restored the previous ImageUrl
                         if (image is not null)
                         {
-                            var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
+                            var imageUrlProp = GetImageUrlProperty(updatedEntity);
                             imageUrlProp?.SetValue(updatedEntity, null);
                         }
                     }
@@ -386,7 +386,7 @@ internal static class EntityApi
                 else
                 {
                     // Check if imageUrl is provided for download
-                    var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
+                    var imageUrlProp = GetImageUrlProperty(updatedEntity);
                     var imageUrl = imageUrlProp?.GetValue(updatedEntity) as string;
                     var existingImageUrl = imageUrlProp?.GetValue(existingEntity) as string;
 
@@ -619,6 +619,11 @@ internal static class EntityApi
     }
 
     /// <summary>
+    /// Returns the entity's ImageUrl property, or null when its type has none.
+    /// </summary>
+    private static System.Reflection.PropertyInfo? GetImageUrlProperty(IEntity entity) => entity.GetType().GetProperty("ImageUrl");
+
+    /// <summary>
     /// Applies the outcome of storing a replacement image on an update. When the new image was stored
     /// the old file is deleted (unless it is the same file); when storing failed the previous cover
     /// and its ImageUrl are kept so the entity still references the old image.
@@ -628,7 +633,7 @@ internal static class EntityApi
         if (newImage is null)
         {
             updatedEntity.CoverImage = existingEntity.CoverImage;
-            var imageUrlProp = updatedEntity.GetType().GetProperty("ImageUrl");
+            var imageUrlProp = GetImageUrlProperty(updatedEntity);
             if (imageUrlProp is { CanWrite: true })
             {
                 imageUrlProp.SetValue(updatedEntity, imageUrlProp.GetValue(existingEntity));
