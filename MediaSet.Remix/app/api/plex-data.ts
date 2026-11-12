@@ -1,7 +1,7 @@
 import { baseUrl } from '../constants.server.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
 import { serverLogger } from '../utils/serverLogger.ts';
-import type { PlexEntityStatus, PlexScope, PlexSearchResult } from '../models.ts';
+import type { PlexEntityStatus, PlexScope, PlexSearchResult, PlexStatistics } from '../models.ts';
 import { getIntegrations } from './integrations-data.ts';
 
 /**
@@ -163,4 +163,23 @@ export async function startPlexSync(entityType: string): Promise<boolean> {
   if (response.status === 409) return false;
   if (!response.ok) await failFrom(response, 'startPlexSync', entityType);
   return true;
+}
+
+/**
+ * The Plex statistics (GET `/plex/statistics`), or null when they cannot be read. They are a bonus on the sync page, so a
+ * failure is logged and the page renders without them.
+ */
+export async function getPlexStatistics(): Promise<PlexStatistics | null> {
+  try {
+    const response = await apiFetch(`${baseUrl}/plex/statistics`);
+    if (!response.ok) {
+      serverLogger.warn('Plex statistics were refused', { operation: 'getPlexStatistics', status: response.status });
+      return null;
+    }
+    const body = (await response.json()) as Partial<PlexStatistics> | null;
+    return body && typeof body === 'object' && body.movies && body.tv ? (body as PlexStatistics) : null;
+  } catch (error) {
+    serverLogger.error('Could not read the Plex statistics', error, { operation: 'getPlexStatistics' });
+    return null;
+  }
 }

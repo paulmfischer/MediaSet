@@ -290,3 +290,33 @@ export type PlexEntityStatus = {
   nextRun?: string | null;
   schedulePolicy: string;
 };
+
+/** One labelled count of a Plex statistics breakdown, in display order. */
+export type PlexCount = { name: string; count: number };
+
+/** One kind of entry (`movies` or `tv`) in `GET /plex/statistics`. The API sends no file path. */
+export type PlexKindStatistics = {
+  kind: string;
+  coverage: { total: number; onPlex: number; notOnPlex: number; broken: number };
+  /** On-Plex movies, or on-Plex episodes for TV; what the breakdowns count. */
+  units: number;
+  resolution: PlexCount[];
+  videoCodec: PlexCount[];
+  hdr: PlexCount[];
+  subtitles: PlexCount[];
+  watched: PlexCount[];
+  audioCodec: PlexCount[];
+  audioChannels: PlexCount[];
+  storage: { totalBytes: number; averageBytes: number; unitsWithSize: number };
+  runtime: { totalSeconds: number; averageSeconds: number; unitsWithRuntime: number };
+  mostWatched: Array<{ id: string; title: string; viewCount: number }>;
+  /** TV only. */
+  completeness?: {
+    episodesPresent: number;
+    episodesExpected: number;
+    entriesComplete: number;
+    entriesIncomplete: number;
+  } | null;
+};
+
+export type PlexStatistics = { movies: PlexKindStatistics; tv: PlexKindStatistics };

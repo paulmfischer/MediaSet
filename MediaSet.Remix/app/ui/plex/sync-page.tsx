@@ -1,8 +1,9 @@
 import type { Handle } from 'remix/component';
 
-import type { PlexEntityStatus, PlexSyncRun } from '../../models.ts';
+import type { PlexEntityStatus, PlexStatistics, PlexSyncRun } from '../../models.ts';
 import { entityTypeLabel, hasActiveRun, isActiveRun, runStateLabel } from '../../utils/plex-sync.ts';
 import { LocalDateTime } from '../image-stats/public/local-date-time.tsx';
+import { PlexStatisticsSection } from './plex-statistics.tsx';
 import { PlexSyncPoller } from './public/plex-sync-poller.tsx';
 
 interface SyncPageProps {
@@ -14,6 +15,8 @@ interface SyncPageProps {
   statusHref: string;
   /** Shown above the list, for example when a second sync request found a run already active. */
   notice?: string;
+  /** The Plex statistics shown before the sync section; null when they could not be read. */
+  statistics?: PlexStatistics | null;
 }
 
 const STATE_CLASS: Record<string, string> = {
@@ -128,10 +131,14 @@ function EntityStatus(handle: Handle<{ status: PlexEntityStatus; action: string 
 // page while a run is active.
 export function PlexSyncPage(handle: Handle<SyncPageProps>) {
   return () => {
-    const { statuses, action, statusHref, notice } = handle.props;
+    const { statuses, action, statusHref, notice, statistics } = handle.props;
     return (
-      <div class="flex flex-col gap-4 px-2 max-w-3xl mx-auto">
-        <h1 class="text-2xl">Plex sync</h1>
+      <div class="flex flex-col gap-4 px-2">
+        <h1 id="plex-page-heading" class="text-3xl font-bold text-white">
+          Plex Statistics
+        </h1>
+        {statistics ? <PlexStatisticsSection statistics={statistics} /> : null}
+        <h2 class="text-lg">Sync</h2>
         {notice ? (
           <p class="text-sm text-amber-400" data-testid="plex-notice">
             {notice}

@@ -116,6 +116,18 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
     }
 
+    public Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken)
+    {
+        if (StatsFailure != null)
+        {
+            throw StatsFailure;
+        }
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.ToList());
+        }
+    }
+
     /// <summary>When set, statistics reads throw it.</summary>
     public Exception? StatsFailure { get; set; }
 

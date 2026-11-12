@@ -21,6 +21,9 @@ export const FORMAT_PALETTES: Record<DashboardTabId, string[]> = {
 // Plex amber shades for the resolution pie.
 export const PLEX_RESOLUTION_COLORS = ['#e5a00d', '#f5c04a', '#b87f0a', '#fbd98a', '#8a5f08'];
 
+// Distinct hues for the Plex statistics pies, whose slices are unrelated categories (Plex amber first).
+export const PLEX_STATISTICS_COLORS = ['#e5a00d', '#38bdf8', '#a78bfa', '#34d399', '#f87171', '#94a3b8'];
+
 export const MOVIE_TYPE_COLORS = ['#ef4444', '#f97316'];
 
 // Shared by every stat card: the accent colour comes from the surrounding entity-* class.
