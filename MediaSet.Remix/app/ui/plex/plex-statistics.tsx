@@ -7,7 +7,7 @@ import { ChartCard } from '../dashboard/chart-card.tsx';
 import { PLEX_RESOLUTION_COLORS, PLEX_STATISTICS_COLORS, STAT_CARD_COLOR } from '../dashboard/config.ts';
 import { PieChart } from '../dashboard/pie-chart.tsx';
 import { StatCard } from '../dashboard/stat-card.tsx';
-import { Clapperboard, HardDrive, Layers, Link2Off, Tv } from '../icons.ts';
+import { AlertTriangle, Clapperboard, HardDrive, Layers, Link2Off, Tv } from '../icons.ts';
 
 const num = (value: number): string => value.toLocaleString('en-US');
 const PLEX_BAR_COLOR = PLEX_RESOLUTION_COLORS[0];
@@ -66,7 +66,12 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
           />
           <StatCard title="On Plex" value={num(coverage.onPlex)} icon={Tv} colorClass={STAT_CARD_COLOR} />
           <StatCard title="Not on Plex" value={num(coverage.notOnPlex)} icon={Link2Off} colorClass={STAT_CARD_COLOR} />
-          <StatCard title="Broken links" value={num(coverage.broken)} icon={Link2Off} colorClass={STAT_CARD_COLOR} />
+          <StatCard
+            title="Broken links"
+            value={num(coverage.broken)}
+            icon={AlertTriangle}
+            colorClass={STAT_CARD_COLOR}
+          />
         </div>
         {stats.units === 0 ? (
           <p class="text-sm text-zinc-400" data-testid="plex-stats-empty">

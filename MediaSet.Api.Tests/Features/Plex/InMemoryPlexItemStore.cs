@@ -116,7 +116,7 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
     }
 
-    public Task<IReadOnlyList<PlexItemData>> ListStatisticsAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken)
     {
         if (StatsFailure != null)
         {

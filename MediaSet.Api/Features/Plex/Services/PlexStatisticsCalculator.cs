@@ -47,11 +47,12 @@ public static class PlexStatisticsCalculator
         PlexCompletenessDto? completeness = null;
         if (tvKind)
         {
-            var rollups = onPlex.Select(x => x.Doc.Rollup).Where(r => r != null).Select(r => r!).ToList();
+            // Every on-Plex entry is counted once: a missing rollup or an expected count of 0 (Plex reports no episodes) is complete
+            var rollups = onPlex.Select(x => x.Doc.Rollup ?? new PlexRollup()).ToList();
             completeness = new PlexCompletenessDto(
                 rollups.Sum(r => r.EpisodesPresent),
                 rollups.Sum(r => r.EpisodesExpected),
-                rollups.Count(r => r.EpisodesExpected > 0 && r.EpisodesPresent >= r.EpisodesExpected),
+                rollups.Count(r => r.EpisodesPresent >= r.EpisodesExpected),
                 rollups.Count(r => r.EpisodesPresent < r.EpisodesExpected));
         }
 

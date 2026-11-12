@@ -180,7 +180,7 @@ async request context for the synchronous header and the Plex handlers (one look
 with coverage (`total`, `onPlex`, `notOnPlex`, `broken`), `units` and ordered `{ name, count }` lists for resolution, video codec, HDR/SDR,
 subtitles, watched, audio codec and channel layout, plus `storage`, `runtime`, `mostWatched` (top 10 by view count, titles from the movie list)
 and, for TV, `completeness` (episodes present against the count Plex reports). A unit is an on-Plex movie, or an on-Plex episode for TV.
-`PlexItemStore.ListStatisticsAsync` projects the documents (no file path, titles or season list; episodes keep only their stream, size,
+`PlexItemStore.ListStatisticsProjectionAsync` projects the documents (no file path, titles or season list; episodes keep only their stream, size,
 duration and watched fields) and the pure `PlexStatisticsCalculator` counts them; documents of no listed entry are ignored. The Plex page
 (`app/ui/plex/plex-statistics.tsx`) renders it before the sync section with the dashboard chart components, and renders without it when
 the call fails. This is separate from the dashboard's `plexStats`.

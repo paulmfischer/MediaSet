@@ -15,7 +15,7 @@ public class PlexStatisticsService(IPlexItemStore items, IEntityService<Movie> m
     public async Task<PlexStatisticsDto> GetAsync(CancellationToken cancellationToken)
     {
         var entries = (await movies.GetListAsync(cancellationToken)).ToList();
-        var docs = await items.ListStatisticsAsync(cancellationToken);
+        var docs = await items.ListStatisticsProjectionAsync(cancellationToken);
         return PlexStatisticsCalculator.Compute(entries, docs);
     }
 }

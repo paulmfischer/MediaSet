@@ -132,17 +132,22 @@ public class PlexStatisticsCalculatorTests
         var complete = Doc("t2");
         complete.Scope = PlexScope.AllSeasons;
         complete.Rollup = new PlexRollup { EpisodesPresent = 4, EpisodesExpected = 4 };
-        var entries = new[] { Entry("t1", "Show 1", tv: true), Entry("t2", "Show 2", tv: true), Entry("m", "Movie") };
+        var noEpisodes = Doc("t3");
+        noEpisodes.Scope = PlexScope.AllSeasons;
+        noEpisodes.Rollup = new PlexRollup { EpisodesPresent = 0, EpisodesExpected = 0 };
+        var entries = new[] { Entry("t1", "Show 1", tv: true), Entry("t2", "Show 2", tv: true), Entry("t3", "Show 3", tv: true), Entry("m", "Movie") };
 
-        var stats = PlexStatisticsCalculator.Compute(entries, [show, complete]);
+        var stats = PlexStatisticsCalculator.Compute(entries, [show, complete, noEpisodes]);
 
-        Assert.That(stats.Tv.Coverage, Is.EqualTo(new PlexCoverageDto(2, 2, 0, 0)));
+        Assert.That(stats.Tv.Coverage, Is.EqualTo(new PlexCoverageDto(3, 3, 0, 0)));
         Assert.That(stats.Tv.Units, Is.EqualTo(2));
         Assert.That(Count(stats.Tv.Resolution, "1080"), Is.EqualTo(2));
         Assert.That(Count(stats.Tv.Subtitles, "With subtitles"), Is.EqualTo(1));
         Assert.That(Count(stats.Tv.Watched, "Watched"), Is.EqualTo(1));
         Assert.That(stats.Tv.Storage, Is.EqualTo(new PlexStorageDto(400, 200, 2)));
-        Assert.That(stats.Tv.Completeness, Is.EqualTo(new PlexCompletenessDto(6, 7, 1, 1)));
+        Assert.That(stats.Tv.Completeness, Is.EqualTo(new PlexCompletenessDto(6, 7, 2, 1)));
+        // complete + incomplete add up to the on-Plex entries
+        Assert.That(stats.Tv.Completeness!.EntriesComplete + stats.Tv.Completeness.EntriesIncomplete, Is.EqualTo(stats.Tv.Coverage.OnPlex));
         Assert.That(stats.Movies.Coverage.Total, Is.EqualTo(1));
     }
 

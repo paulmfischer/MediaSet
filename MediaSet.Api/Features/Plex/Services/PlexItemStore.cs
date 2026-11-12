@@ -29,7 +29,7 @@ public interface IPlexItemStore
     /// Every stored document projected to the fields the statistics page needs: no file path, title, season list or
     /// episode id, so a TV entry's episodes carry only their stream, size, duration and watched fields.
     /// </summary>
-    Task<IReadOnlyList<PlexItemData>> ListStatisticsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken);
 
     /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
     Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
@@ -91,7 +91,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.Resolution))
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<PlexItemData>> ListStatisticsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken)
     {
         var p = Builders<PlexItemData>.Projection;
         var episodeFields = new[] { "OnPlex", "Watched", "Resolution", "Hdr", "VideoCodec", "BestAudioTrack", "SubtitleLanguages", "SizeBytes", "DurationSeconds" };
