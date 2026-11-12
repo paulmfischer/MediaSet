@@ -123,7 +123,7 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
     // Unlinked: only the button, with no "Not on Plex" text.
     if (!plex) {
       return (
-        <section class="mt-6" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
+        <section class="mt-10" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
           <PlexLinkDialog href={linkHref} detailHref={detailHref} label="Link to Plex" auto />
         </section>
       );
@@ -134,13 +134,13 @@ export function PlexCard(handle: Handle<PlexCardProps>) {
 
     return (
       <section
-        class={`mt-6 flex flex-col gap-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 p-4 shadow-md ${state === 'onPlex' ? '' : 'opacity-70'}`}
+        class={`mt-10 flex flex-col gap-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 p-4 shadow-md ${state === 'onPlex' ? '' : 'opacity-70'}`}
         aria-label="Plex"
         data-testid="plex-card"
         data-plex-state={state}
       >
         <div class="flex items-center gap-2">
-          <h2 class="text-lg">Plex</h2>
+          <h2 class="text-xl font-semibold">Plex</h2>
           <PlexMenu
             refreshHref={refreshHref}
             linkHref={linkHref}
