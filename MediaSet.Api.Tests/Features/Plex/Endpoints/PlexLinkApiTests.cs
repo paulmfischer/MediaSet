@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Features.Plex.Models;
+using MediaSet.Api.Features.Plex.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Plex;
@@ -43,7 +44,7 @@ public class PlexLinkApiTests
         _factories.Clear();
     }
 
-    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexItemStore items, bool moviesEnabled = true)
+    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexItemStore items, bool moviesEnabled = true, Mock<IPlexCoverService>? covers = null)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -79,6 +80,10 @@ public class PlexLinkApiTests
                 movies.Setup(s => s.GetAsync(TvNoScopeId, It.IsAny<CancellationToken>())).ReturnsAsync(tvNoScope);
                 movies.Setup(s => s.GetAsync(TvRangeId, It.IsAny<CancellationToken>())).ReturnsAsync(tvRange);
                 services.AddScoped(_ => movies.Object);
+                if (covers != null)
+                {
+                    services.AddScoped(_ => covers.Object);
+                }
                 InMemoryPlexSyncRunStore.Replace(services);
                 InMemoryPlexItemStore.Replace(services, items);
                 services.AddHttpClient(nameof(IPlexClient)).ConfigurePrimaryHttpMessageHandler(() => handler);
@@ -138,6 +143,18 @@ public class PlexLinkApiTests
         Assert.That(json.GetProperty("resolution").GetString(), Is.EqualTo("1080"));
         Assert.That(items.Items[MovieId].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
         Assert.That(items.Items[MovieId].Resolution, Is.EqualTo("1080"));
+    }
+
+    [Test]
+    public async Task Link_ExistingPlexItem_AsksForPlexPosterAsCover()
+    {
+        var covers = new Mock<IPlexCoverService>();
+        using var client = CreateClient(Server(), new InMemoryPlexItemStore(), covers: covers);
+
+        var response = await LinkAsync(client, MovieId, new { plexItemId = "1001" });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        covers.Verify(c => c.ApplyIfMissingAsync(MovieId, "1001", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]

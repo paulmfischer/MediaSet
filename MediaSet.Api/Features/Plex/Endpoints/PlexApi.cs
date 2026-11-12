@@ -139,6 +139,7 @@ internal static class PlexApi
             PlexLinkRequest? body,
             IEntityService<Movie> movies,
             IPlexLinkService links,
+            IPlexCoverService covers,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(body?.PlexItemId))
@@ -177,7 +178,14 @@ internal static class PlexApi
             try
             {
                 var data = await links.LinkAsync(PlexEntityTypeFilter.GetEntityType(context), id, body.PlexItemId.Trim(), cancellationToken, scope);
-                return data == null ? PlexItemNotFound(body.PlexItemId.Trim(), scope != null) : Results.Ok(PlexItemDataDto.From(data));
+                if (data == null)
+                {
+                    return PlexItemNotFound(body.PlexItemId.Trim(), scope != null);
+                }
+
+                // A paired entry without a cover takes the Plex poster (the service checks). Best effort: it never fails the link.
+                await covers.ApplyIfMissingAsync(id, data.PlexItemId, cancellationToken);
+                return Results.Ok(PlexItemDataDto.From(data));
             }
             catch (PlexClientException ex)
             {

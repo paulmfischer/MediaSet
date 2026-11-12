@@ -61,4 +61,11 @@ public interface IPlexClient
         string seasonRatingKey,
         CancellationToken cancellationToken,
         IReadOnlyDictionary<string, PlexKnownMedia>? known = null);
+
+    /// <summary>
+    /// The poster of an item by rating key, at the size Plex stores it (not a transcoded thumbnail), as the raw image
+    /// bytes Plex sends. Null when the item has no poster, or the poster cannot be read, so a missing poster never
+    /// fails a caller. The size is capped by <paramref name="maxBytes"/>; a larger poster also reads as null.
+    /// </summary>
+    Task<byte[]?> GetPosterAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken);
 }

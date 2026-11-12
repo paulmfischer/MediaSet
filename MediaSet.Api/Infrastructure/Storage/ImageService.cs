@@ -136,6 +136,21 @@ public class ImageService : IImageService
     }
 
     /// <summary>
+    /// Save image bytes fetched by a trusted caller, with the same validation and EXIF stripping as other images.
+    /// </summary>
+    public async Task<CoverImage> SaveImageBytesAsync(byte[] imageData, string entityType, string entityId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(imageData);
+        if (string.IsNullOrWhiteSpace(entityType) || string.IsNullOrWhiteSpace(entityId))
+        {
+            throw new ArgumentException("EntityType and EntityId cannot be null or empty");
+        }
+
+        await using var inputStream = new MemoryStream(imageData);
+        return await ProcessAndSaveImageAsync(inputStream, entityType.ToLower(), entityId, cancellationToken);
+    }
+
+    /// <summary>
     /// Retrieve image stream for serving to clients.
     /// </summary>
     public async Task<Stream?> GetImageStreamAsync(string imagePath, CancellationToken cancellationToken)

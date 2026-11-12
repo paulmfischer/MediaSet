@@ -495,6 +495,12 @@ public sealed class PlexSyncService(
                         await itemStore.UpsertAsync(PlexMatching.Build(movie.Id!, item, syncedAt, source, stored), token);
                     }
                     matched++;
+
+                    // A paired entry without a cover takes the Plex poster (the service checks); best effort, never fails the run
+                    if (scope.ServiceProvider.GetService<IPlexCoverService>() is { } covers)
+                    {
+                        await covers.ApplyIfMissingAsync(movie.Id!, item.RatingKey, token);
+                    }
                 }
                 else if (plan.Stale is { } stale)
                 {
