@@ -15,6 +15,7 @@ public record PlexRuntimeDto(long TotalSeconds, long AverageSeconds, int UnitsWi
 /// <summary>TV only: episodes on Plex against the episodes Plex reports for the covered seasons.</summary>
 public record PlexCompletenessDto(int EpisodesPresent, int EpisodesExpected, int EntriesComplete, int EntriesIncomplete);
 
+/// <summary>One most-watched entry. <c>ViewCount</c> is the play count for a movie and the number of watched episodes for a TV entry.</summary>
 public record PlexMostWatchedDto(string Id, string Title, int ViewCount);
 
 /// <summary>

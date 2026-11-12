@@ -118,6 +118,61 @@ public class PlexStatisticsCalculatorTests
     }
 
     [Test]
+    public void Compute_Tv_MostWatchedRanksByWatchedEpisodesNotViewCount()
+    {
+        List<Movie> entries = [Entry("a", "Alpha", tv: true), Entry("b", "Beta", tv: true), Entry("c", "Gamma", tv: true), Entry("d", "Delta", tv: true)];
+        var a = Doc("a");
+        a.ViewCount = 99;
+        a.Rollup = new PlexRollup { WatchedCount = 2 };
+        var b = Doc("b");
+        b.Rollup = new PlexRollup { WatchedCount = 5 };
+        var c = Doc("c");
+        c.Rollup = new PlexRollup { WatchedCount = 2 };
+        var d = Doc("d");
+        d.ViewCount = 50;
+        d.Rollup = new PlexRollup { WatchedCount = 0 };
+
+        var top = PlexStatisticsCalculator.Compute(entries, [a, b, c, d]).Tv.MostWatched;
+
+        Assert.That(top, Is.EqualTo(new List<PlexMostWatchedDto>
+        {
+            new("b", "Beta", 5),
+            new("a", "Alpha", 2),
+            new("c", "Gamma", 2)
+        }));
+    }
+
+    [Test]
+    public void Compute_Tv_MostWatchedIsEmptyWhenNoEpisodeIsWatched()
+    {
+        var show = Doc("a");
+        show.Rollup = new PlexRollup { WatchedCount = 0 };
+        var other = Doc("b"); // no rollup and no episodes
+
+        var top = PlexStatisticsCalculator.Compute([Entry("a", "Alpha", tv: true), Entry("b", "Beta", tv: true)], [show, other]).Tv.MostWatched;
+
+        Assert.That(top, Is.Empty);
+    }
+
+    [Test]
+    public void Compute_Tv_MostWatchedWithoutRollupCountsWatchedOnPlexEpisodes()
+    {
+        var show = Doc("a");
+        show.Rollup = null;
+        show.Episodes =
+        [
+            new PlexEpisodeData { OnPlex = true, Watched = true },
+            new PlexEpisodeData { OnPlex = true, Watched = true },
+            new PlexEpisodeData { OnPlex = true, Watched = false },
+            new PlexEpisodeData { OnPlex = false, Watched = true }
+        ];
+
+        var top = PlexStatisticsCalculator.Compute([Entry("a", "Alpha", tv: true)], [show]).Tv.MostWatched;
+
+        Assert.That(top, Is.EqualTo(new List<PlexMostWatchedDto> { new("a", "Alpha", 2) }));
+    }
+
+    [Test]
     public void Compute_Tv_CountsEpisodesOnPlexAndCompleteness()
     {
         var show = Doc("t1");

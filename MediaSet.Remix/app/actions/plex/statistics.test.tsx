@@ -123,6 +123,20 @@ describe('plex statistics section', () => {
     assert.match(html, /1 complete, 1 missing episodes/);
   });
 
+  it('should label the TV most watched chart by episodes watched', async (t) => {
+    stubApi(t, {
+      statistics: Response.json({
+        movies: kind(),
+        tv: tvKind({ mostWatched: [{ id: 't1', title: 'Severance', viewCount: 9 }] }),
+      }),
+    });
+
+    const html = await (await get('/plex')).text();
+
+    assert.match(html, /Most watched \(episodes watched\)/);
+    assert.match(html, />Severance</);
+  });
+
   it('should say there is nothing to break down for a section with no on-Plex items', async (t) => {
     stubApi(t, {
       statistics: Response.json({

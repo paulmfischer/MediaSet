@@ -109,7 +109,8 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.DurationSeconds)
                 .Include(d => d.Scope)
                 .Include("Rollup.EpisodesPresent")
-                .Include("Rollup.EpisodesExpected"),
+                .Include("Rollup.EpisodesExpected")
+                .Include("Rollup.WatchedCount"),
             p.Combine(episodeFields.Select(f => p.Include($"Episodes.{f}"))));
         return await Collection.Find(FilterDefinition<PlexItemData>.Empty)
             .Project<PlexItemData>(projection)

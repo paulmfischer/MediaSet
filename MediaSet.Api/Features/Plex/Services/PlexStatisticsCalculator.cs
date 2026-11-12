@@ -36,12 +36,14 @@ public static class PlexStatisticsCalculator
         var sized = units.Where(u => u.SizeBytes is > 0).Select(u => u.SizeBytes!.Value).ToList();
         var timed = units.Where(u => u.DurationSeconds is > 0).Select(u => u.DurationSeconds!.Value).ToList();
 
+        // Movies rank by play count; a show document has no play count of its own, so TV entries rank by watched episodes
         var mostWatched = onPlex
-            .Where(x => x.Doc.ViewCount > 0)
-            .OrderByDescending(x => x.Doc.ViewCount)
+            .Select(x => (x.Entry, Count: tvKind ? WatchedEpisodes(x.Doc) : x.Doc.ViewCount))
+            .Where(x => x.Count > 0)
+            .OrderByDescending(x => x.Count)
             .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
             .Take(MostWatchedLimit)
-            .Select(x => new PlexMostWatchedDto(x.Entry.Id!, x.Entry.Title, x.Doc.ViewCount))
+            .Select(x => new PlexMostWatchedDto(x.Entry.Id!, x.Entry.Title, x.Count))
             .ToList();
 
         PlexCompletenessDto? completeness = null;
@@ -72,6 +74,9 @@ public static class PlexStatisticsCalculator
             mostWatched,
             completeness);
     }
+
+    private static int WatchedEpisodes(PlexItemData doc) =>
+        doc.Rollup?.WatchedCount ?? doc.Episodes.Count(e => e.OnPlex && e.Watched);
 
     private sealed record Unit(string? Resolution, bool Hdr, string? VideoCodec, PlexAudioTrackData? Audio, bool HasSubtitles, bool Watched, long? SizeBytes, long? DurationSeconds);
 

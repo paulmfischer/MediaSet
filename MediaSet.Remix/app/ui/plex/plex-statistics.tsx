@@ -132,7 +132,7 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
           </div>
         ) : null}
         {stats.mostWatched.length > 0 ? (
-          <ChartCard title="Most watched">
+          <ChartCard title={stats.kind === 'tv' ? 'Most watched (episodes watched)' : 'Most watched'}>
             <BarChart
               data={stats.mostWatched.map((item) => ({ name: item.title, value: item.viewCount }))}
               color={PLEX_BAR_COLOR}
