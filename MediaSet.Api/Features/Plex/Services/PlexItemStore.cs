@@ -25,6 +25,12 @@ public interface IPlexItemStore
     /// <summary>Every stored document with only the fields the statistics need (OnPlex, Broken, Watched, Resolution).</summary>
     Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Every stored document projected to the fields the statistics page needs: no file path, title, season list or
+    /// episode id, so a TV entry's episodes carry only their stream, size, duration and watched fields.
+    /// </summary>
+    Task<IReadOnlyList<PlexItemData>> ListStatisticsAsync(CancellationToken cancellationToken);
+
     /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
     Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
 
@@ -84,6 +90,31 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.Watched)
                 .Include(d => d.Resolution))
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<PlexItemData>> ListStatisticsAsync(CancellationToken cancellationToken)
+    {
+        var p = Builders<PlexItemData>.Projection;
+        var episodeFields = new[] { "OnPlex", "Watched", "Resolution", "Hdr", "VideoCodec", "BestAudioTrack", "SubtitleLanguages", "SizeBytes", "DurationSeconds" };
+        var projection = p.Combine(
+            p.Include(d => d.OnPlex)
+                .Include(d => d.Broken)
+                .Include(d => d.Watched)
+                .Include(d => d.Resolution)
+                .Include(d => d.Hdr)
+                .Include(d => d.VideoCodec)
+                .Include(d => d.BestAudioTrack)
+                .Include(d => d.SubtitleLanguages)
+                .Include(d => d.ViewCount)
+                .Include(d => d.SizeBytes)
+                .Include(d => d.DurationSeconds)
+                .Include(d => d.Scope)
+                .Include("Rollup.EpisodesPresent")
+                .Include("Rollup.EpisodesExpected"),
+            p.Combine(episodeFields.Select(f => p.Include($"Episodes.{f}"))));
+        return await Collection.Find(FilterDefinition<PlexItemData>.Empty)
+            .Project<PlexItemData>(projection)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
     {

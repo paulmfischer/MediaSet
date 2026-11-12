@@ -25,6 +25,16 @@ internal static class PlexApi
             return Results.Ok(statuses);
         });
 
+        // GET /plex/statistics: breakdowns of the stored Plex data for movies and TV entries (no file paths).
+        // Registered with the rest of the Plex routes, so it exists only when Plex is enabled; 400 when movies are not.
+        group.MapGet("/statistics", async (PlexEnablement enablement, IPlexStatisticsService statistics, CancellationToken cancellationToken) =>
+            enablement.IsEnabled(PlexEntityTypes.Movies)
+                ? Results.Ok(await statistics.GetAsync(cancellationToken))
+                : Results.Problem(
+                    title: "Plex entity type disabled",
+                    detail: "Plex is not enabled for entity type 'movies'.",
+                    statusCode: StatusCodes.Status400BadRequest));
+
         // GET /plex/{entityType}/status: rejects unknown entity types only, so a disabled one reports enabled: false.
         // entityType is a bound handler parameter on every route below so OpenAPI declares it as a path parameter.
         group.MapGroup("/{entityType}").AddEndpointFilter(new PlexEntityTypeFilter(requireEnabled: false))

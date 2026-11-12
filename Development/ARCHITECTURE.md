@@ -174,6 +174,17 @@ forwards the API status uncached, so the browser never calls the API), reloading
 menu's Plex link is decided per request by `plexNavGate` (`app/utils/plex-nav.server.ts`), which stores the gate result in
 async request context for the synchronous header and the Plex handlers (one lookup per page request; it runs after the static files, and asset and `config.json` requests skip it). A 409 from Sync now redirects to `/plex?notice=running`, and the poller stops on a 404, backs off on failures and ignores disabled types.
 
+### Plex statistics
+
+`GET /plex/statistics` (in `PlexApi`, so registered only when Plex is enabled; 400 when movies are not) returns `{ movies, tv }`, each
+with coverage (`total`, `onPlex`, `notOnPlex`, `broken`), `units` and ordered `{ name, count }` lists for resolution, video codec, HDR/SDR,
+subtitles, watched, audio codec and channel layout, plus `storage`, `runtime`, `mostWatched` (top 10 by view count, titles from the movie list)
+and, for TV, `completeness` (episodes present against the count Plex reports). A unit is an on-Plex movie, or an on-Plex episode for TV.
+`PlexItemStore.ListStatisticsAsync` projects the documents (no file path, titles or season list; episodes keep only their stream, size,
+duration and watched fields) and the pure `PlexStatisticsCalculator` counts them; documents of no listed entry are ignored. The Plex page
+(`app/ui/plex/plex-statistics.tsx`) renders it before the sync section with the dashboard chart components, and renders without it when
+the call fails. This is separate from the dashboard's `plexStats`.
+
 ### Plex TV series entries
 
 A TV series entry (`Movie.IsTvSeries`) links to a Plex show (item type `show`), never to a movie, and movie entries never link

@@ -1,8 +1,8 @@
 import { redirect } from 'remix/response/redirect';
 import { createController } from 'remix/router';
 
-import { getPlexStatuses, startPlexSync } from '../../api/plex-data.ts';
-import type { PlexEntityStatus } from '../../models.ts';
+import { getPlexStatistics, getPlexStatuses, startPlexSync } from '../../api/plex-data.ts';
+import type { PlexEntityStatus, PlexStatistics } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
 import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
@@ -17,7 +17,12 @@ const RUNNING_NOTICE = 'notice=running';
 const RUNNING_MESSAGE = 'A sync was already in progress, so no new one was started. This is the current run.';
 const back = { backHref: routes.home.href(), backLabel: 'Back to Home' };
 
-function renderPage(context: AppContext, statuses: PlexEntityStatus[], notice?: string) {
+function renderPage(
+  context: AppContext,
+  statuses: PlexEntityStatus[],
+  notice?: string,
+  statistics?: PlexStatistics | null
+) {
   return context.render(
     <Document path={context.url.pathname} title={TITLE} description="Plex sync status">
       <PlexSyncPage
@@ -25,6 +30,7 @@ function renderPage(context: AppContext, statuses: PlexEntityStatus[], notice?: 
         action={routes.plex.action.href()}
         statusHref={routes.plexStatus.index.href()}
         notice={notice}
+        statistics={statistics}
       />
     </Document>
   );
@@ -38,11 +44,12 @@ function failure(context: AppContext, error: unknown) {
 async function index(context: AppContext) {
   if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
   try {
-    const statuses = (await getPlexStatuses()).filter(isListedStatus);
+    const [allStatuses, statistics] = await Promise.all([getPlexStatuses(), getPlexStatistics()]);
+    const statuses = allStatuses.filter(isListedStatus);
     // The notice only makes sense while a run is active; a stale link shows the plain page.
     const notice =
       context.url.searchParams.get('notice') === 'running' && hasActiveRun(statuses) ? RUNNING_MESSAGE : undefined;
-    return renderPage(context, statuses, notice);
+    return renderPage(context, statuses, notice, statistics);
   } catch (error) {
     return failure(context, error);
   }
