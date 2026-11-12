@@ -187,7 +187,7 @@ async request context for the synchronous header and the Plex handlers (one look
 
 `GET /plex/statistics` (in `PlexApi`, so registered only when Plex is enabled; 400 when movies are not) returns `{ movies, tv }`, each
 with coverage (`total`, `onPlex`, `notOnPlex`, `broken`), `units` and ordered `{ name, count }` lists for resolution, video codec, HDR/SDR,
-subtitles, watched, audio codec and channel layout, plus `storage`, `runtime`, `mostWatched` (top 10 by view count, titles from the movie list)
+subtitles, watched, audio codec and channel layout, plus `storage`, `runtime`, `mostWatched` (top 10, titles from the movie list; ranked by play count for movies and by watched episodes, from the rollup, for TV)
 and, for TV, `completeness` (episodes present against the count Plex reports). A unit is an on-Plex movie, or an on-Plex episode for TV.
 `PlexItemStore.ListStatisticsProjectionAsync` projects the documents (no file path, titles or season list; episodes keep only their stream, size,
 duration and watched fields) and the pure `PlexStatisticsCalculator` counts them; documents of no listed entry are ignored. The Plex page
