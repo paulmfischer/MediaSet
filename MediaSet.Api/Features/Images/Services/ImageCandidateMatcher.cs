@@ -62,7 +62,7 @@ public static class ImageCandidateMatcher
 
     private static string CleanTitle(IEntity entity) => entity switch
     {
-        Movie => RetailVideoTitle.Clean(entity.Title),
+        Movie => RetailVideoTitle.Clean(entity.Title, reorderArticle: false),
         Game => RetailGameTitle.Clean(entity.Title),
         _ => entity.Title
     };

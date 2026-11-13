@@ -429,6 +429,9 @@ public class GameLookupStrategyTests
     [TestCase("Red Dead Redemption 2 - Rockstar Games", "Red Dead Redemption 2")]
     [TestCase("Halo 3 (Limited Edition", "Halo 3")]
     [TestCase("Brain Training AS SEEN ON TV", "Brain Training")]
+    [TestCase("Red Dead Redemption 2 - Rockstar Games - PS4", "Red Dead Redemption 2 - PS4")]
+    [TestCase("Red Dead Redemption 2 10710425498916", "Red Dead Redemption 2")]
+    [TestCase("Halo 3 (Limited Edition]", "Halo 3")]
     public void Clean_RetailNoise_RemovesPublisherBarcodeAndBrokenBrackets(string raw, string expected) =>
         Assert.That(RetailGameTitle.Clean(raw), Is.EqualTo(expected));
 
@@ -441,6 +444,8 @@ public class GameLookupStrategyTests
     [TestCase("Halo 3 (Limited Edition)")]
     [TestCase("Rockstar Games Presents Table Tennis")]
     [TestCase("1942")]
+    [TestCase("As Seen On TV")]
+    [TestCase("Game 12345678")]
     public void Clean_MeaningfulTitle_IsPreserved(string title) =>
         Assert.That(RetailGameTitle.Clean(title), Is.EqualTo(title));
 
@@ -457,11 +462,12 @@ public class GameLookupStrategyTests
         Assert.That(results.Single().Provenance?.ProviderId, Is.EqualTo("25076"));
     }
 
-    [Test]
-    public void CleanGameTitleAndExtractEdition_RemovesTrailingPublisherAndUpc()
+    [TestCase("Red Dead Redemption 2 Rockstar Games 710425498916")]
+    [TestCase("Red Dead Redemption 2 - Rockstar Games - PS4")]
+    [TestCase("Red Dead Redemption 2 Rockstar Games PS4")]
+    public void CleanGameTitleAndExtractEdition_RemovesPublisherAroundPlatformAndUpc(string raw)
     {
-        var (cleanedTitle, _) = GameLookupStrategy.CleanGameTitleAndExtractEdition(
-            "Red Dead Redemption 2 Rockstar Games 710425498916");
+        var (cleanedTitle, _) = GameLookupStrategy.CleanGameTitleAndExtractEdition(raw);
 
         Assert.That(cleanedTitle, Is.EqualTo("Red Dead Redemption 2"));
     }

@@ -21,6 +21,8 @@ public static class RetailGameTitle
     {
         var title = RetailTitle.StripNoise(rawTitle.Trim());
         title = Regex.Replace(title, @"\s*[-:|]?\s+(?:" + Publishers + @")\s*$", "", Options);
+        // A publisher also appears as its own " - " segment before other metadata ("- Rockstar Games - PS4").
+        title = Regex.Replace(title, @"\s+-\s+(?:" + Publishers + @")(?=\s+-\s+)", "", Options);
         title = Regex.Replace(title, @"\s+", " ").Trim();
         return string.IsNullOrWhiteSpace(title) ? rawTitle.Trim() : title;
     }

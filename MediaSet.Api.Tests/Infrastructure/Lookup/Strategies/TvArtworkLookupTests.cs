@@ -111,6 +111,16 @@ public class TvArtworkLookupTests
         Assert.That(result.Single().Title, Is.EqualTo("Eureka: Season 3.5"));
     }
 
+    [TestCase("Plan A", true)]
+    [TestCase("A Plan", false)]
+    public void Select_TrailingArticle_IsNotReorderedForMatching(string providerTitle, bool accepted)
+    {
+        var selected = ImageCandidateMatcher.Select(new Movie { Title = "Plan A" },
+            [new(providerTitle, "https://cover.test/plan.jpg",
+                Provenance: new LookupProvenance("Tmdb", "1", providerTitle))]);
+        Assert.That(selected, accepted ? Has.Count.EqualTo(1) : Is.Empty);
+    }
+
     [Test]
     public void Select_NoisyStoredTitle_AcceptsCleanedTitleMatch()
     {

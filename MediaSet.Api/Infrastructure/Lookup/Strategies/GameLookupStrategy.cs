@@ -219,6 +219,9 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         // Collapse spaces
         title = Regex.Replace(title, @"\s+", " ").Trim();
 
+        // Platform removal can expose a trailing publisher ("... Rockstar Games PS4").
+        title = RetailGameTitle.Clean(title);
+
         return (title, edition);
     }
 

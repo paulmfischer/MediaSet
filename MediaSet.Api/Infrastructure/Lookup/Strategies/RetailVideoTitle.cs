@@ -12,7 +12,9 @@ public static class RetailVideoTitle
         + @"New Line Home (?:Entertainment|Video)|DreamWorks Home Entertainment|Anchor Bay Entertainment";
     private const string Format = @"DVD|Blu-?ray|Blue-?ray|DIGITAL VIDEO DISC|4K(?: UHD)?|BD|UHD|Digital|HD";
 
-    public static string Clean(string rawTitle, string? brand = null)
+    // reorderArticle moves a trailing "A"/"The" to the front ("Matrix The"). Matching passes false,
+    // because "Plan A" must not equal "A Plan".
+    public static string Clean(string rawTitle, string? brand = null, bool reorderArticle = true)
     {
         var title = RetailTitle.StripNoise(rawTitle.Trim());
         // Only known distributors are safe to strip when product brand metadata is inaccurate.
@@ -45,6 +47,8 @@ public static class RetailVideoTitle
             title = Regex.Replace(title, @"\s+Complete Collection$", "", Options);
         }
         title = Regex.Replace(title, @"\s+", " ").Trim();
+        if (!reorderArticle)
+        { return title; }
         var article = Regex.Match(title, @"^(.+?)\s+(A|The)$", Options);
         return article.Success ? $"{article.Groups[2].Value} {article.Groups[1].Value}" : title;
     }

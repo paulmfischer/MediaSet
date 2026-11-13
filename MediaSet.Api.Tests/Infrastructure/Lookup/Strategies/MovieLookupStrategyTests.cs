@@ -375,6 +375,8 @@ public class MovieLookupStrategyTests
     [TestCase("Ab Roller Workout AS SEEN ON TV", "Ab Roller Workout")]
     [TestCase("As Seen On TV - Ab Roller Workout", "Ab Roller Workout")]
     [TestCase("Firefly) The Complete Series", "Firefly The Complete Series")]
+    [TestCase("From Hell (Widescreen]", "From Hell")]
+    [TestCase("From Hell 10024543039915", "From Hell")]
     [TestCase("Eureka: Season 3.5", "Eureka: Season 3.5")]
     public void Clean_RetailNoise_RemovesStudioFormatBarcodeAndBrokenBrackets(string raw, string expected) =>
         Assert.That(RetailVideoTitle.Clean(raw), Is.EqualTo(expected));
@@ -384,8 +386,24 @@ public class MovieLookupStrategyTests
     [TestCase("Blade Runner [Final Cut]")]
     [TestCase("Apollo 13")]
     [TestCase("2046")]
+    [TestCase("As Seen On TV")]
+    [TestCase("Movie 12345678")]
     public void Clean_TitleWithStudioLikeWordsOrNumbers_IsPreserved(string title) =>
         Assert.That(RetailVideoTitle.Clean(title), Is.EqualTo(title));
+
+    [Test]
+    public async Task LookupAsync_TitleOnlyMarketingTag_SearchesTitleAsWritten()
+    {
+        _tmdbClientMock.Setup(c => c.SearchMovieAsync("As Seen On TV", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateSearchResponse(5, "As Seen On TV"));
+        _tmdbClientMock.Setup(c => c.GetMovieDetailsAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateMovieDetails(5, "As Seen On TV", "2013-01-01", 90));
+
+        var results = await _strategy.LookupAsync(IdentifierType.Entity,
+            new Dictionary<string, string> { ["title"] = "As Seen On TV" }, CancellationToken.None);
+
+        Assert.That(results.Single().Provenance?.ProviderId, Is.EqualTo("5"));
+    }
 
     [Test]
     public async Task LookupAsync_NoisyUpcTitle_SearchesCleanedSeriesTitle()
