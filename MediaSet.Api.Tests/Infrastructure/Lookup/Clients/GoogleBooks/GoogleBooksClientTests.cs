@@ -133,6 +133,16 @@ public class GoogleBooksClientTests
     }
 
     [Test]
+    public async Task GetCoverUrlByIsbnAsync_Forbidden_ReturnsNullInsteadOfThrowing()
+    {
+        Respond(HttpStatusCode.Forbidden, """{ "error": { "code": 403, "errors": [{ "reason": "dailyLimitExceededUnreg" }] } }""");
+
+        var url = await _client.GetCoverUrlByIsbnAsync("9780441013593");
+
+        Assert.That(url, Is.Null);
+    }
+
+    [Test]
     public async Task GetCoverUrlByIsbnAsync_MalformedJson_ReturnsNull()
     {
         Respond(HttpStatusCode.OK, "{ not json");

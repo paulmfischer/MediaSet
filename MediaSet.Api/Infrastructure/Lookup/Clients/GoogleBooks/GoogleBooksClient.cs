@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks;
 
@@ -27,9 +28,16 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
         {
             return null;
         }
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+        {
+            // Keyless requests get 403 for an exhausted shared daily quota or an unsupported location. Retrying
+            // would not help and the cover is only a fallback, so treat it as no cover instead of a retryable failure.
+            logger.LogWarning("Google Books refused the cover lookup for ISBN {Isbn} (403 Forbidden)", normalized);
+            return null;
+        }
         if (!response.IsSuccessStatusCode)
         {
-            throw new ProviderLookupException("GoogleBooks", LookupFailureScope.Classify(response.StatusCode),
+            throw new ProviderLookupException(LogProviders.GoogleBooks, LookupFailureScope.Classify(response.StatusCode),
                 $"Google Books cover lookup failed with status {(int)response.StatusCode}", LookupFailureScope.RetryAt(response));
         }
 

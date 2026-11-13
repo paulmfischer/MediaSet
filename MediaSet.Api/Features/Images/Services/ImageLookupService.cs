@@ -180,7 +180,8 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                             direct.ImageUrl, fingerprint, "Cover resolved by stored edition identifier", "Exact-edition artwork")
                         };
                     }
-                    // Open Library has no cover for this ISBN: try Google Books for the same exact ISBN.
+                    // The direct Open Library cover was not saved (404, or a failed or invalid download):
+                    // try Google Books for the same exact ISBN.
                     if (type == IdentifierType.Isbn && googleBooksClient != null)
                     {
                         string? googleCover;
@@ -191,7 +192,12 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                         var fallback = await Download(googleCover, LogProviders.GoogleBooks, strategy);
                         if (fallback?.Success == true)
                         {
-                            return fallback;
+                            // Replace any Open Library candidate whose cover failed: Google Books supplied this one.
+                            return fallback with
+                            {
+                                ConfirmedMatch = new(LogProviders.GoogleBooks, identifier, entity.Title, fallback.ImageUrl,
+                                    fingerprint, "Cover resolved by stored ISBN at Google Books", "Exact-edition artwork")
+                            };
                         }
                     }
                 }

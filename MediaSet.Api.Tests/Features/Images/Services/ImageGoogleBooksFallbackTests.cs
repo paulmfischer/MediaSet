@@ -63,6 +63,9 @@ public class ImageGoogleBooksFallbackTests
         Assert.That(result.Provider, Is.EqualTo("GoogleBooks"));
         Assert.That(result.ImageUrl, Is.EqualTo(GoogleCover));
         Assert.That(result.AttemptedStrategy, Is.EqualTo("Books:Isbn"));
+        Assert.That(result.ConfirmedMatch!.Provider, Is.EqualTo("GoogleBooks"));
+        Assert.That(result.ConfirmedMatch.ProviderId, Is.EqualTo(Isbn));
+        Assert.That(result.ConfirmedMatch.ImageUrl, Is.EqualTo(GoogleCover));
         _images.Verify(s => s.DownloadAndSaveImageAsync(OpenLibraryIsbnCover, "Books", "1", It.IsAny<CancellationToken>()), Times.Once);
     }
 

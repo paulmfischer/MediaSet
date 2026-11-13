@@ -252,10 +252,11 @@ See [DEVELOPMENT.md](DEVELOPMENT.md). The API and frontend run on the host; only
 `ImageLookupService` tries each cover URL at most once per entity per run (`triedUrls`). For a book it tries the stored
 `ImageUrl`, a previously confirmed match, then each identifier (ISBN first): the Open Library candidates' covers, then the
 direct Open Library cover for that ISBN or OLID. Open Library cover URLs are requested with `?default=false`, so a missing
-cover is a 404 instead of a blank placeholder. After that 404 for an ISBN, `IGoogleBooksClient` looks the ISBN up in the
+cover is a 404 instead of a blank placeholder. When that ISBN cover is not saved (a 404 or a failed download), `IGoogleBooksClient` looks the ISBN up in the
 Google Books volumes API and downloads the cover of a volume that lists that exact ISBN (never another edition's cover). A
-Google Books rate limit or server error makes the outcome retryable (`QuotaLimited` or `ProviderUnavailable`); no volume or
-no cover keeps the Open Library miss. The title search runs last. The background processor's `Image lookup outcome` event
+Google Books rate limit or server error makes the outcome retryable (`QuotaLimited` or `ProviderUnavailable`); no volume,
+no cover or a 403 (keyless daily quota or unsupported location, logged as a warning) keeps the Open Library miss. A Google
+Books cover is saved as the confirmed match (`GoogleBooks`, the ISBN). The title search runs last. The background processor's `Image lookup outcome` event
 and `Image run attempt` record the `Provider` that supplied the image (`OpenLibrary`, `GoogleBooks`, ...), or the provider
 of the last failure.
 
