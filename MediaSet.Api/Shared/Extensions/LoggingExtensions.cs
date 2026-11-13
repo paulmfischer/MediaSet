@@ -63,7 +63,7 @@ public static class LoggingExtensions
                .Enrich.WithSpan()
                .Enrich.WithProperty("Application", assemblyNameFromContext)
                .Enrich.WithProperty("Environment", envNameFromContext)
-               .ApplyNoiseOverrides();
+               .ApplyNoiseOverrides(context.Configuration);
 
             // Drop per-command Mongo spans, HTTP client request logs and connection spans (a Plex sync makes about a thousand
             // requests) for every sink, so the console and Seq show the same thing. Client call spans stay for tracing.
@@ -98,12 +98,18 @@ public static class LoggingExtensions
 
     /// <summary>
     /// Raises framework and HTTP client categories to Warning. The request and client spans (SerilogTracing)
-    /// and application events stay at Information.
+    /// and application events stay at Information. A category that configuration already sets under
+    /// Serilog:MinimumLevel:Override keeps the configured level, so appsettings or environment variables can re-enable it.
     /// </summary>
-    internal static LoggerConfiguration ApplyNoiseOverrides(this LoggerConfiguration cfg)
+    internal static LoggerConfiguration ApplyNoiseOverrides(this LoggerConfiguration cfg, IConfiguration? configuration = null)
     {
         foreach (var category in _noisyCategories)
         {
+            if (configuration?.GetSection($"Serilog:MinimumLevel:Override:{category}").Exists() == true)
+            {
+                continue;
+            }
+
             cfg.MinimumLevel.Override(category, LogEventLevel.Warning);
         }
 
@@ -128,12 +134,12 @@ public static class LoggingExtensions
         "Microsoft.Extensions.Http"
     ];
 
-    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net.Http.HttpClient", "Microsoft.Extensions.Http"];
+    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver"];
 
     // Connection-level spans of the HTTP client: they carry no source context, so they are matched by their message
     private static readonly string[] _noisySpanPrefixes = ["DNS lookup", "socket connect", "TLS client handshake", "HTTP connection_setup", "HTTP wait_for_connection"];
 
-    /// <summary>Events below Warning from the Mongo driver and the HTTP client stack.</summary>
+    /// <summary>Events below Warning from the Mongo driver, plus connection-level HTTP client spans.</summary>
     internal static bool IsLogNoise(LogEvent logEvent) =>
         logEvent.Level < LogEventLevel.Warning
         && ((logEvent.Properties.TryGetValue("SourceContext", out var source)

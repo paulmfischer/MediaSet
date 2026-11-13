@@ -411,7 +411,7 @@ internal static class EntityApi
                 }
 
                 var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
-                logger.LogDebug("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
+                logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
 
                 // Delete the replaced file only after the entity references the new image
                 DeleteImageFile(replacedImage, imageService, logger);

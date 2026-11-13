@@ -1,6 +1,8 @@
+using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using MediaSet.Api.Shared.Extensions;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -17,12 +19,12 @@ public class LoggingNoiseOverridesTests
         public void Emit(LogEvent logEvent) => Events.Add(logEvent);
     }
 
-    private static (Serilog.ILogger Logger, ListSink Sink) CreateLogger()
+    private static (Serilog.ILogger Logger, ListSink Sink) CreateLogger(IConfiguration? configuration = null)
     {
         var sink = new ListSink();
         var logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
-            .ApplyNoiseOverrides()
+            .ApplyNoiseOverrides(configuration)
             .WriteTo.Sink(sink)
             .CreateLogger();
         return (logger, sink);
@@ -72,5 +74,44 @@ public class LoggingNoiseOverridesTests
 
         Assert.That(sink.Events, Has.Count.EqualTo(1));
         Assert.That(sink.Events[0].MessageTemplate.Text, Is.EqualTo(template));
+    }
+
+    [Test]
+    public void ApplyNoiseOverrides_CategoryConfiguredInSettings_KeepsConfiguredLevel()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Serilog:MinimumLevel:Override:System.Net.Http.HttpClient"] = "Information"
+            })
+            .Build();
+        var sink = new ListSink();
+        var logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Information)
+            .ApplyNoiseOverrides(configuration)
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        logger.ForContext("SourceContext", "System.Net.Http.HttpClient.Default.ClientHandler").Information("start");
+        logger.ForContext("SourceContext", "Experimental.System.Net.Sockets").Information("noise");
+
+        Assert.That(sink.Events.Select(e => e.MessageTemplate.Text), Is.EqualTo(["start"]));
+    }
+
+    [Test]
+    public void ApplyNoiseOverrides_WithMinimumLevelWarning_DropsApplicationEventsToo()
+    {
+        // Guards the kept-at-Information tests: the same events must be dropped when the level is raised
+        var sink = new ListSink();
+        var logger = new LoggerConfiguration()
+            .MinimumLevel.Warning()
+            .ApplyNoiseOverrides()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        logger.ForContext("SourceContext", "MediaSet.Api.Features.Images.Services.BackgroundImageLookupService").Information("Image run attempt");
+
+        Assert.That(sink.Events, Is.Empty);
     }
 }
