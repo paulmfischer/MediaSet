@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Tests.Observability;
@@ -35,7 +36,7 @@ public class TmdbMovieClientTests
         var (client, logger, http) = Create(HttpStatusCode.TooManyRequests);
         using var _ = http;
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => client.SearchMovieAsync("Alien", CancellationToken.None));
+        await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.SearchMovieAsync("Alien", CancellationToken.None));
 
         Assert.That(logger.Entries.Select(e => e.Level), Does.Contain(LogLevel.Warning));
         Assert.That(logger.Entries.Select(e => e.Level), Does.Not.Contain(LogLevel.Error));

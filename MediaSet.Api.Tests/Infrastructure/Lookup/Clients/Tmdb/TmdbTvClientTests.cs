@@ -119,7 +119,7 @@ public class TmdbTvClientTests
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests)));
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
         using var scope = new LookupFailureScope();
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => Client(http).SearchTvAsync("Community", CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<ProviderRateLimitException>(() => Client(http).SearchTvAsync("Community", CancellationToken.None));
         Assert.That(exception?.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
     }
 

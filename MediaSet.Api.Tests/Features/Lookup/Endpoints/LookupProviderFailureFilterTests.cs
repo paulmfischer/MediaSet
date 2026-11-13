@@ -186,6 +186,82 @@ public class LookupProviderFailureFilterTests
     }
 
     [Test]
+    public void ToProblem_ProviderRateLimitExceptionWithRetryAt_Returns429WithRetryAfterHeader()
+    {
+        var ex = new ProviderRateLimitException("rate limited", DateTime.UtcNow.AddSeconds(30));
+
+        var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
+
+        AssertProblem(result, StatusCodes.Status429TooManyRequests);
+        Assert.That(int.Parse(_httpContext.Response.Headers.RetryAfter.ToString()), Is.InRange(1, 30));
+    }
+
+    [Test]
+    public void ToProblem_ProviderRateLimitExceptionWithoutRetryAt_OmitsRetryAfterHeader()
+    {
+        var ex = new ProviderRateLimitException("rate limited", null);
+
+        var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
+
+        AssertProblem(result, StatusCodes.Status429TooManyRequests);
+        Assert.That(_httpContext.Response.Headers.ContainsKey("Retry-After"), Is.False);
+    }
+
+    [Test]
+    public void FromResponse_RetryAfterHeaderPresent_CarriesRetryAt()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(45));
+
+        var ex = ProviderRateLimitException.FromResponse("rate limited", response);
+
+        Assert.That(ex.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
+        Assert.That(ex.RetryAt, Is.Not.Null.And.InRange(DateTime.UtcNow.AddSeconds(30), DateTime.UtcNow.AddSeconds(46)));
+    }
+
+    [Test]
+    public void FromResponse_RetryAfterHeaderAbsent_RetryAtIsNull()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+
+        var ex = ProviderRateLimitException.FromResponse("rate limited", response);
+
+        Assert.That(ex.RetryAt, Is.Null);
+    }
+
+    private sealed class RateLimitHandler(TimeSpan? retryAfter) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            if (retryAfter is { } delay)
+            {
+                response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(delay);
+            }
+            return Task.FromResult(response);
+        }
+    }
+
+    [TestCase(30, true)]
+    [TestCase(null, false)]
+    public async Task Invoke_ProviderClient429_ReturnsRetryAfterOnlyWhenProviderSentIt(int? retryAfterSeconds, bool expectHeader)
+    {
+        using var http = new HttpClient(new RateLimitHandler(retryAfterSeconds is { } s ? TimeSpan.FromSeconds(s) : null))
+        {
+            BaseAddress = new Uri("https://retry-after.example.test/3/")
+        };
+        var client = new MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb.TmdbClient(http,
+            Microsoft.Extensions.Options.Options.Create(new MediaSet.Api.Infrastructure.Lookup.Models.TmdbConfiguration()),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb.TmdbClient>.Instance);
+
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.SearchMovieAsync("Alien", CancellationToken.None));
+        var result = LookupProviderFailureFilter.ToProblem(ex!, _httpContext, _logger.Object);
+
+        AssertProblem(result, StatusCodes.Status429TooManyRequests);
+        Assert.That(_httpContext.Response.Headers.ContainsKey("Retry-After"), Is.EqualTo(expectHeader));
+    }
+
+    [Test]
     public void ToProblem_ProviderFailure_LogsWarningWithProvider()
     {
         var ex = new ProviderLookupException("api.example.test", ImageLookupOutcome.ProviderUnavailable, "down");
@@ -215,7 +291,7 @@ public class LookupProviderFailureFilterTests
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://musicbrainz.test/") };
         var client = new MusicBrainzClient(http, Mock.Of<ILogger<MusicBrainzClient>>());
 
-        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(
             async () => await client.GetReleaseByIdAsync("abc", CancellationToken.None));
         var result = LookupProviderFailureFilter.ToProblem(ex!, _httpContext, _logger.Object);
 

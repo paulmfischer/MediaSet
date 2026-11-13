@@ -35,7 +35,7 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("TMDB rate limit exceeded", response);
                 }
 
                 _logger.LogWarning("TMDB search returned status code {StatusCode} for movie: {Title}",
@@ -92,7 +92,7 @@ public class TmdbClient : ITmdbClient
                 LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("TMDB rate limit exceeded", response);
                 }
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound && resource.Contains("/season/", StringComparison.Ordinal))
                 {
@@ -141,7 +141,7 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("TMDB rate limit exceeded", response);
                 }
 
                 _logger.LogWarning("TMDB movie details returned status code {StatusCode} for ID: {MovieId}",

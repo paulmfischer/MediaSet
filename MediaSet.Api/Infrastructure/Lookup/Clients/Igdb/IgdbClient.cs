@@ -111,7 +111,7 @@ public class IgdbClient : IIgdbClient
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
             if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
-                throw new HttpRequestException("IGDB rate limit exceeded", null, response.StatusCode);
+                throw ProviderRateLimitException.FromResponse("IGDB rate limit exceeded", response);
             }
 
             _logger.LogWarning("IGDB returned status code {StatusCode} for endpoint: {Endpoint}",

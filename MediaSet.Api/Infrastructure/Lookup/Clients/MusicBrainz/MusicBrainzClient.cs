@@ -43,7 +43,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("MusicBrainz rate limit exceeded", response);
                 }
 
                 _logger.LogWarning("MusicBrainz returned status code {StatusCode} for barcode: {Barcode}",
@@ -110,7 +110,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("MusicBrainz rate limit exceeded", response);
                 }
 
                 _logger.LogWarning("MusicBrainz returned status code {StatusCode} for release ID: {ReleaseId}",
@@ -191,7 +191,7 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
+                    throw ProviderRateLimitException.FromResponse("MusicBrainz rate limit exceeded", response);
                 }
 
                 _logger.LogWarning("MusicBrainz returned status code {StatusCode} for entity search: title={Title}",

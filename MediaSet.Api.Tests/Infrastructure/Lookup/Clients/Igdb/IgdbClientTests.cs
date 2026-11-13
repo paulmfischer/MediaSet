@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Tests.Observability;
@@ -125,7 +126,7 @@ public class IgdbClientTests
                 StatusCode = HttpStatusCode.TooManyRequests
             });
 
-        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+        await Assert.ThrowsAsync<ProviderRateLimitException>(async () =>
             await _client.SearchGameAsync("Test Game", CancellationToken.None));
     }
 
@@ -136,7 +137,7 @@ public class IgdbClientTests
         var client = new IgdbClient(_httpClient, _tokenServiceMock.Object, _configuration, logger);
         SetupResponse(new HttpResponseMessage { StatusCode = HttpStatusCode.TooManyRequests });
 
-        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+        await Assert.ThrowsAsync<ProviderRateLimitException>(async () =>
             await client.SearchGameAsync("Test Game", CancellationToken.None));
 
         Assert.That(logger.Entries.Select(e => e.Level), Does.Not.Contain(LogLevel.Error));
@@ -256,7 +257,7 @@ public class IgdbClientTests
                 StatusCode = HttpStatusCode.TooManyRequests
             });
 
-        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+        await Assert.ThrowsAsync<ProviderRateLimitException>(async () =>
             await _client.GetGameDetailsAsync(12345, CancellationToken.None));
     }
 

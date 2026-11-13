@@ -88,7 +88,13 @@ internal static class LookupProviderFailureFilter
 
     private static int? GetRetryAfterSeconds(Exception ex)
     {
-        if (ex is ProviderLookupException { RetryAt: { } retryAt })
+        var known = ex switch
+        {
+            ProviderLookupException { RetryAt: { } at } => at,
+            ProviderRateLimitException { RetryAt: { } at } => at,
+            _ => (DateTime?)null
+        };
+        if (known is { } retryAt)
         {
             var seconds = (int)Math.Ceiling((retryAt - DateTime.UtcNow).TotalSeconds);
             return seconds > 0 ? seconds : null;

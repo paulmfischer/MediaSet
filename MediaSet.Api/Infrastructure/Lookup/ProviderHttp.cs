@@ -10,6 +10,10 @@ public static class ProviderHttp
 {
     private static readonly ConcurrentDictionary<string, DateTime> _resets = new();
 
+    /// <summary>The tracked quota reset for a host, or null when none is known or it has passed.</summary>
+    public static DateTime? ResetFor(string host) =>
+        _resets.TryGetValue(host, out var reset) && reset > DateTime.UtcNow ? reset : null;
+
     public static async Task<HttpResponseMessage> SendProviderAsync(this HttpClient client, HttpRequestMessage request,
         CancellationToken cancellationToken, [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
     {
