@@ -15,6 +15,13 @@ public static class ProviderFailureLogging
         status is HttpStatusCode.TooManyRequests or >= HttpStatusCode.InternalServerError;
 
     /// <summary>
+    /// True for an HttpClient timeout (a <see cref="TaskCanceledException"/> or <see cref="TimeoutException"/>) that was
+    /// not caused by the caller cancelling the request.
+    /// </summary>
+    public static bool IsProviderTimeout(Exception ex, CancellationToken cancellationToken) =>
+        ex is TaskCanceledException or TimeoutException && !cancellationToken.IsCancellationRequested;
+
+    /// <summary>
     /// Logs a rethrown <see cref="HttpRequestException"/> inside a Provider scope: Warning for rate limits and 5xx
     /// (the endpoint logs and maps them), Error for anything else.
     /// </summary>

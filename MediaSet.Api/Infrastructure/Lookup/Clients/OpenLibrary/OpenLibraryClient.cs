@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using System.Globalization;
 using System.Text;
@@ -30,11 +31,33 @@ public class OpenLibraryClient : IOpenLibraryClient
             var key = $"ISBN:{isbn}";
             return response?.ContainsKey(key) == true ? response[key] : null;
         }
-        catch (HttpRequestException ex)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            throw;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Genuine not-found: no result, not a provider failure
             _logger.LogWarning(ex, "HTTP error while looking up book by ISBN: {Isbn}", isbn);
             return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            // Rate limits, upstream errors and network failures propagate for the endpoint to map to 429/503
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogProviderHttpFailure(ex, LogProviders.OpenLibrary, "HTTP error while looking up book by ISBN: {Isbn}", isbn);
+            throw;
+        }
+        catch (ProviderLookupException)
+        {
+            // Quota deferral already recorded by ProviderHttp
+            throw;
+        }
+        catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while looking up book by ISBN: {Isbn}", isbn);
+            throw;
         }
         catch (JsonException ex)
         {
@@ -66,11 +89,33 @@ public class OpenLibraryClient : IOpenLibraryClient
             var artwork = ExtractArtwork(response!, identifierType, identifierValue);
             return book with { ImageUrl = artwork.FirstOrDefault()?.Url, Artwork = artwork };
         }
-        catch (HttpRequestException ex)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            throw;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Genuine not-found: no result, not a provider failure
             _logger.LogWarning(ex, "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
+        }
+        catch (HttpRequestException ex)
+        {
+            // Rate limits, upstream errors and network failures propagate for the endpoint to map to 429/503
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogProviderHttpFailure(ex, LogProviders.OpenLibrary, "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            throw;
+        }
+        catch (ProviderLookupException)
+        {
+            // Quota deferral already recorded by ProviderHttp
+            throw;
+        }
+        catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            throw;
         }
         catch (JsonException ex)
         {
@@ -157,11 +202,33 @@ public class OpenLibraryClient : IOpenLibraryClient
             var enrichmentTasks = docs.Select(doc => EnrichSearchDocAsync(doc, cancellationToken));
             return await Task.WhenAll(enrichmentTasks);
         }
-        catch (HttpRequestException ex)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            throw;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Genuine not-found: no result, not a provider failure
             _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
+        }
+        catch (HttpRequestException ex)
+        {
+            // Rate limits, upstream errors and network failures propagate for the endpoint to map to 429/503
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogProviderHttpFailure(ex, LogProviders.OpenLibrary, "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
+            throw;
+        }
+        catch (ProviderLookupException)
+        {
+            // Quota deferral already recorded by ProviderHttp
+            throw;
+        }
+        catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
+            throw;
         }
         catch (JsonException ex)
         {
@@ -201,8 +268,10 @@ public class OpenLibraryClient : IOpenLibraryClient
                     };
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not (ProviderRateLimitException or ProviderLookupException)
+                && !cancellationToken.IsCancellationRequested)
             {
+                // Best-effort enrichment: any failure but a rate limit falls back to the search data
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
                 _logger.LogWarning(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
                     doc.Title, doc.CoverEditionKey);

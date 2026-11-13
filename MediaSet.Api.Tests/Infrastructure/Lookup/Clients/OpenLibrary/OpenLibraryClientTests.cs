@@ -10,6 +10,7 @@ using NUnit.Framework;
 using Moq;
 using Moq.Protected;
 using Microsoft.Extensions.Logging;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 
 namespace MediaSet.Api.Tests.Infrastructure.Lookup.Clients.OpenLibrary;
@@ -236,11 +237,9 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public async Task GetReadableBookByIsbnAsync_WithHttpRequestException_ReturnsNull()
+    public async Task GetReadableBookByIsbnAsync_WithHttpRequestException_PropagatesStampedWithProvider()
     {
         // Arrange
-        var isbn = "9780140328721";
-
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -250,11 +249,64 @@ public class OpenLibraryClientTests
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        // Act
-        var result = await client.GetReadableBookByIsbnAsync(isbn);
+        // Act / Assert
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() => client.GetReadableBookByIsbnAsync("9780140328721"));
+        Assert.That(ex!.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
 
-        // Assert
+    [Test]
+    public async Task GetReadableBookByIsbnAsync_WithNotFound_ReturnsNull()
+    {
+        SetupHttpResponse(HttpStatusCode.NotFound, "not found");
+
+        var result = await new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123");
+
         Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task GetReadableBookByIsbnAsync_WithRateLimitAndRetryAfter_ThrowsRateLimitWithRetryAt()
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+                response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(60));
+                return response;
+            });
+
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(
+            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123"));
+
+        Assert.That(ex!.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
+        Assert.That(ex.RetryAt, Is.GreaterThan(DateTime.UtcNow).And.LessThanOrEqualTo(DateTime.UtcNow.AddSeconds(61)));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task GetReadableBookByIsbnAsync_WithTimeout_PropagatesStampedWithProvider()
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("timed out", new TimeoutException()));
+
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(
+            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123"));
+
+        Assert.That(ex!.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task GetReadableBookByIsbnAsync_WhenCallerCancels_PropagatesCancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("cancelled", null, cts.Token));
+        await Assert.ThrowsAsync<TaskCanceledException>(
+            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123", cts.Token));
     }
 
     [Test]
@@ -929,13 +981,25 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public async Task SearchByEntityPropertiesAsync_WithHttpError_ReturnsEmptyList()
+    public async Task SearchByEntityPropertiesAsync_WithUpstreamError_PropagatesStampedWithProvider()
     {
         SetupHttpResponse(HttpStatusCode.InternalServerError, "error");
 
         var client = new OpenLibraryClient(_httpClient, _loggerMock.Object);
 
-        var result = await client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Some Book" });
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => client.SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Some Book" }));
+        Assert.That(ex!.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task SearchByEntityPropertiesAsync_WithNotFound_ReturnsEmptyList()
+    {
+        SetupHttpResponse(HttpStatusCode.NotFound, "not found");
+
+        var result = await new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Some Book" });
 
         Assert.That(result, Is.Empty);
     }

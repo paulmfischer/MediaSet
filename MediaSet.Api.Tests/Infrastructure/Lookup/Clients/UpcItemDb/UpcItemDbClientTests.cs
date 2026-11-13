@@ -9,6 +9,7 @@ using Moq;
 using Moq.Protected;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Tests.Observability;
@@ -175,7 +176,7 @@ public class UpcItemDbClientTests
     }
 
     [Test]
-    public async Task GetItemByCodeAsync_DailyRateLimit_ReturnsNull()
+    public async Task GetItemByCodeAsync_DailyRateLimit_ThrowsRateLimitWithResetAsRetryAt()
     {
         // Arrange
         var code = "012345678901";
@@ -196,10 +197,12 @@ public class UpcItemDbClientTests
         var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
 
         // Act
-        var result = await client.GetItemByCodeAsync(code, CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.GetItemByCodeAsync(code, CancellationToken.None));
 
         // Assert
-        Assert.That(result, Is.Null, "Should return null for daily limit");
+        Assert.That(ex.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
+        Assert.That(ex.RetryAt, Is.EqualTo(DateTimeOffset.FromUnixTimeSeconds(resetTime).UtcDateTime).Within(TimeSpan.FromSeconds(2)));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("UpcItemDb"));
         VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
@@ -332,7 +335,7 @@ public class UpcItemDbClientTests
     }
 
     [Test]
-    public async Task GetItemByCodeAsync_InvalidResetHeader_ReturnsNullOnRateLimit()
+    public async Task GetItemByCodeAsync_InvalidResetHeader_ThrowsRateLimitWithFallbackRetryAt()
     {
         // Arrange
         var code = "012345678901";
@@ -352,10 +355,10 @@ public class UpcItemDbClientTests
         var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
 
         // Act
-        var result = await client.GetItemByCodeAsync(code, CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.GetItemByCodeAsync(code, CancellationToken.None));
 
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(ex.RetryAt, Is.GreaterThan(DateTime.UtcNow));
         VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
@@ -379,7 +382,7 @@ public class UpcItemDbClientTests
     }
 
     [Test]
-    public async Task GetItemByCodeAsync_RetryAfterBurstLimitFails_ReturnsNull()
+    public async Task GetItemByCodeAsync_RetryAfterBurstLimitFails_ThrowsRateLimit()
     {
         // Arrange
         var code = "012345678901";
@@ -401,33 +404,51 @@ public class UpcItemDbClientTests
         var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
 
         // Act
-        var result = await client.GetItemByCodeAsync(code, CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.GetItemByCodeAsync(code, CancellationToken.None));
 
         // Assert
-        Assert.That(result, Is.Null, "Should return null if retry also fails");
+        Assert.That(ex.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
         VerifyLogContains(LogLevel.Warning, "Retry after burst rate limit pause failed");
     }
 
     [Test]
-    public async Task GetItemByCodeAsync_LocalDailyLimitReached_LogsWarningNotError()
+    public async Task GetItemByCodeAsync_LocalDailyLimitReached_ThrowsRateLimitAndLogsWarningNotError()
     {
         var logger = new LevelCapturingLogger<UpcItemDbClient>();
         _configuration.MaxRequestsPerDay = 0;
         var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), logger);
 
-        var result = await client.GetItemByCodeAsync("012345678901", CancellationToken.None);
+        var ex = await Assert.ThrowsAsync<ProviderLookupException>(
+            () => client.GetItemByCodeAsync("012345678901", CancellationToken.None));
 
-        Assert.That(result, Is.Null);
+        Assert.That(ex.Outcome, Is.EqualTo(MediaSet.Api.Shared.Models.ImageLookupOutcome.QuotaLimited));
+        Assert.That(ex.Provider, Is.EqualTo("UpcItemDb"));
         Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(
             e => e.Level == LogLevel.Warning && e.Message.Contains("Daily rate limit of")));
         Assert.That(logger.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 
-    [TestCase(HttpStatusCode.InternalServerError)]
-    [TestCase(HttpStatusCode.Unauthorized)]
-    public async Task GetItemByCodeAsync_NonSuccessStatus_LogsWarningNotError(HttpStatusCode status)
+    [TestCase(HttpStatusCode.InternalServerError, LogLevel.Warning)]
+    [TestCase(HttpStatusCode.Unauthorized, LogLevel.Error)]
+    public async Task GetItemByCodeAsync_UpstreamFailureStatus_ThrowsStampedHttpRequestException(HttpStatusCode status, LogLevel expectedLevel)
     {
-        // Non-success statuses are warned about and return null without throwing.
+        // 5xx logs a Warning (the endpoint maps it to 503); a rejected key still logs Error.
+        var logger = new LevelCapturingLogger<UpcItemDbClient>();
+        SetupHttpResponse(status, "");
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), logger);
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => client.GetItemByCodeAsync("012345678901", CancellationToken.None));
+
+        Assert.That(ex.StatusCode, Is.EqualTo(status));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("UpcItemDb"));
+        Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == expectedLevel));
+    }
+
+    [TestCase(HttpStatusCode.NotFound)]
+    [TestCase(HttpStatusCode.BadRequest)]
+    public async Task GetItemByCodeAsync_NoResultStatus_LogsWarningNotErrorAndReturnsNull(HttpStatusCode status)
+    {
         var logger = new LevelCapturingLogger<UpcItemDbClient>();
         SetupHttpResponse(status, "");
         var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), logger);
@@ -438,6 +459,35 @@ public class UpcItemDbClientTests
         Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(
             e => e.Level == LogLevel.Warning && e.Message.Contains("returned status code")));
         Assert.That(logger.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
+    }
+
+    [Test]
+    public async Task GetItemByCodeAsync_Timeout_PropagatesStampedWithProvider()
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("timed out", new TimeoutException()));
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
+
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(
+            () => client.GetItemByCodeAsync("012345678901", CancellationToken.None));
+
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("UpcItemDb"));
+    }
+
+    [Test]
+    public async Task GetItemByCodeAsync_WhenCallerCancels_PropagatesCancellationUnstamped()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("cancelled", null, cts.Token));
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
+
+        var ex = await Assert.CatchAsync<OperationCanceledException>(() => client.GetItemByCodeAsync("012345678901", cts.Token));
+
+        Assert.That(ex.Data.Contains(LookupFailureScope.ProviderDataKey), Is.False);
     }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content, Dictionary<string, string>? headers = null)

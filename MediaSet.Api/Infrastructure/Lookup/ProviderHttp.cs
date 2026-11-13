@@ -76,13 +76,21 @@ public static class ProviderHttp
         [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
     {
         using var response = await client.GetProviderAsync(url, cancellationToken, caller);
+        var provider = LookupFailureScope.ProviderName(caller);
+        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            // Carry the provider's Retry-After (or the tracked reset) so the endpoint can answer 429 with Retry-After
+            var rateLimited = ProviderRateLimitException.FromResponse($"{provider} rate limit exceeded", response);
+            LookupFailureScope.Stamp(rateLimited, provider);
+            throw rateLimited;
+        }
         try
         {
             response.EnsureSuccessStatusCode();
         }
         catch (HttpRequestException ex)
         {
-            LookupFailureScope.Stamp(ex, LookupFailureScope.ProviderName(caller));
+            LookupFailureScope.Stamp(ex, provider);
             throw;
         }
         return await response.Content.ReadFromJsonAsync<T>(options, cancellationToken);
