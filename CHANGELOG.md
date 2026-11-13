@@ -1,5 +1,38 @@
 # Changelog
 
+## [5.1.0](https://github.com/paulmfischer/MediaSet/compare/v5.0.0...v5.1.0) (2026-11-13)
+
+
+### Features
+
+* **images:** fall back to Google Books cover after Open Library 404 ([#872](https://github.com/paulmfischer/MediaSet/issues/872)) ([f6965d3](https://github.com/paulmfischer/MediaSet/commit/f6965d3bd877ea298a8a1e120eb8cba4742e7397))
+* **images:** improve title normalisation for TMDB and IGDB matching ([#871](https://github.com/paulmfischer/MediaSet/issues/871)) ([a1eecf4](https://github.com/paulmfischer/MediaSet/commit/a1eecf4c64bcb6c945786051a5c2312c2611b6a0)), closes [#860](https://github.com/paulmfischer/MediaSet/issues/860)
+* **logging:** add Component/Provider metadata and Plex duplicate links ([#870](https://github.com/paulmfischer/MediaSet/issues/870)) ([89ab3c9](https://github.com/paulmfischer/MediaSet/commit/89ab3c986a3f9df76729fab05a0c7b3f487fd647)), closes [#859](https://github.com/paulmfischer/MediaSet/issues/859)
+* **lookup:** carry Retry-After from provider 429s to the API ([#874](https://github.com/paulmfischer/MediaSet/issues/874)) ([501c1d5](https://github.com/paulmfischer/MediaSet/commit/501c1d5160596f48d94545a0da5d8a0358f3683e)), closes [#866](https://github.com/paulmfischer/MediaSet/issues/866)
+* **plex:** add Plex statistics endpoint and page section ([#852](https://github.com/paulmfischer/MediaSet/issues/852)) ([1cefecf](https://github.com/paulmfischer/MediaSet/commit/1cefecfc96613f7d8d47b56daa7eae30a4806355)), closes [#847](https://github.com/paulmfischer/MediaSet/issues/847)
+* **plex:** pull cover from Plex when paired entity has none ([#854](https://github.com/paulmfischer/MediaSet/issues/854)) ([fd7cf66](https://github.com/paulmfischer/MediaSet/commit/fd7cf66f5f66afc5be6a2d047a77046f669516e3)), closes [#845](https://github.com/paulmfischer/MediaSet/issues/845)
+* **plex:** rank TV most-watched by watched episodes ([#855](https://github.com/paulmfischer/MediaSet/issues/855)) ([3e5e724](https://github.com/paulmfischer/MediaSet/commit/3e5e72447acefd1df074d7eebb8cca494c98bba4)), closes [#853](https://github.com/paulmfischer/MediaSet/issues/853)
+
+
+### Bug Fixes
+
+* **lookup:** log provider rate limits and 5xx at Warning, not Error ([#873](https://github.com/paulmfischer/MediaSet/issues/873)) ([e425dca](https://github.com/paulmfischer/MediaSet/commit/e425dca9172e06c8a6fed9ef73a2079733e35b91)), closes [#865](https://github.com/paulmfischer/MediaSet/issues/865)
+* **lookup:** map provider rate limit and upstream failures to 429/503 ([#864](https://github.com/paulmfischer/MediaSet/issues/864)) ([f239980](https://github.com/paulmfischer/MediaSet/commit/f239980064483e1a070ec8a90763458a56896df1)), closes [#856](https://github.com/paulmfischer/MediaSet/issues/856)
+* **lookup:** propagate OpenLibrary and UPCitemdb provider failures ([#875](https://github.com/paulmfischer/MediaSet/issues/875)) ([047befc](https://github.com/paulmfischer/MediaSet/commit/047befcfe4f3e75ca42e6f9d51ffef65afa5ccac)), closes [#867](https://github.com/paulmfischer/MediaSet/issues/867)
+* **ui:** add spacing and emphasis to Plex detail section ([#851](https://github.com/paulmfischer/MediaSet/issues/851)) ([a6cbae7](https://github.com/paulmfischer/MediaSet/commit/a6cbae7ebafc4f44bc6cddda47378c6c63dbdff1)), closes [#844](https://github.com/paulmfischer/MediaSet/issues/844)
+* **ui:** remove duplicate chevron from Plex dropdown ([#850](https://github.com/paulmfischer/MediaSet/issues/850)) ([102c98c](https://github.com/paulmfischer/MediaSet/commit/102c98c744393be6f9ddae0a94acc486deed8140)), closes [#843](https://github.com/paulmfischer/MediaSet/issues/843)
+
+
+### Documentation
+
+* **agents:** stop requiring plan approval before implementing ([#848](https://github.com/paulmfischer/MediaSet/issues/848)) ([d04e1a2](https://github.com/paulmfischer/MediaSet/commit/d04e1a2452594e118af8cd5a9856b87afad54005))
+
+
+### Miscellaneous
+
+* **logging:** demote expected 404s to Debug ([#869](https://github.com/paulmfischer/MediaSet/issues/869)) ([c9028d5](https://github.com/paulmfischer/MediaSet/commit/c9028d5ba8b74c5c6ce7b110be4d32240270f784)), closes [#858](https://github.com/paulmfischer/MediaSet/issues/858)
+* **logging:** raise log levels for framework and HTTP noise ([#868](https://github.com/paulmfischer/MediaSet/issues/868)) ([7943307](https://github.com/paulmfischer/MediaSet/commit/79433078b5ac46604a57548c7aa659d720ec165b)), closes [#857](https://github.com/paulmfischer/MediaSet/issues/857)
+
 ## [5.0.0](https://github.com/paulmfischer/MediaSet/compare/v4.3.0...v5.0.0) (2026-11-12)
 
 
