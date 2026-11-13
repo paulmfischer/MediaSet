@@ -190,4 +190,31 @@ public class ImageRetryProcessingTests
         Assert.That(_filters.All(f => f["CoverImage"] == BsonNull.Value), Is.True);
         Assert.That(_updates.Count, Is.EqualTo(2));
     }
+
+    [Test]
+    public async Task ProcessMediaTypeAsync_FallbackProviderSuppliedImage_OutcomeLogRecordsProvider()
+    {
+        var book = new Book { Id = "000000000000000000000001" };
+        _collection.SetupSequence(c => c.FindAsync(It.IsAny<FilterDefinition<Book>>(),
+                It.IsAny<FindOptions<Book, Book>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Cursor([book])).ReturnsAsync(Cursor([]));
+        var lookup = new Mock<IImageLookupService>();
+        lookup.Setup(l => l.LookupAndSaveImageAsync(It.IsAny<IEntity>(), It.IsAny<MediaTypes>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ImageLookupResult(true, null, new Image(), null,
+                Provider: "GoogleBooks", AttemptedStrategy: "Books:Isbn"));
+        using var provider = new ServiceCollection().AddSingleton(lookup.Object).AddSingleton(_database.Object).BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        var logger = new Mock<ILogger<BackgroundImageLookupService>>();
+        var messages = new List<string>();
+        logger.Setup(l => l.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+            .Callback(new InvocationAction(i => messages.Add(i.Arguments[2]!.ToString()!)));
+        var worker = new BackgroundImageLookupService(provider.GetRequiredService<IServiceScopeFactory>(),
+            Options.Create(new BackgroundImageLookupConfiguration { RequestsPerMinute = int.MaxValue }), logger.Object);
+        var method = typeof(BackgroundImageLookupService).GetMethod("ProcessMediaTypeAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        await (Task)method.Invoke(worker, [scope, MediaTypes.Books, 1, DateTime.UtcNow, TimeSpan.FromMinutes(1), CancellationToken.None])!;
+
+        Assert.That(messages, Has.Some.StartsWith("Image lookup outcome:").And.Contains("Success: True, Provider: GoogleBooks"));
+    }
 }

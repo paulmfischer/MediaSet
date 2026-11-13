@@ -50,6 +50,7 @@ public class LogComponentTests
     [TestCase("MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary.OpenLibraryClient", "OpenLibrary")]
     [TestCase("MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz.MusicBrainzClient", "MusicBrainz")]
     [TestCase("MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.UpcItemDbClient", "UpcItemDb")]
+    [TestCase("MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks.GoogleBooksClient", "GoogleBooks")]
     public void Enrich_ClientSourceContext_AddsProviderAndLookupComponent(string sourceContext, string provider)
     {
         var (logger, sink) = CreateLogger();
@@ -112,6 +113,7 @@ public class LogComponentTests
     [TestCase("Tmdb", "TMDB")]
     [TestCase("musicbrainz", "MusicBrainz")]
     [TestCase("OpenLibrary", "OpenLibrary")]
+    [TestCase("GoogleBooks", "GoogleBooks")]
     public void BeginProviderScope_KnownProviderName_AddsNormalizedProvider(string name, string expected)
     {
         var (serilog, sink) = CreateLogger();
