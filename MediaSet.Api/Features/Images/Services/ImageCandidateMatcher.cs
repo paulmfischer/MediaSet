@@ -62,7 +62,10 @@ public static class ImageCandidateMatcher
 
     private static string CleanTitle(IEntity entity) => entity switch
     {
-        Movie => RetailVideoTitle.Clean(entity.Title, reorderArticle: false),
+        // Only a trailing "The" ("Matrix The", "Matrix, The") is a retail sort form; a trailing
+        // "A" is usually part of the title ("Plan A"), so it is never moved for matching.
+        Movie => Regex.Replace(RetailVideoTitle.Clean(entity.Title, reorderArticle: false),
+            @"^(.+?),?\s+The$", "The $1", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
         Game => RetailGameTitle.Clean(entity.Title),
         _ => entity.Title
     };
