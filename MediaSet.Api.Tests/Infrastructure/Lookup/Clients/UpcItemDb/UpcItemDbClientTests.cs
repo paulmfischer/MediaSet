@@ -447,6 +447,31 @@ public class UpcItemDbClientTests
 
     [TestCase(HttpStatusCode.NotFound)]
     [TestCase(HttpStatusCode.BadRequest)]
+    public async Task GetItemByCodeAsync_BurstRetryNoResultStatus_ReturnsNull(HttpStatusCode retryStatus)
+    {
+        var calls = 0;
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() =>
+            {
+                if (++calls == 1)
+                {
+                    var limited = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+                    limited.Headers.Add("X-RateLimit-Reset", DateTimeOffset.UtcNow.AddSeconds(1).ToUnixTimeSeconds().ToString());
+                    return limited;
+                }
+                return new HttpResponseMessage(retryStatus) { Content = new StringContent("") };
+            });
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), _loggerMock.Object);
+
+        var result = await client.GetItemByCodeAsync("012345678901", CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+        Assert.That(calls, Is.EqualTo(2));
+    }
+
+    [TestCase(HttpStatusCode.NotFound)]
+    [TestCase(HttpStatusCode.BadRequest)]
     public async Task GetItemByCodeAsync_NoResultStatus_LogsWarningNotErrorAndReturnsNull(HttpStatusCode status)
     {
         var logger = new LevelCapturingLogger<UpcItemDbClient>();

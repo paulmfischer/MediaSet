@@ -53,6 +53,10 @@ public class UpcItemDbClient : IUpcItemDbClient
             {
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(new ProviderLookupException(
                     "UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited, "UPCitemdb quota deferred until reset", reset));
+                using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+                {
+                    _logger.LogWarning("UPCitemdb quota deferred until reset {Reset} for code: {Code}", reset, code);
+                }
                 throw new ProviderRateLimitException("UPCitemdb quota deferred until reset", reset,
                     System.Net.HttpStatusCode.TooManyRequests);
             }
@@ -111,9 +115,23 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             return result;
         }
+        catch (ProviderRateLimitException ex)
+        {
+            // Already logged at Warning where it was raised
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            throw;
+        }
         catch (HttpRequestException ex)
         {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            // A status failure was already recorded (with its Retry-After) where it was raised
+            if (ex.StatusCode is null)
+            {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            }
+            else
+            {
+                LookupFailureScope.Stamp(ex, LogProviders.UpcItemDb);
+            }
             _logger.LogProviderHttpFailure(ex, LogProviders.UpcItemDb, "HTTP error while looking up UPC/EAN code: {Code}", code);
             throw;
         }

@@ -298,15 +298,79 @@ public class OpenLibraryClientTests
     }
 
     [Test]
-    public async Task GetReadableBookByIsbnAsync_WhenCallerCancels_PropagatesCancellation()
+    public async Task GetReadableBookByIsbnAsync_WhenCallerCancels_PropagatesCancellationUnstamped()
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
+        SetupCancelled(cts.Token);
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(
+            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123", cts.Token));
+        Assert.That(ex.Data.Contains(LookupFailureScope.ProviderDataKey), Is.False);
+    }
+
+    [Test]
+    public async Task SearchByEntityPropertiesAsync_WhenCallerCancels_PropagatesCancellationUnstamped()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        SetupCancelled(cts.Token);
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(() => new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" }, cts.Token));
+        Assert.That(ex.Data.Contains(LookupFailureScope.ProviderDataKey), Is.False);
+    }
+
+    [Test]
+    public async Task SearchByEntityPropertiesAsync_WithTimeout_PropagatesStampedWithProvider()
+    {
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-            .ThrowsAsync(new TaskCanceledException("cancelled", null, cts.Token));
-        await Assert.ThrowsAsync<TaskCanceledException>(
-            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByIsbnAsync("123", cts.Token));
+            .ThrowsAsync(new TaskCanceledException("timed out", new TimeoutException()));
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(() => new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" }));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task GetReadableBookByOlidAsync_WithTimeout_PropagatesStampedWithProvider()
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("timed out", new TimeoutException()));
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(
+            () => new OpenLibraryClient(_httpClient, _loggerMock.Object).GetReadableBookByOlidAsync("OL1M"));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task SearchByEntityPropertiesAsync_WithRateLimit_ThrowsRateLimit()
+    {
+        SetupHttpResponse(HttpStatusCode.TooManyRequests, "");
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" }));
+        Assert.That(ex.Data[LookupFailureScope.ProviderDataKey], Is.EqualTo("OpenLibrary"));
+    }
+
+    [Test]
+    public async Task Search_EnrichmentUpstreamError_FallsBackToSearchData()
+    {
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,
+            """{"docs":[{"title":"Book","key":"/works/OL1W","cover_i":42,"cover_edition_key":"OL1M"}]}""");
+        SetupHttpResponseForUrl("api/volumes", HttpStatusCode.InternalServerError, "");
+        var books = await new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" });
+        Assert.That(books, Has.Count.EqualTo(1));
+        Assert.That(books[0].Title, Is.EqualTo("Book"));
+    }
+
+    [Test]
+    public async Task Search_EnrichmentRateLimited_PropagatesAndStopsSiblings()
+    {
+        SetupHttpResponseForUrl("search.json", HttpStatusCode.OK,
+            """{"docs":[{"title":"A","cover_edition_key":"OL1M"},{"title":"B","cover_edition_key":"OL2M"},{"title":"C","cover_edition_key":"OL3M"}]}""");
+        SetupHttpResponseForUrl("api/volumes", HttpStatusCode.TooManyRequests, "");
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => new OpenLibraryClient(_httpClient, _loggerMock.Object)
+            .SearchByEntityPropertiesAsync(new Dictionary<string, string> { ["title"] = "Book" }));
+        Assert.That(ex.StatusCode, Is.EqualTo(HttpStatusCode.TooManyRequests));
     }
 
     [Test]
@@ -1057,6 +1121,13 @@ public class OpenLibraryClientTests
         Assert.That(books[0].ImageUrl, Does.Contain("/42-L.jpg?default=false"));
         Assert.That(books[0].Artwork!.Select(a => a.Url), Has.Some.Contains("/42-L.jpg?default=false"));
         Assert.That(books[0].Artwork!.Single(a => a.Url.Contains("/42-")).Scope, Does.Contain("Work or alternate"));
+    }
+
+    private void SetupCancelled(CancellationToken token)
+    {
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("cancelled", null, token));
     }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content)

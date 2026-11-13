@@ -38,7 +38,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             // Genuine not-found: no result, not a provider failure
-            _logger.LogWarning(ex, "HTTP error while looking up book by ISBN: {Isbn}", isbn);
+            _logger.LogInformation("No result (404) while looking up book by ISBN: {Isbn}", isbn);
             return null;
         }
         catch (HttpRequestException ex)
@@ -56,7 +56,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while looking up book by ISBN: {Isbn}", isbn);
+            _logger.LogWarning(ex, "Open Library request timed out while looking up book by ISBN: {Isbn}", isbn);
             throw;
         }
         catch (JsonException ex)
@@ -96,7 +96,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             // Genuine not-found: no result, not a provider failure
-            _logger.LogWarning(ex, "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            _logger.LogInformation("No result (404) while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             return null;
         }
         catch (HttpRequestException ex)
@@ -114,7 +114,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
+            _logger.LogWarning(ex, "Open Library request timed out while getting readable book for {identifierType}:{identifierValue}", identifierType, identifierValue);
             throw;
         }
         catch (JsonException ex)
@@ -199,8 +199,23 @@ public class OpenLibraryClient : IOpenLibraryClient
             var docs = response.Docs.Where(d => !string.IsNullOrWhiteSpace(d.Title)).ToList();
             _logger.LogInformation("OpenLibrary search found {Count} results for entity search: title={Title}", docs.Count, title);
 
-            var enrichmentTasks = docs.Select(doc => EnrichSearchDocAsync(doc, cancellationToken));
-            return await Task.WhenAll(enrichmentTasks);
+            // A rate limit on one enrichment cancels its siblings so they stop hitting the limited provider.
+            using var enrichmentCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            ProviderRateLimitException? rateLimited = null;
+            try
+            {
+                var enrichmentTasks = docs.Select(doc => EnrichSearchDocAsync(doc, enrichmentCts.Token, limited =>
+                {
+                    Interlocked.CompareExchange(ref rateLimited, limited, null);
+                    enrichmentCts.Cancel();
+                }));
+                return await Task.WhenAll(enrichmentTasks);
+            }
+            catch (OperationCanceledException) when (rateLimited != null && !cancellationToken.IsCancellationRequested)
+            {
+                // A sibling was cancelled because another enrichment was rate limited: surface the rate limit
+                throw rateLimited;
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -209,7 +224,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             // Genuine not-found: no result, not a provider failure
-            _logger.LogWarning(ex, "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
+            _logger.LogInformation("No result (404) while searching OpenLibrary by entity properties: title={Title}", title);
             return [];
         }
         catch (HttpRequestException ex)
@@ -227,7 +242,7 @@ public class OpenLibraryClient : IOpenLibraryClient
         catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogWarning(ex, "Open Library request timed out: " + "HTTP error while searching OpenLibrary by entity properties: title={Title}", title);
+            _logger.LogWarning(ex, "Open Library request timed out while searching by entity properties: title={Title}", title);
             throw;
         }
         catch (JsonException ex)
@@ -244,7 +259,8 @@ public class OpenLibraryClient : IOpenLibraryClient
         }
     }
 
-    private async Task<BookResponse> EnrichSearchDocAsync(OpenLibrarySearchDoc doc, CancellationToken cancellationToken)
+    private async Task<BookResponse> EnrichSearchDocAsync(OpenLibrarySearchDoc doc, CancellationToken cancellationToken,
+        Action<ProviderRateLimitException> onRateLimited)
     {
         if (!string.IsNullOrWhiteSpace(doc.CoverEditionKey))
         {
@@ -268,12 +284,17 @@ public class OpenLibraryClient : IOpenLibraryClient
                     };
                 }
             }
-            catch (Exception ex) when (ex is not (ProviderRateLimitException or ProviderLookupException)
-                && !cancellationToken.IsCancellationRequested)
+            catch (ProviderRateLimitException ex)
             {
-                // Best-effort enrichment: any failure but a rate limit falls back to the search data
+                onRateLimited(ex);
+                throw;
+            }
+            catch (Exception ex) when (ex is not ProviderLookupException && !cancellationToken.IsCancellationRequested)
+            {
+                // Best-effort enrichment: any failure but a rate limit falls back to the search data.
+                // The readable-book call already logged the failure, so this is only a Debug note.
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-                _logger.LogWarning(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
+                _logger.LogDebug(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
                     doc.Title, doc.CoverEditionKey);
             }
         }
