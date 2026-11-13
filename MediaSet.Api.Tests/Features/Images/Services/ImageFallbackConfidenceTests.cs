@@ -71,6 +71,28 @@ public class ImageFallbackConfidenceTests
     }
 
     [Test]
+    public async Task NoisyStoredGameTitle_MatchesCleanedTitleWithoutSelectingOtherEditions()
+    {
+        var setup = Setup([
+            GameResult(103205, "Red Dead Redemption 2: Special Edition", 2018, "PlayStation 4"),
+            GameResult(25076, "Red Dead Redemption 2", 2018, "PlayStation 4")]);
+        using var services = setup.Services;
+        var entity = new Game
+        {
+            Id = "1",
+            Title = "Red Dead Redemption 2 Rockstar Games 710425498916",
+            Platform = "PS4",
+            ReleaseDate = "2018"
+        };
+
+        var result = await setup.Service.LookupAndSaveImageAsync(entity, MediaTypes.Games, CancellationToken.None);
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.ConfirmedMatch?.ProviderId, Is.EqualTo("25076"));
+        setup.Igdb.Verify(c => c.SearchGameAsync("Red Dead Redemption 2", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
     public void CoverlessUnrelatedFirstCandidate_DoesNotHideConfidentArtwork()
     {
         var entity = new Movie { Title = "Dune", ReleaseDate = "2021" };

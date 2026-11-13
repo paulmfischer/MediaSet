@@ -64,6 +64,13 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
 
     private async Task<IReadOnlyList<GameResponse>> SearchByTitleAsync(string title, CancellationToken cancellationToken)
     {
+        var rawTitle = title;
+        title = RetailGameTitle.Clean(title);
+        if (!string.Equals(rawTitle.Trim(), title, StringComparison.Ordinal))
+        {
+            _logger.LogInformation("Game title candidate {RawTitle} -> {NormalizedQuery}; rationale {MatchRationale}",
+                rawTitle, title, "Retail barcode, publisher and truncated bracket noise removed");
+        }
         var searchResults = await _igdbClient.SearchGameAsync(title, cancellationToken);
 
         if (searchResults == null || searchResults.Count == 0)
@@ -152,7 +159,7 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
             return (string.Empty, string.Empty);
         }
 
-        var title = rawTitle.Trim();
+        var title = RetailGameTitle.Clean(rawTitle);
 
         // Strip leading brand name if present (e.g., "Atari Test Drive Le Mans" with brand "Atari" → "Test Drive Le Mans")
         if (!string.IsNullOrWhiteSpace(brand))

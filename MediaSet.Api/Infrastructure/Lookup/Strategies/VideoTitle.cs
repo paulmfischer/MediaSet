@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
 public record VideoTitle(string Title, string SeriesTitle, int? Season = null, string? Special = null,
-    bool IsSeries = false)
+    bool IsSeries = false, bool SeasonFallback = false)
 {
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
     private static readonly string[] _ordinals =
@@ -23,7 +23,7 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
             return new(title, special.Groups[1].Value.Trim(), Special: special.Groups[2].Value.Trim());
         }
         var match = Regex.Match(title,
-            @"^(.*?)\s*[:\-]?\s*(?:(?:the\s+)?complete\s+)?(?:season|series)\s+(\d+)(?:\s*\([^)]*\))?\s*$", Options);
+            @"^(.*?)\s*[:\-]?\s*(?:(?:the\s+)?complete\s+)?(?:season|series)\s+(\d+)(\.\d+)?(?:\s*\([^)]*\))?\s*$", Options);
         if (!match.Success)
         {
             match = Regex.Match(title,
@@ -34,7 +34,10 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
         {
             var number = int.TryParse(match.Groups[2].Value, out var numeric)
                 ? numeric : Array.IndexOf(_ordinals, match.Groups[2].Value.ToLowerInvariant()) + 1;
-            return new(title, match.Groups[1].Value.Trim().TrimEnd(':', '-').Trim(), number, IsSeries: true);
+            // A split season ("Season 3.5") has no TMDB season of its own: try the whole season,
+            // then the series.
+            return new(title, match.Groups[1].Value.Trim().TrimEnd(':', '-').Trim(), number, IsSeries: true,
+                SeasonFallback: match.Groups[3].Success);
         }
         match = Regex.Match(title, @"^(.*?)\s*[:\-]?\s*(?:the\s+)?complete\s+(?:series|collection)\s*$", Options);
         if (match.Success)

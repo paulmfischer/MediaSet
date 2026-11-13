@@ -367,6 +367,45 @@ public class MovieLookupStrategyTests
     public void Clean_MeaningfulTitle_PreservesPunctuationAndNumbers(string title) =>
         Assert.That(RetailVideoTitle.Clean(title, "Inaccurate"), Is.EqualTo(title));
 
+    [TestCase("20th Century Fox Home Entertainment - Firefly: The Complete Series (DVD", "Firefly: The Complete Series")]
+    [TestCase("Twentieth Century Fx From Hell Dvd Ws", "From Hell")]
+    [TestCase("Twentieth Century Fox Home Entertainment Alien Widescreen", "Alien")]
+    [TestCase("From Hell 024543039915", "From Hell")]
+    [TestCase("From Hell DVD 0024543039915", "From Hell")]
+    [TestCase("Ab Roller Workout AS SEEN ON TV", "Ab Roller Workout")]
+    [TestCase("As Seen On TV - Ab Roller Workout", "Ab Roller Workout")]
+    [TestCase("Firefly) The Complete Series", "Firefly The Complete Series")]
+    [TestCase("Eureka: Season 3.5", "Eureka: Season 3.5")]
+    public void Clean_RetailNoise_RemovesStudioFormatBarcodeAndBrokenBrackets(string raw, string expected) =>
+        Assert.That(RetailVideoTitle.Clean(raw), Is.EqualTo(expected));
+
+    [TestCase("20th Century Women")]
+    [TestCase("Ocean's Eleven (2001)")]
+    [TestCase("Blade Runner [Final Cut]")]
+    [TestCase("Apollo 13")]
+    [TestCase("2046")]
+    public void Clean_TitleWithStudioLikeWordsOrNumbers_IsPreserved(string title) =>
+        Assert.That(RetailVideoTitle.Clean(title), Is.EqualTo(title));
+
+    [Test]
+    public async Task LookupAsync_NoisyUpcTitle_SearchesCleanedSeriesTitle()
+    {
+        _upcItemDbClientMock.Setup(c => c.GetItemByCodeAsync("123", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateUpcItemResponse("123",
+                "20th Century Fox Home Entertainment - Firefly: The Complete Series (DVD", ""));
+        _tmdbClientMock.Setup(c => c.SearchTvAsync("Firefly", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbTvSearchResponse([new(1437, "Firefly")]));
+        _tmdbClientMock.Setup(c => c.GetTvDetailsAsync(1437, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbTvResponse(1437, "Firefly", "2002-09-20", "Plot", "/firefly.jpg"));
+
+        var results = await _strategy.LookupAsync(IdentifierType.Upc,
+            new Dictionary<string, string> { ["upc"] = "123" }, CancellationToken.None);
+
+        Assert.That(results, Has.Count.EqualTo(1));
+        Assert.That(results[0].Provenance?.ProviderId, Is.EqualTo("tv:1437"));
+        Assert.That(results[0].ImageUrl, Does.EndWith("/firefly.jpg"));
+    }
+
     [TestCase("Doctor Who - Matt Smith Specials [HD] - S02E002 - The Time of the Doctor [HD]")]
     [TestCase("Doctor Who - Matt Smith Specials [HD] - S02E002 - The Time of the Doctor [HD] | DVD | Tested")]
     public void Clean_InteriorHdLabel_PreservesSpecialIdentityAndRemovesTrailingNoise(string title)

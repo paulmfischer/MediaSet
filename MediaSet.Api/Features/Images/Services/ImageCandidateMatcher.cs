@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Features.Images.Services;
@@ -59,12 +60,22 @@ public static class ImageCandidateMatcher
         return context.Where(p => !string.IsNullOrWhiteSpace(p.Value)).ToDictionary();
     }
 
+    private static string CleanTitle(IEntity entity) => entity switch
+    {
+        Movie => RetailVideoTitle.Clean(entity.Title),
+        Game => RetailGameTitle.Clean(entity.Title),
+        _ => entity.Title
+    };
+
     public static IReadOnlyList<ImageCandidate> Select(IEntity entity, IEnumerable<ImageCandidate> candidates)
     {
         var context = SearchContext(entity);
         var date = context.GetValueOrDefault("releasedate") ?? context.GetValueOrDefault("publicationdate") ?? "";
         var creators = entity switch { Book b => b.Authors, Music m => [m.Artist], _ => [] };
-        var matching = candidates.Where(c => Normalize(c.Provenance?.Title ?? c.Title) == Normalize(entity.Title))
+        // Retail noise (studio, format words, barcodes) in the stored title is not identity:
+        // accept the provider title when it equals either the stored or the cleaned title.
+        var titles = new[] { entity.Title, CleanTitle(entity) }.Select(Normalize).ToHashSet();
+        var matching = candidates.Where(c => titles.Contains(Normalize(c.Provenance?.Title ?? c.Title)))
             .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date)
                 || c.Provenance?.MatchYears?.Contains(Year(date)) == true)
             .Where(c => entity is not Movie { IsTvSeries: true }

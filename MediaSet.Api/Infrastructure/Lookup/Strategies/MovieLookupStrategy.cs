@@ -180,9 +180,14 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             var seasonNumber = video.Special != null ? 0 : video.Season;
             var season = seasonNumber.HasValue
                 ? await _tmdbClient.GetSeasonDetailsAsync(series.Id, seasonNumber.Value, cancellationToken) : null;
-            // A missing season is not evidence that this is the requested release.
+            // A missing season is not evidence that this is the requested release,
+            // except for a split season, which falls back to the verified series.
             if (seasonNumber.HasValue && season?.SeasonNumber != seasonNumber.Value)
-            { continue; }
+            {
+                if (!video.SeasonFallback)
+                { continue; }
+                season = null;
+            }
             if (video.Special != null)
             {
                 foreach (var episode in season?.Episodes?.Where(e => SameTitle(e.Name, video.Special)) ?? [])
@@ -235,7 +240,7 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             { title = storedTitle; }
             else if (!SameTitle(video.SeriesTitle, series.Name)
                 || (episode != null ? !SameTitle(video.Special ?? string.Empty, episode.Name)
-                    : video.Season != season?.SeasonNumber))
+                    : video.Season != season?.SeasonNumber && !(video.SeasonFallback && season == null)))
             { return []; }
             title = storedTitle;
         }
