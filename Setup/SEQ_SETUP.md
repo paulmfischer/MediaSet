@@ -199,7 +199,7 @@ so events group by template and their values are properties.
 | Property | Values | Set on |
 |----------|--------|--------|
 | `Application` | `MediaSet.Api`, `MediaSet.Api.Processor.BackgroundImage`, `MediaSet.Api.Processor.PlexSync`, `MediaSet.Remix` | Every event. The processor values are the scheduled image lookup and scheduled Plex syncs (a manual Plex sync stays `MediaSet.Api`). |
-| `Component` | `Plex`, `Lookup`, `Images`, `Stats` | API events of those features (endpoints, services, clients and their HTTP spans). |
+| `Component` | `Plex`, `Lookup`, `Images`, `Stats` | API events of those features (endpoint handlers, services and clients) and the outgoing HTTP spans they make. The incoming request span is not tagged: the endpoint filter runs inside the endpoint. |
 | `Provider` | `TMDB`, `IGDB`, `OpenLibrary`, `MusicBrainz`, `UpcItemDb` | Lookup client events, their outgoing HTTP spans, provider-specific lookup warnings and cover downloads. |
 | `MediaType` | `Books`, `Movies`, `Games`, `Musics` | Lookup requests and image lookups. |
 | `RunId`, `Trigger` | run id, `manual` or `scheduled` | Every event of a Plex sync run. |

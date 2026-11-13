@@ -6,7 +6,7 @@ const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
 const APPLICATION = 'MediaSet.Remix';
 
 /** SourceContext of events logged through `serverLogger` directly rather than a `createServerLogger` logger. */
-export const DEFAULT_SOURCE_CONTEXT = APPLICATION;
+const DEFAULT_SOURCE_CONTEXT = APPLICATION;
 
 /** The ASP.NET environment name for a `NODE_ENV` value, so Seq's `Environment` property matches the API's. */
 export function seqEnvironmentName(nodeEnv: string | undefined): string {
@@ -153,7 +153,14 @@ function write(level: LogLevel, template: string, properties?: LogProperties, er
   initializeRequestContext();
   const rendered = renderMessageTemplate(template, properties);
   const line = error.summary ? `${rendered}: ${error.summary}` : rendered;
-  const args: [string, LogProperties | string] = [`[${CONSOLE_PREFIX[level]}] ${line}`, properties || ''];
+  // SourceContext goes to Seq only; on the console it would print a properties object on every line
+  const consoleProperties = Object.fromEntries(
+    Object.entries(properties ?? {}).filter(([name]) => name !== 'SourceContext')
+  );
+  const args: [string, LogProperties | string] = [
+    `[${CONSOLE_PREFIX[level]}] ${line}`,
+    Object.keys(consoleProperties).length > 0 ? consoleProperties : '',
+  ];
   if (level === 'Error') console.error(...args);
   else if (level === 'Warning') console.warn(...args);
   else if (level === 'Debug') console.debug(...args);
