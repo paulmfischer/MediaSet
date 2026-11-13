@@ -16,6 +16,9 @@ internal static class LookupApi
         group.WithTags("Lookup");
         group.RequireRateLimiting("lookup");
         group.AddLookupNotConfiguredFilter();
+        group.AddLookupProviderFailureFilter();
+        group.ProducesProblem(StatusCodes.Status429TooManyRequests);
+        group.ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         group.MapGet("/{entityType}/{identifierType}/{identifierValue?}", async Task<Results<Ok<IReadOnlyList<BookResponse>>, Ok<IReadOnlyList<MovieResponse>>, Ok<IReadOnlyList<GameResponse>>, Ok<IReadOnlyList<MusicResponse>>, BadRequest<string>>> (
             HttpContext httpContext,
