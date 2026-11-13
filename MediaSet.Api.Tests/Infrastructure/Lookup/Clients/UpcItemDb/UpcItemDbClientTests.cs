@@ -199,7 +199,7 @@ public class UpcItemDbClientTests
 
         // Assert
         Assert.That(result, Is.Null, "Should return null for daily limit");
-        VerifyLogContains(LogLevel.Error, "daily rate limit exceeded");
+        VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
     [Test]
@@ -355,7 +355,7 @@ public class UpcItemDbClientTests
 
         // Assert
         Assert.That(result, Is.Null);
-        VerifyLogContains(LogLevel.Error, "daily rate limit exceeded");
+        VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
     [Test]

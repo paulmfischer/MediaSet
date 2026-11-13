@@ -1,3 +1,4 @@
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
@@ -70,7 +71,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while looking up release for barcode: {Barcode}", barcode);
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while looking up release for barcode: {Barcode}", barcode);
             throw;
         }
         catch (Exception ex)
@@ -135,7 +136,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while looking up release for ID: {ReleaseId}", releaseId);
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while looking up release for ID: {ReleaseId}", releaseId);
             throw;
         }
         catch (Exception ex)
@@ -217,7 +218,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while searching MusicBrainz by entity properties");
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while searching MusicBrainz by entity properties");
             throw;
         }
         catch (Exception ex)

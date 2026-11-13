@@ -195,11 +195,12 @@ public class TmdbTvClientTests
     }
 
     [Test]
-    public async Task GetSeasonDetailsAsync_WithRateLimit_LogsError()
+    public async Task GetSeasonDetailsAsync_WithRateLimit_LogsWarningNotError()
     {
         var (_, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests)));
 
-        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Warning));
+        Assert.That(log.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 
     [Test]

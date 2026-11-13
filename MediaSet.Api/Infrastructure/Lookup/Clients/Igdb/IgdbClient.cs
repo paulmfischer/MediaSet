@@ -1,3 +1,4 @@
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using Microsoft.Extensions.Options;
 using System.Text;
@@ -49,7 +50,7 @@ public class IgdbClient : IIgdbClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while searching IGDB for game: {Title}", title);
+            _logger.LogProviderHttpFailure(ex, LogProviders.Igdb, "HTTP error while searching IGDB for game: {Title}", title);
             throw;
         }
         catch (Exception ex)
@@ -81,7 +82,7 @@ public class IgdbClient : IIgdbClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while getting IGDB game details for id: {Id}", igdbId);
+            _logger.LogProviderHttpFailure(ex, LogProviders.Igdb, "HTTP error while getting IGDB game details for id: {Id}", igdbId);
             throw;
         }
         catch (Exception ex)
