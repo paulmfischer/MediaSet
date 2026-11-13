@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -106,8 +107,14 @@ public class UpcItemDbClient : IUpcItemDbClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while looking up UPC/EAN code: {Code}", code);
+            _logger.LogProviderHttpFailure(ex, LogProviders.UpcItemDb, "HTTP error while looking up UPC/EAN code: {Code}", code);
             throw;
+        }
+        catch (ProviderLookupException ex) when (ex.Outcome == Shared.Models.ImageLookupOutcome.QuotaLimited)
+        {
+            // Local quota exhausted: already logged at Warning where it was raised.
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            return null;
         }
         catch (Exception ex)
         {
@@ -143,8 +150,11 @@ public class UpcItemDbClient : IUpcItemDbClient
         // Check if we've hit the daily limit
         if (_requestsToday >= _configuration.MaxRequestsPerDay)
         {
-            _logger.LogError("Daily rate limit of {Limit} requests reached, cannot make more requests today",
-                _configuration.MaxRequestsPerDay);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("Daily rate limit of {Limit} requests reached, cannot make more requests today",
+                    _configuration.MaxRequestsPerDay);
+            }
             var reset = DateTime.UtcNow.Date.AddDays(1);
             _quotaResets[QuotaKey] = reset;
             throw new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
@@ -278,9 +288,12 @@ public class UpcItemDbClient : IUpcItemDbClient
         LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
             "UPCitemdb quota exhausted", resetTime));
         var hoursUntilReset = pauseDuration.TotalHours;
-        _logger.LogError(
-            "UpcItemDb daily rate limit exceeded for {Code}, cannot retry (reset in {Hours} hours)",
-            code, hoursUntilReset);
+        using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+        {
+            _logger.LogWarning(
+                "UpcItemDb daily rate limit exceeded for {Code}, cannot retry (reset in {Hours} hours)",
+                code, hoursUntilReset);
+        }
         return null;
     }
 

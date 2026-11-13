@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Tests.Observability;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -125,6 +127,44 @@ public class IgdbClientTests
 
         await Assert.ThrowsAsync<HttpRequestException>(async () =>
             await _client.SearchGameAsync("Test Game", CancellationToken.None));
+    }
+
+    [Test]
+    public async Task SearchGameAsync_WithRateLimit_LogsWarningNotError()
+    {
+        var logger = new LevelCapturingLogger<IgdbClient>();
+        var client = new IgdbClient(_httpClient, _tokenServiceMock.Object, _configuration, logger);
+        SetupResponse(new HttpResponseMessage { StatusCode = HttpStatusCode.TooManyRequests });
+
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+            await client.SearchGameAsync("Test Game", CancellationToken.None));
+
+        Assert.That(logger.Entries.Select(e => e.Level), Does.Not.Contain(LogLevel.Error));
+        Assert.That(logger.Entries.Select(e => e.Level), Does.Contain(LogLevel.Warning));
+    }
+
+    [Test]
+    public async Task SearchGameAsync_WithUnparseableResponse_LogsError()
+    {
+        var logger = new LevelCapturingLogger<IgdbClient>();
+        var client = new IgdbClient(_httpClient, _tokenServiceMock.Object, _configuration, logger);
+        SetupResponse(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent("not json") });
+
+        var result = await client.SearchGameAsync("Test Game", CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+        Assert.That(logger.Entries.Select(e => e.Level), Does.Contain(LogLevel.Error));
+    }
+
+    private void SetupResponse(HttpResponseMessage response)
+    {
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(response);
     }
 
     [Test]

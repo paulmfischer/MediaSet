@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 
@@ -42,7 +43,6 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    _logger.LogWarning("MusicBrainz rate limit exceeded for barcode: {Barcode}", barcode);
                     throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -70,7 +70,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while looking up release for barcode: {Barcode}", barcode);
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while looking up release for barcode: {Barcode}", barcode);
             throw;
         }
         catch (Exception ex)
@@ -110,7 +110,6 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    _logger.LogWarning("MusicBrainz rate limit exceeded for release ID: {ReleaseId}", releaseId);
                     throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -135,7 +134,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while looking up release for ID: {ReleaseId}", releaseId);
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while looking up release for ID: {ReleaseId}", releaseId);
             throw;
         }
         catch (Exception ex)
@@ -192,7 +191,6 @@ public class MusicBrainzClient : IMusicBrainzClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
-                    _logger.LogWarning("MusicBrainz rate limit exceeded for entity search: title={Title}", title);
                     throw new HttpRequestException("MusicBrainz rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -217,7 +215,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while searching MusicBrainz by entity properties");
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while searching MusicBrainz by entity properties");
             throw;
         }
         catch (Exception ex)

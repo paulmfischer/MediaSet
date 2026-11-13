@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using System.Web;
 using Microsoft.Extensions.Options;
 
@@ -34,7 +35,6 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogWarning("TMDB rate limit exceeded for movie search: {Title}", title);
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -53,7 +53,7 @@ public class TmdbClient : ITmdbClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while searching TMDB for movie: {Title}", title);
+            _logger.LogProviderHttpFailure(ex, LogProviders.Tmdb, "HTTP error while searching TMDB for movie: {Title}", title);
             throw;
         }
         catch (Exception ex)
@@ -117,7 +117,7 @@ public class TmdbClient : ITmdbClient
         catch (HttpRequestException ex)
         {
             LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error getting TMDB TV resource: {Resource}", resource);
+            _logger.LogProviderHttpFailure(ex, LogProviders.Tmdb, "HTTP error getting TMDB TV resource: {Resource}", resource);
             throw;
         }
         catch (Exception ex)
@@ -141,7 +141,6 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogWarning("TMDB rate limit exceeded for movie details: {MovieId}", movieId);
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -159,7 +158,7 @@ public class TmdbClient : ITmdbClient
         catch (HttpRequestException ex)
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            _logger.LogError(ex, "HTTP error while getting TMDB movie details for ID: {MovieId}", movieId);
+            _logger.LogProviderHttpFailure(ex, LogProviders.Tmdb, "HTTP error while getting TMDB movie details for ID: {MovieId}", movieId);
             throw;
         }
         catch (Exception ex)

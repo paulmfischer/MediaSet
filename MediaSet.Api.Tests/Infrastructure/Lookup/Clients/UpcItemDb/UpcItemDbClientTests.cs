@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Tests.Observability;
 
 namespace MediaSet.Api.Tests.Infrastructure.Lookup.Clients.UpcItemDb;
 
@@ -199,7 +200,7 @@ public class UpcItemDbClientTests
 
         // Assert
         Assert.That(result, Is.Null, "Should return null for daily limit");
-        VerifyLogContains(LogLevel.Error, "daily rate limit exceeded");
+        VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
     [Test]
@@ -355,7 +356,7 @@ public class UpcItemDbClientTests
 
         // Assert
         Assert.That(result, Is.Null);
-        VerifyLogContains(LogLevel.Error, "daily rate limit exceeded");
+        VerifyLogContains(LogLevel.Warning, "daily rate limit exceeded");
     }
 
     [Test]
@@ -405,6 +406,38 @@ public class UpcItemDbClientTests
         // Assert
         Assert.That(result, Is.Null, "Should return null if retry also fails");
         VerifyLogContains(LogLevel.Warning, "Retry after burst rate limit pause failed");
+    }
+
+    [Test]
+    public async Task GetItemByCodeAsync_LocalDailyLimitReached_LogsWarningNotError()
+    {
+        var logger = new LevelCapturingLogger<UpcItemDbClient>();
+        _configuration.MaxRequestsPerDay = 0;
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), logger);
+
+        var result = await client.GetItemByCodeAsync("012345678901", CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+        Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(
+            e => e.Level == LogLevel.Warning && e.Message.Contains("Daily rate limit of")));
+        Assert.That(logger.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
+    }
+
+    [TestCase(HttpStatusCode.InternalServerError)]
+    [TestCase(HttpStatusCode.Unauthorized)]
+    public async Task GetItemByCodeAsync_NonSuccessStatus_LogsWarningNotError(HttpStatusCode status)
+    {
+        // Non-success statuses are warned about and return null without throwing.
+        var logger = new LevelCapturingLogger<UpcItemDbClient>();
+        SetupHttpResponse(status, "");
+        var client = new UpcItemDbClient(_httpClient, Options.Create(_configuration), logger);
+
+        var result = await client.GetItemByCodeAsync("012345678901", CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+        Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(
+            e => e.Level == LogLevel.Warning && e.Message.Contains("returned status code")));
+        Assert.That(logger.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 
     private void SetupHttpResponse(HttpStatusCode statusCode, string content, Dictionary<string, string>? headers = null)
