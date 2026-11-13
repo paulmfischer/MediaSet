@@ -152,13 +152,36 @@ public class TmdbTvClientTests
     }
 
     [Test]
-    public async Task GetSeasonDetailsAsync_With404_ReturnsNullAndLogsNothingAboveDebug()
+    public async Task GetSeasonDetailsAsync_With404_ReturnsNullAndLogsOnlySeasonMissAtDebug()
     {
         var (result, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)));
 
         Assert.That(result, Is.Null);
-        Assert.That(log.Entries.Select(e => e.Level), Has.All.LessThanOrEqualTo(LogLevel.Information));
-        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Debug));
+        Assert.That(log.Entries.Where(e => e.Level > LogLevel.Information), Is.Empty);
+        Assert.That(log.Entries.Where(e => e.Level == LogLevel.Debug).Select(e => e.Message),
+            Is.EqualTo(["TMDB season not found: tv/1/season/0"]));
+    }
+
+    [Test]
+    public async Task GetTvDetailsAsync_With404_LogsWarning()
+    {
+        var logger = new LevelCapturingLogger<TmdbClient>();
+        using var http = new HttpClient(new Handler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound))))
+        { BaseAddress = new Uri("https://example.test/3/") };
+
+        var result = await new TmdbClient(http, Options.Create(new TmdbConfiguration()), logger).GetTvDetailsAsync(1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+        Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Warning));
+    }
+
+    [TestCase(HttpStatusCode.Unauthorized)]
+    [TestCase(HttpStatusCode.Forbidden)]
+    public async Task GetSeasonDetailsAsync_WithAuthFailure_LogsError(HttpStatusCode status)
+    {
+        var (_, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(status)));
+
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 
     [TestCase(HttpStatusCode.InternalServerError)]

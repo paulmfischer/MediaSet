@@ -17,6 +17,10 @@ public class HttpSpanErrorTests
     }
 
     [TestCase(HttpStatusCode.OK, false)]
+    [TestCase(HttpStatusCode.NoContent, false)]
+    [TestCase(HttpStatusCode.MovedPermanently, false)]
+    [TestCase(HttpStatusCode.Found, false)]
+    [TestCase(HttpStatusCode.NotModified, false)]
     [TestCase(HttpStatusCode.BadRequest, true)]
     [TestCase(HttpStatusCode.Unauthorized, true)]
     [TestCase(HttpStatusCode.TooManyRequests, true)]
