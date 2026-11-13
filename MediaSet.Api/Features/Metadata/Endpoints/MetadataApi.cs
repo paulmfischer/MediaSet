@@ -17,7 +17,7 @@ internal static class MetadataApi
         group.MapGet("/{media}/{property}", async (IMetadataService metadataService, [FromRoute] Parameter<MediaTypes> media, string property, CancellationToken cancellationToken) =>
         {
             MediaTypes mediaTypes = media;
-            logger.LogInformation("Requesting {property} for {media}", property, mediaTypes);
+            logger.LogDebug("Requesting {property} for {media}", property, mediaTypes);
             return await metadataService.GetMetadata(mediaTypes, property, cancellationToken);
         });
 

@@ -63,9 +63,7 @@ public static class LoggingExtensions
                .Enrich.WithSpan()
                .Enrich.WithProperty("Application", assemblyNameFromContext)
                .Enrich.WithProperty("Environment", envNameFromContext)
-               // Suppress duplicate ASP.NET Core request logs
-               .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
-               .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
+               .ApplyNoiseOverrides();
 
             // Drop per-command Mongo spans, HTTP client request logs and connection spans (a Plex sync makes about a thousand
             // requests) for every sink, so the console and Seq show the same thing. Client call spans stay for tracing.
@@ -97,6 +95,38 @@ public static class LoggingExtensions
 
         return builder;
     }
+
+    /// <summary>
+    /// Raises framework and HTTP client categories to Warning. The request and client spans (SerilogTracing)
+    /// and application events stay at Information.
+    /// </summary>
+    internal static LoggerConfiguration ApplyNoiseOverrides(this LoggerConfiguration cfg)
+    {
+        foreach (var category in _noisyCategories)
+        {
+            cfg.MinimumLevel.Override(category, LogEventLevel.Warning);
+        }
+
+        return cfg;
+    }
+
+    private static readonly string[] _noisyCategories =
+    [
+        // Duplicate ASP.NET Core request logs: the request span already covers them
+        "Microsoft.AspNetCore.Hosting.Diagnostics",
+        "Microsoft.AspNetCore.Routing",
+        // "Sending file. Request path ..." for every static image
+        "Microsoft.AspNetCore.StaticFiles",
+        // Multi-line {HttpLog} request text that duplicates the request span
+        "Microsoft.AspNetCore.HttpLogging",
+        // "Setting HTTP status code" / "Writing value of type" from result executors
+        "Microsoft.AspNetCore.Http.Result",
+        // Socket and connection events, including the Seq and MongoDB sinks' own connections
+        "Experimental.System.Net",
+        // Per-call handler events (Start/Sending/Received/End); the client span has the same data
+        "System.Net.Http.HttpClient",
+        "Microsoft.Extensions.Http"
+    ];
 
     private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net.Http.HttpClient", "Microsoft.Extensions.Http"];
 

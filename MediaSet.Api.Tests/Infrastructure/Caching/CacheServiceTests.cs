@@ -188,7 +188,7 @@ public class MemoryCacheServiceTests
     }
 
     [Test]
-    public async Task RemoveAsync_ShouldLogInformation_WhenKeyIsRemoved()
+    public async Task RemoveAsync_ShouldLogDebug_WhenKeyIsRemoved()
     {
         // Arrange
         var key = "test-key";
@@ -200,7 +200,7 @@ public class MemoryCacheServiceTests
 #nullable enable
         _loggerMock.Verify(
             x => x.Log(
-                LogLevel.Information,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Removed cache entry")),
                 It.IsAny<Exception>(),
@@ -230,7 +230,7 @@ public class MemoryCacheServiceTests
     }
 
     [Test]
-    public async Task RemoveByPatternAsync_ShouldLogInformation_AfterRemoval()
+    public async Task RemoveByPatternAsync_ShouldLogDebug_AfterRemoval()
     {
         // Arrange
         var pattern = "metadata:Books:*";
@@ -242,7 +242,7 @@ public class MemoryCacheServiceTests
 #nullable enable
         _loggerMock.Verify(
             x => x.Log(
-                LogLevel.Information,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString() != null && v.ToString().Contains("Removed") && v.ToString().Contains("cache entries")),
                 It.IsAny<Exception>(),

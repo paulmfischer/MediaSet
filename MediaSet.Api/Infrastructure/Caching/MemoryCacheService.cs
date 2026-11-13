@@ -73,7 +73,7 @@ public class MemoryCacheService : ICacheService
     {
         _memoryCache.Remove(key);
         _cacheKeys.TryRemove(key, out _);
-        _logger.LogInformation("Removed cache entry for key: {key}", key);
+        _logger.LogDebug("Removed cache entry for key: {key}", key);
         return Task.CompletedTask;
     }
 
@@ -91,7 +91,7 @@ public class MemoryCacheService : ICacheService
             _cacheKeys.TryRemove(key, out _);
         }
 
-        _logger.LogInformation("Removed {count} cache entries matching pattern: {pattern}", keysToRemove.Count, pattern);
+        _logger.LogDebug("Removed {count} cache entries matching pattern: {pattern}", keysToRemove.Count, pattern);
 
         return Task.CompletedTask;
     }

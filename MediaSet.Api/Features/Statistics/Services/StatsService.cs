@@ -303,7 +303,7 @@ public class StatsService : IStatsService
         var stats = new Stats(bookStats, movieStats, gameStats, musicStats);
 
         await _cacheService.SetAsync(cacheKey, stats);
-        _logger.LogInformation("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}, music={musicCount}",
+        _logger.LogDebug("Cached statistics: books={bookCount}, movies={movieCount}, games={gameCount}, music={musicCount}",
             bookStats.Total, movieStats.Total, gameStats.Total, musicStats.Total);
 
         return stats;
