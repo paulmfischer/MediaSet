@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Storage;
+using MediaSet.Api.Tests.Observability;
 using NUnit.Framework;
 using Moq;
 using Moq.Protected;
@@ -564,6 +565,64 @@ public class ImageServiceTests : IDisposable
 
         var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await imageService.DownloadAndSaveImageAsync("http://1.2.3.4/missing.jpg", "movies", "456", CancellationToken.None));
+        Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
+    }
+
+    [Test]
+    public async Task DownloadAndSaveImageAsync_With404_LogsOnceAtDebug()
+    {
+        var logger = new LevelCapturingLogger<ImageService>();
+
+        await AssertDownloadFailsAsync(HttpStatusCode.NotFound, logger);
+
+        Assert.That(logger.Entries, Has.Count.EqualTo(1));
+        Assert.That(logger.Entries[0].Level, Is.EqualTo(LogLevel.Debug));
+    }
+
+    [TestCase(HttpStatusCode.InternalServerError)]
+    [TestCase(HttpStatusCode.ServiceUnavailable)]
+    [TestCase(HttpStatusCode.TooManyRequests)]
+    public async Task DownloadAndSaveImageAsync_WithRealHttpFailure_LogsOnceAtError(HttpStatusCode status)
+    {
+        var logger = new LevelCapturingLogger<ImageService>();
+
+        await AssertDownloadFailsAsync(status, logger);
+
+        Assert.That(logger.Entries, Has.Count.EqualTo(1));
+        Assert.That(logger.Entries[0].Level, Is.EqualTo(LogLevel.Error));
+    }
+
+    [Test]
+    public async Task DownloadAndSaveImageAsync_WithTimeout_LogsAtWarningOrAbove()
+    {
+        var logger = new LevelCapturingLogger<ImageService>();
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("timeout", new TimeoutException()));
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(_storageProviderMock!.Object, Options.Create(_imageConfig!), httpClient, logger);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+            await imageService.DownloadAndSaveImageAsync("http://1.2.3.4/slow.jpg", "movies", "456", CancellationToken.None));
+
+        Assert.That(logger.Entries, Is.Not.Empty);
+        Assert.That(logger.Entries.Select(e => e.Level), Has.All.GreaterThanOrEqualTo(LogLevel.Warning));
+    }
+
+    private async Task AssertDownloadFailsAsync(HttpStatusCode status, LevelCapturingLogger<ImageService> logger)
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(status));
+        using var httpClient = new HttpClient(handlerMock.Object);
+        var imageService = new ImageService(_storageProviderMock!.Object, Options.Create(_imageConfig!), httpClient, logger);
+
+        var ex = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await imageService.DownloadAndSaveImageAsync("http://1.2.3.4/cover.jpg", "movies", "456", CancellationToken.None));
         Assert.That(ImageFailure.GetReason(ex!), Is.EqualTo(ImageFailureReason.Unreachable));
     }
 

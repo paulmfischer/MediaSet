@@ -176,11 +176,16 @@ public static class LoggingExtensions
     /// </summary>
     public static IDisposable ConfigureSerilogTracing()
     {
+        // A 404 from a provider (no cover, no season 0) is an expected miss, so its span is not an error
         return new ActivityListenerConfiguration()
             .Instrument.AspNetCoreRequests()  // Captures HTTP requests as spans
-            .Instrument.HttpClientRequests()  // Captures outgoing HTTP calls as spans
+            .Instrument.HttpClientRequests(options => options.IsErrorResponse = IsErrorResponse)
             .TraceToSharedLogger();            // Writes to Serilog (which goes to Seq)
     }
+
+    /// <summary>Whether an outgoing HTTP response is a failure worth an error span: 4xx and 5xx except 404.</summary>
+    internal static bool IsErrorResponse(HttpResponseMessage response) =>
+        (int)response.StatusCode >= 400 && response.StatusCode != System.Net.HttpStatusCode.NotFound;
 
     /// <summary>
     /// Adds HTTP logging filter middleware to the request pipeline.

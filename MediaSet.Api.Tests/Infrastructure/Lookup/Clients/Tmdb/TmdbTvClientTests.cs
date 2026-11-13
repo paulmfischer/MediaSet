@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -6,6 +7,8 @@ using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Tests.Observability;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NUnit.Framework;
@@ -132,5 +135,55 @@ public class TmdbTvClientTests
         using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             Client(http).GetSeasonDetailsAsync(1, 6, cancellation.Token));
+    }
+
+    private static async Task<(TmdbSeasonResponse? Result, LevelCapturingLogger<TmdbClient> Log)> GetSeasonAsync(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send)
+    {
+        var logger = new LevelCapturingLogger<TmdbClient>();
+        using var http = new HttpClient(new Handler(send)) { BaseAddress = new Uri("https://example.test/3/") };
+        var client = new TmdbClient(http, Options.Create(new TmdbConfiguration()), logger);
+        TmdbSeasonResponse? result = null;
+        try
+        { result = await client.GetSeasonDetailsAsync(1, 0, CancellationToken.None); }
+        catch (Exception)
+        { /* the failure is asserted through the log */ }
+        return (result, logger);
+    }
+
+    [Test]
+    public async Task GetSeasonDetailsAsync_With404_ReturnsNullAndLogsNothingAboveDebug()
+    {
+        var (result, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+        Assert.That(result, Is.Null);
+        Assert.That(log.Entries.Select(e => e.Level), Has.All.LessThanOrEqualTo(LogLevel.Information));
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Debug));
+    }
+
+    [TestCase(HttpStatusCode.InternalServerError)]
+    [TestCase(HttpStatusCode.ServiceUnavailable)]
+    public async Task GetSeasonDetailsAsync_WithServerError_LogsWarning(HttpStatusCode status)
+    {
+        var (result, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(status)));
+
+        Assert.That(result, Is.Null);
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level >= LogLevel.Warning));
+    }
+
+    [Test]
+    public async Task GetSeasonDetailsAsync_WithRateLimit_LogsError()
+    {
+        var (_, log) = await GetSeasonAsync((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests)));
+
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
+    }
+
+    [Test]
+    public async Task GetSeasonDetailsAsync_WithTimeout_LogsError()
+    {
+        var (_, log) = await GetSeasonAsync((_, _) => throw new TaskCanceledException("timeout", new TimeoutException()));
+
+        Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 }

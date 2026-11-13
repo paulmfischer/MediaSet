@@ -94,6 +94,16 @@ public class TmdbClient : ITmdbClient
                 {
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    // Expected, e.g. season 0 (specials) on a show that has none.
+                    _logger.LogDebug("TMDB TV resource not found: {Resource}", resource);
+                }
+                else
+                {
+                    _logger.LogWarning("TMDB returned status code {StatusCode} for TV resource: {Resource}",
+                        response.StatusCode, resource);
+                }
                 return default;
             }
             return await response.Content.ReadFromJsonAsync<T>(cancellationToken);
