@@ -75,7 +75,9 @@ public class ProviderOutcomeTests
         {
             using var scope = new LookupFailureScope();
             var client = new UpcItemDbClient(http, config, NullLogger<UpcItemDbClient>.Instance);
-            Assert.That(await client.GetItemByCodeAsync("883929293513", CancellationToken.None), Is.Null);
+            var thrown = await Assert.ThrowsAsync<ProviderRateLimitException>(
+                () => client.GetItemByCodeAsync("883929293513", CancellationToken.None));
+            Assert.That(thrown.RetryAt, Is.EqualTo(reset.UtcDateTime).Within(TimeSpan.FromSeconds(2)));
             var error = Assert.Throws<ProviderLookupException>(scope.ThrowIfFailed)!;
             Assert.That(error.Outcome, Is.EqualTo(ImageLookupOutcome.QuotaLimited));
             Assert.That(error.RetryAt, Is.EqualTo(reset.UtcDateTime).Within(TimeSpan.FromSeconds(2)));

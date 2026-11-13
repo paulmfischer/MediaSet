@@ -53,7 +53,12 @@ public class UpcItemDbClient : IUpcItemDbClient
             {
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(new ProviderLookupException(
                     "UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited, "UPCitemdb quota deferred until reset", reset));
-                return null;
+                using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+                {
+                    _logger.LogWarning("UPCitemdb quota deferred until reset {Reset} for code: {Code}", reset, code);
+                }
+                throw new ProviderRateLimitException("UPCitemdb quota deferred until reset", reset,
+                    System.Net.HttpStatusCode.TooManyRequests);
             }
 
             // Check if we're in a burst limit cooldown period
@@ -84,10 +89,16 @@ public class UpcItemDbClient : IUpcItemDbClient
                     return await HandleRateLimitErrorAsync(code, response, cancellationToken);
                 }
 
+                if (IsNoResultStatus(response.StatusCode))
+                {
+                    _logger.LogWarning("UPCitemdb returned status code {StatusCode} for code: {Code}",
+                        response.StatusCode, code);
+                    return null;
+                }
+
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
-                _logger.LogWarning("UPCitemdb returned status code {StatusCode} for code: {Code}",
-                    response.StatusCode, code);
-                return null;
+                throw new HttpRequestException(
+                    $"UPCitemdb returned status code {(int)response.StatusCode}", null, response.StatusCode);
             }
 
             // Track successful request
@@ -104,17 +115,42 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             return result;
         }
+        catch (ProviderRateLimitException ex)
+        {
+            // Already logged at Warning where it was raised
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            throw;
+        }
         catch (HttpRequestException ex)
         {
-            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            // A status failure was already recorded (with its Retry-After) where it was raised
+            if (ex.StatusCode is null)
+            {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            }
+            else
+            {
+                LookupFailureScope.Stamp(ex, LogProviders.UpcItemDb);
+            }
             _logger.LogProviderHttpFailure(ex, LogProviders.UpcItemDb, "HTTP error while looking up UPC/EAN code: {Code}", code);
             throw;
         }
         catch (ProviderLookupException ex) when (ex.Outcome == Shared.Models.ImageLookupOutcome.QuotaLimited)
         {
-            // Local quota exhausted: already logged at Warning where it was raised.
+            // Local quota exhausted: already logged at Warning where it was raised. Propagate so the endpoint
+            // answers 429 with Retry-After.
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
-            return null;
+            throw;
+        }
+        catch (Exception ex) when (ProviderFailureLogging.IsProviderTimeout(ex, cancellationToken))
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogWarning(ex, "UPCitemdb request timed out for UPC/EAN code: {Code}", code);
+            throw;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -250,18 +286,25 @@ public class UpcItemDbClient : IUpcItemDbClient
 
             if (!retryResponse.IsSuccessStatusCode)
             {
+                _logger.LogWarning(
+                    "Retry after burst rate limit pause failed with status {StatusCode} for code: {Code}",
+                    retryResponse.StatusCode, code);
                 if (retryResponse.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
                     var retryAt = LookupFailureScope.RetryAt(retryResponse) ?? DateTime.UtcNow.AddMinutes(5);
                     _quotaResets[QuotaKey] = retryAt;
                     LookupFailureScope.Record(new ProviderLookupException("UpcItemDb", Shared.Models.ImageLookupOutcome.QuotaLimited,
                         "UPCitemdb quota exhausted after burst retry", retryAt));
+                    throw new ProviderRateLimitException("UPCitemdb quota exhausted after burst retry", retryAt,
+                        System.Net.HttpStatusCode.TooManyRequests);
+                }
+                if (IsNoResultStatus(retryResponse.StatusCode))
+                {
+                    return null;
                 }
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(retryResponse);
-                _logger.LogWarning(
-                    "Retry after burst rate limit pause failed with status {StatusCode} for code: {Code}",
-                    retryResponse.StatusCode, code);
-                return null;
+                throw new HttpRequestException(
+                    $"UPCitemdb returned status code {(int)retryResponse.StatusCode}", null, retryResponse.StatusCode);
             }
 
             // Track successful retry
@@ -294,8 +337,13 @@ public class UpcItemDbClient : IUpcItemDbClient
                 "UpcItemDb daily rate limit exceeded for {Code}, cannot retry (reset in {Hours} hours)",
                 code, hoursUntilReset);
         }
-        return null;
+        throw new ProviderRateLimitException("UPCitemdb quota exhausted", resetTime,
+            System.Net.HttpStatusCode.TooManyRequests);
     }
+
+    // A code UPCitemdb does not know (404) or rejects as malformed (400) is a genuine no-result, not a provider failure.
+    private static bool IsNoResultStatus(System.Net.HttpStatusCode status) =>
+        status is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.BadRequest;
 
     private async Task PauseForRateLimitAsync(string reason, TimeSpan duration, CancellationToken cancellationToken)
     {
