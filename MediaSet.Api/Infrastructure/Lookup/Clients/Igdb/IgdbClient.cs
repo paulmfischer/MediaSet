@@ -1,5 +1,5 @@
-using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -111,7 +111,6 @@ public class IgdbClient : IIgdbClient
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
             if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
-                _logger.LogWarning("IGDB rate limit exceeded for endpoint: {Endpoint}", endpoint);
                 throw new HttpRequestException("IGDB rate limit exceeded", null, response.StatusCode);
             }
 

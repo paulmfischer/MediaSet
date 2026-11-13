@@ -1,13 +1,13 @@
 using System;
-using System.Net;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
-using MediaSet.Api.Tests.Observability;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Tests.Observability;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

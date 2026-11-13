@@ -1,5 +1,5 @@
-using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -109,6 +109,12 @@ public class UpcItemDbClient : IUpcItemDbClient
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogProviderHttpFailure(ex, LogProviders.UpcItemDb, "HTTP error while looking up UPC/EAN code: {Code}", code);
             throw;
+        }
+        catch (ProviderLookupException ex) when (ex.Outcome == Shared.Models.ImageLookupOutcome.QuotaLimited)
+        {
+            // Local quota exhausted: already logged at Warning where it was raised.
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            return null;
         }
         catch (Exception ex)
         {

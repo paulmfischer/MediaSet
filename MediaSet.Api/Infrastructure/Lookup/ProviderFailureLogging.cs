@@ -7,8 +7,9 @@ namespace MediaSet.Api.Infrastructure.Lookup;
 public static class ProviderFailureLogging
 {
     /// <summary>
-    /// True for failures the lookup endpoint maps to 429/503 and already logs as a Warning
-    /// (<c>LookupProviderFailureFilter</c>): a 429 or an upstream 5xx.
+    /// True for a 429 or an upstream 5xx: transient failures the lookup endpoint maps to 429/503 and logs as a
+    /// Warning (<c>LookupProviderFailureFilter</c>), so the client logs them at Warning too. The filter returns 503
+    /// for every other failure as well, but 401/403 and other statuses deliberately still log Error in the client.
     /// </summary>
     public static bool IsTransientProviderStatus(HttpStatusCode? status) =>
         status is HttpStatusCode.TooManyRequests or >= HttpStatusCode.InternalServerError;

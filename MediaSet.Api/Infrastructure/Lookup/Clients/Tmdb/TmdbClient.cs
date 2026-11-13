@@ -1,5 +1,5 @@
-using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using System.Web;
 using Microsoft.Extensions.Options;
 
@@ -35,7 +35,6 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogWarning("TMDB rate limit exceeded for movie search: {Title}", title);
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
@@ -142,7 +141,6 @@ public class TmdbClient : ITmdbClient
                 MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
                 if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogWarning("TMDB rate limit exceeded for movie details: {MovieId}", movieId);
                     throw new HttpRequestException("TMDB rate limit exceeded", null, response.StatusCode);
                 }
 
