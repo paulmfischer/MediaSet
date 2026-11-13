@@ -214,7 +214,8 @@ public class OpenLibraryClient : IOpenLibraryClient
             catch (OperationCanceledException) when (rateLimited != null && !cancellationToken.IsCancellationRequested)
             {
                 // A sibling was cancelled because another enrichment was rate limited: surface the rate limit
-                throw rateLimited;
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(rateLimited).Throw();
+                throw;
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -292,8 +293,7 @@ public class OpenLibraryClient : IOpenLibraryClient
             catch (Exception ex) when (ex is not ProviderLookupException && !cancellationToken.IsCancellationRequested)
             {
                 // Best-effort enrichment: any failure but a rate limit falls back to the search data.
-                // The readable-book call already logged the failure, so this is only a Debug note.
-                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+                // The readable-book call already logged and recorded the failure, so this is only a Debug note.
                 _logger.LogDebug(ex, "Failed to enrich '{Title}' with OLID {Olid}, falling back to search data",
                     doc.Title, doc.CoverEditionKey);
             }
