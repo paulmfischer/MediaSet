@@ -45,7 +45,6 @@ public class LookupProviderFailureFilterTests
     [TestCase(HttpStatusCode.ServiceUnavailable)]
     [TestCase(HttpStatusCode.InternalServerError)]
     [TestCase(HttpStatusCode.BadGateway)]
-    [TestCase(HttpStatusCode.Unauthorized)]
     [TestCase(null)]
     public void ToProblem_OtherUpstreamFailure_Returns503ProblemDetails(HttpStatusCode? status)
     {
@@ -55,6 +54,70 @@ public class LookupProviderFailureFilterTests
 
         var problem = AssertProblem(result, StatusCodes.Status503ServiceUnavailable);
         Assert.That(problem.ProblemDetails.Title, Is.EqualTo("Lookup provider unavailable"));
+    }
+
+    [TestCase(HttpStatusCode.Unauthorized)]
+    [TestCase(HttpStatusCode.Forbidden)]
+    public void ToProblem_UpstreamCredentialsRejected_Returns503NamingCredentialsAndLogsWarning(HttpStatusCode status)
+    {
+        var ex = new HttpRequestException("secret-key-123 rejected", null, status);
+        ex.Data[LookupProviderFailureFilter.ProviderDataKey] = "Tmdb";
+
+        var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
+
+        var problem = AssertProblem(result, StatusCodes.Status503ServiceUnavailable);
+        Assert.That(problem.ProblemDetails.Title, Is.EqualTo("Lookup provider rejected credentials"));
+        Assert.That(problem.ProblemDetails.Detail, Does.Contain("Tmdb").And.Contain("credentials"));
+        Assert.That(problem.ProblemDetails.Detail, Does.Not.Contain("secret-key-123"));
+        _logger.Verify(l => l.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((state, _) => $"{state}".Contains("Tmdb")),
+            ex,
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+    }
+
+    [Test]
+    public void IsProviderFailure_TimeoutExceptions_AreProviderFailures()
+    {
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(
+            new TaskCanceledException("timed out", new TimeoutException())), Is.True);
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new TimeoutException()), Is.True);
+    }
+
+    [Test]
+    public void IsProviderFailure_PlainOperationCanceledAndOtherExceptions_AreNotProviderFailures()
+    {
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new OperationCanceledException()), Is.False);
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new InvalidOperationException()), Is.False);
+    }
+
+    [Test]
+    public void ToProblem_TimeoutWithStampedProvider_Returns503AndLogsWarningWithProvider()
+    {
+        var ex = new TaskCanceledException("timed out", new TimeoutException());
+        ex.Data[LookupProviderFailureFilter.ProviderDataKey] = "Igdb";
+
+        var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
+
+        var problem = AssertProblem(result, StatusCodes.Status503ServiceUnavailable);
+        Assert.That(problem.ProblemDetails.Detail, Does.Contain("Igdb"));
+        _logger.Verify(l => l.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((state, _) => $"{state}".Contains("Igdb")),
+            ex,
+            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+    }
+
+    [Test]
+    public void ToProblem_NoProviderStamped_FallsBackToUnknown()
+    {
+        var result = LookupProviderFailureFilter.ToProblem(
+            new HttpRequestException("boom"), _httpContext, _logger.Object);
+
+        var problem = AssertProblem(result, StatusCodes.Status503ServiceUnavailable);
+        Assert.That(problem.ProblemDetails.Detail, Does.Contain("Unknown"));
     }
 
     [Test]

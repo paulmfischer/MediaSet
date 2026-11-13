@@ -24,6 +24,11 @@ public sealed class LookupFailureScope : IDisposable
         {
             return;
         }
+        if (exception is not ProviderLookupException)
+        {
+            // Lets the lookup endpoint name the provider when the exception is rethrown to it.
+            exception.Data["Provider"] ??= Path.GetFileNameWithoutExtension(caller).Replace("Client", "");
+        }
         if (_current.Value is { } scope)
         {
             var typed = exception as ProviderLookupException ?? new ProviderLookupException(

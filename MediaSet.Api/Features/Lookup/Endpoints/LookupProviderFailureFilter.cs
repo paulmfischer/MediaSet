@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using MediaSet.Api.Infrastructure.Lookup;
@@ -33,13 +32,21 @@ internal static class LookupProviderFailureFilter
         });
     }
 
-    public static bool IsProviderFailure(Exception ex) => ex is HttpRequestException or ProviderLookupException;
+    /// <summary>Key under which provider clients stamp their name on an exception (see LookupFailureScope.Record).</summary>
+    public const string ProviderDataKey = "Provider";
+
+    // A TaskCanceledException or TimeoutException here means the provider call timed out: the filter only
+    // maps it when the caller's own request was not aborted, so real client cancellation still propagates.
+    public static bool IsProviderFailure(Exception ex) =>
+        ex is HttpRequestException or ProviderLookupException or TaskCanceledException or TimeoutException;
 
     public static IResult ToProblem(Exception ex, HttpContext httpContext, ILogger logger)
     {
         var provider = ResolveProvider(ex);
         var rateLimited = ex is ProviderLookupException { Outcome: Shared.Models.ImageLookupOutcome.QuotaLimited }
             || ex is HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests };
+        var rejectedCredentials = ex is ProviderLookupException { Outcome: Shared.Models.ImageLookupOutcome.Unauthorized }
+            || ex is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden };
         var retryAfterSeconds = GetRetryAfterSeconds(ex);
 
         if (rateLimited)
@@ -57,7 +64,18 @@ internal static class LookupProviderFailureFilter
                 statusCode: StatusCodes.Status429TooManyRequests);
         }
 
-        logger.LogWarning(ex, "Lookup provider {Provider} request failed; returning 503", provider);
+        if (rejectedCredentials)
+        {
+            // Warning, not Error: the failure is handled and returned to the caller; the message names the
+            // provider so a bad API key is easy to find without alerting on every request.
+            logger.LogWarning(ex, "Lookup provider {Provider} rejected our credentials; returning 503", provider);
+            return TypedResults.Problem(
+                title: "Lookup provider rejected credentials",
+                detail: $"The {provider} lookup provider rejected our credentials. Its API key may be missing, invalid or expired; check the provider configuration.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        logger.LogWarning(ex, "Lookup provider {Provider} request failed or timed out; returning 503", provider);
         return TypedResults.Problem(
             title: "Lookup provider unavailable",
             detail: $"The {provider} lookup provider is currently unavailable or busy. Please try again later.",
@@ -82,22 +100,7 @@ internal static class LookupProviderFailureFilter
             return provider.Provider;
         }
 
-        // Provider clients throw plain HttpRequestException; the first lookup client frame names the provider.
-        foreach (var frame in new StackTrace(ex).GetFrames())
-        {
-            var type = frame.GetMethod()?.DeclaringType;
-            while (type is { DeclaringType: not null })
-            {
-                type = type.DeclaringType;
-            }
-
-            if (type is { Name: var name } && type.Namespace?.StartsWith("MediaSet.Api.Infrastructure.Lookup.Clients", StringComparison.Ordinal) == true
-                && name.EndsWith("Client", StringComparison.Ordinal))
-            {
-                return name[..^"Client".Length];
-            }
-        }
-
-        return UnknownProvider;
+        // Provider clients stamp their name on exceptions they record before rethrowing.
+        return ex.Data[ProviderDataKey] as string ?? UnknownProvider;
     }
 }
