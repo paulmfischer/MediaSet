@@ -10,6 +10,7 @@ using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -61,7 +62,7 @@ public class LookupProviderFailureFilterTests
     public void ToProblem_UpstreamCredentialsRejected_Returns503NamingCredentialsAndLogsWarning(HttpStatusCode status)
     {
         var ex = new HttpRequestException("secret-key-123 rejected", null, status);
-        ex.Data[LookupProviderFailureFilter.ProviderDataKey] = "Tmdb";
+        ex.Data[LookupFailureScope.ProviderDataKey] = "Tmdb";
 
         var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
 
@@ -78,11 +79,53 @@ public class LookupProviderFailureFilterTests
     }
 
     [Test]
-    public void IsProviderFailure_TimeoutExceptions_AreProviderFailures()
+    public void IsProviderFailure_HttpClientTimeout_IsProviderFailure()
     {
         Assert.That(LookupProviderFailureFilter.IsProviderFailure(
             new TaskCanceledException("timed out", new TimeoutException())), Is.True);
-        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new TimeoutException()), Is.True);
+    }
+
+    [Test]
+    public void IsProviderFailure_BareTimeoutOrCancellationWithoutProvider_IsNotProviderFailure()
+    {
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new TaskCanceledException()), Is.False);
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(new TimeoutException("mongo server selection")), Is.False);
+    }
+
+    [Test]
+    public void IsProviderFailure_TimeoutStampedWithProvider_IsProviderFailure()
+    {
+        var ex = new TimeoutException("provider timed out");
+        LookupFailureScope.Stamp(ex, "Tmdb");
+
+        Assert.That(LookupProviderFailureFilter.IsProviderFailure(ex), Is.True);
+    }
+
+    [Test]
+    public async Task InvokeAsync_RequestAbortedByClient_DoesNotSwallowException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        _httpContext.RequestAborted = cts.Token;
+        _httpContext.RequestServices = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var context = new DefaultEndpointFilterInvocationContext(_httpContext);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await LookupProviderFailureFilter.InvokeAsync(
+            context, _ => throw new TaskCanceledException("aborted", new TimeoutException())));
+        await Assert.ThrowsAsync<HttpRequestException>(async () => await LookupProviderFailureFilter.InvokeAsync(
+            context, _ => throw new HttpRequestException("aborted")));
+    }
+
+    [Test]
+    public async Task InvokeAsync_ProviderFailureWhileRequestActive_ReturnsProblem()
+    {
+        _httpContext.RequestServices = new ServiceCollection().AddLogging().BuildServiceProvider();
+        var context = new DefaultEndpointFilterInvocationContext(_httpContext);
+
+        var result = await LookupProviderFailureFilter.InvokeAsync(
+            context, _ => throw new HttpRequestException("rate limited", null, HttpStatusCode.TooManyRequests));
+
+        AssertProblem(result, StatusCodes.Status429TooManyRequests);
     }
 
     [Test]
@@ -96,7 +139,7 @@ public class LookupProviderFailureFilterTests
     public void ToProblem_TimeoutWithStampedProvider_Returns503AndLogsWarningWithProvider()
     {
         var ex = new TaskCanceledException("timed out", new TimeoutException());
-        ex.Data[LookupProviderFailureFilter.ProviderDataKey] = "Igdb";
+        ex.Data[LookupFailureScope.ProviderDataKey] = "Igdb";
 
         var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
 

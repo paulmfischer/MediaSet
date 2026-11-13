@@ -88,13 +88,18 @@ public class LookupProviderFailureEndpointTests : IntegrationTestBase
     [Test]
     public async Task Lookup_ProviderTimeout_Returns503ProblemDetails()
     {
+        var timeout = new TaskCanceledException("timed out", new TimeoutException());
+        MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Stamp(timeout, "OpenLibrary");
         _openLibraryClientMock
             .Setup(c => c.GetReadableBookByIsbnAsync("9780134685991", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new TaskCanceledException("timed out", new TimeoutException()));
+            .ThrowsAsync(timeout);
 
         var response = await _client.GetAsync("/lookup/books/isbn/9780134685991");
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.ServiceUnavailable));
+        Assert.That(problem?.Title, Is.EqualTo("Lookup provider unavailable"));
+        Assert.That(problem?.Detail, Does.Contain("OpenLibrary"));
     }
 
     [Test]

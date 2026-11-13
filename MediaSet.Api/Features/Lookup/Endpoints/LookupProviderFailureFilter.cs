@@ -16,29 +16,35 @@ internal static class LookupProviderFailureFilter
     public static TBuilder AddLookupProviderFailureFilter<TBuilder>(this TBuilder builder)
         where TBuilder : IEndpointConventionBuilder
     {
-        return builder.AddEndpointFilter(async (context, next) =>
-        {
-            try
-            {
-                return await next(context);
-            }
-            catch (Exception ex) when (IsProviderFailure(ex) && !context.HttpContext.RequestAborted.IsCancellationRequested)
-            {
-                var logger = context.HttpContext.RequestServices
-                    .GetRequiredService<ILoggerFactory>()
-                    .CreateLogger(typeof(LookupProviderFailureFilter).FullName!);
-                return ToProblem(ex, context.HttpContext, logger);
-            }
-        });
+        return builder.AddEndpointFilter(InvokeAsync);
     }
 
-    /// <summary>Key under which provider clients stamp their name on an exception (see LookupFailureScope.Record).</summary>
-    public const string ProviderDataKey = "Provider";
+    public static async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        try
+        {
+            return await next(context);
+        }
+        catch (Exception ex) when (IsProviderFailure(ex) && !context.HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(LookupProviderFailureFilter).FullName!);
+            return ToProblem(ex, context.HttpContext, logger);
+        }
+    }
 
-    // A TaskCanceledException or TimeoutException here means the provider call timed out: the filter only
-    // maps it when the caller's own request was not aborted, so real client cancellation still propagates.
-    public static bool IsProviderFailure(Exception ex) =>
-        ex is HttpRequestException or ProviderLookupException or TaskCanceledException or TimeoutException;
+    // Only failures that clearly come from a lookup provider are mapped. An HttpClient timeout surfaces as a
+    // TaskCanceledException wrapping a TimeoutException; a bare TaskCanceledException or a TimeoutException from
+    // elsewhere (e.g. MongoDB) is only a provider failure when a client stamped it. The `when` clause above also
+    // leaves real client aborts (RequestAborted cancelled) alone.
+    public static bool IsProviderFailure(Exception ex) => ex switch
+    {
+        HttpRequestException or ProviderLookupException => true,
+        TaskCanceledException { InnerException: TimeoutException } => true,
+        TaskCanceledException or TimeoutException => ex.Data[LookupFailureScope.ProviderDataKey] is string,
+        _ => false
+    };
 
     public static IResult ToProblem(Exception ex, HttpContext httpContext, ILogger logger)
     {
@@ -101,6 +107,6 @@ internal static class LookupProviderFailureFilter
         }
 
         // Provider clients stamp their name on exceptions they record before rethrowing.
-        return ex.Data[ProviderDataKey] as string ?? UnknownProvider;
+        return ex.Data[LookupFailureScope.ProviderDataKey] as string ?? UnknownProvider;
     }
 }
