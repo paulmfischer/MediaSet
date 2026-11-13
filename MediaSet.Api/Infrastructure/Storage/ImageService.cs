@@ -125,7 +125,7 @@ public class ImageService : IImageService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "HTTP error downloading image from {ImageUrl}", imageUrl);
+            // Already logged once, at the level for its status, where the download failed.
             throw ImageFailure.Create(ImageFailureReason.Unreachable, $"Failed to download image from URL: {ex.Message}", ex, nameof(imageUrl));
         }
         catch (Exception ex)
@@ -392,6 +392,12 @@ public class ImageService : IImageService
 
                 return memoryStream.ToArray();
             }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // A provider without a cover is an expected miss; the caller reports the outcome per entity.
+            _logger.LogDebug("No image at {ImageUrl} (404 Not Found)", imageUrl);
+            throw;
         }
         catch (HttpRequestException ex)
         {
