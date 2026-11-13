@@ -141,7 +141,7 @@ public sealed class ProviderRateLimitException(string message, DateTime? retryAt
 
     public static ProviderRateLimitException FromResponse(string message, HttpResponseMessage response)
     {
-        var retryAt = LookupFailureScope.RetryAt(response) ?? ProviderHttp.ResetFor(response);
+        var retryAt = LookupFailureScope.RetryAt(response) ?? ProviderHttp.TrackedResetFor(response);
         return new ProviderRateLimitException(message, retryAt, response.StatusCode);
     }
 }

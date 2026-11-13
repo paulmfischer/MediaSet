@@ -16,8 +16,8 @@ public static class ProviderHttp
 
     private static readonly HttpRequestOptionsKey<string> _hostKey = new("MediaSet.ProviderHost");
 
-    /// <summary>The tracked quota reset for the provider host that produced a response sent via <see cref="SendProviderAsync"/>.</summary>
-    public static DateTime? ResetFor(HttpResponseMessage response) =>
+    /// <summary>The tracked quota reset for the host of a response sent via <see cref="SendProviderAsync"/> (null for any other response).</summary>
+    public static DateTime? TrackedResetFor(HttpResponseMessage response) =>
         response.RequestMessage is { } request && request.Options.TryGetValue(_hostKey, out var host) ? ResetFor(host) : null;
 
     public static async Task<HttpResponseMessage> SendProviderAsync(this HttpClient client, HttpRequestMessage request,
