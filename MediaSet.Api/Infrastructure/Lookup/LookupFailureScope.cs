@@ -127,3 +127,21 @@ public sealed class ProviderLookupException(string provider, Shared.Models.Image
     public Shared.Models.ImageLookupOutcome Outcome { get; } = outcome;
     public DateTime? RetryAt { get; } = retryAt;
 }
+
+/// <summary>
+/// Thrown when a provider rate-limits a request (429, or MusicBrainz's 503). It is an <see cref="HttpRequestException"/>
+/// so existing catch blocks keep working, and <see cref="RetryAt"/> says when to retry: the response's Retry-After
+/// header, else the <see cref="ProviderHttp"/> tracked reset, else null.
+/// </summary>
+public sealed class ProviderRateLimitException(string message, DateTime? retryAt,
+    System.Net.HttpStatusCode statusCode)
+    : HttpRequestException(message, null, statusCode)
+{
+    public DateTime? RetryAt { get; } = retryAt;
+
+    public static ProviderRateLimitException FromResponse(string message, HttpResponseMessage response)
+    {
+        var retryAt = LookupFailureScope.RetryAt(response) ?? ProviderHttp.TrackedResetFor(response);
+        return new ProviderRateLimitException(message, retryAt, response.StatusCode);
+    }
+}

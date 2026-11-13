@@ -57,10 +57,7 @@ internal static class LookupProviderFailureFilter
         {
             logger.LogWarning(ex, "Lookup provider {Provider} rate limited the request; returning 429 (retry after {RetryAfterSeconds}s)",
                 provider, retryAfterSeconds);
-            if (retryAfterSeconds is { } seconds)
-            {
-                httpContext.Response.Headers.RetryAfter = seconds.ToString(CultureInfo.InvariantCulture);
-            }
+            SetRetryAfter(httpContext, retryAfterSeconds);
 
             return TypedResults.Problem(
                 title: "Lookup provider rate limit exceeded",
@@ -80,21 +77,36 @@ internal static class LookupProviderFailureFilter
         }
 
         logger.LogWarning(ex, "Lookup provider {Provider} request failed or timed out; returning 503", provider);
+        SetRetryAfter(httpContext, retryAfterSeconds);
         return TypedResults.Problem(
             title: "Lookup provider unavailable",
             detail: $"The {provider} lookup provider is currently unavailable or busy. Please try again later.",
             statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 
+    private static void SetRetryAfter(HttpContext httpContext, int? seconds)
+    {
+        if (seconds is { } value)
+        {
+            httpContext.Response.Headers.RetryAfter = value.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
     private static int? GetRetryAfterSeconds(Exception ex)
     {
-        if (ex is ProviderLookupException { RetryAt: { } retryAt })
+        DateTime? retryAt = ex switch
         {
-            var seconds = (int)Math.Ceiling((retryAt - DateTime.UtcNow).TotalSeconds);
-            return seconds > 0 ? seconds : null;
+            ProviderLookupException e => e.RetryAt,
+            ProviderRateLimitException e => e.RetryAt,
+            _ => null
+        };
+        if (retryAt is null)
+        {
+            return null;
         }
 
-        return null;
+        var seconds = (int)Math.Ceiling((retryAt.Value - DateTime.UtcNow).TotalSeconds);
+        return seconds > 0 ? seconds : null;
     }
 
     private static string ResolveProvider(Exception ex)

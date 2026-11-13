@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 using MediaSet.Api.Tests.Observability;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ public class MusicBrainzClientTests
         var client = new MusicBrainzClient(http, logger);
 
         await Assert.ThatAsync(() => client.GetReleaseByBarcodeAsync("012345678901", CancellationToken.None),
-            Throws.TypeOf<HttpRequestException>());
+            Throws.TypeOf<ProviderRateLimitException>());
 
         Assert.That(logger.Entries.Select(e => e.Level), Does.Contain(LogLevel.Warning));
         Assert.That(logger.Entries.Select(e => e.Level), Does.Not.Contain(LogLevel.Error));
