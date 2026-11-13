@@ -6,12 +6,16 @@ using System.Net;
 using MediaSet.Api.Features.Lookup.Endpoints;
 using MediaSet.Api.Infrastructure.Lookup;
 using MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
+using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
+using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 
@@ -188,7 +192,7 @@ public class LookupProviderFailureFilterTests
     [Test]
     public void ToProblem_ProviderRateLimitExceptionWithRetryAt_Returns429WithRetryAfterHeader()
     {
-        var ex = new ProviderRateLimitException("rate limited", DateTime.UtcNow.AddSeconds(30));
+        var ex = new ProviderRateLimitException("rate limited", DateTime.UtcNow.AddSeconds(30), HttpStatusCode.TooManyRequests);
 
         var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
 
@@ -199,7 +203,7 @@ public class LookupProviderFailureFilterTests
     [Test]
     public void ToProblem_ProviderRateLimitExceptionWithoutRetryAt_OmitsRetryAfterHeader()
     {
-        var ex = new ProviderRateLimitException("rate limited", null);
+        var ex = new ProviderRateLimitException("rate limited", null, HttpStatusCode.TooManyRequests);
 
         var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
 
@@ -229,11 +233,11 @@ public class LookupProviderFailureFilterTests
         Assert.That(ex.RetryAt, Is.Null);
     }
 
-    private sealed class RateLimitHandler(TimeSpan? retryAfter) : HttpMessageHandler
+    private sealed class RateLimitHandler(TimeSpan? retryAfter, HttpStatusCode status = HttpStatusCode.TooManyRequests) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
-            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            var response = new HttpResponseMessage(status);
             if (retryAfter is { } delay)
             {
                 response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(delay);
@@ -244,21 +248,72 @@ public class LookupProviderFailureFilterTests
 
     [TestCase(30, true)]
     [TestCase(null, false)]
-    public async Task Invoke_ProviderClient429_ReturnsRetryAfterOnlyWhenProviderSentIt(int? retryAfterSeconds, bool expectHeader)
+    public async Task Invoke_ProviderClient429OutsideScope_ReturnsRetryAfterOnlyWhenProviderSentIt(int? retryAfterSeconds, bool expectHeader)
     {
         using var http = new HttpClient(new RateLimitHandler(retryAfterSeconds is { } s ? TimeSpan.FromSeconds(s) : null))
         {
             BaseAddress = new Uri("https://retry-after.example.test/3/")
         };
-        var client = new MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb.TmdbClient(http,
-            Microsoft.Extensions.Options.Options.Create(new MediaSet.Api.Infrastructure.Lookup.Models.TmdbConfiguration()),
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb.TmdbClient>.Instance);
+        var client = new TmdbClient(http,
+            Options.Create(new TmdbConfiguration()),
+            NullLogger<TmdbClient>.Instance);
 
         var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.SearchMovieAsync("Alien", CancellationToken.None));
         var result = LookupProviderFailureFilter.ToProblem(ex!, _httpContext, _logger.Object);
 
         AssertProblem(result, StatusCodes.Status429TooManyRequests);
         Assert.That(_httpContext.Response.Headers.ContainsKey("Retry-After"), Is.EqualTo(expectHeader));
+    }
+
+    [Test]
+    public async Task Invoke_ProviderClient429WithoutHeaderInsideScope_ReturnsTrackedResetAsRetryAfter()
+    {
+        using var http = new HttpClient(new RateLimitHandler(null))
+        {
+            BaseAddress = new Uri("https://tracked-reset.example.test/3/")
+        };
+        var client = new TmdbClient(http, Options.Create(new TmdbConfiguration()), NullLogger<TmdbClient>.Instance);
+        using var scope = new LookupFailureScope();
+
+        ProviderRateLimitException? ex = null;
+        try
+        {
+            await client.SearchMovieAsync("Alien", CancellationToken.None);
+        }
+        catch (ProviderRateLimitException caught)
+        {
+            ex = caught;
+        }
+        var result = LookupProviderFailureFilter.ToProblem(ex!, _httpContext, _logger.Object);
+
+        AssertProblem(result, StatusCodes.Status429TooManyRequests);
+        Assert.That(int.Parse(_httpContext.Response.Headers.RetryAfter.ToString()), Is.InRange(290, 300));
+    }
+
+    [Test]
+    public void ToProblem_ProviderRateLimit503WithRetryAt_Returns503WithRetryAfterHeader()
+    {
+        var ex = new ProviderRateLimitException("MusicBrainz rate limit exceeded", DateTime.UtcNow.AddSeconds(30),
+            HttpStatusCode.ServiceUnavailable);
+
+        var result = LookupProviderFailureFilter.ToProblem(ex, _httpContext, _logger.Object);
+
+        AssertProblem(result, StatusCodes.Status503ServiceUnavailable);
+        Assert.That(int.Parse(_httpContext.Response.Headers.RetryAfter.ToString()), Is.InRange(1, 30));
+    }
+
+    [Test]
+    public async Task MusicBrainzClient_503WithRetryAfter_CarriesRetryAt()
+    {
+        var http = new HttpClient(new RateLimitHandler(TimeSpan.FromSeconds(30), HttpStatusCode.ServiceUnavailable))
+        {
+            BaseAddress = new Uri("https://musicbrainz.test/")
+        };
+        var client = new MusicBrainzClient(http, Mock.Of<ILogger<MusicBrainzClient>>());
+
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(() => client.GetReleaseByIdAsync("abc", CancellationToken.None));
+
+        Assert.That(ex!.RetryAt, Is.Not.Null.And.InRange(DateTime.UtcNow.AddSeconds(20), DateTime.UtcNow.AddSeconds(31)));
     }
 
     [Test]

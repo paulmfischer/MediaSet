@@ -14,12 +14,19 @@ public static class ProviderHttp
     public static DateTime? ResetFor(string host) =>
         _resets.TryGetValue(host, out var reset) && reset > DateTime.UtcNow ? reset : null;
 
+    private static readonly HttpRequestOptionsKey<string> _hostKey = new("MediaSet.ProviderHost");
+
+    /// <summary>The tracked quota reset for the provider host that produced a response sent via <see cref="SendProviderAsync"/>.</summary>
+    public static DateTime? ResetFor(HttpResponseMessage response) =>
+        response.RequestMessage is { } request && request.Options.TryGetValue(_hostKey, out var host) ? ResetFor(host) : null;
+
     public static async Task<HttpResponseMessage> SendProviderAsync(this HttpClient client, HttpRequestMessage request,
         CancellationToken cancellationToken, [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
     {
         var uri = request.RequestUri!.IsAbsoluteUri ? request.RequestUri : new Uri(client.BaseAddress!, request.RequestUri);
         // Quota deferral is keyed by host; errors and attempts use the friendly provider name from the calling client.
         var host = uri.Host;
+        request.Options.Set(_hostKey, host);
         var provider = LookupFailureScope.ProviderName(caller);
         LookupFailureScope.Attempt(provider);
         if (LookupFailureScope.IsActive && _resets.TryGetValue(host, out var reset) && reset > DateTime.UtcNow)
@@ -37,6 +44,7 @@ public static class ProviderHttp
         try
         {
             response = await client.SendAsync(request, cancellationToken);
+            response.RequestMessage ??= request;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or TimeoutException && !cancellationToken.IsCancellationRequested)
         {

@@ -113,7 +113,7 @@ public class IgdbClientTests
     }
 
     [Test]
-    public async Task SearchGameAsync_WithRateLimit_ThrowsHttpRequestException()
+    public async Task SearchGameAsync_WithRateLimit_ThrowsProviderRateLimitException()
     {
         _httpMessageHandlerMock
             .Protected()
@@ -128,6 +128,19 @@ public class IgdbClientTests
 
         await Assert.ThrowsAsync<ProviderRateLimitException>(async () =>
             await _client.SearchGameAsync("Test Game", CancellationToken.None));
+    }
+
+    [Test]
+    public async Task SearchGameAsync_WithRateLimitAndRetryAfter_CarriesRetryAt()
+    {
+        var response = new HttpResponseMessage { StatusCode = HttpStatusCode.TooManyRequests };
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(30));
+        SetupResponse(response);
+
+        var ex = await Assert.ThrowsAsync<ProviderRateLimitException>(async () =>
+            await _client.SearchGameAsync("Test Game", CancellationToken.None));
+
+        Assert.That(ex!.RetryAt, Is.Not.Null.And.InRange(DateTime.UtcNow.AddSeconds(20), DateTime.UtcNow.AddSeconds(31)));
     }
 
     [Test]
@@ -244,7 +257,7 @@ public class IgdbClientTests
     }
 
     [Test]
-    public async Task GetGameDetailsAsync_WithRateLimit_ThrowsHttpRequestException()
+    public async Task GetGameDetailsAsync_WithRateLimit_ThrowsProviderRateLimitException()
     {
         _httpMessageHandlerMock
             .Protected()
