@@ -28,7 +28,7 @@ public static class ProviderHttp
         {
             response = await client.SendAsync(request, cancellationToken);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or TimeoutException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or TimeoutException && !cancellationToken.IsCancellationRequested)
         {
             LookupFailureScope.Stamp(ex, provider);
             throw;

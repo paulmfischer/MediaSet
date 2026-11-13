@@ -11,8 +11,6 @@ namespace MediaSet.Api.Features.Lookup.Endpoints;
 /// </summary>
 internal static class LookupProviderFailureFilter
 {
-    private const string UnknownProvider = "Unknown";
-
     public static TBuilder AddLookupProviderFailureFilter<TBuilder>(this TBuilder builder)
         where TBuilder : IEndpointConventionBuilder
     {
@@ -107,6 +105,6 @@ internal static class LookupProviderFailureFilter
         }
 
         // Provider clients stamp their name on exceptions they record before rethrowing.
-        return ex.Data[LookupFailureScope.ProviderDataKey] as string ?? UnknownProvider;
+        return ex.Data[LookupFailureScope.ProviderDataKey] as string ?? LookupFailureScope.UnknownProvider;
     }
 }

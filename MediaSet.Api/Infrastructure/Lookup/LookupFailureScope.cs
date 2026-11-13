@@ -21,9 +21,22 @@ public sealed class LookupFailureScope : IDisposable
 
     public static void Attempt(string provider) => _current.Value?._providers.TryAdd(provider, 0);
 
-    /// <summary>Friendly provider name ("MusicBrainz") derived from the calling client's source file name.</summary>
-    public static string ProviderName(string callerFilePath) =>
-        Path.GetFileNameWithoutExtension(callerFilePath).Replace("Client", "");
+    /// <summary>Provider name used when the caller is not a <c>*Client.cs</c> file.</summary>
+    public const string UnknownProvider = "Unknown";
+
+    private const string ClientSuffix = "Client";
+
+    /// <summary>
+    /// Friendly provider name ("MusicBrainz") from the calling client's source file name: only a trailing
+    /// "Client" is removed. Any other file (or an empty path) yields <see cref="UnknownProvider"/>.
+    /// </summary>
+    public static string ProviderName(string callerFilePath)
+    {
+        var name = Path.GetFileNameWithoutExtension(callerFilePath);
+        return name.Length > ClientSuffix.Length && name.EndsWith(ClientSuffix, StringComparison.Ordinal)
+            ? name[..^ClientSuffix.Length]
+            : UnknownProvider;
+    }
 
     /// <summary>Names the provider on an exception so the lookup endpoint can report it; the first stamp wins.</summary>
     public static void Stamp(Exception exception, string provider)
