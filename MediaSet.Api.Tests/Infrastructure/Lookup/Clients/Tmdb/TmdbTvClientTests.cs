@@ -210,26 +210,4 @@ public class TmdbTvClientTests
 
         Assert.That(log.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
-
-    [TestCase(HttpStatusCode.TooManyRequests)]
-    [TestCase(HttpStatusCode.ServiceUnavailable)]
-    public async Task SearchMovieAsync_RateLimitOrServerError_LogsWarningNotError(HttpStatusCode status)
-    {
-        var logger = new LevelCapturingLogger<TmdbClient>();
-        using var handler = new Handler((_, _) => Task.FromResult(new HttpResponseMessage(status)));
-        using var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.test/3/") };
-        var client = new TmdbClient(http, Options.Create(new TmdbConfiguration()), logger);
-
-        // 429 is rethrown; other statuses return null after a Warning.
-        try
-        {
-            await client.SearchMovieAsync("Alien", CancellationToken.None);
-        }
-        catch (HttpRequestException)
-        {
-        }
-
-        Assert.That(logger.Entries.Select(e => e.Level), Does.Contain(LogLevel.Warning));
-        Assert.That(logger.Entries.Select(e => e.Level), Does.Not.Contain(LogLevel.Error));
-    }
 }

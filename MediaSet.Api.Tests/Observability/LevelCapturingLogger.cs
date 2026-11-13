@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MediaSet.Api.Shared.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace MediaSet.Api.Tests.Observability;
@@ -19,7 +20,7 @@ public sealed class LevelCapturingLogger<T> : ILogger<T>
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
-        var provider = state is IReadOnlyDictionary<string, object?> dict && dict.TryGetValue("Provider", out var value)
+        var provider = state is IReadOnlyDictionary<string, object?> dict && dict.TryGetValue(LogScopes.ProviderProperty, out var value)
             ? value as string
             : null;
         _providers.Push(provider);

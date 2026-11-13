@@ -425,7 +425,7 @@ public class UpcItemDbClientTests
 
     [TestCase(HttpStatusCode.InternalServerError)]
     [TestCase(HttpStatusCode.Unauthorized)]
-    public async Task GetItemByCodeAsync_HttpFailureStatus_LogsExpectedLevel(HttpStatusCode status)
+    public async Task GetItemByCodeAsync_NonSuccessStatus_LogsWarningNotError(HttpStatusCode status)
     {
         // Non-success statuses are warned about and return null without throwing.
         var logger = new LevelCapturingLogger<UpcItemDbClient>();
@@ -435,6 +435,8 @@ public class UpcItemDbClientTests
         var result = await client.GetItemByCodeAsync("012345678901", CancellationToken.None);
 
         Assert.That(result, Is.Null);
+        Assert.That(logger.Entries, Has.Some.Matches<(LogLevel Level, string Message)>(
+            e => e.Level == LogLevel.Warning && e.Message.Contains("returned status code")));
         Assert.That(logger.Entries, Has.None.Matches<(LogLevel Level, string Message)>(e => e.Level == LogLevel.Error));
     }
 
