@@ -247,9 +247,11 @@ public class BackgroundImageLookupService : BackgroundService
                     newProcessed++;
                     newSucceeded += success ? 1 : 0;
                 }
+                // Provider: who supplied the image on success (OpenLibrary, GoogleBooks, ...), else the last provider tried.
+                var provider = entity.ImageLookup?.Provider is { } name ? LogProviders.Normalize(name) ?? name : null;
                 _logger.LogInformation(
-                    "Image lookup outcome: {MediaType} {EntityId}, Cohort: {Cohort}, Success: {Success}",
-                    mediaType, entity.Id, backlog ? "BacklogRecovery" : "NewItem", success);
+                    "Image lookup outcome: {MediaType} {EntityId}, Cohort: {Cohort}, Success: {Success}, Provider: {Provider}",
+                    mediaType, entity.Id, backlog ? "BacklogRecovery" : "NewItem", success, provider);
                 processed++;
 
                 if (success)

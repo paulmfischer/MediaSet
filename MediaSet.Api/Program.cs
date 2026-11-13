@@ -25,6 +25,7 @@ using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
+using MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
@@ -125,6 +126,20 @@ if (openLibraryConfig.Exists())
         client.Timeout = TimeSpan.FromSeconds(options.Timeout);
         client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
         client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", $"MediaSet/1.0 ({options.ContactEmail})");
+    });
+}
+
+// Google Books: keyless fallback cover source for books (on unless GoogleBooksConfiguration:Enabled is false)
+var googleBooksConfig = builder.Configuration.GetSection(nameof(GoogleBooksConfiguration));
+if (googleBooksConfig.Get<GoogleBooksConfiguration>()?.Enabled ?? true)
+{
+    builder.Services.Configure<GoogleBooksConfiguration>(googleBooksConfig);
+    builder.Services.AddHttpClient<IGoogleBooksClient, GoogleBooksClient>((serviceProvider, client) =>
+    {
+        var options = serviceProvider.GetRequiredService<IOptions<GoogleBooksConfiguration>>().Value;
+        client.BaseAddress = new Uri(options.BaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(options.Timeout);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
     });
 }
 

@@ -1,5 +1,6 @@
 using System.Reflection;
 using MediaSet.Api.Infrastructure.Lookup;
+using MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
 using MediaSet.Api.Infrastructure.Storage;
@@ -10,7 +11,7 @@ using MediaSet.Api.Shared.Models;
 namespace MediaSet.Api.Features.Images.Services;
 
 public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageService imageService,
-    ILogger<ImageLookupService> logger) : IImageLookupService
+    ILogger<ImageLookupService> logger, IGoogleBooksClient? googleBooksClient = null) : IImageLookupService
 {
     public async Task<ImageLookupResult> LookupAndSaveImageAsync(IEntity entity, MediaTypes mediaType,
         CancellationToken cancellationToken)
@@ -178,6 +179,20 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                             ConfirmedMatch = new("OpenLibrary", identifier, entity.Title,
                             direct.ImageUrl, fingerprint, "Cover resolved by stored edition identifier", "Exact-edition artwork")
                         };
+                    }
+                    // Open Library has no cover for this ISBN: try Google Books for the same exact ISBN.
+                    if (type == IdentifierType.Isbn && googleBooksClient != null)
+                    {
+                        string? googleCover;
+                        using (logger.BeginProviderScope(LogProviders.GoogleBooks))
+                        {
+                            googleCover = await googleBooksClient.GetCoverUrlByIsbnAsync(identifier, cancellationToken);
+                        }
+                        var fallback = await Download(googleCover, LogProviders.GoogleBooks, strategy);
+                        if (fallback?.Success == true)
+                        {
+                            return fallback;
+                        }
                     }
                 }
                 Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",

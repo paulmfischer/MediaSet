@@ -19,6 +19,7 @@ public static class LogProviders
     public const string OpenLibrary = "OpenLibrary";
     public const string MusicBrainz = "MusicBrainz";
     public const string UpcItemDb = "UpcItemDb";
+    public const string GoogleBooks = "GoogleBooks";
 
     /// <summary>
     /// The provider value for a client or provenance name ("Tmdb", "MusicBrainz", "OpenLibrary"), case-insensitive;
@@ -31,6 +32,7 @@ public static class LogProviders
         "openlibrary" => OpenLibrary,
         "musicbrainz" => MusicBrainz,
         "upcitemdb" => UpcItemDb,
+        "googlebooks" => GoogleBooks,
         _ => null
     };
 }

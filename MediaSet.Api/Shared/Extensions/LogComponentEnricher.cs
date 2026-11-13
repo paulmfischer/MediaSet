@@ -28,6 +28,7 @@ public sealed class LogComponentEnricher : ILogEventEnricher
         ("MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary.", LogProviders.OpenLibrary),
         ("MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz.", LogProviders.MusicBrainz),
         ("MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb.", LogProviders.UpcItemDb),
+        ("MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks.", LogProviders.GoogleBooks),
     ];
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
