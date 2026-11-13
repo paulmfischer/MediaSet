@@ -61,6 +61,7 @@ public static class LoggingExtensions
             cfg.ReadFrom.Configuration(context.Configuration)
                .Enrich.FromLogContext()
                .Enrich.WithSpan()
+               .Enrich.With<LogComponentEnricher>()
                .Enrich.WithProperty("Application", assemblyNameFromContext)
                .Enrich.WithProperty("Environment", envNameFromContext)
                .ApplyNoiseOverrides(context.Configuration);

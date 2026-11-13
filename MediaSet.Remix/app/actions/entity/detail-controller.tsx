@@ -6,12 +6,14 @@ import { Entity, type BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
-import { serverLogger } from '../../utils/serverLogger.ts';
+import { createServerLogger } from '../../utils/serverLogger.ts';
 import { Document } from '../../ui/document.tsx';
 import { bookDetail, gameDetail, movieDetail, musicDetail, type DetailConfig } from '../../ui/entity/detail-config.ts';
 import { DetailPage } from '../../ui/entity/detail-page.tsx';
 import { coverImageNotice } from '../forms/cover-image.ts';
 import { renderError } from '../render-error.tsx';
+
+const serverLogger = createServerLogger('app/actions/entity/detail-controller');
 
 async function renderDetail<T extends BaseEntity>(context: AppContext, config: DetailConfig<T>, id: string) {
   const basePath = `/${config.entity.toLowerCase()}`;
@@ -34,7 +36,7 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
         `We couldn't find that ${config.singular.toLowerCase()}.`
       );
     }
-    serverLogger.error(`Failed to load ${config.singular.toLowerCase()} details`, error, {
+    serverLogger.error('Failed to load {entityType} entity {id} details', error, {
       operation: 'renderDetail',
       entityType: config.entity,
       id,

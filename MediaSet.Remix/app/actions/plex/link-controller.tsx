@@ -11,10 +11,12 @@ import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexLinkPage, resultLabel, type PlexScopeValues } from '../../ui/plex/link-page.tsx';
-import { serverLogger } from '../../utils/serverLogger.ts';
+import { createServerLogger } from '../../utils/serverLogger.ts';
 import { fieldErrors, text } from '../forms/form-schema.ts';
 import { renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
+
+const serverLogger = createServerLogger('app/actions/plex/link-controller');
 
 const MIN_QUERY_LENGTH = 2;
 const SEASON_ERROR = 'Enter a season from 0 to 99';

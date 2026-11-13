@@ -1,8 +1,10 @@
 import { baseUrl } from '../constants.server.ts';
 import { singular } from '../utils/helpers.ts';
 import { type BaseEntity, type Entity, type PlexFilter } from '../models.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
+
+const serverLogger = createServerLogger('app/api/entity-data');
 
 export type PagedResult<TEntity> = {
   items: TEntity[];
@@ -21,7 +23,7 @@ export async function searchEntities<TEntity extends BaseEntity>(
   searchText: string | null,
   orderBy: string = ''
 ): Promise<Array<TEntity>> {
-  serverLogger.info(`Searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}`, {
+  serverLogger.info('Searching {entityType} for {searchText} ordered by {orderBy}', {
     operation: 'searchEntities',
     entityType,
     searchText,
@@ -33,7 +35,7 @@ export async function searchEntities<TEntity extends BaseEntity>(
     searchParams.set('orderBy', orderBy);
     const response = await apiFetch(`${baseUrl}/${entityType}/search?${searchParams.toString()}`);
     if (!response.ok) {
-      serverLogger.error(`Failed to fetch ${entityType} search results`, {
+      serverLogger.error('Failed to fetch {entityType} search results', {
         operation: 'searchEntities',
         entityType,
         status: response.status,
@@ -41,7 +43,7 @@ export async function searchEntities<TEntity extends BaseEntity>(
       throw new Response('Error fetching data', { status: 500 });
     }
     const entities = (await response.json()) as TEntity[];
-    serverLogger.info(`Successfully fetched ${entities.length} ${entityType}`, {
+    serverLogger.info('Fetched {count} {entityType}', {
       operation: 'searchEntities',
       entityType,
       count: entities.length,
@@ -61,18 +63,15 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
   pageSize: number = 75,
   plex: PlexFilter | null = null
 ): Promise<PagedResult<TEntity>> {
-  serverLogger.info(
-    `Paged searching for ${entityType} with searchText: ${searchText}, orderBy: ${orderBy}, page: ${page}`,
-    {
-      operation: 'pagedSearchEntities',
-      entityType,
-      searchText,
-      orderBy,
-      page,
-      pageSize,
-      plex,
-    }
-  );
+  serverLogger.info('Paged search of {entityType} for {searchText} ordered by {orderBy}, page {page}', {
+    operation: 'pagedSearchEntities',
+    entityType,
+    searchText,
+    orderBy,
+    page,
+    pageSize,
+    plex,
+  });
   try {
     const searchParams = new URLSearchParams();
     searchParams.set('searchText', searchText ?? '');
@@ -82,7 +81,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
     searchParams.set('pageSize', String(pageSize));
     const response = await apiFetch(`${baseUrl}/${entityType}/pagedsearch?${searchParams.toString()}`);
     if (!response.ok) {
-      serverLogger.error(`Failed to fetch ${entityType} paged search results`, {
+      serverLogger.error('Failed to fetch {entityType} paged search results', {
         operation: 'pagedSearchEntities',
         entityType,
         status: response.status,
@@ -90,7 +89,7 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
       throw new Response('Error fetching data', { status: 500 });
     }
     const result = (await response.json()) as PagedResult<TEntity>;
-    serverLogger.info(`Successfully fetched ${result.items.length}/${result.totalCount} ${entityType}`, {
+    serverLogger.info('Fetched {count} of {totalCount} {entityType}', {
       operation: 'pagedSearchEntities',
       entityType,
       count: result.items.length,
@@ -104,11 +103,11 @@ export async function pagedSearchEntities<TEntity extends BaseEntity>(
 }
 
 export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, id: string): Promise<TEntity> {
-  serverLogger.info(`Fetching ${singular(entityType)} with id ${id}`, { operation: 'getEntity', entityType, id });
+  serverLogger.info('Fetching {entityType} entity {id}', { operation: 'getEntity', entityType, id });
   try {
     const response = await apiFetch(`${baseUrl}/${entityType}/${encodeURIComponent(id)}`);
     if (response.status === 404) {
-      serverLogger.warn(`${singular(entityType)} with id ${id} not found`, {
+      serverLogger.warn('{entityType} entity {id} not found', {
         operation: 'getEntity',
         entityType,
         id,
@@ -117,7 +116,7 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
       throw new Response(`${singular(entityType)} not found.`, { status: 404 });
     }
     if (!response.ok) {
-      serverLogger.error(`Failed to fetch ${singular(entityType)} with id ${id}`, {
+      serverLogger.error('Failed to fetch {entityType} entity {id}', {
         operation: 'getEntity',
         entityType,
         id,
@@ -126,7 +125,7 @@ export async function getEntity<TEntity extends BaseEntity>(entityType: Entity, 
       throw new Response(`Error fetching ${singular(entityType)}`, { status: response.status });
     }
     const entity = (await response.json()) as TEntity;
-    serverLogger.info(`Successfully fetched ${singular(entityType)} with id ${id}`, {
+    serverLogger.info('Fetched {entityType} entity {id}', {
       operation: 'getEntity',
       entityType,
       id,
@@ -185,7 +184,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
   formData?: FormData
 ): Promise<{ imageError?: string }> {
   const entityType = getEntityType(entity);
-  serverLogger.info(`Updating ${singular(entityType)} with id ${id}`, {
+  serverLogger.info('Updating {entityType} entity {id}', {
     operation: 'updateEntity',
     entityType,
     id,
@@ -209,7 +208,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
     }
 
     if (!response.ok) {
-      serverLogger.error(`Failed to update ${singular(entityType)} with id ${id}`, {
+      serverLogger.error('Failed to update {entityType} entity {id}', {
         operation: 'updateEntity',
         entityType,
         id,
@@ -224,7 +223,7 @@ export async function updateEntity<TEntity extends BaseEntity>(
     }
     // A successful update may have an empty body; only a failed cover image comes with one.
     const imageError = await readUpdateImageError(response);
-    serverLogger.info(`Successfully updated ${singular(entityType)} with id ${id}`, {
+    serverLogger.info('Updated {entityType} entity {id}', {
       operation: 'updateEntity',
       entityType,
       id,
@@ -242,7 +241,7 @@ export async function addEntity<TEntity extends BaseEntity>(
   formData?: FormData
 ): Promise<SaveResult<TEntity>> {
   const entityType = getEntityType(entity);
-  serverLogger.info(`Creating new ${singular(entityType)}`, {
+  serverLogger.info('Creating a {entityType} entity', {
     operation: 'addEntity',
     entityType,
     hasFormData: !!formData,
@@ -265,7 +264,7 @@ export async function addEntity<TEntity extends BaseEntity>(
     }
 
     if (!response.ok) {
-      serverLogger.error(`Failed to create new ${singular(entityType)}`, {
+      serverLogger.error('Failed to create a {entityType} entity', {
         operation: 'addEntity',
         entityType,
         status: response.status,
@@ -281,7 +280,7 @@ export async function addEntity<TEntity extends BaseEntity>(
     const imageError =
       typeof newEntity.imageError === 'string' && newEntity.imageError ? newEntity.imageError : undefined;
     delete newEntity.imageError;
-    serverLogger.info(`Successfully created new ${singular(entityType)} with id ${(newEntity as { id?: string }).id}`, {
+    serverLogger.info('Created {entityType} entity {entityId}', {
       operation: 'addEntity',
       entityType,
       entityId: (newEntity as { id?: string }).id,
@@ -295,7 +294,7 @@ export async function addEntity<TEntity extends BaseEntity>(
 }
 
 export async function deleteEntity(entity: Entity, id: string): Promise<void> {
-  serverLogger.info(`Deleting ${singular(entity)} with id ${id}`, {
+  serverLogger.info('Deleting {entityType} entity {id}', {
     operation: 'deleteEntity',
     entityType: entity,
     id,
@@ -304,7 +303,7 @@ export async function deleteEntity(entity: Entity, id: string): Promise<void> {
     const response = await apiFetch(`${baseUrl}/${entity}/${id}`, { method: 'DELETE' });
 
     if (!response.ok) {
-      serverLogger.error(`Failed to delete ${singular(entity)} with id ${id}`, {
+      serverLogger.error('Failed to delete {entityType} entity {id}', {
         operation: 'deleteEntity',
         entityType: entity,
         id,
@@ -314,13 +313,13 @@ export async function deleteEntity(entity: Entity, id: string): Promise<void> {
         status: response.status === 404 ? 404 : 500,
       });
     }
-    serverLogger.info(`Successfully deleted ${singular(entity)} with id ${id}`, {
+    serverLogger.info('Deleted {entityType} entity {id}', {
       operation: 'deleteEntity',
       entityType: entity,
       id,
     });
   } catch (error) {
-    serverLogger.error(`Error deleting ${singular(entity)} with id ${id}`, error, {
+    serverLogger.error('Error deleting {entityType} entity {id}', error, {
       operation: 'deleteEntity',
       entityType: entity,
       id,

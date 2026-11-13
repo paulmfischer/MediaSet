@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Igdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
@@ -67,7 +68,10 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
 
         if (searchResults == null || searchResults.Count == 0)
         {
-            _logger.LogWarning("No IGDB results found for title: {Title}", title);
+            using (_logger.BeginProviderScope(LogProviders.Igdb))
+            {
+                _logger.LogWarning("No IGDB results found for title: {Title}", title);
+            }
             return [];
         }
 
@@ -84,14 +88,20 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         var upcResult = await _upcItemDbClient.GetItemByCodeAsync(identifierValue, cancellationToken);
         if (upcResult == null || upcResult.Items.Count == 0)
         {
-            _logger.LogWarning("No UPC/EAN data found for code: {Code}", identifierValue);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("No UPC/EAN data found for code: {Code}", identifierValue);
+            }
             return null;
         }
 
         var firstItem = upcResult.Items[0];
         if (string.IsNullOrWhiteSpace(firstItem.Title))
         {
-            _logger.LogWarning("UPC/EAN {Code} data does not contain title", identifierValue);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("UPC/EAN {Code} data does not contain title", identifierValue);
+            }
             return null;
         }
 
@@ -104,7 +114,10 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         var searchResults = await _igdbClient.SearchGameAsync(cleanedTitle, cancellationToken);
         if (searchResults == null || searchResults.Count == 0)
         {
-            _logger.LogWarning("No IGDB results found for title: {Title}", cleanedTitle);
+            using (_logger.BeginProviderScope(LogProviders.Igdb))
+            {
+                _logger.LogWarning("No IGDB results found for title: {Title}", cleanedTitle);
+            }
             return null;
         }
 
@@ -112,7 +125,10 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
         var bestMatch = FindBestMatch(searchResults, cleanedTitle);
         if (bestMatch == null)
         {
-            _logger.LogWarning("No suitable IGDB match found for title: {Title}", cleanedTitle);
+            using (_logger.BeginProviderScope(LogProviders.Igdb))
+            {
+                _logger.LogWarning("No suitable IGDB match found for title: {Title}", cleanedTitle);
+            }
             return null;
         }
 

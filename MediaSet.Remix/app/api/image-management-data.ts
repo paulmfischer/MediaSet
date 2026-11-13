@@ -1,7 +1,9 @@
 import { baseUrl } from '../constants.server.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
 import { type Entity } from '../models.ts';
+
+const serverLogger = createServerLogger('app/api/image-management-data');
 
 export async function resetImageLookup(entityIds: string[], entityType: Entity): Promise<{ reset: number }> {
   try {

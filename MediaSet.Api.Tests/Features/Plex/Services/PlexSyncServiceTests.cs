@@ -49,7 +49,8 @@ public class PlexSyncServiceTests
         public PlexSyncService Service { get; }
 
         /// <param name="tmdbConfigured">When false, ITmdbClient is not registered, as when the TMDB section is absent.</param>
-        public Harness(bool tmdbConfigured = false)
+        /// <param name="logger">The service's logger; a null logger when omitted.</param>
+        public Harness(bool tmdbConfigured = false, Microsoft.Extensions.Logging.ILogger<PlexSyncService>? logger = null)
         {
             var lifetime = new Mock<IHostApplicationLifetime>();
             lifetime.SetupGet(l => l.ApplicationStopping).Returns(Shutdown.Token);
@@ -69,7 +70,7 @@ public class PlexSyncServiceTests
                 Store,
                 lifetime.Object,
                 Options.Create(new PlexConfiguration { Token = "secret-token" }),
-                NullLogger<PlexSyncService>.Instance);
+                logger ?? NullLogger<PlexSyncService>.Instance);
         }
     }
 
@@ -350,6 +351,66 @@ public class PlexSyncServiceTests
         await RunAsync(h);
 
         h.Covers.Verify(c => c.ApplyIfMissingAsync("a", "10", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task Sync_TwoMoviesMatchOnePlexMovie_RecordsDuplicateLinkOnRun()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")), Item("11", new PlexGuids("604", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"), MovieWith("b", "tmdbid:603"), MovieWith("c", "tmdbid:604"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.DuplicateLinks, Has.Count.EqualTo(1));
+        var duplicate = run.DuplicateLinks![0];
+        Assert.That(duplicate.PlexItemId, Is.EqualTo("10"));
+        Assert.That(duplicate.PlexTitle, Is.EqualTo("Item 10"));
+        Assert.That(duplicate.Movies.Select(m => (m.Id, m.Title)), Is.EqualTo([("a", "a"), ("b", "b")]));
+        var dto = PlexSyncRunDto.From(run);
+        Assert.That(dto.DuplicateLinks![0].Movies.Select(m => m.Id), Is.EqualTo(["a", "b"]));
+    }
+
+    [Test]
+    public async Task Sync_EachMovieOnItsOwnPlexItem_RecordsNoDuplicateLinks()
+    {
+        var h = new Harness();
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"));
+
+        var run = await RunAsync(h);
+
+        Assert.That(run.DuplicateLinks, Is.Empty);
+    }
+
+    [TestCase(PlexSyncTriggers.Scheduled, "MediaSet.Api.Processor.PlexSync")]
+    [TestCase(PlexSyncTriggers.Manual, "MediaSet.Api")]
+    public async Task Sync_RunEvents_CarryComponentRunIdTriggerAndApplicationForTrigger(string trigger, string application)
+    {
+        var sink = new MediaSet.Api.Tests.Observability.ListLogSink();
+        var serilog = new Serilog.LoggerConfiguration().MinimumLevel.Verbose()
+            .Enrich.With<MediaSet.Api.Shared.Extensions.LogComponentEnricher>()
+            .Enrich.WithProperty("Application", "MediaSet.Api")
+            .WriteTo.Sink(sink).CreateLogger();
+        using var factory = new Serilog.Extensions.Logging.SerilogLoggerFactory(serilog);
+        var h = new Harness(logger: new Microsoft.Extensions.Logging.Logger<PlexSyncService>(factory));
+        Serve(h, Item("10", new PlexGuids("603", null, null), Version("1080")));
+        SetMovies(h, MovieWith("a", "tmdbid:603"), MovieWith("b", "tmdbid:603"));
+
+        await h.Service.StartAsync("movies", trigger, CancellationToken.None);
+        await WaitUntilAsync(() => h.Store.Runs.Count == 1 && !PlexSyncRunStates.IsInProgress(h.Store.Runs[0].State));
+        var run = h.Store.Runs.Single();
+
+        var events = sink.Events.ToList();
+        Assert.That(events, Is.Not.Empty);
+        Assert.That(events.Any(e => e.MessageTemplate.Text.StartsWith("Plex item {RatingKey} is linked by", StringComparison.Ordinal)), Is.True);
+        foreach (var e in events)
+        {
+            Assert.That(sink.Scalar(e, "Application"), Is.EqualTo(application), e.MessageTemplate.Text);
+            Assert.That(sink.Scalar(e, "Component"), Is.EqualTo("Plex"), e.MessageTemplate.Text);
+            Assert.That(sink.Scalar(e, "RunId"), Is.EqualTo(run.Id), e.MessageTemplate.Text);
+            Assert.That(sink.Scalar(e, "Trigger"), Is.EqualTo(trigger), e.MessageTemplate.Text);
+        }
     }
 
     [Test]

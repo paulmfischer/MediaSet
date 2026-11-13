@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Clients.Tmdb;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
@@ -267,7 +268,10 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 
         if (upcResult == null || upcResult.Items.Count == 0)
         {
-            _logger.LogWarning("No UPC/EAN data found for code: {Code}", identifierValue);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("No UPC/EAN data found for code: {Code}", identifierValue);
+            }
             return null;
         }
 
@@ -275,7 +279,10 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
 
         if (string.IsNullOrEmpty(firstItem.Title))
         {
-            _logger.LogWarning("UPC/EAN {Code} data does not contain title", identifierValue);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("UPC/EAN {Code} data does not contain title", identifierValue);
+            }
             return null;
         }
 
@@ -295,7 +302,10 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
         var candidates = await SearchByTitleAsync(cleanedTitle, cancellationToken);
         if (candidates.Count != 1)
         {
-            _logger.LogWarning("No unambiguous TMDB match found for title: {Title}", cleanedTitle);
+            using (_logger.BeginProviderScope(LogProviders.Tmdb))
+            {
+                _logger.LogWarning("No unambiguous TMDB match found for title: {Title}", cleanedTitle);
+            }
             return null;
         }
         return candidates[0] with { Format = format };

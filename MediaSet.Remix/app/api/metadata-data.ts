@@ -1,17 +1,19 @@
 import { baseUrl } from '../constants.server.ts';
 import { Entity } from '../models.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
+
+const serverLogger = createServerLogger('app/api/metadata-data');
 
 /**
  * Generic function to fetch metadata for a specific property of a media type
  */
 async function getMetadata(entityType: Entity, property: string) {
-  serverLogger.info(`Fetching ${property} metadata for ${entityType}`, { entityType, property });
+  serverLogger.info('Fetching {property} metadata for {entityType}', { entityType, property });
   try {
     const response = await apiFetch(`${baseUrl}/metadata/${entityType}/${property}`);
     if (!response.ok) {
-      serverLogger.error(`Failed to fetch ${property} metadata for ${entityType}`, {
+      serverLogger.error('Failed to fetch {property} metadata for {entityType}', {
         entityType,
         property,
         status: response.status,
@@ -19,14 +21,14 @@ async function getMetadata(entityType: Entity, property: string) {
       throw new Response(`Error fetching ${property} metadata`, { status: response.status });
     }
     const values = (await response.json()) as string[];
-    serverLogger.info(`Successfully fetched ${values.length} ${property} values for ${entityType}`, {
+    serverLogger.info('Fetched {count} {property} values for {entityType}', {
       entityType,
       property,
       count: values.length,
     });
     return values.map((value) => ({ label: value, value: value }));
   } catch (error) {
-    serverLogger.error(`Error fetching ${property} metadata for ${entityType}`, error, { entityType, property });
+    serverLogger.error('Error fetching {property} metadata for {entityType}', error, { entityType, property });
     throw error;
   }
 }

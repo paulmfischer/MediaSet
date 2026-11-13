@@ -1,6 +1,7 @@
 using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.Options;
 
@@ -222,8 +223,28 @@ public sealed class PlexSyncService(
         }
     }
 
+    /// <summary>
+    /// Properties of every event a run logs: Component, RunId and Trigger, and for a scheduled run its own Application,
+    /// so scheduled syncs can be told apart from the API's request logs.
+    /// </summary>
+    internal static Dictionary<string, object?> RunScope(PlexSyncRun run)
+    {
+        var properties = new Dictionary<string, object?>
+        {
+            [LogScopes.ComponentProperty] = LogComponents.Plex,
+            ["RunId"] = run.Id,
+            ["Trigger"] = run.Trigger
+        };
+        if (run.Trigger == PlexSyncTriggers.Scheduled)
+        {
+            properties[LogScopes.ApplicationProperty] = LogScopes.PlexSyncProcessorApplication;
+        }
+        return properties;
+    }
+
     private async Task ExecuteAsync(PlexSyncRun run, bool holdsLock, CancellationTokenSource cts)
     {
+        using var runScope = logger.BeginScope(RunScope(run));
         var token = cts.Token;
         try
         {
@@ -250,6 +271,7 @@ public sealed class PlexSyncService(
                     r.ErroredCount = scan.Errored;
                     r.ExternalIdsBackfilled = scan.Backfilled;
                     r.BackfillSkipped = scan.BackfillSkipped;
+                    r.DuplicateLinks = scan.DuplicateLinks;
                     r.EndedAt = DateTime.UtcNow;
                 });
             }
@@ -287,7 +309,7 @@ public sealed class PlexSyncService(
         }
     }
 
-    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped);
+    private sealed record ScanResult(int Scanned, int Matched, int Unmatched, int Errored, int Backfilled, int BackfillSkipped, List<PlexDuplicateLink> DuplicateLinks);
 
     private sealed record MoviePlan(Movie Movie, PlexItemData? Stored, bool Manual, PlexItem? Item, PlexScope? Scope = null, IReadOnlyList<PlexSeason>? Seasons = null, IReadOnlyDictionary<int, IReadOnlyList<PlexEpisode>>? Episodes = null, PlexItemData? Stale = null);
 
@@ -449,7 +471,8 @@ public sealed class PlexSyncService(
         // Phase 2 writes
         var matched = 0;
         var syncedAt = DateTime.UtcNow;
-        var linkedBy = new Dictionary<string, string>(StringComparer.Ordinal);
+        var linkedBy = new Dictionary<string, Movie>(StringComparer.Ordinal);
+        var duplicates = new Dictionary<string, PlexDuplicateLink>(StringComparer.Ordinal);
         foreach (var plan in plans)
         {
             token.ThrowIfCancellationRequested();
@@ -485,10 +508,22 @@ public sealed class PlexSyncService(
                     }
                     else
                     {
-                        if (!linkedBy.TryAdd(item.RatingKey, movie.Id!))
+                        if (!linkedBy.TryAdd(item.RatingKey, movie))
                         {
-                            // Duplicates are allowed; the owner may want to know
-                            logger.LogWarning("Plex item {RatingKey} is linked by movies {FirstMovieId} and {MovieId}", item.RatingKey, linkedBy[item.RatingKey], movie.Id);
+                            // Duplicates are allowed; the owner may want to know, so the run records them for the sync page
+                            var first = linkedBy[item.RatingKey];
+                            logger.LogWarning("Plex item {RatingKey} is linked by movies {FirstMovieId} and {MovieId}", item.RatingKey, first.Id, movie.Id);
+                            if (!duplicates.TryGetValue(item.RatingKey, out var duplicate))
+                            {
+                                duplicate = new PlexDuplicateLink
+                                {
+                                    PlexItemId = item.RatingKey,
+                                    PlexTitle = item.Title,
+                                    Movies = [new PlexLinkedMovie { Id = first.Id!, Title = first.Title }]
+                                };
+                                duplicates[item.RatingKey] = duplicate;
+                            }
+                            duplicate.Movies.Add(new PlexLinkedMovie { Id = movie.Id!, Title = movie.Title });
                         }
 
                         // Build resets MissCount and Broken: a found item recovers the link
@@ -565,7 +600,7 @@ public sealed class PlexSyncService(
             logger.LogWarning("Plex sync could not purge Plex data of deleted movies ({ExceptionType})", ex.GetType().Name);
         }
 
-        return new ScanResult(movies.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped);
+        return new ScanResult(movies.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped, [.. duplicates.Values]);
     }
 
     /// <summary>

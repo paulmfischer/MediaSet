@@ -61,8 +61,32 @@ public class PlexSyncRun
     /// <summary>Failure or interruption reason. Never contains the Plex token.</summary>
     public string? Message { get; set; }
 
+    /// <summary>
+    /// Plex movies the run found linked by more than one MediaSet movie (allowed, but usually a duplicate entry or a
+    /// wrong ExternalId). Null until the run finishes successfully; empty when there were none.
+    /// </summary>
+    public List<PlexDuplicateLink>? DuplicateLinks { get; set; }
+
     public PlexSyncRun Clone() => (PlexSyncRun)MemberwiseClone();
 }
+
+/// <summary>One Plex item linked by several movies in a run, with those movies in the order the run met them.</summary>
+public class PlexDuplicateLink
+{
+    public string PlexItemId { get; set; } = string.Empty;
+    public string PlexTitle { get; set; } = string.Empty;
+    public List<PlexLinkedMovie> Movies { get; set; } = [];
+}
+
+public class PlexLinkedMovie
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+}
+
+public record PlexLinkedMovieDto(string Id, string Title);
+
+public record PlexDuplicateLinkDto(string PlexItemId, string PlexTitle, IReadOnlyList<PlexLinkedMovieDto> Movies);
 
 public record PlexSyncRunDto(
     string? Id,
@@ -77,7 +101,8 @@ public record PlexSyncRunDto(
     int? ErroredCount,
     int? ExternalIdsBackfilled,
     int? BackfillSkipped,
-    string? Message)
+    string? Message,
+    IReadOnlyList<PlexDuplicateLinkDto>? DuplicateLinks)
 {
     public static PlexSyncRunDto From(PlexSyncRun run) => new(
         run.Id,
@@ -92,5 +117,7 @@ public record PlexSyncRunDto(
         run.ErroredCount,
         run.ExternalIdsBackfilled,
         run.BackfillSkipped,
-        run.Message);
+        run.Message,
+        run.DuplicateLinks?.Select(d => new PlexDuplicateLinkDto(
+            d.PlexItemId, d.PlexTitle, d.Movies.Select(m => new PlexLinkedMovieDto(m.Id, m.Title)).ToList())).ToList());
 }

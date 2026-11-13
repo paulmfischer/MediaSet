@@ -9,7 +9,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { GameFormPage } from '../../../ui/entity/add/game-form-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
@@ -23,6 +23,8 @@ import {
   type GameFormValues,
 } from './game-form.ts';
 import { resolveGameLookupIntent, toGameResultSummary } from './game-lookup.ts';
+
+const serverLogger = createServerLogger('app/actions/entity/add/game-controller');
 
 async function renderGameForm(
   context: AppContext,

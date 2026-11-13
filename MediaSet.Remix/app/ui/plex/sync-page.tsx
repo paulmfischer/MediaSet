@@ -1,6 +1,7 @@
 import type { Handle } from 'remix/component';
 
-import type { PlexEntityStatus, PlexStatistics, PlexSyncRun } from '../../models.ts';
+import type { PlexDuplicateLink, PlexEntityStatus, PlexStatistics, PlexSyncRun } from '../../models.ts';
+import { routes } from '../../routes.ts';
 import { entityTypeLabel, hasActiveRun, isActiveRun, runStateLabel } from '../../utils/plex-sync.ts';
 import { LocalDateTime } from '../image-stats/public/local-date-time.tsx';
 import { PlexStatisticsSection } from './plex-statistics.tsx';
@@ -40,6 +41,36 @@ function counts(run: PlexSyncRun): Array<[string, number]> {
   return rows.filter((row): row is [string, number] => row[1] != null);
 }
 
+// Plex movies linked by several entries: allowed, but usually a duplicate entry or a wrong ExternalId, so the owner
+// sees them here rather than only in the logs.
+function DuplicateLinks(handle: Handle<{ duplicates: PlexDuplicateLink[] }>) {
+  return () => {
+    const { duplicates } = handle.props;
+    return (
+      <div class="flex flex-col gap-1 text-sm" data-testid="plex-duplicate-links">
+        <p class="text-amber-400">
+          {duplicates.length === 1
+            ? '1 Plex movie is linked by more than one entry:'
+            : `${duplicates.length} Plex movies are linked by more than one entry:`}
+        </p>
+        <ul class="list-disc pl-5">
+          {duplicates.map((duplicate) => (
+            <li key={duplicate.plexItemId} data-testid="plex-duplicate-link">
+              {duplicate.plexTitle}:{' '}
+              {duplicate.movies.map((movie, index) => (
+                <span key={movie.id}>
+                  {index > 0 ? ', ' : ''}
+                  <a href={routes.entityDetail.movies.href({ id: movie.id })}>{movie.title || movie.id}</a>
+                </span>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+}
+
 function LastRun(handle: Handle<{ run: PlexSyncRun | null | undefined }>) {
   return () => {
     const run = handle.props.run;
@@ -67,6 +98,9 @@ function LastRun(handle: Handle<{ run: PlexSyncRun | null | undefined }>) {
               </div>
             ))}
           </dl>
+        ) : null}
+        {run.duplicateLinks && run.duplicateLinks.length > 0 ? (
+          <DuplicateLinks duplicates={run.duplicateLinks} />
         ) : null}
       </div>
     );

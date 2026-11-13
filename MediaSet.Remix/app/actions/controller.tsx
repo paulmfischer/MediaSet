@@ -7,9 +7,11 @@ import { getClientConfig } from '../config.server.ts';
 import { routes } from '../routes.ts';
 import type { DashboardStats } from '../ui/dashboard/stats.ts';
 import { isPlexEnabledForRequest } from '../utils/plex-nav.server.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import { HomePage } from './home-page.tsx';
 import { errorDetails } from './render-error.tsx';
+
+const serverLogger = createServerLogger('app/actions/controller');
 
 export default createController(routes, {
   actions: {

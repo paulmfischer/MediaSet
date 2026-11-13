@@ -9,9 +9,11 @@ import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { Document } from '../../ui/document.tsx';
 import { UnlinkPage } from '../../ui/plex/unlink-page.tsx';
-import { serverLogger } from '../../utils/serverLogger.ts';
+import { createServerLogger } from '../../utils/serverLogger.ts';
 import { entityErrorPage, renderError } from '../render-error.tsx';
 import { plexFailurePage } from './failures.ts';
+
+const serverLogger = createServerLogger('app/actions/plex/unlink-controller');
 
 const renderUnavailable = entityErrorPage(routes.entityLists.movies.href(), 'Back to Movies');
 

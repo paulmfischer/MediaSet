@@ -4,6 +4,7 @@ using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
+using MediaSet.Api.Shared.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
@@ -37,7 +38,8 @@ public class BackgroundImageLookupService : BackgroundService
     {
         var scopeProperties = new Dictionary<string, object?>
         {
-            ["Application"] = "MediaSet.Api.Processor.BackgroundImage"
+            [LogScopes.ApplicationProperty] = "MediaSet.Api.Processor.BackgroundImage",
+            [LogScopes.ComponentProperty] = LogComponents.Images
         };
 
         using (_logger.BeginScope(scopeProperties))
@@ -209,6 +211,7 @@ public class BackgroundImageLookupService : BackgroundService
         var newSucceeded = 0;
         var backlogProcessed = 0;
         var backlogSucceeded = 0;
+        using var mediaTypeScope = _logger.BeginComponentScope(LogComponents.Images, mediaType);
 
         try
         {

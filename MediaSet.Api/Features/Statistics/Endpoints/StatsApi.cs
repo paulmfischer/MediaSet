@@ -1,4 +1,5 @@
 using MediaSet.Api.Features.Statistics.Services;
+using MediaSet.Api.Shared.Extensions;
 
 namespace MediaSet.Api.Features.Statistics.Endpoints;
 
@@ -10,6 +11,7 @@ internal static class StatsApi
         var group = routes.MapGroup("/stats");
 
         group.WithTags("Stats");
+        group.WithLogComponent(LogComponents.Stats);
 
         group.MapGet("/", async (IStatsService statsService, CancellationToken cancellationToken) =>
         {

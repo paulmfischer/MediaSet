@@ -2,6 +2,7 @@ using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Features.Plex.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Features.Plex.Endpoints;
@@ -12,6 +13,7 @@ internal static class PlexApi
     {
         var group = routes.MapGroup("/plex");
         group.WithTags("Plex");
+        group.WithLogComponent(LogComponents.Plex);
 
         // GET /plex/status: one entry per supported entity type
         group.MapGet("/status", async (PlexEnablement enablement, IPlexSyncRunStore runs, IPlexScheduleInfo schedule, CancellationToken cancellationToken) =>

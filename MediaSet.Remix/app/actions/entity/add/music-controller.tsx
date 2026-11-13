@@ -8,7 +8,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MusicFormPage } from '../../../ui/entity/add/music-form-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
 import { loadMusicOptions } from '../music-options.ts';
@@ -21,6 +21,8 @@ import {
   type MusicFormValues,
 } from './music-form.ts';
 import { resolveMusicLookupIntent, toMusicResultSummary } from './music-lookup.ts';
+
+const serverLogger = createServerLogger('app/actions/entity/add/music-controller');
 
 async function renderMusicForm(
   context: AppContext,
