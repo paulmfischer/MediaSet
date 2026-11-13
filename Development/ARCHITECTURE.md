@@ -26,7 +26,11 @@
 **Lookup strategy pattern:** `ILookupStrategy<T>` has a strategy per media type (`BookLookupStrategy`,
 `MovieLookupStrategy`, `GameLookupStrategy`, `MusicLookupStrategy`), chosen at runtime by
 `LookupStrategyFactory`. Movies and games look up in two stages (UPCitemdb, then TMDB/IGDB); books use
-OpenLibrary and music uses MusicBrainz directly.
+OpenLibrary and music uses MusicBrainz directly. Before a TMDB/IGDB title search, retail noise is removed
+(`RetailTitle`, `RetailVideoTitle`, `RetailGameTitle`): known studio and publisher names, format words (`DVD`, `WS`),
+`AS SEEN ON` tags, truncated or unmatched brackets and trailing UPC/EAN codes; editions, platforms and bundles are
+kept. `ImageCandidateMatcher` accepts a provider title equal to the stored or the cleaned title. A split season
+("Season 3.5") tries the whole TMDB season, then the series.
 
 ## Frontend (Remix 3)
 

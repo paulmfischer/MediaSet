@@ -6,12 +6,17 @@ public static class RetailVideoTitle
 {
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
     private const string Manufacturers =
-        @"Sony Pictures Entertainment|Sony Pictures|Warner Home Video|Warner Bros(?:\.)?|Paramount(?: Home Entertainment)?|Lions Gate|Lionsgate|Universal Studios(?: Home Entertainment)?|Walt Disney Home Entertainment";
+        @"Sony Pictures Entertainment|Sony Pictures|Warner Home Video|Warner Bros(?:\.)?|Paramount(?: Home Entertainment)?|Lions Gate|Lionsgate|Universal Studios(?: Home Entertainment)?|Walt Disney Home Entertainment|"
+        + @"(?:20th|Twentieth) Century F(?:o)?x(?: Home Entertainment)?|MGM Home Entertainment|"
+        + @"Buena Vista Home Entertainment|Columbia TriStar Home (?:Entertainment|Video)|"
+        + @"New Line Home (?:Entertainment|Video)|DreamWorks Home Entertainment|Anchor Bay Entertainment";
     private const string Format = @"DVD|Blu-?ray|Blue-?ray|DIGITAL VIDEO DISC|4K(?: UHD)?|BD|UHD|Digital|HD";
 
-    public static string Clean(string rawTitle, string? brand = null)
+    // reorderArticle moves a trailing "A"/"The" to the front ("Matrix The"). Matching passes false,
+    // because "Plan A" must not equal "A Plan".
+    public static string Clean(string rawTitle, string? brand = null, bool reorderArticle = true)
     {
-        var title = rawTitle.Trim();
+        var title = RetailTitle.StripNoise(rawTitle.Trim());
         // Only known distributors are safe to strip when product brand metadata is inaccurate.
         title = Regex.Replace(title, @"^(?:" + Manufacturers + @")(?:\s*[-:]\s*|\s+|$)", "", Options);
         if (!string.IsNullOrWhiteSpace(brand) && Regex.IsMatch(brand.Trim(), "^(?:" + Manufacturers + ")$", Options))
@@ -30,7 +35,8 @@ public static class RetailVideoTitle
         title = Regex.Replace(title, @"\s+(?:\d+|Two|Three|Four|Five|Six)[ -]?Discs?\b.*Edition.*$", "", Options);
         title = Regex.Replace(title, @"\s+(?:" + Format + @")\s*\+\s*(?:" + Format + @").*$", "", Options);
         title = Regex.Replace(title, @"\s+-\s*(?:" + Format + @")\b.*$", "", Options);
-        title = Regex.Replace(title, @"\s+(?:" + Format + @")\s*$", "", Options);
+        // Format words often stack at the end ("Dvd Ws"); remove all of them.
+        title = Regex.Replace(title, @"(?:\s+(?:" + Format + @"|WS|Widescreen|Full\s*screen))+\s*$", "", Options);
         if (!string.Equals(title, rawTitle.Trim(), StringComparison.Ordinal))
         {
             title = Regex.Replace(title, @"\s+(?:LIKE NEW|NEW|USED|SEALED|MINT|OPENED|UNOPENED|TESTED)\s*$", "", Options);
@@ -41,6 +47,8 @@ public static class RetailVideoTitle
             title = Regex.Replace(title, @"\s+Complete Collection$", "", Options);
         }
         title = Regex.Replace(title, @"\s+", " ").Trim();
+        if (!reorderArticle)
+        { return title; }
         var article = Regex.Match(title, @"^(.+?)\s+(A|The)$", Options);
         return article.Success ? $"{article.Groups[2].Value} {article.Groups[1].Value}" : title;
     }

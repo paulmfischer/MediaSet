@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -418,6 +419,57 @@ public class GameLookupStrategyTests
     {
         var result = GameLookupStrategy.DecodeAgeRating([]);
         Assert.That(result, Is.EqualTo(string.Empty));
+    }
+
+    #endregion
+
+    #region RetailGameTitle
+
+    [TestCase("Red Dead Redemption 2 Rockstar Games 710425498916", "Red Dead Redemption 2")]
+    [TestCase("Red Dead Redemption 2 - Rockstar Games", "Red Dead Redemption 2")]
+    [TestCase("Halo 3 (Limited Edition", "Halo 3")]
+    [TestCase("Brain Training AS SEEN ON TV", "Brain Training")]
+    [TestCase("Red Dead Redemption 2 - Rockstar Games - PS4", "Red Dead Redemption 2 - PS4")]
+    [TestCase("Red Dead Redemption 2 10710425498916", "Red Dead Redemption 2")]
+    [TestCase("Halo 3 (Limited Edition]", "Halo 3")]
+    public void Clean_RetailNoise_RemovesPublisherBarcodeAndBrokenBrackets(string raw, string expected) =>
+        Assert.That(RetailGameTitle.Clean(raw), Is.EqualTo(expected));
+
+    [TestCase("Red Dead Redemption 2")]
+    [TestCase("Red Dead Redemption 2: Special Edition")]
+    [TestCase("The Last of Us + Uncharted Bundle")]
+    [TestCase("Marvel vs. Capcom 2")]
+    [TestCase("NBA 2K19")]
+    [TestCase("Super Mario 64 DS")]
+    [TestCase("Halo 3 (Limited Edition)")]
+    [TestCase("Rockstar Games Presents Table Tennis")]
+    [TestCase("1942")]
+    [TestCase("As Seen On TV")]
+    [TestCase("Game 12345678")]
+    public void Clean_MeaningfulTitle_IsPreserved(string title) =>
+        Assert.That(RetailGameTitle.Clean(title), Is.EqualTo(title));
+
+    [Test]
+    public async Task LookupAsync_NoisyStoredTitle_SearchesIgdbWithCleanedTitle()
+    {
+        _igdbClientMock.Setup(c => c.SearchGameAsync("Red Dead Redemption 2", It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new IgdbGame(25076, "Red Dead Redemption 2", null, null, null, null, null, null, null)]);
+
+        var results = await _strategy.LookupAsync(IdentifierType.Entity,
+            new Dictionary<string, string> { ["title"] = "Red Dead Redemption 2 Rockstar Games 710425498916" },
+            CancellationToken.None);
+
+        Assert.That(results.Single().Provenance?.ProviderId, Is.EqualTo("25076"));
+    }
+
+    [TestCase("Red Dead Redemption 2 Rockstar Games 710425498916")]
+    [TestCase("Red Dead Redemption 2 - Rockstar Games - PS4")]
+    [TestCase("Red Dead Redemption 2 Rockstar Games PS4")]
+    public void CleanGameTitleAndExtractEdition_RemovesPublisherAroundPlatformAndUpc(string raw)
+    {
+        var (cleanedTitle, _) = GameLookupStrategy.CleanGameTitleAndExtractEdition(raw);
+
+        Assert.That(cleanedTitle, Is.EqualTo("Red Dead Redemption 2"));
     }
 
     #endregion

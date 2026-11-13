@@ -79,6 +79,62 @@ public class TvArtworkLookupTests
     }
 
     [Test]
+    public async Task LookupAsync_SplitSeason_UsesWholeSeasonPoster()
+    {
+        Series("Eureka", 3);
+        var result = await Lookup("Eureka: Season 3.5");
+        Assert.That(result.Single().Provenance?.ProviderId, Is.EqualTo("tv:1:3"));
+        Assert.That(result.Single().ImageUrl, Does.EndWith("/season.jpg"));
+        Assert.That(result.Single().Title, Is.EqualTo("Eureka: Season 3.5"));
+    }
+
+    [Test]
+    public async Task LookupAsync_SplitSeasonMissing_FallsBackToSeriesPoster()
+    {
+        Series("Eureka", 3);
+        _client.Setup(c => c.GetSeasonDetailsAsync(1, 3, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TmdbSeasonResponse?)null);
+        var result = await Lookup("Eureka: Season 3.5");
+        Assert.That(result.Single().Provenance?.ProviderId, Is.EqualTo("tv:1"));
+        Assert.That(result.Single().ImageUrl, Does.EndWith("/series.jpg"));
+    }
+
+    [Test]
+    public async Task LookupAsync_ConfirmedSplitSeasonSeries_RefreshesWithStoredTitle()
+    {
+        Series("Eureka", 3);
+        var result = await _strategy.LookupAsync(IdentifierType.Entity, new Dictionary<string, string>
+        {
+            ["confirmedProviderId"] = "tv:1",
+            ["title"] = "Eureka: Season 3.5"
+        }, CancellationToken.None);
+        Assert.That(result.Single().Title, Is.EqualTo("Eureka: Season 3.5"));
+    }
+
+    [TestCase("Plan A", "Plan A", true)]
+    [TestCase("Plan A", "A Plan", false)]
+    [TestCase("Matrix The", "The Matrix", true)]
+    [TestCase("Matrix, The", "The Matrix", true)]
+    [TestCase("Matrix The DVD", "The Matrix", true)]
+    public void Select_TrailingArticle_ReordersOnlyThe(string storedTitle, string providerTitle, bool accepted)
+    {
+        var selected = ImageCandidateMatcher.Select(new Movie { Title = storedTitle },
+            [new(providerTitle, "https://cover.test/plan.jpg",
+                Provenance: new LookupProvenance("Tmdb", "1", providerTitle))]);
+        Assert.That(selected, accepted ? Has.Count.EqualTo(1) : Is.Empty);
+    }
+
+    [Test]
+    public void Select_NoisyStoredTitle_AcceptsCleanedTitleMatch()
+    {
+        var selected = ImageCandidateMatcher.Select(
+            new Movie { Title = "Twentieth Century Fx From Hell Dvd Ws", ReleaseDate = "2001" },
+            [new("From Hell", "https://cover.test/from-hell.jpg", "2001-02-08",
+                Provenance: new LookupProvenance("Tmdb", "768", "From Hell"))]);
+        Assert.That(selected.Single().Provenance?.ProviderId, Is.EqualTo("768"));
+    }
+
+    [Test]
     public async Task LookupAsync_CompleteSeries_UsesSeriesPoster()
     {
         Series("Constantine", 1);
