@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using MediaSet.Api.Shared.Extensions;
+using Serilog.Context;
 
 namespace MediaSet.Api.Infrastructure.Lookup;
 
@@ -24,6 +26,10 @@ public static class ProviderHttp
             throw error;
         }
         HttpResponseMessage response;
+        // No logger here: the Provider goes on the log context, so the HTTP client span and handler events carry it
+        using var providerProperty = LogProviders.Normalize(provider) is { } providerName
+            ? LogContext.PushProperty(LogScopes.ProviderProperty, providerName)
+            : null;
         try
         {
             response = await client.SendAsync(request, cancellationToken);

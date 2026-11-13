@@ -1,6 +1,8 @@
 import { baseUrl } from '../constants.server.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
+
+const serverLogger = createServerLogger('app/api/stats-data');
 
 export type NameCount = { name: string; count: number };
 
@@ -88,7 +90,7 @@ export async function getStats() {
     }
     const stats = (await response.json()) as Stats;
     serverLogger.info(
-      `Successfully fetched stats: ${stats.bookStats.total} books, ${stats.movieStats.total} movies, ${stats.gameStats.total} games, ${stats.musicStats.total} music items`,
+      'Fetched stats: {totalBooks} books, {totalMovies} movies, {totalGames} games, {totalMusic} music items',
       {
         totalBooks: stats.bookStats.total,
         totalMovies: stats.movieStats.total,

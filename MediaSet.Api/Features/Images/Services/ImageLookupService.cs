@@ -16,6 +16,7 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        using var componentScope = logger.BeginComponentScope(LogComponents.Images, mediaType);
         if (entity.CoverImage != null || entity.ImageLookup?.LastOutcome == ImageLookupOutcome.Success)
         {
             return new(true, null, entity.CoverImage, null, Outcome: ImageLookupOutcome.Success);
@@ -61,7 +62,11 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
             {
                 return null;
             }
-            var result = await TryDownloadImageAsync(url, mediaType.ToString(), entity.Id, cancellationToken);
+            ImageLookupResult result;
+            using (logger.BeginProviderScope(provider))
+            {
+                result = await TryDownloadImageAsync(url, mediaType.ToString(), entity.Id, cancellationToken);
+            }
             result = result with { Provider = provider, AttemptedStrategy = strategy, ConfirmedMatch = confirmed };
             if (!result.Success)
             {

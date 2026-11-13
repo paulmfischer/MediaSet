@@ -7,8 +7,10 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { DeletePage } from '../../../ui/entity/delete/delete-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityErrorPage } from '../../render-error.tsx';
+
+const serverLogger = createServerLogger('app/actions/entity/delete/controller');
 
 const renderUnavailable = entityErrorPage(routes.entityLists.books.href(), 'Back to Books');
 

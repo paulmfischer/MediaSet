@@ -9,7 +9,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MovieFormPage } from '../../../ui/entity/add/movie-form-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, type LookupOutcome } from '../../forms/lookup.ts';
@@ -23,6 +23,8 @@ import {
   type MovieFormValues,
 } from './movie-form.ts';
 import { resolveMovieLookupIntent, toMovieResultSummary } from './movie-lookup.ts';
+
+const serverLogger = createServerLogger('app/actions/entity/add/movie-controller');
 
 async function renderMovieForm(
   context: AppContext,

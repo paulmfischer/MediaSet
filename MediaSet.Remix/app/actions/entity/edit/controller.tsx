@@ -10,7 +10,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { BookFormPage } from '../../../ui/entity/add/book-form-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
@@ -18,6 +18,8 @@ import { entityErrorPage } from '../../render-error.tsx';
 import { BOOK_FIELDS, bookForm, toBookUpdate, toBookValues, type BookFormValues } from '../add/book-form.ts';
 import { resolveBookLookupIntent, toBookResultSummary } from '../add/book-lookup.ts';
 import { loadBookOptions } from '../book-options.ts';
+
+const serverLogger = createServerLogger('app/actions/entity/edit/controller');
 
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);

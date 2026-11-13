@@ -10,7 +10,7 @@ import type { AppContext } from '../../../router.ts';
 import { routes } from '../../../routes.ts';
 import { Document } from '../../../ui/document.tsx';
 import { MovieFormPage } from '../../../ui/entity/add/movie-form-page.tsx';
-import { serverLogger } from '../../../utils/serverLogger.ts';
+import { createServerLogger } from '../../../utils/serverLogger.ts';
 import { entityWithImage, readCoverImage, withImageError } from '../../forms/cover-image.ts';
 import { fieldErrors, submittedValues } from '../../forms/form-schema.ts';
 import { buildLookupProps, readEditSubmission, type LookupOutcome } from '../../forms/lookup.ts';
@@ -18,6 +18,8 @@ import { entityErrorPage } from '../../render-error.tsx';
 import { MOVIE_FIELDS, movieForm, toMovieUpdate, toMovieValues, type MovieFormValues } from '../add/movie-form.ts';
 import { resolveMovieLookupIntent, toMovieResultSummary } from '../add/movie-lookup.ts';
 import { loadMovieOptions } from '../movie-options.ts';
+
+const serverLogger = createServerLogger('app/actions/entity/edit/movie-controller');
 
 const isStatus = (error: unknown, predicate: (status: number) => boolean): error is Response =>
   error instanceof Response && predicate(error.status);

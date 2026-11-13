@@ -1,8 +1,10 @@
 import { baseUrl } from '../constants.server.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
 import type { PlexEntityStatus, PlexScope, PlexSearchResult, PlexStatistics } from '../models.ts';
 import { getIntegrations } from './integrations-data.ts';
+
+const serverLogger = createServerLogger('app/api/plex-data');
 
 /**
  * The single gate for the Plex UI: true only when `/config/integrations` reports Plex enabled with movies among

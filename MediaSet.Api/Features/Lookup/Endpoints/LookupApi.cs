@@ -14,6 +14,7 @@ internal static class LookupApi
         var group = routes.MapGroup("/lookup");
 
         group.WithTags("Lookup");
+        group.WithLogComponent(LogComponents.Lookup);
         group.RequireRateLimiting("lookup");
         group.AddLookupNotConfiguredFilter();
         group.AddLookupProviderFailureFilter();
@@ -34,6 +35,7 @@ internal static class LookupApi
                 return TypedResults.BadRequest($"Invalid entity type: {entityType}. Valid types are: Books, Movies, Games, Musics");
             }
 
+            using var mediaTypeScope = logger.BeginComponentScope(LogComponents.Lookup, parsedEntityType);
             IReadOnlyDictionary<string, string> searchParams;
 
             if (string.Equals(identifierType, "entity", StringComparison.OrdinalIgnoreCase))

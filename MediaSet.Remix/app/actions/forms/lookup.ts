@@ -2,7 +2,9 @@ import { getLookupCapabilities, isLookupAvailable } from '../../api/lookup-capab
 import { isLookupError, lookup } from '../../api/lookup-data.server.ts';
 import type { LookupDialogProps } from '../../ui/forms/public/lookup-dialog.tsx';
 import type { BookEntity, Entity, GameEntity, IdentifierType, MovieEntity, MusicEntity } from '../../models.ts';
-import { serverLogger } from '../../utils/serverLogger.ts';
+import { createServerLogger } from '../../utils/serverLogger.ts';
+
+const serverLogger = createServerLogger('app/actions/forms/lookup');
 
 /*
  * Metadata lookup is a form `intent`, not a separate page. The submit buttons `lookup:<field>`,

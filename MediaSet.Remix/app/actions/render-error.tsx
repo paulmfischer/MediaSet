@@ -4,7 +4,9 @@ import { getShowErrorDetails } from '../config.server.ts';
 import { routes } from '../routes.ts';
 import { Document } from '../ui/document.tsx';
 import { ErrorPage } from '../ui/error-page.tsx';
-import { serverLogger } from '../utils/serverLogger.ts';
+import { createServerLogger } from '../utils/serverLogger.ts';
+
+const serverLogger = createServerLogger('app/actions/render-error');
 
 /** The parts of a request context an error page needs; kept structural so the router can use it. */
 export interface ErrorContext {

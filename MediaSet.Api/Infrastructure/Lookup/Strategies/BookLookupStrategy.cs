@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
@@ -96,7 +97,10 @@ public class BookLookupStrategy : LookupStrategyBase<Book, BookResponse>
 
         if (upcResult == null || upcResult.Items.Count == 0)
         {
-            _logger.LogWarning("No UPC/EAN data found for code: {Upc}", upc);
+            using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+            {
+                _logger.LogWarning("No UPC/EAN data found for code: {Upc}", upc);
+            }
             return null;
         }
 
@@ -109,7 +113,10 @@ public class BookLookupStrategy : LookupStrategyBase<Book, BookResponse>
             return await LookupByIsbnAsync(firstItem.Isbn, cancellationToken);
         }
 
-        _logger.LogWarning("UPC/EAN {Upc} data does not contain ISBN", upc);
+        using (_logger.BeginProviderScope(LogProviders.UpcItemDb))
+        {
+            _logger.LogWarning("UPC/EAN {Upc} data does not contain ISBN", upc);
+        }
         return null;
     }
 }

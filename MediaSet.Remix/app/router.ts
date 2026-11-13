@@ -32,7 +32,9 @@ import { requestContext } from './middleware/request-context.ts';
 import { securityHeaders, type SecurityHeadersOptions } from './middleware/security-headers.ts';
 import { routes } from './routes.ts';
 import { plexNavGate } from './utils/plex-nav.server.ts';
-import { serverLogger } from './utils/serverLogger.ts';
+import { createServerLogger } from './utils/serverLogger.ts';
+
+const serverLogger = createServerLogger('app/router');
 
 // Turns anything an action throws into a rendered error page: a thrown 404 Response is the shared
 // 404 page, everything else is logged and answered with the generic 500 page.

@@ -1,4 +1,5 @@
 using MediaSet.Api.Infrastructure.Lookup.Models;
+using MediaSet.Api.Shared.Extensions;
 using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Infrastructure.Lookup.Clients.MusicBrainz;
 using Serilog;
@@ -67,7 +68,10 @@ public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
 
         if (searchRelease == null)
         {
-            _logger.LogWarning("No MusicBrainz release found for barcode: {Barcode}", identifierValue);
+            using (_logger.BeginProviderScope(LogProviders.MusicBrainz))
+            {
+                _logger.LogWarning("No MusicBrainz release found for barcode: {Barcode}", identifierValue);
+            }
             return [];
         }
 
@@ -76,7 +80,10 @@ public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
 
         if (release == null)
         {
-            _logger.LogWarning("Failed to fetch full release details for ID: {ReleaseId}", searchRelease.Id);
+            using (_logger.BeginProviderScope(LogProviders.MusicBrainz))
+            {
+                _logger.LogWarning("Failed to fetch full release details for ID: {ReleaseId}", searchRelease.Id);
+            }
             return [];
         }
 

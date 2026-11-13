@@ -176,6 +176,41 @@ describe('plex sync page', () => {
     assert.doesNotMatch(html, /<dt>Matched<\/dt>/);
   });
 
+  it('should list the entries that share a Plex movie when the last run found duplicate links', async (t) => {
+    stubApi(t, {
+      plex: enabled,
+      statuses: [
+        [
+          status({
+            lastRun: run({
+              duplicateLinks: [
+                {
+                  plexItemId: '10',
+                  plexTitle: 'Alien',
+                  movies: [
+                    { id: 'a1', title: 'Alien' },
+                    { id: 'a2', title: 'Alien (Special Edition)' },
+                  ],
+                },
+              ],
+            }),
+          }),
+        ],
+      ],
+    });
+    const html = await (await get('/plex')).text();
+    assert.match(html, /1 Plex movie is linked by more than one entry/);
+    assert.match(html, /data-testid="plex-duplicate-link">Alien: /);
+    assert.match(html, /<a href="\/movies\/a1">Alien<\/a>/);
+    assert.match(html, /<a href="\/movies\/a2">/);
+  });
+
+  it('should show no duplicate links section when the last run found none', async (t) => {
+    stubApi(t, { plex: enabled, statuses: [[status({ lastRun: run({ duplicateLinks: [] }) })]] });
+    const html = await (await get('/plex')).text();
+    assert.doesNotMatch(html, /data-testid="plex-duplicate-links"/);
+  });
+
   it('should render the error page when the status cannot be read', async (t) => {
     stubApi(t, { plex: enabled, statusFailure: new Response('boom', { status: 502 }) });
     const response = await get('/plex');

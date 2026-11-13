@@ -1,5 +1,6 @@
 using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Infrastructure.Plex;
+using MediaSet.Api.Shared.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace MediaSet.Api.Features.Plex.Services;
@@ -24,8 +25,15 @@ public sealed class PlexSyncScheduler(
     private static readonly TimeSpan _maxWait = TimeSpan.FromDays(1);
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // The schedule's own events are processor events too, like the scheduled runs' (see PlexSyncService.RunScope)
+        using var processorScope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            [LogScopes.ApplicationProperty] = LogScopes.PlexSyncProcessorApplication,
+            [LogScopes.ComponentProperty] = LogComponents.Plex,
+            ["Trigger"] = PlexSyncTriggers.Scheduled
+        });
         var loops = new List<Task>();
         // Only types the startup validation enabled are scheduled, each from its own configuration
         foreach (var (key, entity) in options.Value.Entities)
@@ -56,7 +64,7 @@ public sealed class PlexSyncScheduler(
             loops.Add(RunLoopAsync(entityType, entity.Schedule, first.NextRun.Value, stoppingToken));
         }
 
-        return Task.WhenAll(loops);
+        await Task.WhenAll(loops);
     }
 
     private async Task RunLoopAsync(string entityType, string schedule, DateTimeOffset next, CancellationToken stoppingToken)

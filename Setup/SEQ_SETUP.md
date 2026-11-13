@@ -190,6 +190,21 @@ Production containers use the same environment variable names for both services:
 | `ExternalLogging__SeqUrl` | Seq server URL, e.g. `http://seq:5341`. If not set, Remix logs to console only. |
 
 Remix logs appear in Seq with `Application = "MediaSet.Remix"` and include a `TraceId` property that correlates with API logs from the same request.
+Their `Environment` is always `Development`, `Production` or `Testing` (whatever the casing of `NODE_ENV`), `SourceContext`
+is the logging module (such as `app/api/entity-data`) and each message is a template (`Fetching {entityType} entity {id}`),
+so events group by template and their values are properties.
+
+## Filtering properties
+
+| Property | Values | Set on |
+|----------|--------|--------|
+| `Application` | `MediaSet.Api`, `MediaSet.Api.Processor.BackgroundImage`, `MediaSet.Api.Processor.PlexSync`, `MediaSet.Remix` | Every event. The processor values are the scheduled image lookup and scheduled Plex syncs (a manual Plex sync stays `MediaSet.Api`). |
+| `Component` | `Plex`, `Lookup`, `Images`, `Stats` | API events of those features (endpoint handlers, services and clients) and the outgoing HTTP spans they make. The incoming request span is not tagged: the endpoint filter runs inside the endpoint. |
+| `Provider` | `TMDB`, `IGDB`, `OpenLibrary`, `MusicBrainz`, `UpcItemDb` | Lookup client events, their outgoing HTTP spans, provider-specific lookup warnings and cover downloads. |
+| `MediaType` | `Books`, `Movies`, `Games`, `Musics` | Lookup requests and image lookups. |
+| `RunId`, `Trigger` | run id, `manual` or `scheduled` | Every event of a Plex sync run. |
+
+For example `Component = 'Images' and Provider = 'OpenLibrary' and @Level = 'Error'`.
 
 ## Troubleshooting
 

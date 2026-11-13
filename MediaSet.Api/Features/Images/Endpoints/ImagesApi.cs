@@ -17,6 +17,7 @@ internal static class ImagesApi
         var group = routes.MapGroup("/images");
 
         group.WithTags("Images");
+        group.WithLogComponent(LogComponents.Images);
 
         group.MapPost("/lookup/{entityType}/requeue", async (string entityType, ImageRequeueRequest request,
             ImageRequeueService service, CancellationToken cancellationToken) =>
