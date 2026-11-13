@@ -194,7 +194,7 @@ public class EntityService<TEntity> : IEntityService<TEntity> where TEntity : IE
         // Invalidate stats cache
         await _cacheService.RemoveAsync("stats");
 
-        _logger.LogInformation("Invalidated caches for entity type: {entityType}", _entityTypeName);
+        _logger.LogDebug("Invalidated caches for entity type: {entityType}", _entityTypeName);
     }
 
     /// <summary>

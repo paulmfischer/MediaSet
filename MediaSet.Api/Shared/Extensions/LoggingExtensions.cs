@@ -63,9 +63,7 @@ public static class LoggingExtensions
                .Enrich.WithSpan()
                .Enrich.WithProperty("Application", assemblyNameFromContext)
                .Enrich.WithProperty("Environment", envNameFromContext)
-               // Suppress duplicate ASP.NET Core request logs
-               .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
-               .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning);
+               .ApplyNoiseOverrides(context.Configuration);
 
             // Drop per-command Mongo spans, HTTP client request logs and connection spans (a Plex sync makes about a thousand
             // requests) for every sink, so the console and Seq show the same thing. Client call spans stay for tracing.
@@ -98,12 +96,50 @@ public static class LoggingExtensions
         return builder;
     }
 
-    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver", "System.Net.Http.HttpClient", "Microsoft.Extensions.Http"];
+    /// <summary>
+    /// Raises framework and HTTP client categories to Warning. The request and client spans (SerilogTracing)
+    /// and application events stay at Information. A category that configuration already sets under
+    /// Serilog:MinimumLevel:Override keeps the configured level, so appsettings or environment variables can re-enable it.
+    /// </summary>
+    internal static LoggerConfiguration ApplyNoiseOverrides(this LoggerConfiguration cfg, IConfiguration? configuration = null)
+    {
+        foreach (var category in _noisyCategories)
+        {
+            if (configuration?.GetSection($"Serilog:MinimumLevel:Override:{category}").Exists() == true)
+            {
+                continue;
+            }
+
+            cfg.MinimumLevel.Override(category, LogEventLevel.Warning);
+        }
+
+        return cfg;
+    }
+
+    private static readonly string[] _noisyCategories =
+    [
+        // Duplicate ASP.NET Core request logs: the request span already covers them
+        "Microsoft.AspNetCore.Hosting.Diagnostics",
+        "Microsoft.AspNetCore.Routing",
+        // "Sending file. Request path ..." for every static image
+        "Microsoft.AspNetCore.StaticFiles",
+        // Multi-line {HttpLog} request text that duplicates the request span
+        "Microsoft.AspNetCore.HttpLogging",
+        // "Setting HTTP status code" / "Writing value of type" from result executors
+        "Microsoft.AspNetCore.Http.Result",
+        // Socket and connection events, including the Seq and MongoDB sinks' own connections
+        "Experimental.System.Net",
+        // Per-call handler events (Start/Sending/Received/End); the client span has the same data
+        "System.Net.Http.HttpClient",
+        "Microsoft.Extensions.Http"
+    ];
+
+    private static readonly string[] _noisySourcePrefixes = ["MongoDB.Driver"];
 
     // Connection-level spans of the HTTP client: they carry no source context, so they are matched by their message
     private static readonly string[] _noisySpanPrefixes = ["DNS lookup", "socket connect", "TLS client handshake", "HTTP connection_setup", "HTTP wait_for_connection"];
 
-    /// <summary>Events below Warning from the Mongo driver and the HTTP client stack.</summary>
+    /// <summary>Events below Warning from the Mongo driver, plus connection-level HTTP client spans.</summary>
     internal static bool IsLogNoise(LogEvent logEvent) =>
         logEvent.Level < LogEventLevel.Warning
         && ((logEvent.Properties.TryGetValue("SourceContext", out var source)

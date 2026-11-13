@@ -13,11 +13,11 @@ internal static class StatsApi
 
         group.MapGet("/", async (IStatsService statsService, CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Requesting media stats");
+            logger.LogDebug("Requesting media stats");
             var stats = await statsService.GetMediaStatsAsync(cancellationToken);
             if (stats is not null)
             {
-                logger.LogInformation(
+                logger.LogDebug(
               "Stats: books total={bookTotal}, formats={bookFormats}, pages={bookPages}; movies total={movieTotal}, formats={movieFormats}, tvSeries={tvSeries}; games total={gameTotal}, formats={gameFormats}, platforms={gamePlatforms}; music total={musicTotal}, formats={musicFormats}, tracks={musicTracks}",
               stats.BookStats.Total,
               stats.BookStats.TotalFormats,
@@ -38,7 +38,7 @@ internal static class StatsApi
 
         group.MapGet("/images", async (IImageStatsService imageStatsService, CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Requesting image stats");
+            logger.LogDebug("Requesting image stats");
             var stats = await imageStatsService.GetImageStatsAsync(cancellationToken);
             return stats is not null ? Results.Ok(stats) : Results.NoContent();
         });

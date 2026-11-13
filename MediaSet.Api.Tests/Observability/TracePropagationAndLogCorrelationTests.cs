@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using OpenTelemetry.Trace;
@@ -162,6 +163,26 @@ public class TracePropagationAndLogCorrelationTests
         Assert.That(requestLogs, Is.Not.Empty, "expected at least one log event correlated to the request");
         Assert.That(requestLogs.Select(e => Property(e, "TraceId")), Has.All.EqualTo(IncomingTraceId));
         Assert.That(requestLogs.Select(e => Property(e, "SpanId")), Has.All.EqualTo(serverSpan!.SpanId.ToString()));
+    }
+
+    [Test]
+    public async Task UseSerilogConfiguration_FrameworkNoiseCategories_AreRaisedToWarningWhileSpansStay()
+    {
+        using var factory = ObservabilityTestHost.Create(_exporter, externalLoggingEnabled: false);
+        using var client = factory.CreateClient();
+        var loggerFactory = factory.Services.GetRequiredService<ILoggerFactory>();
+
+        loggerFactory.CreateLogger("Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware").LogInformation("noise-static");
+        loggerFactory.CreateLogger("Experimental.System.Net.Sockets").LogInformation("noise-socket");
+        loggerFactory.CreateLogger("System.Net.Http.HttpClient.Default.ClientHandler").LogInformation("noise-handler");
+        loggerFactory.CreateLogger("Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware").LogWarning("kept-warning");
+        using var response = await client.GetAsync(RealEndpoint);
+
+        var spans = await WaitForSerilogSpansAsync(e => Property(e, "SpanKind") == "Server");
+        var texts = InMemoryLogSink.Events.Select(e => e.RenderMessage()).ToList();
+        Assert.That(texts, Has.None.StartWith("noise-"));
+        Assert.That(texts, Does.Contain("kept-warning"));
+        Assert.That(spans, Is.Not.Empty, "the request span must still be logged");
     }
 
     [Test]

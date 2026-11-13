@@ -24,9 +24,9 @@ internal static class EntityApi
 
         group.MapGet("/", async (IEntityService<TEntity> entityService, CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Listing all {entityType}", entityType);
+            logger.LogDebug("Listing all {entityType}", entityType);
             var result = await entityService.GetListAsync(cancellationToken);
-            logger.LogInformation("Retrieved {count} {entityType}", result.Count(), entityType);
+            logger.LogDebug("Retrieved {count} {entityType}", result.Count(), entityType);
             return result;
         });
 
@@ -34,9 +34,9 @@ internal static class EntityApi
         {
             try
             {
-                logger.LogInformation("Searching {entityType} with query '{searchText}', orderBy {orderBy}", entityType, searchText, orderBy);
+                logger.LogDebug("Searching {entityType} with query '{searchText}', orderBy {orderBy}", entityType, searchText, orderBy);
                 var result = await entityService.SearchAsync(searchText, orderBy, cancellationToken);
-                logger.LogInformation("Search returned {count} {entityType}", result.Count(), entityType);
+                logger.LogDebug("Search returned {count} {entityType}", result.Count(), entityType);
                 return TypedResults.Ok(result);
             }
             catch (ArgumentException ex)
@@ -58,7 +58,7 @@ internal static class EntityApi
         {
             try
             {
-                logger.LogInformation("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, plex {plex}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, plex, page, pageSize);
+                logger.LogDebug("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, plex {plex}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, plex, page, pageSize);
                 // Movies only; absent (and ignored) when Plex is not configured for movies
                 IdFilter? idFilter = null;
                 if (typeof(TEntity) == typeof(Movie) && plexLookup is not null && !string.IsNullOrWhiteSpace(plex))
@@ -75,7 +75,7 @@ internal static class EntityApi
                 }
                 var result = await entityService.PagedSearchAsync(searchText, orderBy, page, pageSize, idFilter, cancellationToken);
                 await AttachPlexSummariesAsync(result.Items, plexLookup, cancellationToken);
-                logger.LogInformation("Paged search returned {count}/{total} {entityType}", result.Items.Count(), result.TotalCount, entityType);
+                logger.LogDebug("Paged search returned {count}/{total} {entityType}", result.Items.Count(), result.TotalCount, entityType);
                 return TypedResults.Ok(result);
             }
             catch (ArgumentException ex)
@@ -91,7 +91,7 @@ internal static class EntityApi
             string id,
             CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Fetching {entityType} by id {id}", entityType, id);
+            logger.LogDebug("Fetching {entityType} by id {id}", entityType, id);
             var entity = await entityService.GetAsync(id, cancellationToken);
             if (entity is not null)
             {

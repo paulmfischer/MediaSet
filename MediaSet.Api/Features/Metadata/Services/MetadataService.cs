@@ -90,7 +90,7 @@ public class MetadataService : IMetadataService
 
         // Cache the results
         await _cacheService.SetAsync(cacheKey, distinctResults);
-        _logger.LogInformation("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);
+        _logger.LogDebug("Cached metadata for {mediaType}:{propertyName} with {count} distinct values", mediaType, propertyName, distinctResults.Count);
 
         return distinctResults;
     }
