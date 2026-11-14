@@ -2,6 +2,7 @@ import { initializeRequestContext, getRequestContext } from './apiFetch.server.t
 
 const SEQ_ENABLED = process.env['ExternalLogging__Enabled'] === 'true';
 const SEQ_URL = process.env['ExternalLogging__SeqUrl'];
+const SEQ_API_KEY = process.env['ExternalLogging__SeqApiKey'];
 
 const APPLICATION = 'MediaSet.Remix';
 
@@ -93,6 +94,15 @@ export function buildSeqEvent(
   };
 }
 
+/** The headers of a Seq ingestion request. The `X-Seq-ApiKey` header is sent only when a non-blank key is set. */
+export function seqRequestHeaders(apiKey: string | undefined = SEQ_API_KEY): Record<string, string> {
+  const key = apiKey?.trim();
+  return {
+    'Content-Type': 'application/vnd.serilog.clef',
+    ...(key ? { 'X-Seq-ApiKey': key } : {}),
+  };
+}
+
 async function sendLogToSeq(
   level: LogLevel,
   template: string,
@@ -112,7 +122,7 @@ async function sendLogToSeq(
   try {
     const response = await fetch(`${SEQ_URL}/api/events/raw`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/vnd.serilog.clef' },
+      headers: seqRequestHeaders(),
       body: JSON.stringify(event),
     });
 

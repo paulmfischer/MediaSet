@@ -75,6 +75,7 @@ public static class LoggingExtensions
             {
                 var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl")
                     ?? "http://localhost:5341";
+                var seqApiKey = GetSeqApiKey(context.Configuration);
 
                 // Use nested logger to apply filter only to Seq sink
                 cfg.WriteTo.Logger(lc =>
@@ -90,11 +91,22 @@ public static class LoggingExtensions
                         }
                         return false;
                     })
-                    .WriteTo.Seq(seqUrl));
+                    .WriteTo.Seq(seqUrl, apiKey: seqApiKey));
             }
         });
 
         return builder;
+    }
+
+    /// <summary>
+    /// The optional Seq ingestion API key (ExternalLogging:SeqApiKey), or null when it is missing or blank so the
+    /// sink sends no key. Seq can apply an Environment property per key, which separates Development from Production.
+    /// The value is a secret and must never be logged.
+    /// </summary>
+    internal static string? GetSeqApiKey(IConfiguration configuration)
+    {
+        var apiKey = configuration.GetValue<string>("ExternalLogging:SeqApiKey");
+        return string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
     }
 
     /// <summary>

@@ -48,6 +48,42 @@ ExternalLogging__SeqUrl: "http://seq.example.com:5341"
 - External Seq server: Use the full hostname and port, e.g., `http://192.168.1.100:5341`
 - HTTPS-enabled server: Use `https://` protocol, e.g., `https://seq.example.com`
 
+### ExternalLogging__SeqApiKey
+
+**Purpose**: Optional Seq ingestion API key. When set, the API sends it with every event and MediaSet.Remix sends it
+as the `X-Seq-ApiKey` header. When missing or blank no key is sent and behaviour is unchanged.
+
+**Type**: String (secret)
+
+**Example** (placeholder, never commit a real key):
+```yaml
+ExternalLogging__SeqApiKey: "${SEQ_API_KEY}"
+```
+
+The API reads `ExternalLogging:SeqApiKey` (user-secrets locally, `ExternalLogging__SeqApiKey` in containers) and
+Remix reads the environment variable `ExternalLogging__SeqApiKey`. The key is never logged.
+
+## Ingestion API keys per environment
+
+Development and Production share one Seq instance. Seq workspaces only group signals, queries and dashboards;
+they do not partition events, so separation is by ingestion API key instead: one key per environment, each applying an
+`Environment` property.
+
+1. In Seq, open **Settings > API Keys > Add API Key**.
+2. Give it a title (`MediaSet Development`, `MediaSet Production`) and grant the **Ingest** permission only.
+3. Under **Applied properties**, add `Environment` = `Development` (or `Production`).
+4. Copy the token and store it as a secret: `dotnet user-secrets set "ExternalLogging:SeqApiKey" "YOUR_DEV_INGEST_KEY" --project MediaSet.Api`
+   locally, and in the Production secret/env file (`SEQ_API_KEY`) for both the API and Remix services.
+5. Scope Production signals, queries and dashboards with `Environment = 'Production'` (the property the Production key
+   applies), so they no longer depend on remembering a filter for Development events.
+
+Notes:
+- Both the API and Remix already set their own `Environment` property on each event (the ASP.NET environment name, and
+  `Development`, `Production` or `Testing` mapped from `NODE_ENV`). A key-applied property is added by Seq on ingestion;
+  the values should agree, but how Seq resolves a same-named property already on an event is not verified here, so
+  check a few ingested events after adding the keys.
+- Events that arrive without a key (or with the wrong one) are not tagged by the key, so use the right key per environment.
+
 ## HTTP Logging Exclusions
 
 MediaSet.Api includes HTTP request/response logging that can generate high log volume for frequently-accessed endpoints. The following configuration options allow you to exclude specific paths from being logged to Seq while still logging them to console.
@@ -188,6 +224,7 @@ Production containers use the same environment variable names for both services:
 | Variable | Description |
 |----------|-------------|
 | `ExternalLogging__SeqUrl` | Seq server URL, e.g. `http://seq:5341`. If not set, Remix logs to console only. |
+| `ExternalLogging__SeqApiKey` | Optional ingestion API key, sent as the `X-Seq-ApiKey` header. See [per-environment keys](#ingestion-api-keys-per-environment). |
 
 Remix logs appear in Seq with `Application = "MediaSet.Remix"` and include a `TraceId` property that correlates with API logs from the same request.
 Their `Environment` is always `Development`, `Production` or `Testing` (whatever the casing of `NODE_ENV`), `SourceContext`

@@ -1,7 +1,7 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { buildSeqEvent, renderMessageTemplate, seqEnvironmentName } from './serverLogger.ts';
+import { buildSeqEvent, renderMessageTemplate, seqEnvironmentName, seqRequestHeaders } from './serverLogger.ts';
 
 describe('seqEnvironmentName', () => {
   it('should match the ASP.NET environment names the API sends', () => {
@@ -25,6 +25,21 @@ describe('seqEnvironmentName', () => {
     }
     for (const value of ['development', 'Development']) {
       assert.equal(seqEnvironmentName(value), 'Development');
+    }
+  });
+});
+
+describe('seqRequestHeaders', () => {
+  it('should send the X-Seq-ApiKey header when a key is set', () => {
+    assert.deepEqual(seqRequestHeaders('KEY'), {
+      'Content-Type': 'application/vnd.serilog.clef',
+      'X-Seq-ApiKey': 'KEY',
+    });
+  });
+
+  it('should send no X-Seq-ApiKey header when the key is missing or blank', () => {
+    for (const key of [undefined, '', '   ']) {
+      assert.deepEqual(seqRequestHeaders(key), { 'Content-Type': 'application/vnd.serilog.clef' });
     }
   });
 });
@@ -133,6 +148,35 @@ describe('serverLogger Seq events', () => {
     assert.equal(bodies.length, 1);
     assert.equal(bodies[0].Environment, seqEnvironmentName(process.env.NODE_ENV));
     assert.notEqual(bodies[0].Environment, process.env.NODE_ENV);
+  });
+
+  it('should send the key from ExternalLogging__SeqApiKey as the X-Seq-ApiKey header', async (t) => {
+    const names = ['ExternalLogging__Enabled', 'ExternalLogging__SeqUrl', 'ExternalLogging__SeqApiKey'] as const;
+    const originalFetch = globalThis.fetch;
+    const originalEnv = names.map((name) => [name, process.env[name]] as const);
+    const headers: Array<HeadersInit | undefined> = [];
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      headers.push(init?.headers);
+      return new Response(null, { status: 201 });
+    }) as typeof fetch;
+    process.env['ExternalLogging__Enabled'] = 'true';
+    process.env['ExternalLogging__SeqUrl'] = 'http://seq.test';
+    process.env['ExternalLogging__SeqApiKey'] = 'TEST_KEY';
+    t.after(() => {
+      globalThis.fetch = originalFetch;
+      for (const [name, value] of originalEnv) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    });
+
+    const specifier = './serverLogger.ts?seq-api-key';
+    const { serverLogger } = (await import(specifier)) as typeof import('./serverLogger.ts');
+    serverLogger.info('hello');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.equal(headers.length, 1);
+    assert.deepEqual(headers[0], { 'Content-Type': 'application/vnd.serilog.clef', 'X-Seq-ApiKey': 'TEST_KEY' });
   });
 
   it('should send a module logger event with its template, SourceContext and the error as @x', async (t) => {
