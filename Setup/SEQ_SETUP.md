@@ -60,6 +60,10 @@ as the `X-Seq-ApiKey` header. When missing or blank no key is sent and behaviour
 ExternalLogging__SeqApiKey: "${SEQ_API_KEY}"
 ```
 
+Docker Compose substitutes `${SEQ_API_KEY}` from the compose environment, so the variable must be defined in an `.env`
+file next to the compose file or passed with `--env-file`; otherwise it expands to an empty string and no key is sent.
+A key containing control characters (such as a stray newline) is treated as absent.
+
 The API reads `ExternalLogging:SeqApiKey` (user-secrets locally, `ExternalLogging__SeqApiKey` in containers) and
 Remix reads the environment variable `ExternalLogging__SeqApiKey`. The key is never logged.
 

@@ -38,7 +38,7 @@ describe('seqRequestHeaders', () => {
   });
 
   it('should send no X-Seq-ApiKey header when the key is missing or blank', () => {
-    for (const key of [undefined, '', '   ']) {
+    for (const key of [undefined, '', '   ', 'BAD\nKEY']) {
       assert.deepEqual(seqRequestHeaders(key), { 'Content-Type': 'application/vnd.serilog.clef' });
     }
   });

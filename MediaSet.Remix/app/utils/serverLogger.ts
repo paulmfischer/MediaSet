@@ -94,9 +94,16 @@ export function buildSeqEvent(
   };
 }
 
-/** The headers of a Seq ingestion request. The `X-Seq-ApiKey` header is sent only when a non-blank key is set. */
-export function seqRequestHeaders(apiKey: string | undefined = SEQ_API_KEY): Record<string, string> {
-  const key = apiKey?.trim();
+function isControlCharacter(character: string): boolean {
+  const code = character.charCodeAt(0);
+  return code < 0x20 || code === 0x7f;
+}
+
+/** The headers of a Seq ingestion request. The `X-Seq-ApiKey` header is sent only when a non-blank key without control characters is set. */
+export function seqRequestHeaders(apiKey: string | undefined): Record<string, string> {
+  const trimmed = apiKey?.trim();
+  // A key with control characters would make fetch throw on every event, so it is treated as absent
+  const key = trimmed && ![...trimmed].some(isControlCharacter) ? trimmed : undefined;
   return {
     'Content-Type': 'application/vnd.serilog.clef',
     ...(key ? { 'X-Seq-ApiKey': key } : {}),
@@ -122,7 +129,7 @@ async function sendLogToSeq(
   try {
     const response = await fetch(`${SEQ_URL}/api/events/raw`, {
       method: 'POST',
-      headers: seqRequestHeaders(),
+      headers: seqRequestHeaders(SEQ_API_KEY),
       body: JSON.stringify(event),
     });
 
