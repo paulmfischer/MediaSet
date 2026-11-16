@@ -457,10 +457,12 @@ internal static class EntityApi
             var result = await entityService.RemoveAsync(id, cancellationToken);
             logger.LogInformation("Deleted {entityType} {entityId}: {deleted}", entityType, id, result.DeletedCount > 0);
 
-            // The movie is deleted first; its Plex data goes after, and a failure there never fails the delete
-            if (typeof(TEntity) == typeof(Movie))
+            // The entity is deleted first; its Plex data goes after, and a failure there never fails the delete
+            if (typeof(TEntity) == typeof(Movie) || typeof(TEntity) == typeof(Music))
             {
-                await DeletePlexDataAsync(httpContext.RequestServices, id, logger, cancellationToken);
+                await (typeof(TEntity) == typeof(Music)
+                    ? DeletePlexDataAsync(httpContext.RequestServices, id, "music", (cleanup, ct) => cleanup.DeleteMusicDataAsync(id, ct), logger, cancellationToken)
+                    : DeletePlexDataAsync(httpContext.RequestServices, id, "movie", (cleanup, ct) => cleanup.DeleteMovieDataAsync(id, ct), logger, cancellationToken));
             }
 
             return TypedResults.Ok();
@@ -717,7 +719,7 @@ internal static class EntityApi
         }
     }
 
-    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, ILogger logger, CancellationToken cancellationToken)
+    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, string kind, Func<IPlexDataCleanup, CancellationToken, Task> delete, ILogger logger, CancellationToken cancellationToken)
     {
         // Registered only when the Plex integration is configured and valid
         var cleanup = services.GetService<IPlexDataCleanup>();
@@ -728,11 +730,11 @@ internal static class EntityApi
 
         try
         {
-            await cleanup.DeleteMovieDataAsync(id, cancellationToken);
+            await delete(cleanup, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogWarning(ex, "Failed to delete Plex data for movie {entityId}; the next Plex sync purges it", id);
+            logger.LogWarning(ex, "Failed to delete Plex data for {entityType} {entityId}; the next Plex sync purges it", kind, id);
         }
     }
 

@@ -7,4 +7,6 @@ namespace MediaSet.Api.Infrastructure.Plex;
 public interface IPlexDataCleanup
 {
     Task DeleteMovieDataAsync(string movieId, CancellationToken cancellationToken);
+
+    Task DeleteMusicDataAsync(string musicId, CancellationToken cancellationToken);
 }

@@ -16,15 +16,15 @@ public class PlexSearchService(IPlexClient client) : IPlexSearchService
 
     public async Task<IReadOnlyList<PlexSearchResultDto>> SearchAsync(string entityType, string query, CancellationToken cancellationToken)
     {
-        var itemTypes = PlexEntityTypes.LibraryTypes(entityType);
+        var itemTypes = PlexEntityTypes.ItemTypes(entityType);
         var results = new List<PlexSearchResultDto>();
         foreach (var library in await client.GetLibrariesForEntityTypeAsync(entityType, cancellationToken))
         {
             var items = await client.GetItemsAsync(library, query, false, cancellationToken);
-            // Movies and shows (for TV series entries); other item types (episodes, seasons) are never returned
+            // Movies and shows (for TV series entries), or albums for music; other item types (artists, episodes, seasons) are never returned
             results.AddRange(items
                 .Where(i => itemTypes.Contains(i.Type, StringComparer.OrdinalIgnoreCase))
-                .Select(i => new PlexSearchResultDto(i.Title, i.RatingKey, i.Year, i.LibraryTitle, i.Guids, i.Type.ToLowerInvariant())));
+                .Select(i => new PlexSearchResultDto(i.Title, i.RatingKey, i.Year, i.LibraryTitle, i.Guids, i.Type.ToLowerInvariant(), i.ArtistTitle)));
         }
 
         return results.Take(MaxResults).ToList();
