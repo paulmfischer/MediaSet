@@ -47,6 +47,12 @@ public interface IPlexClient
     /// </summary>
     Task<PlexItem?> GetItemAsync(string ratingKey, bool includeDetails, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The tracks of an album by the album's rating key, read in pages (all discs together). Empty when Plex has none or
+    /// no longer knows the album. Throws PlexClientException when Plex cannot be reached.
+    /// </summary>
+    Task<IReadOnlyList<PlexTrack>> GetTracksAsync(string albumRatingKey, CancellationToken cancellationToken);
+
     /// <summary>The seasons of a show by its rating key (one request), with the episode count Plex reports. Empty when Plex has none.</summary>
     Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken);
 

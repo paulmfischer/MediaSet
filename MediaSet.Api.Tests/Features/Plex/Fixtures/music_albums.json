@@ -1,0 +1,105 @@
+{
+ "MediaContainer": {
+  "size": 6,
+  "totalSize": 6,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "7001",
+    "key": "/library/metadata/7001/children",
+    "guid": "plex://album/7001",
+    "type": "album",
+    "title": "Abbey Road",
+    "parentTitle": "The Beatles",
+    "leafCount": 3,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://11111111-1111-1111-1111-111111111111"
+     }
+    ]
+   },
+   {
+    "ratingKey": "7002",
+    "key": "/library/metadata/7002/children",
+    "guid": "plex://album/7002",
+    "type": "album",
+    "title": "Kind of Blue",
+    "parentTitle": "Miles Davis",
+    "leafCount": 2,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://22222222-2222-2222-2222-222222222222"
+     }
+    ]
+   },
+   {
+    "ratingKey": "7003",
+    "key": "/library/metadata/7003/children",
+    "guid": "plex://album/7003",
+    "type": "album",
+    "title": "Now 90",
+    "parentTitle": "Various Artists",
+    "leafCount": 2,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://33333333-3333-3333-3333-333333333333"
+     }
+    ]
+   },
+   {
+    "ratingKey": "7004",
+    "key": "/library/metadata/7004/children",
+    "guid": "plex://album/7004",
+    "type": "album",
+    "title": "Not Owned",
+    "parentTitle": "Nobody",
+    "leafCount": 1,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://44444444-4444-4444-4444-444444444444"
+     }
+    ]
+   },
+   {
+    "ratingKey": "7005",
+    "key": "/library/metadata/7005/children",
+    "guid": "plex://album/7005",
+    "type": "album",
+    "title": "The Wall",
+    "parentTitle": "Pink Floyd",
+    "leafCount": 4,
+    "addedAt": 1690000000,
+    "updatedAt": 1690000010,
+    "Guid": [
+     {
+      "id": "mbid://55555555-5555-5555-5555-555555555555"
+     }
+    ]
+   },
+   {
+    "ratingKey": "7006",
+    "key": "/library/metadata/7006/children",
+    "guid": "plex://album/7006",
+    "type": "album",
+    "title": "Rumours",
+    "parentTitle": "Fleetwood Mac",
+    "leafCount": 1,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://66666666-6666-6666-6666-666666666666"
+     }
+    ]
+   }
+  ]
+ }
+}

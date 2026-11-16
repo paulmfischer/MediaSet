@@ -78,7 +78,7 @@ public static class PlexConfigurationValidator
                 continue;
             }
 
-            if (!TryValidateSchedule(entity.Schedule, out var scheduleError))
+            if (!TryValidateSchedule(PlexConfiguration.ScheduleFor(entityType, entity), out var scheduleError))
             {
                 messages.Add($"Plex entity type '{entityType}' has an invalid schedule: {scheduleError}. It is disabled.");
                 continue;

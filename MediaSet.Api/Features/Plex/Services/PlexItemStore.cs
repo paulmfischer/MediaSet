@@ -1,5 +1,6 @@
 using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Infrastructure.Database;
+using MediaSet.Api.Infrastructure.Plex;
 using MongoDB.Driver;
 
 namespace MediaSet.Api.Features.Plex.Services;
@@ -9,9 +10,9 @@ public interface IPlexItemStore
     /// <summary>Creates the PlexItems collection and its indexes when missing.</summary>
     Task EnsureCreatedAsync(CancellationToken cancellationToken);
 
-    Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken);
+    Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken);
     Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken);
-    Task DeleteAsync(string movieId, CancellationToken cancellationToken);
+    Task DeleteAsync(string entryId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Every stored movie document (TV entries are excluded), with only the fields needed to decide whether a Plex item
@@ -19,8 +20,8 @@ public interface IPlexItemStore
     /// </summary>
     Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken);
 
-    /// <summary>The documents of the given movie ids in one query, with only the fields the list summary needs.</summary>
-    Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken);
+    /// <summary>The documents of the given entry ids in one query, with only the fields the list summary needs.</summary>
+    Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken);
 
     /// <summary>Every stored document with only the fields the statistics need (OnPlex, Broken, Watched, Resolution).</summary>
     Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken);
@@ -34,8 +35,8 @@ public interface IPlexItemStore
     /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
     Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
 
-    /// <summary>Ids of every stored document, used to purge documents of movies that no longer exist.</summary>
-    Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken);
+    /// <summary>Ids of every stored document of an entity type (movies include TV entries), used to purge documents of entries that no longer exist.</summary>
+    Task<IReadOnlyList<string>> ListIdsAsync(string entityType, CancellationToken cancellationToken);
 }
 
 public class PlexItemStore(IDatabaseService database) : IPlexItemStore
@@ -43,11 +44,17 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public const string CollectionName = "PlexItems";
     public const string PlexItemIdIndexName = "PlexItemId";
 
+    /// <summary>Movie and TV documents carry no EntityType; music documents are told apart by it (Mongo matches a missing field as null).</summary>
+    private static FilterDefinition<PlexItemData> OfEntityType(string entityType) =>
+        PlexEntityTypes.Normalize(entityType) == PlexEntityTypes.Music
+            ? Builders<PlexItemData>.Filter.Eq(d => d.EntityType, PlexEntityTypes.Music)
+            : Builders<PlexItemData>.Filter.Eq(d => d.EntityType, null);
+
     private IMongoCollection<PlexItemData> Collection => database.GetCollection<PlexItemData>(CollectionName);
 
     public async Task EnsureCreatedAsync(CancellationToken cancellationToken)
     {
-        // The document id is the movie id, so Mongo's built-in unique _id index covers the entity id.
+        // The document id is the entry id (a movie or music id), so Mongo's built-in unique _id index covers the entity id.
         // Creating an index also creates the collection when it does not exist.
         await Collection.Indexes.CreateOneAsync(
             new CreateIndexModel<PlexItemData>(
@@ -56,25 +63,25 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             cancellationToken: cancellationToken);
     }
 
-    public async Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken) =>
-        await Collection.Find(d => d.Id == movieId).FirstOrDefaultAsync(cancellationToken);
+    public async Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken) =>
+        await Collection.Find(d => d.Id == entryId).FirstOrDefaultAsync(cancellationToken);
 
     public Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken) =>
         Collection.ReplaceOneAsync(d => d.Id == data.Id, data, new ReplaceOptions { IsUpsert = true }, cancellationToken);
 
-    public Task DeleteAsync(string movieId, CancellationToken cancellationToken) =>
-        Collection.DeleteOneAsync(d => d.Id == movieId, cancellationToken);
+    public Task DeleteAsync(string entryId, CancellationToken cancellationToken) =>
+        Collection.DeleteOneAsync(d => d.Id == entryId, cancellationToken);
 
     public async Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken) =>
-        await Collection.Find(d => d.Scope == null)
+        await Collection.Find(Builders<PlexItemData>.Filter.And(OfEntityType(PlexEntityTypes.Movies), Builders<PlexItemData>.Filter.Eq(d => d.Scope, null)))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
                 .Include(d => d.PlexItemId)
                 .Include(d => d.SizeBytes)
                 .Include(d => d.PlexUpdatedAt))
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken) =>
-        await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, movieIds))
+    public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken) =>
+        await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, entryIds))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
@@ -83,7 +90,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken) =>
-        await Collection.Find(FilterDefinition<PlexItemData>.Empty)
+        await Collection.Find(OfEntityType(PlexEntityTypes.Movies))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
@@ -112,7 +119,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include("Rollup.EpisodesExpected")
                 .Include("Rollup.WatchedCount"),
             p.Combine(episodeFields.Select(f => p.Include($"Episodes.{f}"))));
-        return await Collection.Find(FilterDefinition<PlexItemData>.Empty)
+        return await Collection.Find(OfEntityType(PlexEntityTypes.Movies))
             .Project<PlexItemData>(projection)
             .ToListAsync(cancellationToken);
     }
@@ -128,11 +135,11 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             PlexListFilters.Broken => f.Eq(d => d.Broken, true),
             _ => throw new ArgumentException($"Invalid plex filter '{filter}'.")
         };
-        return await Collection.Find(query).Project(d => d.Id).ToListAsync(cancellationToken);
+        return await Collection.Find(f.And(OfEntityType(PlexEntityTypes.Movies), query)).Project(d => d.Id).ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken) =>
-        await Collection.Find(FilterDefinition<PlexItemData>.Empty)
+    public async Task<IReadOnlyList<string>> ListIdsAsync(string entityType, CancellationToken cancellationToken) =>
+        await Collection.Find(OfEntityType(entityType))
             .Project(d => d.Id)
             .ToListAsync(cancellationToken);
 }

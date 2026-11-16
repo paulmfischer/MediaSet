@@ -1,0 +1,101 @@
+{
+ "MediaContainer": {
+  "size": 4,
+  "totalSize": 4,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "7501",
+    "type": "track",
+    "title": "Track 1",
+    "index": 1,
+    "parentIndex": 1,
+    "Media": [
+     {
+      "audioCodec": "flac",
+      "bitrate": 900,
+      "container": "flac",
+      "Part": [
+       {
+        "file": "/music/7501.flac",
+        "size": 1000,
+        "container": "flac"
+       }
+      ]
+     }
+    ],
+    "viewCount": 1,
+    "lastViewedAt": 1700000000
+   },
+   {
+    "ratingKey": "7502",
+    "type": "track",
+    "title": "Track 2",
+    "index": 2,
+    "parentIndex": 1,
+    "Media": [
+     {
+      "audioCodec": "flac",
+      "bitrate": 900,
+      "container": "flac",
+      "Part": [
+       {
+        "file": "/music/7502.flac",
+        "size": 1000,
+        "container": "flac"
+       }
+      ]
+     }
+    ],
+    "viewCount": 1,
+    "lastViewedAt": 1700000001
+   },
+   {
+    "ratingKey": "7503",
+    "type": "track",
+    "title": "Track 1",
+    "index": 1,
+    "parentIndex": 2,
+    "Media": [
+     {
+      "audioCodec": "flac",
+      "bitrate": 900,
+      "container": "flac",
+      "Part": [
+       {
+        "file": "/music/7503.flac",
+        "size": 1000,
+        "container": "flac"
+       }
+      ]
+     }
+    ],
+    "viewCount": 1,
+    "lastViewedAt": 1700000002
+   },
+   {
+    "ratingKey": "7504",
+    "type": "track",
+    "title": "Track 2",
+    "index": 2,
+    "parentIndex": 2,
+    "Media": [
+     {
+      "audioCodec": "flac",
+      "bitrate": 900,
+      "container": "flac",
+      "Part": [
+       {
+        "file": "/music/7504.flac",
+        "size": 1000,
+        "container": "flac"
+       }
+      ]
+     }
+    ],
+    "viewCount": 1,
+    "lastViewedAt": 1700000003
+   }
+  ]
+ }
+}

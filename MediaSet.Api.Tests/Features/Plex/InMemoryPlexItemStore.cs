@@ -87,7 +87,7 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
     {
         lock (_sync)
         {
-            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.Scope == null).ToList());
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.Scope == null && d.EntityType == null).ToList());
         }
     }
 
@@ -112,7 +112,7 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
         lock (_sync)
         {
-            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.ToList());
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.EntityType == null).ToList());
         }
     }
 
@@ -124,7 +124,7 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
         lock (_sync)
         {
-            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.ToList());
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.EntityType == null).ToList());
         }
     }
 
@@ -141,22 +141,24 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
     {
         lock (_sync)
         {
+            var movies = _items.Values.Where(d => d.EntityType == null);
             var matching = PlexListFilters.Normalize(filter) switch
             {
-                PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => _items.Values.Where(d => d.OnPlex),
-                PlexListFilters.Unwatched => _items.Values.Where(d => d.OnPlex && !d.Watched),
-                PlexListFilters.Broken => _items.Values.Where(d => d.Broken),
+                PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => movies.Where(d => d.OnPlex),
+                PlexListFilters.Unwatched => movies.Where(d => d.OnPlex && !d.Watched),
+                PlexListFilters.Broken => movies.Where(d => d.Broken),
                 _ => throw new ArgumentException("bad filter")
             };
             return Task.FromResult<IReadOnlyList<string>>(matching.Select(d => d.Id).ToList());
         }
     }
 
-    public Task<IReadOnlyList<string>> ListIdsAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<string>> ListIdsAsync(string entityType, CancellationToken cancellationToken)
     {
+        var music = entityType == "music";
         lock (_sync)
         {
-            return Task.FromResult<IReadOnlyList<string>>(_items.Keys.ToList());
+            return Task.FromResult<IReadOnlyList<string>>(_items.Values.Where(d => d.EntityType == "music" == music).Select(d => d.Id).ToList());
         }
     }
 

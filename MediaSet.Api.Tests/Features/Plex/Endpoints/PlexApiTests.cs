@@ -172,9 +172,9 @@ public class PlexApiTests
         var entries = (await ReadJsonAsync(response)).EnumerateArray().ToList();
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-        Assert.That(entries, Has.Count.EqualTo(1));
-        Assert.That(entries[0].GetProperty("entityType").GetString(), Is.EqualTo("movies"));
+        Assert.That(entries.Select(e => e.GetProperty("entityType").GetString()), Is.EqualTo(["movies", "music"]));
         Assert.That(entries[0].GetProperty("enabled").GetBoolean(), Is.True);
+        Assert.That(entries[1].GetProperty("enabled").GetBoolean(), Is.False);
         Assert.That(entries[0].GetProperty("lastRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
         Assert.That(entries[0].GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.String));
         Assert.That(entries[0].GetProperty("schedulePolicy").GetString(), Is.EqualTo("queue"));
@@ -186,7 +186,7 @@ public class PlexApiTests
     {
         using var client = CreateClient(PlexSettings());
 
-        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single();
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
         var next = entry.GetProperty("nextRun").GetDateTimeOffset();
 
         Assert.That(next, Is.GreaterThan(DateTimeOffset.UtcNow));
@@ -215,7 +215,7 @@ public class PlexApiTests
         using var client = CreateClient(PlexSettings(schedule: "not a cron"));
 
         var response = await client.GetAsync("/plex/status");
-        var entry = (await ReadJsonAsync(response)).EnumerateArray().Single();
+        var entry = (await ReadJsonAsync(response)).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(entry.GetProperty("enabled").GetBoolean(), Is.False);
@@ -227,7 +227,7 @@ public class PlexApiTests
     {
         using var client = CreateClient(PlexSettings(moviesEnabled: "false"));
 
-        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single();
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
 
         Assert.That(entry.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
     }
@@ -338,7 +338,7 @@ public class PlexApiTests
         using var client = CreateClient(PlexSettings(schedule: "not a cron"));
 
         var statusResponse = await client.GetAsync("/plex/status");
-        var entry = (await ReadJsonAsync(statusResponse)).EnumerateArray().Single();
+        var entry = (await ReadJsonAsync(statusResponse)).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
         var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
 
         Assert.That(statusResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
@@ -389,9 +389,82 @@ public class PlexApiTests
         var booksResponse = await client.GetAsync("/plex/books/status");
         var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
 
-        Assert.That(entries.Select(e => e.GetProperty("entityType").GetString()), Is.EqualTo(["movies"]));
+        Assert.That(entries.Select(e => e.GetProperty("entityType").GetString()), Is.EqualTo(["movies", "music"]));
         Assert.That(entries[0].GetProperty("enabled").GetBoolean(), Is.True);
         Assert.That(booksResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(plex.GetProperty("entityTypes").EnumerateArray().Select(e => e.GetString()), Is.EqualTo(["movies"]));
+    }
+
+    private static Dictionary<string, string> MusicOnlySettings(string? schedule = null)
+    {
+        var settings = PlexSettings(moviesEnabled: "false");
+        settings["PlexConfiguration:Entities:Music:Enabled"] = "true";
+        if (schedule != null)
+        {
+            settings["PlexConfiguration:Entities:Music:Schedule"] = schedule;
+        }
+        return settings;
+    }
+
+    [Test]
+    public async Task GetPlexStatus_MusicEnabledWithoutSchedule_NextRunIsSundayFourLocalAndMoviesAreOff()
+    {
+        using var client = CreateClient(MusicOnlySettings());
+
+        var entries = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().ToList();
+        var music = entries.Single(e => e.GetProperty("entityType").GetString() == "music");
+        var movies = entries.Single(e => e.GetProperty("entityType").GetString() == "movies");
+        var next = music.GetProperty("nextRun").GetDateTimeOffset();
+
+        Assert.That(music.GetProperty("enabled").GetBoolean(), Is.True);
+        Assert.That(next.DayOfWeek, Is.EqualTo(DayOfWeek.Sunday));
+        Assert.That(next.Hour, Is.EqualTo(4));
+        Assert.That(movies.GetProperty("enabled").GetBoolean(), Is.False);
+    }
+
+    [Test]
+    public async Task GetEntityStatus_MusicWithCustomSchedule_ReportsItsOwnNextRun()
+    {
+        var settings = PlexSettings();
+        settings["PlexConfiguration:Entities:Music:Enabled"] = "true";
+        settings["PlexConfiguration:Entities:Music:Schedule"] = "30 5 * * *";
+        using var client = CreateClient(settings);
+
+        var music = await ReadJsonAsync(await client.GetAsync("/plex/music/status"));
+        var movies = await ReadJsonAsync(await client.GetAsync("/plex/movies/status"));
+
+        Assert.That(music.GetProperty("nextRun").GetDateTimeOffset().Hour, Is.EqualTo(5));
+        Assert.That(movies.GetProperty("nextRun").GetDateTimeOffset().Hour, Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task GetPlexStatus_MusicNotConfigured_MusicReportedDisabledAndMoviesUnaffected()
+    {
+        using var client = CreateClient(PlexSettings());
+
+        var music = await ReadJsonAsync(await client.GetAsync("/plex/music/status"));
+        var sync = await client.PostAsync("/plex/music/sync", null);
+        var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
+
+        Assert.That(music.GetProperty("enabled").GetBoolean(), Is.False);
+        Assert.That(music.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
+        Assert.That(sync.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(plex.GetProperty("entityTypes").EnumerateArray().Select(e => e.GetString()), Is.EqualTo(["movies"]));
+    }
+
+    [Test]
+    public async Task GetPlexStatus_InvalidMusicSchedule_SwitchesOffOnlyMusic()
+    {
+        var settings = PlexSettings();
+        settings["PlexConfiguration:Entities:Music:Enabled"] = "true";
+        settings["PlexConfiguration:Entities:Music:Schedule"] = "not a cron";
+        using var client = CreateClient(settings);
+
+        var entries = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().ToList();
+        var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
+
+        Assert.That(entries.Single(e => e.GetProperty("entityType").GetString() == "music").GetProperty("enabled").GetBoolean(), Is.False);
+        Assert.That(entries.Single(e => e.GetProperty("entityType").GetString() == "movies").GetProperty("enabled").GetBoolean(), Is.True);
         Assert.That(plex.GetProperty("entityTypes").EnumerateArray().Select(e => e.GetString()), Is.EqualTo(["movies"]));
     }
 }

@@ -3,8 +3,8 @@ namespace MediaSet.Api.Infrastructure.Plex;
 /// <summary>A Plex library section.</summary>
 public record PlexLibrary(string Id, string Title, string Type);
 
-/// <summary>External ids Plex lists for an item. Values are the raw ids (for example "603" or "tt0133093").</summary>
-public record PlexGuids(string? Tmdb, string? Imdb, string? Tvdb);
+/// <summary>External ids Plex lists for an item. Values are the raw ids (for example "603" or "tt0133093"); Mbid is the MusicBrainz id Plex holds for an album.</summary>
+public record PlexGuids(string? Tmdb, string? Imdb, string? Tvdb, string? Mbid = null);
 
 public record PlexAudioTrack(string? Codec, int? Channels, string? Language);
 
@@ -37,7 +37,23 @@ public record PlexItem(
     DateTimeOffset? LastViewedAt = null,
     bool StreamsAvailable = true,
     DateTimeOffset? UpdatedAt = null,
-    bool StreamsReused = false);
+    bool StreamsReused = false,
+    int? TrackCount = null,
+    string? ArtistTitle = null);
+
+/// <summary>
+/// A track of a Plex album with what a music rollup needs: plays, last played, and the audio codec, bitrate (kbps)
+/// and file size of its first media file. Plex lists no tracks' file paths here on purpose.
+/// </summary>
+public record PlexTrack(
+    string RatingKey,
+    int DiscIndex,
+    int TrackIndex,
+    int ViewCount,
+    DateTimeOffset? LastViewedAt,
+    string? AudioCodec,
+    int? Bitrate,
+    long? SizeBytes);
 
 /// <summary>A season of a Plex show. Index 0 is the specials season. EpisodeCount is what Plex reports.</summary>
 public record PlexSeason(

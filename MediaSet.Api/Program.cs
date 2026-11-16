@@ -252,6 +252,7 @@ if (plexSection.Exists())
         builder.Services.AddScoped<IPlexSearchService, PlexSearchService>();
         builder.Services.AddScoped<IPlexLinkService, PlexLinkService>();
         builder.Services.AddScoped<IPlexCoverService<Movie>, PlexCoverService<Movie>>();
+        builder.Services.AddScoped<IPlexCoverService<Music>, PlexCoverService<Music>>();
         builder.Services.AddScoped<IPlexStatisticsService, PlexStatisticsService>();
         builder.Services.AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
         builder.Services.AddScoped<IMusicExternalIdBackfillService, MusicExternalIdBackfillService>();

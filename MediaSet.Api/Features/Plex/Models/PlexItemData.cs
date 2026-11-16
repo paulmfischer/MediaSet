@@ -126,13 +126,38 @@ public class PlexSeasonData
 /// </summary>
 public class PlexItemData
 {
-    /// <summary>The movie id.</summary>
+    /// <summary>The entry id: a movie id, or a music id when <see cref="EntityType"/> is "music".</summary>
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
-    /// <summary>The Plex rating key of the linked item.</summary>
+    /// <summary>The Plex rating key of the linked item (a movie, a show or, for music, an album).</summary>
     public string PlexItemId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The Plex entity type of the entry ("music"), or null for movies and TV entries (older documents have none). Keeps the
+    /// movie and music documents in one collection apart.
+    /// </summary>
+    public string? EntityType { get; set; }
+
+    /// <summary>Music only: plays of the album, the sum of its tracks' plays. Null for movies and TV.</summary>
+    public int? PlayCount { get; set; }
+
+    /// <summary>Music only: when a track of the album was last played. Null when never played, and for movies and TV.</summary>
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? LastPlayedAt { get; set; }
+
+    /// <summary>Music only: tracks Plex has for the album (all discs together).</summary>
+    public int? TracksPresent { get; set; }
+
+    /// <summary>Music only: the track count of the MediaSet entry. Null when the entry has none. Present below expected is a partial album.</summary>
+    public int? TracksExpected { get; set; }
+
+    /// <summary>Music only: the audio codec most of the tracks use.</summary>
+    public string? AudioCodec { get; set; }
+
+    /// <summary>Music only: the average bitrate of the tracks, in kbps.</summary>
+    public int? Bitrate { get; set; }
 
     /// <summary>"auto" (matched by the sync) or "manual" (linked by the user; never re-matched or replaced by the sync).</summary>
     public string LinkSource { get; set; } = PlexLinkSources.Auto;
