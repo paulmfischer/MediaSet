@@ -67,5 +67,5 @@ public interface IPlexClient
     /// bytes Plex sends. Null when the item has no poster, or the poster cannot be read, so a missing poster never
     /// fails a caller. The size is capped by <paramref name="maxBytes"/>; a larger poster also reads as null.
     /// </summary>
-    Task<byte[]?> GetPosterAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken);
+    Task<byte[]?> GetThumbAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken);
 }

@@ -46,7 +46,7 @@ public class PlexCoverServiceTests
     }
 
     private void ServePoster(byte[]? data) =>
-        _client.Setup(c => c.GetPosterAsync(RatingKey, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(data);
+        _client.Setup(c => c.GetThumbAsync(RatingKey, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(data);
 
     [Test]
     public async Task ApplyIfMissingAsync_MovieWithoutCoverAndLargePoster_SavesAndStoresCover()
@@ -68,7 +68,7 @@ public class PlexCoverServiceTests
         var applied = await _service.ApplyIfMissingAsync(MovieId, RatingKey, CancellationToken.None);
 
         Assert.That(applied, Is.False);
-        _client.Verify(c => c.GetPosterAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.GetThumbAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -175,7 +175,7 @@ public class PlexCoverServiceTests
         var applied = await service.ApplyIfMissingAsync(MusicId, RatingKey, CancellationToken.None);
 
         Assert.That(applied, Is.False);
-        _client.Verify(c => c.GetPosterAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.GetThumbAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]

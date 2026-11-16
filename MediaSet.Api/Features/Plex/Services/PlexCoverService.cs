@@ -8,8 +8,8 @@ namespace MediaSet.Api.Features.Plex.Services;
 
 /// <summary>
 /// Cover fallback from Plex for any entity type with a cover. TV series entries are Movie entities too
-/// (<c>Movie.IsTvSeries</c>), so <c>IPlexCoverService&lt;Movie&gt;</c> covers movies and TV series alike. The entity's own
-/// <see cref="IEntity.Type"/> decides which media type the image is saved under.
+/// (<c>Movie.IsTvSeries</c>), so <c>IPlexCoverService&lt;Movie&gt;</c> covers movies and TV series alike. The media type the image is saved
+/// under follows from <typeparamref name="TEntity"/>.
 /// </summary>
 public interface IPlexCoverService<TEntity> where TEntity : class, IEntity
 {
@@ -33,6 +33,16 @@ public class PlexCoverService<TEntity>(
     /// <summary>Largest image read from Plex, in bytes.</summary>
     public const long MaxBytes = 10 * 1024 * 1024;
 
+    // From the entity class, not the instance: a deserialized entity can carry a default Type
+    private static readonly string _mediaTypeName = (typeof(TEntity) switch
+    {
+        var t when t == typeof(Movie) => MediaTypes.Movies,
+        var t when t == typeof(Music) => MediaTypes.Musics,
+        var t when t == typeof(Book) => MediaTypes.Books,
+        var t when t == typeof(Game) => MediaTypes.Games,
+        _ => throw new NotSupportedException($"No media type for {typeof(TEntity).Name}")
+    }).ToString();
+
     public async Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken)
     {
         Image? saved = null;
@@ -44,7 +54,7 @@ public class PlexCoverService<TEntity>(
                 return false;
             }
 
-            var data = await client.GetPosterAsync(plexRatingKey, MaxBytes, cancellationToken);
+            var data = await client.GetThumbAsync(plexRatingKey, MaxBytes, cancellationToken);
             if (data == null)
             {
                 logger.LogDebug("Plex has no readable image for {EntityType} {EntityId}", typeof(TEntity).Name, entityId);
@@ -61,7 +71,7 @@ public class PlexCoverService<TEntity>(
                 }
             }
 
-            saved = await imageService.SaveImageBytesAsync(data, entity.Type.ToString(), entityId, cancellationToken);
+            saved = await imageService.SaveImageBytesAsync(data, _mediaTypeName, entityId, cancellationToken);
 
             // Re-read right before writing so a cover added meanwhile is never replaced
             var current = await entities.GetAsync(entityId, cancellationToken);

@@ -163,7 +163,7 @@ public class PlexClient : IPlexClient
         return MapItem(m, library, DeepLinkBase(serverId));
     }
 
-    public async Task<byte[]?> GetPosterAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken)
+    public async Task<byte[]?> GetThumbAsync(string ratingKey, long maxBytes, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(ratingKey))
         {
