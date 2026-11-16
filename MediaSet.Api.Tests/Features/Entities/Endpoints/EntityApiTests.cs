@@ -26,6 +26,7 @@ public class EntityApiTests : IntegrationTestBase
     private Mock<IEntityService<Book>> _bookServiceMock = null!;
     private Mock<IEntityService<Movie>> _movieServiceMock = null!;
     private Mock<IEntityService<Game>> _gameServiceMock = null!;
+    private Mock<IEntityService<Music>> _musicServiceMock = null!;
     private Faker<Book> _bookFaker = null!;
     private Faker<Movie> _movieFaker = null!;
     private Faker<Game> _gameFaker = null!;
@@ -42,6 +43,7 @@ public class EntityApiTests : IntegrationTestBase
         _bookServiceMock = new Mock<IEntityService<Book>>();
         _movieServiceMock = new Mock<IEntityService<Movie>>();
         _gameServiceMock = new Mock<IEntityService<Game>>();
+        _musicServiceMock = new Mock<IEntityService<Music>>();
 
         _factory = CreateWebApplicationFactory()
             .WithWebHostBuilder(builder =>
@@ -70,10 +72,18 @@ public class EntityApiTests : IntegrationTestBase
                         services.Remove(gameServiceDescriptor);
                     }
 
+                    var musicServiceDescriptor = services.SingleOrDefault(
+                        d => d.ServiceType == typeof(IEntityService<Music>));
+                    if (musicServiceDescriptor != null)
+                    {
+                        services.Remove(musicServiceDescriptor);
+                    }
+
                     // Add mock services
                     services.AddScoped<IEntityService<Book>>(_ => _bookServiceMock.Object);
                     services.AddScoped<IEntityService<Movie>>(_ => _movieServiceMock.Object);
                     services.AddScoped<IEntityService<Game>>(_ => _gameServiceMock.Object);
+                    services.AddScoped<IEntityService<Music>>(_ => _musicServiceMock.Object);
                 });
             });
 
@@ -594,6 +604,79 @@ public class EntityApiTests : IntegrationTestBase
         }
     }
 
+    #region Music ExternalId
+
+    [Test]
+    public async Task CreateMusic_WithExternalId_PersistsLowercasedSourceAndKeepsValueCase()
+    {
+        Music? saved = null;
+        _musicServiceMock.Setup(s => s.CreateAsync(It.IsAny<Music>(), It.IsAny<CancellationToken>()))
+            .Callback<Music, CancellationToken>((m, _) => saved = m).Returns(Task.CompletedTask);
+
+        var response = await _client.PostAsJsonAsync("/Musics", new Music { Title = "Album", Artist = "Artist", ExternalId = "MBID:AbC-123" });
+        var body = await response.Content.ReadFromJsonAsync<Music>(_jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saved!.ExternalId, Is.EqualTo("mbid:AbC-123"));
+        Assert.That(body!.ExternalId, Is.EqualTo("mbid:AbC-123"));
+    }
+
+    [Test]
+    public async Task CreateMusic_WithoutExternalId_IsAccepted()
+    {
+        _musicServiceMock.Setup(s => s.CreateAsync(It.IsAny<Music>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var response = await _client.PostAsJsonAsync("/Musics", new Music { Title = "Album", Artist = "Artist" });
+        var body = await response.Content.ReadFromJsonAsync<Music>(_jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(body!.ExternalId, Is.Null);
+    }
+
+    [Test]
+    public async Task CreateMusic_WithMalformedExternalId_ReturnsBadRequestProblemDetails()
+    {
+        var response = await _client.PostAsJsonAsync("/Musics", new Music { Title = "Album", Artist = "Artist", ExternalId = "no-colon" });
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(problem.GetProperty("title").GetString(), Is.EqualTo("Invalid ExternalId"));
+        _musicServiceMock.Verify(s => s.CreateAsync(It.IsAny<Music>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateMusic_WithExternalId_PersistsIt()
+    {
+        var musicId = "507f1f77bcf86cd799439012";
+        var existing = new Music { Id = musicId, Title = "Album", Artist = "Artist" };
+        Music? saved = null;
+        _musicServiceMock.Setup(s => s.GetAsync(musicId, It.IsAny<CancellationToken>())).Returns(Task.FromResult<Music?>(existing));
+        _musicServiceMock.Setup(s => s.UpdateAsync(musicId, It.IsAny<Music>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Music, CancellationToken>((_, m, _) => saved = m)
+            .Returns(Task.FromResult(Mock.Of<ReplaceOneResult>()));
+
+        var response = await _client.PutAsJsonAsync($"/Musics/{musicId}", new Music { Id = musicId, Title = "Album", Artist = "Artist", ExternalId = "mbid:abc" });
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(saved!.ExternalId, Is.EqualTo("mbid:abc"));
+    }
+
+    [Test]
+    public async Task GetMusic_ForDocumentWithoutExternalId_ReturnsItWithNullExternalId()
+    {
+        var musicId = "507f1f77bcf86cd799439012";
+        _musicServiceMock.Setup(s => s.GetAsync(musicId, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult<Music?>(new Music { Id = musicId, Title = "Album", Artist = "Artist" }));
+
+        var response = await _client.GetAsync($"/Musics/{musicId}");
+        var body = await response.Content.ReadFromJsonAsync<Music>(_jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(body!.ExternalId, Is.Null);
+    }
+
+    #endregion
+
     #region Movie ExternalId
 
     [Test]
@@ -736,7 +819,6 @@ public class EntityApiTests : IntegrationTestBase
         Assert.That(raw, Does.Not.Contain("externalId").IgnoreCase);
         Assert.That(typeof(Book).GetProperty("ExternalId"), Is.Null);
         Assert.That(typeof(Game).GetProperty("ExternalId"), Is.Null);
-        Assert.That(typeof(Music).GetProperty("ExternalId"), Is.Null);
     }
 
     [TestCase(null, null)]

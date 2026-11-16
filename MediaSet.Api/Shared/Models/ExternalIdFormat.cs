@@ -1,7 +1,7 @@
 namespace MediaSet.Api.Shared.Models;
 
 /// <summary>
-/// Rules for the <c>source:value</c> external identifier carried by a Movie.
+/// Rules for the <c>source:value</c> external identifier carried by a Movie or a Music entry.
 /// </summary>
 public static class ExternalIdFormat
 {
@@ -9,6 +9,9 @@ public static class ExternalIdFormat
         "ExternalId must be in 'source:value' form with a non-empty source and value and no whitespace (for example 'tmdbid:1234').";
 
     public static string ForTmdb(int id) => $"tmdbid:{id}";
+
+    /// <summary>The ExternalId of a music entry: <c>mbid:</c> plus the MusicBrainz release-group id.</summary>
+    public static string ForMusicBrainzReleaseGroup(string releaseGroupId) => $"mbid:{releaseGroupId}";
 
     /// <summary>
     /// Validates <paramref name="input"/>. Null or empty yields a null result. Otherwise the source

@@ -47,6 +47,11 @@ public class Music : IEntity
     public int? Discs { get; set; }
     public List<Disc> DiscList { get; set; } = [];
 
+    /// <summary>
+    /// Optional MusicBrainz release-group id written as <c>mbid:&lt;id&gt;</c>. Absent on older documents.
+    /// </summary>
+    public string? ExternalId { get; set; }
+
     public string? ImageUrl { get; set; }
 
     public Image? CoverImage { get; set; }
@@ -64,6 +69,7 @@ public class Music : IEntity
           && string.IsNullOrWhiteSpace(Label)
           && string.IsNullOrWhiteSpace(Barcode)
           && !Tracks.HasValue
+          && string.IsNullOrWhiteSpace(ExternalId)
           && !Discs.HasValue
           && DiscList.Count == 0
           && CoverImage == null;

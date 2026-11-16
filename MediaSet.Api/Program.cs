@@ -254,9 +254,11 @@ if (plexSection.Exists())
         builder.Services.AddScoped<IPlexCoverService, PlexCoverService>();
         builder.Services.AddScoped<IPlexStatisticsService, PlexStatisticsService>();
         builder.Services.AddScoped<IExternalIdBackfillService, ExternalIdBackfillService>();
+        builder.Services.AddScoped<IMusicExternalIdBackfillService, MusicExternalIdBackfillService>();
         builder.Services.AddSingleton<IPlexSyncRunStore, PlexSyncRunStore>();
         builder.Services.AddSingleton<IPlexItemStore, PlexItemStore>();
         builder.Services.AddSingleton<IExternalIdBackfillStore, ExternalIdBackfillStore>();
+        builder.Services.AddSingleton<IMusicExternalIdBackfillStore, MusicExternalIdBackfillStore>();
         builder.Services.AddSingleton<IPlexDataCleanup, PlexDataCleanup>();
         builder.Services.AddSingleton<IPlexLookup, PlexLookup>();
         builder.Services.AddSingleton<PlexSyncService>();

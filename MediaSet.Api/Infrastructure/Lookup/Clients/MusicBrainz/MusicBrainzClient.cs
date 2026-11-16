@@ -85,6 +85,59 @@ public class MusicBrainzClient : IMusicBrainzClient
         }
     }
 
+    public async Task<IReadOnlyList<MusicBrainzRelease>> SearchByBarcodeAsync(string barcode, CancellationToken cancellationToken)
+    {
+        await _rateLimiter.WaitAsync(cancellationToken);
+        try
+        {
+            var timeSinceLastRequest = DateTime.UtcNow - _lastRequestTime;
+            if (timeSinceLastRequest < TimeSpan.FromSeconds(1))
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1) - timeSinceLastRequest, cancellationToken);
+            }
+
+            _logger.LogInformation("Searching MusicBrainz releases by barcode: {Barcode}", barcode);
+
+            var response = await _httpClient.GetProviderAsync(
+                $"ws/2/release/?query=barcode:{Uri.EscapeDataString(barcode)}&limit=10&fmt=json",
+                cancellationToken);
+
+            _lastRequestTime = DateTime.UtcNow;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.RecordStatus(response);
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    throw ProviderRateLimitException.FromResponse("MusicBrainz rate limit exceeded", response);
+                }
+
+                _logger.LogWarning("MusicBrainz returned status code {StatusCode} for barcode search: {Barcode}",
+                    response.StatusCode, barcode);
+                return [];
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<MusicBrainzSearchResponse>(cancellationToken);
+            return result?.Releases ?? [];
+        }
+        catch (HttpRequestException ex)
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogProviderHttpFailure(ex, LogProviders.MusicBrainz, "HTTP error while searching releases for barcode: {Barcode}", barcode);
+            throw;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
+            _logger.LogError(ex, "Error searching releases for barcode: {Barcode}", barcode);
+            return [];
+        }
+        finally
+        {
+            _rateLimiter.Release();
+        }
+    }
+
     public async Task<MusicBrainzRelease?> GetReleaseByIdAsync(string releaseId, CancellationToken cancellationToken)
     {
         await _rateLimiter.WaitAsync(cancellationToken);

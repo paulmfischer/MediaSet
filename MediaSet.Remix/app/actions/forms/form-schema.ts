@@ -40,6 +40,13 @@ export const optionalHttpUrl = (message: string): Schema<unknown, string> =>
     }
   }, message);
 
+/** A blank optional field, or an external id in `source:value` form with no whitespace (for example `mbid:1234`). */
+export const optionalExternalId = (): Schema<unknown, string> =>
+  text().refine(
+    (value) => value === '' || /^[^\s:]+:[^\s:]+$/.test(value),
+    "Enter the id as source:value with no spaces, for example 'mbid:1234'"
+  );
+
 /** A checkbox: checked submits a value (`true`, or the browser's default `on`); unchecked submits nothing. */
 export const checkbox = (): Schema<unknown, boolean> => text().transform((value) => value === 'true' || value === 'on');
 

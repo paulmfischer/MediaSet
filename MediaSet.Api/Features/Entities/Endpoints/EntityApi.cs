@@ -600,17 +600,18 @@ internal static class EntityApi
     }
 
     /// <summary>
-    /// Validates and normalizes a Movie's ExternalId in place (source lowercased, value untouched).
+    /// Validates and normalizes a Movie's or Music entry's ExternalId in place (source lowercased, value untouched).
     /// Returns a 400 problem-details result when the value is malformed; other entity types are ignored.
     /// </summary>
     private static ProblemHttpResult? ValidateExternalId(IEntity entity)
     {
-        if (entity is not Movie movie)
+        if (entity is not (Movie or Music))
         {
             return null;
         }
 
-        if (!ExternalIdFormat.TryNormalize(movie.ExternalId, out var normalized))
+        var current = entity is Movie m ? m.ExternalId : ((Music)entity).ExternalId;
+        if (!ExternalIdFormat.TryNormalize(current, out var normalized))
         {
             return TypedResults.Problem(
                 title: "Invalid ExternalId",
@@ -618,7 +619,15 @@ internal static class EntityApi
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        movie.ExternalId = normalized;
+        if (entity is Movie movie)
+        {
+            movie.ExternalId = normalized;
+        }
+        else
+        {
+            ((Music)entity).ExternalId = normalized;
+        }
+
         return null;
     }
 

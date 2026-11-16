@@ -171,4 +171,22 @@ public class MusicTests
         // Assert
         Assert.That(result, Is.False);
     }
+
+    [Test]
+    public void IsEmpty_MusicWithOnlyExternalId_ReturnsFalse()
+    {
+        var music = new Music { ExternalId = "mbid:abc" };
+
+        Assert.That(music.IsEmpty(), Is.False);
+    }
+
+    [Test]
+    public void Deserialize_DocumentWithoutExternalId_ReadsWithNullExternalId()
+    {
+        var document = MongoDB.Bson.BsonDocument.Parse("{ \"Title\": \"Album\", \"Artist\": \"Artist\" }");
+
+        var music = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<Music>(document);
+
+        Assert.That(music.ExternalId, Is.Null);
+    }
 }
