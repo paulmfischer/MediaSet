@@ -12,6 +12,12 @@ public interface IPlexLinkService
     /// </summary>
     Task<PlexItemData?> LinkAsync(string entityType, string movieId, string plexItemId, CancellationToken cancellationToken, PlexScope? scope = null);
 
+    /// <summary>
+    /// Links a music entry to a Plex album by hand and stores the album's rollup (its tracks, all discs together). Replaces any
+    /// existing link. <paramref name="expectedTracks"/> is the entry's track count. Null when Plex has no such album.
+    /// </summary>
+    Task<PlexItemData?> LinkMusicAsync(string musicId, string plexItemId, int? expectedTracks, CancellationToken cancellationToken);
+
     /// <summary>Removes the link and its stored Plex data. False when the movie was not linked.</summary>
     Task<bool> UnlinkAsync(string movieId, CancellationToken cancellationToken);
 }
@@ -54,6 +60,21 @@ public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLi
             var episodes = await PlexEpisodeLoader.LoadAsync(client, seasons, scope, null, null, cancellationToken);
             data = PlexMatching.BuildShow(movieId, item, seasons, scope, DateTime.UtcNow, PlexLinkSources.Manual, episodes);
         }
+        await store.UpsertAsync(data, cancellationToken);
+        return data;
+    }
+
+    public async Task<PlexItemData?> LinkMusicAsync(string musicId, string plexItemId, int? expectedTracks, CancellationToken cancellationToken)
+    {
+        var item = await client.GetItemAsync(plexItemId, true, cancellationToken);
+        if (item == null || !string.Equals(item.Type, PlexEntityTypes.AlbumItemType, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // All Plex reads happen before the write
+        var tracks = await client.GetTracksAsync(item.RatingKey, cancellationToken);
+        var data = PlexMusicMatching.Build(musicId, item, tracks, expectedTracks, DateTime.UtcNow, PlexLinkSources.Manual);
         await store.UpsertAsync(data, cancellationToken);
         return data;
     }

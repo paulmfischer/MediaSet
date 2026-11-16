@@ -1,0 +1,25 @@
+{
+ "MediaContainer": {
+  "size": 1,
+  "Metadata": [
+   {
+    "ratingKey": "7001",
+    "key": "/library/metadata/7001/children",
+    "guid": "plex://album/7001",
+    "type": "album",
+    "title": "Abbey Road",
+    "parentTitle": "The Beatles",
+    "librarySectionID": 4,
+    "librarySectionTitle": "Music",
+    "leafCount": 3,
+    "addedAt": 1700000000,
+    "updatedAt": 1700000010,
+    "Guid": [
+     {
+      "id": "mbid://11111111-1111-1111-1111-111111111111"
+     }
+    ]
+   }
+  ]
+ }
+}

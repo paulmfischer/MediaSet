@@ -42,6 +42,18 @@ public static class PlexEntityTypes
             _ => []
         };
 
+    /// <summary>
+    /// The Plex item types listed, searched and linkable for an entity type: movies and shows for movies (TV series
+    /// entries link to shows), albums for music.
+    /// </summary>
+    public static IReadOnlyList<string> ItemTypes(string? entityType) =>
+        Normalize(entityType) switch
+        {
+            Movies => [MovieItemType, ShowItemType],
+            Music => [AlbumItemType],
+            _ => []
+        };
+
     /// <summary>The Plex item type an entry links to: a show for a TV series entry, a movie otherwise.</summary>
     public static string ItemType(bool isTvSeries) => isTvSeries ? ShowItemType : MovieItemType;
 }

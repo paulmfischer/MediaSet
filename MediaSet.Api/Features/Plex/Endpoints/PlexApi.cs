@@ -133,15 +133,17 @@ internal static class PlexApi
                     statusCode: StatusCodes.Status400BadRequest);
         });
 
-        // PUT /plex/{entityType}/items/{id}/link: links a movie to a Plex item by hand and loads its data now
+        // PUT /plex/{entityType}/items/{id}/link: links a movie (or a music entry, to an album) to a Plex item by hand and loads its data now
         entity.MapPut("/items/{id}/link", async (
             string entityType,
             HttpContext context,
             string id,
             PlexLinkRequest? body,
             IEntityService<Movie> movies,
+            IEntityService<Music> musics,
             IPlexLinkService links,
             IPlexCoverService<Movie> covers,
+            IPlexCoverService<Music> musicCovers,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(body?.PlexItemId))
@@ -150,6 +152,41 @@ internal static class PlexApi
                     title: "Plex item id required",
                     detail: "The request body must contain a 'plexItemId'.",
                     statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            if (PlexEntityTypeFilter.GetEntityType(context) == PlexEntityTypes.Music)
+            {
+                var music = IsObjectId(id) ? await musics.GetAsync(id, cancellationToken) : null;
+                if (music == null)
+                {
+                    return MusicNotFound();
+                }
+
+                if (body.Scope != null)
+                {
+                    return Results.Problem(
+                        title: "Scope not allowed",
+                        detail: "A scope applies only to TV series entries.",
+                        statusCode: StatusCodes.Status400BadRequest);
+                }
+
+                try
+                {
+                    var albumId = body.PlexItemId.Trim();
+                    var linked = await links.LinkMusicAsync(id, albumId, PlexMusicMatching.ExpectedTracks(music), cancellationToken);
+                    if (linked == null)
+                    {
+                        return PlexItemNotFound(albumId, album: true);
+                    }
+
+                    // An entry without a cover takes the Plex album image (the service checks). Best effort: it never fails the link.
+                    await musicCovers.ApplyIfMissingAsync(id, linked.PlexItemId, cancellationToken);
+                    return Results.Ok(PlexItemDataDto.From(linked));
+                }
+                catch (PlexClientException ex)
+                {
+                    return PlexFailed(ex);
+                }
             }
 
             var movie = IsObjectId(id) ? await movies.GetAsync(id, cancellationToken) : null;
@@ -198,12 +235,21 @@ internal static class PlexApi
         // DELETE /plex/{entityType}/items/{id}/link: removes the link and its stored Plex data
         entity.MapDelete("/items/{id}/link", async (
             string entityType,
+            HttpContext context,
             string id,
             IEntityService<Movie> movies,
+            IEntityService<Music> musics,
             IPlexLinkService links,
             CancellationToken cancellationToken) =>
         {
-            if (await MovieMissingAsync(id, movies, cancellationToken))
+            if (PlexEntityTypeFilter.GetEntityType(context) == PlexEntityTypes.Music)
+            {
+                if (!IsObjectId(id) || await musics.GetAsync(id, cancellationToken) == null)
+                {
+                    return MusicNotFound();
+                }
+            }
+            else if (await MovieMissingAsync(id, movies, cancellationToken))
             {
                 return MovieNotFound();
             }
@@ -311,9 +357,14 @@ internal static class PlexApi
         detail: "No movie exists with this id.",
         statusCode: StatusCodes.Status404NotFound);
 
-    private static IResult PlexItemNotFound(string plexItemId, bool show = false) => Results.Problem(
+    private static IResult MusicNotFound() => Results.Problem(
+        title: "Music not found",
+        detail: "No music entry exists with this id.",
+        statusCode: StatusCodes.Status404NotFound);
+
+    private static IResult PlexItemNotFound(string plexItemId, bool show = false, bool album = false) => Results.Problem(
         title: "Plex item not found",
-        detail: $"Plex has no {(show ? "show" : "movie")} with item id '{plexItemId}'.",
+        detail: $"Plex has no {(album ? "album" : show ? "show" : "movie")} with item id '{plexItemId}'.",
         statusCode: StatusCodes.Status404NotFound);
 
     // The exception message holds no URL or token
