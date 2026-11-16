@@ -40,7 +40,7 @@ export const optionalHttpUrl = (message: string): Schema<unknown, string> =>
     }
   }, message);
 
-/** A blank optional field, or an external id in `source:value` form with no whitespace (for example `mbid:1234`). */
+/** A blank optional field, or an external id in `source:value` form (exactly one colon, no whitespace), matching the API rule (for example `mbid:1234`). */
 export const optionalExternalId = (): Schema<unknown, string> =>
   text().refine(
     (value) => value === '' || /^[^\s:]+:[^\s:]+$/.test(value),

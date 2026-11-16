@@ -110,7 +110,7 @@ export interface MusicEntity extends BaseEntity {
   tracks?: number | null;
   discs?: number | null;
   discList?: Array<Disc>;
-  /** MusicBrainz release-group id written `mbid:<id>`; filled by the lookup or the Plex sync backfill, editable in the form. */
+  /** MusicBrainz release-group id written `mbid:<id>`; written by the lookup and editable in the form. */
   externalId?: string;
 }
 // UI model

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Features.Plex.Services;
@@ -158,6 +159,20 @@ public class MusicExternalIdBackfillServiceTests
         var h = new Harness(Album("a", barcode: "0123"));
         h.MusicBrainz.ByBarcode["0123"] = [Release("r1", "g1"), Release("r2", "g2")];
         h.MusicBrainz.ByTitle["Kind of Blue|Miles Davis"] = [Release("r3", "g3")];
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Albums[0].ExternalId, Is.Null);
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
+        Assert.That(h.MusicBrainz.Calls.Select(c => c.Kind), Is.EqualTo(["barcode"]));
+    }
+
+    [Test]
+    public async Task RunAsync_BarcodeSearchFails_SkipsTitleFallbackAndLeavesBlank()
+    {
+        var h = new Harness(Album("a", barcode: "0123"));
+        h.MusicBrainz.ByTitle["Kind of Blue|Miles Davis"] = [Release("r1", "g1")];
+        h.MusicBrainz.FailOn = key => key == "0123" ? new HttpRequestException("boom", null, HttpStatusCode.InternalServerError) : null;
 
         var result = await h.Build().RunAsync(CancellationToken.None);
 

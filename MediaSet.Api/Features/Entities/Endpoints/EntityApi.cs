@@ -605,12 +605,17 @@ internal static class EntityApi
     /// </summary>
     private static ProblemHttpResult? ValidateExternalId(IEntity entity)
     {
+        var current = entity switch
+        {
+            Movie movie => movie.ExternalId,
+            Music music => music.ExternalId,
+            _ => null,
+        };
         if (entity is not (Movie or Music))
         {
             return null;
         }
 
-        var current = entity is Movie m ? m.ExternalId : ((Music)entity).ExternalId;
         if (!ExternalIdFormat.TryNormalize(current, out var normalized))
         {
             return TypedResults.Problem(
@@ -619,13 +624,14 @@ internal static class EntityApi
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        if (entity is Movie movie)
+        switch (entity)
         {
-            movie.ExternalId = normalized;
-        }
-        else
-        {
-            ((Music)entity).ExternalId = normalized;
+            case Movie movie:
+                movie.ExternalId = normalized;
+                break;
+            case Music music:
+                music.ExternalId = normalized;
+                break;
         }
 
         return null;

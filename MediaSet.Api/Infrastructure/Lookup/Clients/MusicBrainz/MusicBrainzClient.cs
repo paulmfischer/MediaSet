@@ -114,7 +114,8 @@ public class MusicBrainzClient : IMusicBrainzClient
 
                 _logger.LogWarning("MusicBrainz returned status code {StatusCode} for barcode search: {Barcode}",
                     response.StatusCode, barcode);
-                return [];
+                // An error is not "no releases": throw so callers never treat it as a miss and guess another way
+                throw new HttpRequestException($"MusicBrainz barcode search failed with {(int)response.StatusCode}", null, response.StatusCode);
             }
 
             var result = await response.Content.ReadFromJsonAsync<MusicBrainzSearchResponse>(cancellationToken);
@@ -130,7 +131,7 @@ public class MusicBrainzClient : IMusicBrainzClient
         {
             MediaSet.Api.Infrastructure.Lookup.LookupFailureScope.Record(ex);
             _logger.LogError(ex, "Error searching releases for barcode: {Barcode}", barcode);
-            return [];
+            throw;
         }
         finally
         {
