@@ -196,6 +196,17 @@ export function MusicFormPage(handle: Handle<MusicFormPageProps>) {
               describedBy={errors.label ? errorId('label') : undefined}
             />
           </Field>
+          <Field name="externalId" label="MusicBrainz ID" error={errors.externalId}>
+            <input
+              id="externalId"
+              name="externalId"
+              type="text"
+              class={inputClasses}
+              placeholder="mbid:release-group id"
+              value={values.externalId}
+              {...errorProps('externalId', errors.externalId)}
+            />
+          </Field>
           <Field name="genres" label="Genres" error={errors.genres}>
             <MultiSelectInput
               name="genres"

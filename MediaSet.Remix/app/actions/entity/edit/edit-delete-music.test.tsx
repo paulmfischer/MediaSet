@@ -41,6 +41,8 @@ function stubApi(
     lookup?: () => Response;
     /** Collects each lookup request's path and query. */
     lookups?: string[];
+    /** Fields added to the stored album. */
+    album?: Record<string, unknown>;
   } = {}
 ) {
   const original = globalThis.fetch;
@@ -59,7 +61,7 @@ function stubApi(
       }
       if (options.missing) return new Response('nope', { status: 404 });
       if (options.loadFails) return new Response('down', { status: 503 });
-      return Response.json(existing);
+      return Response.json({ ...existing, ...options.album });
     }
     if (url.pathname.endsWith('/config/lookup-capabilities')) {
       return Response.json({ supportsMusicLookup: options.supported ?? true });
@@ -104,6 +106,31 @@ describe('edit album', () => {
     assert.match(html, /name="trackNumber"[^>]*value="1"/);
     assert.match(html, /name="trackMinutes"[^>]*value="4"/);
     assert.match(html, /name="trackSeconds"[^>]*value="19"/);
+  });
+
+  it('GET shows the saved MusicBrainz id and a save keeps it', async (t) => {
+    const calls = stubApi(t, { album: { externalId: 'mbid:3b8e' } });
+    const html = await (await router.fetch(url('/musics/m1/edit'))).text();
+    assert.match(html, /name="externalId"[^>]*value="mbid:3b8e"/);
+
+    await post('/musics/m1/edit', [
+      ['title', 'Abbey Road'],
+      ['artist', 'The Beatles'],
+      ['externalId', 'mbid:3b8e'],
+    ]);
+    assert.equal((calls[0]?.body as { externalId?: string }).externalId, 'mbid:3b8e');
+  });
+
+  it('re-renders with an error for a malformed MusicBrainz id', async (t) => {
+    const calls = stubApi(t);
+    const response = await post('/musics/m1/edit', [
+      ['title', 'Abbey Road'],
+      ['artist', 'The Beatles'],
+      ['externalId', 'nocolon'],
+    ]);
+    assert.equal(response.status, 400);
+    assert.match(await response.text(), /<p id="externalId-error"/);
+    assert.equal(calls.length, 0);
   });
 
   it('returns 404 for a missing album and 500 when it cannot be loaded', async (t) => {

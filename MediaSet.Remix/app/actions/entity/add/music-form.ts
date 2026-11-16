@@ -6,6 +6,7 @@ import { Entity, type Disc, type MusicEntity } from '../../../models.ts';
 import {
   blankToUndefined,
   fieldErrors,
+  optionalExternalId,
   optionalHttpUrl,
   optionalWholeNumber,
   requiredText,
@@ -28,6 +29,7 @@ export const musicForm = f.object({
   durationSeconds: f.field(optionalWholeNumber('Seconds must be a whole number from 0 to 59', 2, 59)),
   genres: textList('genres'),
   imageUrl: f.field(optionalHttpUrl('Enter a valid http or https image URL')),
+  externalId: f.field(optionalExternalId()),
 });
 
 export const MUSIC_FIELDS = {
@@ -43,6 +45,7 @@ export const MUSIC_FIELDS = {
     'durationMinutes',
     'durationSeconds',
     'imageUrl',
+    'externalId',
   ],
   repeated: ['genres'],
 } as const;
@@ -76,6 +79,7 @@ export type MusicFormValues = {
   /** The track editor's rows, in the order shown; validated separately by `parseTrackRows`. */
   trackList: TrackRowValues[];
   imageUrl: string;
+  externalId: string;
   genres: string[];
 };
 
@@ -92,6 +96,7 @@ export const emptyMusicValues: MusicFormValues = {
   durationSeconds: '',
   trackList: [],
   imageUrl: '',
+  externalId: '',
   genres: [],
 };
 
@@ -203,6 +208,7 @@ export function toMusicEntity(parsed: ParsedMusic, discList: Disc[] = []): Music
     duration: toMilliseconds(parsed.durationMinutes, parsed.durationSeconds),
     discList: discList.length === 0 ? undefined : discList,
     imageUrl: blankToUndefined(parsed.imageUrl),
+    externalId: blankToUndefined(parsed.externalId),
     genres: parsed.genres,
   };
 }
@@ -229,6 +235,7 @@ export function toMusicValues(music: MusicEntity): MusicFormValues {
     durationSeconds: seconds,
     trackList: (music.discList ?? []).map(toTrackRow),
     imageUrl: music.imageUrl ?? '',
+    externalId: music.externalId ?? '',
     genres: music.genres ?? [],
   };
 }

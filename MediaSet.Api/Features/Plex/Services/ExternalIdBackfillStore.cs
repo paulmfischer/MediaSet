@@ -26,12 +26,12 @@ public interface IExternalIdBackfillStore
     Task DeleteAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken);
 }
 
-public class ExternalIdBackfillStore(IDatabaseService database) : IExternalIdBackfillStore
+public class ExternalIdBackfillStore(IDatabaseService database, string collectionName = ExternalIdBackfillStore.CollectionName) : IExternalIdBackfillStore
 {
     public const string CollectionName = "PlexBackfillAttempts";
 
     // The built-in unique _id index covers the movie id; the collection is created on the first write
-    private IMongoCollection<ExternalIdBackfillAttempt> Collection => database.GetCollection<ExternalIdBackfillAttempt>(CollectionName);
+    private IMongoCollection<ExternalIdBackfillAttempt> Collection => database.GetCollection<ExternalIdBackfillAttempt>(collectionName);
 
     public async Task<IReadOnlyDictionary<string, DateTime>> GetAttemptsAsync(CancellationToken cancellationToken) =>
         (await Collection.Find(FilterDefinition<ExternalIdBackfillAttempt>.Empty).ToListAsync(cancellationToken))
@@ -48,4 +48,13 @@ public class ExternalIdBackfillStore(IDatabaseService database) : IExternalIdBac
         movieIds.Count == 0
             ? Task.CompletedTask
             : Collection.DeleteManyAsync(a => movieIds.Contains(a.Id), cancellationToken);
+}
+
+/// <summary>Attempts of the music backfill, in their own collection so each backfill purges only its own entries.</summary>
+public interface IMusicExternalIdBackfillStore : IExternalIdBackfillStore;
+
+public class MusicExternalIdBackfillStore(IDatabaseService database)
+    : ExternalIdBackfillStore(database, MusicCollectionName), IMusicExternalIdBackfillStore
+{
+    public const string MusicCollectionName = "PlexMusicBackfillAttempts";
 }

@@ -161,7 +161,9 @@ public class MusicLookupStrategy : LookupStrategyBase<Music, MusicResponse>
             ImageUrl: $"https://coverartarchive.org/release/{release.Id}/front",
             Provenance: new LookupProvenance("MusicBrainz", release.Id, release.Title,
                 FallbackImageUrl: string.IsNullOrWhiteSpace(release.ReleaseGroup?.Id) ? null
-                    : $"https://coverartarchive.org/release-group/{release.ReleaseGroup.Id}/front")
+                    : $"https://coverartarchive.org/release-group/{release.ReleaseGroup.Id}/front"),
+            ExternalId: string.IsNullOrWhiteSpace(release.ReleaseGroup?.Id) ? null
+                : ExternalIdFormat.ForMusicBrainzReleaseGroup(release.ReleaseGroup.Id)
         );
     }
 

@@ -110,6 +110,8 @@ export interface MusicEntity extends BaseEntity {
   tracks?: number | null;
   discs?: number | null;
   discList?: Array<Disc>;
+  /** MusicBrainz release-group id written `mbid:<id>`; written by the lookup and editable in the form. */
+  externalId?: string;
 }
 // UI model
 export type Music = Override<MusicEntity, { genres: string }>;

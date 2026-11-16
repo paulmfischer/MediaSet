@@ -1,7 +1,7 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { parseTrackRows, readTrackRows, toMusicValues, toTrackRow } from './music-form.ts';
+import { parseMusicSubmission, parseTrackRows, readTrackRows, toMusicValues, toTrackRow } from './music-form.ts';
 
 const row = (trackNumber: string, title: string, minutes = '', seconds = '') => ({
   trackNumber,
@@ -71,5 +71,36 @@ describe('music track rows', () => {
     assert.deepEqual(toTrackRow({ trackNumber: 2, title: 'B', duration: 125900 }), row('2', 'B', '2', '5'));
     assert.deepEqual(toTrackRow({ trackNumber: 3, title: 'C', duration: null }), row('3', 'C'));
     assert.deepEqual(toMusicValues({ type: 'Musics', title: 'T', artist: 'A', genres: [] } as never).trackList, []);
+  });
+});
+
+describe('music externalId field', () => {
+  const submit = (externalId: string) => {
+    const data = new FormData();
+    data.append('title', 'Album');
+    data.append('artist', 'Artist');
+    data.append('externalId', externalId);
+    return parseMusicSubmission(data);
+  };
+
+  it('should accept a blank value and an mbid:<id> value', () => {
+    for (const value of ['', ' mbid:3b8e ']) {
+      const result = submit(value);
+      assert.equal(result.success, true);
+      if (result.success) assert.equal(result.value.externalId, value.trim());
+    }
+  });
+
+  it('should reject a value that is not source:value', () => {
+    for (const value of ['abc', 'mbid:', 'mbid: x y', 'a:b:c']) {
+      const result = submit(value);
+      assert.equal(result.success, false, value);
+      if (!result.success) assert.ok(result.errors.externalId);
+    }
+  });
+
+  it('should show the saved id in the edit form values', () => {
+    assert.equal(toMusicValues({ type: 'Musics', externalId: 'mbid:abc' } as never).externalId, 'mbid:abc');
+    assert.equal(toMusicValues({ type: 'Musics' } as never).externalId, '');
   });
 });

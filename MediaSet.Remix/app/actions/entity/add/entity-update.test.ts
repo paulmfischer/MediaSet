@@ -199,7 +199,14 @@ describe('toMusicUpdate', () => {
     durationSeconds: 5,
     genres: [],
     imageUrl: 'https://img/old.jpg',
+    externalId: '',
   };
+
+  it('should keep an existing externalId when it is resent and drop it when cleared', () => {
+    const withId = { ...existing, externalId: 'mbid:abc' };
+    assert.equal(wire(toMusicUpdate(withId, { ...parsed, externalId: 'mbid:abc' }, [])).externalId, 'mbid:abc');
+    assert.equal('externalId' in wire(toMusicUpdate(withId, parsed, [])), false);
+  });
 
   it('should drop cleared fields, keep an unchanged duration and keep unchanged saved tracks', () => {
     const update = toMusicUpdate(existing, parsed, [{ trackNumber: 1, title: 'One', duration: 3000 }]);
