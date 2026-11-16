@@ -201,6 +201,28 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                         }
                     }
                 }
+                // No Open Library match (or no usable cover) for the stored title: ask Google Books by exact
+                // title and author. This also covers books without an ISBN and series volumes Open Library lacks.
+                if (entity is Book titleBook && type == IdentifierType.Entity && googleBooksClient != null
+                    && !parameters.ContainsKey("confirmedProviderId") && !parameters.ContainsKey("olid"))
+                {
+                    string? googleCover;
+                    using (logger.BeginProviderScope(LogProviders.GoogleBooks))
+                    {
+                        googleCover = await googleBooksClient.GetCoverUrlByTitleAsync(titleBook.Title,
+                            titleBook.Subtitle, titleBook.Authors, cancellationToken);
+                    }
+                    var titleFallback = await Download(googleCover, LogProviders.GoogleBooks, strategy);
+                    if (titleFallback?.Success == true)
+                    {
+                        return titleFallback with
+                        {
+                            ConfirmedMatch = new(LogProviders.GoogleBooks, titleBook.Title, titleBook.Title,
+                                titleFallback.ImageUrl, fingerprint,
+                                "Full title and an author agree with the Google Books volume", "Provider artwork")
+                        };
+                    }
+                }
                 Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",
                     true, matching.Count > 0 ? ImageLookupOutcome.MissingArtwork : ImageLookupOutcome.NoMatch,
                     failures.AttemptedProviders, strategy, ConfirmedMatch: confirmed));

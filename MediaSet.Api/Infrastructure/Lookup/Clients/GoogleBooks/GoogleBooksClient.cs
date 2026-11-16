@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using MediaSet.Api.Shared.Extensions;
 
@@ -22,8 +23,72 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
             return null;
         }
 
+        var volumes = await SearchVolumesAsync($"isbn:{normalized}", $"ISBN {normalized}", cancellationToken);
+
+        // A query can return other editions; only accept a volume that lists this exact ISBN.
+        var volume = volumes?.Items?.FirstOrDefault(v => v.VolumeInfo?.IndustryIdentifiers?
+            .Any(i => i.Type is "ISBN_10" or "ISBN_13" && NormalizeIsbn(i.Identifier) == normalized) == true);
+        var url = FirstCoverUrl(volume?.VolumeInfo?.ImageLinks);
+        if (url == null)
+        {
+            logger.LogDebug("No Google Books cover for ISBN {Isbn}", normalized);
+            return null;
+        }
+        return NormalizeCoverUrl(url);
+    }
+
+    public async Task<string?> GetCoverUrlByTitleAsync(string title, string? subtitle, IReadOnlyList<string> authors,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = Normalize(title);
+        if (wanted.Length == 0)
+        {
+            return null;
+        }
+        var query = $"intitle:\"{title}\"" + (authors.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a)) is { } author
+            ? $" inauthor:\"{author}\"" : string.Empty);
+        var volumes = await SearchVolumesAsync(query, $"title {title}", cancellationToken);
+        var volume = volumes?.Items?.FirstOrDefault(v => v.VolumeInfo is { } info
+            && TitleMatches(title, subtitle, info) && AuthorsMatch(authors, info));
+        var url = FirstCoverUrl(volume?.VolumeInfo?.ImageLinks);
+        if (url == null)
+        {
+            logger.LogDebug("No Google Books cover for title {Title}", title);
+            return null;
+        }
+        return NormalizeCoverUrl(url);
+    }
+
+    // Exact title (with or without the subtitle) only. A stored volume number ("Preacher Vol. 1") also accepts
+    // the same volume with its own subtitle ("Preacher Vol. 1: Gone to Texas").
+    private static bool TitleMatches(string title, string? subtitle, VolumeInfo info)
+    {
+        var stored = new[] { Normalize(title), Normalize($"{title} {subtitle}") }.Where(t => t.Length > 0).ToHashSet();
+        var found = Normalize(info.Title);
+        if (stored.Contains(found) || stored.Contains(Normalize($"{info.Title} {info.Subtitle}")))
+        {
+            return true;
+        }
+        return Regex.IsMatch(Normalize(title), @"\b(?:vol|volume|book|v) ?\d+$")
+            && Normalize($"{info.Title} {info.Subtitle}").StartsWith(Normalize(title) + " ", StringComparison.Ordinal);
+    }
+
+    private static bool AuthorsMatch(IReadOnlyList<string> authors, VolumeInfo info)
+    {
+        var stored = authors.Where(a => !string.IsNullOrWhiteSpace(a)).Select(Normalize).ToList();
+        return stored.Count == 0 || info.Authors?.Any(a => stored.Contains(Normalize(a))) == true;
+    }
+
+    private static string Normalize(string? value) =>
+        Regex.Replace((value ?? string.Empty).ToLowerInvariant(), @"[^\p{L}\p{N}]+", " ").Trim();
+
+    private static string? FirstCoverUrl(Dictionary<string, string>? links) => links == null ? null
+        : _imageSizes.Select(size => links.GetValueOrDefault(size)).FirstOrDefault(u => !string.IsNullOrWhiteSpace(u));
+
+    private async Task<VolumesResponse?> SearchVolumesAsync(string query, string description, CancellationToken cancellationToken)
+    {
         using var response = await httpClient.GetProviderAsync(
-            $"volumes?q=isbn:{normalized}&maxResults=5&printType=books", cancellationToken);
+            $"volumes?q={Uri.EscapeDataString(query).Replace("%3A", ":")}&maxResults=10&printType=books", cancellationToken);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
@@ -32,7 +97,7 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
         {
             // Keyless requests get 403 for an exhausted shared daily quota or an unsupported location. Retrying
             // would not help and the cover is only a fallback, so treat it as no cover instead of a retryable failure.
-            logger.LogWarning("Google Books refused the cover lookup for ISBN {Isbn} (403 Forbidden)", normalized);
+            logger.LogWarning("Google Books refused the cover lookup for {Description} (403 Forbidden)", description);
             return null;
         }
         if (!response.IsSuccessStatusCode)
@@ -40,29 +105,15 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
             throw new ProviderLookupException(LogProviders.GoogleBooks, LookupFailureScope.Classify(response.StatusCode),
                 $"Google Books cover lookup failed with status {(int)response.StatusCode}", LookupFailureScope.RetryAt(response));
         }
-
-        VolumesResponse? volumes;
         try
         {
-            volumes = await response.Content.ReadFromJsonAsync<VolumesResponse>(cancellationToken);
+            return await response.Content.ReadFromJsonAsync<VolumesResponse>(cancellationToken);
         }
         catch (JsonException ex)
         {
-            logger.LogWarning(ex, "Unreadable Google Books response for ISBN {Isbn}", normalized);
+            logger.LogWarning(ex, "Unreadable Google Books response for {Description}", description);
             return null;
         }
-
-        // A query can return other editions; only accept a volume that lists this exact ISBN.
-        var volume = volumes?.Items?.FirstOrDefault(v => v.VolumeInfo?.IndustryIdentifiers?
-            .Any(i => i.Type is "ISBN_10" or "ISBN_13" && NormalizeIsbn(i.Identifier) == normalized) == true);
-        var links = volume?.VolumeInfo?.ImageLinks;
-        var url = links == null ? null : _imageSizes.Select(size => links.GetValueOrDefault(size)).FirstOrDefault(u => !string.IsNullOrWhiteSpace(u));
-        if (url == null)
-        {
-            logger.LogDebug("No Google Books cover for ISBN {Isbn}", normalized);
-            return null;
-        }
-        return NormalizeCoverUrl(url);
     }
 
     /// <summary>ISBN-10 or ISBN-13 without separators, upper-case X check digit; null when it is neither.</summary>
@@ -94,6 +145,9 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
     private sealed record Volume([property: JsonPropertyName("volumeInfo")] VolumeInfo? VolumeInfo);
 
     private sealed record VolumeInfo(
+        [property: JsonPropertyName("title")] string? Title,
+        [property: JsonPropertyName("subtitle")] string? Subtitle,
+        [property: JsonPropertyName("authors")] List<string>? Authors,
         [property: JsonPropertyName("industryIdentifiers")] List<IndustryIdentifier>? IndustryIdentifiers,
         [property: JsonPropertyName("imageLinks")] Dictionary<string, string>? ImageLinks);
 
