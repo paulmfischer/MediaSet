@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MediaSet.Api.Features.Plex.Models;
@@ -217,5 +218,187 @@ public class PlexStatisticsCalculatorTests
         var stats = PlexStatisticsCalculator.Compute([Entry("a", "A"), Entry("b", "B")], [a, b]).Movies;
 
         Assert.That(stats.VideoCodec, Is.EqualTo([new PlexCountDto("hevc", 2)]));
+    }
+
+    private static Music Album(string id, string title, string artist = "Artist") => new() { Id = id, Title = title, Artist = artist };
+
+    private static PlexItemData MusicDoc(string id, bool onPlex = true) =>
+        new() { Id = id, PlexItemId = "k" + id, EntityType = "music", OnPlex = onPlex };
+
+    [Test]
+    public void ComputeMusic_NoDocuments_ReturnsZeroedSectionWithTotals()
+    {
+        var stats = PlexStatisticsCalculator.ComputeMusic([Album("a", "A"), Album("b", "B")], []);
+
+        Assert.That(stats.Coverage, Is.EqualTo(new PlexCoverageDto(2, 0, 2, 0)));
+        Assert.That(stats.Albums, Is.EqualTo(0));
+        Assert.That(stats.TotalPlays, Is.EqualTo(0));
+        Assert.That(stats.NeverPlayed, Is.EqualTo(0));
+        Assert.That(stats.MostPlayed, Is.Empty);
+        Assert.That(stats.RecentlyPlayed, Is.Empty);
+        Assert.That(stats.RecentlyAdded, Is.Empty);
+        Assert.That(stats.Storage, Is.EqualTo(new PlexStorageDto(0, 0, 0)));
+        Assert.That(stats.AudioCodec, Is.Empty);
+        Assert.That(stats.Bitrate, Is.Empty);
+        Assert.That(stats.Completeness, Is.EqualTo(new PlexMusicCompletenessDto(0, 0, 0, 0)));
+    }
+
+    [Test]
+    public void ComputeMusic_Coverage_CountsOnPlexNotOnPlexAndBroken()
+    {
+        var gone = MusicDoc("b", onPlex: false);
+        gone.Broken = true;
+
+        var stats = PlexStatisticsCalculator.ComputeMusic([Album("a", "A"), Album("b", "B"), Album("c", "C")], [MusicDoc("a"), gone]);
+
+        Assert.That(stats.Coverage, Is.EqualTo(new PlexCoverageDto(3, 1, 2, 1)));
+        Assert.That(stats.Albums, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ComputeMusic_Plays_SumsPlaysAndCountsNeverPlayedOverOnPlexAlbums()
+    {
+        var a = MusicDoc("a");
+        a.PlayCount = 5;
+        var b = MusicDoc("b");
+        b.PlayCount = 0;
+        var c = MusicDoc("c"); // null play count is never played
+        var gone = MusicDoc("d", onPlex: false);
+        gone.PlayCount = 100;
+        var entries = new[] { Album("a", "A"), Album("b", "B"), Album("c", "C"), Album("d", "D") };
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, [a, b, c, gone]);
+
+        Assert.That(stats.TotalPlays, Is.EqualTo(5));
+        Assert.That(stats.NeverPlayed, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void ComputeMusic_MostPlayed_TopTenByPlaysThenTitleSkippingNeverPlayed()
+    {
+        var entries = new List<Music>();
+        var docs = new List<PlexItemData>();
+        for (var i = 0; i < 12; i++)
+        {
+            entries.Add(Album($"id{i}", $"Album {i:00}"));
+            var d = MusicDoc($"id{i}");
+            d.PlayCount = i < 11 ? i + 1 : 0;
+            docs.Add(d);
+        }
+        // a tie on plays is broken by title
+        entries.Add(Album("tie", "Aardvark"));
+        var tie = MusicDoc("tie");
+        tie.PlayCount = 11;
+        docs.Add(tie);
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, docs);
+
+        Assert.That(stats.MostPlayed, Has.Count.EqualTo(10));
+        Assert.That(stats.MostPlayed.Select(a => a.Title).Take(2), Is.EqualTo(["Aardvark", "Album 10"]));
+        Assert.That(stats.MostPlayed.Select(a => a.PlayCount), Is.Ordered.Descending);
+        Assert.That(stats.MostPlayed.Select(a => a.Id), Does.Not.Contain("id11"));
+    }
+
+    [Test]
+    public void ComputeMusic_RecentlyPlayedAndAdded_OrderNewestFirstAndSkipMissingDates()
+    {
+        var a = MusicDoc("a");
+        a.LastPlayedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        a.DateAdded = new DateTime(2023, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        var b = MusicDoc("b");
+        b.LastPlayedAt = new DateTime(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+        var c = MusicDoc("c"); // never played, no date added
+        var d = MusicDoc("d");
+        d.DateAdded = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+        var entries = new[] { Album("a", "A", "Art A"), Album("b", "B"), Album("c", "C"), Album("d", "D") };
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, [a, b, c, d]);
+
+        Assert.That(stats.RecentlyPlayed.Select(x => x.Id), Is.EqualTo(["b", "a"]));
+        Assert.That(stats.RecentlyAdded.Select(x => x.Id), Is.EqualTo(["d", "a"]));
+        Assert.That(stats.RecentlyPlayed[1].Artist, Is.EqualTo("Art A"));
+    }
+
+    [Test]
+    public void ComputeMusic_Storage_TotalsAndAveragesOverAlbumsWithASize()
+    {
+        var a = MusicDoc("a");
+        a.SizeBytes = 3000;
+        var b = MusicDoc("b");
+        b.SizeBytes = 1000;
+        var c = MusicDoc("c"); // no size
+        var gone = MusicDoc("d", onPlex: false);
+        gone.SizeBytes = 9999;
+        var entries = new[] { Album("a", "A"), Album("b", "B"), Album("c", "C"), Album("d", "D") };
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, [a, b, c, gone]);
+
+        Assert.That(stats.Storage, Is.EqualTo(new PlexStorageDto(4000, 2000, 2)));
+    }
+
+    [Test]
+    public void ComputeMusic_CodecAndBitrate_GroupsCodecsAndBucketsBitrates()
+    {
+        var specs = new (string Id, string? Codec, int? Bitrate)[]
+        {
+            ("a", "FLAC", 900), ("b", " flac ", 1411), ("c", "mp3", 320), ("d", "mp3", 192),
+            ("e", "mp3", 128), ("f", null, null), ("g", "aac", 96), ("h", "mp3", 255)
+        };
+        var entries = specs.Select(x => Album(x.Id, x.Id.ToUpperInvariant())).ToList();
+        var docs = specs.Select(x =>
+        {
+            var d = MusicDoc(x.Id);
+            d.AudioCodec = x.Codec;
+            d.Bitrate = x.Bitrate;
+            return d;
+        }).ToList();
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, docs);
+
+        Assert.That(Count(stats.AudioCodec, "mp3"), Is.EqualTo(4));
+        Assert.That(Count(stats.AudioCodec, "flac"), Is.EqualTo(2));
+        Assert.That(Count(stats.AudioCodec, "unknown"), Is.EqualTo(1));
+        Assert.That(stats.Bitrate, Is.EqualTo(
+        [
+            new PlexCountDto("Under 128 kbps", 1),
+            new PlexCountDto("128-191 kbps", 1),
+            new PlexCountDto("192-255 kbps", 2),
+            new PlexCountDto("320-999 kbps", 2),
+            new PlexCountDto("1000+ kbps", 1),
+            new PlexCountDto("unknown", 1)
+        ]));
+    }
+
+    [Test]
+    public void ComputeMusic_Completeness_ComparesTracksPresentToExpectedIgnoringUnknownExpected()
+    {
+        var full = MusicDoc("a");
+        full.TracksPresent = 10;
+        full.TracksExpected = 10;
+        var partial = MusicDoc("b");
+        partial.TracksPresent = 6;
+        partial.TracksExpected = 12;
+        var noExpected = MusicDoc("c"); // the entry has no track count
+        noExpected.TracksPresent = 8;
+        var gone = MusicDoc("d", onPlex: false);
+        gone.TracksPresent = 1;
+        gone.TracksExpected = 9;
+        var entries = new[] { Album("a", "A"), Album("b", "B"), Album("c", "C"), Album("d", "D") };
+
+        var stats = PlexStatisticsCalculator.ComputeMusic(entries, [full, partial, noExpected, gone]);
+
+        Assert.That(stats.Completeness, Is.EqualTo(new PlexMusicCompletenessDto(16, 22, 1, 1)));
+    }
+
+    [Test]
+    public void ComputeMusic_DocumentOfNoListedEntry_IsIgnored()
+    {
+        var orphan = MusicDoc("zzz");
+        orphan.PlayCount = 50;
+
+        var stats = PlexStatisticsCalculator.ComputeMusic([Album("a", "A")], [orphan]);
+
+        Assert.That(stats.Albums, Is.EqualTo(0));
+        Assert.That(stats.TotalPlays, Is.EqualTo(0));
     }
 }

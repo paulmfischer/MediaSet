@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediaSet.Api.Features.Plex.Models;
 using MediaSet.Api.Features.Plex.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -125,6 +126,18 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         lock (_sync)
         {
             return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.EntityType == null).ToList());
+        }
+    }
+
+    public Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken)
+    {
+        if (StatsFailure != null)
+        {
+            throw StatsFailure;
+        }
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<PlexItemData>>(_items.Values.Where(d => d.EntityType == PlexEntityTypes.Music).ToList());
         }
     }
 

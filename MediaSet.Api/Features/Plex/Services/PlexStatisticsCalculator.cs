@@ -3,6 +3,9 @@ using MediaSet.Api.Shared.Models;
 
 namespace MediaSet.Api.Features.Plex.Services;
 
+/// <summary>The movie and TV sections computed together (they share the movie list).</summary>
+public record PlexVideoStatistics(PlexEntityStatisticsDto Movies, PlexEntityStatisticsDto Tv);
+
 /// <summary>Pure statistics over the stored Plex documents and the movie list. No storage, no HTTP.</summary>
 public static class PlexStatisticsCalculator
 {
@@ -10,14 +13,104 @@ public static class PlexStatisticsCalculator
     private const string Unknown = "unknown";
 
     /// <summary>A document from the PlexItems collection of an entry in the movie list; documents of no listed entry are ignored.</summary>
-    public static PlexStatisticsDto Compute(IReadOnlyCollection<Movie> entries, IReadOnlyCollection<PlexItemData> docs)
+    public static PlexVideoStatistics Compute(IReadOnlyCollection<Movie> entries, IReadOnlyCollection<PlexItemData> docs)
     {
         var byId = docs.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First());
         var movies = entries.Where(m => !m.IsTvSeries).ToList();
         var tv = entries.Where(m => m.IsTvSeries).ToList();
-        return new PlexStatisticsDto(
+        return new PlexVideoStatistics(
             ComputeKind("movies", movies, byId, tvKind: false),
             ComputeKind("tv", tv, byId, tvKind: true));
+    }
+
+    /// <summary>The music section: the music list against the music documents of the PlexItems collection (documents of no listed entry are ignored).</summary>
+    public static PlexMusicStatisticsDto ComputeMusic(IReadOnlyCollection<Music> entries, IReadOnlyCollection<PlexItemData> docs)
+    {
+        var byId = docs.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First());
+        var linked = entries.Where(e => e.Id != null && byId.ContainsKey(e.Id)).Select(e => (Entry: e, Doc: byId[e.Id!])).ToList();
+        var onPlex = linked.Where(x => x.Doc.OnPlex).ToList();
+        var coverage = new PlexCoverageDto(entries.Count, onPlex.Count, entries.Count - onPlex.Count, linked.Count(x => x.Doc.Broken));
+
+        PlexMusicAlbumDto Album((Music Entry, PlexItemData Doc) x) =>
+            new(x.Entry.Id!, x.Entry.Title, x.Entry.Artist, x.Doc.PlayCount ?? 0, x.Doc.LastPlayedAt, x.Doc.DateAdded);
+
+        var mostPlayed = onPlex
+            .Where(x => x.Doc.PlayCount is > 0)
+            .OrderByDescending(x => x.Doc.PlayCount)
+            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
+            .Take(MostWatchedLimit)
+            .Select(Album)
+            .ToList();
+        var recentlyPlayed = onPlex
+            .Where(x => x.Doc.LastPlayedAt != null)
+            .OrderByDescending(x => x.Doc.LastPlayedAt)
+            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
+            .Take(MostWatchedLimit)
+            .Select(Album)
+            .ToList();
+        var recentlyAdded = onPlex
+            .Where(x => x.Doc.DateAdded != null)
+            .OrderByDescending(x => x.Doc.DateAdded)
+            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
+            .Take(MostWatchedLimit)
+            .Select(Album)
+            .ToList();
+
+        var sized = onPlex.Where(x => x.Doc.SizeBytes is > 0).Select(x => x.Doc.SizeBytes!.Value).ToList();
+
+        // Only albums with a known expected count take part: an entry with no track count cannot be incomplete
+        var counted = onPlex.Where(x => x.Doc.TracksExpected is > 0).Select(x => x.Doc).ToList();
+        var completeness = new PlexMusicCompletenessDto(
+            counted.Sum(d => d.TracksPresent ?? 0),
+            counted.Sum(d => d.TracksExpected ?? 0),
+            counted.Count(d => (d.TracksPresent ?? 0) >= d.TracksExpected),
+            counted.Count(d => (d.TracksPresent ?? 0) < d.TracksExpected));
+
+        return new PlexMusicStatisticsDto(
+            coverage,
+            onPlex.Count,
+            onPlex.Sum(x => x.Doc.PlayCount ?? 0),
+            onPlex.Count(x => (x.Doc.PlayCount ?? 0) == 0),
+            mostPlayed,
+            recentlyPlayed,
+            recentlyAdded,
+            new PlexStorageDto(sized.Sum(), sized.Count == 0 ? 0 : sized.Sum() / sized.Count, sized.Count),
+            Group(onPlex.Select(x => Clean(x.Doc.AudioCodec)?.ToLowerInvariant())),
+            BitrateBuckets(onPlex.Select(x => x.Doc.Bitrate)),
+            completeness);
+    }
+
+    private static readonly (string Name, int Min)[] _bitrateBands =
+    [
+        ("Under 128 kbps", 0),
+        ("128-191 kbps", 128),
+        ("192-255 kbps", 192),
+        ("256-319 kbps", 256),
+        ("320-999 kbps", 320),
+        ("1000+ kbps", 1000)
+    ];
+
+    /// <summary>Counts by bitrate band, lowest band first; a missing bitrate is "unknown", listed last. Empty bands are left out.</summary>
+    private static IReadOnlyList<PlexCountDto> BitrateBuckets(IEnumerable<int?> bitrates)
+    {
+        var values = bitrates.ToList();
+        var counts = new List<PlexCountDto>();
+        for (var i = 0; i < _bitrateBands.Length; i++)
+        {
+            var (name, min) = _bitrateBands[i];
+            var max = i + 1 < _bitrateBands.Length ? _bitrateBands[i + 1].Min : int.MaxValue;
+            var count = values.Count(b => b is > 0 && b >= min && b < max);
+            if (count > 0)
+            {
+                counts.Add(new PlexCountDto(name, count));
+            }
+        }
+        var unknown = values.Count(b => b is null or <= 0);
+        if (unknown > 0)
+        {
+            counts.Add(new PlexCountDto(Unknown, unknown));
+        }
+        return counts;
     }
 
     private static PlexEntityStatisticsDto ComputeKind(string kind, List<Movie> entries, Dictionary<string, PlexItemData> byId, bool tvKind)

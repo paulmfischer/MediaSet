@@ -179,7 +179,10 @@ export async function getPlexStatistics(): Promise<PlexStatistics | null> {
       return null;
     }
     const body = (await response.json()) as Partial<PlexStatistics> | null;
-    return body && typeof body === 'object' && body.movies && body.tv ? (body as PlexStatistics) : null;
+    if (!body || typeof body !== 'object') return null;
+    const hasVideo = Boolean(body.movies && body.tv);
+    // Each section is present only when its entity type is enabled; a body with none is not statistics
+    return hasVideo || body.music ? (body as PlexStatistics) : null;
   } catch (error) {
     serverLogger.error('Could not read the Plex statistics', error, { operation: 'getPlexStatistics' });
     return null;
