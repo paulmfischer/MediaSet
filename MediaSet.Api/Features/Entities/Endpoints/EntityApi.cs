@@ -460,7 +460,9 @@ internal static class EntityApi
             // The entity is deleted first; its Plex data goes after, and a failure there never fails the delete
             if (typeof(TEntity) == typeof(Movie) || typeof(TEntity) == typeof(Music))
             {
-                await DeletePlexDataAsync(httpContext.RequestServices, id, typeof(TEntity) == typeof(Music), logger, cancellationToken);
+                await (typeof(TEntity) == typeof(Music)
+                    ? DeletePlexDataAsync(httpContext.RequestServices, id, "music", (cleanup, ct) => cleanup.DeleteMusicDataAsync(id, ct), logger, cancellationToken)
+                    : DeletePlexDataAsync(httpContext.RequestServices, id, "movie", (cleanup, ct) => cleanup.DeleteMovieDataAsync(id, ct), logger, cancellationToken));
             }
 
             return TypedResults.Ok();
@@ -717,7 +719,7 @@ internal static class EntityApi
         }
     }
 
-    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, bool isMusic, ILogger logger, CancellationToken cancellationToken)
+    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, string kind, Func<IPlexDataCleanup, CancellationToken, Task> delete, ILogger logger, CancellationToken cancellationToken)
     {
         // Registered only when the Plex integration is configured and valid
         var cleanup = services.GetService<IPlexDataCleanup>();
@@ -728,11 +730,11 @@ internal static class EntityApi
 
         try
         {
-            await (isMusic ? cleanup.DeleteMusicDataAsync(id, cancellationToken) : cleanup.DeleteMovieDataAsync(id, cancellationToken));
+            await delete(cleanup, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogWarning(ex, "Failed to delete Plex data for {entityType} {entityId}; the next Plex sync purges it", isMusic ? "music" : "movie", id);
+            logger.LogWarning(ex, "Failed to delete Plex data for {entityType} {entityId}; the next Plex sync purges it", kind, id);
         }
     }
 

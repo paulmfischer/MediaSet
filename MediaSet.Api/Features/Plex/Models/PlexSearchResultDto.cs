@@ -9,5 +9,5 @@ public record PlexSearchResultDto(
     int? Year,
     string Library,
     PlexGuids Guids,
-    string Type = "movie",
+    string Type,
     string? Artist = null);
