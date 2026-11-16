@@ -141,7 +141,11 @@ dotnet user-secrets set "IgdbConfiguration:ClientId" "YOUR_CLIENT_ID" --project 
 dotnet user-secrets set "IgdbConfiguration:ClientSecret" "YOUR_CLIENT_SECRET" --project MediaSet.Api
 dotnet user-secrets set "ExternalLogging:Enabled" "true" --project MediaSet.Api
 dotnet user-secrets set "ExternalLogging:SeqUrl" "http://YOUR_SEQ_HOST:5341" --project MediaSet.Api
+dotnet user-secrets set "ExternalLogging:SeqApiKey" "YOUR_DEV_INGEST_KEY" --project MediaSet.Api
 ```
+
+`ExternalLogging:SeqApiKey` is optional: use the Development ingestion key, never the Production one
+(see [Seq setup](../Setup/SEQ_SETUP.md#ingestion-api-keys-per-environment)).
 
 See the integration guides in [Setup](../Setup/) for other providers.
 Do not copy container hostnames such as `mongodb` or `api` into host configuration.

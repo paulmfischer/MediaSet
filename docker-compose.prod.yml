@@ -109,6 +109,8 @@ services:
       # See Setup/SEQ_SETUP.md for detailed configuration guide
       # ExternalLogging__Enabled: "true"
       # ExternalLogging__SeqUrl: "[ReplaceThis]"
+      # Optional Production ingestion API key (see Setup/SEQ_SETUP.md); keep the value in the secret/env file
+      # ExternalLogging__SeqApiKey: "${SEQ_API_KEY}"
 
       # HTTP logging exclusions (reduces noise in logs by excluding specific paths)
       # HttpLoggingFilterOptions__ExcludedPaths__0: "/health"
@@ -164,6 +166,7 @@ services:
       # Seq logging configuration (for structured logging from Remix server)
       # Uses the same variable as the API — set once to enable both services
       # ExternalLogging__SeqUrl: "http://seq:5341"
+      # ExternalLogging__SeqApiKey: "${SEQ_API_KEY}"
 
       # Optional: Enable detailed error messages (not recommended for production)
       # SHOW_ERROR_DETAILS: "false"

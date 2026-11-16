@@ -4,6 +4,7 @@ using MediaSet.Api.Shared.Models;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Configuration;
 using Serilog.Enrichers.Span;
 using Serilog.Events;
 using SerilogTracing;
@@ -73,9 +74,6 @@ public static class LoggingExtensions
             // Conditionally add Seq sink with filtering for excluded paths
             if (externalLoggingEnabled)
             {
-                var seqUrl = context.Configuration.GetValue<string>("ExternalLogging:SeqUrl")
-                    ?? "http://localhost:5341";
-
                 // Use nested logger to apply filter only to Seq sink
                 cfg.WriteTo.Logger(lc =>
                     lc.Filter.ByExcluding(logEvent =>
@@ -90,11 +88,35 @@ public static class LoggingExtensions
                         }
                         return false;
                     })
-                    .WriteTo.Seq(seqUrl));
+                    .WriteTo.WriteToConfiguredSeq(context.Configuration));
             }
         });
 
         return builder;
+    }
+
+    /// <summary>Adds the Seq sink using ExternalLogging:SeqUrl (default http://localhost:5341) and the optional API key.</summary>
+    internal static LoggerConfiguration WriteToConfiguredSeq(this LoggerSinkConfiguration sinks, IConfiguration configuration)
+    {
+        var seqUrl = configuration.GetValue<string>("ExternalLogging:SeqUrl") ?? "http://localhost:5341";
+        return sinks.Seq(seqUrl, apiKey: GetSeqApiKey(configuration));
+    }
+
+    /// <summary>
+    /// The optional Seq ingestion API key (ExternalLogging:SeqApiKey), or null when it is missing, blank or contains control characters (which would make the request fail) so the
+    /// sink sends no key. Seq can apply an Environment property per key, which separates Development from Production.
+    /// The value is a secret and must never be logged.
+    /// </summary>
+    internal static string? GetSeqApiKey(IConfiguration configuration)
+    {
+        var apiKey = configuration.GetValue<string>("ExternalLogging:SeqApiKey");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return null;
+        }
+
+        apiKey = apiKey.Trim();
+        return apiKey.Any(char.IsControl) ? null : apiKey;
     }
 
     /// <summary>
