@@ -63,12 +63,13 @@ public static class PlexMusicMatching
 
         var bitrates = tracks.Where(t => t.Bitrate is > 0).Select(t => t.Bitrate!.Value).ToList();
         var sizes = tracks.Where(t => t.SizeBytes is > 0).Select(t => t.SizeBytes!.Value).ToList();
-        var lastPlayed = tracks.Where(t => t.LastViewedAt.HasValue).Select(t => t.LastViewedAt!.Value).DefaultIfEmpty().Max();
+        // Null when no track was ever played
+        DateTimeOffset? lastPlayed = tracks.Where(t => t.LastViewedAt.HasValue).Select(t => t.LastViewedAt).Max();
 
         return new AlbumRollup(
             tracks.Count,
             tracks.Sum(t => t.ViewCount),
-            lastPlayed == default ? null : lastPlayed.UtcDateTime,
+            lastPlayed?.UtcDateTime,
             codec,
             bitrates.Count == 0 ? null : (int)Math.Round(bitrates.Average(), MidpointRounding.AwayFromZero),
             sizes.Count == 0 ? null : sizes.Sum());

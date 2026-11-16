@@ -186,7 +186,7 @@ public class PlexApiTests
     {
         using var client = CreateClient(PlexSettings());
 
-        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().First();
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
         var next = entry.GetProperty("nextRun").GetDateTimeOffset();
 
         Assert.That(next, Is.GreaterThan(DateTimeOffset.UtcNow));
@@ -215,7 +215,7 @@ public class PlexApiTests
         using var client = CreateClient(PlexSettings(schedule: "not a cron"));
 
         var response = await client.GetAsync("/plex/status");
-        var entry = (await ReadJsonAsync(response)).EnumerateArray().First();
+        var entry = (await ReadJsonAsync(response)).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(entry.GetProperty("enabled").GetBoolean(), Is.False);
@@ -227,7 +227,7 @@ public class PlexApiTests
     {
         using var client = CreateClient(PlexSettings(moviesEnabled: "false"));
 
-        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().First();
+        var entry = (await ReadJsonAsync(await client.GetAsync("/plex/status"))).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
 
         Assert.That(entry.GetProperty("nextRun").ValueKind, Is.EqualTo(JsonValueKind.Null));
     }
@@ -338,7 +338,7 @@ public class PlexApiTests
         using var client = CreateClient(PlexSettings(schedule: "not a cron"));
 
         var statusResponse = await client.GetAsync("/plex/status");
-        var entry = (await ReadJsonAsync(statusResponse)).EnumerateArray().First();
+        var entry = (await ReadJsonAsync(statusResponse)).EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies");
         var plex = PlexEntry(await ReadJsonAsync(await client.GetAsync("/config/integrations")));
 
         Assert.That(statusResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));

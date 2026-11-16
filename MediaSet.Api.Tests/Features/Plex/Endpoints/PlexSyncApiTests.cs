@@ -154,7 +154,7 @@ public class PlexSyncApiTests
         Assert.That(last.GetProperty("state").GetString(), Is.EqualTo("succeeded"));
         Assert.That(last.GetProperty("itemsScanned").GetInt32(), Is.EqualTo(3));
         Assert.That(last.GetProperty("endedAt").ValueKind, Is.EqualTo(JsonValueKind.String));
-        Assert.That(all.EnumerateArray().First().GetProperty("lastRun").GetProperty("state").GetString(), Is.EqualTo("succeeded"));
+        Assert.That(all.EnumerateArray().Single(e => e.GetProperty("entityType").GetString() == "movies").GetProperty("lastRun").GetProperty("state").GetString(), Is.EqualTo("succeeded"));
         Assert.That(store.Runs.Single().ItemsScanned, Is.EqualTo(3));
     }
 

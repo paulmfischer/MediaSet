@@ -10,9 +10,9 @@ public interface IPlexItemStore
     /// <summary>Creates the PlexItems collection and its indexes when missing.</summary>
     Task EnsureCreatedAsync(CancellationToken cancellationToken);
 
-    Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken);
+    Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken);
     Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken);
-    Task DeleteAsync(string movieId, CancellationToken cancellationToken);
+    Task DeleteAsync(string entryId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Every stored movie document (TV entries are excluded), with only the fields needed to decide whether a Plex item
@@ -20,8 +20,8 @@ public interface IPlexItemStore
     /// </summary>
     Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken);
 
-    /// <summary>The documents of the given movie ids in one query, with only the fields the list summary needs.</summary>
-    Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken);
+    /// <summary>The documents of the given entry ids in one query, with only the fields the list summary needs.</summary>
+    Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken);
 
     /// <summary>Every stored document with only the fields the statistics need (OnPlex, Broken, Watched, Resolution).</summary>
     Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken);
@@ -54,7 +54,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
 
     public async Task EnsureCreatedAsync(CancellationToken cancellationToken)
     {
-        // The document id is the movie id, so Mongo's built-in unique _id index covers the entity id.
+        // The document id is the entry id (a movie or music id), so Mongo's built-in unique _id index covers the entity id.
         // Creating an index also creates the collection when it does not exist.
         await Collection.Indexes.CreateOneAsync(
             new CreateIndexModel<PlexItemData>(
@@ -63,14 +63,14 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             cancellationToken: cancellationToken);
     }
 
-    public async Task<PlexItemData?> GetAsync(string movieId, CancellationToken cancellationToken) =>
-        await Collection.Find(d => d.Id == movieId).FirstOrDefaultAsync(cancellationToken);
+    public async Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken) =>
+        await Collection.Find(d => d.Id == entryId).FirstOrDefaultAsync(cancellationToken);
 
     public Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken) =>
         Collection.ReplaceOneAsync(d => d.Id == data.Id, data, new ReplaceOptions { IsUpsert = true }, cancellationToken);
 
-    public Task DeleteAsync(string movieId, CancellationToken cancellationToken) =>
-        Collection.DeleteOneAsync(d => d.Id == movieId, cancellationToken);
+    public Task DeleteAsync(string entryId, CancellationToken cancellationToken) =>
+        Collection.DeleteOneAsync(d => d.Id == entryId, cancellationToken);
 
     public async Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken) =>
         await Collection.Find(Builders<PlexItemData>.Filter.And(OfEntityType(PlexEntityTypes.Movies), Builders<PlexItemData>.Filter.Eq(d => d.Scope, null)))
@@ -80,8 +80,8 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.PlexUpdatedAt))
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> movieIds, CancellationToken cancellationToken) =>
-        await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, movieIds))
+    public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken) =>
+        await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, entryIds))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
