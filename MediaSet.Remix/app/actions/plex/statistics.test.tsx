@@ -282,8 +282,9 @@ describe('plex statistics section', () => {
     assert.doesNotMatch(html, /Track completeness/);
   });
 
-  it('should show only the music section when the statistics have only music', async (t) => {
+  it('should show only the music section when only music is enabled', async (t) => {
     stubApi(t, {
+      plex: [{ key: 'plex', displayName: 'Plex', enabled: true, entityTypes: ['music'] }],
       statistics: Response.json({ music: music() }),
     });
 
