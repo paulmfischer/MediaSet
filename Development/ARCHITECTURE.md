@@ -99,7 +99,7 @@ and neither fails the run.
 ### Plex cover fallback
 
 When an entry is paired with a Plex item (a sync match or a manual link) and has no cover, `PlexCoverService`
-(`Features/Plex/Services`) takes the item's poster: `IPlexClient.GetPosterAsync` reads `library/metadata/{ratingKey}/thumb`
+(`Features/Plex/Services`) takes the item's poster: `IPlexClient.GetThumbAsync` reads `library/metadata/{ratingKey}/thumb`
 (the stored poster, not a resized copy; GET only, token in the header) and `IImageService.SaveImageBytesAsync` stores it like any
 other cover (the URL download is not used: it blocks private addresses such as the Plex server). A poster narrower than
 `PlexCoverService.MinWidth` (400 px), larger than 10 MB, not JPEG/PNG, or missing is skipped. A cover is never replaced, and

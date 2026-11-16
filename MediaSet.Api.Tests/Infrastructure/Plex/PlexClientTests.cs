@@ -992,45 +992,45 @@ public class PlexClientTests
     }
 
     [Test]
-    public async Task GetPosterAsync_PosterServed_ReturnsBytesFromThumbPathWithTokenHeaderOnly()
+    public async Task GetThumbAsync_PosterServed_ReturnsBytesFromThumbPathWithTokenHeaderOnly()
     {
         var handler = new FakePlexHandler().Route("/library/metadata/1001/thumb", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3]) });
         var client = Client(handler);
 
-        var poster = await client.GetPosterAsync("1001", 1024, CancellationToken.None);
+        var poster = await client.GetThumbAsync("1001", 1024, CancellationToken.None);
 
         Assert.That(poster, Is.EqualTo(new byte[] { 1, 2, 3 }));
         Assert.That(handler.Requests.Single().Uri.Query, Is.Empty);
     }
 
     [Test]
-    public async Task GetPosterAsync_NoPoster_ReturnsNull()
+    public async Task GetThumbAsync_NoPoster_ReturnsNull()
     {
         var client = Client(new FakePlexHandler());
 
-        var poster = await client.GetPosterAsync("1001", 1024, CancellationToken.None);
+        var poster = await client.GetThumbAsync("1001", 1024, CancellationToken.None);
 
         Assert.That(poster, Is.Null);
     }
 
     [Test]
-    public async Task GetPosterAsync_PosterLargerThanLimit_ReturnsNull()
+    public async Task GetThumbAsync_PosterLargerThanLimit_ReturnsNull()
     {
         var handler = new FakePlexHandler().Route("/library/metadata/1001/thumb", _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(new byte[100]) });
         var client = Client(handler);
 
-        var poster = await client.GetPosterAsync("1001", 10, CancellationToken.None);
+        var poster = await client.GetThumbAsync("1001", 10, CancellationToken.None);
 
         Assert.That(poster, Is.Null);
     }
 
     [Test]
-    public async Task GetPosterAsync_ServerError_ReturnsNull()
+    public async Task GetThumbAsync_ServerError_ReturnsNull()
     {
         var handler = new FakePlexHandler().Route("/library/metadata/1001/thumb", _ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
         var client = Client(handler);
 
-        var poster = await client.GetPosterAsync("1001", 1024, CancellationToken.None);
+        var poster = await client.GetThumbAsync("1001", 1024, CancellationToken.None);
 
         Assert.That(poster, Is.Null);
     }
