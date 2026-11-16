@@ -14,7 +14,8 @@ Changes (`RetailVideoTitle`, `VideoTitle`):
 - Leading or trailing `Pre-Owned` / `Pre-Played`, and a leading retailer name followed by a separator
   (`Amazon.com:`, `Walmart -`, `Best Buy |`, `Target:`, `eBay -`, `GameStop:`), are removed. `Used` and `New` are deliberately
   kept (`Used Cars`, `New Girl`).
-- `Series, Vol. N` and `Series, Volume N` (comma form only) are a series-level release: the verified TMDB series poster is used.
+- `Series, Vol. N` and `Series, Volume N` (comma form only) are a series-level release: the verified TMDB series poster is used;
+  when no series matches, the full title is searched as a film (`Kill Bill, Vol. 1`).
   A volume number does not map reliably to a TMDB season, so none is guessed. `Kill Bill: Vol. 1` (colon) stays a film.
 - `Series S4`, `Series S04 Complete Series`, `Series: Season 4 Comp` resolve to that season's poster.
 - `Series: Seasons 1-3`, `Seasons 1 & 2` resolve to the series poster.
@@ -36,6 +37,10 @@ with `intitle:"..." inauthor:"..."`. A volume is accepted only when its title (w
 title and it lists a stored author. A stored title that ends in a volume number (`Preacher Vol. 1`) also accepts the same
 volume with its own subtitle (`Preacher Vol. 1: Gone to Texas`). The result is saved as a `GoogleBooks` confirmed match with
 "Provider artwork" scope. A 403 is treated as no cover; a 429 or 5xx is a retryable outcome, as for the ISBN lookup.
+
+A Google Books 429 or 5xx on this title lookup makes a book with no Open Library match retryable (`QuotaLimited` or
+`ProviderUnavailable`) instead of terminal `NoMatch`, as for the ISBN lookup, so an outage delays the terminal classification
+until a retry succeeds. Double quotes are removed from the title and author in the query.
 
 Limits: the keyless Google Books API shares a per-IP daily quota; one extra request is made per unresolved book per run. Series
 volumes whose stored title differs from Google's title by more than a subtitle (`Sandman Vol 1` vs `The Sandman: Preludes & Nocturnes`)
@@ -65,13 +70,20 @@ Findings: stored platforms carry the manufacturer (`Nintendo Wii`, `Sony PlaySta
 title differ from IGDB's name.
 
 Changes: platform comparison drops the manufacturer and maps common aliases (PS/PSX/PSP/Vita, N64, GameCube, PC, Xbox Series);
-a trailing `(YYYY)` or `[YYYY]` is removed from the search title and is used as the release year when no release date is stored;
+`FIFA 10` and `FIFA Soccer 10` count as one title; a trailing `(YYYY)` or `[YYYY]` is removed from the search title and is used as the release year when no release date is stored;
 IGDB `alternative_names` are requested and an alternative name equal to the stored title is accepted (regional names such as
 `FIFA Soccer 10`).
 
-Secondary source: not needed for these causes. Whether IGDB lists `FIFA 10`/`FIFA 11` under a matching name or alternative name
-could not be checked without IGDB credentials; if titles remain unmatched after release, assess them individually before
-adding a provider.
+Read-only IGDB search results (2026-11-16, same search the lookup uses):
+
+| Stored title | IGDB lists | Result |
+|---|---|---|
+| FIFA 10 | `FIFA Soccer 10` (id 3133, PS3 and Xbox 360, alternative `FIFA 10: World Class Soccer`); the Wii, DS, PSP, PS2, PC and mobile releases are separate records named `FIFA Soccer 10` with alternative name `FIFA 10` | Real cause: the name differs. Alternative names fix the Wii/DS/PSP/PS2/PC records; the PS3 and Xbox 360 record needed a narrow rule that treats `FIFA 10` and `FIFA Soccer 10` as one title. Both now match. |
+| FIFA 11 | `FIFA Soccer 11` (id 503, PS3, PC, Xbox 360); other platforms are separate records with alternative `FIFA 11` | Same cause and fix. |
+| Need for Speed Most Wanted (2012) | `Need for Speed: Most Wanted` 2012 (id 3193, PS3, PC, Xbox 360; Vita id 248206; mobile id 248205) and the 2005 records | Matches once the bracketed year is dropped; the year (or the stored platform) picks the 2012 record. With no platform stored, the 2012 PS3/PC/Xbox 360, Vita and mobile records are equally good and the lookup stays ambiguous. |
+| Wii Fit | `Wii Fit` (id 2186, Wii, 2007); `Wii Fit Plus` and `Wii Fit U` are different titles | Failed only on the platform text `Nintendo Wii` versus IGDB `Wii`; now matches. |
+
+Secondary source: not needed. All four causes were title or platform text handling, and IGDB has the records.
 
 ## Operational: requeue after the fix ships
 

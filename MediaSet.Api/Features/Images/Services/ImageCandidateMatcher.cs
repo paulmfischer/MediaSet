@@ -15,6 +15,10 @@ public static class ImageCandidateMatcher
 {
     public static string Normalize(string value) => Regex.Replace(value.ToLowerInvariant(), @"[^\p{L}\p{N}]+", " ").Trim();
 
+    // IGDB names the North American FIFA games "FIFA Soccer 10"; shelves write "FIFA 10".
+    private static string TitleKey(string value) =>
+        Regex.Replace(Normalize(value), @"^fifa (?:soccer )?(\d{2})(?: world class soccer)?$", "fifa $1");
+
     // Stored platforms carry a manufacturer ("Nintendo Wii", "Sony PlayStation 3", "Microsoft Xbox 360") that IGDB
     // omits ("Wii", "PlayStation 3"), and IGDB spells PC as "PC (Microsoft Windows)". Compare the bare names.
     private static string Platform(string value)
@@ -88,9 +92,9 @@ public static class ImageCandidateMatcher
         var creators = entity switch { Book b => b.Authors, Music m => [m.Artist], _ => [] };
         // Retail noise (studio, format words, barcodes) in the stored title is not identity:
         // accept the provider title when it equals either the stored or the cleaned title.
-        var titles = new[] { entity.Title, CleanTitle(entity) }.Select(Normalize).ToHashSet();
-        var matching = candidates.Where(c => titles.Contains(Normalize(c.Provenance?.Title ?? c.Title))
-                || c.Provenance?.AlternativeTitles?.Any(t => titles.Contains(Normalize(t))) == true)
+        var titles = new[] { entity.Title, CleanTitle(entity) }.Select(TitleKey).ToHashSet();
+        var matching = candidates.Where(c => titles.Contains(TitleKey(c.Provenance?.Title ?? c.Title))
+                || c.Provenance?.AlternativeTitles?.Any(t => titles.Contains(TitleKey(t))) == true)
             .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date)
                 || c.Provenance?.MatchYears?.Contains(Year(date)) == true)
             .Where(c => entity is not Movie { IsTvSeries: true }

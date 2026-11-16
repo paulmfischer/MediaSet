@@ -105,6 +105,19 @@ public class ImageArtworkMissTests
         Assert.That(result.ConfirmedMatch?.ProviderId, Is.EqualTo("7"));
     }
 
+    [TestCase("FIFA 10", "Xbox 360", 3133)]
+    [TestCase("FIFA 10", "PlayStation 3", 3133)]
+    [TestCase("FIFA 11", "Sony PlayStation 3", 503)]
+    public async Task LookupAndSaveImageAsync_FifaShelfTitle_MatchesIgdbFifaSoccerName(string title, string platform, int id)
+    {
+        var result = await LookupGame(new Game { Id = "1", Title = title, Platform = platform },
+            Game(3133, "FIFA Soccer 10", 2009, ["PlayStation 3", "Xbox 360"], ["FIFA 10: World Class Soccer"]),
+            Game(503, "FIFA Soccer 11", 2010, ["PlayStation 3", "Xbox 360"]),
+            Game(22973, "FIFA 10: Ultimate Team", 2010, ["PlayStation 3", "Xbox 360"]));
+
+        Assert.That(result.ConfirmedMatch?.ProviderId, Is.EqualTo(id.ToString()));
+    }
+
     [TestCase("Need for Speed Most Wanted (2012)", "Need for Speed Most Wanted", "2012")]
     [TestCase("Halo 3 [2007]", "Halo 3", "2007")]
     [TestCase("Wii Fit", "Wii Fit", "")]
