@@ -44,7 +44,7 @@ public class PlexLinkApiTests
         _factories.Clear();
     }
 
-    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexItemStore items, bool moviesEnabled = true, Mock<IPlexCoverService>? covers = null)
+    private HttpClient CreateClient(FakePlexHandler handler, InMemoryPlexItemStore items, bool moviesEnabled = true, Mock<IPlexCoverService<Movie>>? covers = null)
     {
         var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -148,7 +148,7 @@ public class PlexLinkApiTests
     [Test]
     public async Task Link_ExistingPlexItem_AsksForPlexPosterAsCover()
     {
-        var covers = new Mock<IPlexCoverService>();
+        var covers = new Mock<IPlexCoverService<Movie>>();
         using var client = CreateClient(Server(), new InMemoryPlexItemStore(), covers: covers);
 
         var response = await LinkAsync(client, MovieId, new { plexItemId = "1001" });

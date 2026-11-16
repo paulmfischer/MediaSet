@@ -141,7 +141,7 @@ internal static class PlexApi
             PlexLinkRequest? body,
             IEntityService<Movie> movies,
             IPlexLinkService links,
-            IPlexCoverService covers,
+            IPlexCoverService<Movie> covers,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(body?.PlexItemId))
