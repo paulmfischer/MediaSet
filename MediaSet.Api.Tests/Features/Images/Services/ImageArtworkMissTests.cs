@@ -53,6 +53,8 @@ public class ImageArtworkMissTests
     [TestCase("Halo 3", "N64", "Nintendo 64")]
     [TestCase("Halo 3", "PC", "PC (Microsoft Windows)")]
     [TestCase("Halo 3", "Nintendo GameCube", "GameCube")]
+    [TestCase("Forza Horizon 5", "Xbox Series S", "Xbox Series X|S")]
+    [TestCase("Forza Horizon 5", "Xbox Series X", "Xbox Series X|S")]
     public async Task LookupAndSaveImageAsync_StoredPlatformHasManufacturer_MatchesIgdbPlatformName(
         string title, string stored, string igdbPlatform)
     {

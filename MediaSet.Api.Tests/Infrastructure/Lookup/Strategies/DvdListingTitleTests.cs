@@ -118,4 +118,23 @@ public class DvdListingTitleTests
 
         Assert.That(await Candidates(strategy, movie), Is.Empty);
     }
+
+    [Test]
+    public async Task Lookup_CommaVolumeFilmWithoutSeries_FallsBackToMovieSearch()
+    {
+        var client = new Mock<ITmdbClient>();
+        client.Setup(c => c.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbTvSearchResponse([]));
+        client.Setup(c => c.SearchMovieAsync("Kill Bill, Vol. 1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbSearchResponse(1, [new TmdbMovieSearchResult(9, "Kill Bill, Vol. 1", "2003-10-10", "Plot")], 1, 1));
+        client.Setup(c => c.GetMovieDetailsAsync(9, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbMovieResponse(Id: 9, Title: "Kill Bill, Vol. 1", Overview: "Plot", ReleaseDate: "2003-10-10",
+                Runtime: 111, Genres: [], ProductionCompanies: [], VoteAverage: 8, PosterPath: "/kb.jpg"));
+        var strategy = new MovieLookupStrategy(new Mock<IUpcItemDbClient>().Object, client.Object,
+            NullLogger<MovieLookupStrategy>.Instance);
+
+        var selected = await Candidates(strategy, new Movie { Id = "1", Title = "Kill Bill, Vol. 1" });
+
+        Assert.That(selected.Single().ImageUrl, Does.EndWith("/kb.jpg"));
+    }
 }

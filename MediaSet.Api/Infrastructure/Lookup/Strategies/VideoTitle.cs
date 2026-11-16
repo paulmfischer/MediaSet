@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MediaSet.Api.Infrastructure.Lookup.Strategies;
 
 public record VideoTitle(string Title, string SeriesTitle, int? Season = null, string? Special = null,
-    bool IsSeries = false, bool SeasonFallback = false)
+    bool IsSeries = false, bool SeasonFallback = false, bool IsVolume = false)
 {
     private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
     private static readonly string[] _ordinals =
@@ -56,7 +56,9 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
         }
         if (match.Success)
         {
-            return new(title, match.Groups[1].Value.Trim().TrimEnd(',', ':', '-').Trim(), IsSeries: true);
+            // A comma volume can also be a film ("Kill Bill, Vol. 1"): the lookup falls back to films when no series matches.
+            return new(title, match.Groups[1].Value.Trim().TrimEnd(',', ':', '-').Trim(), IsSeries: true,
+                IsVolume: !Regex.IsMatch(title, @"seasons?\s+\d", Options));
         }
         match = Regex.Match(title, @"^(.*?)\s*[:\-]?\s*(?:the\s+)?complete\s+(?:series|collection)\s*$", Options);
         if (match.Success)

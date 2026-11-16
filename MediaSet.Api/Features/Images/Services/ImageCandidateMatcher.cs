@@ -32,7 +32,7 @@ public static class ImageCandidateMatcher
             "n64" => "64",
             "gc" or "ngc" or "game cube" => "gamecube",
             "pc microsoft windows" or "windows" or "microsoft windows" => "pc",
-            "xbox series x s" or "xbox series x" => "xbox series x s",
+            "xbox series x s" or "xbox series x" or "xbox series s" => "xbox series x s",
             var other => other
         };
     }

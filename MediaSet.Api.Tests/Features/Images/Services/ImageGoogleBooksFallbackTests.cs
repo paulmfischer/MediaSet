@@ -188,4 +188,19 @@ public class ImageGoogleBooksFallbackTests
         Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.QuotaLimited));
         Assert.That(result.PermanentFailure, Is.False);
     }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_GoogleBooksTitleServerError_IsRetryableNotNoMatch()
+    {
+        _google.Setup(g => g.GetCoverUrlByTitleAsync(It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ProviderLookupException("GoogleBooks", ImageLookupOutcome.ProviderUnavailable, "503"));
+
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.ProviderUnavailable));
+        Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.True);
+        Assert.That(result.PermanentFailure, Is.False);
+    }
 }

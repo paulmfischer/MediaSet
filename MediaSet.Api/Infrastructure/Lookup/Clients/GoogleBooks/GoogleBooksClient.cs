@@ -45,8 +45,9 @@ public class GoogleBooksClient(HttpClient httpClient, ILogger<GoogleBooksClient>
         {
             return null;
         }
-        var query = $"intitle:\"{title}\"" + (authors.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a)) is { } author
-            ? $" inauthor:\"{author}\"" : string.Empty);
+        // A double quote would end the quoted phrase early; it is punctuation, never part of the match.
+        var query = $"intitle:\"{title.Replace("\"", " ")}\"" + (authors.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a)) is { } author
+            ? $" inauthor:\"{author.Replace("\"", " ")}\"" : string.Empty);
         var volumes = await SearchVolumesAsync(query, $"title {title}", cancellationToken);
         var volume = volumes?.Items?.FirstOrDefault(v => v.VolumeInfo is { } info
             && TitleMatches(title, subtitle, info) && AuthorsMatch(authors, info));

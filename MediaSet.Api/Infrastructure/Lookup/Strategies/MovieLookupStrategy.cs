@@ -101,7 +101,7 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             return collections;
         }
         var results = new List<MovieResponse>();
-        if (!video.IsSeries && !isTvSeries)
+        async Task AddMoviesAsync()
         {
             var movies = await _tmdbClient.SearchMovieAsync(title, cancellationToken);
             foreach (var match in movies?.Results.Where(r => SameTitle(r.Title, title)).Take(10) ?? [])
@@ -115,6 +115,10 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                 }
             }
         }
+        if (!video.IsSeries && !isTvSeries)
+        {
+            await AddMoviesAsync();
+        }
         // Punctuation may belong to a series name or separate a named special.
         // Verify both interpretations instead of assuming that the prefix is the series.
         if (video.Special != null)
@@ -122,6 +126,11 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             results.AddRange(await SearchTvAsync(new VideoTitle(title, title), cancellationToken));
         }
         results.AddRange(await SearchTvAsync(video, cancellationToken));
+        // "Series, Vol. N" is a series release unless no series matches; then it may be a film ("Kill Bill, Vol. 1").
+        if (video.IsVolume && results.Count == 0 && !isTvSeries)
+        {
+            await AddMoviesAsync();
+        }
         return results;
     }
 

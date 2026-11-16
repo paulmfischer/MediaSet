@@ -191,4 +191,17 @@ public class GoogleBooksClientTests
         await Assert.ThatAsync(() => _client.GetCoverUrlByTitleAsync("Dune", null, []),
             Throws.TypeOf<ProviderLookupException>());
     }
+
+    [Test]
+    public async Task GetCoverUrlByTitleAsync_QuotesInTitleAndAuthor_AreRemovedFromTheQuery()
+    {
+        Respond(HttpStatusCode.OK, "{}");
+
+        await _client.GetCoverUrlByTitleAsync("The \"Best\" Book", null, ["Jo \"JJ\" Smith"]);
+
+        var query = _requests[0].Query;
+        Assert.That(query, Does.Contain("intitle:%22The%20%20Best%20%20Book%22"));
+        Assert.That(query, Does.Contain("inauthor:%22Jo%20%20JJ%20%20Smith%22"));
+        Assert.That(query.Split("%22").Length, Is.EqualTo(5));
+    }
 }
