@@ -22,7 +22,7 @@ public class PlexCoverServiceTests
     private Mock<IPlexClient> _client = null!;
     private Mock<IImageService> _images = null!;
     private Mock<IEntityService<Movie>> _movies = null!;
-    private PlexCoverService _service = null!;
+    private PlexCoverService<Movie> _service = null!;
     private static readonly Image _saved = new() { Id = "i", FilePath = "movies/m1-i.jpg", ContentType = "image/jpeg" };
 
     [SetUp]
@@ -33,7 +33,7 @@ public class PlexCoverServiceTests
         _movies = new Mock<IEntityService<Movie>>();
         _movies.Setup(m => m.GetAsync(MovieId, It.IsAny<CancellationToken>())).ReturnsAsync(() => new Movie { Id = MovieId, Title = "t" });
         _images.Setup(i => i.SaveImageBytesAsync(It.IsAny<byte[]>(), "Movies", MovieId, It.IsAny<CancellationToken>())).ReturnsAsync(_saved);
-        _service = new PlexCoverService(_client.Object, _images.Object, _movies.Object, NullLogger<PlexCoverService>.Instance);
+        _service = new PlexCoverService<Movie>(_client.Object, _images.Object, _movies.Object, NullLogger<PlexCoverService<Movie>>.Instance);
     }
 
     private static byte[] Poster(int width, int height)
@@ -46,7 +46,7 @@ public class PlexCoverServiceTests
     }
 
     private void ServePoster(byte[]? data) =>
-        _client.Setup(c => c.GetPosterAsync(RatingKey, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(data);
+        _client.Setup(c => c.GetThumbAsync(RatingKey, It.IsAny<long>(), It.IsAny<CancellationToken>())).ReturnsAsync(data);
 
     [Test]
     public async Task ApplyIfMissingAsync_MovieWithoutCoverAndLargePoster_SavesAndStoresCover()
@@ -68,7 +68,7 @@ public class PlexCoverServiceTests
         var applied = await _service.ApplyIfMissingAsync(MovieId, RatingKey, CancellationToken.None);
 
         Assert.That(applied, Is.False);
-        _client.Verify(c => c.GetPosterAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(c => c.GetThumbAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Test]
@@ -85,7 +85,7 @@ public class PlexCoverServiceTests
     [Test]
     public async Task ApplyIfMissingAsync_PosterIsThumbnailSized_IsSkipped()
     {
-        ServePoster(Poster(PlexCoverService.MinWidth - 1, 600));
+        ServePoster(Poster(PlexCoverService<Movie>.MinWidth - 1, 600));
 
         var applied = await _service.ApplyIfMissingAsync(MovieId, RatingKey, CancellationToken.None);
 
@@ -142,5 +142,66 @@ public class PlexCoverServiceTests
 
         Assert.That(applied, Is.False);
         _images.Verify(i => i.DeleteImageAsync(_saved.FilePath), Times.Once);
+    }
+
+    private const string MusicId = "a1";
+
+    private (PlexCoverService<Music> Service, Mock<IEntityService<Music>> Albums) CreateMusicService(Func<Music> current)
+    {
+        var albums = new Mock<IEntityService<Music>>();
+        albums.Setup(a => a.GetAsync(MusicId, It.IsAny<CancellationToken>())).ReturnsAsync(current);
+        _images.Setup(i => i.SaveImageBytesAsync(It.IsAny<byte[]>(), "Musics", MusicId, It.IsAny<CancellationToken>())).ReturnsAsync(_saved);
+        return (new PlexCoverService<Music>(_client.Object, _images.Object, albums.Object, NullLogger<PlexCoverService<Music>>.Instance), albums);
+    }
+
+    [Test]
+    public async Task ApplyIfMissingAsync_MusicWithoutCoverAndLargeImage_SavesUnderMusicMediaType()
+    {
+        ServePoster(Poster(1000, 1000));
+        var (service, albums) = CreateMusicService(() => new Music { Id = MusicId, Title = "t" });
+
+        var applied = await service.ApplyIfMissingAsync(MusicId, RatingKey, CancellationToken.None);
+
+        Assert.That(applied, Is.True);
+        _images.Verify(i => i.SaveImageBytesAsync(It.IsAny<byte[]>(), "Musics", MusicId, It.IsAny<CancellationToken>()), Times.Once);
+        albums.Verify(a => a.UpdateAsync(MusicId, It.Is<Music>(x => x.CoverImage == _saved), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task ApplyIfMissingAsync_MusicAlreadyHasCover_DoesNotReadPlex()
+    {
+        var (service, _) = CreateMusicService(() => new Music { Id = MusicId, Title = "t", CoverImage = new Image { FilePath = "x" } });
+
+        var applied = await service.ApplyIfMissingAsync(MusicId, RatingKey, CancellationToken.None);
+
+        Assert.That(applied, Is.False);
+        _client.Verify(c => c.GetThumbAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task ApplyIfMissingAsync_MusicImageIsThumbnailSized_IsSkipped()
+    {
+        ServePoster(Poster(PlexCoverService<Music>.MinWidth - 1, 600));
+        var (service, _) = CreateMusicService(() => new Music { Id = MusicId, Title = "t" });
+
+        var applied = await service.ApplyIfMissingAsync(MusicId, RatingKey, CancellationToken.None);
+
+        Assert.That(applied, Is.False);
+    }
+
+    [Test]
+    public async Task ApplyIfMissingAsync_MusicCoverAddedWhileSaving_KeepsExistingCoverAndDeletesNewFile()
+    {
+        ServePoster(Poster(1000, 1000));
+        var calls = 0;
+        var (service, albums) = CreateMusicService(() => ++calls == 1
+            ? new Music { Id = MusicId, Title = "t" }
+            : new Music { Id = MusicId, Title = "t", CoverImage = new Image { FilePath = "other" } });
+
+        var applied = await service.ApplyIfMissingAsync(MusicId, RatingKey, CancellationToken.None);
+
+        Assert.That(applied, Is.False);
+        _images.Verify(i => i.DeleteImageAsync(_saved.FilePath), Times.Once);
+        albums.Verify(a => a.UpdateAsync(It.IsAny<string>(), It.IsAny<Music>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

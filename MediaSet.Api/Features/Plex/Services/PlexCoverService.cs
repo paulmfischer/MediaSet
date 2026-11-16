@@ -7,46 +7,57 @@ using SkiaSharp;
 namespace MediaSet.Api.Features.Plex.Services;
 
 /// <summary>
-/// Cover fallback from Plex. TV series entries are Movie entities too (<c>Movie.IsTvSeries</c>), so this covers
-/// movies and TV series alike.
+/// Cover fallback from Plex for any entity type with a cover. TV series entries are Movie entities too
+/// (<c>Movie.IsTvSeries</c>), so <c>IPlexCoverService&lt;Movie&gt;</c> covers movies and TV series alike. The media type the image is saved
+/// under follows from <typeparamref name="TEntity"/>.
 /// </summary>
-public interface IPlexCoverService
+public interface IPlexCoverService<TEntity> where TEntity : class, IEntity
 {
     /// <summary>
-    /// Gives a movie without a cover the poster of the Plex item it is paired with. Does nothing when the movie already
-    /// has a cover, or when Plex has no poster, only a small one, or cannot be read. Never throws (except on
+    /// Gives an entity without a cover the image of the Plex item it is paired with. Does nothing when the entity
+    /// already has a cover, or when Plex has no image, only a small one, or cannot be read. Never throws (except on
     /// cancellation), so pairing and syncing never fail because of a cover. True when a cover was saved.
     /// </summary>
-    Task<bool> ApplyIfMissingAsync(string movieId, string plexRatingKey, CancellationToken cancellationToken);
+    Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken);
 }
 
-public class PlexCoverService(
+public class PlexCoverService<TEntity>(
     IPlexClient client,
     IImageService imageService,
-    IEntityService<Movie> movies,
-    ILogger<PlexCoverService> logger) : IPlexCoverService
+    IEntityService<TEntity> entities,
+    ILogger<PlexCoverService<TEntity>> logger) : IPlexCoverService<TEntity> where TEntity : class, IEntity
 {
-    /// <summary>Narrowest poster saved, in pixels. Plex serves small thumbnails for some items; those are skipped.</summary>
+    /// <summary>Narrowest image saved, in pixels. Plex serves small thumbnails for some items; those are skipped.</summary>
     public const int MinWidth = 400;
 
-    /// <summary>Largest poster read from Plex, in bytes.</summary>
+    /// <summary>Largest image read from Plex, in bytes.</summary>
     public const long MaxBytes = 10 * 1024 * 1024;
 
-    public async Task<bool> ApplyIfMissingAsync(string movieId, string plexRatingKey, CancellationToken cancellationToken)
+    // From the entity class, not the instance: a deserialized entity can carry a default Type
+    private static readonly string _mediaTypeName = (typeof(TEntity) switch
+    {
+        var t when t == typeof(Movie) => MediaTypes.Movies,
+        var t when t == typeof(Music) => MediaTypes.Musics,
+        var t when t == typeof(Book) => MediaTypes.Books,
+        var t when t == typeof(Game) => MediaTypes.Games,
+        _ => throw new NotSupportedException($"No media type for {typeof(TEntity).Name}")
+    }).ToString();
+
+    public async Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken)
     {
         Image? saved = null;
         try
         {
-            var movie = await movies.GetAsync(movieId, cancellationToken);
-            if (movie == null || movie.CoverImage != null)
+            var entity = await entities.GetAsync(entityId, cancellationToken);
+            if (entity == null || entity.CoverImage != null)
             {
                 return false;
             }
 
-            var data = await client.GetPosterAsync(plexRatingKey, MaxBytes, cancellationToken);
+            var data = await client.GetThumbAsync(plexRatingKey, MaxBytes, cancellationToken);
             if (data == null)
             {
-                logger.LogDebug("Plex has no readable poster for movie {MovieId}", movieId);
+                logger.LogDebug("Plex has no readable image for {EntityType} {EntityId}", typeof(TEntity).Name, entityId);
                 return false;
             }
 
@@ -55,15 +66,15 @@ public class PlexCoverService(
             {
                 if (codec == null || codec.Info.Width < MinWidth)
                 {
-                    logger.LogInformation("Plex poster for movie {MovieId} is missing or too small to use as a cover", movieId);
+                    logger.LogInformation("Plex image for {EntityType} {EntityId} is missing or too small to use as a cover", typeof(TEntity).Name, entityId);
                     return false;
                 }
             }
 
-            saved = await imageService.SaveImageBytesAsync(data, nameof(MediaTypes.Movies), movieId, cancellationToken);
+            saved = await imageService.SaveImageBytesAsync(data, _mediaTypeName, entityId, cancellationToken);
 
             // Re-read right before writing so a cover added meanwhile is never replaced
-            var current = await movies.GetAsync(movieId, cancellationToken);
+            var current = await entities.GetAsync(entityId, cancellationToken);
             if (current == null || current.CoverImage != null)
             {
                 DeleteQuietly(saved);
@@ -71,14 +82,14 @@ public class PlexCoverService(
             }
 
             current.CoverImage = saved;
-            await movies.UpdateAsync(movieId, current, cancellationToken);
-            logger.LogInformation("Saved Plex poster as cover for movie {MovieId}", movieId);
+            await entities.UpdateAsync(entityId, current, cancellationToken);
+            logger.LogInformation("Saved Plex image as cover for {EntityType} {EntityId}", typeof(TEntity).Name, entityId);
             return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Type only: never the message, which could hold a Plex address
-            logger.LogWarning("Could not use the Plex poster as a cover for movie {MovieId} ({ExceptionType})", movieId, ex.GetType().Name);
+            logger.LogWarning("Could not use the Plex image as a cover for {EntityType} {EntityId} ({ExceptionType})", typeof(TEntity).Name, entityId, ex.GetType().Name);
             if (saved != null)
             {
                 DeleteQuietly(saved);

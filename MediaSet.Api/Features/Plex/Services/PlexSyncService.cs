@@ -532,7 +532,7 @@ public sealed class PlexSyncService(
                     matched++;
 
                     // A paired entry without a cover takes the Plex poster (the service checks); best effort, never fails the run
-                    if (scope.ServiceProvider.GetService<IPlexCoverService>() is { } covers)
+                    if (scope.ServiceProvider.GetService<IPlexCoverService<Movie>>() is { } covers)
                     {
                         await covers.ApplyIfMissingAsync(movie.Id!, item.RatingKey, token);
                     }

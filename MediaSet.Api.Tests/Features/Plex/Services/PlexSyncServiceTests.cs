@@ -45,7 +45,7 @@ public class PlexSyncServiceTests
         public InMemoryPlexItemStore Items { get; } = new();
         public Mock<IEntityService<Movie>> Movies { get; } = InMemoryPlexItemStore.MovieService();
         public Mock<ITmdbClient> Tmdb { get; } = new();
-        public Mock<IPlexCoverService> Covers { get; } = new();
+        public Mock<IPlexCoverService<Movie>> Covers { get; } = new();
         public PlexSyncService Service { get; }
 
         /// <param name="tmdbConfigured">When false, ITmdbClient is not registered, as when the TMDB section is absent.</param>
