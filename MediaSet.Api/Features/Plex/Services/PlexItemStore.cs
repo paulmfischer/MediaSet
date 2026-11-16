@@ -32,6 +32,9 @@ public interface IPlexItemStore
     /// </summary>
     Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken);
 
+    /// <summary>The music documents with only the fields the music statistics read (no file path or deep link).</summary>
+    Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken);
+
     /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
     Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
 
@@ -123,6 +126,21 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             .Project<PlexItemData>(projection)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken) =>
+        await Collection.Find(OfEntityType(PlexEntityTypes.Music))
+            .Project<PlexItemData>(Builders<PlexItemData>.Projection
+                .Include(d => d.OnPlex)
+                .Include(d => d.Broken)
+                .Include(d => d.PlayCount)
+                .Include(d => d.LastPlayedAt)
+                .Include(d => d.DateAdded)
+                .Include(d => d.TracksPresent)
+                .Include(d => d.TracksExpected)
+                .Include(d => d.AudioCodec)
+                .Include(d => d.Bitrate)
+                .Include(d => d.SizeBytes))
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
     {

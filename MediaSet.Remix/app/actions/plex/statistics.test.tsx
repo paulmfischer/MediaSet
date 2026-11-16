@@ -1,7 +1,7 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import type { PlexKindStatistics, PlexStatistics } from '../../models.ts';
+import type { PlexKindStatistics, PlexMusicStatistics, PlexStatistics } from '../../models.ts';
 import { router } from '../../router.ts';
 
 const get = (path: string) => router.fetch(new URL(path, 'http://localhost'));
@@ -55,7 +55,57 @@ const tvKind = (overrides: Partial<PlexKindStatistics> = {}): PlexKindStatistics
     ...overrides,
   });
 
+const music = (overrides: Partial<PlexMusicStatistics> = {}): PlexMusicStatistics => ({
+  coverage: { total: 20, onPlex: 12, notOnPlex: 8, broken: 2 },
+  albums: 12,
+  totalPlays: 345,
+  neverPlayed: 4,
+  mostPlayed: [
+    {
+      id: 'a1',
+      title: 'Kind of Blue',
+      artist: 'Miles Davis',
+      playCount: 40,
+      lastPlayedAt: '2024-05-01T00:00:00Z',
+      dateAdded: null,
+    },
+  ],
+  recentlyPlayed: [
+    {
+      id: 'a2',
+      title: 'Blue Train',
+      artist: 'John Coltrane',
+      playCount: 3,
+      lastPlayedAt: '2024-06-02T12:00:00Z',
+      dateAdded: null,
+    },
+  ],
+  recentlyAdded: [
+    {
+      id: 'a3',
+      title: 'Mingus Ah Um',
+      artist: 'Charles Mingus',
+      playCount: 0,
+      lastPlayedAt: null,
+      dateAdded: '2023-01-15T00:00:00Z',
+    },
+  ],
+  storage: { totalBytes: 6_000_000_000, averageBytes: 500_000_000, unitsWithSize: 12 },
+  audioCodec: [
+    { name: 'flac', count: 8 },
+    { name: 'mp3', count: 4 },
+  ],
+  bitrate: [
+    { name: '320-999 kbps', count: 4 },
+    { name: '1000+ kbps', count: 8 },
+  ],
+  completeness: { tracksPresent: 100, tracksExpected: 120, albumsComplete: 10, albumsPartial: 2 },
+  ...overrides,
+});
+
 const statistics = (): PlexStatistics => ({ movies: kind(), tv: tvKind() });
+
+const withMusic = (): PlexStatistics => ({ ...statistics(), music: music() });
 
 interface StubOptions {
   plex?: unknown;
@@ -168,5 +218,82 @@ describe('plex statistics section', () => {
 
     assert.equal(response.status, 404);
     assert.equal(calls.includes('/plex/statistics'), false);
+  });
+
+  it('should not show a music section when the statistics have none', async (t) => {
+    stubApi(t);
+
+    const html = await (await get('/plex')).text();
+
+    assert.doesNotMatch(html, /data-kind="music"/);
+  });
+
+  it('should show the music section with each figure', async (t) => {
+    stubApi(t, { statistics: Response.json(withMusic()) });
+
+    const html = await (await get('/plex')).text();
+
+    assert.match(html, /data-testid="plex-stats-kind" data-kind="music"/);
+    assert.match(html, /Albums in MediaSet<\/p><p class="[^"]*">20</);
+    assert.match(html, /On Plex<\/p><p class="[^"]*">12</);
+    assert.match(html, /Total plays<\/p><p class="[^"]*">345</);
+    assert.match(html, /Never played<\/p><p class="[^"]*">4</);
+    assert.match(html, /Total size \(12 albums\)<\/p><p class="[^"]*">6\.0 GB</);
+    assert.match(html, /Average size<\/p><p class="[^"]*">500\.0 MB</);
+    assert.match(html, /aria-label="Audio codec pie chart"/);
+    assert.match(html, />Bitrate</);
+    assert.match(html, /100 of 120 tracks/);
+    assert.match(html, /10 complete, 2 partial/);
+    assert.match(html, /Most played/);
+    assert.match(html, />Kind of Blue \(Miles Davis\)</);
+  });
+
+  it('should list recently played and recently added albums with their dates', async (t) => {
+    stubApi(t, { statistics: Response.json(withMusic()) });
+
+    const html = await (await get('/plex')).text();
+
+    assert.match(html, /data-testid="plex-stats-recently-played"/);
+    assert.match(html, /Blue Train/);
+    assert.match(html, /Jun 2, 2024/);
+    assert.match(html, /data-testid="plex-stats-recently-added"/);
+    assert.match(html, /Mingus Ah Um/);
+    assert.match(html, /Jan 15, 2023/);
+  });
+
+  it('should say there is nothing to break down when no album is on Plex', async (t) => {
+    stubApi(t, {
+      statistics: Response.json({
+        ...statistics(),
+        music: music({
+          albums: 0,
+          coverage: { total: 3, onPlex: 0, notOnPlex: 3, broken: 0 },
+          mostPlayed: [],
+          recentlyPlayed: [],
+          recentlyAdded: [],
+          completeness: { tracksPresent: 0, tracksExpected: 0, albumsComplete: 0, albumsPartial: 0 },
+        }),
+      }),
+    });
+
+    const html = await (await get('/plex')).text();
+
+    assert.match(html, /No albums on Plex yet/);
+    assert.doesNotMatch(html, /Track completeness/);
+  });
+
+  it('should show only the music section when only music is enabled', async (t) => {
+    stubApi(t, {
+      plex: [{ key: 'plex', displayName: 'Plex', enabled: true, entityTypes: ['music'] }],
+      statistics: Response.json({ music: music() }),
+    });
+
+    const response = await get('/plex');
+    const html = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(html, /data-kind="music"/);
+    assert.doesNotMatch(html, /data-kind="movies"/);
+    assert.doesNotMatch(html, /data-kind="tv"/);
   });
 });

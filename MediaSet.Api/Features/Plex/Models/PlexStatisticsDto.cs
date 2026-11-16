@@ -38,5 +38,34 @@ public record PlexEntityStatisticsDto(
     IReadOnlyList<PlexMostWatchedDto> MostWatched,
     PlexCompletenessDto? Completeness);
 
-/// <summary>The Plex statistics page data: movies and TV entries (which share the movies entity type) apart.</summary>
-public record PlexStatisticsDto(PlexEntityStatisticsDto Movies, PlexEntityStatisticsDto Tv);
+/// <summary>
+/// One album in a music ranking. <c>PlayCount</c> is the sum of its tracks' plays; the dates are null when unknown (never
+/// played, or no date from Plex).
+/// </summary>
+public record PlexMusicAlbumDto(string Id, string Title, string Artist, int PlayCount, DateTime? LastPlayedAt, DateTime? DateAdded);
+
+/// <summary>Music only: tracks on Plex against the tracks the entries expect. A partial album has fewer tracks present than expected.</summary>
+public record PlexMusicCompletenessDto(int TracksPresent, int TracksExpected, int AlbumsComplete, int AlbumsPartial);
+
+/// <summary>
+/// Statistics of the music collection. A unit is an on-Plex album: the size, codec and bitrate breakdowns count albums.
+/// No field carries a file path.
+/// </summary>
+public record PlexMusicStatisticsDto(
+    PlexCoverageDto Coverage,
+    int Albums,
+    int TotalPlays,
+    int NeverPlayed,
+    IReadOnlyList<PlexMusicAlbumDto> MostPlayed,
+    IReadOnlyList<PlexMusicAlbumDto> RecentlyPlayed,
+    IReadOnlyList<PlexMusicAlbumDto> RecentlyAdded,
+    PlexStorageDto Storage,
+    IReadOnlyList<PlexCountDto> AudioCodec,
+    IReadOnlyList<PlexCountDto> Bitrate,
+    PlexMusicCompletenessDto Completeness);
+
+/// <summary>
+/// The Plex statistics page data. Each section is present only when its entity type is enabled: movies and TV entries
+/// (which share the movies entity type) together, music on its own.
+/// </summary>
+public record PlexStatisticsDto(PlexEntityStatisticsDto? Movies = null, PlexEntityStatisticsDto? Tv = null, PlexMusicStatisticsDto? Music = null);

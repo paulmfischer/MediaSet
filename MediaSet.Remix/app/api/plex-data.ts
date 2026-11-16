@@ -6,14 +6,20 @@ import { getIntegrations } from './integrations-data.ts';
 
 const serverLogger = createServerLogger('app/api/plex-data');
 
-/**
- * The single gate for the Plex UI: true only when `/config/integrations` reports Plex enabled with movies among
- * its entity types. Every Plex piece of the UI depends on it; a failed lookup counts as off.
- */
-export async function isPlexEnabledForMovies(): Promise<boolean> {
+/** Which Plex entity types the UI treats as enabled; a failed lookup counts as off. */
+export async function getPlexEnabledTypes(): Promise<{ movies: boolean; music: boolean }> {
   const integrations = await getIntegrations();
   const plex = integrations.find((integration) => integration.key === 'plex');
-  return Boolean(plex?.enabled && plex.entityTypes?.some((type) => type.toLowerCase() === 'movies'));
+  const has = (name: string) => Boolean(plex?.enabled && plex.entityTypes?.some((type) => type.toLowerCase() === name));
+  return { movies: has('movies'), music: has('music') };
+}
+
+/**
+ * The single gate for the Plex movie UI: true only when `/config/integrations` reports Plex enabled with movies among
+ * its entity types. Every Plex piece of the movie UI depends on it; a failed lookup counts as off.
+ */
+export async function isPlexEnabledForMovies(): Promise<boolean> {
+  return (await getPlexEnabledTypes()).movies;
 }
 
 export type PlexFailure = 'unreachable' | 'syncInProgress' | 'itemMissing' | 'movieMissing' | 'notLinked' | 'other';
@@ -179,7 +185,10 @@ export async function getPlexStatistics(): Promise<PlexStatistics | null> {
       return null;
     }
     const body = (await response.json()) as Partial<PlexStatistics> | null;
-    return body && typeof body === 'object' && body.movies && body.tv ? (body as PlexStatistics) : null;
+    if (!body || typeof body !== 'object') return null;
+    const hasVideo = Boolean(body.movies && body.tv);
+    // Each section is present only when its entity type is enabled; a body with none is not statistics
+    return hasVideo || body.music ? (body as PlexStatistics) : null;
   } catch (error) {
     serverLogger.error('Could not read the Plex statistics', error, { operation: 'getPlexStatistics' });
     return null;

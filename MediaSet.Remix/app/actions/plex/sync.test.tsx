@@ -75,7 +75,7 @@ describe('gear menu Plex link', () => {
   for (const [name, plex] of [
     ['no Plex integration is listed', undefined],
     ['Plex is disabled', { enabled: false, entityTypes: ['movies'] }],
-    ['Plex is enabled without movies', { enabled: true, entityTypes: ['music'] }],
+    ['Plex is enabled without movies or music', { enabled: true, entityTypes: [] }],
   ] as const) {
     it(`should not show the link or serve /plex when ${name}`, async (t) => {
       const calls = stubApi(t, { plex });
@@ -99,6 +99,18 @@ describe('gear menu Plex link', () => {
       const html = await (await get(path)).text();
       assert.match(html, /"href":"\/plex"[^]*?"Plex"/, path);
     }
+  });
+});
+
+describe('Plex statistics page with only music enabled', () => {
+  it('should show the link and serve /plex, but not the movie sync routes', async (t) => {
+    stubApi(t, { plex: { enabled: true, entityTypes: ['music'] } });
+
+    const home = await (await get('/books/b1')).text();
+    assert.match(home, /"href":"\/plex"/);
+    assert.equal((await get('/plex')).status, 200);
+    assert.equal((await get('/plex/status')).status, 404);
+    assert.equal((await post('/plex', { entityType: 'movies' })).status, 404);
   });
 });
 

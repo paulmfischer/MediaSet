@@ -1,13 +1,19 @@
 import type { Handle } from 'remix/component';
 
-import type { PlexCount, PlexKindStatistics, PlexStatistics } from '../../models.ts';
+import type {
+  PlexCount,
+  PlexKindStatistics,
+  PlexMusicAlbum,
+  PlexMusicStatistics,
+  PlexStatistics,
+} from '../../models.ts';
 import { formatBytes, formatDuration, statisticLabel } from '../../utils/plex-statistics.ts';
 import { BarChart } from '../dashboard/bar-chart.tsx';
 import { ChartCard } from '../dashboard/chart-card.tsx';
 import { PLEX_RESOLUTION_COLORS, PLEX_STATISTICS_COLORS, STAT_CARD_COLOR } from '../dashboard/config.ts';
 import { PieChart } from '../dashboard/pie-chart.tsx';
 import { StatCard } from '../dashboard/stat-card.tsx';
-import { AlertTriangle, Clapperboard, HardDrive, Layers, Link2Off, Tv } from '../icons.ts';
+import { AlertTriangle, Album, Clapperboard, Disc, HardDrive, Layers, Link2Off, Music, Tv } from '../icons.ts';
 
 const num = (value: number): string => value.toLocaleString('en-US');
 const PLEX_BAR_COLOR = PLEX_RESOLUTION_COLORS[0];
@@ -144,14 +150,144 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
   };
 }
 
+// An album's date as "Mar 4, 2024"; the API sends UTC instants, so the date is read in UTC to match what Plex reports.
+function formatDate(value: string | null): string {
+  if (!value) return 'Unknown';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+function AlbumListCard(
+  handle: Handle<{ title: string; albums: PlexMusicAlbum[]; testId: string; detail: (album: PlexMusicAlbum) => string }>
+) {
+  return () => {
+    const { title, albums, testId, detail } = handle.props;
+    if (albums.length === 0) return null;
+    return (
+      <ChartCard title={title}>
+        <ol class="space-y-1 text-sm" data-testid={testId}>
+          {albums.map((album) => (
+            <li key={album.id} class="flex items-baseline justify-between gap-3">
+              <span class="min-w-0 truncate text-white">
+                {album.title} <span class="text-zinc-400">by {album.artist || 'Unknown artist'}</span>
+              </span>
+              <span class="shrink-0 text-xs text-zinc-400">{detail(album)}</span>
+            </li>
+          ))}
+        </ol>
+      </ChartCard>
+    );
+  };
+}
+
+function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
+  return () => {
+    const { stats } = handle.props;
+    const { coverage, completeness } = stats;
+    return (
+      <section
+        aria-labelledby="plex-stats-music-heading"
+        class="space-y-4 border-t border-zinc-700 pt-4"
+        data-testid="plex-stats-kind"
+        data-kind="music"
+      >
+        <h3 id="plex-stats-music-heading" class="text-base font-semibold text-white">
+          Music
+        </h3>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard title="Albums in MediaSet" value={num(coverage.total)} icon={Album} colorClass={STAT_CARD_COLOR} />
+          <StatCard title="On Plex" value={num(coverage.onPlex)} icon={Music} colorClass={STAT_CARD_COLOR} />
+          <StatCard title="Not on Plex" value={num(coverage.notOnPlex)} icon={Link2Off} colorClass={STAT_CARD_COLOR} />
+          <StatCard
+            title="Broken links"
+            value={num(coverage.broken)}
+            icon={AlertTriangle}
+            colorClass={STAT_CARD_COLOR}
+          />
+        </div>
+        {stats.albums === 0 ? (
+          <p class="text-sm text-zinc-400" data-testid="plex-stats-empty">
+            No albums on Plex yet, so there is nothing to break down.
+          </p>
+        ) : (
+          <>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard title="Total plays" value={num(stats.totalPlays)} icon={Disc} colorClass={STAT_CARD_COLOR} />
+              <StatCard title="Never played" value={num(stats.neverPlayed)} icon={Disc} colorClass={STAT_CARD_COLOR} />
+              <StatCard
+                title={`Total size (${num(stats.albums)} albums)`}
+                value={formatBytes(stats.storage.totalBytes)}
+                icon={HardDrive}
+                colorClass={STAT_CARD_COLOR}
+              />
+              <StatCard
+                title="Average size"
+                value={formatBytes(stats.storage.averageBytes)}
+                icon={HardDrive}
+                colorClass={STAT_CARD_COLOR}
+              />
+            </div>
+            <p class="text-xs text-zinc-400">The charts below count albums that are on Plex.</p>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <PieCard title="Audio codec" counts={stats.audioCodec} upper />
+              <BarCard title="Bitrate" counts={stats.bitrate} />
+            </div>
+          </>
+        )}
+        {completeness.tracksExpected > 0 ? (
+          <div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4" data-testid="plex-stats-completeness">
+            <p class="text-sm font-medium text-zinc-400">Track completeness</p>
+            <p class="mt-2 flex items-center gap-2 text-2xl font-bold text-white">
+              <span>
+                {num(completeness.tracksPresent)} of {num(completeness.tracksExpected)} tracks
+              </span>
+            </p>
+            <p class="mt-1 text-xs text-zinc-400">
+              {num(completeness.albumsComplete)} complete, {num(completeness.albumsPartial)} partial. Expected is the
+              track count of the album in MediaSet.
+            </p>
+          </div>
+        ) : null}
+        {stats.mostPlayed.length > 0 ? (
+          <ChartCard title="Most played">
+            <BarChart
+              data={stats.mostPlayed.map((album) => ({
+                name: `${album.title} (${album.artist || 'Unknown artist'})`,
+                value: album.playCount,
+              }))}
+              color={PLEX_BAR_COLOR}
+            />
+          </ChartCard>
+        ) : null}
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <AlbumListCard
+            title="Recently played"
+            albums={stats.recentlyPlayed}
+            testId="plex-stats-recently-played"
+            detail={(album) => formatDate(album.lastPlayedAt)}
+          />
+          <AlbumListCard
+            title="Recently added"
+            albums={stats.recentlyAdded}
+            testId="plex-stats-recently-added"
+            detail={(album) => formatDate(album.dateAdded)}
+          />
+        </div>
+      </section>
+    );
+  };
+}
+
 // The statistics block of the Plex page, placed before the sync section: an overview by entity, then one section for
-// Movies and one for TV. TV breakdowns count episodes.
+// Movies and one for TV (episodes) when movies are enabled, and one for Music when music is enabled.
 export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistics }>) {
   return () => {
-    const { movies, tv } = handle.props.statistics;
+    const { movies, tv, music } = handle.props.statistics;
     const byEntity = [
-      { name: 'Movies', value: movies.coverage.onPlex },
-      { name: 'TV series', value: tv.coverage.onPlex },
+      ...(movies ? [{ name: 'Movies', value: movies.coverage.onPlex }] : []),
+      ...(tv ? [{ name: 'TV series', value: tv.coverage.onPlex }] : []),
+      ...(music ? [{ name: 'Albums', value: music.coverage.onPlex }] : []),
     ];
     return (
       <section aria-labelledby="plex-page-heading" class="space-y-4" data-testid="plex-statistics">
@@ -160,8 +296,9 @@ export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistic
             <BarChart data={byEntity} color={PLEX_BAR_COLOR} />
           </ChartCard>
         </div>
-        <KindSection stats={movies} label="Movies" unit="movies" />
-        <KindSection stats={tv} label="TV series" unit="episodes" />
+        {movies ? <KindSection stats={movies} label="Movies" unit="movies" /> : null}
+        {tv ? <KindSection stats={tv} label="TV series" unit="episodes" /> : null}
+        {music ? <MusicSection stats={music} /> : null}
       </section>
     );
   };

@@ -1,19 +1,27 @@
 import * as assert from 'remix/assert';
 import { describe, it } from 'remix/test';
 
-import { isPlexEnabledForRequest, isPlexNavEnabled, plexNavGate } from './plex-nav.server.ts';
+import {
+  isPlexEnabledForRequest,
+  isPlexNavEnabled,
+  isPlexPageEnabledForRequest,
+  plexNavGate,
+} from './plex-nav.server.ts';
 
 // Runs the gate for a path against a stubbed API; `plexFor` answers the integrations call per request path.
-function stub(t: { after: (fn: () => void) => void }, plexFor: (path: string) => boolean, delay = 0) {
+function stub(
+  t: { after: (fn: () => void) => void },
+  plexFor: (path: string) => boolean,
+  delay = 0,
+  entityTypes: string[] = ['movies']
+) {
   const original = globalThis.fetch;
   const state = { lookups: 0 };
   globalThis.fetch = (async () => {
     state.lookups++;
     const current = state.lookups;
     if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-    return Response.json([
-      { key: 'plex', displayName: 'Plex', enabled: plexFor(String(current)), entityTypes: ['movies'] },
-    ]);
+    return Response.json([{ key: 'plex', displayName: 'Plex', enabled: plexFor(String(current)), entityTypes }]);
   }) as typeof fetch;
   t.after(() => {
     globalThis.fetch = original;
@@ -40,6 +48,14 @@ describe('plexNavGate', () => {
     const response = await run('/plex', async () => [isPlexNavEnabled(), await isPlexEnabledForRequest()].join());
     assert.equal(await response.text(), 'true,true');
     assert.equal(state.lookups, 1);
+  });
+
+  it('should open the statistics page but not the movie gate when only music is enabled', async (t) => {
+    stub(t, () => true, 0, ['music']);
+    const response = await run('/plex', async () =>
+      [isPlexNavEnabled(), await isPlexPageEnabledForRequest(), await isPlexEnabledForRequest()].join()
+    );
+    assert.equal(await response.text(), 'true,true,false');
   });
 
   it('should be off outside a request and when Plex is off', async (t) => {

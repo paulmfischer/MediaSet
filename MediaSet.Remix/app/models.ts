@@ -330,4 +330,35 @@ export type PlexKindStatistics = {
   } | null;
 };
 
-export type PlexStatistics = { movies: PlexKindStatistics; tv: PlexKindStatistics };
+/** One album in a music ranking of `GET /plex/statistics`. Dates are ISO strings, or null when unknown. */
+export type PlexMusicAlbum = {
+  id: string;
+  title: string;
+  artist: string;
+  playCount: number;
+  lastPlayedAt: string | null;
+  dateAdded: string | null;
+};
+
+/** The music section of `GET /plex/statistics`; a unit is an on-Plex album. The API sends no file path. */
+export type PlexMusicStatistics = {
+  coverage: { total: number; onPlex: number; notOnPlex: number; broken: number };
+  /** On-Plex albums; what the size, codec and bitrate figures count. */
+  albums: number;
+  totalPlays: number;
+  neverPlayed: number;
+  mostPlayed: PlexMusicAlbum[];
+  recentlyPlayed: PlexMusicAlbum[];
+  recentlyAdded: PlexMusicAlbum[];
+  storage: { totalBytes: number; averageBytes: number; unitsWithSize: number };
+  audioCodec: PlexCount[];
+  bitrate: PlexCount[];
+  completeness: { tracksPresent: number; tracksExpected: number; albumsComplete: number; albumsPartial: number };
+};
+
+/** Each section is present only when its entity type is enabled (movies and TV together, music on its own). */
+export type PlexStatistics = {
+  movies?: PlexKindStatistics | null;
+  tv?: PlexKindStatistics | null;
+  music?: PlexMusicStatistics | null;
+};

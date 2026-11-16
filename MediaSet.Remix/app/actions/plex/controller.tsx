@@ -5,7 +5,7 @@ import { getPlexStatistics, getPlexStatuses, startPlexSync } from '../../api/ple
 import type { PlexEntityStatus, PlexStatistics } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { isPlexEnabledForRequest, isPlexPageEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { hasActiveRun, isListedStatus, SYNCABLE_ENTITY_TYPES } from '../../utils/plex-sync.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexSyncPage } from '../../ui/plex/sync-page.tsx';
@@ -42,7 +42,7 @@ function failure(context: AppContext, error: unknown) {
 }
 
 async function index(context: AppContext) {
-  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
+  if (!(await isPlexPageEnabledForRequest())) return renderError(context, 404);
   try {
     const [allStatuses, statistics] = await Promise.all([getPlexStatuses(), getPlexStatistics()]);
     const statuses = allStatuses.filter(isListedStatus);
