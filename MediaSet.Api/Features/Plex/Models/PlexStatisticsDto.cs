@@ -68,4 +68,4 @@ public record PlexMusicStatisticsDto(
 /// The Plex statistics page data. Each section is present only when its entity type is enabled: movies and TV entries
 /// (which share the movies entity type) together, music on its own.
 /// </summary>
-public record PlexStatisticsDto(PlexEntityStatisticsDto? Movies, PlexEntityStatisticsDto? Tv, PlexMusicStatisticsDto? Music = null);
+public record PlexStatisticsDto(PlexEntityStatisticsDto? Movies = null, PlexEntityStatisticsDto? Tv = null, PlexMusicStatisticsDto? Music = null);

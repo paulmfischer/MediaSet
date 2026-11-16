@@ -13,7 +13,7 @@ import { ChartCard } from '../dashboard/chart-card.tsx';
 import { PLEX_RESOLUTION_COLORS, PLEX_STATISTICS_COLORS, STAT_CARD_COLOR } from '../dashboard/config.ts';
 import { PieChart } from '../dashboard/pie-chart.tsx';
 import { StatCard } from '../dashboard/stat-card.tsx';
-import { AlertTriangle, Clapperboard, Disc, HardDrive, Layers, Link2Off, Music, Tv } from '../icons.ts';
+import { AlertTriangle, Album, Clapperboard, Disc, HardDrive, Layers, Link2Off, Music, Tv } from '../icons.ts';
 
 const num = (value: number): string => value.toLocaleString('en-US');
 const PLEX_BAR_COLOR = PLEX_RESOLUTION_COLORS[0];
@@ -196,8 +196,8 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
           Music
         </h3>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard title="Albums in MediaSet" value={num(coverage.total)} icon={Music} colorClass={STAT_CARD_COLOR} />
-          <StatCard title="On Plex" value={num(coverage.onPlex)} icon={Tv} colorClass={STAT_CARD_COLOR} />
+          <StatCard title="Albums in MediaSet" value={num(coverage.total)} icon={Album} colorClass={STAT_CARD_COLOR} />
+          <StatCard title="On Plex" value={num(coverage.onPlex)} icon={Music} colorClass={STAT_CARD_COLOR} />
           <StatCard title="Not on Plex" value={num(coverage.notOnPlex)} icon={Link2Off} colorClass={STAT_CARD_COLOR} />
           <StatCard
             title="Broken links"
@@ -252,7 +252,10 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
         {stats.mostPlayed.length > 0 ? (
           <ChartCard title="Most played">
             <BarChart
-              data={stats.mostPlayed.map((album) => ({ name: album.title, value: album.playCount }))}
+              data={stats.mostPlayed.map((album) => ({
+                name: `${album.title} (${album.artist || 'Unknown artist'})`,
+                value: album.playCount,
+              }))}
               color={PLEX_BAR_COLOR}
             />
           </ChartCard>

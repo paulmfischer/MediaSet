@@ -245,7 +245,7 @@ describe('plex statistics section', () => {
     assert.match(html, /100 of 120 tracks/);
     assert.match(html, /10 complete, 2 partial/);
     assert.match(html, /Most played/);
-    assert.match(html, />Kind of Blue</);
+    assert.match(html, />Kind of Blue \(Miles Davis\)</);
   });
 
   it('should list recently played and recently added albums with their dates', async (t) => {

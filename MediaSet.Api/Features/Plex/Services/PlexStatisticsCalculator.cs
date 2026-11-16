@@ -34,27 +34,20 @@ public static class PlexStatisticsCalculator
         PlexMusicAlbumDto Album((Music Entry, PlexItemData Doc) x) =>
             new(x.Entry.Id!, x.Entry.Title, x.Entry.Artist, x.Doc.PlayCount ?? 0, x.Doc.LastPlayedAt, x.Doc.DateAdded);
 
-        var mostPlayed = onPlex
-            .Where(x => x.Doc.PlayCount is > 0)
-            .OrderByDescending(x => x.Doc.PlayCount)
-            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
-            .Take(MostWatchedLimit)
-            .Select(Album)
-            .ToList();
-        var recentlyPlayed = onPlex
-            .Where(x => x.Doc.LastPlayedAt != null)
-            .OrderByDescending(x => x.Doc.LastPlayedAt)
-            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
-            .Take(MostWatchedLimit)
-            .Select(Album)
-            .ToList();
-        var recentlyAdded = onPlex
-            .Where(x => x.Doc.DateAdded != null)
-            .OrderByDescending(x => x.Doc.DateAdded)
-            .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
-            .Take(MostWatchedLimit)
-            .Select(Album)
-            .ToList();
+        // Each ranking takes the on-Plex albums that have the key, newest/highest first, ties by title
+        List<PlexMusicAlbumDto> Top<TKey>(Func<PlexItemData, bool> has, Func<PlexItemData, TKey> key) =>
+        [
+            .. onPlex
+                .Where(x => has(x.Doc))
+                .OrderByDescending(x => key(x.Doc))
+                .ThenBy(x => x.Entry.Title, StringComparer.OrdinalIgnoreCase)
+                .Take(MostWatchedLimit)
+                .Select(Album)
+        ];
+
+        var mostPlayed = Top(d => d.PlayCount is > 0, d => d.PlayCount);
+        var recentlyPlayed = Top(d => d.LastPlayedAt != null, d => d.LastPlayedAt);
+        var recentlyAdded = Top(d => d.DateAdded != null, d => d.DateAdded);
 
         var sized = onPlex.Where(x => x.Doc.SizeBytes is > 0).Select(x => x.Doc.SizeBytes!.Value).ToList();
 
