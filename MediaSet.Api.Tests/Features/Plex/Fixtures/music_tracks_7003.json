@@ -1,0 +1,51 @@
+{
+ "MediaContainer": {
+  "size": 2,
+  "totalSize": 2,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "7301",
+    "type": "track",
+    "title": "Track 1",
+    "index": 1,
+    "parentIndex": 1,
+    "Media": [
+     {
+      "audioCodec": "mp3",
+      "bitrate": 256,
+      "container": "mp3",
+      "Part": [
+       {
+        "file": "/music/7301.mp3",
+        "size": 8000000,
+        "container": "mp3"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "ratingKey": "7302",
+    "type": "track",
+    "title": "Track 2",
+    "index": 2,
+    "parentIndex": 1,
+    "Media": [
+     {
+      "audioCodec": "mp3",
+      "bitrate": 256,
+      "container": "mp3",
+      "Part": [
+       {
+        "file": "/music/7302.mp3",
+        "size": 8000000,
+        "container": "mp3"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

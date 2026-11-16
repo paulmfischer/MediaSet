@@ -7,7 +7,7 @@ namespace MediaSet.Api.Features.Plex.Services;
 
 /// <summary>
 /// Starts a Plex sync for each enabled entity type on its own cron schedule
-/// (<c>PlexConfiguration:Entities:{type}:Schedule</c>, default Sunday 03:00), evaluated in the server local time
+/// (<c>PlexConfiguration:Entities:{type}:Schedule</c>, default Sunday 03:00 for movies and Sunday 04:00 for music), evaluated in the server local time
 /// zone. Scheduled runs go through <see cref="IPlexSyncService.StartAsync"/>, so they share the sync lock and the run
 /// records with manual runs: when the lock is held the run is queued behind it (never parallel), and when the same
 /// entity type already has a queued or running run the scheduled run is skipped.
@@ -50,7 +50,8 @@ public sealed class PlexSyncScheduler(
                 continue;
             }
 
-            var first = PlexScheduleCalculator.GetNextRun(entity.Schedule, _time.GetUtcNow(), _time.LocalTimeZone);
+            var schedule = PlexConfiguration.ScheduleFor(entityType, entity);
+            var first = PlexScheduleCalculator.GetNextRun(schedule, _time.GetUtcNow(), _time.LocalTimeZone);
             if (first.NextRun == null)
             {
                 logger.LogWarning(
@@ -61,7 +62,7 @@ public sealed class PlexSyncScheduler(
 
             // The first next run is published before this method yields, so status is correct right after startup
             scheduleInfo.SetNextRun(entityType, first.NextRun);
-            loops.Add(RunLoopAsync(entityType, entity.Schedule, first.NextRun.Value, stoppingToken));
+            loops.Add(RunLoopAsync(entityType, schedule, first.NextRun.Value, stoppingToken));
         }
 
         await Task.WhenAll(loops);

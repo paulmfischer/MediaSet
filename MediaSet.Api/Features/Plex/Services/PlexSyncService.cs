@@ -319,6 +319,11 @@ public sealed class PlexSyncService(
     /// <summary>Scan the Plex libraries, match movies to the items, store the Plex data. Writes nothing to Plex.</summary>
     private async Task<ScanResult> ScanAsync(string entityType, CancellationToken token)
     {
+        if (PlexEntityTypes.Normalize(entityType) == PlexEntityTypes.Music)
+        {
+            return await ScanMusicAsync(token);
+        }
+
         // First step: fill missing ExternalIds from TMDB so the movies can match in this same run. It never
         // fails the run (only shutdown cancels it).
         var backfill = new ExternalIdBackfillResult(0, 0);
@@ -587,7 +592,7 @@ public sealed class PlexSyncService(
         try
         {
             var live = movies.Select(m => m.Id!).ToHashSet(StringComparer.Ordinal);
-            foreach (var id in await itemStore.ListIdsAsync(token))
+            foreach (var id in await itemStore.ListIdsAsync(PlexEntityTypes.Movies, token))
             {
                 if (!live.Contains(id))
                 {
@@ -601,6 +606,225 @@ public sealed class PlexSyncService(
         }
 
         return new ScanResult(movies.Count, matched, movies.Count - matched - errored, errored, backfill.Filled, backfill.Skipped, [.. duplicates.Values]);
+    }
+
+    private sealed record MusicPlan(Music Music, PlexItemData? Stored, bool Manual, PlexItem? Item);
+
+    /// <summary>
+    /// Music sync: fills missing MusicBrainz ids first, lists the albums of the artist libraries, matches each music entry to
+    /// an album (the stored link, then its ExternalId against the MusicBrainz id Plex holds; never by title), reads the tracks
+    /// of the linked albums and stores one rolled-up document per match. Writes nothing to Plex.
+    /// </summary>
+    private async Task<ScanResult> ScanMusicAsync(CancellationToken token)
+    {
+        // First step: fill missing ExternalIds from MusicBrainz so the entries can match in this same run. It never
+        // fails the run (only shutdown cancels it).
+        var backfill = new ExternalIdBackfillResult(0, 0);
+        try
+        {
+            using var backfillScope = services.CreateScope();
+            backfill = await backfillScope.ServiceProvider.GetRequiredService<IMusicExternalIdBackfillService>().RunAsync(token);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("Plex music sync ExternalId backfill failed ({ExceptionType}); continuing the sync", ex.GetType().Name);
+        }
+
+        var client = services.GetRequiredService<IPlexClient>();
+        var itemStore = services.GetRequiredService<IPlexItemStore>();
+        var albums = new List<PlexItem>();
+        foreach (var library in await client.GetLibrariesForEntityTypeAsync(PlexEntityTypes.Music, token))
+        {
+            var libraryItems = await client.GetItemListingAsync(library, token);
+            albums.AddRange(libraryItems.Where(i => string.Equals(i.Type, PlexEntityTypes.AlbumItemType, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        using var scope = services.CreateScope();
+        var musics = (await scope.ServiceProvider.GetRequiredService<IEntityService<Music>>().GetListAsync(token))
+            .Where(m => !string.IsNullOrEmpty(m.Id))
+            .ToList();
+
+        var byRatingKey = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
+        var byMbid = new Dictionary<string, PlexItem>(StringComparer.Ordinal);
+        foreach (var album in albums)
+        {
+            byRatingKey.TryAdd(album.RatingKey, album);
+            if (PlexMusicMatching.MbidKey(album.Guids) is { } mbid)
+            {
+                // First scanned album wins for a shared id
+                byMbid.TryAdd(mbid, album);
+            }
+        }
+
+        // Phase 1 reads only: decide each entry's album. A PlexClientException (outage, rejected token, timeout) is
+        // rethrown so the run fails before anything is written, and nothing is marked gone.
+        var plans = new List<MusicPlan>();
+        var errored = 0;
+        foreach (var music in musics)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                var stored = await itemStore.GetAsync(music.Id!, token);
+                var storedUsable = stored is { EntityType: PlexEntityTypes.Music };
+                var manual = storedUsable && stored!.LinkSource == PlexLinkSources.Manual;
+
+                // The earlier link wins; the MusicBrainz id is only used until the entry is linked
+                PlexItem? item = null;
+                if (storedUsable && byRatingKey.TryGetValue(stored!.PlexItemId, out var linked))
+                {
+                    item = linked;
+                }
+                if (item == null && manual)
+                {
+                    // A manual link may point outside the scanned libraries: ask Plex for that album itself
+                    item = await FetchLinkedItemAsync(client, PlexEntityTypes.AlbumItemType, stored!.PlexItemId, token);
+                }
+                if (item == null && !manual && PlexMusicMatching.MbidKey(music.ExternalId) is { } key
+                    && byMbid.TryGetValue(key, out var byId))
+                {
+                    item = byId;
+                }
+
+                plans.Add(new MusicPlan(music, storedUsable ? stored : null, manual, item));
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException and not PlexClientException)
+            {
+                errored++;
+                logger.LogWarning("Plex sync could not process music {MusicId} ({ExceptionType})", music.Id, ex.GetType().Name);
+            }
+        }
+
+        // Still reads only: the tracks of each linked album, once per album however many entries link to it
+        var (tracksByAlbum, failedAlbums) = await ReadAlbumTracksAsync(client, plans, token);
+
+        // Phase 2 writes
+        var matched = 0;
+        var syncedAt = DateTime.UtcNow;
+        var linkedBy = new Dictionary<string, Music>(StringComparer.Ordinal);
+        foreach (var plan in plans)
+        {
+            token.ThrowIfCancellationRequested();
+            var music = plan.Music;
+            var stored = plan.Stored;
+            try
+            {
+                if (plan.Item == null && logger.IsEnabled(LogLevel.Debug))
+                {
+                    var reason = !plan.Manual && string.IsNullOrWhiteSpace(music.ExternalId) ? "it has no ExternalId"
+                        : !plan.Manual && PlexMusicMatching.MbidKey(music.ExternalId) == null ? "its ExternalId is not a MusicBrainz id"
+                        : "no Plex album in the scanned libraries has that id";
+                    logger.LogDebug("Plex sync found no match for music {MusicId} ({Title}): {Reason}", music.Id, music.Title, reason);
+                }
+
+                if (plan.Item is { } item)
+                {
+                    if (failedAlbums.Contains(item.RatingKey))
+                    {
+                        // Its tracks could not be read: keep what is stored and try again next sync
+                        errored++;
+                        logger.LogWarning("Plex sync could not read the tracks of the album linked to music {MusicId}", music.Id);
+                        continue;
+                    }
+
+                    // A manual link may have been made since the read above; it must never be replaced
+                    if (!plan.Manual && await itemStore.GetAsync(music.Id!, token) is { LinkSource: PlexLinkSources.Manual })
+                    {
+                        matched++;
+                        continue;
+                    }
+
+                    if (!linkedBy.TryAdd(item.RatingKey, music))
+                    {
+                        logger.LogWarning("Plex album {RatingKey} is linked by music {FirstMusicId} and {MusicId}", item.RatingKey, linkedBy[item.RatingKey].Id, music.Id);
+                    }
+
+                    var source = plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto;
+                    // Build resets MissCount and Broken: a found album recovers the link
+                    await itemStore.UpsertAsync(
+                        PlexMusicMatching.Build(music.Id!, item, tracksByAlbum[item.RatingKey], PlexMusicMatching.ExpectedTracks(music), syncedAt, source), token);
+                    matched++;
+
+                    // A paired entry without a cover takes the Plex album thumb (the service checks); best effort, never fails the run
+                    if (scope.ServiceProvider.GetService<IPlexCoverService<Music>>() is { } covers)
+                    {
+                        await covers.ApplyIfMissingAsync(music.Id!, item.RatingKey, token);
+                    }
+                }
+                else if (stored != null)
+                {
+                    // Linked earlier but gone from Plex while the library is reachable
+                    var misses = stored.MissCount + 1;
+                    if (plan.Manual)
+                    {
+                        await FlagManualBrokenAsync(itemStore, stored, misses, syncedAt, token);
+                    }
+                    else if (misses >= AutoLinkDropMisses)
+                    {
+                        await itemStore.DeleteAsync(music.Id!, token);
+                    }
+                    else
+                    {
+                        // Keep the last data, flag it
+                        stored.OnPlex = false;
+                        stored.MissCount = misses;
+                        stored.LastSyncedAt = syncedAt;
+                        await itemStore.UpsertAsync(stored, token);
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                errored++;
+                logger.LogWarning("Plex sync could not process music {MusicId} ({ExceptionType})", music.Id, ex.GetType().Name);
+            }
+        }
+
+        // Purge the Plex data of music deleted since the last run. Only a missing entry qualifies, so a manual link is never
+        // purged for being unmatched or gone from Plex.
+        try
+        {
+            var live = musics.Select(m => m.Id!).ToHashSet(StringComparer.Ordinal);
+            foreach (var id in await itemStore.ListIdsAsync(PlexEntityTypes.Music, token))
+            {
+                if (!live.Contains(id))
+                {
+                    await itemStore.DeleteAsync(id, token);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning("Plex sync could not purge Plex data of deleted music ({ExceptionType})", ex.GetType().Name);
+        }
+
+        return new ScanResult(musics.Count, matched, musics.Count - matched - errored, errored, backfill.Filled, backfill.Skipped, []);
+    }
+
+    /// <summary>
+    /// Reads, with at most DetailConcurrency requests at once, the tracks of the albums the plans link to, one read per rating
+    /// key. An album whose read fails with a Plex error is returned in the failed set (and retried next sync); other Plex
+    /// failures are not expected here because the listing already succeeded.
+    /// </summary>
+    private async Task<(Dictionary<string, IReadOnlyList<PlexTrack>> Tracks, HashSet<string> Failed)> ReadAlbumTracksAsync(
+        IPlexClient client, List<MusicPlan> plans, CancellationToken token)
+    {
+        var albumKeys = plans.Where(p => p.Item != null).Select(p => p.Item!.RatingKey).Distinct(StringComparer.Ordinal).ToList();
+        var tracks = new System.Collections.Concurrent.ConcurrentDictionary<string, IReadOnlyList<PlexTrack>>(StringComparer.Ordinal);
+        var failed = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
+        var parallel = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, options.Value.DetailConcurrency), CancellationToken = token };
+        await Parallel.ForEachAsync(albumKeys, parallel, async (key, ct) =>
+        {
+            try
+            {
+                tracks[key] = await client.GetTracksAsync(key, ct);
+            }
+            catch (PlexClientException)
+            {
+                failed[key] = 0;
+            }
+        });
+        return (new Dictionary<string, IReadOnlyList<PlexTrack>>(tracks, StringComparer.Ordinal), [.. failed.Keys]);
     }
 
     /// <summary>

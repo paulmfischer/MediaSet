@@ -1,0 +1,30 @@
+{
+ "MediaContainer": {
+  "size": 1,
+  "totalSize": 1,
+  "offset": 0,
+  "Metadata": [
+   {
+    "ratingKey": "7601",
+    "type": "track",
+    "title": "Track 1",
+    "index": 1,
+    "parentIndex": 1,
+    "Media": [
+     {
+      "audioCodec": "flac",
+      "bitrate": 900,
+      "container": "flac",
+      "Part": [
+       {
+        "file": "/music/7601.flac",
+        "size": 1000,
+        "container": "flac"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

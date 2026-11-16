@@ -36,7 +36,9 @@ public class PlexConfigurationValidatorTests
         Assert.That(config.Timeout, Is.EqualTo(30));
         Assert.That(config.PageSize, Is.EqualTo(100));
         Assert.That(config.AcceptInvalidCertificate, Is.False);
-        Assert.That(entity.Schedule, Is.EqualTo("0 3 * * 0"));
+        Assert.That(entity.Schedule, Is.Null);
+        Assert.That(PlexConfiguration.ScheduleFor("movies", entity), Is.EqualTo("0 3 * * 0"));
+        Assert.That(PlexConfiguration.ScheduleFor("music", entity), Is.EqualTo("0 4 * * 0"));
         Assert.That(entity.LibrarySectionIds, Is.Empty);
     }
 
@@ -175,5 +177,62 @@ public class PlexConfigurationValidatorTests
 
         Assert.That(messages, Is.Not.Empty);
         Assert.That(messages, Has.None.Contain(Token));
+    }
+
+    [Test]
+    public void Validate_MusicEnabledWithNoSchedule_EnablesMusicWithTheDefaultSchedule()
+    {
+        var config = Valid();
+        config.Entities["Music"] = new PlexEntityConfiguration { Enabled = true };
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.EnabledEntityTypes, Is.EqualTo(["movies", "music"]));
+        Assert.That(result.Messages, Is.Empty);
+    }
+
+    [Test]
+    public void Validate_MusicOnly_EnablesMusicWithoutMovies()
+    {
+        var config = Valid(enabled: false);
+        config.Entities["music"] = new PlexEntityConfiguration { Enabled = true, LibrarySectionIds = ["4"] };
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.IntegrationEnabled, Is.True);
+        Assert.That(result.EnabledEntityTypes, Is.EqualTo(["music"]));
+    }
+
+    [Test]
+    public void Validate_InvalidMusicSchedule_DisablesOnlyMusicAndNamesItInTheMessage()
+    {
+        var config = Valid();
+        config.Entities["Music"] = new PlexEntityConfiguration { Enabled = true, Schedule = "not a cron" };
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.IntegrationEnabled, Is.True);
+        Assert.That(result.EnabledEntityTypes, Is.EqualTo(["movies"]));
+        Assert.That(result.Messages.Single(), Does.Contain("'music'").And.Contain("invalid schedule"));
+    }
+
+    [Test]
+    public void Validate_InvalidMovieScheduleWithMusicOn_DisablesOnlyMovies()
+    {
+        var config = Valid(schedule: "not a cron");
+        config.Entities["Music"] = new PlexEntityConfiguration { Enabled = true };
+
+        var result = PlexConfigurationValidator.Validate(config);
+
+        Assert.That(result.EnabledEntityTypes, Is.EqualTo(["music"]));
+    }
+
+    [Test]
+    public void Validate_MusicDisabled_IsNotEnabled()
+    {
+        var config = Valid();
+        config.Entities["Music"] = new PlexEntityConfiguration { Enabled = false };
+
+        Assert.That(PlexConfigurationValidator.Validate(config).EnabledEntityTypes, Is.EqualTo(["movies"]));
     }
 }

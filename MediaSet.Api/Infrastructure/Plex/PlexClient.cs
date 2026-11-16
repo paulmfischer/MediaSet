@@ -15,6 +15,9 @@ public class PlexClient : IPlexClient
     /// <summary>Safety cap on pages per library, so a misbehaving server cannot loop the client forever.</summary>
     public const int MaxPages = 10_000;
 
+    /// <summary>Plex's numeric type of an album, used to list the albums of an artist library.</summary>
+    private const int AlbumTypeNumber = 9;
+
     private readonly HttpClient _httpClient;
     private readonly PlexConfiguration _configuration;
     private readonly ILogger<PlexClient> _logger;
@@ -95,6 +98,11 @@ public class PlexClient : IPlexClient
         var serverId = deepLinks ? await GetMachineIdentifierAsync(cancellationToken) : null;
         // Plex omits the Guid entries from section listings unless includeGuids=1 is sent
         var path = $"library/sections/{Uri.EscapeDataString(library.Id)}/all?includeGuids=1";
+        if (string.Equals(library.Type, PlexEntityTypes.ArtistLibraryType, StringComparison.OrdinalIgnoreCase))
+        {
+            // An artist library lists artists by default; type 9 lists its albums
+            path += $"&type={AlbumTypeNumber}";
+        }
         if (!string.IsNullOrWhiteSpace(titleContains))
         {
             path += $"&title={Uri.EscapeDataString(titleContains)}";
@@ -212,6 +220,61 @@ public class PlexClient : IPlexClient
             LogFailure(ex, null);
             return null;
         }
+    }
+
+    public async Task<IReadOnlyList<PlexTrack>> GetTracksAsync(string albumRatingKey, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(albumRatingKey))
+        {
+            return [];
+        }
+
+        var pageSize = _configuration.PageSize > 0 ? _configuration.PageSize : 100;
+        var path = $"library/metadata/{Uri.EscapeDataString(albumRatingKey.Trim())}/children";
+        var tracks = new List<PlexTrack>();
+        var start = 0;
+        for (var page = 0; page < MaxPagesPerRead; page++)
+        {
+            ItemsRoot root;
+            try
+            {
+                root = await GetAsync<ItemsRoot>(path, (start, pageSize), cancellationToken, allowNotFound: true);
+            }
+            catch (PlexNotFoundException)
+            {
+                return [];
+            }
+
+            var container = root.MediaContainer;
+            var metadata = container?.Metadata ?? [];
+            foreach (var listed in metadata)
+            {
+                if (string.IsNullOrEmpty(listed.RatingKey) || !string.Equals(listed.Type, "track", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var media = listed.Media?.FirstOrDefault();
+                tracks.Add(new PlexTrack(
+                    listed.RatingKey,
+                    listed.ParentIndex ?? 1,
+                    listed.Index ?? 0,
+                    listed.ViewCount is > 0 ? listed.ViewCount.Value : 0,
+                    listed.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(listed.LastViewedAt.Value) : null,
+                    media?.AudioCodec,
+                    media?.Bitrate is > 0 ? media.Bitrate : null,
+                    media?.Part?.FirstOrDefault()?.Size));
+            }
+
+            start += metadata.Count;
+            if (metadata.Count < pageSize || (container?.TotalSize.HasValue == true && start >= container.TotalSize))
+            {
+                return tracks;
+            }
+        }
+
+        _logger.LogWarning("Plex album paging exceeded {MaxPages} pages", MaxPagesPerRead);
+        throw new PlexClientException(null, "Plex returned too many pages");
     }
 
     public async Task<IReadOnlyList<PlexSeason>> GetSeasonsAsync(string showRatingKey, CancellationToken cancellationToken)
@@ -437,7 +500,10 @@ public class PlexClient : IPlexClient
         m.ViewCount is > 0 ? m.ViewCount.Value : 0,
         m.LastViewedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.LastViewedAt.Value) : null,
         !m.StreamLookupFailed,
-        UpdatedAtOf(m));
+        UpdatedAtOf(m),
+        false,
+        m.LeafCount,
+        m.ParentTitle);
 
     private static DateTimeOffset? UpdatedAtOf(RawMetadata m) =>
         m.UpdatedAt is > 0 ? DateTimeOffset.FromUnixTimeSeconds(m.UpdatedAt.Value) : null;
@@ -460,7 +526,7 @@ public class PlexClient : IPlexClient
             .Select(id => id![(scheme.Length + 3)..])
             .FirstOrDefault(v => v.Length > 0);
 
-        return new PlexGuids(Find("tmdb"), Find("imdb"), Find("tvdb"));
+        return new PlexGuids(Find("tmdb"), Find("imdb"), Find("tvdb"), Find("mbid"));
     }
 
     private static PlexVersion MapVersion(RawMedia media)
@@ -514,6 +580,8 @@ public class PlexClient : IPlexClient
         public int? ParentIndex { get; set; }
         [JsonIgnore] public bool StreamLookupFailed { get; set; }
         public int? LeafCount { get; set; }
+        /// <summary>The artist of an album.</summary>
+        public string? ParentTitle { get; set; }
         public long? AddedAt { get; set; }
         public long? UpdatedAt { get; set; }
         [JsonPropertyName("librarySectionID")] public long? LibrarySectionId { get; set; }
@@ -529,6 +597,8 @@ public class PlexClient : IPlexClient
         public long? Duration { get; set; }
         public string? VideoResolution { get; set; }
         public string? VideoCodec { get; set; }
+        public string? AudioCodec { get; set; }
+        public int? Bitrate { get; set; }
         public string? Container { get; set; }
         [JsonPropertyName("Part")] public List<RawPart>? Part { get; set; }
     }
