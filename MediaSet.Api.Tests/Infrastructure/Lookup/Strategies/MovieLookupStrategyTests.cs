@@ -629,7 +629,7 @@ public class MovieLookupStrategyTests
     }
 
     [Test]
-    public async Task LookupAsync_CommaVolumeTitle_SearchesTvSeriesBeforeFallingBackToMovie()
+    public async Task LookupAsync_CommaVolumeTitle_SearchesFilmsThenFallsBackToTvSeries()
     {
         var upc = "043396471238";
         var rawTitle = "Aqua Teen Hunger Force, Vol. 2 [2 Discs] [DVD]";
@@ -641,7 +641,7 @@ public class MovieLookupStrategyTests
 
         Assert.That(RetailVideoTitle.Clean(rawTitle), Is.EqualTo("Aqua Teen Hunger Force, Vol. 2"));
         _tmdbClientMock.Verify(x => x.SearchTvAsync("Aqua Teen Hunger Force", It.IsAny<CancellationToken>()), Times.Once);
-        // No series matched in this fixture, so the film search runs as the fallback.
+        // No film matched in this fixture, so the series search runs as the fallback.
         _tmdbClientMock.Verify(x => x.SearchMovieAsync("Aqua Teen Hunger Force, Vol. 2", It.IsAny<CancellationToken>()), Times.Once);
     }
 

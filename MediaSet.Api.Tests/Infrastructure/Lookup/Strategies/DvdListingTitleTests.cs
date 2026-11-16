@@ -84,7 +84,7 @@ public class DvdListingTitleTests
     }
 
     [Test]
-    public async Task Lookup_FuturamaVolume_UsesSeriesPosterWithoutMovieSearch()
+    public async Task Lookup_FuturamaVolume_NoFilmMatch_UsesSeriesPoster()
     {
         var (strategy, client) = Strategy("Futurama", 5);
         var movie = new Movie { Id = "1", Title = "Pre-Owned Futurama, Vol. 5" };
@@ -94,7 +94,7 @@ public class DvdListingTitleTests
         Assert.That(selected, Has.Count.EqualTo(1));
         Assert.That(selected[0].ImageUrl, Does.EndWith("/series.jpg"));
         Assert.That(selected[0].Provenance?.ProviderId, Is.EqualTo("tv:7"));
-        client.Verify(c => c.SearchMovieAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        client.Verify(c => c.SearchMovieAsync("Futurama, Vol. 5", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -120,7 +120,7 @@ public class DvdListingTitleTests
     }
 
     [Test]
-    public async Task Lookup_CommaVolumeFilmWithoutSeries_FallsBackToMovieSearch()
+    public async Task Lookup_CommaVolumeFilmWithoutSeries_FindsFilm()
     {
         var client = new Mock<ITmdbClient>();
         client.Setup(c => c.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -136,5 +136,23 @@ public class DvdListingTitleTests
         var selected = await Candidates(strategy, new Movie { Id = "1", Title = "Kill Bill, Vol. 1" });
 
         Assert.That(selected.Single().ImageUrl, Does.EndWith("/kb.jpg"));
+    }
+
+    [Test]
+    public async Task Lookup_CommaVolumeFilmAndSameNamedSeries_FilmWins()
+    {
+        var (strategy, client) = Strategy("Kill Bill", 1);
+        client.Setup(c => c.SearchMovieAsync("Kill Bill, Vol. 1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbSearchResponse(1, [new TmdbMovieSearchResult(9, "Kill Bill, Vol. 1", "2003-10-10", "Plot")], 1, 1));
+        client.Setup(c => c.GetMovieDetailsAsync(9, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TmdbMovieResponse(Id: 9, Title: "Kill Bill, Vol. 1", Overview: "Plot", ReleaseDate: "2003-10-10",
+                Runtime: 111, Genres: [], ProductionCompanies: [], VoteAverage: 8, PosterPath: "/kb.jpg"));
+
+        var selected = await Candidates(strategy, new Movie { Id = "1", Title = "Kill Bill, Vol. 1" });
+
+        Assert.That(selected, Has.Count.EqualTo(1));
+        Assert.That(selected[0].ImageUrl, Does.EndWith("/kb.jpg"));
+        Assert.That(selected[0].Provenance?.ProviderId, Is.EqualTo("9"));
+        client.Verify(c => c.SearchTvAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

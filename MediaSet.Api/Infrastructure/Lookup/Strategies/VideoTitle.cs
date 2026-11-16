@@ -56,7 +56,7 @@ public record VideoTitle(string Title, string SeriesTitle, int? Season = null, s
         }
         if (match.Success)
         {
-            // A comma volume can also be a film ("Kill Bill, Vol. 1"): the lookup falls back to films when no series matches.
+            // A comma volume can also be a film ("Kill Bill, Vol. 1"): the lookup searches films first and uses the series only when no film matches.
             return new(title, match.Groups[1].Value.Trim().TrimEnd(',', ':', '-').Trim(), IsSeries: true,
                 IsVolume: !Regex.IsMatch(title, @"seasons?\s+\d", Options));
         }

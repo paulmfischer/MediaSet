@@ -14,8 +14,8 @@ Changes (`RetailVideoTitle`, `VideoTitle`):
 - Leading or trailing `Pre-Owned` / `Pre-Played`, and a leading retailer name followed by a separator
   (`Amazon.com:`, `Walmart -`, `Best Buy |`, `Target:`, `eBay -`, `GameStop:`), are removed. `Used` and `New` are deliberately
   kept (`Used Cars`, `New Girl`).
-- `Series, Vol. N` and `Series, Volume N` (comma form only) are a series-level release: the verified TMDB series poster is used;
-  when no series matches, the full title is searched as a film (`Kill Bill, Vol. 1`).
+- `Series, Vol. N` and `Series, Volume N` (comma form only) are searched as a film first, using the full title including the volume (`Kill Bill, Vol. 1`); a matching film is never
+  replaced by a TV series. Only when no film matches is the release a series-level one and the verified TMDB series poster is used.
   A volume number does not map reliably to a TMDB season, so none is guessed. `Kill Bill: Vol. 1` (colon) stays a film.
 - `Series S4`, `Series S04 Complete Series`, `Series: Season 4 Comp` resolve to that season's poster.
 - `Series: Seasons 1-3`, `Seasons 1 & 2` resolve to the series poster.
