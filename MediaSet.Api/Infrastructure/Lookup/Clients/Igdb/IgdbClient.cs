@@ -32,7 +32,7 @@ public class IgdbClient : IIgdbClient
             _logger.LogInformation("Searching IGDB for game: {Title}", title);
 
             var escapedTitle = SanitizeTitle(title);
-            var body = $"fields id,name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url; search \"{escapedTitle}\"; limit 10;";
+            var body = $"fields id,name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url,alternative_names.name; search \"{escapedTitle}\"; limit 10;";
             var response = await SendRequestAsync("games", body, cancellationToken);
 
             if (response == null)
@@ -67,7 +67,7 @@ public class IgdbClient : IIgdbClient
         {
             _logger.LogInformation("Getting IGDB game details for id: {Id}", igdbId);
 
-            var body = $"fields name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url; where id = {igdbId};";
+            var body = $"fields name,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,platforms.abbreviation,age_ratings.category,age_ratings.rating,cover.url,alternative_names.name; where id = {igdbId};";
             var response = await SendRequestAsync("games", body, cancellationToken);
 
             if (response == null)

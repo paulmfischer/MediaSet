@@ -12,6 +12,20 @@ public static class RetailVideoTitle
         + @"New Line Home (?:Entertainment|Video)|DreamWorks Home Entertainment|Anchor Bay Entertainment";
     private const string Format = @"DVD|Blu-?ray|Blue-?ray|DIGITAL VIDEO DISC|4K(?: UHD)?|BD|UHD|Digital|HD";
 
+    // Marketplace condition and retailer words that are never part of a title. "Used" and "New" are not
+    // stripped: they can start or end a real title ("Used Cars", "New Girl").
+    private const string Condition = @"Pre[- ]?(?:Owned|Played)";
+    private const string Retailers = @"Amazon(?:\.com)?|Walmart(?:\.com)?|Best Buy|Target|eBay|GameStop";
+
+    private static string StripListingNoise(string title)
+    {
+        var cleaned = Regex.Replace(title, @"^(?:" + Condition + @")\b\s*[-:|]?\s*", "", Options);
+        cleaned = Regex.Replace(cleaned, @"^(?:" + Retailers + @")\s*[-:|]\s*(?:" + Condition + @"\b\s*[-:|]?\s*)?", "", Options);
+        cleaned = Regex.Replace(cleaned, @"\s*(?:[-:|]\s*|[\[(]\s*)(?:" + Condition + @")\s*[\])]?\s*$", "", Options);
+        cleaned = Regex.Replace(cleaned, @"\s+(?:" + Condition + @")\s*$", "", Options);
+        return string.IsNullOrWhiteSpace(cleaned) ? title : cleaned.Trim();
+    }
+
     // reorderArticle moves a trailing "A"/"The" to the front ("Matrix The"). Matching passes false,
     // because "Plan A" must not equal "A Plan".
     public static string Clean(string rawTitle, string? brand = null, bool reorderArticle = true)
@@ -23,6 +37,7 @@ public static class RetailVideoTitle
         {
             title = Regex.Replace(title, @"\s+" + Regex.Escape(brand.Trim()) + "$", "", Options);
         }
+        title = StripListingNoise(title);
         title = Regex.Replace(title, @"\s*\|\s*(?:" + Format + @")\b.*$", "", Options);
         // An HD label before an episode marker is interior metadata, not the end of the title.
         title = Regex.Replace(title, @"\s*\[HD\](?=\s+-\s+S\d+E\d+\s+-\s+)", "", Options);

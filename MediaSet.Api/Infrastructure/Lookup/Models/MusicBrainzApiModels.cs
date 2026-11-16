@@ -28,6 +28,9 @@ public class MusicBrainzRelease
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
+    [JsonPropertyName("release-group")]
+    public MusicBrainzReleaseGroup? ReleaseGroup { get; set; }
+
     [JsonPropertyName("artist-credit")]
     public List<MusicBrainzArtistCredit> ArtistCredit { get; set; } = [];
 
@@ -39,6 +42,12 @@ public class MusicBrainzRelease
 
     [JsonPropertyName("tags")]
     public List<MusicBrainzTag> Tags { get; set; } = [];
+}
+
+public class MusicBrainzReleaseGroup
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
 }
 
 public class MusicBrainzArtistCredit

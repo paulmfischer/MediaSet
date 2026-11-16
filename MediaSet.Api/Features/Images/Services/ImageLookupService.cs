@@ -155,11 +155,28 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                             fingerprint, "Full title and all available year, creator and platform constraints agree",
                             provenance.ArtworkScope ?? (entity is Game ? "Game artwork; region and package unverified" : "Provider artwork"));
                     }
-                    var download = await Download(candidate.ImageUrl,
-                        candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString(), strategy);
+                    var candidateProvider = candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString();
+                    var download = await Download(candidate.ImageUrl, candidateProvider, strategy);
                     if (download?.Success == true)
                     {
                         return download;
+                    }
+                    // The identity matched but this release has no cover: try the artwork of the wider
+                    // identity it belongs to (a Cover Art Archive release group).
+                    if (candidate.Provenance?.FallbackImageUrl is { } fallbackUrl && confirmed != null)
+                    {
+                        var wider = await Download(fallbackUrl, candidateProvider, strategy);
+                        if (wider?.Success == true)
+                        {
+                            return wider with
+                            {
+                                ConfirmedMatch = confirmed with
+                                {
+                                    ImageUrl = fallbackUrl,
+                                    ArtworkScope = "Release-group artwork; the edition's own cover is missing"
+                                }
+                            };
+                        }
                     }
                 }
                 failures.ThrowIfFailed();
@@ -199,6 +216,28 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                                     fingerprint, "Cover resolved by stored ISBN at Google Books", "Exact-edition artwork")
                             };
                         }
+                    }
+                }
+                // No Open Library match (or no usable cover) for the stored title: ask Google Books by exact
+                // title and author. This also covers books without an ISBN and series volumes Open Library lacks.
+                if (entity is Book titleBook && type == IdentifierType.Entity && googleBooksClient != null
+                    && !parameters.ContainsKey("confirmedProviderId") && !parameters.ContainsKey("olid"))
+                {
+                    string? googleCover;
+                    using (logger.BeginProviderScope(LogProviders.GoogleBooks))
+                    {
+                        googleCover = await googleBooksClient.GetCoverUrlByTitleAsync(titleBook.Title,
+                            titleBook.Subtitle, titleBook.Authors, cancellationToken);
+                    }
+                    var titleFallback = await Download(googleCover, LogProviders.GoogleBooks, strategy);
+                    if (titleFallback?.Success == true)
+                    {
+                        return titleFallback with
+                        {
+                            ConfirmedMatch = new(LogProviders.GoogleBooks, titleBook.Title, titleBook.Title,
+                                titleFallback.ImageUrl, fingerprint,
+                                "Full title and an author agree with the Google Books volume", "Provider artwork")
+                        };
                     }
                 }
                 Remember(new(false, null, null, matching.Count > 0 ? "Matched entity has no usable artwork" : "No image URL: no matching entity",

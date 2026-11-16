@@ -74,6 +74,19 @@ public class ImageRetryPolicyTests
         Assert.That(ImageRetryPolicy.CanRequeue(book, config, true), Is.True);
     }
 
+    [TestCase(ImageLookupOutcome.NoMatch)]
+    [TestCase(ImageLookupOutcome.MissingArtwork)]
+    public void CanRequeue_PermanentFailureFromPreviousStrategyVersion_QueuesOnlyWithOptIn(ImageLookupOutcome outcome)
+    {
+        var music = new Music { Title = "Gaslighter", Artist = "The Chicks" };
+        music.ImageLookup = ImageRetryPolicy.Complete(music, new(false, null, null, "no cover", true, outcome),
+            new() { StrategyVersion = 2 }, DateTime.UtcNow);
+
+        Assert.That(music.ImageLookup.PermanentFailure, Is.True);
+        Assert.That(ImageRetryPolicy.CanRequeue(music, new(), false), Is.False);
+        Assert.That(ImageRetryPolicy.CanRequeue(music, new(), true), Is.True);
+    }
+
     [Test]
     public void CanRequeue_HistoricalPermanentFailure_ReassessesMissingVersion()
     {

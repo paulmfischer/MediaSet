@@ -256,7 +256,8 @@ cover is a 404 instead of a blank placeholder. When that ISBN cover is not saved
 Google Books volumes API and downloads the cover of a volume that lists that exact ISBN (never another edition's cover). A
 Google Books rate limit or server error makes the outcome retryable (`QuotaLimited` or `ProviderUnavailable`); no volume,
 no cover or a 403 (keyless daily quota or unsupported location, logged as a warning) keeps the Open Library miss. A Google
-Books cover is saved as the confirmed match (`GoogleBooks`, the ISBN). The title search runs last. The background processor's `Image lookup outcome` event
+Books cover is saved as the confirmed match (`GoogleBooks`, the ISBN). The title search runs last; when it finds nothing
+usable, Google Books is searched by exact title and author (`GetCoverUrlByTitleAsync`), which also serves books without an ISBN. The background processor's `Image lookup outcome` event
 and `Image run attempt` record the `Provider` that supplied the image (`OpenLibrary`, `GoogleBooks`, ...), or the provider
 of the last failure.
 

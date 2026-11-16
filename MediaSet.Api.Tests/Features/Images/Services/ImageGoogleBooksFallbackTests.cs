@@ -126,4 +126,81 @@ public class ImageGoogleBooksFallbackTests
 
         _google.Verify(g => g.GetCoverUrlByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    private void TitleCover(string? url) => _google.Setup(g => g.GetCoverUrlByTitleAsync("Dune", It.IsAny<string?>(),
+        It.Is<IReadOnlyList<string>>(a => a.Count == 1 && a[0] == "Frank Herbert"), It.IsAny<CancellationToken>()))
+        .ReturnsAsync(url);
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_BookWithoutIsbnNoMatch_DownloadsGoogleBooksTitleCover()
+    {
+        TitleCover(GoogleCover);
+        _images.Setup(s => s.DownloadAndSaveImageAsync(GoogleCover, "Books", "1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_saved);
+        var book = new Book { Id = "1", Title = "Dune", Authors = ["Frank Herbert"] };
+
+        var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Provider, Is.EqualTo("GoogleBooks"));
+        Assert.That(result.AttemptedStrategy, Is.EqualTo("Books:Entity"));
+        Assert.That(result.ConfirmedMatch!.Provider, Is.EqualTo("GoogleBooks"));
+        _google.Verify(g => g.GetCoverUrlByIsbnAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_BookWithIsbnGoogleIsbnMiss_FallsBackToTitleAndAuthor()
+    {
+        _google.Setup(g => g.GetCoverUrlByIsbnAsync(Isbn, It.IsAny<CancellationToken>())).ReturnsAsync((string?)null);
+        TitleCover(GoogleCover);
+        _images.Setup(s => s.DownloadAndSaveImageAsync(GoogleCover, "Books", "1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_saved);
+        var book = new Book { Id = "1", Title = "Dune", ISBN = Isbn, Authors = ["Frank Herbert"] };
+
+        var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.AttemptedStrategy, Is.EqualTo("Books:Entity"));
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_GoogleBooksTitleMiss_KeepsNoMatchOutcome()
+    {
+        TitleCover(null);
+        var book = new Book { Id = "1", Title = "Dune", Authors = ["Frank Herbert"] };
+
+        var result = await _service.LookupAndSaveImageAsync(book, MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.NoMatch));
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_GoogleBooksTitleRateLimited_ReturnsRetryableOutcome()
+    {
+        _google.Setup(g => g.GetCoverUrlByTitleAsync(It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ProviderLookupException("GoogleBooks", ImageLookupOutcome.QuotaLimited, "rate limited"));
+
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.QuotaLimited));
+        Assert.That(result.PermanentFailure, Is.False);
+    }
+
+    [Test]
+    public async Task LookupAndSaveImageAsync_GoogleBooksTitleServerError_IsRetryableNotNoMatch()
+    {
+        _google.Setup(g => g.GetCoverUrlByTitleAsync(It.IsAny<string>(), It.IsAny<string?>(),
+                It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ProviderLookupException("GoogleBooks", ImageLookupOutcome.ProviderUnavailable, "503"));
+
+        var result = await _service.LookupAndSaveImageAsync(new Book { Id = "1", Title = "Dune" },
+            MediaTypes.Books, CancellationToken.None);
+
+        Assert.That(result.Outcome, Is.EqualTo(ImageLookupOutcome.ProviderUnavailable));
+        Assert.That(ImageRetryPolicy.IsRetryable(result.Outcome), Is.True);
+        Assert.That(result.PermanentFailure, Is.False);
+    }
 }

@@ -101,7 +101,7 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
             return collections;
         }
         var results = new List<MovieResponse>();
-        if (!video.IsSeries && !isTvSeries)
+        async Task AddMoviesAsync()
         {
             var movies = await _tmdbClient.SearchMovieAsync(title, cancellationToken);
             foreach (var match in movies?.Results.Where(r => SameTitle(r.Title, title)).Take(10) ?? [])
@@ -114,6 +114,16 @@ public class MovieLookupStrategy : LookupStrategyBase<Movie, MovieResponse>
                     results.Add(MapToMovieResponse(details));
                 }
             }
+        }
+        if ((!video.IsSeries || video.IsVolume) && !isTvSeries)
+        {
+            await AddMoviesAsync();
+        }
+        // "Series, Vol. N" is a film when one matches the full title ("Kill Bill, Vol. 1"); a matching film is
+        // never replaced by the TV series of the same name. Only without a film match is it a series release.
+        if (video.IsVolume && results.Count > 0)
+        {
+            return results;
         }
         // Punctuation may belong to a series name or separate a named special.
         // Verify both interpretations instead of assuming that the prefix is the series.

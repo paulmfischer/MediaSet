@@ -151,4 +151,57 @@ public class GoogleBooksClientTests
 
         Assert.That(url, Is.Null);
     }
+
+    private static string TitledVolume(string title, string? subtitle, string author) => $$"""
+        { "items": [ { "volumeInfo": {
+            "title": "{{title}}", "subtitle": "{{subtitle}}", "authors": ["{{author}}"],
+            "imageLinks": { "thumbnail": "http://books.google.com/cover?id=1&edge=curl" } } } ] }
+        """;
+
+    [TestCase("Preacher", "Preacher", "", "Garth Ennis", true)]
+    [TestCase("Preacher: Gone to Texas", "Preacher", "Gone to Texas", "Garth Ennis", true)]
+    [TestCase("Preacher Vol. 1", "Preacher Vol. 1", "Gone to Texas", "Garth Ennis", true)]
+    [TestCase("Preacher", "Preacher", "", "Someone Else", false)]
+    [TestCase("Preacher", "Preacher Special", "", "Garth Ennis", false)]
+    [TestCase("Saga", "Saga of the Swamp Thing", "", "Garth Ennis", false)]
+    public async Task GetCoverUrlByTitleAsync_Volume_AcceptedOnlyOnTitleAndAuthorAgreement(
+        string stored, string title, string subtitle, string author, bool accepted)
+    {
+        Respond(HttpStatusCode.OK, TitledVolume(title, subtitle, author));
+
+        var url = await _client.GetCoverUrlByTitleAsync(stored, null, ["Garth Ennis"]);
+
+        Assert.That(url, accepted ? Is.EqualTo("https://books.google.com/cover?id=1") : Is.Null);
+        Assert.That(_requests[0].Query, Does.Contain("intitle:%22").And.Contain("inauthor:%22"));
+    }
+
+    [Test]
+    public async Task GetCoverUrlByTitleAsync_Forbidden_ReturnsNull()
+    {
+        Respond(HttpStatusCode.Forbidden);
+
+        Assert.That(await _client.GetCoverUrlByTitleAsync("Dune", null, ["Frank Herbert"]), Is.Null);
+    }
+
+    [Test]
+    public async Task GetCoverUrlByTitleAsync_ServerError_ThrowsProviderLookupException()
+    {
+        Respond(HttpStatusCode.InternalServerError);
+
+        await Assert.ThatAsync(() => _client.GetCoverUrlByTitleAsync("Dune", null, []),
+            Throws.TypeOf<ProviderLookupException>());
+    }
+
+    [Test]
+    public async Task GetCoverUrlByTitleAsync_QuotesInTitleAndAuthor_AreRemovedFromTheQuery()
+    {
+        Respond(HttpStatusCode.OK, "{}");
+
+        await _client.GetCoverUrlByTitleAsync("The \"Best\" Book", null, ["Jo \"JJ\" Smith"]);
+
+        var query = _requests[0].Query;
+        Assert.That(query, Does.Contain("intitle:%22The%20%20Best%20%20Book%22"));
+        Assert.That(query, Does.Contain("inauthor:%22Jo%20%20JJ%20%20Smith%22"));
+        Assert.That(query.Split("%22").Length, Is.EqualTo(5));
+    }
 }

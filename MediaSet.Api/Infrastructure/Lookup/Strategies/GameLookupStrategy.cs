@@ -472,7 +472,8 @@ public class GameLookupStrategy : LookupStrategyBase<Game, GameResponse>
             Format: format,
             ImageUrl: imageUrl,
             Provenance: new LookupProvenance("Igdb", details.Id.ToString(), details.Name,
-                details.Platforms?.SelectMany(p => new[] { p.Name, p.Abbreviation ?? p.Name }).ToList())
+                details.Platforms?.SelectMany(p => new[] { p.Name, p.Abbreviation ?? p.Name }).ToList(),
+                AlternativeTitles: details.AlternativeNames?.Select(n => n.Name).ToList())
         );
     }
 
