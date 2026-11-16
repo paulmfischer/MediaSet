@@ -15,19 +15,27 @@ public static class ImageCandidateMatcher
 {
     public static string Normalize(string value) => Regex.Replace(value.ToLowerInvariant(), @"[^\p{L}\p{N}]+", " ").Trim();
 
-    private static string Platform(string value) => Normalize(value) switch
+    // Stored platforms carry a manufacturer ("Nintendo Wii", "Sony PlayStation 3", "Microsoft Xbox 360") that IGDB
+    // omits ("Wii", "PlayStation 3"), and IGDB spells PC as "PC (Microsoft Windows)". Compare the bare names.
+    private static string Platform(string value)
     {
-        "ps1" or "psx" => "playstation",
-        "ps2" => "playstation 2",
-        "ps3" => "playstation 3",
-        "ps4" => "playstation 4",
-        "ps5" => "playstation 5",
-        "ds" => "nintendo ds",
-        "3ds" => "nintendo 3ds",
-        "n64" => "nintendo 64",
-        "switch" => "nintendo switch",
-        var other => other
-    };
+        var name = Regex.Replace(Normalize(value), @"^(?:nintendo|sony|microsoft|sega) ", "");
+        return name switch
+        {
+            "ps1" or "psx" or "ps one" or "playstation 1" => "playstation",
+            "ps2" => "playstation 2",
+            "ps3" => "playstation 3",
+            "ps4" => "playstation 4",
+            "ps5" => "playstation 5",
+            "psp" => "playstation portable",
+            "ps vita" or "psvita" or "vita" => "playstation vita",
+            "n64" => "64",
+            "gc" or "ngc" or "game cube" => "gamecube",
+            "pc microsoft windows" or "windows" or "microsoft windows" => "pc",
+            "xbox series x s" or "xbox series x" => "xbox series x s",
+            var other => other
+        };
+    }
 
     private static string Year(string value) => Regex.Match(value, @"\b(?:18|19|20)\d{2}\b").Value;
 
@@ -74,11 +82,15 @@ public static class ImageCandidateMatcher
     {
         var context = SearchContext(entity);
         var date = context.GetValueOrDefault("releasedate") ?? context.GetValueOrDefault("publicationdate") ?? "";
+        // "Need for Speed Most Wanted (2012)": the title's year stands in for a missing release date.
+        if (entity is Game && string.IsNullOrEmpty(Year(date)))
+        { date = RetailGameTitle.TrailingYear(entity.Title); }
         var creators = entity switch { Book b => b.Authors, Music m => [m.Artist], _ => [] };
         // Retail noise (studio, format words, barcodes) in the stored title is not identity:
         // accept the provider title when it equals either the stored or the cleaned title.
         var titles = new[] { entity.Title, CleanTitle(entity) }.Select(Normalize).ToHashSet();
-        var matching = candidates.Where(c => titles.Contains(Normalize(c.Provenance?.Title ?? c.Title)))
+        var matching = candidates.Where(c => titles.Contains(Normalize(c.Provenance?.Title ?? c.Title))
+                || c.Provenance?.AlternativeTitles?.Any(t => titles.Contains(Normalize(t))) == true)
             .Where(c => string.IsNullOrEmpty(Year(date)) || Year(date) == Year(c.Date)
                 || c.Provenance?.MatchYears?.Contains(Year(date)) == true)
             .Where(c => entity is not Movie { IsTvSeries: true }
@@ -98,7 +110,13 @@ public static class ImageCandidateMatcher
         // Different provider identities with equally good evidence remain ambiguous, even if
         // only one has artwork. Duplicate observations of the same identity may share artwork.
         var identities = matching.Select((candidate, index) => (candidate, index))
-            .GroupBy(c => c.candidate.Provenance is { } p ? $"{p.Provider}:{p.ProviderId}" : $"unknown:{c.index}").ToList();
+            .GroupBy(c => c.candidate.Provenance switch
+            {
+                // Editions of one release group are the same album once title, artist, year and format agree.
+                { FallbackImageUrl: { } group } p => $"{p.Provider}:group:{group}",
+                { } p => $"{p.Provider}:{p.ProviderId}",
+                _ => $"unknown:{c.index}"
+            }).ToList();
         if (identities.Count > 1)
         {
             throw new ProviderLookupException(entity.Type.ToString(), ImageLookupOutcome.AmbiguousMatch,

@@ -155,11 +155,28 @@ public class ImageLookupService(LookupStrategyFactory strategyFactory, IImageSer
                             fingerprint, "Full title and all available year, creator and platform constraints agree",
                             provenance.ArtworkScope ?? (entity is Game ? "Game artwork; region and package unverified" : "Provider artwork"));
                     }
-                    var download = await Download(candidate.ImageUrl,
-                        candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString(), strategy);
+                    var candidateProvider = candidate.Provenance?.Provider ?? failures.AttemptedProviders ?? mediaType.ToString();
+                    var download = await Download(candidate.ImageUrl, candidateProvider, strategy);
                     if (download?.Success == true)
                     {
                         return download;
+                    }
+                    // The identity matched but this release has no cover: try the artwork of the wider
+                    // identity it belongs to (a Cover Art Archive release group).
+                    if (candidate.Provenance?.FallbackImageUrl is { } fallbackUrl && confirmed != null)
+                    {
+                        var wider = await Download(fallbackUrl, candidateProvider, strategy);
+                        if (wider?.Success == true)
+                        {
+                            return wider with
+                            {
+                                ConfirmedMatch = confirmed with
+                                {
+                                    ImageUrl = fallbackUrl,
+                                    ArtworkScope = "Release-group artwork; the edition's own cover is missing"
+                                }
+                            };
+                        }
                     }
                 }
                 failures.ThrowIfFailed();

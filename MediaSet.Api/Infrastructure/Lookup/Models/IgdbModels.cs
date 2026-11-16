@@ -11,8 +11,11 @@ public record IgdbGame(
     [property: JsonPropertyName("involved_companies")] List<IgdbInvolvedCompany>? InvolvedCompanies,
     [property: JsonPropertyName("platforms")] List<IgdbPlatform>? Platforms,
     [property: JsonPropertyName("age_ratings")] List<IgdbAgeRating>? AgeRatings,
-    [property: JsonPropertyName("cover")] IgdbCover? Cover
+    [property: JsonPropertyName("cover")] IgdbCover? Cover,
+    [property: JsonPropertyName("alternative_names")] List<IgdbAlternativeName>? AlternativeNames = null
 );
+
+public record IgdbAlternativeName([property: JsonPropertyName("name")] string Name);
 
 public record IgdbNamedObject(
     [property: JsonPropertyName("id")] int Id,

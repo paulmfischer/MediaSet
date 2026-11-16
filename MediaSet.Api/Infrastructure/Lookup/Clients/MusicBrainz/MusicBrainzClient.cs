@@ -100,7 +100,7 @@ public class MusicBrainzClient : IMusicBrainzClient
             _logger.LogInformation("Looking up music release by ID: {ReleaseId}", releaseId);
 
             var response = await _httpClient.GetProviderAsync(
-                $"ws/2/release/{releaseId}?inc=artist-credits+labels+recordings+tags&fmt=json",
+                $"ws/2/release/{releaseId}?inc=artist-credits+labels+recordings+tags+release-groups&fmt=json",
                 cancellationToken);
 
             _lastRequestTime = DateTime.UtcNow;
