@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -270,8 +271,64 @@ public class PlexMusicListApiTests
         Assert.That(Ids(json), Is.EquivalentTo(expected));
     }
 
+    [Test]
+    public async Task PagedSearch_BrokenFilter_ReturnsOnlyAlbumsWithABrokenLink()
+    {
+        var items = Store();
+        items.Items[PartialId].Broken = true;
+        using var client = CreateClient(items);
+
+        var (status, _, json) = await ListAsync(client, "&plex=broken");
+
+        Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(Ids(json), Is.EquivalentTo([PartialId]));
+    }
+
+    [Test]
+    public async Task PagedSearch_BrokenFilterIgnoresBrokenMovieDocuments()
+    {
+        var items = Store();
+        // A broken movie document: it must never leak into the music list, whatever its id
+        await items.UpsertAsync(new PlexItemData { Id = UnlinkedId, PlexItemId = "1", OnPlex = true, Broken = true }, CancellationToken.None);
+        using var client = CreateClient(items);
+
+        var (status, _, json) = await ListAsync(client, "&plex=broken");
+
+        Assert.That(status, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(Ids(json), Is.Empty);
+    }
+
+    [Test]
+    public void MusicFilters_AreExactlyTheOnesTheListPageOffers()
+    {
+        // The UI offers these in PLEX_MUSIC_FILTERS (MediaSet.Remix/app/models.ts); the API must accept each of them and nothing else
+        var offered = ReadUiMusicFilters();
+
+        Assert.That(offered, Is.Not.Empty);
+        foreach (var filter in offered)
+        {
+            Assert.That(PlexListFilters.NormalizeMusic(filter), Is.EqualTo(filter), $"The API rejects the UI music filter '{filter}'");
+        }
+        var accepted = new[] { PlexListFilters.OnPlex, PlexListFilters.NotOnPlex, PlexListFilters.Unwatched, PlexListFilters.Broken }
+            .Where(f => PlexListFilters.NormalizeMusic(f) != null);
+        Assert.That(accepted, Is.EquivalentTo(offered), "The UI and the API music filters have drifted apart");
+    }
+
+    private static string[] ReadUiMusicFilters()
+    {
+        var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "MediaSet.sln")))
+        {
+            dir = dir.Parent;
+        }
+        Assert.That(dir, Is.Not.Null, "Repository root not found");
+        var models = File.ReadAllText(Path.Combine(dir!.FullName, "MediaSet.Remix", "app", "models.ts"));
+        var match = System.Text.RegularExpressions.Regex.Match(models, @"PLEX_MUSIC_FILTERS\s*=\s*\[([^\]]*)\]");
+        Assert.That(match.Success, Is.True, "PLEX_MUSIC_FILTERS not found in models.ts");
+        return [.. System.Text.RegularExpressions.Regex.Matches(match.Groups[1].Value, "'([^']+)'").Select(m => m.Groups[1].Value)];
+    }
+
     [TestCase("unwatched")]
-    [TestCase("broken")]
     [TestCase("bogus")]
     public async Task PagedSearch_UnsupportedMusicPlexFilter_ReturnsBadRequest(string filter)
     {

@@ -58,6 +58,13 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         return found;
     }
 
+    public async Task<PlexItemData?> GetAsync(string entryId, string entityType, CancellationToken cancellationToken)
+    {
+        var found = await GetAsync(entryId, cancellationToken);
+        var music = PlexEntityTypes.Normalize(entityType) == PlexEntityTypes.Music;
+        return found != null && found.EntityType == PlexEntityTypes.Music == music ? found : null;
+    }
+
     public Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken)
     {
         if (data.Id == FailUpsertFor)
@@ -117,8 +124,12 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
         }
     }
 
+    /// <summary>How many times the movie and TV statistics projection was read.</summary>
+    public int MovieStatisticsReads { get; private set; }
+
     public Task<IReadOnlyList<PlexItemData>> ListStatisticsProjectionAsync(CancellationToken cancellationToken)
     {
+        MovieStatisticsReads++;
         if (StatsFailure != null)
         {
             throw StatsFailure;

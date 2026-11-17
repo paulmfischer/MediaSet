@@ -14,11 +14,33 @@ namespace MediaSet.Api.Features.Plex.Services;
 public interface IPlexCoverService<TEntity> where TEntity : class, IEntity
 {
     /// <summary>
+    /// Like <see cref="ApplyIfMissingAsync"/> but says why no cover was saved, so a caller can avoid repeating a fetch that
+    /// is known to be unusable. Never throws (except on cancellation).
+    /// </summary>
+    Task<PlexCoverOutcome> TryApplyAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gives an entity without a cover the image of the Plex item it is paired with. Does nothing when the entity
     /// already has a cover, or when Plex has no image, only a small one, or cannot be read. Never throws (except on
     /// cancellation), so pairing and syncing never fail because of a cover. True when a cover was saved.
     /// </summary>
     Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken);
+}
+
+/// <summary>The result of a cover attempt. <see cref="Failed"/> is the default so an unset mock result never reads as a known dead end.</summary>
+public enum PlexCoverOutcome
+{
+    /// <summary>An error, or a change made meanwhile: worth trying again next time.</summary>
+    Failed = 0,
+
+    /// <summary>A cover was saved.</summary>
+    Saved,
+
+    /// <summary>The entity has a cover (or is gone), so nothing was read from Plex.</summary>
+    NotNeeded,
+
+    /// <summary>Plex has no readable image, or only a small or non-image one: repeating the fetch finds the same until the item changes.</summary>
+    Unusable
 }
 
 public class PlexCoverService<TEntity>(
@@ -43,7 +65,10 @@ public class PlexCoverService<TEntity>(
         _ => throw new NotSupportedException($"No media type for {typeof(TEntity).Name}")
     }).ToString();
 
-    public async Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken)
+    public async Task<bool> ApplyIfMissingAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken) =>
+        await TryApplyAsync(entityId, plexRatingKey, cancellationToken) == PlexCoverOutcome.Saved;
+
+    public async Task<PlexCoverOutcome> TryApplyAsync(string entityId, string plexRatingKey, CancellationToken cancellationToken)
     {
         Image? saved = null;
         try
@@ -51,14 +76,14 @@ public class PlexCoverService<TEntity>(
             var entity = await entities.GetAsync(entityId, cancellationToken);
             if (entity == null || entity.CoverImage != null)
             {
-                return false;
+                return PlexCoverOutcome.NotNeeded;
             }
 
             var data = await client.GetThumbAsync(plexRatingKey, MaxBytes, cancellationToken);
             if (data == null)
             {
                 logger.LogDebug("Plex has no readable image for {EntityType} {EntityId}", typeof(TEntity).Name, entityId);
-                return false;
+                return PlexCoverOutcome.Unusable;
             }
 
             using (var encoded = SKData.CreateCopy(data))
@@ -67,7 +92,7 @@ public class PlexCoverService<TEntity>(
                 if (codec == null || codec.Info.Width < MinWidth)
                 {
                     logger.LogInformation("Plex image for {EntityType} {EntityId} is missing or too small to use as a cover", typeof(TEntity).Name, entityId);
-                    return false;
+                    return PlexCoverOutcome.Unusable;
                 }
             }
 
@@ -78,13 +103,13 @@ public class PlexCoverService<TEntity>(
             if (current == null || current.CoverImage != null)
             {
                 DeleteQuietly(saved);
-                return false;
+                return PlexCoverOutcome.NotNeeded;
             }
 
             current.CoverImage = saved;
             await entities.UpdateAsync(entityId, current, cancellationToken);
             logger.LogInformation("Saved Plex image as cover for {EntityType} {EntityId}", typeof(TEntity).Name, entityId);
-            return true;
+            return PlexCoverOutcome.Saved;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -94,7 +119,7 @@ public class PlexCoverService<TEntity>(
             {
                 DeleteQuietly(saved);
             }
-            return false;
+            return PlexCoverOutcome.Failed;
         }
     }
 

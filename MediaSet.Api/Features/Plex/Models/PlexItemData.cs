@@ -153,6 +153,17 @@ public class PlexItemData
     /// <summary>Music only: the track count of the MediaSet entry. Null when the entry has none. Present below expected is a partial album.</summary>
     public int? TracksExpected { get; set; }
 
+    /// <summary>
+    /// Music only: marks the Plex album state (its id and last update) for which the cover fetch found no usable image, so
+    /// the sync does not repeat it until the album changes or <see cref="CoverAttemptedAt"/> is old. Null when never tried or
+    /// when the last try is worth repeating.
+    /// </summary>
+    public string? CoverAttemptKey { get; set; }
+
+    /// <summary>Music only: when <see cref="CoverAttemptKey"/> was recorded.</summary>
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime? CoverAttemptedAt { get; set; }
+
     /// <summary>Music only: the audio codec most of the tracks use.</summary>
     public string? AudioCodec { get; set; }
 

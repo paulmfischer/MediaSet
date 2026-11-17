@@ -157,6 +157,8 @@ public class PlexMusicSyncApiTests
 
     private static async Task<JsonElement> SyncAsync(HttpClient client)
     {
+        var previous = await ReadJsonAsync(await client.GetAsync("/plex/music/status"));
+        var previousId = previous.GetProperty("lastRun").ValueKind == JsonValueKind.Object ? previous.GetProperty("lastRun").GetProperty("id").GetString() : null;
         var started = await client.PostAsync("/plex/music/sync", null);
         Assert.That(started.StatusCode, Is.EqualTo(HttpStatusCode.Accepted));
         var deadline = DateTime.UtcNow.AddSeconds(10);
@@ -164,7 +166,8 @@ public class PlexMusicSyncApiTests
         {
             var status = await ReadJsonAsync(await client.GetAsync("/plex/music/status"));
             var last = status.GetProperty("lastRun");
-            if (last.ValueKind == JsonValueKind.Object && last.GetProperty("state").GetString() is not ("running" or "queued"))
+            if (last.ValueKind == JsonValueKind.Object && last.GetProperty("id").GetString() != previousId
+                && last.GetProperty("state").GetString() is not ("running" or "queued"))
             {
                 return last;
             }
@@ -346,10 +349,67 @@ public class PlexMusicSyncApiTests
 
         await SyncAsync(h.Client);
 
-        h.Covers.Verify(c => c.ApplyIfMissingAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Once);
-        h.Covers.Verify(c => c.ApplyIfMissingAsync(TheWallId, "7005", It.IsAny<CancellationToken>()), Times.Once);
-        h.Covers.Verify(c => c.ApplyIfMissingAsync(UnlistedId, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        h.Covers.Verify(c => c.ApplyIfMissingAsync(RumoursId, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        h.Covers.Verify(c => c.TryApplyAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Once);
+        h.Covers.Verify(c => c.TryApplyAsync(TheWallId, "7005", It.IsAny<CancellationToken>()), Times.Once);
+        h.Covers.Verify(c => c.TryApplyAsync(UnlistedId, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        h.Covers.Verify(c => c.TryApplyAsync(RumoursId, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task Sync_CoverKnownUnusable_IsNotFetchedAgainWhileTheAlbumIsUnchanged()
+    {
+        var covers = new Mock<IPlexCoverService<Music>>();
+        covers.Setup(c => c.TryApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(PlexCoverOutcome.Unusable);
+        var h = CreateHarness(Server(), Collection(), covers: covers);
+
+        await SyncAsync(h.Client);
+        await SyncAsync(h.Client);
+
+        covers.Verify(c => c.TryApplyAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Once);
+        Assert.That(h.Items.Items[AbbeyRoadId].CoverAttemptKey, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Sync_CoverAttemptFailed_IsRetriedNextSync()
+    {
+        var covers = new Mock<IPlexCoverService<Music>>();
+        covers.Setup(c => c.TryApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(PlexCoverOutcome.Failed);
+        var h = CreateHarness(Server(), Collection(), covers: covers);
+
+        await SyncAsync(h.Client);
+        await SyncAsync(h.Client);
+
+        covers.Verify(c => c.TryApplyAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Exactly(2));
+        Assert.That(h.Items.Items[AbbeyRoadId].CoverAttemptKey, Is.Null);
+    }
+
+    [Test]
+    public async Task Sync_CoverAttemptRecordedForAnotherAlbumState_IsTriedAgain()
+    {
+        var covers = new Mock<IPlexCoverService<Music>>();
+        covers.Setup(c => c.TryApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(PlexCoverOutcome.Unusable);
+        var h = CreateHarness(Server(), Collection(), covers: covers);
+        await SyncAsync(h.Client);
+        // The album changed on Plex since the recorded attempt
+        h.Items.Items[AbbeyRoadId].CoverAttemptKey = "7001|1";
+
+        await SyncAsync(h.Client);
+
+        covers.Verify(c => c.TryApplyAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Test]
+    public async Task Sync_CoverAttemptOlderThanTheRetryWindow_IsTriedAgain()
+    {
+        var covers = new Mock<IPlexCoverService<Music>>();
+        covers.Setup(c => c.TryApplyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(PlexCoverOutcome.Unusable);
+        var h = CreateHarness(Server(), Collection(), covers: covers);
+        await SyncAsync(h.Client);
+        h.Items.Items[AbbeyRoadId].CoverAttemptedAt = DateTime.UtcNow - PlexMusicMatching.CoverRetryAfter - TimeSpan.FromDays(1);
+
+        await SyncAsync(h.Client);
+
+        covers.Verify(c => c.TryApplyAsync(AbbeyRoadId, "7001", It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Test]

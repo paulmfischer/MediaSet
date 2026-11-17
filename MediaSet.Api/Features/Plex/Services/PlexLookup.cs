@@ -17,7 +17,7 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger
         // Plex data is a bonus on the lookup: a store failure must not fail the movie request
         try
         {
-            var data = await items.GetAsync(movieId, cancellationToken);
+            var data = await items.GetAsync(movieId, PlexEntityTypes.Movies, cancellationToken);
             return data == null ? null : PlexItemDataDto.From(data).WithoutFilePath();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -71,8 +71,8 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger
         // Plex data is a bonus on the lookup: a store failure must not fail the album request
         try
         {
-            var data = await items.GetAsync(musicId, cancellationToken);
-            return data is { EntityType: PlexEntityTypes.Music } ? PlexMusicDataDto.From(data) : null;
+            var data = await items.GetAsync(musicId, PlexEntityTypes.Music, cancellationToken);
+            return data == null ? null : PlexMusicDataDto.From(data);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -107,7 +107,7 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger
     public async Task<IdFilter?> GetMusicFilterAsync(string filter, CancellationToken cancellationToken)
     {
         var normalized = PlexListFilters.NormalizeMusic(filter)
-            ?? throw new ArgumentException($"Invalid plex filter '{filter}'. Use onPlex or notOnPlex.");
+            ?? throw new ArgumentException($"Invalid plex filter '{filter}'. Use onPlex, notOnPlex or broken.");
         if (!enablement.IsEnabled(PlexEntityTypes.Music))
         {
             return null;

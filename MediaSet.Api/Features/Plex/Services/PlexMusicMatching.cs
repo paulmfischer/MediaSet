@@ -110,6 +110,20 @@ public static class PlexMusicMatching
         };
     }
 
+    /// <summary>How long a recorded unusable cover fetch is trusted before it is tried again (a Plex outage can look like no image).</summary>
+    public static readonly TimeSpan CoverRetryAfter = TimeSpan.FromDays(30);
+
+    /// <summary>
+    /// The state of a Plex album a cover fetch result belongs to: its id and last update. Null when Plex gave no update time,
+    /// since a change could then not be told and the fetch is simply repeated.
+    /// </summary>
+    public static string? CoverAttemptKey(PlexItem album) =>
+        album.UpdatedAt is { } updated ? $"{album.RatingKey}|{updated.ToUnixTimeSeconds()}" : null;
+
+    /// <summary>True when the stored data says this album state was already tried for a cover, recently enough to trust it.</summary>
+    public static bool CoverAlreadyTried(PlexItemData? stored, string? key, DateTime now) =>
+        key != null && stored is { CoverAttemptKey: { } k, CoverAttemptedAt: { } at } && k == key && now - at < CoverRetryAfter;
+
     /// <summary>The expected track count of a music entry, or null when it has none.</summary>
     public static int? ExpectedTracks(Music music) => music.Tracks is > 0 ? music.Tracks : null;
 }

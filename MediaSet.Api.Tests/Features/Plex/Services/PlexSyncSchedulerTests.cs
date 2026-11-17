@@ -137,6 +137,62 @@ public class PlexSyncSchedulerTests
     }
 
     [Test]
+    public async Task ExecuteAsync_MusicMissingScheduleKey_UsesDefaultSundayFourAm()
+    {
+        var config = new PlexConfiguration();
+        config.Entities["music"] = new PlexEntityConfiguration { Enabled = true };
+        var h = new Harness(config, ["music"]);
+
+        await h.Scheduler.StartAsync(CancellationToken.None);
+        var next = await h.NextRunAsync("music");
+        await h.Scheduler.StopAsync(CancellationToken.None);
+
+        // 04:00 local at +05:00, an hour after the movie default
+        Assert.That(next, Is.EqualTo(_firstRun.AddHours(1)));
+        Assert.That(next.DayOfWeek, Is.EqualTo(DayOfWeek.Sunday));
+        Assert.That(next.Hour, Is.EqualTo(4));
+    }
+
+    [Test]
+    public async Task ExecuteAsync_MusicAndMoviesWithDefaults_RunOneHourApartIndependently()
+    {
+        var config = new PlexConfiguration();
+        config.Entities["movies"] = new PlexEntityConfiguration { Enabled = true };
+        config.Entities["music"] = new PlexEntityConfiguration { Enabled = true };
+        var h = new Harness(config, ["movies", "music"]);
+
+        await h.Scheduler.StartAsync(CancellationToken.None);
+        var musicNext = await h.NextRunAsync("music");
+        await h.Time.AdvanceToAsync(_firstRun);
+        await WaitUntilAsync(() => h.StartCount == 1);
+        var afterMovies = h.Starts.ToList();
+        var musicStillPending = h.Info.GetNextRun("music");
+        await h.Time.AdvanceToAsync(musicNext);
+        await WaitUntilAsync(() => h.StartCount == 2);
+        await h.Scheduler.StopAsync(CancellationToken.None);
+
+        Assert.That(afterMovies.Single(), Is.EqualTo(("movies", PlexSyncTriggers.Scheduled)));
+        Assert.That(musicStillPending, Is.EqualTo(_firstRun.AddHours(1)));
+        Assert.That(h.Starts.Select(x => x.Type), Is.EqualTo(["movies", "music"]));
+    }
+
+    [Test]
+    public async Task ExecuteAsync_MusicScheduleSet_DoesNotChangeTheMovieSchedule()
+    {
+        var h = new Harness(
+            Config(("movies", true, PlexConfiguration.DefaultSchedule), ("music", true, "0 6 * * 3")),
+            ["movies", "music"]);
+
+        await h.Scheduler.StartAsync(CancellationToken.None);
+        var musicNext = await h.NextRunAsync("music");
+        var moviesNext = await h.NextRunAsync("movies");
+        await h.Scheduler.StopAsync(CancellationToken.None);
+
+        Assert.That(musicNext.DayOfWeek, Is.EqualTo(DayOfWeek.Wednesday));
+        Assert.That(moviesNext, Is.EqualTo(_firstRun));
+    }
+
+    [Test]
     public async Task ExecuteAsync_TwoTypesWithOwnSchedules_EachRunsOnItsOwnSchedule()
     {
         // movies: default Sunday; shows: every Wednesday at 04:00 local

@@ -43,7 +43,7 @@ export default createController(routes, {
       if (stats && !(await isPlexEnabledForRequest())) stats = { ...stats, plexStats: null };
       // Music has no Plex numbers in /stats: when Plex is enabled for music they come from the Plex statistics.
       if (stats && (await isPlexMusicEnabledForRequest())) {
-        stats = { ...stats, plexMusicStats: (await getPlexStatistics())?.music ?? null };
+        stats = { ...stats, plexMusicStats: (await getPlexStatistics(['music']))?.music ?? null };
       }
       return context.render(
         <HomePage

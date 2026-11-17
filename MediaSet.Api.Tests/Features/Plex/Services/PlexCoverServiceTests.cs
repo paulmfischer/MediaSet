@@ -144,6 +144,38 @@ public class PlexCoverServiceTests
         _images.Verify(i => i.DeleteImageAsync(_saved.FilePath), Times.Once);
     }
 
+    [Test]
+    public async Task TryApplyAsync_OutcomesTellADeadEndFromAFailure()
+    {
+        ServePoster(null);
+        Assert.That(await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None), Is.EqualTo(PlexCoverOutcome.Unusable));
+
+        ServePoster(Poster(PlexCoverService<Movie>.MinWidth - 1, 600));
+        Assert.That(await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None), Is.EqualTo(PlexCoverOutcome.Unusable));
+
+        ServePoster([1, 2, 3]);
+        Assert.That(await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None), Is.EqualTo(PlexCoverOutcome.Unusable));
+
+        ServePoster(Poster(1000, 1500));
+        Assert.That(await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None), Is.EqualTo(PlexCoverOutcome.Saved));
+
+        _images.Setup(i => i.SaveImageBytesAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException());
+        Assert.That(await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None), Is.EqualTo(PlexCoverOutcome.Failed));
+    }
+
+    [Test]
+    public async Task TryApplyAsync_EntityAlreadyHasCover_IsNotNeededAndDoesNotReadPlex()
+    {
+        _movies.Setup(m => m.GetAsync(MovieId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Movie { Id = MovieId, Title = "t", CoverImage = new Image { FilePath = "x" } });
+
+        var outcome = await _service.TryApplyAsync(MovieId, RatingKey, CancellationToken.None);
+
+        Assert.That(outcome, Is.EqualTo(PlexCoverOutcome.NotNeeded));
+        _client.Verify(c => c.GetThumbAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private const string MusicId = "a1";
 
     private (PlexCoverService<Music> Service, Mock<IEntityService<Music>> Albums) CreateMusicService(Func<Music> current)

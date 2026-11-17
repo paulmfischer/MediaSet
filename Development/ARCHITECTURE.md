@@ -132,7 +132,7 @@ A run matches each movie to a Plex item first by the stored Plex item id (rating
 fallback; unmatched movies stay unmatched. The Plex data lives in the separate `PlexItems` collection (`PlexItemData`, `_id` =
 movie id, plus an index on the Plex item id, created at startup), so editing a movie never touches it. For an item with several
 versions the best one is stored: highest resolution, then HDR, then larger file. `GET /plex/{entityType}/items/{movieId}` returns
-the document (404 when unlinked) and is the only response with the server file path.
+the movie or TV document (404 when unlinked or when the id is a music document) and is the only response with the server file path.
 `GET /movies/pagedsearch` attaches a small `plex` summary (`onPlex`, `resolution`, `watched`, `broken`; never a file path) to each
 linked movie of the page, read for the page's ids in one query through `IPlexLookup.GetMovieSummariesAsync` (a failed read is
 logged and skipped), and accepts an optional `plex` filter: `onPlex` (`OnPlex` true), `notOnPlex` (everything not `onPlex`),
@@ -255,10 +255,11 @@ under `DuplicateLinks` as `Albums` (shown on the `/plex` page).
 
 **Backfill.** `MusicExternalIdBackfillService` (`Features/Plex/Services`) starts every music run. It selects entries with an empty
 `ExternalId` and a barcode, or a title and an artist. It searches MusicBrainz by barcode first (`SearchByBarcodeAsync`); the
-releases found must all belong to one release group, else the barcode is ambiguous and the entry stays blank (no title guess). Only
-a barcode with no result falls back to the exact case-insensitive title with a single exact artist credit
-(`SearchByEntityPropertiesAsync`), again accepted only for one release group. It re-reads the entry before saving so an id
-entered meanwhile is never overwritten, and writes only `ExternalId`. Throttling uses `Backfill__RequestsPerMinute` per MusicBrainz
+releases found are a clear match when they all belong to one release group. A barcode with no result, or with several release groups,
+falls back to the exact case-insensitive title with a single exact artist credit (`SearchByEntityPropertiesAsync`), accepted only
+for one release group (and, after an ambiguous barcode, only one of the barcode's groups); a failed barcode lookup skips the entry
+without the fallback. It saves through `IMusicExternalIdWriter`, an atomic update that sets only `ExternalId` and only while it is
+still missing or blank, so an id or another field edited meanwhile is never overwritten. Throttling uses `Backfill__RequestsPerMinute` per MusicBrainz
 request and `Backfill__BatchSize` entries per run, never or least recently searched first; attempt times are kept in a store
 (`IMusicExternalIdBackfillStore`), a 429 stops the backfill early and errors count as skipped without failing the run. Its counts
 go into `ExternalIdsBackfilled` and `BackfillSkipped` of the run.
@@ -273,12 +274,12 @@ partial.
 
 **Routes.**
 
-- `/plex/music/status`, `sync`, `search?query=` (albums, with the artist) and `items/{id}` (the stored data).
-- `PUT items/{id}/link` (body `{ "plexItemId" }`, no scope) reads the album, stores a manual link, then applies the cover if missing.
+- `/plex/music/status`, `sync`, `search?query=` (albums, with the artist) and `items/{id}` (the stored data as `PlexMusicDataDto`: plays, last played, tracks present and expected, codec, bitrate; no file path, watched or HDR fields). `items/{id}` is scoped by entity type through `IPlexItemStore.GetAsync(id, entityType)`, so a movie route never returns a music document and a music route never a movie one (they share one id space).
+- `PUT items/{id}/link` (body `{ "plexItemId" }`, no scope) reads the album, stores a manual link, applies the cover if missing and returns the same music-shaped data.
 - `DELETE items/{id}/link` removes the link and its data. A music id is checked against the music service (404 "Music not found").
-- The per-item refresh and the season scope are movie-only.
+- The per-item refresh and the season scope are movie-only: the music routes answer 400 "Not supported for music" and never look at movies.
 - `GET /musics/pagedsearch` attaches a `plex` summary (`onPlex`, `broken`, `playCount`, `lastPlayedAt`, `tracksPresent`, `tracksExpected`, `audioCodec`, `bitrate`).
-- Its `plex` filter takes `onPlex` or `notOnPlex` only (400 otherwise, ignored when music is not enabled) through `IPlexLookup.GetMusicFilterAsync`.
+- Its `plex` filter takes `onPlex`, `notOnPlex` or `broken` (400 otherwise, so `unwatched` is refused; ignored when music is not enabled) through `IPlexLookup.GetMusicFilterAsync`, which reads only music documents. A test keeps the list in `PLEX_MUSIC_FILTERS` (`app/models.ts`) equal to what the API accepts.
 - `GET /musics/{id}` adds the stored data as `plex` (no file path).
 - Deleting a music entry deletes its Plex document (`IPlexDataCleanup.DeleteMusicDataAsync`), and a run purges documents of deleted entries.
 
@@ -287,6 +288,12 @@ partial.
 artist, play count and dates), `storage` (total and average over albums with a size), `audioCodec`, `bitrate` (bands "Under 128
 kbps", "128-191 kbps", "192-255 kbps", "256-319 kbps", "320-999 kbps", "1000+ kbps", and "unknown" last) and `completeness` (tracks present against
 expected, and albums complete and partial, counting only albums with an expected count).
+`GET /plex/statistics?sections=music` (or `movies`, comma separated) computes only the named sections, which the dashboard uses so a music
+request never reads the movie documents; without `sections` the response is unchanged, and an unknown section is a 400.
+
+**Covers.** A sync tries the cover only for a matched album without one. When Plex has no usable image, the sync records on the stored
+document the album state (`CoverAttemptKey`: Plex item id and update time, with `CoverAttemptedAt`) and does not fetch again until that state
+changes or 30 days pass. Errors are not recorded, and the manual link path always tries.
 
 **UI.**
 
