@@ -923,8 +923,44 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateGame_DatabaseFails_ReturnsInternalServerErrorProblem()
+    {
+        var game = NewGameWithImageUrl(null);
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("db down"));
+
+        var response = await _client.PostAsJsonAsync("/Games", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(doc.RootElement.GetProperty("title").GetString(), Is.EqualTo("An error occurred while creating the entity."));
+    }
+
+    [Test]
+    public async Task UpdateGame_DatabaseFails_ReturnsInternalServerErrorProblem()
+    {
+        var game = ArrangeUpdate();
+        _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("db down"));
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(doc.RootElement.GetProperty("title").GetString(), Is.EqualTo("An error occurred while updating the entity."));
+    }
+
+    [Test]
+    public async Task CreateGame_MalformedEntityJsonInForm_ReturnsBadRequest()
+    {
+        var content = new MultipartFormDataContent { { new StringContent("{not json", Encoding.UTF8, "application/json"), "entity" } };
+
+        var response = await _client.PostAsync("/Games", content);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 
     [Test]
@@ -938,6 +974,195 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    #endregion
+
+    #region Coverage Pinning Tests
+
+    private record SavedState(string? ImageUrl, string? CoverPath);
+
+    private List<SavedState> CaptureSaves()
+    {
+        List<SavedState> saves = [];
+        _gameServiceMock.Setup(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Game, CancellationToken>((_, g, _) => saves.Add(new SavedState(g.ImageUrl, g.CoverImage?.FilePath)))
+            .ReturnsAsync(Mock.Of<ReplaceOneResult>());
+        return saves;
+    }
+
+    private Game NewGameWithImageUrl(string? imageUrl) =>
+        _gameFaker.Clone().RuleFor(g => g.Id, GameId).RuleFor(g => g.ImageUrl, imageUrl).Generate();
+
+    [Test]
+    public async Task CreateGame_UploadStored_PersistsCoverAndClearsImageUrl()
+    {
+        var game = NewGameWithImageUrl("https://example.com/ignored.jpg");
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var saves = CaptureSaves();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saves, Is.Not.Empty);
+        Assert.That(saves[^1], Is.EqualTo(new SavedState(null, CreateStoredImage("new-guid").FilePath)));
+    }
+
+    [Test]
+    public async Task CreateGame_UploadFails_PersistsEntityWithImageUrlCleared()
+    {
+        var game = NewGameWithImageUrl("https://example.com/ignored.jpg");
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var saves = CaptureSaves();
+        _imageServiceMock.Setup(s => s.SaveImageAsync(It.IsAny<IFormFile>(), "games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new IOException("disk full"));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saves, Is.Not.Empty);
+        Assert.That(saves[^1], Is.EqualTo(new SavedState(null, null)));
+    }
+
+    [Test]
+    public async Task CreateGame_MultipartImageUrlStored_PersistsCover()
+    {
+        var game = NewGameWithImageUrl(null);
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var saves = CaptureSaves();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+
+        var response = await _client.PostAsync("/Games", CreateMultipartFormDataContentWithUrl(game, ImageUrl));
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saves[^1].CoverPath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
+    }
+
+    [Test]
+    public async Task CreateGame_JsonImageUrlStored_PersistsCover()
+    {
+        var game = NewGameWithImageUrl(ImageUrl);
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var saves = CaptureSaves();
+        _imageServiceMock.Setup(s => s.DownloadAndSaveImageAsync(ImageUrl, "Games", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateStoredImage("new-guid"));
+
+        var response = await _client.PostAsJsonAsync("/Games", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(saves[^1].CoverPath, Is.EqualTo(CreateStoredImage("new-guid").FilePath));
+    }
+
+    [Test]
+    public async Task CreateGame_WithoutImage_DoesNotTouchImageServiceOrUpdate()
+    {
+        var game = NewGameWithImageUrl(null);
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var response = await _client.PostAsJsonAsync("/Games", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        _imageServiceMock.VerifyNoOtherCalls();
+        _gameServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateGame_MultipartWithoutEntityField_ReturnsBadRequest()
+    {
+        var content = new MultipartFormDataContent { { new StringContent("x"), "other" } };
+
+        var response = await _client.PostAsync("/Games", content);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        _gameServiceMock.Verify(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateGame_WhenNotFound_ReturnsNotFoundAndDoesNotSave()
+    {
+        var game = NewGameWithImageUrl(null);
+        _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync((Game?)null);
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        _gameServiceMock.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Game>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateGame_MultipartWithoutEntityField_ReturnsBadRequest()
+    {
+        var content = new MultipartFormDataContent { { new StringContent("x"), "other" } };
+
+        var response = await _client.PutAsync($"/Games/{GameId}", content);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task UpdateGame_MultipartImageCleared_DeletesOldFileAndClearsCover()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        game.CoverImage = null;
+        var content = new MultipartFormDataContent
+        {
+            { new StringContent(JsonSerializer.Serialize(game, _jsonOptions), Encoding.UTF8, "application/json"), "entity" }
+        };
+
+        var response = await _client.PutAsync($"/Games/{GameId}", content);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(CreateStoredImage("old-guid").FilePath), Times.Once);
+        Assert.That(saved()!.CoverImage, Is.Null);
+    }
+
+    [Test]
+    public async Task UpdateGame_JsonImageUrlUnchanged_DoesNotDownloadAgain()
+    {
+        var game = ArrangeUpdateWithExistingCover(out var saved);
+        game.ImageUrl = "https://example.com/old.jpg";
+        game.CoverImage = CreateStoredImage("old-guid");
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _imageServiceMock.Verify(s => s.DownloadAndSaveImageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+        Assert.That(saved()!.CoverImage!.FilePath, Is.EqualTo(CreateStoredImage("old-guid").FilePath));
+    }
+
+    [Test]
+    public async Task DeleteGame_ImageDeleteThrowsIOException_StillDeletesEntity()
+    {
+        var game = NewGameWithImageUrl(null);
+        game.CoverImage = CreateStoredImage("old-guid");
+        _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(game);
+        _gameServiceMock.Setup(s => s.RemoveAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(Mock.Of<DeleteResult>());
+        _imageServiceMock.Setup(s => s.DeleteImageAsync(It.IsAny<string>())).Throws(new IOException("locked"));
+
+        var response = await _client.DeleteAsync($"/Games/{GameId}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        _gameServiceMock.Verify(s => s.RemoveAsync(GameId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteGameImage_FileDeleteThrows_StillClearsReference()
+    {
+        var game = NewGameWithImageUrl(null);
+        game.CoverImage = CreateStoredImage("old-guid");
+        _gameServiceMock.Setup(s => s.GetAsync(GameId, It.IsAny<CancellationToken>())).ReturnsAsync(game);
+        var saves = CaptureSaves();
+        _imageServiceMock.Setup(s => s.DeleteImageAsync(It.IsAny<string>())).Throws(new IOException("gone"));
+
+        var response = await _client.DeleteAsync($"/Games/{GameId}/image");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        Assert.That(saves, Has.Count.EqualTo(1));
+        Assert.That(saves[0].CoverPath, Is.Null);
     }
 
     #endregion

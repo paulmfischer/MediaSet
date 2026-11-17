@@ -2,7 +2,6 @@ using MediaSet.Api.Shared.Models;
 using MediaSet.Api.Features.Entities.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
 using MediaSet.Api.Infrastructure.Plex;
-using MediaSet.Api.Infrastructure.Storage;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic.FileIO;
@@ -107,410 +106,120 @@ internal static class EntityApi
         });
 
         group.MapPost("/", async Task<Results<Created<TEntity>, Created<JsonObject>, BadRequest<string>, ProblemHttpResult>> (
-            IEntityService<TEntity> entityService,
-            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            IEntityWriteService<TEntity> writeService,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                TEntity newEntity;
-                IFormCollection? multipartForm = null;
-
-                // Check if request is multipart form data or JSON
-                if (context.Request.ContentType?.Contains("multipart/form-data") == true)
+                var request = await EntityRequestReader.ReadAsync<TEntity>(context.Request, "Entity is required and must have some data", cancellationToken);
+                if (request.Error is not null)
                 {
-                    // Parse multipart form data once
-                    multipartForm = await context.Request.ReadFormAsync(cancellationToken);
-
-                    // Deserialize entity from JSON
-                    if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
-                    {
-                        logger.LogError("Entity JSON not provided in form data for {entityType}", entityType);
-                        return TypedResults.BadRequest("Entity JSON is required in form data");
-                    }
-
-                    var entityJsonString = entityJson[0]!;
-                    var options = new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-                    };
-                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJsonString, options);
-                    if (deserializedEntity is null)
-                    {
-                        logger.LogError("Failed to deserialize entity for {entityType}", entityType);
-                        return TypedResults.BadRequest("Failed to deserialize entity");
-                    }
-
-                    newEntity = deserializedEntity;
+                    logger.LogError("Invalid create request for {entityType}: {error}", entityType, request.Error);
+                    return TypedResults.BadRequest(request.Error);
                 }
-                else
+
+                var result = await writeService.CreateAsync(request.Entity!, request.Image, cancellationToken);
+                switch (result.Status)
                 {
-                    // For backward compatibility, try to read as JSON from body
-                    var deserializedEntity = await context.Request.ReadFromJsonAsync<TEntity>(cancellationToken);
-                    if (deserializedEntity is null)
-                    {
-                        logger.LogError("Failed to deserialize entity from request body for {entityType}", entityType);
+                    case EntityWriteStatus.InvalidExternalId:
+                        return InvalidExternalId();
+                    case EntityWriteStatus.EmptyEntity:
                         return TypedResults.BadRequest("Entity is required and must have some data");
-                    }
-
-                    newEntity = deserializedEntity;
                 }
 
-                ClearPlex(newEntity);
-
-                if (ValidateExternalId(newEntity) is { } externalIdProblem)
+                var entity = result.Entity!;
+                var location = $"/{typeof(TEntity).Name}/{entity.Id}";
+                if (result.ImageError is null)
                 {
-                    logger.LogWarning("Rejected {entityType} with invalid ExternalId", entityType);
-                    return externalIdProblem;
-                }
-
-                if (newEntity.IsEmpty())
-                {
-                    logger.LogError("A {entity} is required and must have some data on it", typeof(TEntity).Name);
-                    return TypedResults.BadRequest("Entity is required and must have some data");
-                }
-
-                logger.LogInformation("Creating new {entityType}", entityType);
-                await entityService.CreateAsync(newEntity, cancellationToken);
-                logger.LogInformation("Created {entityType} with id {id}", entityType, newEntity.Id);
-
-                string? imageError = null;
-
-                // Process image after entity is saved so we have an ID
-                // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
-                if (multipartForm is not null)
-                {
-                    // Check for image file in multipart form
-                    var imageFile = multipartForm.Files["coverImage"];
-                    if (imageFile is not null && imageFile.Length > 0)
-                    {
-                        logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, newEntity.Id);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.SaveImageAsync(imageFile, entityType.ToLower(), newEntity.Id!, cancellationToken),
-                            ImageSource.Upload, logger, entityType, newEntity.Id!);
-                        imageError = error;
-                        if (image is not null)
-                        {
-                            newEntity.CoverImage = image;
-                            // Update entity with image
-                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                        }
-
-                        // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence)
-                        var imageUrlProp = GetImageUrlProperty(newEntity);
-                        imageUrlProp?.SetValue(newEntity, null);
-                        await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                    }
-                    else if (multipartForm.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-                    {
-                        // No file provided, check for imageUrl
-                        var imageUrl = imageUrlValue.ToString();
-                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken),
-                            ImageSource.Url, logger, entityType, newEntity.Id!);
-                        imageError = error;
-                        if (image is not null)
-                        {
-                            newEntity.CoverImage = image;
-                            // Update entity with image
-                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                        }
-                    }
-                }
-                // Flow 2: Handle JSON update with imageUrl
-                else
-                {
-                    // Check if imageUrl is provided for download
-                    var imageUrlProp = GetImageUrlProperty(newEntity);
-                    var imageUrl = imageUrlProp?.GetValue(newEntity) as string;
-
-                    if (!string.IsNullOrWhiteSpace(imageUrl))
-                    {
-                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, newEntity.Id, imageUrl);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, newEntity.Id!, cancellationToken),
-                            ImageSource.Url, logger, entityType, newEntity.Id!);
-                        imageError = error;
-                        if (image is not null)
-                        {
-                            newEntity.CoverImage = image;
-                            // Update entity with image
-                            await entityService.UpdateAsync(newEntity.Id!, newEntity, cancellationToken);
-                        }
-                    }
-                }
-
-                var location = $"/{typeof(TEntity).Name}/{newEntity.Id}";
-                if (imageError is null)
-                {
-                    return TypedResults.Created(location, newEntity);
+                    return TypedResults.Created(location, entity);
                 }
 
                 // The entity is saved; report the failed cover image alongside it.
                 var jsonOptions = context.RequestServices
                     .GetRequiredService<IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>().Value.SerializerOptions;
-                var body = JsonSerializer.SerializeToNode(newEntity, jsonOptions) as JsonObject ?? [];
-                body["imageError"] = imageError;
+                var body = JsonSerializer.SerializeToNode(entity, jsonOptions) as JsonObject ?? [];
+                body["imageError"] = result.ImageError;
                 return TypedResults.Created(location, body);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is JsonException or BadHttpRequestException or InvalidDataException)
             {
+                // A body that cannot be read is the client's fault
                 logger.LogError(ex, "Error creating {entityType}", entityType);
                 return TypedResults.BadRequest("An error occurred while creating the entity.");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Database or other server faults
+                logger.LogError(ex, "Error creating {entityType}", entityType);
+                return TypedResults.Problem(
+                    title: "An error occurred while creating the entity.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }).DisableAntiforgery();
 
         group.MapPut("/{id}", async Task<Results<Ok, Ok<ImageErrorResponse>, NotFound, BadRequest<string>, ProblemHttpResult>> (
-            IEntityService<TEntity> entityService,
-            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            IEntityWriteService<TEntity> writeService,
             string id,
             HttpContext context,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                TEntity updatedEntity;
-                IFormCollection? multipartForm = null;
-
-                // Check if request is multipart form data or JSON
-                if (context.Request.ContentType?.Contains("multipart/form-data") == true)
+                var request = await EntityRequestReader.ReadAsync<TEntity>(context.Request, "Failed to deserialize entity", cancellationToken);
+                if (request.Error is not null)
                 {
-                    // Parse multipart form data once
-                    multipartForm = await context.Request.ReadFormAsync(cancellationToken);
-
-                    // Deserialize entity from JSON
-                    if (!multipartForm.TryGetValue("entity", out var entityJson) || entityJson.Count == 0)
-                    {
-                        logger.LogError("Entity JSON not provided in form data for {entityType}/{id}", entityType, id);
-                        return TypedResults.BadRequest("Entity JSON is required in form data");
-                    }
-
-                    var entityJsonString = entityJson[0]!;
-                    var options = new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-                    };
-                    var deserializedEntity = System.Text.Json.JsonSerializer.Deserialize<TEntity>(entityJsonString, options);
-                    if (deserializedEntity is null)
-                    {
-                        logger.LogError("Failed to deserialize entity for {entityType}/{id}", entityType, id);
-                        return TypedResults.BadRequest("Failed to deserialize entity");
-                    }
-
-                    updatedEntity = deserializedEntity;
-                }
-                else
-                {
-                    // For backward compatibility, try to read as JSON from body
-                    var deserializedEntity = await context.Request.ReadFromJsonAsync<TEntity>(cancellationToken);
-                    if (deserializedEntity is null)
-                    {
-                        logger.LogError("Failed to deserialize entity from request body for {entityType}/{id}", entityType, id);
-                        return TypedResults.BadRequest("Failed to deserialize entity");
-                    }
-
-                    updatedEntity = deserializedEntity;
+                    logger.LogError("Invalid update request for {entityType}/{id}: {error}", entityType, id, request.Error);
+                    return TypedResults.BadRequest(request.Error);
                 }
 
-                ClearPlex(updatedEntity);
-
-                if (id != updatedEntity.Id)
+                var result = await writeService.UpdateAsync(id, request.Entity!, request.Image, cancellationToken);
+                switch (result.Status)
                 {
-                    logger.LogError("Ids on the entity and the request do not match: {pathId} != {entityId}", id, updatedEntity.Id);
-                    return TypedResults.BadRequest("Ids on the entity and the request do not match");
+                    case EntityWriteStatus.IdMismatch:
+                        return TypedResults.BadRequest("Ids on the entity and the request do not match");
+                    case EntityWriteStatus.InvalidExternalId:
+                        return InvalidExternalId();
+                    case EntityWriteStatus.NotFound:
+                        return TypedResults.NotFound();
                 }
 
-                if (ValidateExternalId(updatedEntity) is { } externalIdProblem)
-                {
-                    logger.LogWarning("Rejected {entityType}/{id} update with invalid ExternalId", entityType, id);
-                    return externalIdProblem;
-                }
-
-                // Get the existing entity to access old image for cleanup
-                var existingEntity = await entityService.GetAsync(id, cancellationToken);
-                if (existingEntity is null)
-                {
-                    logger.LogWarning("{entityType} not found for id {id}", entityType, id);
-                    return TypedResults.NotFound();
-                }
-
-                string? imageError = null;
-                Image? replacedImage = null;
-
-                // Flow 1: Handle multipart/form-data with file upload and/or imageUrl
-                if (multipartForm is not null)
-                {
-                    // Check for image file in multipart form
-                    var imageFile = multipartForm.Files["coverImage"];
-                    if (imageFile is not null && imageFile.Length > 0)
-                    {
-                        logger.LogInformation("Processing image file upload for {entityType}/{id}", entityType, id);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.SaveImageAsync(imageFile, entityType.ToLower(), id, cancellationToken),
-                            ImageSource.Upload, logger, entityType, id);
-                        imageError = error;
-                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
-
-                        // Ensure imageUrl is not persisted when a file is uploaded (file takes precedence);
-                        // on failure ApplyStoredImage already restored the previous ImageUrl
-                        if (image is not null)
-                        {
-                            var imageUrlProp = GetImageUrlProperty(updatedEntity);
-                            imageUrlProp?.SetValue(updatedEntity, null);
-                        }
-                    }
-                    else if (multipartForm.TryGetValue("imageUrl", out var imageUrlValue) && !string.IsNullOrWhiteSpace(imageUrlValue.ToString()))
-                    {
-                        // No file provided, check for imageUrl
-                        var imageUrl = imageUrlValue.ToString();
-                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
-                            ImageSource.Url, logger, entityType, id);
-                        imageError = error;
-                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
-                    }
-                    else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
-                    {
-                        // Neither file nor imageUrl provided, but old image exists - delete it
-                        logger.LogInformation("Image is being cleared for {entityType}/{id}", entityType, id);
-                        DeleteOldImage(existingEntity, imageService, logger);
-                    }
-                }
-                // Flow 2: Handle JSON update with imageUrl
-                else
-                {
-                    // Check if imageUrl is provided for download
-                    var imageUrlProp = GetImageUrlProperty(updatedEntity);
-                    var imageUrl = imageUrlProp?.GetValue(updatedEntity) as string;
-                    var existingImageUrl = imageUrlProp?.GetValue(existingEntity) as string;
-
-                    if (!string.IsNullOrWhiteSpace(imageUrl) && imageUrl != existingImageUrl)
-                    {
-                        logger.LogInformation("Processing image URL download for {entityType}/{id}: {url}", entityType, id, imageUrl);
-
-                        var (image, error) = await TryStoreImageAsync(
-                            () => imageService.DownloadAndSaveImageAsync(imageUrl, entityType, id, cancellationToken),
-                            ImageSource.Url, logger, entityType, id);
-                        imageError = error;
-                        replacedImage = ApplyStoredImage(updatedEntity, existingEntity, image);
-                    }
-                    // Check if image is being cleared (updatedEntity.CoverImage is null but existing had one)
-                    else if (updatedEntity.CoverImage is null && existingEntity.CoverImage is not null)
-                    {
-                        logger.LogInformation("Image is being cleared for {entityType}/{id}", entityType, id);
-                        // Delete the old image to prevent orphaned files
-                        DeleteOldImage(existingEntity, imageService, logger);
-                    }
-                }
-
-                var result = await entityService.UpdateAsync(id, updatedEntity, cancellationToken);
-                logger.LogInformation("Updated {entityType} {entityId}: {updated}", entityType, id, result.ModifiedCount > 0);
-
-                // Delete the replaced file only after the entity references the new image
-                DeleteImageFile(replacedImage, imageService, logger);
-                return imageError is null
+                return result.ImageError is null
                     ? TypedResults.Ok()
-                    : TypedResults.Ok(new ImageErrorResponse(imageError));
+                    : TypedResults.Ok(new ImageErrorResponse(result.ImageError));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is JsonException or BadHttpRequestException or InvalidDataException)
             {
+                // A body that cannot be read is the client's fault
                 logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
                 return TypedResults.BadRequest("An error occurred while updating the entity.");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Database or other server faults
+                logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
+                return TypedResults.Problem(
+                    title: "An error occurred while updating the entity.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }).DisableAntiforgery();
 
         group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (
-            IEntityService<TEntity> entityService,
-            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
-            HttpContext httpContext,
+            IEntityWriteService<TEntity> writeService,
             string id,
             CancellationToken cancellationToken) =>
         {
-            // Get entity to retrieve image path for cleanup
-            var entity = await entityService.GetAsync(id, cancellationToken);
-            if (entity is not null && entity.CoverImage is not null)
-            {
-                try
-                {
-                    imageService.DeleteImageAsync(entity.CoverImage.FilePath);
-                    logger.LogInformation("Deleted image during entity deletion: {imagePath}", entity.CoverImage.FilePath);
-                }
-                catch (IOException ex)
-                {
-                    logger.LogWarning("Failed to delete image during entity deletion (IO error): {error}", ex.Message);
-                    // Continue anyway - don't fail the entity deletion
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    logger.LogWarning("Failed to delete image during entity deletion (unauthorized): {error}", ex.Message);
-                    // Continue anyway - don't fail the entity deletion
-                }
-            }
-
-            var result = await entityService.RemoveAsync(id, cancellationToken);
-            logger.LogInformation("Deleted {entityType} {entityId}: {deleted}", entityType, id, result.DeletedCount > 0);
-
-            // The entity is deleted first; its Plex data goes after, and a failure there never fails the delete
-            if (typeof(TEntity) == typeof(Movie) || typeof(TEntity) == typeof(Music))
-            {
-                await (typeof(TEntity) == typeof(Music)
-                    ? DeletePlexDataAsync(httpContext.RequestServices, id, "music", (cleanup, ct) => cleanup.DeleteMusicDataAsync(id, ct), logger, cancellationToken)
-                    : DeletePlexDataAsync(httpContext.RequestServices, id, "movie", (cleanup, ct) => cleanup.DeleteMovieDataAsync(id, ct), logger, cancellationToken));
-            }
-
+            await writeService.DeleteAsync(id, cancellationToken);
             return TypedResults.Ok();
         });
 
         group.MapDelete("/{id}/image", async Task<Results<NoContent, NotFound>> (
-            IEntityService<TEntity> entityService,
-            [Microsoft.AspNetCore.Mvc.FromServices] IImageService imageService,
+            IEntityWriteService<TEntity> writeService,
             string id,
             CancellationToken cancellationToken) =>
         {
-            logger.LogInformation("Deleting image for {entityType}/{id}", entityType, id);
-
-            // Get the entity
-            var entity = await entityService.GetAsync(id, cancellationToken);
-            if (entity is null)
-            {
-                logger.LogWarning("{entityType} not found for id {id}", entityType, id);
-                return TypedResults.NotFound();
-            }
-
-            if (entity.CoverImage is null)
-            {
-                logger.LogWarning("No image found for {entityType}/{id}", entityType, id);
-                return TypedResults.NotFound();
-            }
-
-            // Delete the image file
-            try
-            {
-                imageService.DeleteImageAsync(entity.CoverImage.FilePath);
-                logger.LogInformation("Deleted image file: {imagePath}", entity.CoverImage.FilePath);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning("Failed to delete image file: {error}", ex.Message);
-                // Continue - file might already be deleted
-            }
-
-            // Remove coverImage from entity
-            entity.CoverImage = null;
-            await entityService.UpdateAsync(id, entity, cancellationToken);
-            logger.LogInformation("Removed image reference from {entityType}/{id}", entityType, id);
-
-            return TypedResults.NoContent();
+            var status = await writeService.DeleteImageAsync(id, cancellationToken);
+            return status == DeleteImageStatus.Deleted ? TypedResults.NoContent() : TypedResults.NotFound();
         });
 
         group.MapPost("/upload", async Task<Results<Ok<string>, BadRequest<string>>> (IEntityService<TEntity> entityService, IFormFile bookUpload, CancellationToken cancellationToken) =>
@@ -577,182 +286,10 @@ internal static class EntityApi
         return group;
     }
 
-    /// <summary>
-    /// Runs an image store operation. A validation or download failure is logged and mapped to a
-    /// stable <see cref="ImageErrorCodes"/> value so the entity can still be saved.
-    /// </summary>
-    private static async Task<(Image? Image, string? Error)> TryStoreImageAsync(
-        Func<Task<Image>> store,
-        ImageSource source,
-        ILogger logger,
-        string entityType,
-        string entityId)
-    {
-        try
-        {
-            var image = await store();
-            logger.LogInformation("Cover image stored for {entityType}/{id}", entityType, entityId);
-            return (image, null);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            // Validation, download and storage failures (e.g. IOException) all leave the saved entity in place.
-            var code = ImageErrorMapper.ToCode(ex, source);
-            logger.LogWarning("Cover image from {source} not stored for {entityType}/{id} ({code}): {error}",
-                source, entityType, entityId, code, ex.Message);
-            return (null, code);
-        }
-    }
-
-    /// <summary>
-    /// Validates and normalizes a Movie's or Music entry's ExternalId in place (source lowercased, value untouched).
-    /// Returns a 400 problem-details result when the value is malformed; other entity types are ignored.
-    /// </summary>
-    private static ProblemHttpResult? ValidateExternalId(IEntity entity)
-    {
-        var current = entity switch
-        {
-            Movie movie => movie.ExternalId,
-            Music music => music.ExternalId,
-            _ => null,
-        };
-        if (entity is not (Movie or Music))
-        {
-            return null;
-        }
-
-        if (!ExternalIdFormat.TryNormalize(current, out var normalized))
-        {
-            return TypedResults.Problem(
-                title: "Invalid ExternalId",
-                detail: ExternalIdFormat.ErrorMessage,
-                statusCode: StatusCodes.Status400BadRequest);
-        }
-
-        switch (entity)
-        {
-            case Movie movie:
-                movie.ExternalId = normalized;
-                break;
-            case Music music:
-                music.ExternalId = normalized;
-                break;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Returns the entity's ImageUrl property, or null when its type has none.
-    /// </summary>
-    private static System.Reflection.PropertyInfo? GetImageUrlProperty(IEntity entity) => entity.GetType().GetProperty("ImageUrl");
-
-    /// <summary>
-    /// Applies the outcome of storing a replacement image on an update. When the new image was stored
-    /// it is set on the entity and the replaced image is returned so the caller can delete it once the
-    /// entity is saved (null when unchanged or the same file). When storing failed the previous cover
-    /// and its ImageUrl are kept so the entity still references the old image.
-    /// </summary>
-    private static Image? ApplyStoredImage(IEntity updatedEntity, IEntity existingEntity, Image? newImage)
-    {
-        if (newImage is null)
-        {
-            updatedEntity.CoverImage = existingEntity.CoverImage;
-            var imageUrlProp = GetImageUrlProperty(updatedEntity);
-            if (imageUrlProp is { CanWrite: true })
-            {
-                imageUrlProp.SetValue(updatedEntity, imageUrlProp.GetValue(existingEntity));
-            }
-
-            return null;
-        }
-
-        updatedEntity.CoverImage = newImage;
-        return existingEntity.CoverImage is not null && existingEntity.CoverImage.FilePath != newImage.FilePath
-            ? existingEntity.CoverImage
-            : null;
-    }
-
-    private static void DeleteImageFile(Image? image, IImageService imageService, ILogger logger)
-    {
-        if (image is null)
-        {
-            return;
-        }
-
-        try
-        {
-            imageService.DeleteImageAsync(image.FilePath);
-            logger.LogInformation("Deleted old image: {imagePath}", image.FilePath);
-        }
-        catch (IOException ex)
-        {
-            logger.LogWarning("Failed to delete old image (IO error): {error}", ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
-        }
-    }
-
-    /// <summary>
-    /// Helper method to delete an old image with proper exception handling.
-    /// </summary>
-    private static void DeleteOldImage(IEntity? entity, IImageService imageService, ILogger logger)
-    {
-        if (entity?.CoverImage is null)
-        {
-            return;
-        }
-
-        try
-        {
-            imageService.DeleteImageAsync(entity.CoverImage.FilePath);
-            logger.LogInformation("Deleted old image: {imagePath}", entity.CoverImage.FilePath);
-        }
-        catch (IOException ex)
-        {
-            logger.LogWarning("Failed to delete old image (IO error): {error}", ex.Message);
-            // Continue anyway - don't fail the operation
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            logger.LogWarning("Failed to delete old image (unauthorized): {error}", ex.Message);
-            // Continue anyway - don't fail the operation
-        }
-    }
-
-    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, string kind, Func<IPlexDataCleanup, CancellationToken, Task> delete, ILogger logger, CancellationToken cancellationToken)
-    {
-        // Registered only when the Plex integration is configured and valid
-        var cleanup = services.GetService<IPlexDataCleanup>();
-        if (cleanup == null)
-        {
-            return;
-        }
-
-        try
-        {
-            await delete(cleanup, cancellationToken);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            logger.LogWarning(ex, "Failed to delete Plex data for {entityType} {entityId}; the next Plex sync purges it", kind, id);
-        }
-    }
-
-    // Plex data is read-only and lives in its own collection: whatever a client sends in `plex` is dropped.
-    private static void ClearPlex(IEntity entity)
-    {
-        if (entity is Movie movie)
-        {
-            movie.Plex = null;
-        }
-        else if (entity is Music music)
-        {
-            music.Plex = null;
-        }
-    }
+    private static ProblemHttpResult InvalidExternalId() => TypedResults.Problem(
+        title: "Invalid ExternalId",
+        detail: ExternalIdFormat.ErrorMessage,
+        statusCode: StatusCodes.Status400BadRequest);
 
     // Paged search: adds the small Plex summary (no file paths) to each linked movie or album of the page, joined in one query.
     private static async Task AttachPlexSummariesAsync<TEntity>(IEnumerable<TEntity> entities, IPlexLookup? plexLookup, CancellationToken cancellationToken)

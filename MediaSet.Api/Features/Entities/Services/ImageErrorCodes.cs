@@ -1,6 +1,6 @@
 using MediaSet.Api.Infrastructure.Storage;
 
-namespace MediaSet.Api.Features.Entities.Endpoints;
+namespace MediaSet.Api.Features.Entities.Services;
 
 /// <summary>
 /// Stable codes returned as <c>imageError</c> when an entity was saved but its cover image was not.
