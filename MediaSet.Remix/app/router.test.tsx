@@ -127,7 +127,7 @@ describe('router', () => {
     // The design is dark-only, so every page is always dark (see the `@custom-variant dark` line in app/tailwind.css).
     assert.match(html, /<html lang="en" class="dark">/);
     assert.match(html, /<title>Dashboard \| MediaSet<\/title>/);
-    assert.match(html, /<link rel="stylesheet" href="\/app.css"/);
+    assert.match(html, /<link rel="stylesheet" href="\/app.css\?v=[^"]+"/);
     assert.match(html, /<script type="module" src="\/assets\/app\/actions\/public\/entry\.ts[^"]*"/);
   });
 
