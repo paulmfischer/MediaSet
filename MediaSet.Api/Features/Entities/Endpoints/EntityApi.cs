@@ -142,10 +142,19 @@ internal static class EntityApi
                 body["imageError"] = result.ImageError;
                 return TypedResults.Created(location, body);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is JsonException or BadHttpRequestException or InvalidDataException)
             {
+                // A body that cannot be read is the client's fault
                 logger.LogError(ex, "Error creating {entityType}", entityType);
                 return TypedResults.BadRequest("An error occurred while creating the entity.");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Database or other server faults
+                logger.LogError(ex, "Error creating {entityType}", entityType);
+                return TypedResults.Problem(
+                    title: "An error occurred while creating the entity.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }).DisableAntiforgery();
 
@@ -179,10 +188,19 @@ internal static class EntityApi
                     ? TypedResults.Ok()
                     : TypedResults.Ok(new ImageErrorResponse(result.ImageError));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is JsonException or BadHttpRequestException or InvalidDataException)
             {
+                // A body that cannot be read is the client's fault
                 logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
                 return TypedResults.BadRequest("An error occurred while updating the entity.");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Database or other server faults
+                logger.LogError(ex, "Error updating {entityType}/{id}", entityType, id);
+                return TypedResults.Problem(
+                    title: "An error occurred while updating the entity.",
+                    statusCode: StatusCodes.Status500InternalServerError);
             }
         }).DisableAntiforgery();
 

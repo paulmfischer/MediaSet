@@ -923,8 +923,44 @@ public class EntityApiControllerImageTests : IntegrationTestBase
 
         var response = await _client.PutAsync($"/Games/{GameId}", CreateMultipartFormDataContent(game, CreateImageFile("a.jpg", "image/jpeg")));
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
         _imageServiceMock.Verify(s => s.DeleteImageAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateGame_DatabaseFails_ReturnsInternalServerErrorProblem()
+    {
+        var game = NewGameWithImageUrl(null);
+        _gameServiceMock.Setup(s => s.CreateAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("db down"));
+
+        var response = await _client.PostAsJsonAsync("/Games", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(doc.RootElement.GetProperty("title").GetString(), Is.EqualTo("An error occurred while creating the entity."));
+    }
+
+    [Test]
+    public async Task UpdateGame_DatabaseFails_ReturnsInternalServerErrorProblem()
+    {
+        var game = ArrangeUpdate();
+        _gameServiceMock.Setup(s => s.UpdateAsync(GameId, It.IsAny<Game>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("db down"));
+
+        var response = await _client.PutAsJsonAsync($"/Games/{GameId}", game, _jsonOptions);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.That(doc.RootElement.GetProperty("title").GetString(), Is.EqualTo("An error occurred while updating the entity."));
+    }
+
+    [Test]
+    public async Task CreateGame_MalformedEntityJsonInForm_ReturnsBadRequest()
+    {
+        var content = new MultipartFormDataContent { { new StringContent("{not json", Encoding.UTF8, "application/json"), "entity" } };
+
+        var response = await _client.PostAsync("/Games", content);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
     }
 
     [Test]
