@@ -20,6 +20,9 @@ interface SyncPageProps {
   statistics?: PlexStatistics | null;
 }
 
+// The same entity colours as the dashboard and the statistics tabs.
+const ENTITY_CLASS: Record<string, string> = { movies: 'entity-movies', music: 'entity-musics' };
+
 const STATE_CLASS: Record<string, string> = {
   succeeded: 'text-green-400',
   failed: 'text-red-400',
@@ -118,12 +121,12 @@ function EntityStatus(handle: Handle<{ status: PlexEntityStatus; action: string 
     const label = entityTypeLabel(status.entityType);
     return (
       <section
-        class="flex flex-col gap-3 rounded-lg border border-slate-600 p-4"
+        class={`${ENTITY_CLASS[status.entityType] ?? ''} flex flex-col gap-3 rounded-lg border border-slate-600 border-t-4 border-t-entity p-4`}
         aria-labelledby={`plex-${status.entityType}-heading`}
         data-testid="plex-entity-status"
         data-entity-type={status.entityType}
       >
-        <h2 id={`plex-${status.entityType}-heading`} class="text-lg">
+        <h2 id={`plex-${status.entityType}-heading`} class="text-lg font-semibold text-entity">
           {label}
         </h2>
         <dl class="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
@@ -183,9 +186,11 @@ export function PlexSyncPage(handle: Handle<SyncPageProps>) {
           </p>
         ) : null}
         {statuses.length === 0 ? <p>No Plex entity types are enabled.</p> : null}
-        {statuses.map((status) => (
-          <EntityStatus key={status.entityType} status={status} action={action} />
-        ))}
+        <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          {statuses.map((status) => (
+            <EntityStatus key={status.entityType} status={status} action={action} />
+          ))}
+        </div>
         {hasActiveRun(statuses) ? <PlexSyncPoller statusHref={statusHref} /> : null}
       </div>
     );
