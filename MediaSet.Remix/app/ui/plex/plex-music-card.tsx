@@ -19,15 +19,19 @@ interface PlexMusicNotesProps {
   plex: PlexMusicSummary;
 }
 
+/** True when the list has notes to show for an album: it is on Plex and either never played or partial. */
+export function hasPlexMusicNotes(plex: PlexMusicSummary): boolean {
+  return plexLinkState(plex) === 'onPlex' && (plex.playCount <= 0 || isPartialAlbum(plex));
+}
+
 // What the list says beside the Plex icon: "Never played" and a "Partial" marker with the tracks present. They stay visible
 // text so they do not rely on the icon's tooltip.
 export function PlexMusicNotes(handle: Handle<PlexMusicNotesProps>) {
   return () => {
     const { plex } = handle.props;
-    if (plexLinkState(plex) !== 'onPlex') return null;
+    if (!hasPlexMusicNotes(plex)) return null;
     const never = plex.playCount <= 0;
     const partial = isPartialAlbum(plex);
-    if (!never && !partial) return null;
     return (
       <span class="flex flex-col items-center text-xs leading-tight" data-testid="plex-music-notes">
         {never ? <span class="dark:text-slate-300">Never played</span> : null}

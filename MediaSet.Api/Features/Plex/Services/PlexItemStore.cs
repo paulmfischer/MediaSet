@@ -78,7 +78,6 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public async Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken) =>
         await Collection.Find(Builders<PlexItemData>.Filter.And(OfEntityType(PlexEntityTypes.Movies), Builders<PlexItemData>.Filter.Eq(d => d.Scope, null)))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
-        .Include(d => d.EntityType)
                 .Include(d => d.PlexItemId)
                 .Include(d => d.SizeBytes)
                 .Include(d => d.PlexUpdatedAt))
@@ -109,7 +108,6 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public async Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken) =>
         await Collection.Find(OfEntityType(PlexEntityTypes.Movies))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
-        .Include(d => d.EntityType)
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
                 .Include(d => d.Watched)
@@ -145,7 +143,6 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public async Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken) =>
         await Collection.Find(OfEntityType(PlexEntityTypes.Music))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
-        .Include(d => d.EntityType)
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
                 .Include(d => d.PlayCount)

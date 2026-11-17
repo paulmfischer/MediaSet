@@ -14,7 +14,7 @@ import {
 import { PLEX_FILTER_LABELS, PLEX_MUSIC_FILTER_LABELS } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { PlexIcon, plexMusicIconLabel } from '../plex/plex-icon.tsx';
-import { PlexMusicNotes } from '../plex/plex-music-card.tsx';
+import { hasPlexMusicNotes, PlexMusicNotes } from '../plex/plex-music-card.tsx';
 import { PlexFilterSelect } from '../plex/public/plex-filter.tsx';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, Trash2, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
@@ -62,7 +62,9 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
     // Visible text beside an album's icon: never played and partial.
     const plexNotes = (item: T) => {
       const summary = plexOf(item);
-      return isMusic && summary ? <PlexMusicNotes plex={summary as PlexMusicSummary} /> : null;
+      return isMusic && summary && hasPlexMusicNotes(summary as PlexMusicSummary) ? (
+        <PlexMusicNotes plex={summary as PlexMusicSummary} />
+      ) : null;
     };
     const plexFilterOptions = isMusic
       ? [
@@ -213,23 +215,26 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
           ) : (
             <>
               <div class="md:hidden flex flex-col divide-y divide-slate-700">
-                {items.map((item) => (
-                  <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
-                    {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
-                    <div class="flex-1 min-w-0">
-                      <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
-                        {config.titleOf(item)}
-                      </a>
-                      <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
-                      {isMusic ? <div class="flex">{plexNotes(item)}</div> : null}
+                {items.map((item) => {
+                  const notes = plexNotes(item);
+                  return (
+                    <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
+                      {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
+                      <div class="flex-1 min-w-0">
+                        <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
+                          {config.titleOf(item)}
+                        </a>
+                        <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
+                        {notes ? <div class="mt-0.5 flex">{notes}</div> : null}
+                      </div>
+                      <div class="flex flex-row items-center gap-3 shrink-0">
+                        {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}
+                        {editLink(item)}
+                        {deleteLink(item)}
+                      </div>
                     </div>
-                    <div class="flex flex-row items-center gap-3 shrink-0">
-                      {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}
-                      {editLink(item)}
-                      {deleteLink(item)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <table class="hidden md:table text-left w-full">
                 <thead class="dark:bg-zinc-700 border-b-2 border-slate-600">
