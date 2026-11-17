@@ -1,3 +1,4 @@
+import type { IconNode } from 'lucide';
 import type { Handle } from 'remix/component';
 
 import type {
@@ -10,39 +11,39 @@ import type {
 import { formatBytes, formatDuration, statisticLabel } from '../../utils/plex-statistics.ts';
 import { BarChart } from '../dashboard/bar-chart.tsx';
 import { ChartCard } from '../dashboard/chart-card.tsx';
-import { PLEX_RESOLUTION_COLORS, PLEX_STATISTICS_COLORS, STAT_CARD_COLOR } from '../dashboard/config.ts';
+import { CHART_HEX, FORMAT_PALETTES, STAT_CARD_COLOR, type DashboardTabId } from '../dashboard/config.ts';
+import { Icon } from '../icon.tsx';
 import { PieChart } from '../dashboard/pie-chart.tsx';
 import { StatCard } from '../dashboard/stat-card.tsx';
 import { AlertTriangle, Album, Clapperboard, Disc, HardDrive, Layers, Link2Off, Music, Tv } from '../icons.ts';
 
 const num = (value: number): string => value.toLocaleString('en-US');
-const PLEX_BAR_COLOR = PLEX_RESOLUTION_COLORS[0];
 
 function slices(counts: PlexCount[], upper = false): Array<{ name: string; value: number }> {
   return counts.filter((c) => c.count > 0).map((c) => ({ name: statisticLabel(c.name, upper), value: c.count }));
 }
 
-function PieCard(handle: Handle<{ title: string; counts: PlexCount[]; upper?: boolean }>) {
+function PieCard(handle: Handle<{ title: string; counts: PlexCount[]; upper?: boolean; entity: DashboardTabId }>) {
   return () => {
-    const { title, counts, upper } = handle.props;
+    const { title, counts, upper, entity } = handle.props;
     const data = slices(counts, upper);
     if (data.length === 0) return null;
     return (
       <ChartCard title={title}>
-        <PieChart title={title} data={data} colors={PLEX_STATISTICS_COLORS} size={140} />
+        <PieChart title={title} data={data} colors={FORMAT_PALETTES[entity]} size={140} />
       </ChartCard>
     );
   };
 }
 
-function BarCard(handle: Handle<{ title: string; counts: PlexCount[]; upper?: boolean }>) {
+function BarCard(handle: Handle<{ title: string; counts: PlexCount[]; upper?: boolean; entity: DashboardTabId }>) {
   return () => {
-    const { title, counts, upper } = handle.props;
+    const { title, counts, upper, entity } = handle.props;
     const data = slices(counts, upper);
     if (data.length === 0) return null;
     return (
       <ChartCard title={title}>
-        <BarChart data={data} color={PLEX_BAR_COLOR} />
+        <BarChart data={data} color={CHART_HEX[entity]} />
       </ChartCard>
     );
   };
@@ -54,12 +55,7 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
     const headingId = `plex-stats-${stats.kind}-heading`;
     const { coverage, completeness } = stats;
     return (
-      <section
-        aria-labelledby={headingId}
-        class="space-y-4 border-t border-zinc-700 pt-4"
-        data-testid="plex-stats-kind"
-        data-kind={stats.kind}
-      >
+      <section aria-labelledby={headingId} class="space-y-4" data-testid="plex-stats-kind" data-kind={stats.kind}>
         <h3 id={headingId} class="text-base font-semibold text-white">
           {label}
         </h3>
@@ -113,13 +109,13 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
             </div>
             <p class="text-xs text-zinc-400">The charts below count {unit} that are on Plex.</p>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <PieCard title="Resolution" counts={stats.resolution} upper />
-              <PieCard title="Video codec" counts={stats.videoCodec} upper />
-              <PieCard title="HDR vs SDR" counts={stats.hdr} />
-              <PieCard title="Subtitles" counts={stats.subtitles} />
-              <PieCard title="Watched" counts={stats.watched} />
-              <BarCard title="Audio codec" counts={stats.audioCodec} upper />
-              <BarCard title="Audio channel layout" counts={stats.audioChannels} />
+              <PieCard title="Resolution" counts={stats.resolution} upper entity="movies" />
+              <PieCard title="Video codec" counts={stats.videoCodec} upper entity="movies" />
+              <PieCard title="HDR vs SDR" counts={stats.hdr} entity="movies" />
+              <PieCard title="Subtitles" counts={stats.subtitles} entity="movies" />
+              <PieCard title="Watched" counts={stats.watched} entity="movies" />
+              <BarCard title="Audio codec" counts={stats.audioCodec} upper entity="movies" />
+              <BarCard title="Audio channel layout" counts={stats.audioChannels} entity="movies" />
             </div>
           </>
         )}
@@ -141,7 +137,7 @@ function KindSection(handle: Handle<{ stats: PlexKindStatistics; label: string; 
           <ChartCard title={stats.kind === 'tv' ? 'Most watched (episodes watched)' : 'Most watched'}>
             <BarChart
               data={stats.mostWatched.map((item) => ({ name: item.title, value: item.viewCount }))}
-              color={PLEX_BAR_COLOR}
+              color={CHART_HEX.movies}
             />
           </ChartCard>
         ) : null}
@@ -188,7 +184,7 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
     return (
       <section
         aria-labelledby="plex-stats-music-heading"
-        class="space-y-4 border-t border-zinc-700 pt-4"
+        class="space-y-4"
         data-testid="plex-stats-kind"
         data-kind="music"
       >
@@ -230,8 +226,8 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
             </div>
             <p class="text-xs text-zinc-400">The charts below count albums that are on Plex.</p>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <PieCard title="Audio codec" counts={stats.audioCodec} upper />
-              <BarCard title="Bitrate" counts={stats.bitrate} />
+              <PieCard title="Audio codec" counts={stats.audioCodec} upper entity="musics" />
+              <BarCard title="Bitrate" counts={stats.bitrate} entity="musics" />
             </div>
           </>
         )}
@@ -256,7 +252,7 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
                 name: `${album.title} (${album.artist || 'Unknown artist'})`,
                 value: album.playCount,
               }))}
-              color={PLEX_BAR_COLOR}
+              color={CHART_HEX.musics}
             />
           </ChartCard>
         ) : null}
@@ -279,8 +275,50 @@ function MusicSection(handle: Handle<{ stats: PlexMusicStatistics }>) {
   };
 }
 
-// The statistics block of the Plex page, placed before the sync section: an overview by entity, then one section for
-// Movies and one for TV (episodes) when movies are enabled, and one for Music when music is enabled.
+interface PlexTabConfig {
+  id: 'movies' | 'music';
+  /** Sets --entity-color for the tab and its panel. */
+  entityClass: string;
+  label: string;
+  icon: IconNode;
+  inputId: string;
+  // Tailwind only generates classes it finds as complete strings, so each tab's state variants are written out in
+  // full. They key off the tab's checked radio through the wrapper's `tabs` group (as on the dashboard).
+  activeLabelClass: string;
+  focusLabelClass: string;
+  activePanelClass: string;
+}
+
+const PLEX_TABS: PlexTabConfig[] = [
+  {
+    id: 'movies',
+    entityClass: 'entity-movies',
+    label: 'Movies & TV',
+    icon: Clapperboard,
+    inputId: 'plex-tab-movies',
+    activeLabelClass:
+      'group-has-[#plex-tab-movies:checked]/tabs:relative group-has-[#plex-tab-movies:checked]/tabs:z-10 group-has-[#plex-tab-movies:checked]/tabs:-mb-[5px] group-has-[#plex-tab-movies:checked]/tabs:rounded-b-none group-has-[#plex-tab-movies:checked]/tabs:border-x-zinc-700 group-has-[#plex-tab-movies:checked]/tabs:border-b-zinc-900 group-has-[#plex-tab-movies:checked]/tabs:border-t-entity group-has-[#plex-tab-movies:checked]/tabs:bg-zinc-800',
+    focusLabelClass:
+      'group-has-[#plex-tab-movies:focus-visible]/tabs:ring-2 group-has-[#plex-tab-movies:focus-visible]/tabs:ring-blue-400',
+    activePanelClass: 'group-has-[#plex-tab-movies:checked]/tabs:block',
+  },
+  {
+    id: 'music',
+    entityClass: 'entity-musics',
+    label: 'Music',
+    icon: Music,
+    inputId: 'plex-tab-music',
+    activeLabelClass:
+      'group-has-[#plex-tab-music:checked]/tabs:relative group-has-[#plex-tab-music:checked]/tabs:z-10 group-has-[#plex-tab-music:checked]/tabs:-mb-[5px] group-has-[#plex-tab-music:checked]/tabs:rounded-b-none group-has-[#plex-tab-music:checked]/tabs:border-x-zinc-700 group-has-[#plex-tab-music:checked]/tabs:border-b-zinc-900 group-has-[#plex-tab-music:checked]/tabs:border-t-entity group-has-[#plex-tab-music:checked]/tabs:bg-zinc-800',
+    focusLabelClass:
+      'group-has-[#plex-tab-music:focus-visible]/tabs:ring-2 group-has-[#plex-tab-music:focus-visible]/tabs:ring-blue-400',
+    activePanelClass: 'group-has-[#plex-tab-music:checked]/tabs:block',
+  },
+];
+
+// The statistics block of the Plex page, placed before the sync section: an overview by entity, then one tab per
+// entity (Movies and TV episodes when movies are enabled, Music when music is enabled). Like the dashboard, the tab
+// choice is CSS only: a hidden radio per tab picks the visible panel, so every panel is in the HTML.
 export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistics }>) {
   return () => {
     const { movies, tv, music } = handle.props.statistics;
@@ -289,16 +327,71 @@ export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistic
       ...(tv ? [{ name: 'TV series', value: tv.coverage.onPlex }] : []),
       ...(music ? [{ name: 'Albums', value: music.coverage.onPlex }] : []),
     ];
+    const onPlex = {
+      movies: (movies?.coverage.onPlex ?? 0) + (tv?.coverage.onPlex ?? 0),
+      music: music?.coverage.onPlex ?? 0,
+    };
+    const tabs = PLEX_TABS.filter((tab) => (tab.id === 'movies' ? movies || tv : music));
+    const panel = (id: PlexTabConfig['id']) =>
+      id === 'movies' ? (
+        <div class="space-y-8">
+          {movies ? <KindSection stats={movies} label="Movies" unit="movies" /> : null}
+          {tv ? (
+            <div class={movies ? 'border-t border-zinc-700 pt-8' : ''}>
+              <KindSection stats={tv} label="TV series" unit="episodes" />
+            </div>
+          ) : null}
+        </div>
+      ) : music ? (
+        <MusicSection stats={music} />
+      ) : null;
     return (
       <section aria-labelledby="plex-page-heading" class="space-y-4" data-testid="plex-statistics">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ChartCard title="On Plex by entity">
-            <BarChart data={byEntity} color={PLEX_BAR_COLOR} />
+            <BarChart data={byEntity} color={CHART_HEX.movies} />
           </ChartCard>
         </div>
-        {movies ? <KindSection stats={movies} label="Movies" unit="movies" /> : null}
-        {tv ? <KindSection stats={tv} label="TV series" unit="episodes" /> : null}
-        {music ? <MusicSection stats={music} /> : null}
+        {tabs.length > 0 ? (
+          <fieldset class="group/tabs min-w-0">
+            <legend class="sr-only">Plex entity</legend>
+            {tabs.map((tab, index) => (
+              <input
+                type="radio"
+                name="plex-tab"
+                id={tab.inputId}
+                aria-controls={`plex-panel-${tab.id}`}
+                class="sr-only"
+                checked={index === 0}
+              />
+            ))}
+            <div class="mb-1 grid gap-4 sm:grid-cols-2">
+              {tabs.map((tab) => (
+                <label
+                  for={tab.inputId}
+                  id={`plex-label-${tab.id}`}
+                  class={`${tab.entityClass} ${tab.activeLabelClass} ${tab.focusLabelClass} block w-full cursor-pointer rounded-sm border border-gray-500 bg-transparent p-4 text-left text-slate-300 transition-colors hover:bg-gray-800`}
+                >
+                  <div class="flex items-center gap-2">
+                    <Icon icon={tab.icon} size={16} class="text-entity" />
+                    <span class="font-semibold text-white">{tab.label}</span>
+                  </div>
+                  <div class="mt-1 text-xs text-zinc-400">{num(onPlex[tab.id])} on Plex</div>
+                </label>
+              ))}
+            </div>
+            {tabs.map((tab) => (
+              <div
+                id={`plex-panel-${tab.id}`}
+                role="region"
+                aria-labelledby={`plex-label-${tab.id}`}
+                class={`${tab.entityClass} ${tab.activePanelClass} hidden rounded-lg rounded-tl-none rounded-tr-none border border-zinc-700 p-6`}
+              >
+                {panel(tab.id)}
+              </div>
+            ))}
+          </fieldset>
+        ) : null}
       </section>
     );
   };
