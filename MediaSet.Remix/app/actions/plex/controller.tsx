@@ -5,7 +5,7 @@ import { getPlexStatistics, getPlexStatuses, startPlexSync } from '../../api/ple
 import type { PlexEntityStatus, PlexStatistics } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { isPlexEnabledForRequest, isPlexPageEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { isPlexEnabledForEntityType, isPlexPageEnabledForRequest } from '../../utils/plex-nav.server.ts';
 import { hasActiveRun, isListedStatus, SYNCABLE_ENTITY_TYPES } from '../../utils/plex-sync.ts';
 import { Document } from '../../ui/document.tsx';
 import { PlexSyncPage } from '../../ui/plex/sync-page.tsx';
@@ -58,7 +58,7 @@ async function index(context: AppContext) {
 // Starts a sync, then returns to the page (303). A request that finds a run already active is not an error: it goes
 // back to the page with a notice, which shows that run, so a refresh does not submit the form again.
 async function action(context: AppContext) {
-  if (!(await isPlexEnabledForRequest())) return renderError(context, 404);
+  if (!(await isPlexPageEnabledForRequest())) return renderError(context, 404);
   const entityType = context.formData?.get('entityType');
   if (typeof entityType !== 'string' || !SYNCABLE_ENTITY_TYPES.includes(entityType)) {
     return renderError(context, 400, undefined, {
@@ -67,6 +67,8 @@ async function action(context: AppContext) {
       ...back,
     });
   }
+  // A type whose Plex gate is off has no sync, like the page when Plex is off.
+  if (!(await isPlexEnabledForEntityType(entityType))) return renderError(context, 404);
   try {
     const started = await startPlexSync(entityType);
     return redirect(started ? routes.plex.index.href() : `${routes.plex.index.href()}?${RUNNING_NOTICE}`, 303);

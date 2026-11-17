@@ -63,6 +63,8 @@ function stubApi(t: { after: (fn: () => void) => void }, options: StubOptions = 
     }
     if (url.pathname === '/plex/movies/sync')
       return options.sync ?? Response.json(run({ state: 'running' }), { status: 202 });
+    if (url.pathname === '/plex/music/sync')
+      return options.sync ?? Response.json(run({ entityType: 'music', state: 'running' }), { status: 202 });
     return Response.json([]);
   }) as typeof fetch;
   t.after(() => {
@@ -102,15 +104,66 @@ describe('gear menu Plex link', () => {
   });
 });
 
-describe('Plex statistics page with only music enabled', () => {
-  it('should show the link and serve /plex, but not the movie sync routes', async (t) => {
-    stubApi(t, { plex: { enabled: true, entityTypes: ['music'] } });
+describe('Plex sync with only music enabled', () => {
+  const musicOnly = { enabled: true, entityTypes: ['music'] };
+  const musicStatus = (overrides: Partial<PlexEntityStatus> = {}) =>
+    status({ entityType: 'music', lastRun: run({ entityType: 'music' }), ...overrides });
+
+  it('should show the link and serve the sync page and status route, listing music only', async (t) => {
+    stubApi(t, { plex: musicOnly, statuses: [[status({ enabled: false }), musicStatus()]] });
 
     const home = await (await get('/books/b1')).text();
     assert.match(home, /"href":"\/plex"/);
-    assert.equal((await get('/plex')).status, 200);
-    assert.equal((await get('/plex/status')).status, 404);
+    const page = await get('/plex');
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.match(html, /data-entity-type="music"/);
+    assert.doesNotMatch(html, /data-entity-type="movies"/);
+
+    const poll = await get('/plex/status');
+    assert.equal(poll.status, 200);
+    const body = (await poll.json()) as PlexEntityStatus[];
+    assert.deepEqual(
+      body.map((entry) => entry.entityType),
+      ['music']
+    );
+  });
+
+  it('should start a music sync and return to the page', async (t) => {
+    const calls = stubApi(t, { plex: musicOnly });
+    const response = await post('/plex', { entityType: 'music' });
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.get('Location'), '/plex');
+    assert.equal(calls.includes('POST /plex/music/sync'), true);
+  });
+
+  it('should not start a movie sync when movies are not enabled', async (t) => {
+    const calls = stubApi(t, { plex: musicOnly });
     assert.equal((await post('/plex', { entityType: 'movies' })).status, 404);
+    assert.equal(calls.includes('POST /plex/movies/sync'), false);
+  });
+});
+
+describe('Plex sync with movies and music enabled', () => {
+  it('should list both types and show music progress with the poller while its run is active', async (t) => {
+    stubApi(t, {
+      plex: { enabled: true, entityTypes: ['movies', 'music'] },
+      statuses: [
+        [
+          status(),
+          status({
+            entityType: 'music',
+            lastRun: run({ entityType: 'music', state: 'running', startedAt: '2026-03-02T10:00:00Z', endedAt: null }),
+          }),
+        ],
+      ],
+    });
+    const html = await (await get('/plex')).text();
+    const music = html.match(/<section[^>]*data-entity-type="music"[\s\S]*?<\/section>/)?.[0] ?? '';
+    assert.match(html, /data-entity-type="movies"/);
+    assert.match(music, /Running since/);
+    assert.match(music, /disabled/);
+    assert.match(html, /data-testid="plex-sync-poller"/);
   });
 });
 
@@ -217,6 +270,39 @@ describe('plex sync page', () => {
     assert.match(html, /<a href="\/movies\/a2">/);
   });
 
+  it('should list the albums that share a Plex album when the last music run found duplicate links', async (t) => {
+    stubApi(t, {
+      plex: { enabled: true, entityTypes: ['music'] },
+      statuses: [
+        [
+          status({
+            entityType: 'music',
+            lastRun: run({
+              entityType: 'music',
+              duplicateLinks: [
+                {
+                  plexItemId: '7001',
+                  plexTitle: 'Abbey Road',
+                  movies: [],
+                  albums: [
+                    { id: 'm1', title: 'Abbey Road' },
+                    { id: 'm2', title: 'Abbey Road (2nd copy)' },
+                  ],
+                },
+              ],
+            }),
+          }),
+        ],
+      ],
+    });
+    const html = await (await get('/plex')).text();
+
+    assert.match(html, /1 Plex album is linked by more than one entry:/);
+    assert.match(html, /data-testid="plex-duplicate-link">Abbey Road: /);
+    assert.match(html, /<a href="\/musics\/m1">Abbey Road<\/a>/);
+    assert.match(html, /<a href="\/musics\/m2">Abbey Road \(2nd copy\)<\/a>/);
+  });
+
   it('should show no duplicate links section when the last run found none', async (t) => {
     stubApi(t, { plex: enabled, statuses: [[status({ lastRun: run({ duplicateLinks: [] }) })]] });
     const html = await (await get('/plex')).text();
@@ -266,17 +352,26 @@ describe('plex sync now', () => {
   });
 
   it('should list only enabled types a sync can be started for', async (t) => {
-    stubApi(t, { plex: enabled, statuses: [[status(), status({ entityType: 'music' })]] });
+    stubApi(t, { plex: enabled, statuses: [[status(), status({ entityType: 'games' })]] });
     const html = await (await get('/plex')).text();
-    assert.doesNotMatch(html, /data-entity-type="music"/);
+    assert.doesNotMatch(html, /data-entity-type="games"/);
   });
 
   it('should reject an entity type that cannot be synced without calling the API', async (t) => {
     const calls = stubApi(t, { plex: enabled });
-    const response = await post('/plex', { entityType: 'music' });
+    const response = await post('/plex', { entityType: 'games' });
     assert.equal(response.status, 400);
-    assert.equal(calls.includes('POST /plex/music/sync'), false);
+    assert.equal(
+      calls.some((call) => call.startsWith('POST')),
+      false
+    );
     assert.equal(calls.includes('GET /plex/status'), false);
+  });
+
+  it('should not start a music sync when Plex is not enabled for music', async (t) => {
+    const calls = stubApi(t, { plex: enabled });
+    assert.equal((await post('/plex', { entityType: 'music' })).status, 404);
+    assert.equal(calls.includes('POST /plex/music/sync'), false);
   });
 
   it('should render the failure page when Plex cannot be reached', async (t) => {

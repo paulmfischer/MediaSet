@@ -219,6 +219,36 @@ public class PlexMusicSyncApiTests
     }
 
     [Test]
+    public async Task Sync_TwoEntriesLinkOneAlbum_RecordsDuplicateLinkOnRun()
+    {
+        const string copyId = "65b000000000000000000008";
+        var collection = Collection();
+        collection.Add(new Music { Id = copyId, Title = "Abbey Road (2nd copy)", Artist = "The Beatles", Tracks = 3, ExternalId = $"mbid:{AbbeyRoadMbid}" });
+        var h = CreateHarness(Server(), collection);
+
+        var last = await SyncAsync(h.Client);
+
+        var duplicates = last.GetProperty("duplicateLinks");
+        Assert.That(duplicates.GetArrayLength(), Is.EqualTo(1));
+        var duplicate = duplicates[0];
+        Assert.That(duplicate.GetProperty("plexItemId").GetString(), Is.EqualTo("7001"));
+        Assert.That(duplicate.GetProperty("movies").GetArrayLength(), Is.EqualTo(0));
+        Assert.That(
+            duplicate.GetProperty("albums").EnumerateArray().Select(a => (a.GetProperty("id").GetString(), a.GetProperty("title").GetString())),
+            Is.EqualTo([(AbbeyRoadId, "Abbey Road"), (copyId, "Abbey Road (2nd copy)")]));
+    }
+
+    [Test]
+    public async Task Sync_EachEntryOnItsOwnAlbum_RecordsNoDuplicateLinks()
+    {
+        var h = CreateHarness(Server(), Collection());
+
+        var last = await SyncAsync(h.Client);
+
+        Assert.That(last.GetProperty("duplicateLinks").GetArrayLength(), Is.EqualTo(0));
+    }
+
+    [Test]
     public async Task Sync_MatchedAlbum_StoresRolledUpPlexData()
     {
         var h = CreateHarness(Server(), Collection());

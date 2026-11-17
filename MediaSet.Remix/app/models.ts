@@ -320,15 +320,16 @@ export type PlexSyncRun = {
   externalIdsBackfilled?: number | null;
   backfillSkipped?: number | null;
   message?: string | null;
-  /** Plex movies the run found linked by more than one MediaSet movie; null until the run succeeds. */
+  /** Plex movies or albums the run found linked by more than one MediaSet entry; null until the run succeeds. */
   duplicateLinks?: PlexDuplicateLink[] | null;
 };
 
-/** One Plex item that several movies link to, as a sync run found it. */
+/** One Plex item that several entries link to, as a sync run found it: movies for a movie run, albums for a music run. */
 export type PlexDuplicateLink = {
   plexItemId: string;
   plexTitle: string;
   movies: Array<{ id: string; title: string }>;
+  albums?: Array<{ id: string; title: string }>;
 };
 
 /** Sync status of one entity type (`GET /plex/status`). */

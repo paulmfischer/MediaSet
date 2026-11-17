@@ -4,7 +4,7 @@ import type { Middleware } from 'remix/router';
 import { getPlexEnabledTypes, isPlexEnabledForMovies } from '../api/plex-data.ts';
 import { Entity } from '../models.ts';
 
-// Whether the current request has Plex enabled for movies. Decided once per page request by the middleware below and
+// Whether the current request has Plex enabled for movies (and for music, and for either). Decided once per page request by the middleware below and
 // reused by the header (which renders synchronously and cannot call the API) and by the Plex handlers.
 const storage = new AsyncLocalStorage<{ plexEnabled: boolean; plexMusicEnabled: boolean; plexPageEnabled: boolean }>();
 
@@ -33,6 +33,11 @@ export async function isPlexEnabledForEntity(entity: Entity): Promise<boolean> {
   if (entity === Entity.Movies) return isPlexEnabledForRequest();
   if (entity === Entity.Musics) return isPlexMusicEnabledForRequest();
   return false;
+}
+
+/** The gate of one Plex entity type's sync: movies or music enabled for Plex. */
+export async function isPlexEnabledForEntityType(entityType: string): Promise<boolean> {
+  return entityType === 'music' ? isPlexMusicEnabledForRequest() : isPlexEnabledForRequest();
 }
 
 /** The gate of the Plex statistics page: Plex enabled for movies (and TV) or music. */

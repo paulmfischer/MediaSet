@@ -1,3 +1,4 @@
+import type { PlexMusicStatistics } from '../models.ts';
 import { baseUrl } from '../constants.server.ts';
 import { createServerLogger } from '../utils/serverLogger.ts';
 import { apiFetch } from '../utils/apiFetch.server.ts';
@@ -23,6 +24,8 @@ type Stats = {
   gameStats: GameStats;
   musicStats: MusicStats;
   plexStats?: PlexStats | null;
+  /** Added by the dashboard controller when Plex is enabled for music; the API's /stats has none. */
+  plexMusicStats?: PlexMusicStatistics | null;
 };
 
 type BookStats = {

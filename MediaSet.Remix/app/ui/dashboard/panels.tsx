@@ -7,6 +7,7 @@ import { BarChart } from './bar-chart.tsx';
 import { ChartCard } from './chart-card.tsx';
 import { CHART_HEX, FORMAT_PALETTES, MOVIE_TYPE_COLORS, STAT_CARD_COLOR } from './config.ts';
 import { PieChart } from './pie-chart.tsx';
+import { PlexMusicSection } from './plex-music-section.tsx';
 import { PlexSection } from './plex-section.tsx';
 import { StatCard } from './stat-card.tsx';
 
@@ -221,6 +222,7 @@ export function MusicsPanel(handle: Handle<PanelProps>) {
             </ChartCard>
           )}
         </div>
+        {handle.props.stats.plexMusicStats && <PlexMusicSection plex={handle.props.stats.plexMusicStats} />}
       </div>
     );
   };

@@ -41,26 +41,30 @@ function counts(run: PlexSyncRun): Array<[string, number]> {
   return rows.filter((row): row is [string, number] => row[1] != null);
 }
 
-// Plex movies linked by several entries: allowed, but usually a duplicate entry or a wrong ExternalId, so the owner
-// sees them here rather than only in the logs.
-function DuplicateLinks(handle: Handle<{ duplicates: PlexDuplicateLink[] }>) {
+// Plex movies or albums linked by several entries: allowed, but usually a duplicate entry or a wrong ExternalId, so
+// the owner sees them here rather than only in the logs.
+function DuplicateLinks(handle: Handle<{ duplicates: PlexDuplicateLink[]; entityType: string }>) {
   return () => {
-    const { duplicates } = handle.props;
+    const { duplicates, entityType } = handle.props;
+    const music = entityType === 'music';
+    const noun = music ? 'album' : 'movie';
+    const entryHref = (id: string) =>
+      music ? routes.entityDetail.musics.href({ id }) : routes.entityDetail.movies.href({ id });
     return (
       <div class="flex flex-col gap-1 text-sm" data-testid="plex-duplicate-links">
         <p class="text-amber-400">
           {duplicates.length === 1
-            ? '1 Plex movie is linked by more than one entry:'
-            : `${duplicates.length} Plex movies are linked by more than one entry:`}
+            ? `1 Plex ${noun} is linked by more than one entry:`
+            : `${duplicates.length} Plex ${noun}s are linked by more than one entry:`}
         </p>
         <ul class="list-disc pl-5">
           {duplicates.map((duplicate) => (
             <li key={duplicate.plexItemId} data-testid="plex-duplicate-link">
               {duplicate.plexTitle}:{' '}
-              {duplicate.movies.map((movie, index) => (
-                <span key={movie.id}>
+              {(music ? (duplicate.albums ?? []) : duplicate.movies).map((entry, index) => (
+                <span key={entry.id}>
                   {index > 0 ? ', ' : ''}
-                  <a href={routes.entityDetail.movies.href({ id: movie.id })}>{movie.title || movie.id}</a>
+                  <a href={entryHref(entry.id)}>{entry.title || entry.id}</a>
                 </span>
               ))}
             </li>
@@ -100,7 +104,7 @@ function LastRun(handle: Handle<{ run: PlexSyncRun | null | undefined }>) {
           </dl>
         ) : null}
         {run.duplicateLinks && run.duplicateLinks.length > 0 ? (
-          <DuplicateLinks duplicates={run.duplicateLinks} />
+          <DuplicateLinks duplicates={run.duplicateLinks} entityType={run.entityType} />
         ) : null}
       </div>
     );
