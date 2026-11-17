@@ -259,4 +259,105 @@ public class EntityWriteServiceTests
 
         _entities.Verify(e => e.RemoveAsync(Id, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    private EntityWriteService<T> ServiceFor<T>(Mock<IEntityService<T>> entities) where T : IEntity
+    {
+        entities.Setup(e => e.UpdateAsync(It.IsAny<string>(), It.IsAny<T>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<ReplaceOneResult>());
+        return new EntityWriteService<T>(
+            entities.Object,
+            new EntityImageCoordinator(_images.Object, NullLogger<EntityImageCoordinator>.Instance),
+            NullLogger<EntityWriteService<T>>.Instance);
+    }
+
+    [Test]
+    public async Task CreateAsync_MovieAndMusic_DropClientSuppliedPlex()
+    {
+        var movies = new Mock<IEntityService<Movie>>();
+        var music = new Mock<IEntityService<Music>>();
+        var movie = new Movie { Id = Id, Title = "T", Plex = new object() };
+        var album = new Music { Id = Id, Title = "T", Plex = new object() };
+
+        await ServiceFor(movies).CreateAsync(movie, ImageInput.None, CancellationToken.None);
+        await ServiceFor(music).CreateAsync(album, ImageInput.None, CancellationToken.None);
+
+        Assert.That(movie.Plex, Is.Null);
+        Assert.That(album.Plex, Is.Null);
+    }
+
+    [Test]
+    public async Task UpdateAsync_MovieAndMusic_DropClientSuppliedPlex()
+    {
+        var movies = new Mock<IEntityService<Movie>>();
+        var music = new Mock<IEntityService<Music>>();
+        var movie = new Movie { Id = Id, Title = "T", Plex = new object() };
+        var album = new Music { Id = Id, Title = "T", Plex = new object() };
+        movies.Setup(e => e.GetAsync(Id, It.IsAny<CancellationToken>())).ReturnsAsync(new Movie { Id = Id, Title = "T" });
+        music.Setup(e => e.GetAsync(Id, It.IsAny<CancellationToken>())).ReturnsAsync(new Music { Id = Id, Title = "T" });
+
+        await ServiceFor(movies).UpdateAsync(Id, movie, ImageInput.None, CancellationToken.None);
+        await ServiceFor(music).UpdateAsync(Id, album, ImageInput.None, CancellationToken.None);
+
+        Assert.That(movie.Plex, Is.Null);
+        Assert.That(album.Plex, Is.Null);
+    }
+
+    [Test]
+    public async Task UpdateAsync_InvalidExternalId_ReturnsInvalidExternalIdWithoutWriting()
+    {
+        var movies = new Mock<IEntityService<Movie>>();
+
+        var result = await ServiceFor(movies).UpdateAsync(
+            Id, new Movie { Id = Id, Title = "T", ExternalId = "tmdbid" }, ImageInput.None, CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(EntityWriteStatus.InvalidExternalId));
+        movies.Verify(m => m.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        movies.Verify(m => m.UpdateAsync(It.IsAny<string>(), It.IsAny<Movie>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateAsync_ExternalId_LowercasesSourceOnly()
+    {
+        var movie = new Movie { Id = Id, Title = "T", ExternalId = "TmdbID:Tt0111161" };
+
+        var result = await ServiceFor(new Mock<IEntityService<Movie>>()).CreateAsync(movie, ImageInput.None, CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(EntityWriteStatus.Success));
+        Assert.That(result.Entity!.ExternalId, Is.EqualTo("tmdbid:Tt0111161"));
+    }
+
+    [Test]
+    public async Task UpdateAsync_ExternalId_LowercasesSourceOnly()
+    {
+        var movies = new Mock<IEntityService<Movie>>();
+        movies.Setup(e => e.GetAsync(Id, It.IsAny<CancellationToken>())).ReturnsAsync(new Movie { Id = Id, Title = "T" });
+        var movie = new Movie { Id = Id, Title = "T", ExternalId = "TmdbID:Tt0111161" };
+
+        var result = await ServiceFor(movies).UpdateAsync(Id, movie, ImageInput.None, CancellationToken.None);
+
+        Assert.That(result.Status, Is.EqualTo(EntityWriteStatus.Success));
+        Assert.That(movie.ExternalId, Is.EqualTo("tmdbid:Tt0111161"));
+    }
+
+    [Test]
+    public async Task UpdateAsync_UploadStored_ClearsImageUrl()
+    {
+        SetupExisting(NewGame("https://example.com/old.jpg", StoredImage("old")));
+        SetupUpload(StoredImage("new"));
+
+        await _service.UpdateAsync(Id, NewGame("https://example.com/other.jpg"), ImageInput.Upload(File()), CancellationToken.None);
+
+        Assert.That(_saves.Single(), Is.EqualTo(((string?)null, (string?)StoredImage("new").FilePath)));
+    }
+
+    [Test]
+    public async Task UpdateAsync_CoverClearedWithImageUrlUnchanged_ClearsCoverAndKeepsImageUrl()
+    {
+        SetupExisting(NewGame(Url, StoredImage("old")));
+
+        await _service.UpdateAsync(Id, NewGame(Url), ImageInput.None, CancellationToken.None);
+
+        Assert.That(_saves.Single(), Is.EqualTo(((string?)Url, (string?)null)));
+        _images.Verify(i => i.DeleteImageAsync(StoredImage("old").FilePath), Times.Once);
+    }
 }
