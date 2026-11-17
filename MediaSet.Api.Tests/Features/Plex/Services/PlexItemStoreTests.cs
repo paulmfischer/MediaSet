@@ -33,6 +33,19 @@ public class PlexItemStoreTests
     }
 
     [Test]
+    public void SummaryProjection_IncludesTheFieldsTheMusicAndMovieSummariesRead()
+    {
+        // An inclusion projection drops every other field; a missing EntityType reads as null and hides every album
+        var projection = PlexItemStore.SummaryProjection.Render(new RenderArgs<PlexItemData>(
+            BsonSerializer.SerializerRegistry.GetSerializer<PlexItemData>(), BsonSerializer.SerializerRegistry));
+
+        foreach (var field in new[] { "EntityType", "OnPlex", "Broken", "Watched", "Resolution", "PlayCount", "LastPlayedAt", "TracksPresent", "TracksExpected", "AudioCodec", "Bitrate" })
+        {
+            Assert.That(projection.Contains(field), Is.True, field);
+        }
+    }
+
+    [Test]
     public void Serialize_TvDocumentWithScopeAndSeasons_RoundTripsThroughBson()
     {
         var data = new PlexItemData

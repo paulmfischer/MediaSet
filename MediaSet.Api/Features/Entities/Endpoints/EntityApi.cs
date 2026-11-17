@@ -762,9 +762,14 @@ internal static class EntityApi
             return;
         }
 
-        var albums = entities.OfType<Music>().Where(m => m.Id is not null).ToList();
-        if (albums.Count > 0)
+        if (typeof(TEntity) == typeof(Music))
         {
+            var albums = entities.OfType<Music>().Where(m => m.Id is not null).ToList();
+            if (albums.Count == 0)
+            {
+                return;
+            }
+
             var albumSummaries = await plexLookup.GetMusicSummariesAsync([.. albums.Select(m => m.Id!)], cancellationToken);
             foreach (var album in albums)
             {

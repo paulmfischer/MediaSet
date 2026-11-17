@@ -5,6 +5,7 @@ import type { PagedResult } from '../../api/entity-data.ts';
 import {
   Entity,
   PLEX_FILTERS,
+  PLEX_MUSIC_FILTERS,
   type BaseEntity,
   type PlexFilter,
   type PlexListSummary,
@@ -66,7 +67,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
     const plexFilterOptions = isMusic
       ? [
           { value: '', label: 'All albums' },
-          ...(['onPlex', 'notOnPlex'] as const).map((filter) => ({
+          ...PLEX_MUSIC_FILTERS.map((filter) => ({
             value: filter as string,
             label: PLEX_MUSIC_FILTER_LABELS[filter] ?? filter,
           })),
@@ -220,7 +221,7 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                         {config.titleOf(item)}
                       </a>
                       <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
-                      {plexNotes(item) ? <div class="mt-0.5 flex">{plexNotes(item)}</div> : null}
+                      {isMusic ? <div class="flex">{plexNotes(item)}</div> : null}
                     </div>
                     <div class="flex flex-row items-center gap-3 shrink-0">
                       {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}

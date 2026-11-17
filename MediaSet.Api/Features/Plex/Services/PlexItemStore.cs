@@ -78,29 +78,38 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public async Task<IReadOnlyList<PlexItemData>> ListMoviesAsync(CancellationToken cancellationToken) =>
         await Collection.Find(Builders<PlexItemData>.Filter.And(OfEntityType(PlexEntityTypes.Movies), Builders<PlexItemData>.Filter.Eq(d => d.Scope, null)))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
+        .Include(d => d.EntityType)
                 .Include(d => d.PlexItemId)
                 .Include(d => d.SizeBytes)
                 .Include(d => d.PlexUpdatedAt))
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// The fields the list summary needs. EntityType must stay in it: an inclusion projection drops every other field, and
+    /// the music lookup tells music documents from movie ones by it.
+    /// </summary>
+    public static ProjectionDefinition<PlexItemData> SummaryProjection { get; } = Builders<PlexItemData>.Projection
+        .Include(d => d.EntityType)
+        .Include(d => d.OnPlex)
+        .Include(d => d.Broken)
+        .Include(d => d.Watched)
+        .Include(d => d.Resolution)
+        .Include(d => d.PlayCount)
+        .Include(d => d.LastPlayedAt)
+        .Include(d => d.TracksPresent)
+        .Include(d => d.TracksExpected)
+        .Include(d => d.AudioCodec)
+        .Include(d => d.Bitrate);
+
     public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken) =>
         await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, entryIds))
-            .Project<PlexItemData>(Builders<PlexItemData>.Projection
-                .Include(d => d.OnPlex)
-                .Include(d => d.Broken)
-                .Include(d => d.Watched)
-                .Include(d => d.Resolution)
-                .Include(d => d.PlayCount)
-                .Include(d => d.LastPlayedAt)
-                .Include(d => d.TracksPresent)
-                .Include(d => d.TracksExpected)
-                .Include(d => d.AudioCodec)
-                .Include(d => d.Bitrate))
+            .Project<PlexItemData>(SummaryProjection)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken) =>
         await Collection.Find(OfEntityType(PlexEntityTypes.Movies))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
+        .Include(d => d.EntityType)
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
                 .Include(d => d.Watched)
@@ -136,6 +145,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
     public async Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken) =>
         await Collection.Find(OfEntityType(PlexEntityTypes.Music))
             .Project<PlexItemData>(Builders<PlexItemData>.Projection
+        .Include(d => d.EntityType)
                 .Include(d => d.OnPlex)
                 .Include(d => d.Broken)
                 .Include(d => d.PlayCount)
