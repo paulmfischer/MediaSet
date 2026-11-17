@@ -4,7 +4,9 @@ This document explains how to connect MediaSet to your Plex Media Server. The in
 **read-only**: MediaSet only reads from Plex and never changes anything on your Plex server. After a sync, a
 movie in MediaSet shows whether it is on Plex, its resolution, HDR, video and audio codecs, subtitle languages,
 watched state, date added and a link back to Plex. TV series entries (which MediaSet stores as movies) are
-linked to Plex shows. Only movies are supported.
+linked to Plex shows. Music is supported too: an album in MediaSet shows whether it is on Plex, how often it was
+played, when it was last played, how many of its tracks are on Plex, its audio quality, size, date added and a link
+back to Plex. Music is set up on its own (step 7) and is off unless you enable it.
 
 1) Find your Plex token
 
@@ -31,7 +33,11 @@ linked to Plex shows. Only movies are supported.
     PlexConfiguration__BaseUrl: "http://plex.local:32400"
     PlexConfiguration__Token: "[ReplaceThis]"    # <-- replace with your Plex token
     PlexConfiguration__Entities__Movies__Enabled: "true"
+    # Optional: also sync music (albums)
+    PlexConfiguration__Entities__Music__Enabled: "true"
     ```
+
+    - Movies and music are enabled independently; enable only the ones you want. Music alone is fine.
 
     - Restart the stack:
 
@@ -51,15 +57,20 @@ linked to Plex shows. Only movies are supported.
     | `Entities__Movies__Enabled` | `false` | Turns on syncing for movies |
     | `Entities__Movies__Schedule` | `0 3 * * 0` | When to sync automatically (cron, see below) |
     | `Entities__Movies__LibrarySectionIds__0`, `__1`, ... | empty (all libraries) | Which Plex libraries to read |
+    | `Entities__Music__Enabled` | `false` | Turns on syncing for music |
+    | `Entities__Music__Schedule` | `0 4 * * 0` | When to sync music automatically (cron, see below) |
+    | `Entities__Music__LibrarySectionIds__0`, `__1`, ... | empty (all music libraries) | Which Plex music libraries to read |
     | `Timeout` | `30` | Seconds to wait for Plex to answer |
     | `PageSize` | `100` | Items requested from Plex at a time |
     | `DetailConcurrency` | `4` | Detail requests sent to Plex at once; lower it if Plex struggles during a sync |
     | `AcceptInvalidCertificate` | `false` | Accept any HTTPS certificate from Plex |
-    | `Backfill__RequestsPerMinute` | `30` | Most TMDB searches per minute when filling in ids (step 7) |
-    | `Backfill__BatchSize` | `50` | Most movies searched on TMDB per sync |
+    | `Backfill__RequestsPerMinute` | `30` | Most searches per minute when filling in ids (step 7): TMDB for movies, MusicBrainz for music |
+    | `Backfill__BatchSize` | `50` | Most entries searched per sync (movies on TMDB, albums on MusicBrainz) |
 
     The numeric settings must be above 0. An invalid value switches the Plex integration off, and an invalid
-    schedule switches off just the movie sync; the API log names the problem at startup.
+    schedule switches off just that entity type (an invalid music schedule switches off only music syncing); the API
+    log names the problem at startup. The base URL, token, `Timeout`, `PageSize`, `DetailConcurrency` and the
+    backfill settings are shared by movies and music.
 
 5) Schedule
 
@@ -67,14 +78,17 @@ linked to Plex shows. Only movies are supported.
       every Sunday at 03:00.
     - Times use the server's local time zone, which is UTC in the container unless you set `TZ` on
       `mediaset-api` (for example `TZ: "America/New_York"`).
+    - `Entities__Music__Schedule` works the same way and defaults to `0 4 * * 0` (Sundays at 04:00), an hour after the
+      movie sync, so the two do not start together.
     - If MediaSet was stopped at the scheduled time, that run is skipped; the next one happens as normal.
 
-    **Library section ids.** By default every movie and TV library on the server is read. To read only some,
-    list their Plex library ids:
+    **Library section ids.** By default every movie and TV library on the server is read for movies, and every music
+    library (a Plex library of type "artist") for music. To read only some, list their Plex library ids:
 
     ```bash
     PlexConfiguration__Entities__Movies__LibrarySectionIds__0: "1"
     PlexConfiguration__Entities__Movies__LibrarySectionIds__1: "3"
+    PlexConfiguration__Entities__Music__LibrarySectionIds__0: "5"
     ```
 
     To find the ids, open `<your base URL>/library/sections?X-Plex-Token=<your token>` in a browser and read the
@@ -108,6 +122,32 @@ linked to Plex shows. Only movies are supported.
       year. Unclear cases are left blank. This needs TMDB to be set up (see [TMDB_SETUP.md](TMDB_SETUP.md));
       without it the step is skipped and the sync carries on. An `ExternalId` you entered is never changed.
 
+    **Music matching.** Albums are matched differently from movies:
+
+    - A music entry matches a Plex album only by its `ExternalId`, a MusicBrainz release-group id written as
+      `mbid:<id>` (for example `mbid:6f1a1b1e-...`). It is compared with the MusicBrainz id Plex holds for the album.
+      The order is the same as for movies: the album it was linked to before (by an earlier sync or by hand), then its
+      `ExternalId`. MediaSet never guesses by title or artist, so compilations and various-artists releases are never
+      mismatched. An album with no `ExternalId` and no link stays unmatched.
+    - A music lookup (adding an album by barcode or search) writes `mbid:<release-group id>` for you.
+    - An album for which Plex holds no MusicBrainz id cannot match automatically. Link it by hand.
+    - **Backfill.** Each music sync starts by searching MusicBrainz for entries whose `ExternalId` is empty. The
+      barcode is tried first; if MusicBrainz finds nothing for it, the exact (case-insensitive) title and artist are
+      tried. An id is saved only when everything found belongs to one release group. An ambiguous barcode or title,
+      or no result, leaves the field blank. An `ExternalId` you entered is never changed. It uses the same
+      `Backfill__RequestsPerMinute` and `Backfill__BatchSize` settings and needs no key (MusicBrainz is set up as in
+      [MUSICBRAINZ_SETUP.md](MUSICBRAINZ_SETUP.md)); entries never or least recently searched go first.
+    - **One Plex album per entry.** A multi-disc release is one Plex album, with its discs added together. Plex albums
+      you do not have in MediaSet are ignored. Individual tracks are not stored; their plays, last played, size and
+      codec are rolled up onto the album.
+    - **Stored for each album:** play count (the sum of its tracks' plays), last played (or never played), tracks on
+      Plex against the track count of the entry, the most common audio codec, the average bitrate, total size, the
+      library, the date added and a link to open it in Plex. There is no watched state, no rating and no file path.
+    - **Partial albums.** An album with fewer tracks on Plex than the entry's track count still matches and shows as
+      partial ("Partial 8/12"). An entry with no track count is never partial.
+    - **Cover art.** When a matched or linked album has no cover, the Plex album cover is used. An existing cover is
+      never replaced, and a Plex image narrower than 400 pixels (or over 10 MB) is skipped.
+
 8) Run a sync and check status
 
     - A sync starts on the schedule, or when you ask for one. The API is published on port 8080 in
@@ -119,15 +159,20 @@ linked to Plex shows. Only movies are supported.
 
     # Check whether it is enabled, the last run (state and counts) and the next scheduled run
     curl http://localhost:8080/plex/movies/status
+
+    # The same for music
+    curl -X POST http://localhost:8080/plex/music/sync
+    curl http://localhost:8080/plex/music/status
     ```
 
     - A run ends as `succeeded` (with how many entries were matched and unmatched), `failed` (with a reason) or
       `interrupted` (MediaSet stopped during it).
-    - Only one sync runs at a time. Asking for another while one is running answers 409; wait for it to finish.
+    - A music run also reports how many `ExternalId`s the backfill filled in and how many it skipped.
+    - Only one sync runs at a time, across movies and music. Asking for another while one is running answers 409; wait for it to finish.
 
 9) Link and unlink by hand
 
-    The movie page has buttons for this (step 11). The same actions are available as API calls. Use them when an entry
+    The movie and album pages have buttons for this (step 11). The same actions are available as API calls. Use them when an entry
     was not matched or was matched to the wrong item. A hand-made link is never replaced by a sync. Ids shown as `<...>`
     are placeholders.
 
@@ -145,11 +190,19 @@ linked to Plex shows. Only movies are supported.
     # Remove the link and the stored Plex data
     curl -X DELETE http://localhost:8080/plex/movies/items/<movie-id>/link
 
+    # Music: search Plex albums, link an album (<music-id> is the entry's id in MediaSet), unlink it
+    curl "http://localhost:8080/plex/music/search?query=Abbey+Road"
+    curl -X PUT http://localhost:8080/plex/music/items/<music-id>/link \
+      -H "Content-Type: application/json" -d '{ "plexItemId": "<plex-album-id>" }'
+    curl -X DELETE http://localhost:8080/plex/music/items/<music-id>/link
+
     # The seasons a TV entry's title says (200 with kind "season", "range", "all" or "unreadable"; 400 for a
     # non-TV entry). It works whether or not the entry is linked and never calls Plex.
     curl http://localhost:8080/plex/movies/items/<movie-id>/scope
     ```
 
+    - Music search results are albums, each with its artist. A manual music link takes no `scope`, reads the album now
+      and also fills a missing cover. There is no per-album refresh for music; the next sync (or a relink) re-reads it.
     - For a TV series entry whose title does not say which seasons it covers, add a `scope` to the link body:
       `{ "plexItemId": "<id>", "scope": { "kind": "season", "season": 2 } }`, or `"kind": "range"` with `"from"`
       and `"to"`, or `"kind": "all"`. Seasons run from 0 (specials) to 99. Only TV series entries take a scope.
@@ -166,7 +219,11 @@ linked to Plex shows. Only movies are supported.
     | Many entries are unmatched | They have no `ExternalId` and no link. Set up TMDB for the backfill, enter an id, or link by hand |
     | An entry matched the wrong item | Link the right item by hand; a hand-made link wins |
     | Backfill leaves an id blank | No single clear TMDB match, or a movie has no release year. Enter the `ExternalId` yourself |
-    | Nothing comes from a library | The library is not in `LibrarySectionIds`, or it is not a movie or TV library |
+    | Nothing comes from a library | The library is not in `LibrarySectionIds`, or it is not a movie or TV library (for music, not a music library) |
+    | Albums are unmatched | They have no `mbid:` `ExternalId` and no link, or Plex holds no MusicBrainz id for the album. Check the album in Plex is matched, enter the `ExternalId`, or link by hand |
+    | Music backfill leaves an id blank | MusicBrainz found no single clear release group for the barcode, or for the exact title and artist. Enter the `ExternalId` yourself |
+    | A music sync never runs | `Entities__Music__Enabled` is not `true`, or the music cron expression is invalid (see the startup log; only music is switched off) |
+    | No cover came from Plex | The album already has a cover, or the Plex image is under 400 pixels wide or over 10 MB |
     | Starting a sync answers 409 | A sync is already running. Wait, then check status |
     | A run shows `interrupted` | MediaSet stopped or restarted during it. Start another sync |
     | Scheduled sync never runs | The movie sync is not enabled, the cron expression is invalid (see the startup log), or the time zone is not what you expect (set `TZ`) |
@@ -175,7 +232,8 @@ linked to Plex shows. Only movies are supported.
 
 11) What you will see in the UI
 
-    The Plex parts of the UI appear only when Plex is enabled for movies. With Plex off, nothing Plex-related is shown.
+    The Plex parts of the UI appear only when Plex is enabled for the type they belong to: movie parts need movies enabled and
+    album parts need music enabled. With Plex off, nothing Plex-related is shown.
 
     - **Plex icon** beside the title on the movie's page, and in the **On Plex** column of the movie list, for a movie linked to Plex. It looks normal when the movie is on Plex, muted (faded and
       gray) when it is no longer on Plex, carries a small amber dot when a hand-made link is broken, and a green check when
@@ -220,3 +278,29 @@ linked to Plex shows. Only movies are supported.
       with no Plex link plus those whose hand-made link is broken; selecting it opens the movie list filtered to **Not on
       Plex**. The same numbers are in the `plexStats` part of `GET /stats`, which is present only when Plex is enabled for
       movies and holds counts only, never a file path. With Plex off the section is absent.
+
+    **Music in the UI.** The same pieces exist for albums, with music-specific details.
+
+    - **Plex icon** on the album's page and in the **On Plex** column of the music list, in the same states as for
+      movies (normal, muted when no longer on Plex, an amber dot for a broken hand-made link). There is no watched check.
+      In the list, an on-Plex album that was never played shows "Never played", and a partial album shows
+      "Partial 8/12" (tracks present over expected).
+    - **Plex card** on the album page: plays (or never played), last played, tracks (marked partial when fewer than
+      expected), quality (codec and bitrate), size, the date added, and when it was last synced. It never shows a file
+      path. **Open in Plex** opens the album in Plex. The gear menu holds **Relink** and **Unlink** (no Refresh).
+      **Link to Plex** (first link, auto-linking a single match), **Relink** and **Unlink** work as for movies, with a
+      search of Plex albums showing title and artist.
+    - **Music list filter.** A filter limits the list to **On Plex** or **Not on Plex** (`?plex=onPlex`); there is no
+      unwatched or broken option for music.
+    - **Plex sync page.** `/plex` lists music beside movies, each with its own last run, next run and **Sync now**.
+      The page works when only music is enabled.
+    - **Dashboard.** The Music tab gains a **Plex** section with **On Plex**, **Not on Plex**, **Total plays** and
+      **Never played** cards and an **Albums not on Plex** link to the music list filtered to **Not on Plex**. It appears only
+      when music is enabled.
+    - **Plex statistics page.** The statistics shown on the `/plex` page (`GET /plex/statistics`) gain a **Music** section
+      when music is enabled: albums in MediaSet, on Plex, not on Plex and broken links; total plays and never played; total
+      and average size; an audio codec chart and a bitrate chart (bands from "Under 128 kbps" to "1000+ kbps", plus
+      "unknown") over the albums on Plex; track completeness (tracks present of tracks expected, albums complete and
+      partial); and the top 10 **Most played**, **Recently played** and **Recently added** albums. The response has a
+      `music` section only when music is enabled; it answers 400 only when no entity type is enabled, so music alone is
+      enough.

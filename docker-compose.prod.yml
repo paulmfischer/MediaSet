@@ -82,10 +82,13 @@ services:
       # PlexConfiguration__Timeout: "30"
       # PlexConfiguration__DetailConcurrency: "4"  # most per-item detail requests in flight at once during a sync (minimum 1)
       # PlexConfiguration__AcceptInvalidCertificate: "false"
-      # PlexConfiguration__Backfill__RequestsPerMinute: "30"  # TMDB ExternalId backfill at the start of each sync (needs TmdbConfiguration)
+      # PlexConfiguration__Backfill__RequestsPerMinute: "30"  # ExternalId backfill at the start of each sync (TMDB for movies, needs TmdbConfiguration; MusicBrainz for music)
       # PlexConfiguration__Backfill__BatchSize: "50"
       # PlexConfiguration__Entities__Movies__Enabled: "true"
       # PlexConfiguration__Entities__Movies__Schedule: "0 3 * * 0"  # cron, server local time (set TZ); default Sunday 03:00
+      # PlexConfiguration__Entities__Music__Enabled: "true"
+      # PlexConfiguration__Entities__Music__Schedule: "0 4 * * 0"  # default Sunday 04:00
+      # PlexConfiguration__Entities__Music__LibrarySectionIds__0: "5"  # optional; default is every music library
 
       # UpcItemDb configuration (for barcode lookup)
       # Free tier: 100 requests/day, 6 requests/minute burst
