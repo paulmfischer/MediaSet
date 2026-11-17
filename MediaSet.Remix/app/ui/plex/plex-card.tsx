@@ -15,11 +15,10 @@ import {
   relativeTime,
 } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
-import { AlertTriangle, ExternalLink, Settings } from '../icons.ts';
+import { AlertTriangle, ExternalLink } from '../icons.ts';
 import { PlexSeasonList } from './plex-tv-section.tsx';
-import { PlexMenuBehavior } from './public/plex-menu-behavior.tsx';
+import { PlexMenu } from './plex-menu.tsx';
 import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
-import { PlexUnlinkDialog } from './public/plex-unlink-dialog.tsx';
 
 interface PlexCardProps {
   /** The movie's stored Plex data; undefined for an unlinked movie. */
@@ -77,43 +76,6 @@ function tvFacts(plex: PlexItem): Array<[string, string]> {
     ['Date added', formatPlexDate(plex.dateAdded)],
   ];
   return rows.filter(([, value]) => value !== '');
-}
-
-interface PlexMenuProps {
-  refreshHref: string;
-  linkHref: string;
-  unlinkHref: string;
-  detailHref: string;
-  title: string;
-}
-
-// The gear menu beside the heading: Refresh, Relink and Unlink. A native <details>, so it opens and closes without
-// JavaScript; the three actions keep their own no-JavaScript targets and dialogs.
-function PlexMenu(handle: Handle<PlexMenuProps>) {
-  return () => {
-    const { refreshHref, linkHref, unlinkHref, detailHref, title } = handle.props;
-    return (
-      <details class="relative" data-testid="plex-menu">
-        <summary
-          class="flex cursor-pointer list-none items-center rounded-md p-1 hover:bg-zinc-300 dark:hover:bg-zinc-700 [&::-webkit-details-marker]:hidden"
-          aria-label="Plex actions"
-          title="Plex actions"
-        >
-          <Icon icon={Settings} size={18} />
-        </summary>
-        <div class="absolute left-0 top-full z-20 mt-1 flex w-36 flex-col [&>form>button]:w-full gap-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 p-2 shadow-lg">
-          <form method="post" action={refreshHref}>
-            <button type="submit" class="secondary">
-              Refresh
-            </button>
-          </form>
-          <PlexLinkDialog href={linkHref} detailHref={detailHref} label="Relink" />
-          <PlexUnlinkDialog title={title} href={unlinkHref} />
-        </div>
-        <PlexMenuBehavior />
-      </details>
-    );
-  };
 }
 
 export function PlexCard(handle: Handle<PlexCardProps>) {

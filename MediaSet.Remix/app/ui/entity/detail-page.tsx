@@ -137,7 +137,16 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   </>
                 ) : null}
               </div>
-              {plexEnabled && isMusic ? <PlexMusicCard plex={musicPlex} now={now} /> : null}
+              {plexEnabled && isMusic ? (
+                <PlexMusicCard
+                  plex={musicPlex}
+                  title={title || config.singular}
+                  linkHref={`${basePath}/${itemId}/plex/link`}
+                  unlinkHref={`${basePath}/${itemId}/plex/unlink`}
+                  detailHref={`${basePath}/${itemId}`}
+                  now={now}
+                />
+              ) : null}
               {plexEnabled && !isMusic ? (
                 <PlexCard
                   plex={plex}

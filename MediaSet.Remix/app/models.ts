@@ -207,8 +207,10 @@ export type PlexSearchResult = {
   plexItemId: string;
   year?: number | null;
   library: string;
-  /** `movie` or `show`. */
+  /** `movie` or `show` for video, `album` for music. */
   type: string;
+  /** The album's artist; present for music results only. */
+  artist?: string | null;
 };
 
 export type PlexSeason = {
@@ -265,8 +267,8 @@ export type PlexMusicItem = PlexMusicSummary & {
   lastSyncedAt: string;
 };
 
-/** The music list's `plex` filter values: albums have no watched state, so only on Plex or not. */
-export const PLEX_MUSIC_FILTERS = ['onPlex', 'notOnPlex'] as const;
+/** The music list's `plex` filter values: albums have no watched state; a link breaks only when made by hand. */
+export const PLEX_MUSIC_FILTERS = ['onPlex', 'notOnPlex', 'broken'] as const;
 
 /** The movie list's `plex` filter values. */
 export const PLEX_FILTERS = ['onPlex', 'notOnPlex', 'unwatched', 'broken'] as const;

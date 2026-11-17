@@ -1,5 +1,8 @@
 import { PlexActionError, type PlexFailure } from '../../api/plex-data.ts';
 
+/** What the failed action was for; names it in the messages. */
+export type PlexSubject = 'movie' | 'album';
+
 /** The Plex actions that can fail with the shared messages. */
 export type PlexAction = 'refresh' | 'link' | 'unlink' | 'search' | 'sync';
 
@@ -34,7 +37,7 @@ const OTHER_HEADING: Record<PlexAction, string> = {
 };
 
 /** The heading, message and status of the entity error page for a failed Plex action. */
-export function plexFailurePage(error: unknown, action: PlexAction): PlexFailurePage {
+export function plexFailurePage(error: unknown, action: PlexAction, subject: PlexSubject = 'movie'): PlexFailurePage {
   const failure: PlexFailure = error instanceof PlexActionError ? error.failure : 'other';
   switch (failure) {
     case 'unreachable':
@@ -60,14 +63,16 @@ export function plexFailurePage(error: unknown, action: PlexAction): PlexFailure
       };
     case 'movieMissing':
       return { status: 404, heading: 'Movie not found', message: "We couldn't find that movie." };
+    case 'musicMissing':
+      return { status: 404, heading: 'Music not found', message: "We couldn't find that album." };
     case 'notLinked':
       return {
         status: action === 'unlink' ? 404 : 400,
         heading: 'Not linked to Plex',
         message:
           action === 'unlink'
-            ? 'This movie is not linked to Plex, so there is nothing to unlink.'
-            : 'This movie is not linked to a Plex item, so there is nothing to refresh.',
+            ? `This ${subject} is not linked to Plex, so there is nothing to unlink.`
+            : `This ${subject} is not linked to a Plex item, so there is nothing to refresh.`,
       };
     default:
       return {

@@ -22,7 +22,17 @@ export async function isPlexEnabledForMovies(): Promise<boolean> {
   return (await getPlexEnabledTypes()).movies;
 }
 
-export type PlexFailure = 'unreachable' | 'syncInProgress' | 'itemMissing' | 'movieMissing' | 'notLinked' | 'other';
+export type PlexFailure =
+  | 'unreachable'
+  | 'syncInProgress'
+  | 'itemMissing'
+  | 'movieMissing'
+  | 'musicMissing'
+  | 'notLinked'
+  | 'other';
+
+/** The entity types with Plex routes (`/plex/movies/...`, `/plex/music/...`). */
+export type PlexEntityKind = 'movies' | 'music';
 
 /** A Plex action the API refused or could not complete; `failure` says which of the known causes it was. */
 export class PlexActionError extends Error {
@@ -64,20 +74,34 @@ async function failFrom(
   if (response.status === 400) throw new PlexActionError(badRequest, 400);
   if (response.status === 404 && title === 'Plex item not found') throw new PlexActionError('itemMissing', 404);
   if (response.status === 404 && title === 'Movie not found') throw new PlexActionError('movieMissing', 404);
+  if (response.status === 404 && title === 'Music not found') throw new PlexActionError('musicMissing', 404);
   if (response.status === 404 && title === 'Not linked to Plex') throw new PlexActionError('notLinked', 404);
   throw new PlexActionError('other', response.status);
 }
 
-async function plexCall(
-  operation: string,
-  id: string | undefined,
-  path: string,
-  init?: RequestInit,
-  badRequest: PlexFailure = 'other'
-): Promise<Response> {
+interface PlexCallOptions {
+  /** The call's name and the entry id, for the log. */
+  operation: string;
+  id?: string;
+  path: string;
+  init?: RequestInit;
+  /** What a 400 means for the call; defaults to `other`. */
+  badRequest?: PlexFailure;
+  /** Which entity type's routes to call; defaults to movies. */
+  kind?: PlexEntityKind;
+}
+
+async function plexCall({
+  operation,
+  id,
+  path,
+  init,
+  badRequest = 'other',
+  kind = 'movies',
+}: PlexCallOptions): Promise<Response> {
   let response: Response;
   try {
-    response = await apiFetch(`${baseUrl}/plex/movies/${path}`, init);
+    response = await apiFetch(`${baseUrl}/plex/${kind}/${path}`, init);
   } catch (error) {
     serverLogger.error('Could not reach the API for a Plex request', error, { operation, id });
     throw new PlexActionError('other', 0);
@@ -86,20 +110,30 @@ async function plexCall(
   return response;
 }
 
-const itemPath = (movieId: string) => `items/${encodeURIComponent(movieId)}`;
+const itemPath = (entryId: string) => `items/${encodeURIComponent(entryId)}`;
 
 /**
  * Re-reads one linked movie from Plex (POST; only ever called from a server action, never on page load).
  * Throws a `PlexActionError` naming the cause when the API answers with an error. The response body, which
  * could carry a file path for other calls, is not used.
  */
-export async function refreshPlexItem(movieId: string): Promise<void> {
-  await plexCall('refreshPlexItem', movieId, `${itemPath(movieId)}/refresh`, { method: 'POST' }, 'notLinked');
+export async function refreshPlexItem(entryId: string): Promise<void> {
+  await plexCall({
+    operation: 'refreshPlexItem',
+    id: entryId,
+    path: `${itemPath(entryId)}/refresh`,
+    init: { method: 'POST' },
+    badRequest: 'notLinked',
+  });
 }
 
 /** Searches Plex by title (GET). Throws a `PlexActionError` when Plex cannot be reached. */
-export async function searchPlex(query: string): Promise<PlexSearchResult[]> {
-  const response = await plexCall('searchPlex', undefined, `search?query=${encodeURIComponent(query)}`);
+export async function searchPlex(query: string, kind: PlexEntityKind = 'movies'): Promise<PlexSearchResult[]> {
+  const response = await plexCall({
+    operation: 'searchPlex',
+    path: `search?query=${encodeURIComponent(query)}`,
+    kind,
+  });
   const results = (await response.json()) as PlexSearchResult[];
   return Array.isArray(results) ? results : [];
 }
@@ -108,8 +142,12 @@ export async function searchPlex(query: string): Promise<PlexSearchResult[]> {
  * The seasons a TV entry's title says, to prefill the scope step (GET; reads only the entry, never Plex).
  * Kind `unreadable` means the title does not say.
  */
-export async function getPlexScope(movieId: string): Promise<PlexScope> {
-  const response = await plexCall('getPlexScope', movieId, `${itemPath(movieId)}/scope`);
+export async function getPlexScope(entryId: string): Promise<PlexScope> {
+  const response = await plexCall({
+    operation: 'getPlexScope',
+    id: entryId,
+    path: `${itemPath(entryId)}/scope`,
+  });
   return (await response.json()) as PlexScope;
 }
 
@@ -126,17 +164,33 @@ export type PlexLinkRequest = { plexItemId: string; scope?: PlexLinkScope };
  * Links a movie or TV entry to a Plex item by hand (PUT). The response, which carries a file path, is not used.
  * Throws a `PlexActionError` naming the cause when the API answers with an error.
  */
-export async function linkPlexItem(movieId: string, request: PlexLinkRequest): Promise<void> {
-  await plexCall('linkPlexItem', movieId, `${itemPath(movieId)}/link`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+export async function linkPlexItem(
+  entryId: string,
+  request: PlexLinkRequest,
+  kind: PlexEntityKind = 'movies'
+): Promise<void> {
+  await plexCall({
+    operation: 'linkPlexItem',
+    id: entryId,
+    path: `${itemPath(entryId)}/link`,
+    init: {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
+    kind,
   });
 }
 
-/** Removes a movie's Plex link and its stored Plex data (DELETE). */
-export async function unlinkPlexItem(movieId: string): Promise<void> {
-  await plexCall('unlinkPlexItem', movieId, `${itemPath(movieId)}/link`, { method: 'DELETE' });
+/** Removes an entry's Plex link and its stored Plex data (DELETE). */
+export async function unlinkPlexItem(entryId: string, kind: PlexEntityKind = 'movies'): Promise<void> {
+  await plexCall({
+    operation: 'unlinkPlexItem',
+    id: entryId,
+    path: `${itemPath(entryId)}/link`,
+    init: { method: 'DELETE' },
+    kind,
+  });
 }
 
 /**
