@@ -25,7 +25,7 @@ export const toolsNav: NavItem[] = [
   { href: routes.imageStats.index.href(), label: 'Image Statistics', icon: HardDrive },
 ];
 
-/** The Plex sync page's link; the gear menu shows it only when Plex is enabled for movies. */
+/** The Plex sync page's link; the gear menu shows it only when Plex is enabled for movies or music. */
 export const plexNavItem: NavItem = { href: routes.plex.index.href(), label: 'Plex', icon: RefreshCw };
 
 /** A link is active on its own path and below it; Home only matches the root. */

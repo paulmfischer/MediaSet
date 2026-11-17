@@ -702,6 +702,7 @@ public sealed class PlexSyncService(
         var matched = 0;
         var syncedAt = DateTime.UtcNow;
         var linkedBy = new Dictionary<string, Music>(StringComparer.Ordinal);
+        var duplicates = new Dictionary<string, PlexDuplicateLink>(StringComparer.Ordinal);
         foreach (var plan in plans)
         {
             token.ThrowIfCancellationRequested();
@@ -736,7 +737,20 @@ public sealed class PlexSyncService(
 
                     if (!linkedBy.TryAdd(item.RatingKey, music))
                     {
-                        logger.LogWarning("Plex album {RatingKey} is linked by music {FirstMusicId} and {MusicId}", item.RatingKey, linkedBy[item.RatingKey].Id, music.Id);
+                        // Duplicates are allowed; the run records them for the sync page as well as the log
+                        var first = linkedBy[item.RatingKey];
+                        logger.LogWarning("Plex album {RatingKey} is linked by music {FirstMusicId} and {MusicId}", item.RatingKey, first.Id, music.Id);
+                        if (!duplicates.TryGetValue(item.RatingKey, out var duplicate))
+                        {
+                            duplicate = new PlexDuplicateLink
+                            {
+                                PlexItemId = item.RatingKey,
+                                PlexTitle = item.Title,
+                                Albums = [new PlexLinkedAlbum { Id = first.Id!, Title = first.Title }]
+                            };
+                            duplicates[item.RatingKey] = duplicate;
+                        }
+                        duplicate.Albums.Add(new PlexLinkedAlbum { Id = music.Id!, Title = music.Title });
                     }
 
                     var source = plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto;
@@ -798,7 +812,7 @@ public sealed class PlexSyncService(
             logger.LogWarning("Plex sync could not purge Plex data of deleted music ({ExceptionType})", ex.GetType().Name);
         }
 
-        return new ScanResult(musics.Count, matched, musics.Count - matched - errored, errored, backfill.Filled, backfill.Skipped, []);
+        return new ScanResult(musics.Count, matched, musics.Count - matched - errored, errored, backfill.Filled, backfill.Skipped, [.. duplicates.Values]);
     }
 
     /// <summary>

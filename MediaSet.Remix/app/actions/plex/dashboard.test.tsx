@@ -25,12 +25,19 @@ const plexStats = {
   needsLinking: 3,
 };
 
-function stubApi(t: { after: (fn: () => void) => void }, stats: unknown, integrations: unknown = enabled) {
+function stubApi(
+  t: { after: (fn: () => void) => void },
+  stats: unknown,
+  integrations: unknown = enabled,
+  plexStatistics: unknown = null
+) {
   const original = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.pathname === '/stats') return Response.json(stats);
     if (url.pathname === '/config/integrations') return Response.json(integrations);
+    if (url.pathname === '/plex/statistics')
+      return Response.json(plexStatistics, { status: plexStatistics ? 200 : 500 });
     return new Response('not found', { status: 404 });
   }) as typeof fetch;
   t.after(() => {
@@ -113,5 +120,78 @@ describe('dashboard Plex section', () => {
     assert.doesNotMatch(movies, /Plex Resolution/);
     assert.match(movies, /<a[^>]*data-plex-needs-linking[^>]*sm:col-span-2/);
     assert.match(movies, /Needs linking/);
+  });
+});
+
+const musicStats = { ...baseStats, musicStats: { total: 5, totalTracks: 50 } };
+const musicEnabled = [{ key: 'plex', displayName: 'Plex', enabled: true, entityTypes: ['music'] }];
+const bothEnabled = [{ key: 'plex', displayName: 'Plex', enabled: true, entityTypes: ['movies', 'music'] }];
+const plexMusic = {
+  music: {
+    coverage: { total: 5, onPlex: 3, notOnPlex: 2, broken: 1 },
+    albums: 3,
+    totalPlays: 42,
+    neverPlayed: 1,
+  },
+};
+
+const musicsPanel = (html: string) =>
+  html.match(/<div id="dashboard-panel-musics"[\s\S]*?(?=<div id="dashboard-panel-|$)/)?.[0] ?? '';
+
+describe('dashboard Plex music section', () => {
+  it('should show the Plex stat cards and a link to the not-on-Plex list on the Music tab', async (t) => {
+    stubApi(t, musicStats, musicEnabled, plexMusic);
+
+    const music = musicsPanel(await (await get('/')).text());
+
+    assert.match(music, /<h3[^>]*>Plex<\/h3>/);
+    for (const [title, value] of [
+      ['On Plex', '3'],
+      ['Not on Plex', '2'],
+      ['Total plays', '42'],
+      ['Never played', '1'],
+    ]) {
+      assert.match(music, new RegExp(`${title}</p><p class="[^"]*">${value}</p>`));
+    }
+    assert.match(music, /<a[^>]*href="\/musics\?plex=notOnPlex"/);
+  });
+
+  it('should show the movie and music Plex sections together when both are enabled', async (t) => {
+    stubApi(t, { ...musicStats, plexStats }, bothEnabled, plexMusic);
+
+    const html = await (await get('/')).text();
+
+    assert.match(moviesPanel(html), /data-plex-needs-linking/);
+    assert.match(musicsPanel(html), /dashboard-plex-music-heading/);
+  });
+
+  it('should leave the movie panel without a Plex section when only music is enabled', async (t) => {
+    stubApi(t, { ...musicStats, plexStats }, musicEnabled, plexMusic);
+
+    const html = await (await get('/')).text();
+
+    assert.doesNotMatch(moviesPanel(html), /Plex/);
+    assert.match(musicsPanel(html), /dashboard-plex-music-heading/);
+  });
+
+  it('should render no music Plex section when Plex is enabled for movies only', async (t) => {
+    stubApi(t, { ...musicStats, plexStats }, enabled, plexMusic);
+
+    assert.doesNotMatch(musicsPanel(await (await get('/')).text()), /dashboard-plex-music-heading/);
+  });
+
+  it('should render no music Plex section when Plex is not enabled', async (t) => {
+    stubApi(t, musicStats, [], plexMusic);
+
+    assert.doesNotMatch(musicsPanel(await (await get('/')).text()), /dashboard-plex-music-heading/);
+  });
+
+  it('should still render the dashboard without the music section when the Plex statistics fail', async (t) => {
+    stubApi(t, musicStats, musicEnabled, null);
+
+    const response = await get('/');
+
+    assert.equal(response.status, 200);
+    assert.doesNotMatch(musicsPanel(await response.text()), /dashboard-plex-music-heading/);
   });
 });

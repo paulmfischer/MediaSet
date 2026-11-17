@@ -13,6 +13,7 @@ export { default as ChevronLeft } from 'lucide/dist/esm/icons/chevron-left.mjs';
 export { default as ChevronRight } from 'lucide/dist/esm/icons/chevron-right.mjs';
 export { default as ChevronUp } from 'lucide/dist/esm/icons/chevron-up.mjs';
 export { default as Clapperboard } from 'lucide/dist/esm/icons/clapperboard.mjs';
+export { default as Play } from 'lucide/dist/esm/icons/play.mjs';
 export { default as Disc } from 'lucide/dist/esm/icons/disc.mjs';
 export { default as ExternalLink } from 'lucide/dist/esm/icons/external-link.mjs';
 export { default as Files } from 'lucide/dist/esm/icons/files.mjs';

@@ -1,12 +1,13 @@
 import { createController } from 'remix/router';
 
 import { getIntegrations } from '../api/integrations-data.ts';
+import { getPlexStatistics } from '../api/plex-data.ts';
 import { getStats } from '../api/stats-data.ts';
 import { assets } from '../assets.ts';
 import { getClientConfig } from '../config.server.ts';
 import { routes } from '../routes.ts';
 import type { DashboardStats } from '../ui/dashboard/stats.ts';
-import { isPlexEnabledForRequest } from '../utils/plex-nav.server.ts';
+import { isPlexEnabledForRequest, isPlexMusicEnabledForRequest } from '../utils/plex-nav.server.ts';
 import { createServerLogger } from '../utils/serverLogger.ts';
 import { HomePage } from './home-page.tsx';
 import { errorDetails } from './render-error.tsx';
@@ -40,6 +41,10 @@ export default createController(routes, {
       // The Plex section renders only when the request's Plex gate is on; the API already omits the statistics when
       // Plex is off, and this keeps the page invisible to Plex if the two ever disagree.
       if (stats && !(await isPlexEnabledForRequest())) stats = { ...stats, plexStats: null };
+      // Music has no Plex numbers in /stats: when Plex is enabled for music they come from the Plex statistics.
+      if (stats && (await isPlexMusicEnabledForRequest())) {
+        stats = { ...stats, plexMusicStats: (await getPlexStatistics())?.music ?? null };
+      }
       return context.render(
         <HomePage
           path={context.url.pathname}

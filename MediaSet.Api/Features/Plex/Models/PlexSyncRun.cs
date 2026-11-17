@@ -62,20 +62,30 @@ public class PlexSyncRun
     public string? Message { get; set; }
 
     /// <summary>
-    /// Plex movies the run found linked by more than one MediaSet movie (allowed, but usually a duplicate entry or a
-    /// wrong ExternalId). Null until the run finishes successfully; empty when there were none.
+    /// Plex movies (or albums, for a music run) the run found linked by more than one MediaSet entry (allowed, but usually
+    /// a duplicate entry or a wrong ExternalId). Null until the run finishes successfully; empty when there were none.
     /// </summary>
     public List<PlexDuplicateLink>? DuplicateLinks { get; set; }
 
     public PlexSyncRun Clone() => (PlexSyncRun)MemberwiseClone();
 }
 
-/// <summary>One Plex item linked by several movies in a run, with those movies in the order the run met them.</summary>
+/// <summary>
+/// One Plex item linked by several entries in a run, with those entries in the order the run met them: movies for a
+/// movie run, albums for a music run (the other list stays empty).
+/// </summary>
 public class PlexDuplicateLink
 {
     public string PlexItemId { get; set; } = string.Empty;
     public string PlexTitle { get; set; } = string.Empty;
     public List<PlexLinkedMovie> Movies { get; set; } = [];
+    public List<PlexLinkedAlbum> Albums { get; set; } = [];
+}
+
+public class PlexLinkedAlbum
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 }
 
 public class PlexLinkedMovie
@@ -86,7 +96,13 @@ public class PlexLinkedMovie
 
 public record PlexLinkedMovieDto(string Id, string Title);
 
-public record PlexDuplicateLinkDto(string PlexItemId, string PlexTitle, IReadOnlyList<PlexLinkedMovieDto> Movies);
+public record PlexLinkedAlbumDto(string Id, string Title);
+
+public record PlexDuplicateLinkDto(
+    string PlexItemId,
+    string PlexTitle,
+    IReadOnlyList<PlexLinkedMovieDto> Movies,
+    IReadOnlyList<PlexLinkedAlbumDto> Albums);
 
 public record PlexSyncRunDto(
     string? Id,
@@ -119,5 +135,8 @@ public record PlexSyncRunDto(
         run.BackfillSkipped,
         run.Message,
         run.DuplicateLinks?.Select(d => new PlexDuplicateLinkDto(
-            d.PlexItemId, d.PlexTitle, d.Movies.Select(m => new PlexLinkedMovieDto(m.Id, m.Title)).ToList())).ToList());
+            d.PlexItemId,
+            d.PlexTitle,
+            d.Movies.Select(m => new PlexLinkedMovieDto(m.Id, m.Title)).ToList(),
+            d.Albums.Select(a => new PlexLinkedAlbumDto(a.Id, a.Title)).ToList())).ToList());
 }
