@@ -4,8 +4,9 @@ import type { Middleware } from 'remix/router';
 import { getPlexEnabledTypes, isPlexEnabledForMovies } from '../api/plex-data.ts';
 import { Entity } from '../models.ts';
 
-// Whether the current request has Plex enabled for movies (and for music, and for either). Decided once per page request by the middleware below and
-// reused by the header (which renders synchronously and cannot call the API) and by the Plex handlers.
+// Whether the current request has Plex enabled for movies, for music, and for either. Decided once per page request
+// by the middleware below and reused by the header (which renders synchronously and cannot call the API) and by the
+// Plex handlers.
 const storage = new AsyncLocalStorage<{ plexEnabled: boolean; plexMusicEnabled: boolean; plexPageEnabled: boolean }>();
 
 /**

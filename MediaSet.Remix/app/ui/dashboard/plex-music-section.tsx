@@ -3,7 +3,7 @@ import type { Handle } from 'remix/component';
 import { listHref } from '../../actions/entity/list-params.ts';
 import type { PlexMusicStatistics } from '../../models.ts';
 import { routes } from '../../routes.ts';
-import { Album, Hash, Link2Off, Tv } from '../icons.ts';
+import { Hash, Link2Off, Play, Tv } from '../icons.ts';
 import { STAT_CARD_COLOR } from './config.ts';
 import { StatCard } from './stat-card.tsx';
 
@@ -30,7 +30,7 @@ export function PlexMusicSection(handle: Handle<PlexMusicSectionProps>) {
           <StatCard title="On Plex" value={num(onPlex)} icon={Tv} colorClass={STAT_CARD_COLOR} />
           <StatCard title="Not on Plex" value={num(notOnPlex)} icon={Link2Off} colorClass={STAT_CARD_COLOR} />
           <StatCard title="Total plays" value={num(plex.totalPlays)} icon={Hash} colorClass={STAT_CARD_COLOR} />
-          <StatCard title="Never played" value={num(plex.neverPlayed)} icon={Album} colorClass={STAT_CARD_COLOR} />
+          <StatCard title="Never played" value={num(plex.neverPlayed)} icon={Play} colorClass={STAT_CARD_COLOR} />
         </div>
         <a href={notOnPlexHref} data-plex-music-not-on-plex="" class="text-sm">
           Albums not on Plex
