@@ -188,20 +188,10 @@ internal static class EntityApi
 
         group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (
             IEntityWriteService<TEntity> writeService,
-            HttpContext httpContext,
             string id,
             CancellationToken cancellationToken) =>
         {
             await writeService.DeleteAsync(id, cancellationToken);
-
-            // The entity is deleted first; its Plex data goes after, and a failure there never fails the delete
-            if (typeof(TEntity) == typeof(Movie) || typeof(TEntity) == typeof(Music))
-            {
-                await (typeof(TEntity) == typeof(Music)
-                    ? DeletePlexDataAsync(httpContext.RequestServices, id, "music", (cleanup, ct) => cleanup.DeleteMusicDataAsync(id, ct), logger, cancellationToken)
-                    : DeletePlexDataAsync(httpContext.RequestServices, id, "movie", (cleanup, ct) => cleanup.DeleteMovieDataAsync(id, ct), logger, cancellationToken));
-            }
-
             return TypedResults.Ok();
         });
 
@@ -282,25 +272,6 @@ internal static class EntityApi
         title: "Invalid ExternalId",
         detail: ExternalIdFormat.ErrorMessage,
         statusCode: StatusCodes.Status400BadRequest);
-
-    private static async Task DeletePlexDataAsync(IServiceProvider services, string id, string kind, Func<IPlexDataCleanup, CancellationToken, Task> delete, ILogger logger, CancellationToken cancellationToken)
-    {
-        // Registered only when the Plex integration is configured and valid
-        var cleanup = services.GetService<IPlexDataCleanup>();
-        if (cleanup == null)
-        {
-            return;
-        }
-
-        try
-        {
-            await delete(cleanup, cancellationToken);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            logger.LogWarning(ex, "Failed to delete Plex data for {entityType} {entityId}; the next Plex sync purges it", kind, id);
-        }
-    }
 
     // Paged search: adds the small Plex summary (no file paths) to each linked movie or album of the page, joined in one query.
     private static async Task AttachPlexSummariesAsync<TEntity>(IEnumerable<TEntity> entities, IPlexLookup? plexLookup, CancellationToken cancellationToken)

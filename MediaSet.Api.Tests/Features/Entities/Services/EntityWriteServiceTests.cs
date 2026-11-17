@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaSet.Api.Features.Entities.Services;
 using MediaSet.Api.Infrastructure.DataAccess;
+using MediaSet.Api.Infrastructure.Plex;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Shared.Models;
 using Microsoft.AspNetCore.Http;
@@ -359,5 +360,84 @@ public class EntityWriteServiceTests
 
         Assert.That(_saves.Single(), Is.EqualTo(((string?)Url, (string?)null)));
         _images.Verify(i => i.DeleteImageAsync(StoredImage("old").FilePath), Times.Once);
+    }
+
+    private static (EntityWriteService<T> Service, Mock<IEntityService<T>> Entities) PlexService<T>(IPlexDataCleanup? cleanup, IImageService images) where T : IEntity
+    {
+        var entities = new Mock<IEntityService<T>>();
+        entities.Setup(e => e.RemoveAsync(Id, It.IsAny<CancellationToken>())).ReturnsAsync(Mock.Of<DeleteResult>());
+        return (new EntityWriteService<T>(
+            entities.Object,
+            new EntityImageCoordinator(images, NullLogger<EntityImageCoordinator>.Instance),
+            NullLogger<EntityWriteService<T>>.Instance,
+            cleanup), entities);
+    }
+
+    [Test]
+    public async Task DeleteAsync_Movie_DeletesPlexDataAfterEntity()
+    {
+        List<string> order = [];
+        var cleanup = new Mock<IPlexDataCleanup>();
+        cleanup.Setup(c => c.DeleteMovieDataAsync(Id, It.IsAny<CancellationToken>())).Callback(() => order.Add("plex")).Returns(Task.CompletedTask);
+        var (service, entities) = PlexService<Movie>(cleanup.Object, _images.Object);
+        entities.Setup(e => e.RemoveAsync(Id, It.IsAny<CancellationToken>())).Callback(() => order.Add("remove")).ReturnsAsync(Mock.Of<DeleteResult>());
+
+        await service.DeleteAsync(Id, CancellationToken.None);
+
+        Assert.That(order, Is.EqualTo((string[])["remove", "plex"]));
+        cleanup.Verify(c => c.DeleteMusicDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task DeleteAsync_Music_DeletesMusicPlexData()
+    {
+        var cleanup = new Mock<IPlexDataCleanup>();
+        var (service, _) = PlexService<Music>(cleanup.Object, _images.Object);
+
+        await service.DeleteAsync(Id, CancellationToken.None);
+
+        cleanup.Verify(c => c.DeleteMusicDataAsync(Id, It.IsAny<CancellationToken>()), Times.Once);
+        cleanup.Verify(c => c.DeleteMovieDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Test]
+    public async Task DeleteAsync_OtherEntityType_SkipsPlexCleanup()
+    {
+        var cleanup = new Mock<IPlexDataCleanup>();
+        var (service, _) = PlexService<Game>(cleanup.Object, _images.Object);
+
+        await service.DeleteAsync(Id, CancellationToken.None);
+
+        cleanup.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task DeleteAsync_PlexNotRegistered_StillDeletes()
+    {
+        var (service, entities) = PlexService<Movie>(null, _images.Object);
+
+        await service.DeleteAsync(Id, CancellationToken.None);
+
+        entities.Verify(e => e.RemoveAsync(Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteAsync_PlexCleanupFails_DoesNotFailDelete()
+    {
+        var cleanup = new Mock<IPlexDataCleanup>();
+        cleanup.Setup(c => c.DeleteMovieDataAsync(Id, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("mongo down"));
+        var (service, _) = PlexService<Movie>(cleanup.Object, _images.Object);
+
+        Assert.That(() => service.DeleteAsync(Id, CancellationToken.None), Throws.Nothing);
+    }
+
+    [Test]
+    public void DeleteAsync_PlexCleanupCanceled_Propagates()
+    {
+        var cleanup = new Mock<IPlexDataCleanup>();
+        cleanup.Setup(c => c.DeleteMovieDataAsync(Id, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+        var (service, _) = PlexService<Movie>(cleanup.Object, _images.Object);
+
+        Assert.That(() => service.DeleteAsync(Id, CancellationToken.None), Throws.InstanceOf<OperationCanceledException>());
     }
 }
