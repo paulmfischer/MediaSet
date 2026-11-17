@@ -21,8 +21,10 @@ import entityEditMovieController from './actions/entity/edit/movie-controller.ts
 import entityEditMusicController from './actions/entity/edit/music-controller.tsx';
 import entityListsController from './actions/entity/controller.tsx';
 import entityPlexLinkController from './actions/plex/link-controller.tsx';
+import entityPlexLinkMusicController from './actions/plex/link-music-controller.tsx';
 import entityPlexRefreshController from './actions/plex/refresh-controller.tsx';
 import entityPlexUnlinkController from './actions/plex/unlink-controller.tsx';
+import entityPlexUnlinkMusicController from './actions/plex/unlink-music-controller.tsx';
 import plexController from './actions/plex/controller.tsx';
 import plexStatusController from './actions/plex/status-controller.tsx';
 import imageStatsController from './actions/image-stats/controller.tsx';
@@ -78,6 +80,8 @@ export function createAppRouter(options: SecurityHeadersOptions = {}) {
   router.map(routes.entityPlexRefresh, entityPlexRefreshController);
   router.map(routes.entityPlexLink.movies, entityPlexLinkController);
   router.map(routes.entityPlexUnlink.movies, entityPlexUnlinkController);
+  router.map(routes.entityPlexLink.musics, entityPlexLinkMusicController);
+  router.map(routes.entityPlexUnlink.musics, entityPlexUnlinkMusicController);
   router.map(routes.entityAdd.books, entityAddController);
   router.map(routes.entityEdit.books, entityEditController);
   router.map(routes.entityDelete.books, entityDeleteController);

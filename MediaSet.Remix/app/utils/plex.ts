@@ -33,9 +33,10 @@ export function parsePlexFilter(value: string | null | undefined): PlexFilter | 
 export const PLEX_MUSIC_FILTER_LABELS: Partial<Record<PlexFilter, string>> = {
   onPlex: 'On Plex',
   notOnPlex: 'Not on Plex',
+  broken: 'Broken link',
 };
 
-/** The filter a music list may use: only on Plex or not, anything else reads as no filter. */
+/** The filter a music list may use: on Plex, not on Plex or broken, anything else reads as no filter. */
 export function parsePlexMusicFilter(value: PlexFilter | null): PlexFilter | null {
   return (PLEX_MUSIC_FILTERS as readonly string[]).includes(value ?? '') ? value : null;
 }

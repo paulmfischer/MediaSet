@@ -19,6 +19,8 @@ interface PlexLinkPageProps {
   /** True when the entry already has a Plex link, so the flow is a relink. */
   relink: boolean;
   isTv: boolean;
+  /** What the entry is; defaults to a movie. An album has no scope step and shows its artist in the results. */
+  kind?: 'movie' | 'album';
   step: 'search' | 'scope';
   /** GET URL of the flow (search and the scope step). */
   searchHref: string;
@@ -83,12 +85,12 @@ function Shell(handle: Handle<{ fragment: boolean; title: string; cancelHref: st
 
 function SearchStep(handle: Handle<PlexLinkPageProps>) {
   return () => {
-    const { movieTitle, isTv, searchHref, actionHref, query, results } = handle.props;
+    const { movieTitle, isTv, kind = 'movie', searchHref, actionHref, query, results } = handle.props;
     return (
       <>
         <form method="get" action={searchHref} role="search" class="flex flex-col gap-2">
           <label for="plex-query" class="block text-sm font-medium text-gray-200">
-            Search Plex for a {isTv ? 'show' : 'movie'}
+            Search Plex for {isTv ? 'a show' : kind === 'album' ? 'an album' : 'a movie'}
           </label>
           <div class="flex gap-2">
             <input
@@ -118,6 +120,11 @@ function SearchStep(handle: Handle<PlexLinkPageProps>) {
               >
                 <span class="min-w-0 wrap-break-word">
                   <span class="font-medium">{resultLabel(result)}</span>
+                  {result.artist ? (
+                    <span class="block text-sm" data-plex-artist>
+                      {result.artist}
+                    </span>
+                  ) : null}
                   <span class="block text-sm dark:text-slate-300">{result.library}</span>
                 </span>
                 {isTv ? (

@@ -5,6 +5,8 @@ interface PlexUnlinkDialogProps {
   title: string;
   /** The unlink page URL: the no-JavaScript target of the button and the form action the dialog posts to. */
   href: string;
+  /** What is kept after the unlink: "movie" (the default) or "album". */
+  noun?: string;
 }
 
 // Unlink control for the Plex card. Without JavaScript (or before it loads) the button opens the unlink page's
@@ -35,7 +37,7 @@ export const PlexUnlinkDialog = clientEntry(
     });
 
     return () => {
-      const { title, href } = handle.props;
+      const { title, href, noun = 'movie' } = handle.props;
       return (
         <>
           <form
@@ -60,7 +62,7 @@ export const PlexUnlinkDialog = clientEntry(
               <h2 id="plex-unlink-heading" class="text-xl">
                 Unlink {title} from Plex?
               </h2>
-              <p>This deletes the Plex data stored for it. The movie is kept, and you can link it again later.</p>
+              <p>This deletes the Plex data stored for it. The {noun} is kept, and you can link it again later.</p>
               <div class="flex gap-2 justify-end">
                 <button type="button" class="secondary" mix={on('click', () => dialog?.close())}>
                   Cancel

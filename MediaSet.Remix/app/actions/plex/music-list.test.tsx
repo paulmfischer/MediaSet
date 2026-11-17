@@ -113,16 +113,15 @@ describe('music list with Plex', () => {
     assert.match(html, /Unlinked/);
   });
 
-  it('should render a filter with only the on Plex and not on Plex choices', async (t) => {
+  it('should render a filter with the on Plex, not on Plex and broken link choices', async (t) => {
     stubApi(t, { plex: enabled });
     const html = await (await get('/musics')).text();
 
     assert.match(html, /<select[^>]*name="plex"/);
-    for (const label of ['All albums', 'On Plex', 'Not on Plex']) {
+    for (const label of ['All albums', 'On Plex', 'Not on Plex', 'Broken link']) {
       assert.match(html, new RegExp(`>${label}<`));
     }
     assert.doesNotMatch(html, />Unwatched on Plex</);
-    assert.doesNotMatch(html, />Broken link</);
   });
 
   it('should pass the plex filter to the paged search and select it', async (t) => {
@@ -132,6 +131,12 @@ describe('music list with Plex', () => {
     assert.equal(calls[0].pathname, '/Musics/pagedsearch');
     assert.equal(calls[0].searchParams.get('plex'), 'notOnPlex');
     assert.match(html, /<option value="notOnPlex" selected/);
+  });
+
+  it('should pass the broken filter to the paged search', async (t) => {
+    const calls = stubApi(t, { plex: enabled });
+    await get('/musics?plex=broken');
+    assert.equal(calls[0].searchParams.get('plex'), 'broken');
   });
 
   it('should drop a filter albums do not have', async (t) => {
@@ -234,10 +239,24 @@ describe('music detail with Plex', () => {
     assert.doesNotMatch(html, /Open in Plex/);
   });
 
-  it('should render no card and no icon for an unlinked album', async (t) => {
+  it('should render only a Link to Plex button and no icon for an unlinked album', async (t) => {
     stubApi(t, { plex: enabled, item: null });
     const html = await (await get('/musics/a1')).text();
-    assert.doesNotMatch(html, /data-plex-icon|data-testid="plex-card"/);
+    assert.doesNotMatch(html, /data-plex-icon|Open in Plex/);
+    assert.match(html, /data-plex-state="unlinked"/);
+    assert.match(
+      html,
+      /<form method="post" action="\/musics\/a1\/plex\/link"><input type="hidden" name="intent" value="auto"/
+    );
+  });
+
+  it('should offer Relink and Unlink but no Refresh on a linked album', async (t) => {
+    stubApi(t, { plex: enabled });
+    const html = await (await get('/musics/a1')).text();
+    assert.match(html, /<form method="get" action="\/musics\/a1\/plex\/link">/);
+    assert.match(html, /<form method="get" action="\/musics\/a1\/plex\/unlink">/);
+    assert.match(html, /The album is kept/);
+    assert.doesNotMatch(html, /plex\/refresh|>\s*Refresh\s*</);
   });
 
   for (const [name, plex] of [

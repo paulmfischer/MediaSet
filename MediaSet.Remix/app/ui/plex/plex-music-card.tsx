@@ -13,6 +13,8 @@ import {
 } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { AlertTriangle, ExternalLink } from '../icons.ts';
+import { PlexMenu } from './plex-card.tsx';
+import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
 
 interface PlexMusicNotesProps {
   /** The album's Plex summary from the list. */
@@ -46,8 +48,16 @@ export function PlexMusicNotes(handle: Handle<PlexMusicNotesProps>) {
 }
 
 interface PlexMusicCardProps {
-  /** The album's stored Plex data; undefined for an unlinked album, which shows no card. */
+  /** The album's stored Plex data; undefined for an unlinked album, which shows only the link button. */
   plex: PlexMusicItem | undefined;
+  /** The link flow's page (Link to Plex and Relink open it, or a dialog showing the same flow). */
+  linkHref: string;
+  /** The unlink confirmation page (the Unlink button opens it, or a dialog). */
+  unlinkHref: string;
+  /** The album's detail page, where a finished link lands. */
+  detailHref: string;
+  /** The album's title, named in the unlink dialog. */
+  title: string;
   /** The reference time for "Synced ...", so tests are stable; defaults to now. */
   now?: Date;
 }
@@ -71,12 +81,20 @@ function facts(plex: PlexMusicItem): Array<[string, string]> {
   return rows.filter(([, value]) => value !== '');
 }
 
-// The Plex card of a linked album, read-only: plays or never played, last played, tracks with a partial marker, quality,
-// size and a link to open it in Plex. An unlinked album shows nothing.
+// The Plex card of a linked album: plays or never played, last played, tracks with a partial marker, quality, size and a
+// link to open it in Plex, with a menu to relink or unlink (there is no per-album refresh). An unlinked album shows only
+// the "Link to Plex" button.
 export function PlexMusicCard(handle: Handle<PlexMusicCardProps>) {
   return () => {
-    const { plex, now } = handle.props;
-    if (!plex) return null;
+    const { plex, linkHref, unlinkHref, detailHref, title, now } = handle.props;
+    // Unlinked: only the button, with no "Not on Plex" text. The first link of an album auto-links a lone match.
+    if (!plex) {
+      return (
+        <section class="mt-10" aria-label="Plex" data-testid="plex-card" data-plex-state="unlinked">
+          <PlexLinkDialog href={linkHref} detailHref={detailHref} label="Link to Plex" auto />
+        </section>
+      );
+    }
 
     const state = plexLinkState(plex);
     const href = safeHref(plex.deepLink);
@@ -88,7 +106,10 @@ export function PlexMusicCard(handle: Handle<PlexMusicCardProps>) {
         data-testid="plex-card"
         data-plex-state={state}
       >
-        <h2 class="text-xl font-semibold">Plex</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-xl font-semibold">Plex</h2>
+          <PlexMenu linkHref={linkHref} unlinkHref={unlinkHref} detailHref={detailHref} title={title} noun="album" />
+        </div>
         {state === 'offPlex' ? (
           <p class="text-sm text-amber-400" role="status" data-testid="plex-notice">
             No longer on Plex. This is the last data MediaSet synced.

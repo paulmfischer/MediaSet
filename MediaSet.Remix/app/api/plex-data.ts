@@ -22,7 +22,17 @@ export async function isPlexEnabledForMovies(): Promise<boolean> {
   return (await getPlexEnabledTypes()).movies;
 }
 
-export type PlexFailure = 'unreachable' | 'syncInProgress' | 'itemMissing' | 'movieMissing' | 'notLinked' | 'other';
+export type PlexFailure =
+  | 'unreachable'
+  | 'syncInProgress'
+  | 'itemMissing'
+  | 'movieMissing'
+  | 'musicMissing'
+  | 'notLinked'
+  | 'other';
+
+/** The entity types with Plex routes (`/plex/movies/...`, `/plex/music/...`). */
+export type PlexEntityKind = 'movies' | 'music';
 
 /** A Plex action the API refused or could not complete; `failure` says which of the known causes it was. */
 export class PlexActionError extends Error {
@@ -64,6 +74,7 @@ async function failFrom(
   if (response.status === 400) throw new PlexActionError(badRequest, 400);
   if (response.status === 404 && title === 'Plex item not found') throw new PlexActionError('itemMissing', 404);
   if (response.status === 404 && title === 'Movie not found') throw new PlexActionError('movieMissing', 404);
+  if (response.status === 404 && title === 'Music not found') throw new PlexActionError('musicMissing', 404);
   if (response.status === 404 && title === 'Not linked to Plex') throw new PlexActionError('notLinked', 404);
   throw new PlexActionError('other', response.status);
 }
@@ -73,11 +84,12 @@ async function plexCall(
   id: string | undefined,
   path: string,
   init?: RequestInit,
-  badRequest: PlexFailure = 'other'
+  badRequest: PlexFailure = 'other',
+  kind: PlexEntityKind = 'movies'
 ): Promise<Response> {
   let response: Response;
   try {
-    response = await apiFetch(`${baseUrl}/plex/movies/${path}`, init);
+    response = await apiFetch(`${baseUrl}/plex/${kind}/${path}`, init);
   } catch (error) {
     serverLogger.error('Could not reach the API for a Plex request', error, { operation, id });
     throw new PlexActionError('other', 0);
@@ -98,8 +110,15 @@ export async function refreshPlexItem(movieId: string): Promise<void> {
 }
 
 /** Searches Plex by title (GET). Throws a `PlexActionError` when Plex cannot be reached. */
-export async function searchPlex(query: string): Promise<PlexSearchResult[]> {
-  const response = await plexCall('searchPlex', undefined, `search?query=${encodeURIComponent(query)}`);
+export async function searchPlex(query: string, kind: PlexEntityKind = 'movies'): Promise<PlexSearchResult[]> {
+  const response = await plexCall(
+    'searchPlex',
+    undefined,
+    `search?query=${encodeURIComponent(query)}`,
+    undefined,
+    'other',
+    kind
+  );
   const results = (await response.json()) as PlexSearchResult[];
   return Array.isArray(results) ? results : [];
 }
@@ -126,17 +145,28 @@ export type PlexLinkRequest = { plexItemId: string; scope?: PlexLinkScope };
  * Links a movie or TV entry to a Plex item by hand (PUT). The response, which carries a file path, is not used.
  * Throws a `PlexActionError` naming the cause when the API answers with an error.
  */
-export async function linkPlexItem(movieId: string, request: PlexLinkRequest): Promise<void> {
-  await plexCall('linkPlexItem', movieId, `${itemPath(movieId)}/link`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
+export async function linkPlexItem(
+  movieId: string,
+  request: PlexLinkRequest,
+  kind: PlexEntityKind = 'movies'
+): Promise<void> {
+  await plexCall(
+    'linkPlexItem',
+    movieId,
+    `${itemPath(movieId)}/link`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    },
+    'other',
+    kind
+  );
 }
 
-/** Removes a movie's Plex link and its stored Plex data (DELETE). */
-export async function unlinkPlexItem(movieId: string): Promise<void> {
-  await plexCall('unlinkPlexItem', movieId, `${itemPath(movieId)}/link`, { method: 'DELETE' });
+/** Removes an entry's Plex link and its stored Plex data (DELETE). */
+export async function unlinkPlexItem(movieId: string, kind: PlexEntityKind = 'movies'): Promise<void> {
+  await plexCall('unlinkPlexItem', movieId, `${itemPath(movieId)}/link`, { method: 'DELETE' }, 'other', kind);
 }
 
 /**
