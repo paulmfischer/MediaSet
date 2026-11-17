@@ -6,7 +6,7 @@ interface PlexUnlinkDialogProps {
   /** The unlink page URL: the no-JavaScript target of the button and the form action the dialog posts to. */
   href: string;
   /** What is kept after the unlink: "movie" (the default) or "album". */
-  noun?: string;
+  noun?: 'movie' | 'album';
 }
 
 // Unlink control for the Plex card. Without JavaScript (or before it loads) the button opens the unlink page's

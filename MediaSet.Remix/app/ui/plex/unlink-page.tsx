@@ -7,7 +7,7 @@ interface UnlinkPageProps {
   action: string;
   cancelHref: string;
   /** What is kept after the unlink: "movie" (the default) or "album". */
-  noun?: string;
+  noun?: 'movie' | 'album';
 }
 
 // The unlink confirmation form. It is the no-JavaScript path; the Plex card's dialog posts to the same action.

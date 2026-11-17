@@ -13,7 +13,7 @@ import {
 } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { AlertTriangle, ExternalLink } from '../icons.ts';
-import { PlexMenu } from './plex-card.tsx';
+import { PlexMenu } from './plex-menu.tsx';
 import { PlexLinkDialog } from './public/plex-link-dialog.tsx';
 
 interface PlexMusicNotesProps {

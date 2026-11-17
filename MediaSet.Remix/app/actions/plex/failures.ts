@@ -1,5 +1,8 @@
 import { PlexActionError, type PlexFailure } from '../../api/plex-data.ts';
 
+/** What the failed action was for; names it in the messages. */
+export type PlexSubject = 'movie' | 'album';
+
 /** The Plex actions that can fail with the shared messages. */
 export type PlexAction = 'refresh' | 'link' | 'unlink' | 'search' | 'sync';
 
@@ -34,7 +37,7 @@ const OTHER_HEADING: Record<PlexAction, string> = {
 };
 
 /** The heading, message and status of the entity error page for a failed Plex action. */
-export function plexFailurePage(error: unknown, action: PlexAction, subject = 'movie'): PlexFailurePage {
+export function plexFailurePage(error: unknown, action: PlexAction, subject: PlexSubject = 'movie'): PlexFailurePage {
   const failure: PlexFailure = error instanceof PlexActionError ? error.failure : 'other';
   switch (failure) {
     case 'unreachable':
