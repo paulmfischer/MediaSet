@@ -183,6 +183,107 @@ public class PlexMusicLinkApiTests
     }
 
     [Test]
+    public async Task Link_Album_ReturnsTheMusicShapedData()
+    {
+        var h = CreateHarness(Server());
+
+        var json = await ReadJsonAsync(await LinkAsync(h.Client, MusicId, new { plexItemId = "7001" }));
+
+        AssertMusicShape(json);
+    }
+
+    private static void AssertMusicShape(JsonElement json)
+    {
+        Assert.That(json.GetProperty("musicId").GetString(), Is.EqualTo(MusicId));
+        foreach (var name in new[] { "playCount", "lastPlayedAt", "tracksPresent", "tracksExpected", "audioCodec", "bitrate" })
+        {
+            Assert.That(json.TryGetProperty(name, out _), Is.True, $"missing {name}");
+        }
+        foreach (var name in new[] { "watched", "viewCount", "hdr", "filePath", "movieId" })
+        {
+            Assert.That(json.TryGetProperty(name, out _), Is.False, $"unexpected {name}");
+        }
+    }
+
+    [Test]
+    public async Task GetItem_LinkedAlbum_ReturnsTheMusicShapedDataWithoutAFilePath()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = MusicId,
+            PlexItemId = "7001",
+            EntityType = PlexEntityTypes.Music,
+            OnPlex = true,
+            PlayCount = 4,
+            TracksPresent = 3,
+            TracksExpected = 3,
+            AudioCodec = "flac",
+            Bitrate = 900,
+            FilePath = "/data/secret.flac"
+        }, CancellationToken.None);
+        var h = CreateHarness(Server(), items: items);
+
+        var response = await h.Client.GetAsync($"/plex/music/items/{MusicId}");
+        var json = await ReadJsonAsync(response);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        AssertMusicShape(json);
+        Assert.That(json.GetProperty("playCount").GetInt32(), Is.EqualTo(4));
+        Assert.That(json.GetProperty("audioCodec").GetString(), Is.EqualTo("flac"));
+        Assert.That(json.ToString(), Does.Not.Contain("secret"));
+    }
+
+    [Test]
+    public async Task GetItem_MusicRouteForAMovieDocument_Returns404()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData { Id = MusicId, PlexItemId = "1001", OnPlex = true }, CancellationToken.None);
+        var h = CreateHarness(Server(), items: items);
+
+        var response = await h.Client.GetAsync($"/plex/music/items/{MusicId}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+    }
+
+    [Test]
+    public async Task GetItem_MovieRouteForAMusicDocument_Returns404()
+    {
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData { Id = MusicId, PlexItemId = "7001", EntityType = PlexEntityTypes.Music, OnPlex = true }, CancellationToken.None);
+        var h = CreateHarness(Server(), moviesEnabled: true, items: items);
+
+        var response = await h.Client.GetAsync($"/plex/movies/items/{MusicId}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+    }
+
+    [Test]
+    public async Task Refresh_MusicRoute_Returns400WithAMusicMessageEvenForAnUnknownId()
+    {
+        var h = CreateHarness(Server());
+
+        var response = await h.Client.PostAsync($"/plex/music/items/{MusicId}/refresh", null);
+        var json = await ReadJsonAsync(response);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(json.GetProperty("title").GetString(), Is.EqualTo("Not supported for music"));
+        Assert.That(json.GetProperty("detail").GetString(), Does.Not.Contain("Movie"));
+    }
+
+    [Test]
+    public async Task Scope_MusicRoute_Returns400WithAMusicMessage()
+    {
+        var h = CreateHarness(Server());
+
+        var response = await h.Client.GetAsync($"/plex/music/items/{MusicId}/scope");
+        var json = await ReadJsonAsync(response);
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(json.GetProperty("title").GetString(), Is.EqualTo("Not supported for music"));
+    }
+
+    [Test]
     public async Task Link_Album_AsksForPlexAlbumImageAsCover()
     {
         var h = CreateHarness(Server());
@@ -216,6 +317,30 @@ public class PlexMusicLinkApiTests
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(items.Items[MusicId].PlexItemId, Is.EqualTo("7001"));
         Assert.That(items.Items[MusicId].LinkSource, Is.EqualTo(PlexLinkSources.Manual));
+    }
+
+    [Test]
+    public async Task Link_RelinkingTheSameAlbumState_KeepsTheRecordedCoverAttempt()
+    {
+        var first = CreateHarness(Server());
+        await LinkAsync(first.Client, MusicId, new { plexItemId = "7001" });
+        var key = PlexMusicMatching.CoverAttemptKey(new PlexItem("7001", "album", "x", null, "4", "Music", null, null, new PlexGuids(null, null, null), [], UpdatedAt: first.Items.Items[MusicId].PlexUpdatedAt));
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = MusicId,
+            PlexItemId = "7001",
+            EntityType = PlexEntityTypes.Music,
+            CoverAttemptKey = key,
+            CoverAttemptedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        }, CancellationToken.None);
+        var h = CreateHarness(Server(), items: items);
+
+        await LinkAsync(h.Client, MusicId, new { plexItemId = "7001" });
+
+        Assert.That(key, Is.Not.Null);
+        Assert.That(items.Items[MusicId].CoverAttemptKey, Is.EqualTo(key));
+        Assert.That(items.Items[MusicId].CoverAttemptedAt, Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
     }
 
     [Test]

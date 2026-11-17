@@ -73,13 +73,24 @@ public class MusicExternalIdBackfillServiceTests
             Service.Setup(s => s.GetListAsync(It.IsAny<CancellationToken>())).ReturnsAsync(() => [.. Albums.Select(Copy)]);
             Service.Setup(s => s.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string id, CancellationToken _) => Albums.Where(m => m.Id == id).Select(Copy).FirstOrDefault());
-            Service.Setup(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Music>(), It.IsAny<CancellationToken>()))
-                .Callback((string id, Music m, CancellationToken _) => Albums[Albums.FindIndex(x => x.Id == id)] = m)
-                .ReturnsAsync(default(ReplaceOneResult)!);
+            // Mirrors the atomic write: sets only ExternalId, and only while it is still empty
+            Writer.Setup(w => w.SetIfEmptyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string id, string externalId, CancellationToken _) =>
+                {
+                    var album = Albums.FirstOrDefault(x => x.Id == id);
+                    if (album == null || !string.IsNullOrWhiteSpace(album.ExternalId))
+                    {
+                        return false;
+                    }
+                    album.ExternalId = externalId;
+                    return true;
+                });
         }
 
+        public Mock<IMusicExternalIdWriter> Writer { get; } = new();
+
         public MusicExternalIdBackfillService Build() =>
-            new(Service.Object, Attempts, Options.Create(new PlexConfiguration { Backfill = Config }),
+            new(Service.Object, Attempts, Writer.Object, Options.Create(new PlexConfiguration { Backfill = Config }),
                 NullLogger<MusicExternalIdBackfillService>.Instance, MusicBrainz, Clock);
 
         private static Music Copy(Music m) => new()
@@ -154,7 +165,21 @@ public class MusicExternalIdBackfillServiceTests
     }
 
     [Test]
-    public async Task RunAsync_BarcodeMatchesSeveralReleaseGroups_LeavesBlankWithoutTitleFallback()
+    public async Task RunAsync_BarcodeMatchesSeveralReleaseGroups_FallsBackAndAcceptsTitleMatchInsideThem()
+    {
+        var h = new Harness(Album("a", barcode: "0123"));
+        h.MusicBrainz.ByBarcode["0123"] = [Release("r1", "g1"), Release("r2", "g2")];
+        h.MusicBrainz.ByTitle["Kind of Blue|Miles Davis"] = [Release("r3", "g2")];
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Albums[0].ExternalId, Is.EqualTo("mbid:g2"));
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(1, 0)));
+        Assert.That(h.MusicBrainz.Calls.Select(c => c.Kind), Is.EqualTo(["barcode", "title"]));
+    }
+
+    [Test]
+    public async Task RunAsync_BarcodeMatchesSeveralReleaseGroups_TitleMatchOutsideThemLeavesBlank()
     {
         var h = new Harness(Album("a", barcode: "0123"));
         h.MusicBrainz.ByBarcode["0123"] = [Release("r1", "g1"), Release("r2", "g2")];
@@ -164,7 +189,19 @@ public class MusicExternalIdBackfillServiceTests
 
         Assert.That(h.Albums[0].ExternalId, Is.Null);
         Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
-        Assert.That(h.MusicBrainz.Calls.Select(c => c.Kind), Is.EqualTo(["barcode"]));
+    }
+
+    [Test]
+    public async Task RunAsync_BarcodeMatchesSeveralReleaseGroups_AmbiguousTitleMatchLeavesBlank()
+    {
+        var h = new Harness(Album("a", barcode: "0123"));
+        h.MusicBrainz.ByBarcode["0123"] = [Release("r1", "g1"), Release("r2", "g2")];
+        h.MusicBrainz.ByTitle["Kind of Blue|Miles Davis"] = [Release("r3", "g1"), Release("r4", "g2")];
+
+        var result = await h.Build().RunAsync(CancellationToken.None);
+
+        Assert.That(h.Albums[0].ExternalId, Is.Null);
+        Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
     }
 
     [Test]
@@ -267,6 +304,7 @@ public class MusicExternalIdBackfillServiceTests
         Assert.That(h.Albums[0].ExternalId, Is.EqualTo("mbid:manual"));
         Assert.That(result, Is.EqualTo(new ExternalIdBackfillResult(0, 1)));
         h.Service.Verify(s => s.UpdateAsync(It.IsAny<string>(), It.IsAny<Music>(), It.IsAny<CancellationToken>()), Times.Never);
+        h.Writer.Verify(w => w.SetIfEmptyAsync("a", "mbid:g1", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]

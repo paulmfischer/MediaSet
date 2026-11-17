@@ -29,15 +29,18 @@ function stubApi(
   t: { after: (fn: () => void) => void },
   stats: unknown,
   integrations: unknown = enabled,
-  plexStatistics: unknown = null
+  plexStatistics: unknown = null,
+  statisticsRequests?: string[]
 ) {
   const original = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.pathname === '/stats') return Response.json(stats);
     if (url.pathname === '/config/integrations') return Response.json(integrations);
-    if (url.pathname === '/plex/statistics')
+    if (url.pathname === '/plex/statistics') {
+      statisticsRequests?.push(url.search);
       return Response.json(plexStatistics, { status: plexStatistics ? 200 : 500 });
+    }
     return new Response('not found', { status: 404 });
   }) as typeof fetch;
   t.after(() => {
@@ -139,6 +142,15 @@ const musicsPanel = (html: string) =>
   html.match(/<div id="dashboard-panel-musics"[\s\S]*?(?=<div id="dashboard-panel-|$)/)?.[0] ?? '';
 
 describe('dashboard Plex music section', () => {
+  it('should request only the music section of the Plex statistics', async (t) => {
+    const requests: string[] = [];
+    stubApi(t, musicStats, bothEnabled, plexMusic, requests);
+
+    await get('/');
+
+    assert.deepEqual(requests, ['?sections=music']);
+  });
+
   it('should show the Plex stat cards and a link to the not-on-Plex list on the Music tab', async (t) => {
     stubApi(t, musicStats, musicEnabled, plexMusic);
 

@@ -755,14 +755,28 @@ public sealed class PlexSyncService(
 
                     var source = plan.Manual ? PlexLinkSources.Manual : PlexLinkSources.Auto;
                     // Build resets MissCount and Broken: a found album recovers the link
-                    await itemStore.UpsertAsync(
-                        PlexMusicMatching.Build(music.Id!, item, tracksByAlbum[item.RatingKey], PlexMusicMatching.ExpectedTracks(music), syncedAt, source), token);
+                    var data = PlexMusicMatching.Build(music.Id!, item, tracksByAlbum[item.RatingKey], PlexMusicMatching.ExpectedTracks(music), syncedAt, source);
+                    // Carry the cover attempt over so a rewrite does not forget it
+                    var coverKey = PlexMusicMatching.CoverAttemptKey(item);
+                    if (stored is { CoverAttemptKey: not null } && stored.CoverAttemptKey == coverKey)
+                    {
+                        data.CoverAttemptKey = stored.CoverAttemptKey;
+                        data.CoverAttemptedAt = stored.CoverAttemptedAt;
+                    }
+                    await itemStore.UpsertAsync(data, token);
                     matched++;
 
-                    // A paired entry without a cover takes the Plex album thumb (the service checks); best effort, never fails the run
-                    if (scope.ServiceProvider.GetService<IPlexCoverService<Music>>() is { } covers)
+                    // A paired entry without a cover takes the Plex album thumb (the service checks); best effort, never fails the run.
+                    // An album already tried for this state (no usable image) is not fetched again until it changes.
+                    if (!PlexMusicMatching.CoverAlreadyTried(data, coverKey, syncedAt)
+                        && scope.ServiceProvider.GetService<IPlexCoverService<Music>>() is { } covers)
                     {
-                        await covers.ApplyIfMissingAsync(music.Id!, item.RatingKey, token);
+                        if (await covers.TryApplyAsync(music.Id!, item.RatingKey, token) == PlexCoverOutcome.Unusable && coverKey != null)
+                        {
+                            data.CoverAttemptKey = coverKey;
+                            data.CoverAttemptedAt = syncedAt;
+                            await itemStore.UpsertAsync(data, token);
+                        }
                     }
                 }
                 else if (stored != null)

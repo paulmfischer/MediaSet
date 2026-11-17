@@ -11,6 +11,9 @@ public interface IPlexItemStore
     Task EnsureCreatedAsync(CancellationToken cancellationToken);
 
     Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken);
+
+    /// <summary>The document of the entry, only when it is of the given entity type (movies include TV entries); null for a document of the other type, since movie and music ids share one id space.</summary>
+    Task<PlexItemData?> GetAsync(string entryId, string entityType, CancellationToken cancellationToken);
     Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken);
     Task DeleteAsync(string entryId, CancellationToken cancellationToken);
 
@@ -68,6 +71,10 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
 
     public async Task<PlexItemData?> GetAsync(string entryId, CancellationToken cancellationToken) =>
         await Collection.Find(d => d.Id == entryId).FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<PlexItemData?> GetAsync(string entryId, string entityType, CancellationToken cancellationToken) =>
+        await Collection.Find(Builders<PlexItemData>.Filter.And(Builders<PlexItemData>.Filter.Eq(d => d.Id, entryId), OfEntityType(entityType)))
+            .FirstOrDefaultAsync(cancellationToken);
 
     public Task UpsertAsync(PlexItemData data, CancellationToken cancellationToken) =>
         Collection.ReplaceOneAsync(d => d.Id == data.Id, data, new ReplaceOptions { IsUpsert = true }, cancellationToken);

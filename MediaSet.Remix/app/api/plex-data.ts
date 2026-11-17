@@ -227,13 +227,18 @@ export async function startPlexSync(entityType: string): Promise<boolean> {
   return true;
 }
 
+/** The entity types the statistics can be limited to. */
+export type PlexStatisticsSection = 'movies' | 'music';
+
 /**
  * The Plex statistics (GET `/plex/statistics`), or null when they cannot be read. They are a bonus on the sync page, so a
- * failure is logged and the page renders without them.
+ * failure is logged and the page renders without them. `sections` limits what the API computes (`movies` covers TV too).
  */
-export async function getPlexStatistics(): Promise<PlexStatistics | null> {
+export async function getPlexStatistics(sections?: readonly PlexStatisticsSection[]): Promise<PlexStatistics | null> {
   try {
-    const response = await apiFetch(`${baseUrl}/plex/statistics`);
+    // Without sections the API computes every enabled entity type; a caller that needs one asks for just that
+    const query = sections && sections.length > 0 ? `?sections=${sections.map(encodeURIComponent).join(',')}` : '';
+    const response = await apiFetch(`${baseUrl}/plex/statistics${query}`);
     if (!response.ok) {
       serverLogger.warn('Plex statistics were refused', { operation: 'getPlexStatistics', status: response.status });
       return null;

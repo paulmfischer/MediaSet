@@ -17,17 +17,20 @@ public interface IMusicExternalIdBackfillService
 
 /// <summary>
 /// Looks up music entries without an ExternalId on MusicBrainz and saves the release-group id as <c>mbid:&lt;id&gt;</c>.
-/// The barcode is tried first: every release found must belong to one release group, otherwise the barcode is ambiguous
-/// and the entry is left blank. Only a barcode with no result falls back to the exact (case-insensitive) title plus exact
-/// artist, again accepted only when the matching releases share one release group. A wrong id is worse than a missing
-/// one, so anything unclear stays blank. An entry that already has an ExternalId is never selected, and the id is
-/// re-checked just before saving so an id entered meanwhile is never overwritten.
+/// The barcode is tried first: releases that all belong to one release group are a clear match. A barcode with no result
+/// falls back to the exact (case-insensitive) title plus exact artist, accepted only when the matching releases share one
+/// release group. A barcode that finds several release groups is ambiguous, so it also falls back to the title and artist
+/// search, but then only a match that is also one of the barcode's groups is taken. A barcode lookup that fails skips the
+/// entry (no fallback). A wrong id is worse than a missing one, so anything unclear stays blank. An entry that already has
+/// an ExternalId is never selected, and the id is written with an atomic update that sets only ExternalId and only while it
+/// is still empty, so an id or another field edited meanwhile is never overwritten.
 /// Throttled by <see cref="PlexBackfillConfiguration"/> (batch size, and requests per minute counted per MusicBrainz
 /// request). Entries never or least recently searched go first, tracked in <see cref="IMusicExternalIdBackfillStore"/>.
 /// </summary>
 public sealed class MusicExternalIdBackfillService(
     IEntityService<Music> musics,
     IMusicExternalIdBackfillStore attempts,
+    IMusicExternalIdWriter writer,
     IOptions<PlexConfiguration> options,
     ILogger<MusicExternalIdBackfillService> logger,
     IMusicBrainzClient musicBrainz,
@@ -74,17 +77,15 @@ public sealed class MusicExternalIdBackfillService(
                     continue;
                 }
 
-                // Re-read so only ExternalId changes and an id entered since the list was read is kept
-                var current = await musics.GetAsync(music.Id!, cancellationToken);
-                if (current == null || !string.IsNullOrWhiteSpace(current.ExternalId))
+                // Sets only ExternalId, and only while it is still empty (false when an id was entered since or the album is gone)
+                if (await writer.SetIfEmptyAsync(music.Id!, ExternalIdFormat.ForMusicBrainzReleaseGroup(releaseGroupId), cancellationToken))
+                {
+                    filled++;
+                }
+                else
                 {
                     skipped++;
-                    continue;
                 }
-
-                current.ExternalId = ExternalIdFormat.ForMusicBrainzReleaseGroup(releaseGroupId);
-                await musics.UpdateAsync(music.Id!, current, cancellationToken);
-                filled++;
             }
             catch (Exception ex) when (ex is HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests } or ProviderRateLimitException)
             {
@@ -107,16 +108,17 @@ public sealed class MusicExternalIdBackfillService(
     /// <summary>The single release-group id the album resolves to, or null when there is none or it is not clear.</summary>
     private async Task<string?> FindReleaseGroupAsync(Music music, TimeSpan interval, CancellationToken cancellationToken)
     {
+        List<string> barcodeGroups = [];
         if (!string.IsNullOrWhiteSpace(music.Barcode))
         {
             await ThrottleAsync(interval, cancellationToken);
             var byBarcode = await musicBrainz.SearchByBarcodeAsync(music.Barcode.Trim(), cancellationToken);
-            var groups = ReleaseGroupIds(byBarcode);
-            if (groups.Count > 0)
+            barcodeGroups = ReleaseGroupIds(byBarcode);
+            if (barcodeGroups.Count == 1)
             {
-                // One group is a clear match; several mean the barcode is ambiguous, so no title guess either
-                return groups.Count == 1 ? groups[0] : null;
+                return barcodeGroups[0];
             }
+            // None: fall through to the title search. Several: the barcode is ambiguous, the title search must pick one of them.
         }
 
         if (string.IsNullOrWhiteSpace(music.Title) || string.IsNullOrWhiteSpace(music.Artist))
@@ -135,6 +137,10 @@ public sealed class MusicExternalIdBackfillService(
                 && string.Equals(r.ArtistCredit[0].Name?.Trim(), artist, StringComparison.OrdinalIgnoreCase))
             .ToList();
         var namedGroups = ReleaseGroupIds(named);
+        if (barcodeGroups.Count > 1)
+        {
+            namedGroups = [.. namedGroups.Where(g => barcodeGroups.Contains(g, StringComparer.OrdinalIgnoreCase))];
+        }
         return namedGroups.Count == 1 ? namedGroups[0] : null;
     }
 

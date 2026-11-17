@@ -39,7 +39,7 @@ public interface IPlexLookup
     Task<IReadOnlyDictionary<string, object>> GetMusicSummariesAsync(IReadOnlyCollection<string> musicIds, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The id restriction for a music list filter (onPlex or notOnPlex, case-insensitive), or null when Plex is not enabled
+    /// The id restriction for a music list filter (onPlex, notOnPlex or broken, case-insensitive), or null when Plex is not enabled
     /// for music. Throws <see cref="ArgumentException"/> for any other filter value.
     /// </summary>
     Task<IdFilter?> GetMusicFilterAsync(string filter, CancellationToken cancellationToken);

@@ -260,6 +260,7 @@ if (plexSection.Exists())
         builder.Services.AddSingleton<IPlexItemStore, PlexItemStore>();
         builder.Services.AddSingleton<IExternalIdBackfillStore, ExternalIdBackfillStore>();
         builder.Services.AddSingleton<IMusicExternalIdBackfillStore, MusicExternalIdBackfillStore>();
+        builder.Services.AddSingleton<IMusicExternalIdWriter, MusicExternalIdWriter>();
         builder.Services.AddSingleton<IPlexDataCleanup, PlexDataCleanup>();
         builder.Services.AddSingleton<IPlexLookup, PlexLookup>();
         builder.Services.AddSingleton<PlexSyncService>();

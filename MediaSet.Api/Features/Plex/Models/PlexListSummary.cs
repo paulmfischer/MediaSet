@@ -13,11 +13,14 @@ public static class PlexListFilters
         new[] { OnPlex, NotOnPlex, Unwatched, Broken }
             .FirstOrDefault(f => string.Equals(f, value, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The canonical spelling of a music list filter value (only onPlex and notOnPlex apply to albums), or null when it is not one.</summary>
+    /// <summary>
+    /// The canonical spelling of a music list filter value, or null when it is not one. <see cref="Unwatched"/> does not
+    /// apply to albums; <see cref="Broken"/> does, since a manual link to an album can lose its Plex item.
+    /// </summary>
     public static string? NormalizeMusic(string? value)
     {
         var normalized = Normalize(value);
-        return normalized is OnPlex or NotOnPlex ? normalized : null;
+        return normalized is OnPlex or NotOnPlex or Broken ? normalized : null;
     }
 }
 

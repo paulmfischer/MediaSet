@@ -27,15 +27,38 @@ internal static class PlexApi
             return Results.Ok(statuses);
         });
 
-        // GET /plex/statistics: breakdowns of the stored Plex data for movies and TV entries and for music (no file paths).
+        // GET /plex/statistics[?sections=movies,music]: breakdowns of the stored Plex data for movies and TV entries and for music
+        // (no file paths). Without 'sections' every enabled entity type is computed; with it only the listed ones (movies covers
+        // TV too), so a caller that needs only music does not pay for the movie sections. 400 for an unknown section.
         // Registered with the rest of the Plex routes, so it exists only when Plex is enabled; 400 when no entity type is.
-        group.MapGet("/statistics", async (PlexEnablement enablement, IPlexStatisticsService statistics, CancellationToken cancellationToken) =>
-            enablement.EnabledEntityTypes.Count > 0
-                ? Results.Ok(await statistics.GetAsync(cancellationToken))
-                : Results.Problem(
+        group.MapGet("/statistics", async (PlexEnablement enablement, IPlexStatisticsService statistics, string? sections, CancellationToken cancellationToken) =>
+        {
+            if (enablement.EnabledEntityTypes.Count == 0)
+            {
+                return Results.Problem(
                     title: "Plex entity type disabled",
                     detail: "Plex is not enabled for any entity type.",
-                    statusCode: StatusCodes.Status400BadRequest));
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            IReadOnlyCollection<string>? requested = null;
+            if (!string.IsNullOrWhiteSpace(sections))
+            {
+                var parsed = sections.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(PlexEntityTypes.Normalize)
+                    .ToList();
+                if (parsed.Count == 0 || parsed.Contains(null))
+                {
+                    return Results.Problem(
+                        title: "Unknown statistics section",
+                        detail: $"'sections' must list entity types from: {string.Join(", ", PlexEntityTypes.Supported)}.",
+                        statusCode: StatusCodes.Status400BadRequest);
+                }
+                requested = [.. parsed.Select(t => t!).Distinct()];
+            }
+
+            return Results.Ok(await statistics.GetAsync(cancellationToken, requested));
+        });
 
         // GET /plex/{entityType}/status: rejects unknown entity types only, so a disabled one reports enabled: false.
         // entityType is a bound handler parameter on every route below so OpenAPI declares it as a path parameter.
@@ -97,17 +120,24 @@ internal static class PlexApi
             }
         });
 
-        // GET /plex/{entityType}/items/{movieId}: the Plex data of one linked movie, 404 when unlinked.
-        // The only response that carries the file path.
-        entity.MapGet("/items/{id}", async (string entityType, string id, IPlexItemStore items, CancellationToken cancellationToken) =>
+        // GET /plex/{entityType}/items/{id}: the Plex data of one linked entry of that entity type, 404 when unlinked (or when
+        // the id belongs to the other type). A movie or TV entry returns the movie-shaped data, which is the only response that
+        // carries the file path; a music entry returns the album data, which never does.
+        entity.MapGet("/items/{id}", async (string entityType, HttpContext context, string id, IPlexItemStore items, CancellationToken cancellationToken) =>
         {
+            var type = PlexEntityTypeFilter.GetEntityType(context);
             // Plex documents are keyed by ObjectId; any other id cannot be linked
-            var data = IsObjectId(id) ? await items.GetAsync(id, cancellationToken) : null;
-            return data == null
-                ? Results.Problem(
+            var data = IsObjectId(id) ? await items.GetAsync(id, type, cancellationToken) : null;
+            if (data == null)
+            {
+                return Results.Problem(
                     title: "Not linked to Plex",
                     detail: "This item has no Plex data.",
-                    statusCode: StatusCodes.Status404NotFound)
+                    statusCode: StatusCodes.Status404NotFound);
+            }
+
+            return type == PlexEntityTypes.Music
+                ? Results.Ok(PlexMusicDataDto.From(data))
                 : Results.Ok(PlexItemDataDto.From(data));
         });
 
@@ -115,10 +145,16 @@ internal static class PlexApi
         // for prefilling the link form. Reads only the entry, so it works whether or not it is linked; 400 for a non-TV entry.
         entity.MapGet("/items/{id}/scope", async (
             string entityType,
+            HttpContext context,
             string id,
             IEntityService<Movie> movies,
             CancellationToken cancellationToken) =>
         {
+            if (PlexEntityTypeFilter.GetEntityType(context) == PlexEntityTypes.Music)
+            {
+                return MusicNotSupported("A season scope applies only to TV series entries, not to music.");
+            }
+
             var movie = IsObjectId(id) ? await movies.GetAsync(id, cancellationToken) : null;
             if (movie == null)
             {
@@ -181,7 +217,7 @@ internal static class PlexApi
 
                     // An entry without a cover takes the Plex album image (the service checks). Best effort: it never fails the link.
                     await musicCovers.ApplyIfMissingAsync(id, linked.PlexItemId, cancellationToken);
-                    return Results.Ok(PlexItemDataDto.From(linked));
+                    return Results.Ok(PlexMusicDataDto.From(linked));
                 }
                 catch (PlexClientException ex)
                 {
@@ -262,7 +298,7 @@ internal static class PlexApi
                     statusCode: StatusCodes.Status404NotFound);
         });
 
-        // POST /plex/{entityType}/items/{id}/refresh: re-reads one linked movie under the sync lock, 409 while a sync runs
+        // POST /plex/{entityType}/items/{id}/refresh: re-reads one linked movie or TV entry under the sync lock, 409 while a sync runs
         entity.MapPost("/items/{id}/refresh", async (
             string entityType,
             HttpContext context,
@@ -271,6 +307,11 @@ internal static class PlexApi
             IPlexSyncService sync,
             CancellationToken cancellationToken) =>
         {
+            if (PlexEntityTypeFilter.GetEntityType(context) == PlexEntityTypes.Music)
+            {
+                return MusicNotSupported("Refreshing a single music entry is not supported. Run a music sync instead.");
+            }
+
             if (await MovieMissingAsync(id, movies, cancellationToken))
             {
                 return MovieNotFound();
@@ -361,6 +402,11 @@ internal static class PlexApi
         title: "Music not found",
         detail: "No music entry exists with this id.",
         statusCode: StatusCodes.Status404NotFound);
+
+    private static IResult MusicNotSupported(string detail) => Results.Problem(
+        title: "Not supported for music",
+        detail: detail,
+        statusCode: StatusCodes.Status400BadRequest);
 
     private static IResult PlexItemNotFound(string plexItemId, bool show = false, bool album = false) => Results.Problem(
         title: "Plex item not found",

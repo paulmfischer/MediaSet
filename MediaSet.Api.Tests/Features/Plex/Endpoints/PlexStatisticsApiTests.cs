@@ -181,6 +181,73 @@ public class PlexStatisticsApiTests
     }
 
     [Test]
+    public async Task GetStatistics_SectionsMusic_ReturnsOnlyMusicAndDoesNotReadMovies()
+    {
+        var items = await StoreAsync();
+        using var client = CreateClient(items);
+
+        var response = await client.GetAsync("/plex/statistics?sections=music");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(doc.RootElement.GetProperty("music").GetProperty("coverage").GetProperty("total").GetInt32(), Is.EqualTo(3));
+        Assert.That(doc.RootElement.GetProperty("movies").ValueKind, Is.EqualTo(JsonValueKind.Null));
+        Assert.That(doc.RootElement.GetProperty("tv").ValueKind, Is.EqualTo(JsonValueKind.Null));
+        Assert.That(items.MovieStatisticsReads, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetStatistics_SectionsMovies_ReturnsMoviesAndTvWithoutMusic()
+    {
+        using var client = CreateClient(await StoreAsync());
+
+        var response = await client.GetAsync("/plex/statistics?sections=Movies");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(doc.RootElement.GetProperty("movies").ValueKind, Is.EqualTo(JsonValueKind.Object));
+        Assert.That(doc.RootElement.GetProperty("tv").ValueKind, Is.EqualTo(JsonValueKind.Object));
+        Assert.That(doc.RootElement.GetProperty("music").ValueKind, Is.EqualTo(JsonValueKind.Null));
+    }
+
+    [Test]
+    public async Task GetStatistics_SectionsMoviesAndMusic_ReturnsBoth()
+    {
+        using var client = CreateClient(await StoreAsync());
+
+        var response = await client.GetAsync("/plex/statistics?sections=movies,music");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.That(doc.RootElement.GetProperty("movies").ValueKind, Is.EqualTo(JsonValueKind.Object));
+        Assert.That(doc.RootElement.GetProperty("music").ValueKind, Is.EqualTo(JsonValueKind.Object));
+    }
+
+    [TestCase("bogus")]
+    [TestCase("music,tv")]
+    [TestCase(",")]
+    public async Task GetStatistics_UnknownSection_Returns400(string sections)
+    {
+        using var client = CreateClient(await StoreAsync());
+
+        var response = await client.GetAsync($"/plex/statistics?sections={sections}");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+    }
+
+    [Test]
+    public async Task GetStatistics_SectionsMusicButMusicNotEnabled_ReturnsNoSections()
+    {
+        using var client = CreateClient(await StoreAsync(), musicEnabled: false);
+
+        var response = await client.GetAsync("/plex/statistics?sections=music");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(doc.RootElement.GetProperty("music").ValueKind, Is.EqualTo(JsonValueKind.Null));
+        Assert.That(doc.RootElement.GetProperty("movies").ValueKind, Is.EqualTo(JsonValueKind.Null));
+    }
+
+    [Test]
     public async Task GetStatistics_PlexEnabled_ResponseHasNoFilePath()
     {
         using var client = CreateClient(await StoreAsync());

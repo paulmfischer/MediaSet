@@ -132,9 +132,10 @@ back to Plex. Music is set up on its own (step 7) and is off unless you enable i
     - A music lookup (adding an album by barcode or search) writes `mbid:<release-group id>` for you.
     - An album for which Plex holds no MusicBrainz id cannot match automatically. Link it by hand.
     - **Backfill.** Each music sync starts by searching MusicBrainz for entries whose `ExternalId` is empty. The
-      barcode is tried first; if MusicBrainz finds nothing for it, the exact (case-insensitive) title and artist are
-      tried. An id is saved only when everything found belongs to one release group. An ambiguous barcode or title,
-      or no result, leaves the field blank. An `ExternalId` you entered is never changed. It uses the same
+      barcode is tried first; if MusicBrainz finds nothing for it, or several release groups, the exact
+      (case-insensitive) title and artist are tried (with several barcode groups, only a match inside them counts).
+      An id is saved only when everything found belongs to one release group. An ambiguous title, a failed
+      barcode lookup, or no result, leaves the field blank. An `ExternalId` you entered is never changed. It uses the same
       `Backfill__RequestsPerMinute` and `Backfill__BatchSize` settings and needs no key (MusicBrainz is set up as in
       [MUSICBRAINZ_SETUP.md](MUSICBRAINZ_SETUP.md)); entries never or least recently searched go first.
     - **One Plex album per entry.** A multi-disc release is one Plex album, with its discs added together. Plex albums
@@ -146,7 +147,9 @@ back to Plex. Music is set up on its own (step 7) and is off unless you enable i
     - **Partial albums.** An album with fewer tracks on Plex than the entry's track count still matches and shows as
       partial ("Partial 8/12"). An entry with no track count is never partial.
     - **Cover art.** When a matched or linked album has no cover, the Plex album cover is used. An existing cover is
-      never replaced, and a Plex image narrower than 400 pixels (or over 10 MB) is skipped.
+      never replaced, and a Plex image narrower than 400 pixels (or over 10 MB) is skipped. An album whose image was
+      unusable is not fetched again by each sync until Plex updates the album (or after 30 days); a manual link
+      always tries.
 
 8) Run a sync and check status
 
@@ -202,7 +205,8 @@ back to Plex. Music is set up on its own (step 7) and is off unless you enable i
     ```
 
     - Music search results are albums, each with its artist. A manual music link takes no `scope`, reads the album now
-      and also fills a missing cover. There is no per-album refresh for music; the next sync (or a relink) re-reads it.
+      and also fills a missing cover. There is no per-album refresh for music (the refresh and season scope routes answer 400 "Not supported for music");
+      the next sync (or a relink) re-reads it.
     - For a TV series entry whose title does not say which seasons it covers, add a `scope` to the link body:
       `{ "plexItemId": "<id>", "scope": { "kind": "season", "season": 2 } }`, or `"kind": "range"` with `"from"`
       and `"to"`, or `"kind": "all"`. Seasons run from 0 (specials) to 99. Only TV series entries take a scope.
@@ -290,15 +294,16 @@ back to Plex. Music is set up on its own (step 7) and is off unless you enable i
       path. **Open in Plex** opens the album in Plex. The gear menu holds **Relink** and **Unlink** (no Refresh).
       **Link to Plex** (first link, auto-linking a single match), **Relink** and **Unlink** work as for movies, with a
       search of Plex albums showing title and artist.
-    - **Music list filter.** A filter limits the list to **On Plex** or **Not on Plex** (`?plex=onPlex`); there is no
-      unwatched or broken option for music.
+    - **Music list filter.** A filter limits the list to **On Plex**, **Not on Plex** or **Broken link** (a manual
+      link whose Plex album is gone; `?plex=onPlex`, `notOnPlex` or `broken`); there is no unwatched option for music.
     - **Plex sync page.** `/plex` lists music beside movies, each with its own last run, next run and **Sync now**.
       The page works when only music is enabled.
     - **Dashboard.** The Music tab gains a **Plex** section with **On Plex**, **Not on Plex**, **Total plays** and
       **Never played** cards and an **Albums not on Plex** link to the music list filtered to **Not on Plex**. It appears only
       when music is enabled.
     - **Plex statistics page.** The statistics shown on the `/plex` page (`GET /plex/statistics`) gain a **Music** section
-      when music is enabled: albums in MediaSet, on Plex, not on Plex and broken links; total plays and never played; total
+      when music is enabled (the dashboard asks only for it with `?sections=music`; `sections` takes `movies` and/or
+      `music`, and without it every enabled type is computed): albums in MediaSet, on Plex, not on Plex and broken links; total plays and never played; total
       and average size; an audio codec chart and a bitrate chart (bands from "Under 128 kbps" to "1000+ kbps", plus
       "unknown") over the albums on Plex; track completeness (tracks present of tracks expected, albums complete and
       partial); and the top 10 **Most played**, **Recently played** and **Recently added** albums. The response has a
