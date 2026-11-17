@@ -59,13 +59,16 @@ internal static class EntityApi
             try
             {
                 logger.LogDebug("Paged searching {entityType} with query '{searchText}', orderBy {orderBy}, plex {plex}, page {page}, pageSize {pageSize}", entityType, searchText, orderBy, plex, page, pageSize);
-                // Movies only; absent (and ignored) when Plex is not configured for movies
+                // Movies and music only; absent (and ignored) when Plex is not configured for the entity type
                 IdFilter? idFilter = null;
-                if (typeof(TEntity) == typeof(Movie) && plexLookup is not null && !string.IsNullOrWhiteSpace(plex))
+                var plexFilterable = typeof(TEntity) == typeof(Movie) || typeof(TEntity) == typeof(Music);
+                if (plexFilterable && plexLookup is not null && !string.IsNullOrWhiteSpace(plex))
                 {
                     try
                     {
-                        idFilter = await plexLookup.GetMovieFilterAsync(plex, cancellationToken);
+                        idFilter = typeof(TEntity) == typeof(Music)
+                            ? await plexLookup.GetMusicFilterAsync(plex, cancellationToken)
+                            : await plexLookup.GetMovieFilterAsync(plex, cancellationToken);
                     }
                     catch (ArgumentException ex)
                     {
@@ -745,13 +748,33 @@ internal static class EntityApi
         {
             movie.Plex = null;
         }
+        else if (entity is Music music)
+        {
+            music.Plex = null;
+        }
     }
 
-    // Paged search: adds the small Plex summary (no file paths) to each linked movie of the page, joined in one query.
+    // Paged search: adds the small Plex summary (no file paths) to each linked movie or album of the page, joined in one query.
     private static async Task AttachPlexSummariesAsync<TEntity>(IEnumerable<TEntity> entities, IPlexLookup? plexLookup, CancellationToken cancellationToken)
     {
         if (plexLookup is null)
         {
+            return;
+        }
+
+        if (typeof(TEntity) == typeof(Music))
+        {
+            var albums = entities.OfType<Music>().Where(m => m.Id is not null).ToList();
+            if (albums.Count == 0)
+            {
+                return;
+            }
+
+            var albumSummaries = await plexLookup.GetMusicSummariesAsync([.. albums.Select(m => m.Id!)], cancellationToken);
+            foreach (var album in albums)
+            {
+                album.Plex = albumSummaries.GetValueOrDefault(album.Id!);
+            }
             return;
         }
 
@@ -768,13 +791,22 @@ internal static class EntityApi
         }
     }
 
-    // Single lookup only: adds the stored Plex data (without file paths) to a linked movie. Plex not configured,
+    // Single lookup only: adds the stored Plex data (without file paths) to a linked movie or album. Plex not configured,
     // not enabled for movies, or no document for the id leaves the movie unchanged.
     private static async Task AttachPlexAsync(IEntity entity, IPlexLookup? plexLookup, CancellationToken cancellationToken)
     {
-        if (entity is Movie { Id: not null } movie && plexLookup is not null)
+        if (plexLookup is null)
+        {
+            return;
+        }
+
+        if (entity is Movie { Id: not null } movie)
         {
             movie.Plex = await plexLookup.GetMovieDataAsync(movie.Id, cancellationToken);
+        }
+        else if (entity is Music { Id: not null } album)
+        {
+            album.Plex = await plexLookup.GetMusicDataAsync(album.Id, cancellationToken);
         }
     }
 }

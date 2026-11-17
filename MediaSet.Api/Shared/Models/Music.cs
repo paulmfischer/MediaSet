@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using MediaSet.Api.Shared.Attributes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -57,6 +58,15 @@ public class Music : IEntity
     public Image? CoverImage { get; set; }
 
     public ImageLookup? ImageLookup { get; set; }
+
+    /// <summary>
+    /// Stored Plex data (the album's Plex summary on the paged search, the full Plex album data on the single lookup; typed object so
+    /// Shared does not depend on the Plex feature), filled only when the album is linked to Plex. Never stored on the album and
+    /// ignored on input, so edits never touch the Plex data.
+    /// </summary>
+    [BsonIgnore]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? Plex { get; set; }
 
     public bool IsEmpty()
     {

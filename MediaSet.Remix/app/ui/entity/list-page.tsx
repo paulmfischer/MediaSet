@@ -2,10 +2,19 @@ import type { Handle } from 'remix/component';
 
 import { DEFAULT_ORDER_BY, listHref } from '../../actions/entity/list-params.ts';
 import type { PagedResult } from '../../api/entity-data.ts';
-import { PLEX_FILTERS, type BaseEntity, type PlexFilter, type PlexListSummary } from '../../models.ts';
-import { PLEX_FILTER_LABELS } from '../../utils/plex.ts';
+import {
+  Entity,
+  PLEX_FILTERS,
+  PLEX_MUSIC_FILTERS,
+  type BaseEntity,
+  type PlexFilter,
+  type PlexListSummary,
+  type PlexMusicSummary,
+} from '../../models.ts';
+import { PLEX_FILTER_LABELS, PLEX_MUSIC_FILTER_LABELS } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
-import { PlexIcon } from '../plex/plex-icon.tsx';
+import { PlexIcon, plexMusicIconLabel } from '../plex/plex-icon.tsx';
+import { hasPlexMusicNotes, PlexMusicNotes } from '../plex/plex-music-card.tsx';
 import { PlexFilterSelect } from '../plex/public/plex-filter.tsx';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, Trash2, X } from '../icons.ts';
 import type { ListConfig } from './list-config.ts';
@@ -19,9 +28,9 @@ interface ListPageProps<T extends BaseEntity> {
   result: PagedResult<T>;
   searchText: string | null;
   orderBy: string;
-  /** The Plex gate: when false, no Plex icon or filter renders. Only ever true for movies. */
+  /** The Plex gate: when false, no Plex icon or filter renders. Only ever true for movies and music. */
   plexEnabled?: boolean;
-  /** The active Plex filter (movies only). */
+  /** The active Plex filter (movies and music only). */
   plex?: PlexFilter | null;
   /** Browser-reachable API origin, used for cover images. */
   apiUrl: string;
@@ -36,16 +45,39 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
     const name = config.entity;
     const [sortField, sortDirection] = orderBy.split(':');
 
-    // The linked movie's Plex summary; undefined when unlinked or the gate is off, so nothing renders.
-    const plexOf = (item: T) => (plexEnabled ? (item as { plex?: PlexListSummary }).plex : undefined);
+    const isMusic = config.entity === Entity.Musics;
+
+    // The linked entry's Plex summary; undefined when unlinked or the gate is off, so nothing renders.
+    const plexOf = (item: T) =>
+      plexEnabled ? (item as { plex?: PlexListSummary | PlexMusicSummary }).plex : undefined;
     const plexIcon = (item: T) => {
       const summary = plexOf(item);
-      return summary ? <PlexIcon plex={summary} size={20} /> : null;
+      if (!summary) return null;
+      return isMusic ? (
+        <PlexIcon plex={summary} size={20} label={plexMusicIconLabel(summary as PlexMusicSummary)} />
+      ) : (
+        <PlexIcon plex={summary} size={20} />
+      );
     };
-    const plexFilterOptions = [
-      { value: '', label: 'All movies' },
-      ...PLEX_FILTERS.map((filter) => ({ value: filter as string, label: PLEX_FILTER_LABELS[filter] })),
-    ];
+    // Visible text beside an album's icon: never played and partial.
+    const plexNotes = (item: T) => {
+      const summary = plexOf(item);
+      return isMusic && summary && hasPlexMusicNotes(summary as PlexMusicSummary) ? (
+        <PlexMusicNotes plex={summary as PlexMusicSummary} />
+      ) : null;
+    };
+    const plexFilterOptions = isMusic
+      ? [
+          { value: '', label: 'All albums' },
+          ...PLEX_MUSIC_FILTERS.map((filter) => ({
+            value: filter as string,
+            label: PLEX_MUSIC_FILTER_LABELS[filter] ?? filter,
+          })),
+        ]
+      : [
+          { value: '', label: 'All movies' },
+          ...PLEX_FILTERS.map((filter) => ({ value: filter as string, label: PLEX_FILTER_LABELS[filter] })),
+        ];
 
     const cover = (item: T) =>
       item.coverImage ? (
@@ -183,22 +215,26 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
           ) : (
             <>
               <div class="md:hidden flex flex-col divide-y divide-slate-700">
-                {items.map((item) => (
-                  <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
-                    {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
-                    <div class="flex-1 min-w-0">
-                      <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
-                        {config.titleOf(item)}
-                      </a>
-                      <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
+                {items.map((item) => {
+                  const notes = plexNotes(item);
+                  return (
+                    <div key={item.id} class="flex flex-row items-center gap-3 py-2 px-2 dark:hover:bg-zinc-800">
+                      {item.coverImage ? <div class="shrink-0">{cover(item)}</div> : null}
+                      <div class="flex-1 min-w-0">
+                        <a href={`${basePath}/${item.id}`} class="font-medium block truncate">
+                          {config.titleOf(item)}
+                        </a>
+                        <div class="text-xs text-gray-400 truncate">{config.summary(item)}</div>
+                        {notes ? <div class="mt-0.5 flex">{notes}</div> : null}
+                      </div>
+                      <div class="flex flex-row items-center gap-3 shrink-0">
+                        {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}
+                        {editLink(item)}
+                        {deleteLink(item)}
+                      </div>
                     </div>
-                    <div class="flex flex-row items-center gap-3 shrink-0">
-                      {plexEnabled ? <span class="inline-flex w-5 justify-center">{plexIcon(item)}</span> : null}
-                      {editLink(item)}
-                      {deleteLink(item)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <table class="hidden md:table text-left w-full">
                 <thead class="dark:bg-zinc-700 border-b-2 border-slate-600">
@@ -230,7 +266,10 @@ export function ListPage<T extends BaseEntity>(handle: Handle<ListPageProps<T>>)
                       ))}
                       {plexEnabled ? (
                         <td class={cell} data-plex-cell>
-                          <div class="flex justify-center">{plexIcon(item)}</div>
+                          <div class="flex flex-col items-center gap-1">
+                            {plexIcon(item)}
+                            {plexNotes(item)}
+                          </div>
                         </td>
                       ) : null}
                       <td class="flex flex-row gap-3 p-1 pt-2">

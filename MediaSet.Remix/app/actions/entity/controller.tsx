@@ -6,18 +6,21 @@ import { clientApiUrl } from '../../constants.server.ts';
 import { Entity, type BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
 import { routes } from '../../routes.ts';
-import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { isPlexEnabledForEntity } from '../../utils/plex-nav.server.ts';
 import { Document } from '../../ui/document.tsx';
 import { booksList, gamesList, moviesList, musicsList, type ListConfig } from '../../ui/entity/list-config.ts';
 import { ListPage } from '../../ui/entity/list-page.tsx';
+import { parsePlexMusicFilter } from '../../utils/plex.ts';
 import { listHref, parseListParams } from './list-params.ts';
 
 async function renderList<T extends BaseEntity>(context: AppContext, config: ListConfig<T>) {
   const params = parseListParams(context.url);
   const { searchText, orderBy, page } = params;
-  // Only movies have a Plex layer; the request-scoped gate decides whether the filter and icons exist at all.
-  const plexEnabled = config.entity === Entity.Movies && (await isPlexEnabledForRequest());
-  const plex = plexEnabled ? params.plex : null;
+  // Only movies and music have a Plex layer; the request-scoped gate decides whether the filter and icons exist at all.
+  // Albums have no watched state, so the music list takes only the on Plex and not on Plex filters.
+  const plexEnabled = await isPlexEnabledForEntity(config.entity);
+  const plexParam = config.entity === Entity.Musics ? parsePlexMusicFilter(params.plex) : params.plex;
+  const plex = plexEnabled ? plexParam : null;
   const result = await pagedSearchEntities<T>(config.entity, searchText, orderBy, page, undefined, plex);
   // A stale link past the last page goes to the last page rather than showing an empty list.
   if (result.items.length === 0 && result.totalCount > 0 && page > result.totalPages) {

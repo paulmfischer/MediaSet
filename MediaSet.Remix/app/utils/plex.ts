@@ -1,4 +1,12 @@
-import { PLEX_FILTERS, type PlexFilter, type PlexItem, type PlexRollup, type PlexScope } from '../models.ts';
+import {
+  PLEX_FILTERS,
+  PLEX_MUSIC_FILTERS,
+  type PlexFilter,
+  type PlexItem,
+  type PlexMusicSummary,
+  type PlexRollup,
+  type PlexScope,
+} from '../models.ts';
 
 /** How the Plex icon and card present a movie's link, decided from the stored data. */
 export type PlexLinkState = 'onPlex' | 'offPlex' | 'broken';
@@ -19,6 +27,46 @@ export const PLEX_FILTER_LABELS: Record<PlexFilter, string> = {
 /** The filter named by a query value, or null when it is missing or not one of the four. */
 export function parsePlexFilter(value: string | null | undefined): PlexFilter | null {
   return (PLEX_FILTERS as readonly string[]).includes(value ?? '') ? (value as PlexFilter) : null;
+}
+
+/** The filters the music list offers, in menu order. */
+export const PLEX_MUSIC_FILTER_LABELS: Partial<Record<PlexFilter, string>> = {
+  onPlex: 'On Plex',
+  notOnPlex: 'Not on Plex',
+};
+
+/** The filter a music list may use: only on Plex or not, anything else reads as no filter. */
+export function parsePlexMusicFilter(value: PlexFilter | null): PlexFilter | null {
+  return (PLEX_MUSIC_FILTERS as readonly string[]).includes(value ?? '') ? value : null;
+}
+
+/** True when Plex has fewer tracks of the album than MediaSet expects. */
+export function isPartialAlbum(plex: Pick<PlexMusicSummary, 'tracksPresent' | 'tracksExpected'>): boolean {
+  return (
+    plex.tracksPresent != null &&
+    plex.tracksExpected != null &&
+    plex.tracksExpected > 0 &&
+    plex.tracksPresent < plex.tracksExpected
+  );
+}
+
+/** "10 of 10 tracks" or "7 of 10 tracks"; just the Plex count when MediaSet expects none; empty when unknown. */
+export function describeTracks(plex: Pick<PlexMusicSummary, 'tracksPresent' | 'tracksExpected'>): string {
+  const { tracksPresent: present, tracksExpected: expected } = plex;
+  if (present == null) return '';
+  if (expected == null || expected <= 0) return `${present} ${present === 1 ? 'track' : 'tracks'}`;
+  return `${present} of ${expected} tracks`;
+}
+
+/** "FLAC, 900 kbps"; either part may be missing, empty when both are. */
+export function describeAudioQuality(plex: Pick<PlexMusicSummary, 'audioCodec' | 'bitrate'>): string {
+  return [plex.audioCodec?.toUpperCase(), plex.bitrate ? `${plex.bitrate} kbps` : ''].filter(Boolean).join(', ');
+}
+
+/** "12 plays", "1 play" or "Never played". */
+export function describePlays(plex: Pick<PlexMusicSummary, 'playCount'>): string {
+  if (plex.playCount <= 0) return 'Never played';
+  return `${plex.playCount} ${plex.playCount === 1 ? 'play' : 'plays'}`;
 }
 
 const MINUTE = 60;

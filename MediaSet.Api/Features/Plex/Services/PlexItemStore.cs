@@ -35,8 +35,8 @@ public interface IPlexItemStore
     /// <summary>The music documents with only the fields the music statistics read (no file path or deep link).</summary>
     Task<IReadOnlyList<PlexItemData>> ListMusicStatisticsProjectionAsync(CancellationToken cancellationToken);
 
-    /// <summary>Ids of the documents in a list filter state (see <see cref="PlexListFilters"/>), for movies and TV entries.</summary>
-    Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken);
+    /// <summary>Ids of the documents of an entity type in a list filter state (see <see cref="PlexListFilters"/>); movies include TV entries.</summary>
+    Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, string entityType, CancellationToken cancellationToken);
 
     /// <summary>Ids of every stored document of an entity type (movies include TV entries), used to purge documents of entries that no longer exist.</summary>
     Task<IReadOnlyList<string>> ListIdsAsync(string entityType, CancellationToken cancellationToken);
@@ -83,13 +83,26 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.PlexUpdatedAt))
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// The fields the list summary needs. EntityType must stay in it: an inclusion projection drops every other field, and
+    /// the music lookup tells music documents from movie ones by it.
+    /// </summary>
+    public static ProjectionDefinition<PlexItemData> SummaryProjection { get; } = Builders<PlexItemData>.Projection
+        .Include(d => d.EntityType)
+        .Include(d => d.OnPlex)
+        .Include(d => d.Broken)
+        .Include(d => d.Watched)
+        .Include(d => d.Resolution)
+        .Include(d => d.PlayCount)
+        .Include(d => d.LastPlayedAt)
+        .Include(d => d.TracksPresent)
+        .Include(d => d.TracksExpected)
+        .Include(d => d.AudioCodec)
+        .Include(d => d.Bitrate);
+
     public async Task<IReadOnlyList<PlexItemData>> ListSummariesAsync(IReadOnlyCollection<string> entryIds, CancellationToken cancellationToken) =>
         await Collection.Find(Builders<PlexItemData>.Filter.In(d => d.Id, entryIds))
-            .Project<PlexItemData>(Builders<PlexItemData>.Projection
-                .Include(d => d.OnPlex)
-                .Include(d => d.Broken)
-                .Include(d => d.Watched)
-                .Include(d => d.Resolution))
+            .Project<PlexItemData>(SummaryProjection)
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<PlexItemData>> ListStatsAsync(CancellationToken cancellationToken) =>
@@ -142,7 +155,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
                 .Include(d => d.SizeBytes))
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, string entityType, CancellationToken cancellationToken)
     {
         var f = Builders<PlexItemData>.Filter;
         // notOnPlex lists the ids that ARE on Plex; the caller excludes them
@@ -153,7 +166,7 @@ public class PlexItemStore(IDatabaseService database) : IPlexItemStore
             PlexListFilters.Broken => f.Eq(d => d.Broken, true),
             _ => throw new ArgumentException($"Invalid plex filter '{filter}'.")
         };
-        return await Collection.Find(f.And(OfEntityType(PlexEntityTypes.Movies), query)).Project(d => d.Id).ToListAsync(cancellationToken);
+        return await Collection.Find(f.And(OfEntityType(entityType), query)).Project(d => d.Id).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> ListIdsAsync(string entityType, CancellationToken cancellationToken) =>
