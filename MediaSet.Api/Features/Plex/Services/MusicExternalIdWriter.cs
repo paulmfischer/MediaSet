@@ -1,3 +1,4 @@
+using MediaSet.Api.Infrastructure.Caching;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Shared.Models;
 using MongoDB.Bson;
@@ -14,7 +15,7 @@ public interface IMusicExternalIdWriter
     Task<bool> SetIfEmptyAsync(string musicId, string externalId, CancellationToken cancellationToken);
 }
 
-public class MusicExternalIdWriter(IDatabaseService database) : IMusicExternalIdWriter
+public class MusicExternalIdWriter(IDatabaseService database, ICacheService cache) : IMusicExternalIdWriter
 {
     /// <summary>The album with this id and an ExternalId that is missing, null, empty or whitespace.</summary>
     public static FilterDefinition<Music> EmptyExternalIdFilter(string musicId)
@@ -24,12 +25,24 @@ public class MusicExternalIdWriter(IDatabaseService database) : IMusicExternalId
             & (f.Eq(m => m.ExternalId, null) | f.Regex(m => m.ExternalId, new BsonRegularExpression("^\\s*$")));
     }
 
+    /// <summary>The update: sets ExternalId and nothing else.</summary>
+    public static UpdateDefinition<Music> SetExternalIdUpdate(string externalId) =>
+        Builders<Music>.Update.Set(m => m.ExternalId, externalId);
+
     public async Task<bool> SetIfEmptyAsync(string musicId, string externalId, CancellationToken cancellationToken)
     {
         var result = await database.GetCollection<Music>().UpdateOneAsync(
             EmptyExternalIdFilter(musicId),
-            Builders<Music>.Update.Set(m => m.ExternalId, externalId),
+            SetExternalIdUpdate(externalId),
             cancellationToken: cancellationToken);
-        return result.ModifiedCount > 0;
+        if (result.ModifiedCount == 0)
+        {
+            return false;
+        }
+
+        // Same invalidation as EntityService.UpdateAsync, which this write bypasses
+        await cache.RemoveByPatternAsync($"metadata:{MediaTypes.Musics}:*");
+        await cache.RemoveAsync("stats");
+        return true;
     }
 }

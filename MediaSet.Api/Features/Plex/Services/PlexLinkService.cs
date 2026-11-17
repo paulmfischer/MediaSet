@@ -75,6 +75,13 @@ public class PlexLinkService(IPlexClient client, IPlexItemStore store) : IPlexLi
         // All Plex reads happen before the write
         var tracks = await client.GetTracksAsync(item.RatingKey, cancellationToken);
         var data = PlexMusicMatching.Build(musicId, item, tracks, expectedTracks, DateTime.UtcNow, PlexLinkSources.Manual);
+        // Keep the recorded cover attempt when the album state is the same, so a relink does not forget it
+        var stored = await store.GetAsync(musicId, PlexEntityTypes.Music, cancellationToken);
+        if (stored?.CoverAttemptKey != null && stored.CoverAttemptKey == PlexMusicMatching.CoverAttemptKey(item))
+        {
+            data.CoverAttemptKey = stored.CoverAttemptKey;
+            data.CoverAttemptedAt = stored.CoverAttemptedAt;
+        }
         await store.UpsertAsync(data, cancellationToken);
         return data;
     }

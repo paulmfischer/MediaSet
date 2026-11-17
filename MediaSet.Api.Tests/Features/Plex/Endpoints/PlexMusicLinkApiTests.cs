@@ -320,6 +320,30 @@ public class PlexMusicLinkApiTests
     }
 
     [Test]
+    public async Task Link_RelinkingTheSameAlbumState_KeepsTheRecordedCoverAttempt()
+    {
+        var first = CreateHarness(Server());
+        await LinkAsync(first.Client, MusicId, new { plexItemId = "7001" });
+        var key = PlexMusicMatching.CoverAttemptKey(new PlexItem("7001", "album", "x", null, "4", "Music", null, null, new PlexGuids(null, null, null), [], UpdatedAt: first.Items.Items[MusicId].PlexUpdatedAt));
+        var items = new InMemoryPlexItemStore();
+        await items.UpsertAsync(new PlexItemData
+        {
+            Id = MusicId,
+            PlexItemId = "7001",
+            EntityType = PlexEntityTypes.Music,
+            CoverAttemptKey = key,
+            CoverAttemptedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        }, CancellationToken.None);
+        var h = CreateHarness(Server(), items: items);
+
+        await LinkAsync(h.Client, MusicId, new { plexItemId = "7001" });
+
+        Assert.That(key, Is.Not.Null);
+        Assert.That(items.Items[MusicId].CoverAttemptKey, Is.EqualTo(key));
+        Assert.That(items.Items[MusicId].CoverAttemptedAt, Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+    }
+
+    [Test]
     public async Task Link_UnknownPlexItem_Returns404AndStoresNothing()
     {
         var h = CreateHarness(Server());
