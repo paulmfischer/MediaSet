@@ -66,11 +66,11 @@ guides are in `Setup/`.
 | IGDB | Game metadata | `IgdbConfiguration__` (`ClientId`, `ClientSecret`) | `IIgdbClient` |
 | MusicBrainz | Music album metadata | `MusicBrainzConfiguration__` (`UserAgent`) | `IMusicBrainzClient` |
 | UPCitemdb | Barcode to product (movies/games) | `UpcItemDbConfiguration__` (`ApiKey`) | `IUpcItemDbClient` |
-| Plex | Optional read-only library sync (movies) | `PlexConfiguration__` (`BaseUrl`, `Token`, `DetailConcurrency`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
+| Plex | Optional read-only library sync (movies, TV and music) | `PlexConfiguration__` (`BaseUrl`, `Token`, `DetailConcurrency`, `Entities__Movies__Enabled`, `Entities__Movies__Schedule`, `Entities__Music__Enabled`, `Entities__Music__Schedule`, `Entities__<Type>__LibrarySectionIds`, `Backfill__RequestsPerMinute`, `Backfill__BatchSize`) | `IPlexClient` (GET only; token sent in the `X-Plex-Token` header, never in URLs); `/plex/status` reports state and `/plex/{entityType}/search?query=` finds titles |
 
 ### Plex overview
 
-Plex data is stored apart from movies, one lock serializes every sync, and Plex is only ever read (GET). Matching order and
+Plex data is stored apart from movies, one lock serializes every sync, and Plex is only ever read (GET). Movies, TV series entries and music are the supported entity types (`PlexEntityTypes`); music is described in [Plex music](#plex-music). Matching order and
 stored data are described in the sections below; setup and operation are in the [Plex setup guide](../Setup/PLEX_SETUP.md).
 
 ### Plex sync runs
@@ -96,6 +96,8 @@ reads the background image lookup configuration. `ITmdbClient` exists only when 
 is skipped with a log line and the sync continues. A TMDB error on one movie counts as skipped, a 429 stops the backfill early,
 and neither fails the run.
 
+The music backfill is a separate service, `MusicExternalIdBackfillService`, run as the first step of a music run (see [Plex music](#plex-music)). It shares the two throttle settings, which count MusicBrainz requests for music.
+
 ### Plex cover fallback
 
 When an entry is paired with a Plex item (a sync match or a manual link) and has no cover, `PlexCoverService`
@@ -103,12 +105,12 @@ When an entry is paired with a Plex item (a sync match or a manual link) and has
 (the stored poster, not a resized copy; GET only, token in the header) and `IImageService.SaveImageBytesAsync` stores it like any
 other cover (the URL download is not used: it blocks private addresses such as the Plex server). A poster narrower than
 `PlexCoverService.MinWidth` (400 px), larger than 10 MB, not JPEG/PNG, or missing is skipped. A cover is never replaced, and
-any failure is logged (type only) and never fails the link or the sync run.
+any failure is logged (type only) and never fails the link or the sync run. The service is generic over the entity type (`IPlexCoverService<TEntity>`, registered for `Movie` and `Music`), so TV entries share the movie one and music saves the album thumb under the music media type with the same 400 px and 10 MB limits.
 
 ### Plex sync schedule
 
 `PlexSyncScheduler` (a hosted service registered only when Plex is enabled) runs one loop per enabled entity type, driven by
-`PlexConfiguration__Entities__<Type>__Schedule`, a cron expression that defaults to `0 3 * * 0` (Sundays at 03:00). It has its own
+`PlexConfiguration__Entities__<Type>__Schedule`, a cron expression that defaults to `0 3 * * 0` (Sundays at 03:00) for movies and `0 4 * * 0` (Sundays at 04:00) for music (`PlexConfiguration.ScheduleFor`). It has its own
 configuration and does not use `BackgroundImageLookupConfiguration`. Times are in the **server local time zone** (`TimeZoneInfo.Local`;
 set `TZ` in the container), the same as the image lookup job. At each occurrence it calls `IPlexSyncService.StartAsync(type,
 "scheduled")`, so it uses the same lock and run records as a manual sync (`Trigger` is `scheduled`). A failed start is logged and the
@@ -190,14 +192,14 @@ async request context for the synchronous header and the Plex handlers (one look
 
 ### Plex statistics
 
-`GET /plex/statistics` (in `PlexApi`, so registered only when Plex is enabled; 400 when movies are not) returns `{ movies, tv }`, each
+`GET /plex/statistics` (in `PlexApi`, so registered only when Plex is enabled; 400 only when no entity type is) returns `{ movies, tv, music }`; each section is present only when its type is enabled (`movies` and `tv` with movies, `music` with music, so music alone works). Each of movies and TV has
 with coverage (`total`, `onPlex`, `notOnPlex`, `broken`), `units` and ordered `{ name, count }` lists for resolution, video codec, HDR/SDR,
 subtitles, watched, audio codec and channel layout, plus `storage`, `runtime`, `mostWatched` (top 10, titles from the movie list; ranked by play count for movies and by watched episodes, from the rollup, for TV)
 and, for TV, `completeness` (episodes present against the count Plex reports). A unit is an on-Plex movie, or an on-Plex episode for TV.
 `PlexItemStore.ListStatisticsProjectionAsync` projects the documents (no file path, titles or season list; episodes keep only their stream, size,
 duration and watched fields) and the pure `PlexStatisticsCalculator` counts them; documents of no listed entry are ignored. The Plex page
 (`app/ui/plex/plex-statistics.tsx`) renders it before the sync section with the dashboard chart components, and renders without it when
-the call fails. This is separate from the dashboard's `plexStats`.
+the call fails. The music section is described under [Plex music](#plex-music). This is separate from the dashboard's `plexStats`, which stays movies only.
 
 ### Plex TV series entries
 
@@ -234,6 +236,66 @@ season no longer returns keeps its data with `OnPlex` false and a miss; an autom
 miss (`AutoLinkDropMisses`), a manual link keeps it. A season in scope that Plex no longer has treats all its episodes as
 missing, and a refresh flags without counting misses. A show gone from Plex leaves stored episodes as they were. Episode file
 paths are returned only by the single-item responses (`GET .../items/{id}`, link and refresh).
+
+### Plex music
+
+Music is a second entity type (`music`, enabled with `PlexConfiguration__Entities__Music__Enabled`) that links a `Music` entry
+to a Plex **album** (item type `album`, read from libraries of type `artist`; by default every artist library, or those in
+`Entities__Music__LibrarySectionIds`). An invalid music schedule disables only music (`PlexConfigurationValidator`). It shares
+the lock, run records, scheduler, `PlexItems` collection and the `/plex/{entityType}/...` routes with movies.
+
+**Matching.** `Music.ExternalId` is an optional MusicBrainz release-group id written `mbid:<id>` (`ExternalIdFormat`; the music
+lookup strategy writes it for new lookups). `PlexMusicMatching` (pure) matches by the stored Plex item id first, then
+`ExternalId` against the MusicBrainz guid Plex holds for the album (`PlexGuids.Mbid`, compared lowercased). There is no title or
+artist fallback, so compilations and various-artists releases cannot be mismatched. Plex albums with no entry are ignored. A
+manual link may point outside the scanned libraries (the album is fetched directly) and is never replaced by a run. As for
+movies, an album gone from a reachable library is flagged `OnPlex = false` and an automatic link is dropped at the second
+consecutive miss (`AutoLinkDropMisses`); a manual link is flagged broken. Several entries linking to one album are recorded
+under `DuplicateLinks` as `Albums` (shown on the `/plex` page).
+
+**Backfill.** `MusicExternalIdBackfillService` (`Features/Plex/Services`) starts every music run. It selects entries with an empty
+`ExternalId` and a barcode, or a title and an artist. It searches MusicBrainz by barcode first (`SearchByBarcodeAsync`); the
+releases found must all belong to one release group, else the barcode is ambiguous and the entry stays blank (no title guess). Only
+a barcode with no result falls back to the exact case-insensitive title with a single exact artist credit
+(`SearchByEntityPropertiesAsync`), again accepted only for one release group. It re-reads the entry before saving so an id
+entered meanwhile is never overwritten, and writes only `ExternalId`. Throttling uses `Backfill__RequestsPerMinute` per MusicBrainz
+request and `Backfill__BatchSize` entries per run, never or least recently searched first; attempt times are kept in a store
+(`IMusicExternalIdBackfillStore`), a 429 stops the backfill early and errors count as skipped without failing the run. Its counts
+go into `ExternalIdsBackfilled` and `BackfillSkipped` of the run.
+
+**Stored data.** Music reuses `PlexItems`, keyed by the music id with `EntityType = music`. `PlexMusicMatching.Build` writes one
+document per entry from the album and its tracks (read once per album, bounded by `DetailConcurrency`; an album whose tracks cannot
+be read is retried next run): `PlayCount` (sum of track plays), `LastPlayedAt` (latest, null when never played), `TracksPresent`
+and `TracksExpected` (`Music.Tracks`, null when unknown), `AudioCodec` (the most used, ties to the better ranked), `Bitrate` (rounded
+average), `SizeBytes` (sum), library, `DateAdded`, deep link and sync times. Multi-disc releases are one Plex album summed across
+discs. There is no watched flag, rating, file path or per-track storage. Fewer tracks on Plex than expected is a match shown as
+partial.
+
+**Routes.**
+
+- `/plex/music/status`, `sync`, `search?query=` (albums, with the artist) and `items/{id}` (the stored data).
+- `PUT items/{id}/link` (body `{ "plexItemId" }`, no scope) reads the album, stores a manual link, then applies the cover if missing.
+- `DELETE items/{id}/link` removes the link and its data. A music id is checked against the music service (404 "Music not found").
+- The per-item refresh and the season scope are movie-only.
+- `GET /musics/pagedsearch` attaches a `plex` summary (`onPlex`, `broken`, `playCount`, `lastPlayedAt`, `tracksPresent`, `tracksExpected`, `audioCodec`, `bitrate`).
+- Its `plex` filter takes `onPlex` or `notOnPlex` only (400 otherwise, ignored when music is not enabled) through `IPlexLookup.GetMusicFilterAsync`.
+- `GET /musics/{id}` adds the stored data as `plex` (no file path).
+- Deleting a music entry deletes its Plex document (`IPlexDataCleanup.DeleteMusicDataAsync`), and a run purges documents of deleted entries.
+
+**Statistics.** `PlexStatisticsCalculator.ComputeMusic` over `ListMusicStatisticsProjectionAsync` returns `PlexMusicStatisticsDto`:
+`coverage`, `albums` (on Plex), `totalPlays`, `neverPlayed`, `mostPlayed`, `recentlyPlayed` and `recentlyAdded` (top 10 albums with
+artist, play count and dates), `storage` (total and average over albums with a size), `audioCodec`, `bitrate` (bands "Under 128
+kbps", "128-191 kbps", "192-255 kbps", "256-319 kbps", "320-999 kbps", "1000+ kbps", and "unknown" last) and `completeness` (tracks present against
+expected, and albums complete and partial, counting only albums with an expected count).
+
+**UI.**
+
+- Routes `/musics/:id/plex/link` and `/musics/:id/plex/unlink` (`link-music-controller.tsx`, `unlink-music-controller.tsx`), driven through `app/api/plex-data.ts` like movies.
+- The gate is `isPlexMusicEnabledForRequest`, so music UI shows only when music is enabled.
+- The music list shows the Plex icon with "Never played" and "Partial n/m" notes (`PlexMusicNotes`) and an on Plex or not on Plex filter.
+- The detail page shows `PlexMusicCard` (plays, last played, tracks, quality, size, date added, Open in Plex, and a menu with Relink and Unlink).
+- The `/plex` sync page lists music next to movies, and the statistics block has a Music section (`plex-statistics.tsx`).
+- The dashboard Music panel shows `PlexMusicSection` (on Plex, not on Plex, total plays, never played and a link to the list filtered to not on Plex), fed from the Plex statistics.
 
 ## Local development
 
