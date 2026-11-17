@@ -12,17 +12,14 @@ export const CHART_HEX: Record<DashboardTabId, string> = {
 };
 
 export const FORMAT_PALETTES: Record<DashboardTabId, string[]> = {
-  books: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
-  movies: ['#dc2626', '#ef4444', '#f87171', '#fca5a5', '#fecaca'],
-  games: ['#9333ea', '#a855f7', '#c084fc', '#d8b4fe', '#e9d5ff'],
-  musics: ['#db2777', '#ec4899', '#f472b6', '#f9a8d4', '#fbcfe8'],
+  books: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#15803d'],
+  movies: ['#dc2626', '#ef4444', '#f87171', '#fca5a5', '#fecaca', '#b91c1c'],
+  games: ['#9333ea', '#a855f7', '#c084fc', '#d8b4fe', '#e9d5ff', '#7e22ce'],
+  musics: ['#db2777', '#ec4899', '#f472b6', '#f9a8d4', '#fbcfe8', '#be185d'],
 };
 
 // Plex amber shades for the resolution pie.
 export const PLEX_RESOLUTION_COLORS = ['#e5a00d', '#f5c04a', '#b87f0a', '#fbd98a', '#8a5f08'];
-
-// Distinct hues for the Plex statistics pies, whose slices are unrelated categories (Plex amber first).
-export const PLEX_STATISTICS_COLORS = ['#e5a00d', '#38bdf8', '#a78bfa', '#34d399', '#f87171', '#94a3b8'];
 
 export const MOVIE_TYPE_COLORS = ['#ef4444', '#f97316'];
 

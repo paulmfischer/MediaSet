@@ -336,7 +336,11 @@ export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistic
       id === 'movies' ? (
         <div class="space-y-8">
           {movies ? <KindSection stats={movies} label="Movies" unit="movies" /> : null}
-          {tv ? <KindSection stats={tv} label="TV series" unit="episodes" /> : null}
+          {tv ? (
+            <div class={movies ? 'border-t border-zinc-700 pt-8' : ''}>
+              <KindSection stats={tv} label="TV series" unit="episodes" />
+            </div>
+          ) : null}
         </div>
       ) : music ? (
         <MusicSection stats={music} />
@@ -361,7 +365,7 @@ export function PlexStatisticsSection(handle: Handle<{ statistics: PlexStatistic
                 checked={index === 0}
               />
             ))}
-            <div class="mb-1 grid gap-4 sm:grid-cols-3">
+            <div class="mb-1 grid gap-4 sm:grid-cols-2">
               {tabs.map((tab) => (
                 <label
                   for={tab.inputId}
