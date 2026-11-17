@@ -1,5 +1,36 @@
 # Changelog
 
+## [5.2.0](https://github.com/paulmfischer/MediaSet/compare/v5.1.0...v5.2.0) (2026-11-17)
+
+
+### Features
+
+* **music:** add MusicBrainz ExternalId and a backfill service ([#892](https://github.com/paulmfischer/MediaSet/issues/892)) ([134da4b](https://github.com/paulmfischer/MediaSet/commit/134da4bd63f5cd2f6a5e3effdab924f05e4e2342)), closes [#883](https://github.com/paulmfischer/MediaSet/issues/883)
+* **plex:** add entity tabs and column sync layout to statistics page ([#901](https://github.com/paulmfischer/MediaSet/issues/901)) ([7f1c808](https://github.com/paulmfischer/MediaSet/commit/7f1c808f17802d4e5ca332e64b2b283fb901b698))
+* **plex:** add music Plex link and unlink dialogs ([#897](https://github.com/paulmfischer/MediaSet/issues/897)) ([f1f500f](https://github.com/paulmfischer/MediaSet/commit/f1f500f177da7b32be2df18e419cdcc674cee518)), closes [#888](https://github.com/paulmfischer/MediaSet/issues/888)
+* **plex:** add music search, link and unlink routes and delete cleanup ([#894](https://github.com/paulmfischer/MediaSet/issues/894)) ([f2805b6](https://github.com/paulmfischer/MediaSet/commit/f2805b643668c577984f50ce0bdf12c6d2676a5b))
+* **plex:** add music section to the Plex statistics ([#895](https://github.com/paulmfischer/MediaSet/issues/895)) ([165da02](https://github.com/paulmfischer/MediaSet/commit/165da026877fcfd686d2c823701d3b932a6fb784)), closes [#886](https://github.com/paulmfischer/MediaSet/issues/886)
+* **plex:** add Plex badge, card and filter to music list and detail ([#896](https://github.com/paulmfischer/MediaSet/issues/896)) ([9160703](https://github.com/paulmfischer/MediaSet/commit/91607039e39e61cb764a606d8e62f5317286e588)), closes [#887](https://github.com/paulmfischer/MediaSet/issues/887)
+* **plex:** show music on the dashboard and sync page ([#898](https://github.com/paulmfischer/MediaSet/issues/898)) ([b82c300](https://github.com/paulmfischer/MediaSet/commit/b82c300b3f9ccd57d3a0d8f2a0eaf46eebd71027)), closes [#889](https://github.com/paulmfischer/MediaSet/issues/889)
+* **plex:** sync music albums to Plex with MusicBrainz id matching ([#893](https://github.com/paulmfischer/MediaSet/issues/893)) ([635c91f](https://github.com/paulmfischer/MediaSet/commit/635c91f66117c28b8480035e9598c424fd4965e2))
+
+
+### Bug Fixes
+
+* **plex:** fix music audit findings (filters, items, covers, stats) ([#900](https://github.com/paulmfischer/MediaSet/issues/900)) ([bcafbd0](https://github.com/paulmfischer/MediaSet/commit/bcafbd09b02cab946055e45731105051091c1c35)), closes [#881](https://github.com/paulmfischer/MediaSet/issues/881)
+
+
+### Documentation
+
+* **plex:** document music sync, matching, statistics and UI ([#899](https://github.com/paulmfischer/MediaSet/issues/899)) ([b0bdf0e](https://github.com/paulmfischer/MediaSet/commit/b0bdf0eedcafabfac4993bde515a5ca8ee17c852)), closes [#890](https://github.com/paulmfischer/MediaSet/issues/890)
+* remove outdated ImplementationDetails folder ([#878](https://github.com/paulmfischer/MediaSet/issues/878)) ([26db9b1](https://github.com/paulmfischer/MediaSet/commit/26db9b1c8f45f0851efa33b2b634cd935e8f4318))
+* remove remaining ImplementationDetails doc ([#880](https://github.com/paulmfischer/MediaSet/issues/880)) ([43af5a7](https://github.com/paulmfischer/MediaSet/commit/43af5a7b9286cbc8a44e62a8d95cdd9c48b720f8))
+
+
+### Refactoring
+
+* **plex:** make the cover service generic over entity type ([#891](https://github.com/paulmfischer/MediaSet/issues/891)) ([931f2cc](https://github.com/paulmfischer/MediaSet/commit/931f2cce2931ea182810ddda0499159b6b11fd67)), closes [#882](https://github.com/paulmfischer/MediaSet/issues/882)
+
 ## [5.1.0](https://github.com/paulmfischer/MediaSet/compare/v5.0.0...v5.1.0) (2026-11-16)
 
 
