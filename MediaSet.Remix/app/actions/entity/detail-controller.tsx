@@ -2,9 +2,9 @@ import { createController } from 'remix/router';
 
 import { getEntity } from '../../api/entity-data.ts';
 import { clientApiUrl } from '../../constants.server.ts';
-import { Entity, type BaseEntity } from '../../models.ts';
+import type { BaseEntity } from '../../models.ts';
 import type { AppContext } from '../../router.ts';
-import { isPlexEnabledForRequest } from '../../utils/plex-nav.server.ts';
+import { isPlexEnabledForEntity } from '../../utils/plex-nav.server.ts';
 import { routes } from '../../routes.ts';
 import { createServerLogger } from '../../utils/serverLogger.ts';
 import { Document } from '../../ui/document.tsx';
@@ -49,8 +49,8 @@ async function renderDetail<T extends BaseEntity>(context: AppContext, config: D
     );
   }
 
-  // Only movies have a Plex layer; the gate is read once per page and decides whether any of it renders.
-  const plexEnabled = config.entity === Entity.Movies && (await isPlexEnabledForRequest());
+  // Only movies and music have a Plex layer; the gate is read once per page and decides whether any of it renders.
+  const plexEnabled = await isPlexEnabledForEntity(config.entity);
   const title = config.titleOf(entity) || config.singular;
   return context.render(
     <Document

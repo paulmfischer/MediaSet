@@ -1,7 +1,7 @@
 import type { Handle } from 'remix/component';
 
-import type { PlexItem, PlexListSummary } from '../../models.ts';
-import { plexLinkState } from '../../utils/plex.ts';
+import type { PlexItem, PlexListSummary, PlexMusicSummary } from '../../models.ts';
+import { describePlays, describeTracks, isPartialAlbum, plexLinkState } from '../../utils/plex.ts';
 import { Icon } from '../icon.tsx';
 import { Check } from '../icons.ts';
 
@@ -12,13 +12,25 @@ export const PLEX_ICON_SRC = `/integrations/plex-${PLEX_ICON_VARIANT}.svg`;
 
 interface PlexIconProps {
   /** The movie's stored Plex data or list summary; an unlinked movie (undefined) shows nothing. */
-  plex: Pick<PlexItem, 'onPlex' | 'broken' | 'watched'> | PlexListSummary | undefined;
+  plex: (Pick<PlexItem, 'onPlex' | 'broken'> & { watched?: boolean }) | PlexListSummary | undefined;
   /** Width and height in pixels. */
   size?: number;
+  /** Tooltip and accessible label; defaults to the movie wording of the state. */
+  label?: string;
+}
+
+/** The tooltip and accessible label for an album's Plex state: on Plex with its plays and, when partial, its tracks. */
+export function plexMusicIconLabel(plex: PlexMusicSummary): string {
+  const state = plexLinkState(plex);
+  if (state === 'broken') return 'Plex link is broken';
+  if (state === 'offPlex') return 'No longer on Plex';
+  const parts = ['On Plex', describePlays(plex).toLowerCase()];
+  if (isPartialAlbum(plex)) parts.push(`partial, ${describeTracks(plex)}`);
+  return parts.join(', ');
 }
 
 /** The tooltip and accessible label for a movie's Plex state. */
-export function plexIconLabel(plex: Pick<PlexItem, 'onPlex' | 'broken' | 'watched'>): string {
+export function plexIconLabel(plex: Pick<PlexItem, 'onPlex' | 'broken'> & { watched?: boolean }): string {
   switch (plexLinkState(plex)) {
     case 'broken':
       return 'Plex link is broken';
@@ -34,11 +46,11 @@ export function plexIconLabel(plex: Pick<PlexItem, 'onPlex' | 'broken' | 'watche
 // caller passes no data) renders nothing.
 export function PlexIcon(handle: Handle<PlexIconProps>) {
   return () => {
-    const { plex, size = 28 } = handle.props;
+    const { plex, size = 28, label: labelOverride } = handle.props;
     if (!plex) return null;
 
     const state = plexLinkState(plex);
-    const label = plexIconLabel(plex);
+    const label = labelOverride ?? plexIconLabel(plex);
     const muted = state === 'offPlex' || state === 'broken';
     const badge = Math.max(10, Math.round(size * 0.45));
     const dot = Math.round(badge * 0.7);

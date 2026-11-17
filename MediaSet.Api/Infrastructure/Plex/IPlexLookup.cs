@@ -27,6 +27,24 @@ public interface IPlexLookup
     Task<IdFilter?> GetMovieFilterAsync(string filter, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The Plex data of the album without any file path, or null when Plex is not enabled for music, the id is not an
+    /// ObjectId or the album is not linked.
+    /// </summary>
+    Task<object?> GetMusicDataAsync(string musicId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The small Plex summaries of the linked albums among the ids, keyed by music id, read in one query. Empty when Plex is
+    /// not enabled for music or a read fails.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, object>> GetMusicSummariesAsync(IReadOnlyCollection<string> musicIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The id restriction for a music list filter (onPlex or notOnPlex, case-insensitive), or null when Plex is not enabled
+    /// for music. Throws <see cref="ArgumentException"/> for any other filter value.
+    /// </summary>
+    Task<IdFilter?> GetMusicFilterAsync(string filter, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The Plex statistics of the movie collection of <paramref name="totalMovies"/> movies, read per call, or null when
     /// Plex is not enabled for movies or the read fails.
     /// </summary>

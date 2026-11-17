@@ -150,16 +150,17 @@ public sealed class InMemoryPlexItemStore : IPlexItemStore
     /// <summary>When set, summary reads throw it.</summary>
     public Exception? SummariesFailure { get; set; }
 
-    public Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<string>> ListIdsByFilterAsync(string filter, string entityType, CancellationToken cancellationToken)
     {
         lock (_sync)
         {
-            var movies = _items.Values.Where(d => d.EntityType == null);
+            var music = PlexEntityTypes.Normalize(entityType) == PlexEntityTypes.Music;
+            var docs = _items.Values.Where(d => music ? d.EntityType == PlexEntityTypes.Music : d.EntityType == null);
             var matching = PlexListFilters.Normalize(filter) switch
             {
-                PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => movies.Where(d => d.OnPlex),
-                PlexListFilters.Unwatched => movies.Where(d => d.OnPlex && !d.Watched),
-                PlexListFilters.Broken => movies.Where(d => d.Broken),
+                PlexListFilters.OnPlex or PlexListFilters.NotOnPlex => docs.Where(d => d.OnPlex),
+                PlexListFilters.Unwatched => docs.Where(d => d.OnPlex && !d.Watched),
+                PlexListFilters.Broken => docs.Where(d => d.Broken),
                 _ => throw new ArgumentException("bad filter")
             };
             return Task.FromResult<IReadOnlyList<string>>(matching.Select(d => d.Id).ToList());

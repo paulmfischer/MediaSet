@@ -1,12 +1,13 @@
 import type { Handle } from 'remix/component';
 
-import type { BaseEntity, PlexItem } from '../../models.ts';
+import { Entity, type BaseEntity, type PlexItem, type PlexMusicItem } from '../../models.ts';
 import { Icon } from '../icon.tsx';
 import { Check, ImageOff, Pencil } from '../icons.ts';
 import { millisecondsToMinutesSeconds } from '../../utils/helpers.ts';
 import type { DetailConfig } from './detail-config.ts';
 import { PlexCard } from '../plex/plex-card.tsx';
-import { PlexIcon } from '../plex/plex-icon.tsx';
+import { PlexMusicCard } from '../plex/plex-music-card.tsx';
+import { PlexIcon, plexMusicIconLabel } from '../plex/plex-icon.tsx';
 import { ConfirmDelete } from './public/confirm-delete.tsx';
 
 interface DetailPageProps<T extends BaseEntity> {
@@ -16,7 +17,7 @@ interface DetailPageProps<T extends BaseEntity> {
   basePath: string;
   /** Browser-reachable API origin, used for the cover image. */
   apiUrl: string;
-  /** The Plex gate: when false, no Plex icon or card renders. Only ever true for movies. */
+  /** The Plex gate: when false, no Plex icon or card renders. Only ever true for movies and music. */
   plexEnabled?: boolean;
   /** Set after a save whose cover image could not be stored; the entity itself was saved. */
   imageNotice?: string;
@@ -40,7 +41,10 @@ const value = 'min-w-0 wrap-break-word';
 export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<T>>) {
   return () => {
     const { config, entity, basePath, apiUrl, plexEnabled = false, imageNotice, now } = handle.props;
-    const plex = plexEnabled ? (entity as { plex?: PlexItem }).plex : undefined;
+    const isMusic = config.entity === Entity.Musics;
+    const plexData = plexEnabled ? (entity as { plex?: PlexItem | PlexMusicItem }).plex : undefined;
+    const plex = isMusic ? undefined : (plexData as PlexItem | undefined);
+    const musicPlex = isMusic ? (plexData as PlexMusicItem | undefined) : undefined;
     const itemId = encodeURIComponent(entity.id ?? '');
     const title = config.titleOf(entity);
     const subtitle = config.subtitleOf?.(entity);
@@ -55,7 +59,12 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
           <div class="flex flex-col gap-2 items-baseline">
             <div class="flex flex-row items-center gap-2">
               <h1 class="text-2xl">{title}</h1>
-              {plexEnabled ? <PlexIcon plex={plex} /> : null}
+              {plexEnabled ? (
+                <PlexIcon
+                  plex={isMusic ? musicPlex : plex}
+                  label={musicPlex ? plexMusicIconLabel(musicPlex) : undefined}
+                />
+              ) : null}
             </div>
             {subtitle ? <h2 class="text-sm">{subtitle}</h2> : null}
           </div>
@@ -128,7 +137,8 @@ export function DetailPage<T extends BaseEntity>(handle: Handle<DetailPageProps<
                   </>
                 ) : null}
               </div>
-              {plexEnabled ? (
+              {plexEnabled && isMusic ? <PlexMusicCard plex={musicPlex} now={now} /> : null}
+              {plexEnabled && !isMusic ? (
                 <PlexCard
                   plex={plex}
                   title={title || config.singular}

@@ -57,7 +57,63 @@ public class PlexLookup(PlexEnablement enablement, IPlexItemStore items, ILogger
             return null;
         }
 
-        var ids = await items.ListIdsByFilterAsync(normalized, cancellationToken);
+        var ids = await items.ListIdsByFilterAsync(normalized, PlexEntityTypes.Movies, cancellationToken);
+        return new IdFilter(ids, Exclude: normalized == PlexListFilters.NotOnPlex);
+    }
+
+    public async Task<object?> GetMusicDataAsync(string musicId, CancellationToken cancellationToken)
+    {
+        if (!enablement.IsEnabled(PlexEntityTypes.Music) || !MongoDB.Bson.ObjectId.TryParse(musicId, out _))
+        {
+            return null;
+        }
+
+        // Plex data is a bonus on the lookup: a store failure must not fail the album request
+        try
+        {
+            var data = await items.GetAsync(musicId, cancellationToken);
+            return data is { EntityType: PlexEntityTypes.Music } ? PlexMusicDataDto.From(data) : null;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not read the Plex data of album {MusicId}; returning the album without it", musicId);
+            return null;
+        }
+    }
+
+    public async Task<IReadOnlyDictionary<string, object>> GetMusicSummariesAsync(IReadOnlyCollection<string> musicIds, CancellationToken cancellationToken)
+    {
+        var ids = musicIds.Where(id => MongoDB.Bson.ObjectId.TryParse(id, out _)).Distinct().ToList();
+        if (ids.Count == 0 || !enablement.IsEnabled(PlexEntityTypes.Music))
+        {
+            return new Dictionary<string, object>();
+        }
+
+        // The summaries are a bonus on the list: a store failure must not fail the search
+        try
+        {
+            var docs = await items.ListSummariesAsync(ids, cancellationToken);
+            return docs
+                .Where(d => d.EntityType == PlexEntityTypes.Music)
+                .ToDictionary(d => d.Id, d => (object)PlexMusicListSummary.From(d));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not read the Plex summaries of {Count} albums; returning the list without them", ids.Count);
+            return new Dictionary<string, object>();
+        }
+    }
+
+    public async Task<IdFilter?> GetMusicFilterAsync(string filter, CancellationToken cancellationToken)
+    {
+        var normalized = PlexListFilters.NormalizeMusic(filter)
+            ?? throw new ArgumentException($"Invalid plex filter '{filter}'. Use onPlex or notOnPlex.");
+        if (!enablement.IsEnabled(PlexEntityTypes.Music))
+        {
+            return null;
+        }
+
+        var ids = await items.ListIdsByFilterAsync(normalized, PlexEntityTypes.Music, cancellationToken);
         return new IdFilter(ids, Exclude: normalized == PlexListFilters.NotOnPlex);
     }
 

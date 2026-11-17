@@ -112,6 +112,11 @@ export interface MusicEntity extends BaseEntity {
   discList?: Array<Disc>;
   /** MusicBrainz release-group id written `mbid:<id>`; written by the lookup and editable in the form. */
   externalId?: string;
+  /**
+   * Stored Plex data, present only for an album linked to Plex when Plex is enabled for music: the full data on the
+   * detail page and the small summary on the list. The API never sends a file path.
+   */
+  plex?: PlexMusicItem | PlexMusicSummary;
 }
 // UI model
 export type Music = Override<MusicEntity, { genres: string }>;
@@ -231,6 +236,37 @@ export type PlexEpisode = {
 
 /** The small Plex summary the paged movie search attaches to a linked movie (no file path); absent when unlinked. */
 export type PlexListSummary = Pick<PlexItem, 'onPlex' | 'broken' | 'watched'> & { resolution?: string | null };
+
+/** The small Plex summary the paged music search attaches to a linked album (no file path); absent when unlinked. */
+export type PlexMusicSummary = {
+  onPlex: boolean;
+  broken: boolean;
+  /** Plays of the album, the sum of its tracks' plays. */
+  playCount: number;
+  /** When a track was last played; null or absent when never played. */
+  lastPlayedAt?: string | null;
+  tracksPresent?: number | null;
+  /** The track count of the MediaSet entry; absent when it has none. */
+  tracksExpected?: number | null;
+  audioCodec?: string | null;
+  bitrate?: number | null;
+};
+
+/** The Plex data the music lookup returns for a linked album (no file path). */
+export type PlexMusicItem = PlexMusicSummary & {
+  musicId: string;
+  plexItemId: string;
+  /** `auto` (set by a sync) or `manual` (linked by hand). */
+  linkSource: string;
+  library?: string | null;
+  sizeBytes?: number | null;
+  dateAdded?: string | null;
+  deepLink?: string | null;
+  lastSyncedAt: string;
+};
+
+/** The music list's `plex` filter values: albums have no watched state, so only on Plex or not. */
+export const PLEX_MUSIC_FILTERS = ['onPlex', 'notOnPlex'] as const;
 
 /** The movie list's `plex` filter values. */
 export const PLEX_FILTERS = ['onPlex', 'notOnPlex', 'unwatched', 'broken'] as const;
