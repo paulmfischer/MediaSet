@@ -1,4 +1,3 @@
-using MediaSet.Api.Features.Entities.Endpoints;
 using MediaSet.Api.Infrastructure.Storage;
 using MediaSet.Api.Shared.Models;
 
@@ -57,7 +56,7 @@ public sealed class EntityImageCoordinator(IImageService imageService, ILogger<E
     /// entity is saved (null when unchanged or the same file). When storing failed the previous cover
     /// and its ImageUrl are kept so the entity still references the old image.
     /// </summary>
-    public static Image? ApplyStoredImage(IEntity updatedEntity, IEntity existingEntity, Image? newImage)
+    public Image? ApplyStoredImage(IEntity updatedEntity, IEntity existingEntity, Image? newImage)
     {
         if (newImage is null)
         {
@@ -72,7 +71,10 @@ public sealed class EntityImageCoordinator(IImageService imageService, ILogger<E
             : null;
     }
 
-    /// <summary>Deletes an image file, logging instead of throwing: a leftover file must never fail the operation.</summary>
+    /// <summary>
+    /// Deletes an image file, logging instead of throwing. Swallowing every exception is intentional: file deletion
+    /// is best effort and must never fail the entity operation.
+    /// </summary>
     public void DeleteFile(Image? image)
     {
         if (image is null)

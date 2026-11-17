@@ -93,7 +93,7 @@ public sealed class EntityWriteService<TEntity>(
         {
             var (stored, error) = await images.TryStoreAsync(image, _entityType, id, cancellationToken);
             imageError = error;
-            replacedImage = EntityImageCoordinator.ApplyStoredImage(entity, existing, stored);
+            replacedImage = images.ApplyStoredImage(entity, existing, stored);
 
             // A file takes precedence over any imageUrl; on failure ApplyStoredImage restored the previous one
             if (image.HasFile && stored is not null)
