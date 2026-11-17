@@ -271,28 +271,31 @@ average), `SizeBytes` (sum), library, `DateAdded`, deep link and sync times. Mul
 discs. There is no watched flag, rating, file path or per-track storage. Fewer tracks on Plex than expected is a match shown as
 partial.
 
-**Routes.** `/plex/music/status`, `sync`, `search?query=` (albums, with the artist), `items/{id}` (the stored data), `PUT
-items/{id}/link` (body `{ "plexItemId" }`, no scope; reads the album, stores a manual link, then applies the cover if missing) and
-`DELETE items/{id}/link`. A music id is checked against the music service (404 "Music not found"). The per-item refresh and the
-season scope are movie-only. `GET /musics/pagedsearch` attaches a `plex` summary (`onPlex`, `broken`, `playCount`, `lastPlayedAt`,
-`tracksPresent`, `tracksExpected`, `audioCodec`, `bitrate`) and accepts a `plex` filter of `onPlex` or `notOnPlex` only (400
-otherwise, ignored when music is not enabled) through `IPlexLookup.GetMusicFilterAsync`; `GET /musics/{id}` adds the stored data as
-`plex` (no file path); deleting a music entry deletes its Plex document (`IPlexDataCleanup.DeleteMusicDataAsync`) and a run purges
-documents of deleted entries.
+**Routes.**
+
+- `/plex/music/status`, `sync`, `search?query=` (albums, with the artist) and `items/{id}` (the stored data).
+- `PUT items/{id}/link` (body `{ "plexItemId" }`, no scope) reads the album, stores a manual link, then applies the cover if missing.
+- `DELETE items/{id}/link` removes the link and its data. A music id is checked against the music service (404 "Music not found").
+- The per-item refresh and the season scope are movie-only.
+- `GET /musics/pagedsearch` attaches a `plex` summary (`onPlex`, `broken`, `playCount`, `lastPlayedAt`, `tracksPresent`, `tracksExpected`, `audioCodec`, `bitrate`).
+- Its `plex` filter takes `onPlex` or `notOnPlex` only (400 otherwise, ignored when music is not enabled) through `IPlexLookup.GetMusicFilterAsync`.
+- `GET /musics/{id}` adds the stored data as `plex` (no file path).
+- Deleting a music entry deletes its Plex document (`IPlexDataCleanup.DeleteMusicDataAsync`), and a run purges documents of deleted entries.
 
 **Statistics.** `PlexStatisticsCalculator.ComputeMusic` over `ListMusicStatisticsProjectionAsync` returns `PlexMusicStatisticsDto`:
 `coverage`, `albums` (on Plex), `totalPlays`, `neverPlayed`, `mostPlayed`, `recentlyPlayed` and `recentlyAdded` (top 10 albums with
 artist, play count and dates), `storage` (total and average over albums with a size), `audioCodec`, `bitrate` (bands "Under 128
-kbps", "128-191", "192-255", "256-319", "320-999", "1000+", and "unknown" last) and `completeness` (tracks present against
+kbps", "128-191 kbps", "192-255 kbps", "256-319 kbps", "320-999 kbps", "1000+ kbps", and "unknown" last) and `completeness` (tracks present against
 expected, and albums complete and partial, counting only albums with an expected count).
 
-**UI.** The music routes are `/musics/:id/plex/link` and `/musics/:id/plex/unlink` (`link-music-controller.tsx`,
-`unlink-music-controller.tsx`, driven through `app/api/plex-data.ts` like movies). The music gate is
-`isPlexMusicEnabledForRequest`, so music UI shows only when music is enabled. The music list shows the Plex icon with "Never played"
-and "Partial n/m" notes (`PlexMusicNotes`) and a filter of on Plex or not on Plex; the detail page shows `PlexMusicCard` (plays, last
-played, tracks, quality, size, date added, Open in Plex, and a menu with Relink and Unlink). The `/plex` sync page lists music next to
-movies, the statistics block has a Music section (`plex-statistics.tsx`), and the dashboard Music panel shows `PlexMusicSection`
-(on Plex, not on Plex, total plays, never played and a link to the list filtered to not on Plex), fed from the Plex statistics.
+**UI.**
+
+- Routes `/musics/:id/plex/link` and `/musics/:id/plex/unlink` (`link-music-controller.tsx`, `unlink-music-controller.tsx`), driven through `app/api/plex-data.ts` like movies.
+- The gate is `isPlexMusicEnabledForRequest`, so music UI shows only when music is enabled.
+- The music list shows the Plex icon with "Never played" and "Partial n/m" notes (`PlexMusicNotes`) and an on Plex or not on Plex filter.
+- The detail page shows `PlexMusicCard` (plays, last played, tracks, quality, size, date added, Open in Plex, and a menu with Relink and Unlink).
+- The `/plex` sync page lists music next to movies, and the statistics block has a Music section (`plex-statistics.tsx`).
+- The dashboard Music panel shows `PlexMusicSection` (on Plex, not on Plex, total plays, never played and a link to the list filtered to not on Plex), fed from the Plex statistics.
 
 ## Local development
 
