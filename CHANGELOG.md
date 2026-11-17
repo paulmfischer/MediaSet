@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.2.1](https://github.com/paulmfischer/MediaSet/compare/v5.2.0...v5.2.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **ui:** version the stylesheet URL so releases bypass stale caches ([#902](https://github.com/paulmfischer/MediaSet/issues/902)) ([3191a9f](https://github.com/paulmfischer/MediaSet/commit/3191a9f159fd47386c44bc9b84ff227511a33fe1))
+
+
+### Refactoring
+
+* **entities:** move entity write logic out of EntityApi into a service ([#904](https://github.com/paulmfischer/MediaSet/issues/904)) ([4c648dc](https://github.com/paulmfischer/MediaSet/commit/4c648dcf30e63d60b3c67e6c22d3ebc2a0a06924)), closes [#527](https://github.com/paulmfischer/MediaSet/issues/527)
+
 ## [5.2.0](https://github.com/paulmfischer/MediaSet/compare/v5.1.0...v5.2.0) (2026-11-17)
 
 
