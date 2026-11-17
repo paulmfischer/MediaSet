@@ -27,7 +27,8 @@ export function Document(handle: Handle<DocumentProps>) {
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>{title}</title>
           {description ? <meta name="description" content={description} /> : null}
-          <link rel="stylesheet" href="/app.css" />
+          {/* The version in the URL makes every release fetch a fresh stylesheet, even past a stale cached /app.css. */}
+          <link rel="stylesheet" href={`/app.css?v=${encodeURIComponent(getAppVersion())}`} />
           <ImportMap value={importMap} />
           {preloads.map((preload) => (
             <link key={preload} rel="modulepreload" href={preload} />
