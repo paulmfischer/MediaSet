@@ -222,7 +222,7 @@ public sealed partial class RegressionSuite
         });
     }
 
-    private static void AssertFailureState(Book saved, ImageLookupOutcome outcome, string provider, DateTime retry)
+    private static void AssertFailureState(Book saved, ImageLookupOutcome outcome, string provider, DateTime retry, int attempts = 1)
     {
         Assert.That(saved.ImageLookup, Is.Not.Null);
         Assert.Multiple(() =>
@@ -232,7 +232,7 @@ public sealed partial class RegressionSuite
             Assert.That(saved.ImageLookup.Provider, Is.EqualTo(provider));
             Assert.That(saved.ImageLookup.AttemptedStrategy, Is.EqualTo("Books:Entity"));
             Assert.That(saved.ImageLookup.PermanentFailure, Is.False);
-            Assert.That(saved.ImageLookup.AttemptCount, Is.EqualTo(1));
+            Assert.That(saved.ImageLookup.AttemptCount, Is.EqualTo(attempts));
             Assert.That(saved.ImageLookup.NextEligibleAt, Is.EqualTo(retry));
             Assert.That(saved.ImageLookup.FailureReason, Is.Not.Empty);
             Assert.That(saved.ImageLookup.MetadataFingerprint, Is.EqualTo(ImageRetryPolicy.Fingerprint(saved)));
@@ -281,13 +281,18 @@ public sealed partial class RegressionSuite
         internal StrictHttpFixtures Transport { get; } = new(Progress);
         internal ServiceProvider Services { get; }
         internal ScenarioTimeProvider Clock { get; } = new();
+        internal List<JsonElement> Logs { get; } = [];
         internal BackgroundImageLookupConfiguration Config { get; } = new() { BatchSize = 1, RequestsPerMinute = int.MaxValue };
         internal CancellationToken Token => _deadline.Token;
 
         internal BookScenario(RegressionSuite suite)
         {
             _suite = suite;
-            Services = suite.CreateBookServices(Transport, _openHost, _googleHost);
+            Services = suite.CreateBookServices(Transport, _openHost, _googleHost, new ProgressLoggerProvider((action, details) =>
+            {
+                Logs.Add(JsonSerializer.SerializeToElement(details));
+                Progress(action, details);
+            }));
             _processor = new BackgroundImageLookupService(Services.GetRequiredService<IServiceScopeFactory>(),
                 Options.Create(Config), Services.GetRequiredService<ILogger<BackgroundImageLookupService>>(), Clock);
         }
@@ -297,7 +302,7 @@ public sealed partial class RegressionSuite
             Add(id, $"https://{_openHost}/search.json?{(author == null ? $"q={Uri.EscapeDataString(BookTitle)}" : $"title={Uri.EscapeDataString(BookTitle)}&author={Uri.EscapeDataString(author)}")}&limit=10{SearchFields}", text, status, reset, failure, count);
         internal void Google(string id, string query, string text, int status = 200, DateTimeOffset? reset = null, string? failure = null) =>
             Add(id, $"https://{_googleHost}/books/v1/volumes?q={Uri.EscapeDataString(query).Replace("%3A", ":")}&maxResults=10&printType=books", text, status, reset, failure);
-        internal void Art(string id, string url, int status = 200) => Add(id, url, "", status, image: true);
+        internal void Art(string id, string url, int status = 200, string? failure = null) => Add(id, url, "", status, failure: failure, image: true);
 
         private void Add(string id, string url, string text, int status = 200, DateTimeOffset? reset = null, string? failure = null, int count = 1, bool image = false)
         {
@@ -331,6 +336,7 @@ public sealed partial class RegressionSuite
 
         internal Task InsertAsync(Book book) => _suite._database.GetCollection<Book>().InsertOneAsync(book, cancellationToken: Token);
         internal Task ProcessAsync() => _processor.ProcessAllEntityTypesAsync(Token);
+        internal Task ProcessAsync(CancellationToken token) => _processor.ProcessAllEntityTypesAsync(token);
         internal Task<Book> SavedAsync(string id = BookId) => _suite._database.GetCollection<Book>().Find(b => b.Id == id).SingleAsync(Token);
         internal async Task AssertDueAsync(bool expected)
         {

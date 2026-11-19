@@ -26,13 +26,15 @@ public sealed partial class RegressionSuite
 {
     private const string MongoImage = "docker.io/library/mongo:8.0.17";
     private readonly string _databaseName = "image_regression_" + Guid.NewGuid().ToString("N");
-    private readonly string _images = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_IMAGES")
+    private readonly string _imageRoot = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_IMAGES")
         ?? Path.Combine(Path.GetTempPath(), "mediaset-images-" + Guid.NewGuid().ToString("N"));
     private readonly string _container = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_CONTAINER")
         ?? ("mediaset-image-regression-" + Guid.NewGuid().ToString("N"));
     private readonly string _runtime = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_RUNTIME") ?? "podman";
     private Func<string, CancellationToken, Task<IPAddress[]>>? _originalDns;
     private DatabaseService _database = null!;
+    private string _images = null!;
+    private string _connection = null!;
     private bool _started;
 
     internal static void Progress(string action, object? details)
@@ -40,8 +42,16 @@ public sealed partial class RegressionSuite
         var directory = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_ARTIFACTS") ?? TestContext.CurrentContext.WorkDirectory;
         Directory.CreateDirectory(directory);
         File.AppendAllText(Path.Combine(directory, "progress.jsonl"),
-            JsonSerializer.Serialize(new { utc = DateTimeOffset.UtcNow, @event = action, scenarioId = TestContext.CurrentContext.Test.Name, details }) + "\n");
+            JsonSerializer.Serialize(new
+            {
+                utc = DateTimeOffset.UtcNow,
+                @event = action,
+                runId = Environment.GetEnvironmentVariable("IMAGE_REGRESSION_RUN_ID") ?? _directRunId,
+                scenarioId = TestContext.CurrentContext.Test.Name,
+                details
+            }) + "\n");
     }
+    private static readonly string _directRunId = Guid.NewGuid().ToString("N");
 
     [OneTimeSetUp]
     public async Task StartAsync()
@@ -59,6 +69,7 @@ public sealed partial class RegressionSuite
                 throw new InvalidOperationException("Mongo container must bind exclusively to loopback");
             }
             var connection = $"mongodb://127.0.0.1:{port}/?directConnection=true&serverSelectionTimeoutMS=1000";
+            _connection = connection;
             var client = new MongoClient(connection);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             while (true)
@@ -98,24 +109,38 @@ public sealed partial class RegressionSuite
     [SetUp]
     public async Task ResetAsync()
     {
-        await _database.GetCollection<Book>().DeleteManyAsync(Builders<Book>.Filter.Empty);
-        await _database.GetCollection<Movie>().DeleteManyAsync(Builders<Movie>.Filter.Empty);
-        await _database.GetCollection<Game>().DeleteManyAsync(Builders<Game>.Filter.Empty);
-        await _database.GetCollection<Music>().DeleteManyAsync(Builders<Music>.Filter.Empty);
-        if (Directory.Exists(_images))
+        var scenario = Guid.NewGuid().ToString("N");
+        var databaseName = "scenario_" + scenario;
+        _database = new DatabaseService(Options.Create(new MediaSetDatabaseSettings
         {
-            Directory.Delete(_images, recursive: true);
-        }
-        Progress("scenario-start", TestContext.CurrentContext.Test.Name);
+            ConnectionString = _connection,
+            DatabaseName = databaseName
+        }));
+        _images = Path.Combine(_imageRoot, scenario);
+        Assert.That(await _database.GetCollection<Book>().CountDocumentsAsync(Builders<Book>.Filter.Empty), Is.Zero);
+        Assert.That(Directory.Exists(_images), Is.False);
+        Progress("scenario-start", new { databaseName, images = _images });
     }
 
     [TearDown]
-    public void RecordResult() => Progress("scenario-finished", new
+    public async Task RecordResultAsync()
     {
-        id = TestContext.CurrentContext.Test.Name,
-        status = TestContext.CurrentContext.Result.Outcome.Status.ToString(),
-        failure = TestContext.CurrentContext.Result.Message
-    });
+        // Capture before another scenario starts or infrastructure is removed, including failures.
+        Progress("scenario-snapshot", new
+        {
+            books = await _database.GetCollection<Book>().Find(Builders<Book>.Filter.Empty).ToListAsync(),
+            movies = await _database.GetCollection<Movie>().Find(Builders<Movie>.Filter.Empty).ToListAsync(),
+            games = await _database.GetCollection<Game>().Find(Builders<Game>.Filter.Empty).ToListAsync(),
+            music = await _database.GetCollection<Music>().Find(Builders<Music>.Filter.Empty).ToListAsync(),
+            files = Directory.Exists(_images) ? Directory.GetFiles(_images, "*", SearchOption.AllDirectories) : []
+        });
+        Progress("scenario-finished", new
+        {
+            id = TestContext.CurrentContext.Test.Name,
+            status = TestContext.CurrentContext.Result.Outcome.Status.ToString(),
+            failure = TestContext.CurrentContext.Result.Message
+        });
+    }
 
     [Test]
     public async Task BookSuccess_ExactIsbn_SavesReadableImageAndStateAsync()
@@ -159,10 +184,10 @@ public sealed partial class RegressionSuite
     }
 
     private ServiceProvider CreateBookServices(StrictHttpFixtures fixtures, string openLibraryHost = "openlibrary.org",
-        string googleBooksHost = "www.googleapis.com")
+        string googleBooksHost = "www.googleapis.com", ILoggerProvider? logger = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddProvider(new ProgressLoggerProvider()));
+        services.AddLogging(builder => builder.AddProvider(logger ?? new ProgressLoggerProvider()));
         services.AddSingleton<IDatabaseService>(_database);
         services.AddScoped<LookupStrategyFactory>();
         services.AddSingleton<IOpenLibraryClient>(sp => new OpenLibraryClient(
@@ -199,11 +224,11 @@ public sealed partial class RegressionSuite
         }
         finally
         {
-            if (Directory.Exists(_images))
+            if (Directory.Exists(_imageRoot))
             {
-                Directory.Delete(_images, recursive: true);
+                Directory.Delete(_imageRoot, recursive: true);
             }
-            Progress("images-removed", _images);
+            Progress("images-removed", _imageRoot);
         }
     }
 
@@ -261,17 +286,24 @@ internal sealed class ScenarioTimeProvider : TimeProvider
     public override DateTimeOffset GetUtcNow() => Now;
 }
 
-internal sealed class ProgressLoggerProvider : ILoggerProvider
+internal sealed class ProgressLoggerProvider(Action<string, object?>? record = null) : ILoggerProvider
 {
-    public ILogger CreateLogger(string categoryName) => new ProgressLogger(categoryName);
+    public ILogger CreateLogger(string categoryName) => new ProgressLogger(categoryName, record ?? RegressionSuite.Progress);
     public void Dispose() { }
 
-    private sealed class ProgressLogger(string category) : ILogger
+    private sealed class ProgressLogger(string category, Action<string, object?> record) : ILogger
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter) => RegressionSuite.Progress("application-log",
-                new { category, level = logLevel.ToString(), message = formatter(state, exception), exception = exception?.ToString() });
+            Func<TState, Exception?, string> formatter) => record("application-log",
+                new
+                {
+                    category,
+                    level = logLevel.ToString(),
+                    message = formatter(state, exception),
+                    exception = exception?.ToString(),
+                    properties = state as IEnumerable<KeyValuePair<string, object?>>
+                });
     }
 }

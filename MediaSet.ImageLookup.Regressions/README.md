@@ -5,7 +5,8 @@ strategies, image validation, background processing and local filesystem storage
 It is deliberately outside the normal unit-test solution and CI. Product defects
 must keep failing assertions; book fallback and quota scenarios cover #907,
 movie/TV scenarios cover #908, game/authentication scenarios cover #909, music and
-validation scenarios cover #910, and further scenarios belong to #911–912.
+validation scenarios cover #910, processing/recovery scenarios cover #911, and
+further scenarios belong to #912.
 
 Prerequisites: .NET 10 SDK, Python 3, and a working local rootless Podman (default)
 or Docker runtime. The runtime must be able to obtain `docker.io/library/mongo:8.0.17`.
@@ -38,8 +39,8 @@ unique container name in progress; remove only that container after investigatio
 The NUnit project can also run directly with `dotnet test
 MediaSet.ImageLookup.Regressions/MediaSet.ImageLookup.Regressions.csproj`; use the
 Python entry point to produce the full historical artifact set. Scenarios run
-sequentially. The database scenario fixture clears all media collections and removes
-images before each test. Setup failures and normal teardown both clean suite-owned
+sequentially. Each database scenario gets a unique database and image subdirectory;
+no scenario clears another scenario's data. Setup failures and normal teardown both clean suite-owned
 infrastructure; the runner provides a second exact-name cleanup attempt.
 
 ## Fixtures and scenarios
@@ -204,3 +205,33 @@ with `MissingArtwork` after exhausting matching metadata candidates. Those inten
 assertions remain active inside multiple-assertion scopes, so no-file, Mongo state,
 retry suppression and fixture-consumption checks still run. This is a known product
 assertion failure, not a harness failure; production behavior is unchanged.
+
+## Multi-pass processing and recovery (#911)
+
+`RecoveryRegressionScenarios.cs` exercises successive production batches using real
+Mongo collections, a controlled clock and strict book/artwork fixtures:
+
+| Scenario | Verified behavior |
+| --- | --- |
+| `SuccessiveFailuresAndDueBoundaries` | Three failed attempts, exponential retry capped at 15 minutes, no work one millisecond before eligibility, retry exactly at eligibility, fourth-attempt readable-image recovery and completed suppression |
+| `IneligibleState` (eight outcomes) | Terminal/success outcomes remain excluded even with a past retry date; unavailable state without an eligibility date remains untouched |
+| `ActiveLookupCancellation` (fresh/retry × lookup/artwork) | Wait for a fixture request to become active, cancel it, assert cancellation propagates and the whole persisted document remains unchanged with no file |
+| `BoundedBatch` | A two-item batch reserves a fresh slot and a due backlog slot, preserves requeue identity and attempt history, processes the remaining item next pass, then reports zero work |
+| `RuntimeBoundary` | Advancing controlled time during artwork stops processing before the next entity once the configured runtime is exceeded |
+| `IsolatedDatabaseAndImages` | An empty scenario cannot read or mutate a separate database with the same entity ID, or another scenario's filesystem sentinel |
+
+`pass-start`/`pass-finished` events retain clock, batch settings, request history and
+persisted documents after each pass. Structured application logs retain typed totals
+and per-run attempt diagnostics; tests assert bounded counts and that diagnostics
+reset between runs. `scenario-snapshot` captures all four collections and image paths
+before teardown, including failed assertions. Each progress record has a run ID and
+scenario ID, and scenario-start records identify its unique database and image path.
+These logs survive disposal of temporary databases/images.
+
+Run just this coverage with `dotnet test MediaSet.ImageLookup.Regressions --filter
+FullyQualifiedName~ProcessRecovery`. The Python runner contract checks run without
+containers using `python3 -m unittest discover -s scripts -p
+test_image_lookup_regressions.py`. They simulate assertion failures, interruption,
+invalid/incomplete results and report-finalization failure, then start another run
+in the same history directory and verify every previous artifact remains byte-for-byte
+unchanged while container, image directory, artifact directory and run ID are distinct.
