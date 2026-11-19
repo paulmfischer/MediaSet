@@ -61,7 +61,9 @@ public sealed partial class RegressionSuite
     [TestCase(true, "502")]
     [TestCase(true, "network")]
     [TestCase(true, "timeout")]
-    public async Task ProcessMusic_TemporaryProviderFailure_RetriesAndRecoversAsync(bool detail, string failure)
+    public Task ProcessMusic_TemporaryProviderFailure_RetriesAndRecoversAsync(bool detail, string failure) => VerifyMusicRecoveryAsync(detail, failure);
+
+    private async Task VerifyMusicRecoveryAsync(bool detail, string failure)
     {
         using var assertions = Assert.EnterMultipleScope();
         using var scenario = new MusicScenario(this);
@@ -94,7 +96,9 @@ public sealed partial class RegressionSuite
     [TestCase("corrupt")]
     [TestCase("non-image")]
     [TestCase("pixels")]
-    public async Task ProcessMusic_InvalidArtwork_RejectsBytesAndPersistsInvalidOutcomeAsync(string invalid)
+    public Task ProcessMusic_InvalidArtwork_RejectsBytesAndPersistsInvalidOutcomeAsync(string invalid) => VerifyInvalidMusicArtworkAsync(invalid);
+
+    private async Task VerifyInvalidMusicArtworkAsync(string invalid)
     {
         using var assertions = Assert.EnterMultipleScope();
         var config = new ImageConfiguration { MaxFileSizeMb = 1, MaxPixelCount = invalid == "pixels" ? 3 : 25_000_000 };
