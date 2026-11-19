@@ -3,7 +3,8 @@
 This separate NUnit project exercises real MongoDB access, provider clients, lookup
 strategies, image validation, background processing and local filesystem storage.
 It is deliberately outside the normal unit-test solution and CI. Product defects
-must keep failing assertions; book fallback and quota scenarios cover #907; other product scenarios belong to #908–912.
+must keep failing assertions; book fallback and quota scenarios cover #907,
+movie/TV scenarios cover #908, and further scenarios belong to #909–912.
 
 Prerequisites: .NET 10 SDK, Python 3, and a working local rootless Podman (default)
 or Docker runtime. The runtime must be able to obtain `docker.io/library/mongo:8.0.17`.
@@ -103,3 +104,45 @@ recovery and storage are asserted separately and remain covered. This suite does
 not change production behavior to repair the defect. A failing scenario with this
 provider assertion is a product failure; `http-unexpected`, unused fixtures or
 `harness-failure` events indicate fixture/infrastructure problems to investigate.
+
+## Movie and TV scenarios
+
+`MovieRegressionScenarios.cs` adds 28 cases through the real TMDB client,
+movie/TV lookup strategy, background processor, MongoDB and filesystem image
+validation/storage. Search, detail, season, collection and artwork responses are
+inline fixtures. TMDB requests require the synthetic `Bearer fixture-token`
+header; no key, provider configuration, live authentication or sockets are used.
+Each scenario has a unique `.invalid` TMDB host to isolate quota caches.
+
+| Scenario | Verified behavior |
+| --- | --- |
+| `RemakesAndUnrelatedCandidates` | Search/detail title agreement, release year disambiguation, readable selected poster, persisted identity and second-run suppression |
+| `EquallyMatchingRemakesWithOnlyOnePoster` / `EquallyMatchingSeries` | Distinct matching identities remain ambiguous even when only one has artwork; no artwork download or file |
+| `UnverifiedDetailTitle` | Matching search title with conflicting detail title is rejected |
+| `CollectionTitle` | A trilogy requires matching collection identity and three parts; never searches individual films or uses their posters |
+| `VerifiedSeason` | Verified season poster takes precedence; absent season poster falls back to verified series artwork |
+| `MissingSeasonResource` | Season 404 is terminal for an ordinary season; split-season release may use verified series artwork |
+| `ExistingArtworkMissing` | Stored URL 404 falls back to TMDB search/details and saves the verified film poster |
+| `VerifiedIdentityWithoutUsableArtwork` | Film poster 404 or TV season/series without posters persist confirmed identity and terminal missing-artwork state |
+| `InvalidPosterBytes` | Real image validation rejects invalid bytes, no file is saved, intended invalid-artwork outcome stays actively asserted |
+| `TemporaryProviderFailure` (movie/TV × 503/network/timeout) | Correct provider, retry time and due filter, suppressed early retry, recovery at eligibility, cumulative attempts, backlog flag and readable saved image |
+| `RejectedSyntheticAuthentication` (movie/TV × 401/403) | Unauthorized state remains retryable with TMDB attribution and no saved files |
+| `ProviderQuota` (movie/TV) | Exact HTTP-date reset, no early retry, fresh entity deferred by provider quota cache without another HTTP request |
+| `PartialDetailFailure` (movie/TV) | Unavailable competing details prevent accepting an apparently unique surviving candidate |
+
+Assertions read the saved Mongo documents and re-open the stored image through
+`IImageService`, checking dimensions, file existence and that exactly one image
+was stored. Confirmed-match URLs record fetched artwork; the entity's input
+`ImageUrl` is not rewritten by background processing. Terminal outcomes are checked
+for persisted reason, fingerprint, attempt count and permanent/no-retry state;
+retryable failures verify due-filter behavior with an advanced scenario clock.
+Each scenario verifies the exact consumed fixture order and unused/unexpected
+requests. All cases run against suite-owned local Mongo and temporary images.
+
+Known product regression: `InvalidPosterBytes` currently persists `MissingArtwork`
+after `ImageService` rejects the payload with `ArgumentException`; the later
+metadata miss overwrites `InvalidArtwork` in `ImageLookupService`. The intended
+`InvalidArtwork` assertion remains active in a multiple-assertion scope, so the
+same case also checks no files, terminal state, retry suppression and fixture
+consumption. This is a product assertion failure, not a harness failure, and is
+outside this coverage change's production-fix scope.
