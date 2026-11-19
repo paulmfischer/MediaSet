@@ -71,7 +71,9 @@ public sealed partial class RegressionSuite
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task ProcessGame_NoMatchOrMatchedWithoutArtwork_PersistsTerminalOutcomeAsync(bool matched)
+    public Task ProcessGame_NoMatchOrMatchedWithoutArtwork_PersistsTerminalOutcomeAsync(bool matched) => VerifyGameMissAsync(matched);
+
+    private async Task VerifyGameMissAsync(bool matched)
     {
         using var scenario = new GameScenario(this);
         scenario.Auth();

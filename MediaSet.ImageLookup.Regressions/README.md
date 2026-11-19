@@ -8,6 +8,12 @@ movie/TV scenarios cover #908, game/authentication scenarios cover #909, music a
 validation scenarios cover #910, processing/recovery scenarios cover #911, and
 further scenarios belong to #912.
 
+Production-derived coverage is now in `ProductionRegressionScenarios.cs`.
+[The evidence ledger](PRODUCTION_EVIDENCE.md) maps seven stable `Production912_`
+scenario IDs to bounded, correlated November 18 Seq evidence, documents synthetic
+response assumptions and gaps, and distinguishes active product assertions from
+harness failures. No production behavior or provider access is added.
+
 Prerequisites: .NET 10 SDK, Python 3, and a working local rootless Podman (default)
 or Docker runtime. The runtime must be able to obtain `docker.io/library/mongo:8.0.17`.
 Podman is forced into local mode; Docker is restricted to a local Unix socket

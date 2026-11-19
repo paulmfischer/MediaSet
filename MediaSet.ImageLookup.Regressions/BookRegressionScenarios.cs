@@ -119,7 +119,9 @@ public sealed partial class RegressionSuite
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task ProcessBook_ProviderQuota_DefersNextBookWithoutAnotherProviderRequestAsync(bool google)
+    public Task ProcessBook_ProviderQuota_DefersNextBookWithoutAnotherProviderRequestAsync(bool google) => VerifyBookQuotaAsync(google);
+
+    private async Task VerifyBookQuotaAsync(bool google)
     {
         using var scenario = new BookScenario(this);
         // HTTP-date, rather than a relative delay, makes persisted reset assertions exact.
