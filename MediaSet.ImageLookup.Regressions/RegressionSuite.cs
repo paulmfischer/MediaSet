@@ -5,6 +5,7 @@ using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Features.Images.Services;
 using MediaSet.Api.Infrastructure.Database;
 using MediaSet.Api.Infrastructure.Lookup.Clients.OpenLibrary;
+using MediaSet.Api.Infrastructure.Lookup.Clients.GoogleBooks;
 using MediaSet.Api.Infrastructure.Lookup.Clients.UpcItemDb;
 using MediaSet.Api.Infrastructure.Lookup.Models;
 using MediaSet.Api.Infrastructure.Lookup.Strategies;
@@ -21,7 +22,7 @@ namespace MediaSet.ImageLookup.Regressions;
 
 [TestFixture]
 [NonParallelizable]
-public sealed class RegressionSuite
+public sealed partial class RegressionSuite
 {
     private const string MongoImage = "docker.io/library/mongo:8.0.17";
     private readonly string _databaseName = "image_regression_" + Guid.NewGuid().ToString("N");
@@ -121,21 +122,7 @@ public sealed class RegressionSuite
     {
         using var fixtures = new StrictHttpFixtures(Progress);
         fixtures.Load(Path.Combine(TestContext.CurrentContext.TestDirectory, "Fixtures", "book-success.json"));
-        var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddProvider(new ProgressLoggerProvider()));
-        services.AddSingleton<IDatabaseService>(_database);
-        services.AddScoped<LookupStrategyFactory>();
-        services.AddSingleton<IOpenLibraryClient>(sp => new OpenLibraryClient(
-            new HttpClient(fixtures, false) { BaseAddress = new Uri("https://openlibrary.org/") }, sp.GetRequiredService<ILogger<OpenLibraryClient>>()));
-        services.AddSingleton<IUpcItemDbClient>(sp => new UpcItemDbClient(
-            new HttpClient(fixtures, false) { BaseAddress = new Uri("https://api.upcitemdb.com/") },
-            Options.Create(new UpcItemDbConfiguration()), sp.GetRequiredService<ILogger<UpcItemDbClient>>()));
-        services.AddScoped<ILookupStrategy<BookResponse>, BookLookupStrategy>();
-        services.AddSingleton<IImageStorageProvider>(sp => new LocalFileStorageProvider(_images, sp.GetRequiredService<ILogger<LocalFileStorageProvider>>()));
-        services.AddSingleton<IImageService>(sp => new ImageService(sp.GetRequiredService<IImageStorageProvider>(),
-            Options.Create(new ImageConfiguration()), new HttpClient(fixtures, false), sp.GetRequiredService<ILogger<ImageService>>()));
-        services.AddScoped<IImageLookupService, ImageLookupService>();
-        using var provider = services.BuildServiceProvider();
+        using var provider = CreateBookServices(fixtures);
         var clock = new ScenarioTimeProvider();
         var config = Options.Create(new BackgroundImageLookupConfiguration { BatchSize = 1, RequestsPerMinute = int.MaxValue });
         using var processor = new BackgroundImageLookupService(provider.GetRequiredService<IServiceScopeFactory>(),
@@ -169,6 +156,29 @@ public sealed class RegressionSuite
             Assert.That(bitmap.Height, Is.EqualTo(2));
             Assert.That(File.Exists(Path.Combine(_images, saved.CoverImage.FilePath)), Is.True);
         });
+    }
+
+    private ServiceProvider CreateBookServices(StrictHttpFixtures fixtures, string openLibraryHost = "openlibrary.org",
+        string googleBooksHost = "www.googleapis.com")
+    {
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(new ProgressLoggerProvider()));
+        services.AddSingleton<IDatabaseService>(_database);
+        services.AddScoped<LookupStrategyFactory>();
+        services.AddSingleton<IOpenLibraryClient>(sp => new OpenLibraryClient(
+            new HttpClient(fixtures, false) { BaseAddress = new Uri($"https://{openLibraryHost}/") }, sp.GetRequiredService<ILogger<OpenLibraryClient>>()));
+        services.AddSingleton<IUpcItemDbClient>(sp => new UpcItemDbClient(
+            new HttpClient(fixtures, false) { BaseAddress = new Uri("https://api.upcitemdb.com/") },
+            Options.Create(new UpcItemDbConfiguration()), sp.GetRequiredService<ILogger<UpcItemDbClient>>()));
+        services.AddSingleton<IGoogleBooksClient>(sp => new GoogleBooksClient(
+            new HttpClient(fixtures, false) { BaseAddress = new Uri($"https://{googleBooksHost}/books/v1/") },
+            sp.GetRequiredService<ILogger<GoogleBooksClient>>()));
+        services.AddScoped<ILookupStrategy<BookResponse>, BookLookupStrategy>();
+        services.AddSingleton<IImageStorageProvider>(sp => new LocalFileStorageProvider(_images, sp.GetRequiredService<ILogger<LocalFileStorageProvider>>()));
+        services.AddSingleton<IImageService>(sp => new ImageService(sp.GetRequiredService<IImageStorageProvider>(),
+            Options.Create(new ImageConfiguration()), new HttpClient(fixtures, false), sp.GetRequiredService<ILogger<ImageService>>()));
+        services.AddScoped<IImageLookupService, ImageLookupService>();
+        return services.BuildServiceProvider();
     }
 
     [OneTimeTearDown]
