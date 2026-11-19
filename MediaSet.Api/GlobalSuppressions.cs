@@ -7,3 +7,5 @@ using System.Runtime.CompilerServices;
 
 // Make internal classes visible to test project
 [assembly: InternalsVisibleTo("MediaSet.Api.Tests")]
+
+[assembly: InternalsVisibleTo("MediaSet.ImageLookup.Regressions")]
