@@ -96,6 +96,11 @@ finally:
     if images.exists():
         shutil.rmtree(images)
     progress('images-cleanup-backstop', str(images))
+    if not summary['complete'] and not summary['infrastructureFailures']:
+        summary['infrastructureFailures'].append('Test results do not establish a completed run')
+    if (not summary['complete'] or summary['infrastructureFailures']
+            or any(scenario['outcome'] != 'Passed' for scenario in summary['scenarios'])):
+        exit_code = exit_code or 1
     summary['exitCode'] = exit_code
     summary['durationSeconds'] = (datetime.datetime.now(datetime.timezone.utc) - started).total_seconds()
     checkpoint()
