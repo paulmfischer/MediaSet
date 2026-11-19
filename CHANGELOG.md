@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.2.2](https://github.com/paulmfischer/MediaSet/compare/v5.2.1...v5.2.2) (2026-11-19)
+
+
+### Tests
+
+* **images:** add standalone regression harness ([#913](https://github.com/paulmfischer/MediaSet/issues/913)) ([bd360ab](https://github.com/paulmfischer/MediaSet/commit/bd360ab0bea036853ced4cc63a8974ba974e1646)), closes [#906](https://github.com/paulmfischer/MediaSet/issues/906)
+* **images:** cover book fallback and quota regressions ([#915](https://github.com/paulmfischer/MediaSet/issues/915)) ([f2e15d0](https://github.com/paulmfischer/MediaSet/commit/f2e15d0631473414c3831732e30809ce42b74a19)), closes [#907](https://github.com/paulmfischer/MediaSet/issues/907)
+* **images:** cover bounded processing and recovery, closes [#911](https://github.com/paulmfischer/MediaSet/issues/911) ([#921](https://github.com/paulmfischer/MediaSet/issues/921)) ([376a8ac](https://github.com/paulmfischer/MediaSet/commit/376a8acf33fa69a2bae65a867920a53ddae3960d))
+* **images:** cover game lookup and authentication regressions ([#919](https://github.com/paulmfischer/MediaSet/issues/919)) ([d3325a1](https://github.com/paulmfischer/MediaSet/commit/d3325a1a764027ea6a022dcc9b54dca963611239)), closes [#909](https://github.com/paulmfischer/MediaSet/issues/909)
+* **images:** cover music lookup and validation regressions ([#920](https://github.com/paulmfischer/MediaSet/issues/920)) ([6d8d28c](https://github.com/paulmfischer/MediaSet/commit/6d8d28c954e05eb6914d14a841bf174e8dfd3648)), closes [#910](https://github.com/paulmfischer/MediaSet/issues/910)
+* **images:** cover TMDB movie and TV regressions ([#917](https://github.com/paulmfischer/MediaSet/issues/917)) ([8b84606](https://github.com/paulmfischer/MediaSet/commit/8b84606737645f0a276f3fac6316606029185d59)), closes [#908](https://github.com/paulmfischer/MediaSet/issues/908)
+* **images:** reconstruct production lookup failures ([#922](https://github.com/paulmfischer/MediaSet/issues/922)) ([eaf781c](https://github.com/paulmfischer/MediaSet/commit/eaf781c43ac8ef56135eab6854837a42764a899b)), closes [#912](https://github.com/paulmfischer/MediaSet/issues/912)
+
 ## [5.2.1](https://github.com/paulmfischer/MediaSet/compare/v5.2.0...v5.2.1) (2026-11-17)
 
 
