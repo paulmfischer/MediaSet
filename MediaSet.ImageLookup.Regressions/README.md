@@ -4,8 +4,8 @@ This separate NUnit project exercises real MongoDB access, provider clients, loo
 strategies, image validation, background processing and local filesystem storage.
 It is deliberately outside the normal unit-test solution and CI. Product defects
 must keep failing assertions; book fallback and quota scenarios cover #907,
-movie/TV scenarios cover #908, game/authentication scenarios cover #909, and further
-scenarios belong to #910–912.
+movie/TV scenarios cover #908, game/authentication scenarios cover #909, music and
+validation scenarios cover #910, and further scenarios belong to #911–912.
 
 Prerequisites: .NET 10 SDK, Python 3, and a working local rootless Podman (default)
 or Docker runtime. The runtime must be able to obtain `docker.io/library/mongo:8.0.17`.
@@ -173,3 +173,34 @@ and retry eligibility use the scenario clock; stored images are decoded through 
 real image service and checked for dimensions, existence and expected file count.
 The suite continues to retain the unrelated active product assertions tracked by
 #916 (Google Books provider attribution) and #918 (invalid TMDB artwork outcome).
+
+## Music and image validation scenarios (#910)
+
+`MusicRegressionScenarios.cs` adds 14 cases through the real `MusicBrainzClient`,
+music lookup strategy, background processor, MongoDB and local filesystem image
+storage. Exact entity-search queries, release-detail queries and Cover Art Archive
+release/release-group artwork all terminate in strict fixtures. Each scenario owns
+its service provider, a unique `.invalid` lookup host, a cancellation deadline and
+an explicit request-order/consumption assertion. The production MusicBrainz rate
+limiter remains active; no live HTTP, DNS, API keys or production database is used.
+
+| Scenario | Verified behavior |
+| --- | --- |
+| `ReleaseArtworkOrGroupFallback` | Release artwork success; release 404 falls back to release-group artwork with the wider artwork scope persisted; saved image reopens as a 2×2 bitmap; completed lookup does not repeat |
+| `NoMatchOrUnavailableArtwork` | Empty lookup or both release/group artwork 404 yield distinct terminal Mongo outcomes, confirmed identity where applicable, no files and no retry |
+| `TemporaryProviderFailure` (search/detail × HTTP 502/network/timeout) | MusicBrainz attribution, retry time/due filter, suppressed early lookup, recovery at eligibility, cumulative attempts, backlog flag and readable stored image |
+| `InvalidArtwork` (oversized/corrupt/non-image/pixels) | Real download/validation rejection with exact `ImageFailureReason`, no files or Mongo records from the direct validation probe, then real background processing and active intended `InvalidArtwork` persisted-state assertions |
+
+Validation uses a 1 MiB configured limit and a 1 MiB + 1 byte response, a truncated
+PNG, an HTML response, and a valid 2×2 PNG exceeding a configured three-pixel limit.
+Each payload first traverses the real image service to assert `TooLarge`,
+`UnsupportedFormat` or `PixelLimit`, then traverses the same pipeline through music
+background processing. Rejected artwork must leave no saved image, preserve the
+confirmed MusicBrainz release, and be terminal with no second attempt.
+
+The four invalid-artwork cases currently expose the same shared outcome overwrite
+tracked in #918: `ImageLookupService` replaces the validation `InvalidArtwork` result
+with `MissingArtwork` after exhausting matching metadata candidates. Those intended
+assertions remain active inside multiple-assertion scopes, so no-file, Mongo state,
+retry suppression and fixture-consumption checks still run. This is a known product
+assertion failure, not a harness failure; production behavior is unchanged.
