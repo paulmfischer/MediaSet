@@ -1,4 +1,3 @@
-using MediaSet.Api.Features.Images.Models;
 using MediaSet.Api.Shared.Models;
 using NUnit.Framework;
 
