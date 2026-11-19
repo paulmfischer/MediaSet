@@ -39,7 +39,7 @@ checkpoint()
 progress('run-start', summary)
 print(f'Artifacts: {output}', flush=True)
 env = dict(os.environ, IMAGE_REGRESSION_ARTIFACTS=str(output), IMAGE_REGRESSION_CONTAINER=container,
-           IMAGE_REGRESSION_IMAGES=str(images))
+           IMAGE_REGRESSION_IMAGES=str(images), IMAGE_REGRESSION_RUN_ID=run_id)
 exit_code = 1
 try:
     with (output / 'test-output.log').open('w') as log:
@@ -63,7 +63,7 @@ try:
             summary['scenarios'].append({'id': item.attrib['testName'], 'outcome': item.attrib['outcome'],
                                          'duration': item.attrib.get('duration'),
                                          'fixtureIds': sorted(fixture_ids.get(item.attrib['testName'], [])),
-                                         'fixtures': ['Fixtures/book-success.json'] if item.attrib['testName'].startswith('BookSuccess_') else ['inline-book'] if item.attrib['testName'].startswith('ProcessBook_') else ['inline-game'] if item.attrib['testName'].startswith('ProcessGame_') else ['inline-music'] if item.attrib['testName'].startswith('ProcessMusic_') else ['inline-contract'],
+                                         'fixtures': ['Fixtures/book-success.json'] if item.attrib['testName'].startswith('BookSuccess_') else ['inline-book'] if item.attrib['testName'].startswith('ProcessBook_') else ['inline-game'] if item.attrib['testName'].startswith('ProcessGame_') else ['inline-music'] if item.attrib['testName'].startswith('ProcessMusic_') else ['inline-recovery'] if item.attrib['testName'].startswith('ProcessRecovery_') else ['inline-contract'],
                                          'failure': ''.join(item.itertext()).strip()})
         result_summary = doc.find('.//t:ResultSummary', ns)
         counters = doc.find('.//t:Counters', ns)

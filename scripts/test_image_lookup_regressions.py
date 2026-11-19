@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 
 class RunnerTests(unittest.TestCase):
-    def run_runner(self, mode, expected_exit=1):
+    def run_runner(self, mode, expected_exit=1, preceding_mode=None):
         source = Path(__file__).with_name('image-lookup-regressions.py').read_text()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -19,6 +19,7 @@ class RunnerTests(unittest.TestCase):
             script.parent.mkdir()
             script.write_text(source)
             removed = []
+            environments = []
             original_write = Path.write_text
 
             def write_text(path, content, *args, **kwargs):
@@ -28,6 +29,7 @@ class RunnerTests(unittest.TestCase):
 
             def run(command, **kwargs):
                 if command[0] == 'dotnet':
+                    environments.append(kwargs['env'])
                     output = Path(kwargs['env']['IMAGE_REGRESSION_ARTIFACTS'])
                     images = Path(kwargs['env']['IMAGE_REGRESSION_IMAGES'])
                     images.mkdir()
@@ -35,6 +37,8 @@ class RunnerTests(unittest.TestCase):
                     kwargs['stdout'].write('retained raw test output\n')
                     with (output / 'progress.jsonl').open('a') as progress:
                         progress.write('{"event":"scenario-start"}\n')
+                        progress.write(json.dumps({'event': 'pass-finished', 'runId': kwargs['env']['IMAGE_REGRESSION_RUN_ID'],
+                                                   'details': {'attemptCount': 1, 'outcome': 'ProviderUnavailable'}}) + '\n')
                     if mode == 'interrupted':
                         raise KeyboardInterrupt()
                     if mode == 'missing-trx':
@@ -57,20 +61,35 @@ class RunnerTests(unittest.TestCase):
                     patch('subprocess.run', side_effect=run), \
                     patch.object(Path, 'write_text', write_text), \
                     contextlib.redirect_stdout(io.StringIO()):
+                retained = {}
+                if preceding_mode:
+                    current_mode = mode
+                    mode = preceding_mode
+                    with self.assertRaises(SystemExit):
+                        runpy.run_path(str(script), run_name='__main__')
+                    mode = current_mode
+                    retained = {path: path.read_bytes() for path in
+                                (root / 'artifacts').rglob('*') if path.is_file()}
                 with self.assertRaises(SystemExit) as exited:
                     runpy.run_path(str(script), run_name='__main__')
             artifacts = list((root / 'artifacts' / 'image-lookup-regressions').iterdir())
-            self.assertEqual(len(artifacts), 1)
-            output = artifacts[0]
+            self.assertEqual(len(artifacts), 2 if preceding_mode else 1)
+            for path, contents in retained.items():
+                self.assertEqual(path.read_bytes(), contents, str(path))
+            for key in ('IMAGE_REGRESSION_ARTIFACTS', 'IMAGE_REGRESSION_IMAGES', 'IMAGE_REGRESSION_CONTAINER', 'IMAGE_REGRESSION_RUN_ID'):
+                self.assertEqual(len({env[key] for env in environments}), len(environments), key)
+            output = Path(environments[-1]['IMAGE_REGRESSION_ARTIFACTS'])
             summary = json.loads((output / 'summary.json').read_text())
             self.assertEqual(exited.exception.code, expected_exit)
             self.assertEqual(summary['exitCode'], expected_exit)
             self.assertEqual(summary['commit'], 'fixture-commit')
             self.assertTrue((output / 'test-output.log').exists())
             self.assertIn('run-start', (output / 'progress.jsonl').read_text())
-            self.assertEqual(len(removed), 1)
-            self.assertRegex(removed[0][-1], r'^mediaset-image-regression-[a-f0-9]{32}$')
-            self.assertFalse((Path(tempfile.gettempdir()) / removed[0][-1].replace('image-regression', 'images')).exists())
+            self.assertIn('ProviderUnavailable', (output / 'progress.jsonl').read_text())
+            self.assertEqual(len(removed), len(environments))
+            for cleanup in removed:
+                self.assertRegex(cleanup[-1], r'^mediaset-image-regression-[a-f0-9]{32}$')
+                self.assertFalse((Path(tempfile.gettempdir()) / cleanup[-1].replace('image-regression', 'images')).exists())
             if mode in ('interrupted', 'missing-trx', 'malformed-trx'):
                 self.assertFalse(summary['complete'])
                 self.assertEqual((output / 'results.trx').exists(), mode == 'malformed-trx')
@@ -105,6 +124,11 @@ class RunnerTests(unittest.TestCase):
         summary = self.run_runner('report-failure')
         self.assertFalse(summary['complete'])
         self.assertIn('Report finalization failed', summary['infrastructureFailures'][0])
+
+    def test_successive_runs_preserve_failed_and_interrupted_history_with_distinct_resources(self):
+        for previous in ('assertion-failure', 'interrupted', 'report-failure'):
+            with self.subTest(previous=previous):
+                self.run_runner('success', expected_exit=0, preceding_mode=previous)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ internal sealed class StrictHttpFixtures(Action<string, object?> progress) : Htt
 {
     private readonly List<Fixture> _fixtures = [];
     internal List<string> RequestIds { get; } = [];
+    internal Action<string>? RequestStarted { get; set; }
     private readonly List<string> _violations = [];
     internal void Load(string path)
     {
@@ -49,6 +50,7 @@ internal sealed class StrictHttpFixtures(Action<string, object?> progress) : Htt
         var response = fixture.Responses[0];
         fixture.Responses.RemoveAt(0);
         progress("http-fixture", new { fixture.Id, response.Status, response.Failure });
+        RequestStarted?.Invoke(fixture.Id);
         if (response.Failure == "network")
         {
             throw new HttpRequestException($"Fixture {fixture.Id}: connection failure");
