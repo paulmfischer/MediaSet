@@ -4,7 +4,8 @@ This separate NUnit project exercises real MongoDB access, provider clients, loo
 strategies, image validation, background processing and local filesystem storage.
 It is deliberately outside the normal unit-test solution and CI. Product defects
 must keep failing assertions; book fallback and quota scenarios cover #907,
-movie/TV scenarios cover #908, and further scenarios belong to #909–912.
+movie/TV scenarios cover #908, game/authentication scenarios cover #909, and further
+scenarios belong to #910–912.
 
 Prerequisites: .NET 10 SDK, Python 3, and a working local rootless Podman (default)
 or Docker runtime. The runtime must be able to obtain `docker.io/library/mongo:8.0.17`.
@@ -146,3 +147,29 @@ metadata miss overwrites `InvalidArtwork` in `ImageLookupService`. The intended
 same case also checks no files, terminal state, retry suppression and fixture
 consumption. This is a product assertion failure, not a harness failure, and is
 outside this coverage change's production-fix scope.
+
+## Game and authentication scenarios (#909)
+
+`GameRegressionScenarios.cs` adds 15 cases through the real `IgdbTokenService`,
+`IgdbClient`, game strategy, background processor, MongoDB and local image storage.
+The token endpoint requires the exact form body containing dummy client ID/secret
+and client-credentials grant. Every IGDB search requires the exact POST query,
+`Client-ID`, and scenario-specific Bearer token. Authentication, lookup and artwork
+all terminate in `StrictHttpFixtures`; no provider configuration or API keys load.
+
+| Scenario | Verified behavior |
+| --- | --- |
+| `SuccessfulLookups` | Protocol-relative thumbnail becomes HTTPS large-cover URL; readable image, confirmed provider identity, fingerprint and persisted success; a second entity reuses one authentication request across scopes; completed entities are suppressed |
+| `FreshScenario` | A fresh service provider/cache must authenticate again and use its own token after the previous scenario is disposed |
+| `NoMatchOrMatchedWithoutArtwork` | Empty results or a confirmed game without artwork produce distinct terminal outcomes, no files, and no repeated lookup |
+| `UnavailableArtwork` | Artwork 404 retains confirmed game identity, terminal missing-artwork state, and no files |
+| `AuthenticationOrProviderFailure` (auth/lookup × 401/403/503/network/timeout) | Unauthorized versus unavailable outcomes, IGDB attribution, exact retry time, no early HTTP/retry, due-filter transition, recovery, cumulative attempt count and readable saved image |
+
+Every case verifies the complete fixture request order and consumption. Failed
+authentication is requested again on recovery; failed lookup reuses its successfully
+cached token. Each scenario owns its memory cache and unique `.invalid` lookup/auth
+host, avoiding token and provider-quota contamination. Persisted attempt timestamps
+and retry eligibility use the scenario clock; stored images are decoded through the
+real image service and checked for dimensions, existence and expected file count.
+The suite continues to retain the unrelated active product assertions tracked by
+#916 (Google Books provider attribution) and #918 (invalid TMDB artwork outcome).
