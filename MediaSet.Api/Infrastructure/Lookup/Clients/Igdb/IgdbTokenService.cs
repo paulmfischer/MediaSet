@@ -9,6 +9,7 @@ public class IgdbTokenService : IIgdbTokenService
 {
     private readonly IgdbConfiguration _configuration;
     private readonly IMemoryCache _cache;
+    private readonly IHttpClientFactory? _httpClientFactory;
     private readonly ILogger<IgdbTokenService> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private const string CacheKey = "igdb_access_token";
@@ -16,11 +17,13 @@ public class IgdbTokenService : IIgdbTokenService
     public IgdbTokenService(
         IOptions<IgdbConfiguration> configuration,
         IMemoryCache cache,
-        ILogger<IgdbTokenService> logger)
+        ILogger<IgdbTokenService> logger,
+        IHttpClientFactory? httpClientFactory = null)
     {
         _configuration = configuration.Value;
         _cache = cache;
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
@@ -41,7 +44,7 @@ public class IgdbTokenService : IIgdbTokenService
 
             _logger.LogInformation("Fetching new IGDB access token");
 
-            using var httpClient = new HttpClient();
+            using var httpClient = _httpClientFactory?.CreateClient() ?? new HttpClient();
             var requestContent = new FormUrlEncodedContent(
             [
                 new KeyValuePair<string, string>("client_id", _configuration.ClientId),

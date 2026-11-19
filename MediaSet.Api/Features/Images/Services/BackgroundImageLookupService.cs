@@ -93,7 +93,7 @@ public class BackgroundImageLookupService : BackgroundService
         }
     }
 
-    private async Task ProcessAllEntityTypesAsync(CancellationToken cancellationToken)
+    internal async Task ProcessAllEntityTypesAsync(CancellationToken cancellationToken)
     {
         var runStartTime = UtcNow;
         var maxRuntime = TimeSpan.FromMinutes(_config.Value.MaxRuntimeMinutes);

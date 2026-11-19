@@ -1,0 +1,26 @@
+[
+  {
+    "Id": "openlibrary-isbn",
+    "Method": "GET",
+    "Host": "openlibrary.org",
+    "Path": "/api/volumes/brief/isbn/9780000000001.json",
+    "Responses": [
+      {
+        "Text": "{\"records\": {\"/books/OL1M\": {\"data\": {\"title\": \"Fixture Book\", \"cover\": {\"large\": \"https://covers.openlibrary.org/b/id/123-L.jpg\"}}, \"olids\": [\"OL1M\"], \"isbns\": [\"9780000000001\"]}}, \"items\": []}"
+      }
+    ]
+  },
+  {
+    "Id": "openlibrary-artwork",
+    "Method": "GET",
+    "Host": "covers.openlibrary.org",
+    "Path": "/b/id/123-L.jpg",
+    "Query": "?default=false",
+    "Responses": [
+      {
+        "ContentType": "image/png",
+        "Base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEklEQVR4nGNQSFigkLCAAUIBAB2OBIG+B74KAAAAAElFTkSuQmCC"
+      }
+    ]
+  }
+]

@@ -345,3 +345,6 @@ data/
 
 # Private local archives and logs from older agent tooling
 .agent-local/
+
+# Retained local image regression history
+/artifacts/image-lookup-regressions/
