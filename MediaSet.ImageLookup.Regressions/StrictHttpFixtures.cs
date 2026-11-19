@@ -9,6 +9,7 @@ namespace MediaSet.ImageLookup.Regressions;
 internal sealed class StrictHttpFixtures(Action<string, object?> progress) : HttpMessageHandler, IHttpClientFactory
 {
     private readonly List<Fixture> _fixtures = [];
+    internal List<string> RequestIds { get; } = [];
     private readonly List<string> _violations = [];
     internal void Load(string path)
     {
@@ -44,6 +45,7 @@ internal sealed class StrictHttpFixtures(Action<string, object?> progress) : Htt
             progress("http-unexpected", message);
             throw new InvalidOperationException(message);
         }
+        RequestIds.Add(fixture.Id);
         var response = fixture.Responses[0];
         fixture.Responses.RemoveAt(0);
         progress("http-fixture", new { fixture.Id, response.Status, response.Failure });
